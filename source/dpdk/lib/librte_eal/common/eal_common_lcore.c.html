@@ -1,0 +1,152 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>eal_common_lcore.c source code [dpdk/lib/librte_eal/common/eal_common_lcore.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'dpdk/lib/librte_eal/common/eal_common_lcore.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>dpdk</a>/<a href='../..'>lib</a>/<a href='..'>librte_eal</a>/<a href='./'>common</a>/<a href='eal_common_lcore.c.html'>eal_common_lcore.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright(c) 2010-2014 Intel Corporation</i></td></tr>
+<tr><th id="3">3</th><td><i> */</i></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><u>#include <a href="../../../../include/unistd.h.html">&lt;unistd.h&gt;</a></u></td></tr>
+<tr><th id="6">6</th><td><u>#include &lt;limits.h&gt;</u></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="../../../../include/string.h.html">&lt;string.h&gt;</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="../../../../include/dirent.h.html">&lt;dirent.h&gt;</a></u></td></tr>
+<tr><th id="9">9</th><td></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="include/rte_errno.h.html">&lt;rte_errno.h&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="include/rte_log.h.html">&lt;rte_log.h&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="include/rte_eal.h.html">&lt;rte_eal.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="include/rte_lcore.h.html">&lt;rte_lcore.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="include/rte_common.h.html">&lt;rte_common.h&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="include/rte_debug.h.html">&lt;rte_debug.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="eal_private.h.html">"eal_private.h"</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="eal_thread.h.html">"eal_thread.h"</a></u></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="21">21</th><td><dfn class="tu decl def fn" id="socket_id_cmp" title='socket_id_cmp' data-type='int socket_id_cmp(const void * a, const void * b)' data-ref="socket_id_cmp">socket_id_cmp</dfn>(<em>const</em> <em>void</em> *<dfn class="local col7 decl" id="7a" title='a' data-type='const void *' data-ref="7a">a</dfn>, <em>const</em> <em>void</em> *<dfn class="local col8 decl" id="8b" title='b' data-type='const void *' data-ref="8b">b</dfn>)</td></tr>
+<tr><th id="22">22</th><td>{</td></tr>
+<tr><th id="23">23</th><td>	<em>const</em> <em>int</em> *<dfn class="local col9 decl" id="9lcore_id_a" title='lcore_id_a' data-type='const int *' data-ref="9lcore_id_a">lcore_id_a</dfn> = <a class="local col7 ref" href="#7a" title='a' data-ref="7a">a</a>;</td></tr>
+<tr><th id="24">24</th><td>	<em>const</em> <em>int</em> *<dfn class="local col0 decl" id="10lcore_id_b" title='lcore_id_b' data-type='const int *' data-ref="10lcore_id_b">lcore_id_b</dfn> = <a class="local col8 ref" href="#8b" title='b' data-ref="8b">b</a>;</td></tr>
+<tr><th id="25">25</th><td></td></tr>
+<tr><th id="26">26</th><td>	<b>if</b> (*<a class="local col9 ref" href="#9lcore_id_a" title='lcore_id_a' data-ref="9lcore_id_a">lcore_id_a</a> &lt; *<a class="local col0 ref" href="#10lcore_id_b" title='lcore_id_b' data-ref="10lcore_id_b">lcore_id_b</a>)</td></tr>
+<tr><th id="27">27</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="28">28</th><td>	<b>if</b> (*<a class="local col9 ref" href="#9lcore_id_a" title='lcore_id_a' data-ref="9lcore_id_a">lcore_id_a</a> &gt; *<a class="local col0 ref" href="#10lcore_id_b" title='lcore_id_b' data-ref="10lcore_id_b">lcore_id_b</a>)</td></tr>
+<tr><th id="29">29</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="30">30</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="31">31</th><td>}</td></tr>
+<tr><th id="32">32</th><td></td></tr>
+<tr><th id="33">33</th><td><i>/*</i></td></tr>
+<tr><th id="34">34</th><td><i> * Parse /sys/devices/system/cpu to get the number of physical and logical</i></td></tr>
+<tr><th id="35">35</th><td><i> * processors on the machine. The function will fill the cpu_info</i></td></tr>
+<tr><th id="36">36</th><td><i> * structure.</i></td></tr>
+<tr><th id="37">37</th><td><i> */</i></td></tr>
+<tr><th id="38">38</th><td><em>int</em></td></tr>
+<tr><th id="39">39</th><td><dfn class="decl def fn" id="rte_eal_cpu_init" title='rte_eal_cpu_init' data-ref="rte_eal_cpu_init">rte_eal_cpu_init</dfn>(<em>void</em>)</td></tr>
+<tr><th id="40">40</th><td>{</td></tr>
+<tr><th id="41">41</th><td>	<i>/* pointer to global configuration */</i></td></tr>
+<tr><th id="42">42</th><td>	<b>struct</b> <a class="type" href="include/rte_eal.h.html#rte_config" title='rte_config' data-ref="rte_config">rte_config</a> *<dfn class="local col1 decl" id="11config" title='config' data-type='struct rte_config *' data-ref="11config">config</dfn> = <a class="ref fn" href="include/rte_eal.h.html#rte_eal_get_configuration" title='rte_eal_get_configuration' data-ref="rte_eal_get_configuration">rte_eal_get_configuration</a>();</td></tr>
+<tr><th id="43">43</th><td>	<em>unsigned</em> <dfn class="local col2 decl" id="12lcore_id" title='lcore_id' data-type='unsigned int' data-ref="12lcore_id">lcore_id</dfn>;</td></tr>
+<tr><th id="44">44</th><td>	<em>unsigned</em> <dfn class="local col3 decl" id="13count" title='count' data-type='unsigned int' data-ref="13count">count</dfn> = <var>0</var>;</td></tr>
+<tr><th id="45">45</th><td>	<em>unsigned</em> <em>int</em> <dfn class="local col4 decl" id="14socket_id" title='socket_id' data-type='unsigned int' data-ref="14socket_id">socket_id</dfn>, <dfn class="local col5 decl" id="15prev_socket_id" title='prev_socket_id' data-type='unsigned int' data-ref="15prev_socket_id">prev_socket_id</dfn>;</td></tr>
+<tr><th id="46">46</th><td>	<em>int</em> <dfn class="local col6 decl" id="16lcore_to_socket_id" title='lcore_to_socket_id' data-type='int [128]' data-ref="16lcore_to_socket_id">lcore_to_socket_id</dfn>[<a class="macro" href="../../../build/include/rte_config.h.html#23" title="128" data-ref="_M/RTE_MAX_LCORE">RTE_MAX_LCORE</a>];</td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td>	<i>/*</i></td></tr>
+<tr><th id="49">49</th><td><i>	 * Parse the maximum set of logical cores, detect the subset of running</i></td></tr>
+<tr><th id="50">50</th><td><i>	 * ones and enable them by default.</i></td></tr>
+<tr><th id="51">51</th><td><i>	 */</i></td></tr>
+<tr><th id="52">52</th><td>	<b>for</b> (<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a> = <var>0</var>; <a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a> &lt; <a class="macro" href="../../../build/include/rte_config.h.html#23" title="128" data-ref="_M/RTE_MAX_LCORE">RTE_MAX_LCORE</a>; <a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>++) {</td></tr>
+<tr><th id="53">53</th><td>		<a class="ref" href="include/rte_lcore.h.html#lcore_config" title='lcore_config' data-ref="lcore_config">lcore_config</a>[<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>].<a class="ref field" href="include/rte_lcore.h.html#lcore_config::core_index" title='lcore_config::core_index' data-ref="lcore_config::core_index">core_index</a> = <a class="local col3 ref" href="#13count" title='count' data-ref="13count">count</a>;</td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td>		<i>/* init cpuset for per lcore config */</i></td></tr>
+<tr><th id="56">56</th><td>		<a class="macro" href="../../../../include/sched.h.html#83" title="do __builtin_memset (&amp;lcore_config[lcore_id].cpuset, &apos;\0&apos;, sizeof (cpu_set_t)); while (0)" data-ref="_M/CPU_ZERO">CPU_ZERO</a>(&amp;<a class="ref" href="include/rte_lcore.h.html#lcore_config" title='lcore_config' data-ref="lcore_config">lcore_config</a>[<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>].<a class="ref field" href="include/rte_lcore.h.html#lcore_config::cpuset" title='lcore_config::cpuset' data-ref="lcore_config::cpuset">cpuset</a>);</td></tr>
+<tr><th id="57">57</th><td></td></tr>
+<tr><th id="58">58</th><td>		<i>/* find socket first */</i></td></tr>
+<tr><th id="59">59</th><td>		<a class="local col4 ref" href="#14socket_id" title='socket_id' data-ref="14socket_id">socket_id</a> = <a class="ref fn" href="eal_thread.h.html#eal_cpu_socket_id" title='eal_cpu_socket_id' data-ref="eal_cpu_socket_id">eal_cpu_socket_id</a>(<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>);</td></tr>
+<tr><th id="60">60</th><td>		<b>if</b> (<a class="local col4 ref" href="#14socket_id" title='socket_id' data-ref="14socket_id">socket_id</a> &gt;= <a class="macro" href="../../../build/include/rte_config.h.html#25" title="8" data-ref="_M/RTE_MAX_NUMA_NODES">RTE_MAX_NUMA_NODES</a>) {</td></tr>
+<tr><th id="61">61</th><td><u>#<span data-ppcond="61">ifdef</span> <span class="macro" data-ref="_M/RTE_EAL_ALLOW_INV_SOCKET_ID">RTE_EAL_ALLOW_INV_SOCKET_ID</span></u></td></tr>
+<tr><th id="62">62</th><td>			socket_id = <var>0</var>;</td></tr>
+<tr><th id="63">63</th><td><u>#<span data-ppcond="61">else</span></u></td></tr>
+<tr><th id="64">64</th><td>			<a class="macro" href="include/rte_log.h.html#320" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Socket ID (%u) is greater than RTE_MAX_NUMA_NODES (%d)\n&quot;, socket_id, 8)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"Socket ID (%u) is greater than RTE_MAX_NUMA_NODES (%d)\n"</q>,</td></tr>
+<tr><th id="65">65</th><td>					<a class="local col4 ref" href="#14socket_id" title='socket_id' data-ref="14socket_id">socket_id</a>, <a class="macro" href="../../../build/include/rte_config.h.html#25" title="8" data-ref="_M/RTE_MAX_NUMA_NODES">RTE_MAX_NUMA_NODES</a>);</td></tr>
+<tr><th id="66">66</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="67">67</th><td><u>#<span data-ppcond="61">endif</span></u></td></tr>
+<tr><th id="68">68</th><td>		}</td></tr>
+<tr><th id="69">69</th><td>		<a class="local col6 ref" href="#16lcore_to_socket_id" title='lcore_to_socket_id' data-ref="16lcore_to_socket_id">lcore_to_socket_id</a>[<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>] = <a class="local col4 ref" href="#14socket_id" title='socket_id' data-ref="14socket_id">socket_id</a>;</td></tr>
+<tr><th id="70">70</th><td></td></tr>
+<tr><th id="71">71</th><td>		<i>/* in 1:1 mapping, record related cpu detected state */</i></td></tr>
+<tr><th id="72">72</th><td>		<a class="ref" href="include/rte_lcore.h.html#lcore_config" title='lcore_config' data-ref="lcore_config">lcore_config</a>[<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>].<a class="ref field" href="include/rte_lcore.h.html#lcore_config::detected" title='lcore_config::detected' data-ref="lcore_config::detected">detected</a> = <a class="ref fn" href="eal_private.h.html#eal_cpu_detected" title='eal_cpu_detected' data-ref="eal_cpu_detected">eal_cpu_detected</a>(<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>);</td></tr>
+<tr><th id="73">73</th><td>		<b>if</b> (<a class="ref" href="include/rte_lcore.h.html#lcore_config" title='lcore_config' data-ref="lcore_config">lcore_config</a>[<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>].<a class="ref field" href="include/rte_lcore.h.html#lcore_config::detected" title='lcore_config::detected' data-ref="lcore_config::detected">detected</a> == <var>0</var>) {</td></tr>
+<tr><th id="74">74</th><td>			<a class="local col1 ref" href="#11config" title='config' data-ref="11config">config</a>-&gt;<a class="ref field" href="include/rte_eal.h.html#rte_config::lcore_role" title='rte_config::lcore_role' data-ref="rte_config::lcore_role">lcore_role</a>[<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>] = <a class="enum" href="include/rte_eal.h.html#ROLE_OFF" title='ROLE_OFF' data-ref="ROLE_OFF">ROLE_OFF</a>;</td></tr>
+<tr><th id="75">75</th><td>			<a class="ref" href="include/rte_lcore.h.html#lcore_config" title='lcore_config' data-ref="lcore_config">lcore_config</a>[<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>].<a class="ref field" href="include/rte_lcore.h.html#lcore_config::core_index" title='lcore_config::core_index' data-ref="lcore_config::core_index">core_index</a> = -<var>1</var>;</td></tr>
+<tr><th id="76">76</th><td>			<b>continue</b>;</td></tr>
+<tr><th id="77">77</th><td>		}</td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td>		<i>/* By default, lcore 1:1 map to cpu id */</i></td></tr>
+<tr><th id="80">80</th><td>		<a class="macro" href="../../../../include/sched.h.html#79" title="(__extension__ ({ size_t __cpu = (lcore_id); __cpu &lt; 8 * (sizeof (cpu_set_t)) ? (((__cpu_mask *) ((&amp;lcore_config[lcore_id].cpuset)-&gt;__bits))[((__cpu) / (8 * sizeof (__cpu_mask)))] |= ((__cpu_mask) 1 &lt;&lt; ((__cpu) % (8 * sizeof (__cpu_mask))))) : 0; }))" data-ref="_M/CPU_SET">CPU_SET</a>(<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>, &amp;<a class="ref" href="include/rte_lcore.h.html#lcore_config" title='lcore_config' data-ref="lcore_config">lcore_config</a>[<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>].<a class="ref field" href="include/rte_lcore.h.html#lcore_config::cpuset" title='lcore_config::cpuset' data-ref="lcore_config::cpuset">cpuset</a>);</td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td>		<i>/* By default, each detected core is enabled */</i></td></tr>
+<tr><th id="83">83</th><td>		<a class="local col1 ref" href="#11config" title='config' data-ref="11config">config</a>-&gt;<a class="ref field" href="include/rte_eal.h.html#rte_config::lcore_role" title='rte_config::lcore_role' data-ref="rte_config::lcore_role">lcore_role</a>[<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>] = <a class="enum" href="include/rte_eal.h.html#ROLE_RTE" title='ROLE_RTE' data-ref="ROLE_RTE">ROLE_RTE</a>;</td></tr>
+<tr><th id="84">84</th><td>		<a class="ref" href="include/rte_lcore.h.html#lcore_config" title='lcore_config' data-ref="lcore_config">lcore_config</a>[<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>].<a class="ref field" href="include/rte_lcore.h.html#lcore_config::core_role" title='lcore_config::core_role' data-ref="lcore_config::core_role">core_role</a> = <a class="enum" href="include/rte_eal.h.html#ROLE_RTE" title='ROLE_RTE' data-ref="ROLE_RTE">ROLE_RTE</a>;</td></tr>
+<tr><th id="85">85</th><td>		<a class="ref" href="include/rte_lcore.h.html#lcore_config" title='lcore_config' data-ref="lcore_config">lcore_config</a>[<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>].<a class="ref field" href="include/rte_lcore.h.html#lcore_config::core_id" title='lcore_config::core_id' data-ref="lcore_config::core_id">core_id</a> = <a class="ref fn" href="eal_private.h.html#eal_cpu_core_id" title='eal_cpu_core_id' data-ref="eal_cpu_core_id">eal_cpu_core_id</a>(<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>);</td></tr>
+<tr><th id="86">86</th><td>		<a class="ref" href="include/rte_lcore.h.html#lcore_config" title='lcore_config' data-ref="lcore_config">lcore_config</a>[<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>].<a class="ref field" href="include/rte_lcore.h.html#lcore_config::socket_id" title='lcore_config::socket_id' data-ref="lcore_config::socket_id">socket_id</a> = <a class="local col4 ref" href="#14socket_id" title='socket_id' data-ref="14socket_id">socket_id</a>;</td></tr>
+<tr><th id="87">87</th><td>		<a class="macro" href="include/rte_log.h.html#320" title="rte_log(8U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Detected lcore %u as &quot; &quot;core %u on socket %u\n&quot;, lcore_id, lcore_config[lcore_id].core_id, lcore_config[lcore_id].socket_id)" data-ref="_M/RTE_LOG">RTE_LOG</a>(DEBUG, EAL, <q>"Detected lcore %u as "</q></td></tr>
+<tr><th id="88">88</th><td>				<q>"core %u on socket %u\n"</q>,</td></tr>
+<tr><th id="89">89</th><td>				<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>, <a class="ref" href="include/rte_lcore.h.html#lcore_config" title='lcore_config' data-ref="lcore_config">lcore_config</a>[<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>].<a class="ref field" href="include/rte_lcore.h.html#lcore_config::core_id" title='lcore_config::core_id' data-ref="lcore_config::core_id">core_id</a>,</td></tr>
+<tr><th id="90">90</th><td>				<a class="ref" href="include/rte_lcore.h.html#lcore_config" title='lcore_config' data-ref="lcore_config">lcore_config</a>[<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>].<a class="ref field" href="include/rte_lcore.h.html#lcore_config::socket_id" title='lcore_config::socket_id' data-ref="lcore_config::socket_id">socket_id</a>);</td></tr>
+<tr><th id="91">91</th><td>		<a class="local col3 ref" href="#13count" title='count' data-ref="13count">count</a>++;</td></tr>
+<tr><th id="92">92</th><td>	}</td></tr>
+<tr><th id="93">93</th><td>	<i>/* Set the count of enabled logical cores of the EAL configuration */</i></td></tr>
+<tr><th id="94">94</th><td>	<a class="local col1 ref" href="#11config" title='config' data-ref="11config">config</a>-&gt;<a class="ref field" href="include/rte_eal.h.html#rte_config::lcore_count" title='rte_config::lcore_count' data-ref="rte_config::lcore_count">lcore_count</a> = <a class="local col3 ref" href="#13count" title='count' data-ref="13count">count</a>;</td></tr>
+<tr><th id="95">95</th><td>	<a class="macro" href="include/rte_log.h.html#320" title="rte_log(8U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Support maximum %u logical core(s) by configuration.\n&quot;, 128)" data-ref="_M/RTE_LOG">RTE_LOG</a>(DEBUG, EAL,</td></tr>
+<tr><th id="96">96</th><td>		<q>"Support maximum %u logical core(s) by configuration.\n"</q>,</td></tr>
+<tr><th id="97">97</th><td>		<a class="macro" href="../../../build/include/rte_config.h.html#23" title="128" data-ref="_M/RTE_MAX_LCORE">RTE_MAX_LCORE</a>);</td></tr>
+<tr><th id="98">98</th><td>	<a class="macro" href="include/rte_log.h.html#320" title="rte_log(7U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Detected %u lcore(s)\n&quot;, config-&gt;lcore_count)" data-ref="_M/RTE_LOG">RTE_LOG</a>(INFO, EAL, <q>"Detected %u lcore(s)\n"</q>, <a class="local col1 ref" href="#11config" title='config' data-ref="11config">config</a>-&gt;<a class="ref field" href="include/rte_eal.h.html#rte_config::lcore_count" title='rte_config::lcore_count' data-ref="rte_config::lcore_count">lcore_count</a>);</td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td>	<i>/* sort all socket id's in ascending order */</i></td></tr>
+<tr><th id="101">101</th><td>	<a class="ref fn" href="../../../../include/stdlib.h.html#qsort" title='qsort' data-ref="qsort">qsort</a>(<a class="local col6 ref" href="#16lcore_to_socket_id" title='lcore_to_socket_id' data-ref="16lcore_to_socket_id">lcore_to_socket_id</a>, <a class="macro" href="include/rte_common.h.html#482" title="(sizeof (lcore_to_socket_id) / sizeof ((lcore_to_socket_id)[0]))" data-ref="_M/RTE_DIM">RTE_DIM</a>(<a class="local col6 ref" href="#16lcore_to_socket_id" title='lcore_to_socket_id' data-ref="16lcore_to_socket_id">lcore_to_socket_id</a>),</td></tr>
+<tr><th id="102">102</th><td>			<b>sizeof</b>(<a class="local col6 ref" href="#16lcore_to_socket_id" title='lcore_to_socket_id' data-ref="16lcore_to_socket_id">lcore_to_socket_id</a>[<var>0</var>]), <a class="tu ref fn" href="#socket_id_cmp" title='socket_id_cmp' data-use='r' data-ref="socket_id_cmp">socket_id_cmp</a>);</td></tr>
+<tr><th id="103">103</th><td></td></tr>
+<tr><th id="104">104</th><td>	<a class="local col5 ref" href="#15prev_socket_id" title='prev_socket_id' data-ref="15prev_socket_id">prev_socket_id</a> = -<var>1</var>;</td></tr>
+<tr><th id="105">105</th><td>	<a class="local col1 ref" href="#11config" title='config' data-ref="11config">config</a>-&gt;<a class="ref field" href="include/rte_eal.h.html#rte_config::numa_node_count" title='rte_config::numa_node_count' data-ref="rte_config::numa_node_count">numa_node_count</a> = <var>0</var>;</td></tr>
+<tr><th id="106">106</th><td>	<b>for</b> (<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a> = <var>0</var>; <a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a> &lt; <a class="macro" href="../../../build/include/rte_config.h.html#23" title="128" data-ref="_M/RTE_MAX_LCORE">RTE_MAX_LCORE</a>; <a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>++) {</td></tr>
+<tr><th id="107">107</th><td>		<a class="local col4 ref" href="#14socket_id" title='socket_id' data-ref="14socket_id">socket_id</a> = <a class="local col6 ref" href="#16lcore_to_socket_id" title='lcore_to_socket_id' data-ref="16lcore_to_socket_id">lcore_to_socket_id</a>[<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>];</td></tr>
+<tr><th id="108">108</th><td>		<b>if</b> (<a class="local col4 ref" href="#14socket_id" title='socket_id' data-ref="14socket_id">socket_id</a> != <a class="local col5 ref" href="#15prev_socket_id" title='prev_socket_id' data-ref="15prev_socket_id">prev_socket_id</a>)</td></tr>
+<tr><th id="109">109</th><td>			<a class="local col1 ref" href="#11config" title='config' data-ref="11config">config</a>-&gt;<a class="ref field" href="include/rte_eal.h.html#rte_config::numa_nodes" title='rte_config::numa_nodes' data-ref="rte_config::numa_nodes">numa_nodes</a>[<a class="local col1 ref" href="#11config" title='config' data-ref="11config">config</a>-&gt;<a class="ref field" href="include/rte_eal.h.html#rte_config::numa_node_count" title='rte_config::numa_node_count' data-ref="rte_config::numa_node_count">numa_node_count</a>++] =</td></tr>
+<tr><th id="110">110</th><td>					<a class="local col4 ref" href="#14socket_id" title='socket_id' data-ref="14socket_id">socket_id</a>;</td></tr>
+<tr><th id="111">111</th><td>		<a class="local col5 ref" href="#15prev_socket_id" title='prev_socket_id' data-ref="15prev_socket_id">prev_socket_id</a> = <a class="local col4 ref" href="#14socket_id" title='socket_id' data-ref="14socket_id">socket_id</a>;</td></tr>
+<tr><th id="112">112</th><td>	}</td></tr>
+<tr><th id="113">113</th><td>	<a class="macro" href="include/rte_log.h.html#320" title="rte_log(7U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Detected %u NUMA nodes\n&quot;, config-&gt;numa_node_count)" data-ref="_M/RTE_LOG">RTE_LOG</a>(INFO, EAL, <q>"Detected %u NUMA nodes\n"</q>, <a class="local col1 ref" href="#11config" title='config' data-ref="11config">config</a>-&gt;<a class="ref field" href="include/rte_eal.h.html#rte_config::numa_node_count" title='rte_config::numa_node_count' data-ref="rte_config::numa_node_count">numa_node_count</a>);</td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="116">116</th><td>}</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td><em>unsigned</em> <em>int</em> <a class="macro" href="../../librte_compat/rte_compat.h.html#87" title="__attribute__((section(&quot;.text.experimental&quot;)))" data-ref="_M/__rte_experimental">__rte_experimental</a></td></tr>
+<tr><th id="119">119</th><td><dfn class="decl def fn" id="rte_socket_count" title='rte_socket_count' data-ref="rte_socket_count">rte_socket_count</dfn>(<em>void</em>)</td></tr>
+<tr><th id="120">120</th><td>{</td></tr>
+<tr><th id="121">121</th><td>	<em>const</em> <b>struct</b> <a class="type" href="include/rte_eal.h.html#rte_config" title='rte_config' data-ref="rte_config">rte_config</a> *<dfn class="local col7 decl" id="17config" title='config' data-type='const struct rte_config *' data-ref="17config">config</dfn> = <a class="ref fn" href="include/rte_eal.h.html#rte_eal_get_configuration" title='rte_eal_get_configuration' data-ref="rte_eal_get_configuration">rte_eal_get_configuration</a>();</td></tr>
+<tr><th id="122">122</th><td>	<b>return</b> <a class="local col7 ref" href="#17config" title='config' data-ref="17config">config</a>-&gt;<a class="ref field" href="include/rte_eal.h.html#rte_config::numa_node_count" title='rte_config::numa_node_count' data-ref="rte_config::numa_node_count">numa_node_count</a>;</td></tr>
+<tr><th id="123">123</th><td>}</td></tr>
+<tr><th id="124">124</th><td></td></tr>
+<tr><th id="125">125</th><td><em>int</em> <a class="macro" href="../../librte_compat/rte_compat.h.html#87" title="__attribute__((section(&quot;.text.experimental&quot;)))" data-ref="_M/__rte_experimental">__rte_experimental</a></td></tr>
+<tr><th id="126">126</th><td><dfn class="decl def fn" id="rte_socket_id_by_idx" title='rte_socket_id_by_idx' data-ref="rte_socket_id_by_idx">rte_socket_id_by_idx</dfn>(<em>unsigned</em> <em>int</em> <dfn class="local col8 decl" id="18idx" title='idx' data-type='unsigned int' data-ref="18idx">idx</dfn>)</td></tr>
+<tr><th id="127">127</th><td>{</td></tr>
+<tr><th id="128">128</th><td>	<em>const</em> <b>struct</b> <a class="type" href="include/rte_eal.h.html#rte_config" title='rte_config' data-ref="rte_config">rte_config</a> *<dfn class="local col9 decl" id="19config" title='config' data-type='const struct rte_config *' data-ref="19config">config</dfn> = <a class="ref fn" href="include/rte_eal.h.html#rte_eal_get_configuration" title='rte_eal_get_configuration' data-ref="rte_eal_get_configuration">rte_eal_get_configuration</a>();</td></tr>
+<tr><th id="129">129</th><td>	<b>if</b> (<a class="local col8 ref" href="#18idx" title='idx' data-ref="18idx">idx</a> &gt;= <a class="local col9 ref" href="#19config" title='config' data-ref="19config">config</a>-&gt;<a class="ref field" href="include/rte_eal.h.html#rte_config::numa_node_count" title='rte_config::numa_node_count' data-ref="rte_config::numa_node_count">numa_node_count</a>) {</td></tr>
+<tr><th id="130">130</th><td>		<a class="macro" href="include/rte_errno.h.html#29" title="(per_lcore__rte_errno)" data-ref="_M/rte_errno">rte_errno</a> = <a class="macro" href="../../../../include/asm-generic/errno-base.h.html#25" title="22" data-ref="_M/EINVAL">EINVAL</a>;</td></tr>
+<tr><th id="131">131</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="132">132</th><td>	}</td></tr>
+<tr><th id="133">133</th><td>	<b>return</b> <a class="local col9 ref" href="#19config" title='config' data-ref="19config">config</a>-&gt;<a class="ref field" href="include/rte_eal.h.html#rte_config::numa_nodes" title='rte_config::numa_nodes' data-ref="rte_config::numa_nodes">numa_nodes</a>[<a class="local col8 ref" href="#18idx" title='idx' data-ref="18idx">idx</a>];</td></tr>
+<tr><th id="134">134</th><td>}</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-21</em> from project dpdk revision <em>18.05</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

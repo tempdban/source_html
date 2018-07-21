@@ -1,0 +1,328 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>rte_timer.h source code [dpdk/lib/librte_timer/rte_timer.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="rte_timer,rte_timer_status,rte_timer_type "/>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'dpdk/lib/librte_timer/rte_timer.h'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>dpdk</a>/<a href='..'>lib</a>/<a href='./'>librte_timer</a>/<a href='rte_timer.h.html'>rte_timer.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright(c) 2010-2014 Intel Corporation</i></td></tr>
+<tr><th id="3">3</th><td><i> */</i></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><u>#<span data-ppcond="5">ifndef</span> <span class="macro" data-ref="_M/_RTE_TIMER_H_">_RTE_TIMER_H_</span></u></td></tr>
+<tr><th id="6">6</th><td><u>#define <dfn class="macro" id="_M/_RTE_TIMER_H_" data-ref="_M/_RTE_TIMER_H_">_RTE_TIMER_H_</dfn></u></td></tr>
+<tr><th id="7">7</th><td></td></tr>
+<tr><th id="8">8</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="9">9</th><td><i class="doc"> *<span class="command"> @file</span></i></td></tr>
+<tr><th id="10">10</th><td><i class="doc"> RTE Timer</i></td></tr>
+<tr><th id="11">11</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="12">12</th><td><i class="doc"> * This library provides a timer service to RTE Data Plane execution</i></td></tr>
+<tr><th id="13">13</th><td><i class="doc"> * units that allows the execution of callback functions asynchronously.</i></td></tr>
+<tr><th id="14">14</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="15">15</th><td><i class="doc"> * - Timers can be periodic or single (one-shot).</i></td></tr>
+<tr><th id="16">16</th><td><i class="doc"> * - The timers can be loaded from one core and executed on another. This has</i></td></tr>
+<tr><th id="17">17</th><td><i class="doc"> *   to be specified in the call to rte_timer_reset().</i></td></tr>
+<tr><th id="18">18</th><td><i class="doc"> * - High precision is possible. NOTE: this depends on the call frequency to</i></td></tr>
+<tr><th id="19">19</th><td><i class="doc"> *   rte_timer_manage() that check the timer expiration for the local core.</i></td></tr>
+<tr><th id="20">20</th><td><i class="doc"> * - If not used in an application, for improved performance, it can be</i></td></tr>
+<tr><th id="21">21</th><td><i class="doc"> *   disabled at compilation time by not calling the rte_timer_manage()</i></td></tr>
+<tr><th id="22">22</th><td><i class="doc"> *   to improve performance.</i></td></tr>
+<tr><th id="23">23</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="24">24</th><td><i class="doc"> * The timer library uses the rte_get_hpet_cycles() function that</i></td></tr>
+<tr><th id="25">25</th><td><i class="doc"> * uses the HPET, when available, to provide a reliable time reference. [HPET</i></td></tr>
+<tr><th id="26">26</th><td><i class="doc"> * routines are provided by EAL, which falls back to using the chip TSC (time-</i></td></tr>
+<tr><th id="27">27</th><td><i class="doc"> * stamp counter) as fallback when HPET is not available]</i></td></tr>
+<tr><th id="28">28</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="29">29</th><td><i class="doc"> * This library provides an interface to add, delete and restart a</i></td></tr>
+<tr><th id="30">30</th><td><i class="doc"> * timer. The API is based on the BSD callout(9) API with a few</i></td></tr>
+<tr><th id="31">31</th><td><i class="doc"> * differences.</i></td></tr>
+<tr><th id="32">32</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="33">33</th><td><i class="doc"> * See the RTE architecture documentation for more information about the</i></td></tr>
+<tr><th id="34">34</th><td><i class="doc"> * design of this library.</i></td></tr>
+<tr><th id="35">35</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="36">36</th><td></td></tr>
+<tr><th id="37">37</th><td><u>#include <a href="../../../include/stdio.h.html">&lt;stdio.h&gt;</a></u></td></tr>
+<tr><th id="38">38</th><td><u>#include &lt;stdint.h&gt;</u></td></tr>
+<tr><th id="39">39</th><td><u>#include &lt;stddef.h&gt;</u></td></tr>
+<tr><th id="40">40</th><td><u>#include <a href="../librte_eal/common/include/rte_common.h.html">&lt;rte_common.h&gt;</a></u></td></tr>
+<tr><th id="41">41</th><td><u>#include <a href="../../build/include/rte_config.h.html">&lt;rte_config.h&gt;</a></u></td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><u>#<span data-ppcond="43">ifdef</span> <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="44">44</th><td><b>extern</b> <q>"C"</q> {</td></tr>
+<tr><th id="45">45</th><td><u>#<span data-ppcond="43">endif</span></u></td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td><u>#define <dfn class="macro" id="_M/RTE_TIMER_STOP" data-ref="_M/RTE_TIMER_STOP">RTE_TIMER_STOP</dfn>    0 /**&lt; State: timer is stopped. */</u></td></tr>
+<tr><th id="48">48</th><td><u>#define <dfn class="macro" id="_M/RTE_TIMER_PENDING" data-ref="_M/RTE_TIMER_PENDING">RTE_TIMER_PENDING</dfn> 1 /**&lt; State: timer is scheduled. */</u></td></tr>
+<tr><th id="49">49</th><td><u>#define <dfn class="macro" id="_M/RTE_TIMER_RUNNING" data-ref="_M/RTE_TIMER_RUNNING">RTE_TIMER_RUNNING</dfn> 2 /**&lt; State: timer function is running. */</u></td></tr>
+<tr><th id="50">50</th><td><u>#define <dfn class="macro" id="_M/RTE_TIMER_CONFIG" data-ref="_M/RTE_TIMER_CONFIG">RTE_TIMER_CONFIG</dfn>  3 /**&lt; State: timer is being configured. */</u></td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td><u>#define <dfn class="macro" id="_M/RTE_TIMER_NO_OWNER" data-ref="_M/RTE_TIMER_NO_OWNER">RTE_TIMER_NO_OWNER</dfn> -2 /**&lt; Timer has no owner. */</u></td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="55">55</th><td><i class="doc"> * Timer type: Periodic or single (one-shot).</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="57">57</th><td><b>enum</b> <dfn class="type def" id="rte_timer_type" title='rte_timer_type' data-ref="rte_timer_type">rte_timer_type</dfn> {</td></tr>
+<tr><th id="58">58</th><td>	<dfn class="enum" id="SINGLE" title='SINGLE' data-ref="SINGLE">SINGLE</dfn>,</td></tr>
+<tr><th id="59">59</th><td>	<dfn class="enum" id="PERIODICAL" title='PERIODICAL' data-ref="PERIODICAL">PERIODICAL</dfn></td></tr>
+<tr><th id="60">60</th><td>};</td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="63">63</th><td><i class="doc"> * Timer status: A union of the state (stopped, pending, running,</i></td></tr>
+<tr><th id="64">64</th><td><i class="doc"> * config) and an owner (the id of the lcore that owns the timer).</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="66">66</th><td><b>union</b> <dfn class="type def" id="rte_timer_status" title='rte_timer_status' data-ref="rte_timer_status">rte_timer_status</dfn> {</td></tr>
+<tr><th id="67">67</th><td>	<a class="macro" href="../librte_eal/common/include/rte_common.h.html#39" title="" data-ref="_M/RTE_STD_C11">RTE_STD_C11</a></td></tr>
+<tr><th id="68">68</th><td>	<b>struct</b> {</td></tr>
+<tr><th id="69">69</th><td>		<a class="typedef" href="../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="rte_timer_status::(anonymous)::state" title='rte_timer_status::(anonymous struct)::state' data-ref="rte_timer_status::(anonymous)::state">state</dfn>;  <i class="doc">/**&lt; Stop, pending, running, config. */</i></td></tr>
+<tr><th id="70">70</th><td>		<a class="typedef" href="../../../include/stdint.h.html#int16_t" title='int16_t' data-type='short' data-ref="int16_t">int16_t</a> <dfn class="decl field" id="rte_timer_status::(anonymous)::owner" title='rte_timer_status::(anonymous struct)::owner' data-ref="rte_timer_status::(anonymous)::owner">owner</dfn>;   <i class="doc">/**&lt; The lcore that owns the timer. */</i></td></tr>
+<tr><th id="71">71</th><td>	};</td></tr>
+<tr><th id="72">72</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_timer_status::u32" title='rte_timer_status::u32' data-ref="rte_timer_status::u32">u32</dfn>;            <i class="doc">/**&lt; To atomic-set status + owner. */</i></td></tr>
+<tr><th id="73">73</th><td>};</td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td><u>#<span data-ppcond="75">ifdef</span> <span class="macro" data-ref="_M/RTE_LIBRTE_TIMER_DEBUG">RTE_LIBRTE_TIMER_DEBUG</span></u></td></tr>
+<tr><th id="76">76</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="77">77</th><td><i class="doc"> * A structure that stores the timer statistics (per-lcore).</i></td></tr>
+<tr><th id="78">78</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="79">79</th><td><b>struct</b> rte_timer_debug_stats {</td></tr>
+<tr><th id="80">80</th><td>	uint64_t reset;   <i class="doc">/**&lt; Number of success calls to rte_timer_reset(). */</i></td></tr>
+<tr><th id="81">81</th><td>	uint64_t stop;    <i class="doc">/**&lt; Number of success calls to rte_timer_stop(). */</i></td></tr>
+<tr><th id="82">82</th><td>	uint64_t manage;  <i class="doc">/**&lt; Number of calls to rte_timer_manage(). */</i></td></tr>
+<tr><th id="83">83</th><td>	uint64_t pending; <i class="doc">/**&lt; Number of pending/running timers. */</i></td></tr>
+<tr><th id="84">84</th><td>};</td></tr>
+<tr><th id="85">85</th><td><u>#<span data-ppcond="75">endif</span></u></td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td><b>struct</b> <a class="type" href="#rte_timer" title='rte_timer' data-ref="rte_timer">rte_timer</a>;</td></tr>
+<tr><th id="88">88</th><td></td></tr>
+<tr><th id="89">89</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc"> * Callback function type for timer expiry.</i></td></tr>
+<tr><th id="91">91</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="92">92</th><td><b>typedef</b> <em>void</em> (*<dfn class="typedef" id="rte_timer_cb_t" title='rte_timer_cb_t' data-type='void (*)(struct rte_timer *, void *)' data-ref="rte_timer_cb_t">rte_timer_cb_t</dfn>)(<b>struct</b> <a class="type" href="#rte_timer" title='rte_timer' data-ref="rte_timer">rte_timer</a> *, <em>void</em> *);</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td><u>#define <dfn class="macro" id="_M/MAX_SKIPLIST_DEPTH" data-ref="_M/MAX_SKIPLIST_DEPTH">MAX_SKIPLIST_DEPTH</dfn> 10</u></td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="97">97</th><td><i class="doc"> * A structure describing a timer in RTE.</i></td></tr>
+<tr><th id="98">98</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="99">99</th><td><b>struct</b> <dfn class="type def" id="rte_timer" title='rte_timer' data-ref="rte_timer">rte_timer</dfn></td></tr>
+<tr><th id="100">100</th><td>{</td></tr>
+<tr><th id="101">101</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="rte_timer::expire" title='rte_timer::expire' data-ref="rte_timer::expire">expire</dfn>;       <i class="doc">/**&lt; Time when timer expire. */</i></td></tr>
+<tr><th id="102">102</th><td>	<b>struct</b> <a class="type" href="#rte_timer" title='rte_timer' data-ref="rte_timer">rte_timer</a> *<dfn class="decl field" id="rte_timer::sl_next" title='rte_timer::sl_next' data-ref="rte_timer::sl_next">sl_next</dfn>[<a class="macro" href="#94" title="10" data-ref="_M/MAX_SKIPLIST_DEPTH">MAX_SKIPLIST_DEPTH</a>];</td></tr>
+<tr><th id="103">103</th><td>	<em>volatile</em> <b>union</b> <a class="type" href="#rte_timer_status" title='rte_timer_status' data-ref="rte_timer_status">rte_timer_status</a> <dfn class="decl field" id="rte_timer::status" title='rte_timer::status' data-ref="rte_timer::status">status</dfn>; <i class="doc">/**&lt; Status of timer. */</i></td></tr>
+<tr><th id="104">104</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="rte_timer::period" title='rte_timer::period' data-ref="rte_timer::period">period</dfn>;       <i class="doc">/**&lt; Period of timer (0 if not periodic). */</i></td></tr>
+<tr><th id="105">105</th><td>	<a class="typedef" href="#rte_timer_cb_t" title='rte_timer_cb_t' data-type='void (*)(struct rte_timer *, void *)' data-ref="rte_timer_cb_t">rte_timer_cb_t</a> <dfn class="decl field" id="rte_timer::f" title='rte_timer::f' data-ref="rte_timer::f">f</dfn>;      <i class="doc">/**&lt; Callback function. */</i></td></tr>
+<tr><th id="106">106</th><td>	<em>void</em> *<dfn class="decl field" id="rte_timer::arg" title='rte_timer::arg' data-ref="rte_timer::arg">arg</dfn>;             <i class="doc">/**&lt; Argument to callback function. */</i></td></tr>
+<tr><th id="107">107</th><td>};</td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td><u>#<span data-ppcond="110">ifdef</span> <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="111">111</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc"> * A C++ static initializer for a timer structure.</i></td></tr>
+<tr><th id="113">113</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="114">114</th><td><u>#define RTE_TIMER_INITIALIZER {             \</u></td></tr>
+<tr><th id="115">115</th><td><u>	0,                                      \</u></td></tr>
+<tr><th id="116">116</th><td><u>	{NULL},                                 \</u></td></tr>
+<tr><th id="117">117</th><td><u>	{{RTE_TIMER_STOP, RTE_TIMER_NO_OWNER}}, \</u></td></tr>
+<tr><th id="118">118</th><td><u>	0,                                      \</u></td></tr>
+<tr><th id="119">119</th><td><u>	NULL,                                   \</u></td></tr>
+<tr><th id="120">120</th><td><u>	NULL,                                   \</u></td></tr>
+<tr><th id="121">121</th><td><u>	}</u></td></tr>
+<tr><th id="122">122</th><td><u>#<span data-ppcond="110">else</span></u></td></tr>
+<tr><th id="123">123</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="124">124</th><td><i class="doc"> * A static initializer for a timer structure.</i></td></tr>
+<tr><th id="125">125</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="126">126</th><td><u>#define <dfn class="macro" id="_M/RTE_TIMER_INITIALIZER" data-ref="_M/RTE_TIMER_INITIALIZER">RTE_TIMER_INITIALIZER</dfn> {                      \</u></td></tr>
+<tr><th id="127">127</th><td><u>		.status = {{                         \</u></td></tr>
+<tr><th id="128">128</th><td><u>			.state = RTE_TIMER_STOP,     \</u></td></tr>
+<tr><th id="129">129</th><td><u>			.owner = RTE_TIMER_NO_OWNER, \</u></td></tr>
+<tr><th id="130">130</th><td><u>		}},                                  \</u></td></tr>
+<tr><th id="131">131</th><td><u>	}</u></td></tr>
+<tr><th id="132">132</th><td><u>#<span data-ppcond="110">endif</span></u></td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="135">135</th><td><i class="doc"> * Initialize the timer library.</i></td></tr>
+<tr><th id="136">136</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="137">137</th><td><i class="doc"> * Initializes internal variables (list, locks and so on) for the RTE</i></td></tr>
+<tr><th id="138">138</th><td><i class="doc"> * timer library.</i></td></tr>
+<tr><th id="139">139</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="140">140</th><td><em>void</em> <dfn class="decl fn" id="rte_timer_subsystem_init" title='rte_timer_subsystem_init' data-ref="rte_timer_subsystem_init">rte_timer_subsystem_init</dfn>(<em>void</em>);</td></tr>
+<tr><th id="141">141</th><td></td></tr>
+<tr><th id="142">142</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="143">143</th><td><i class="doc"> * Initialize a timer handle.</i></td></tr>
+<tr><th id="144">144</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="145">145</th><td><i class="doc"> * The rte_timer_init() function initializes the timer handle *tim*</i></td></tr>
+<tr><th id="146">146</th><td><i class="doc"> * for use. No operations can be performed on a timer before it is</i></td></tr>
+<tr><th id="147">147</th><td><i class="doc"> * initialized.</i></td></tr>
+<tr><th id="148">148</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="149">149</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">tim</span></i></td></tr>
+<tr><th id="150">150</th><td><i class="doc"> *   The timer to initialize.</i></td></tr>
+<tr><th id="151">151</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="152">152</th><td><em>void</em> <dfn class="decl fn" id="rte_timer_init" title='rte_timer_init' data-ref="rte_timer_init">rte_timer_init</dfn>(<b>struct</b> <a class="type" href="#rte_timer" title='rte_timer' data-ref="rte_timer">rte_timer</a> *<dfn class="local col1 decl" id="1tim" title='tim' data-type='struct rte_timer *' data-ref="1tim">tim</dfn>);</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="155">155</th><td><i class="doc"> * Reset and start the timer associated with the timer handle.</i></td></tr>
+<tr><th id="156">156</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="157">157</th><td><i class="doc"> * The rte_timer_reset() function resets and starts the timer</i></td></tr>
+<tr><th id="158">158</th><td><i class="doc"> * associated with the timer handle *tim*. When the timer expires after</i></td></tr>
+<tr><th id="159">159</th><td><i class="doc"> * *ticks* HPET cycles, the function specified by *fct* will be called</i></td></tr>
+<tr><th id="160">160</th><td><i class="doc"> * with the argument *arg* on core *tim_lcore*.</i></td></tr>
+<tr><th id="161">161</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="162">162</th><td><i class="doc"> * If the timer associated with the timer handle is already running</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc"> * (in the RUNNING state), the function will fail. The user has to check</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc"> * the return value of the function to see if there is a chance that the</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc"> * timer is in the RUNNING state.</i></td></tr>
+<tr><th id="166">166</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="167">167</th><td><i class="doc"> * If the timer is being configured on another core (the CONFIG state),</i></td></tr>
+<tr><th id="168">168</th><td><i class="doc"> * it will also fail.</i></td></tr>
+<tr><th id="169">169</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="170">170</th><td><i class="doc"> * If the timer is pending or stopped, it will be rescheduled with the</i></td></tr>
+<tr><th id="171">171</th><td><i class="doc"> * new parameters.</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">tim</span></i></td></tr>
+<tr><th id="174">174</th><td><i class="doc"> *   The timer handle.</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">ticks</span></i></td></tr>
+<tr><th id="176">176</th><td><i class="doc"> *   The number of cycles (see rte_get_hpet_hz()) before the callback</i></td></tr>
+<tr><th id="177">177</th><td><i class="doc"> *   function is called.</i></td></tr>
+<tr><th id="178">178</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">type</span></i></td></tr>
+<tr><th id="179">179</th><td><i class="doc"> *   The type can be either:</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc"> *   - PERIODICAL: The timer is automatically reloaded after execution</i></td></tr>
+<tr><th id="181">181</th><td><i class="doc"> *     (returns to the PENDING state)</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc"> *   - SINGLE: The timer is one-shot, that is, the timer goes to a</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc"> *     STOPPED state after execution.</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">tim_lcore</span></i></td></tr>
+<tr><th id="185">185</th><td><i class="doc"> *   The ID of the lcore where the timer callback function has to be</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc"> *   executed. If tim_lcore is LCORE_ID_ANY, the timer library will</i></td></tr>
+<tr><th id="187">187</th><td><i class="doc"> *   launch it on a different core for each call (round-robin).</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">fct</span></i></td></tr>
+<tr><th id="189">189</th><td><i class="doc"> *   The callback function of the timer.</i></td></tr>
+<tr><th id="190">190</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">arg</span></i></td></tr>
+<tr><th id="191">191</th><td><i class="doc"> *   The user argument of the callback function.</i></td></tr>
+<tr><th id="192">192</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="193">193</th><td><i class="doc"> *   - 0: Success; the timer is scheduled.</i></td></tr>
+<tr><th id="194">194</th><td><i class="doc"> *   - (-1): Timer is in the RUNNING or CONFIG state.</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="196">196</th><td><em>int</em> <dfn class="decl fn" id="rte_timer_reset" title='rte_timer_reset' data-ref="rte_timer_reset">rte_timer_reset</dfn>(<b>struct</b> <a class="type" href="#rte_timer" title='rte_timer' data-ref="rte_timer">rte_timer</a> *<dfn class="local col2 decl" id="2tim" title='tim' data-type='struct rte_timer *' data-ref="2tim">tim</dfn>, <a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="local col3 decl" id="3ticks" title='ticks' data-type='uint64_t' data-ref="3ticks">ticks</dfn>,</td></tr>
+<tr><th id="197">197</th><td>		    <b>enum</b> <a class="type" href="#rte_timer_type" title='rte_timer_type' data-ref="rte_timer_type">rte_timer_type</a> <dfn class="local col4 decl" id="4type" title='type' data-type='enum rte_timer_type' data-ref="4type">type</dfn>, <em>unsigned</em> <dfn class="local col5 decl" id="5tim_lcore" title='tim_lcore' data-type='unsigned int' data-ref="5tim_lcore">tim_lcore</dfn>,</td></tr>
+<tr><th id="198">198</th><td>		    <a class="typedef" href="#rte_timer_cb_t" title='rte_timer_cb_t' data-type='void (*)(struct rte_timer *, void *)' data-ref="rte_timer_cb_t">rte_timer_cb_t</a> <dfn class="local col6 decl" id="6fct" title='fct' data-type='rte_timer_cb_t' data-ref="6fct">fct</dfn>, <em>void</em> *<dfn class="local col7 decl" id="7arg" title='arg' data-type='void *' data-ref="7arg">arg</dfn>);</td></tr>
+<tr><th id="199">199</th><td></td></tr>
+<tr><th id="200">200</th><td></td></tr>
+<tr><th id="201">201</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="202">202</th><td><i class="doc"> * Loop until rte_timer_reset() succeeds.</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="204">204</th><td><i class="doc"> * Reset and start the timer associated with the timer handle. Always</i></td></tr>
+<tr><th id="205">205</th><td><i class="doc"> * succeed. See rte_timer_reset() for details.</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="207">207</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">tim</span></i></td></tr>
+<tr><th id="208">208</th><td><i class="doc"> *   The timer handle.</i></td></tr>
+<tr><th id="209">209</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">ticks</span></i></td></tr>
+<tr><th id="210">210</th><td><i class="doc"> *   The number of cycles (see rte_get_hpet_hz()) before the callback</i></td></tr>
+<tr><th id="211">211</th><td><i class="doc"> *   function is called.</i></td></tr>
+<tr><th id="212">212</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">type</span></i></td></tr>
+<tr><th id="213">213</th><td><i class="doc"> *   The type can be either:</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc"> *   - PERIODICAL: The timer is automatically reloaded after execution</i></td></tr>
+<tr><th id="215">215</th><td><i class="doc"> *     (returns to the PENDING state)</i></td></tr>
+<tr><th id="216">216</th><td><i class="doc"> *   - SINGLE: The timer is one-shot, that is, the timer goes to a</i></td></tr>
+<tr><th id="217">217</th><td><i class="doc"> *     STOPPED state after execution.</i></td></tr>
+<tr><th id="218">218</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">tim_lcore</span></i></td></tr>
+<tr><th id="219">219</th><td><i class="doc"> *   The ID of the lcore where the timer callback function has to be</i></td></tr>
+<tr><th id="220">220</th><td><i class="doc"> *   executed. If tim_lcore is LCORE_ID_ANY, the timer library will</i></td></tr>
+<tr><th id="221">221</th><td><i class="doc"> *   launch it on a different core for each call (round-robin).</i></td></tr>
+<tr><th id="222">222</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">fct</span></i></td></tr>
+<tr><th id="223">223</th><td><i class="doc"> *   The callback function of the timer.</i></td></tr>
+<tr><th id="224">224</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">arg</span></i></td></tr>
+<tr><th id="225">225</th><td><i class="doc"> *   The user argument of the callback function.</i></td></tr>
+<tr><th id="226">226</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="227">227</th><td><em>void</em></td></tr>
+<tr><th id="228">228</th><td><dfn class="decl fn" id="rte_timer_reset_sync" title='rte_timer_reset_sync' data-ref="rte_timer_reset_sync">rte_timer_reset_sync</dfn>(<b>struct</b> <a class="type" href="#rte_timer" title='rte_timer' data-ref="rte_timer">rte_timer</a> *<dfn class="local col8 decl" id="8tim" title='tim' data-type='struct rte_timer *' data-ref="8tim">tim</dfn>, <a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="local col9 decl" id="9ticks" title='ticks' data-type='uint64_t' data-ref="9ticks">ticks</dfn>,</td></tr>
+<tr><th id="229">229</th><td>		     <b>enum</b> <a class="type" href="#rte_timer_type" title='rte_timer_type' data-ref="rte_timer_type">rte_timer_type</a> <dfn class="local col0 decl" id="10type" title='type' data-type='enum rte_timer_type' data-ref="10type">type</dfn>, <em>unsigned</em> <dfn class="local col1 decl" id="11tim_lcore" title='tim_lcore' data-type='unsigned int' data-ref="11tim_lcore">tim_lcore</dfn>,</td></tr>
+<tr><th id="230">230</th><td>		     <a class="typedef" href="#rte_timer_cb_t" title='rte_timer_cb_t' data-type='void (*)(struct rte_timer *, void *)' data-ref="rte_timer_cb_t">rte_timer_cb_t</a> <dfn class="local col2 decl" id="12fct" title='fct' data-type='rte_timer_cb_t' data-ref="12fct">fct</dfn>, <em>void</em> *<dfn class="local col3 decl" id="13arg" title='arg' data-type='void *' data-ref="13arg">arg</dfn>);</td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="233">233</th><td><i class="doc"> * Stop a timer.</i></td></tr>
+<tr><th id="234">234</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="235">235</th><td><i class="doc"> * The rte_timer_stop() function stops the timer associated with the</i></td></tr>
+<tr><th id="236">236</th><td><i class="doc"> * timer handle *tim*. It may fail if the timer is currently running or</i></td></tr>
+<tr><th id="237">237</th><td><i class="doc"> * being configured.</i></td></tr>
+<tr><th id="238">238</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="239">239</th><td><i class="doc"> * If the timer is pending or stopped (for instance, already expired),</i></td></tr>
+<tr><th id="240">240</th><td><i class="doc"> * the function will succeed. The timer handle tim must have been</i></td></tr>
+<tr><th id="241">241</th><td><i class="doc"> * initialized using rte_timer_init(), otherwise, undefined behavior</i></td></tr>
+<tr><th id="242">242</th><td><i class="doc"> * will occur.</i></td></tr>
+<tr><th id="243">243</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc"> * This function can be called safely from a timer callback. If it</i></td></tr>
+<tr><th id="245">245</th><td><i class="doc"> * succeeds, the timer is not referenced anymore by the timer library</i></td></tr>
+<tr><th id="246">246</th><td><i class="doc"> * and the timer structure can be freed (even in the callback</i></td></tr>
+<tr><th id="247">247</th><td><i class="doc"> * function).</i></td></tr>
+<tr><th id="248">248</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="249">249</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">tim</span></i></td></tr>
+<tr><th id="250">250</th><td><i class="doc"> *   The timer handle.</i></td></tr>
+<tr><th id="251">251</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="252">252</th><td><i class="doc"> *   - 0: Success; the timer is stopped.</i></td></tr>
+<tr><th id="253">253</th><td><i class="doc"> *   - (-1): The timer is in the RUNNING or CONFIG state.</i></td></tr>
+<tr><th id="254">254</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="255">255</th><td><em>int</em> <dfn class="decl fn" id="rte_timer_stop" title='rte_timer_stop' data-ref="rte_timer_stop">rte_timer_stop</dfn>(<b>struct</b> <a class="type" href="#rte_timer" title='rte_timer' data-ref="rte_timer">rte_timer</a> *<dfn class="local col4 decl" id="14tim" title='tim' data-type='struct rte_timer *' data-ref="14tim">tim</dfn>);</td></tr>
+<tr><th id="256">256</th><td></td></tr>
+<tr><th id="257">257</th><td></td></tr>
+<tr><th id="258">258</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="259">259</th><td><i class="doc"> * Loop until rte_timer_stop() succeeds.</i></td></tr>
+<tr><th id="260">260</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="261">261</th><td><i class="doc"> * After a call to this function, the timer identified by *tim* is</i></td></tr>
+<tr><th id="262">262</th><td><i class="doc"> * stopped. See rte_timer_stop() for details.</i></td></tr>
+<tr><th id="263">263</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="264">264</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">tim</span></i></td></tr>
+<tr><th id="265">265</th><td><i class="doc"> *   The timer handle.</i></td></tr>
+<tr><th id="266">266</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="267">267</th><td><em>void</em> <dfn class="decl fn" id="rte_timer_stop_sync" title='rte_timer_stop_sync' data-ref="rte_timer_stop_sync">rte_timer_stop_sync</dfn>(<b>struct</b> <a class="type" href="#rte_timer" title='rte_timer' data-ref="rte_timer">rte_timer</a> *<dfn class="local col5 decl" id="15tim" title='tim' data-type='struct rte_timer *' data-ref="15tim">tim</dfn>);</td></tr>
+<tr><th id="268">268</th><td></td></tr>
+<tr><th id="269">269</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="270">270</th><td><i class="doc"> * Test if a timer is pending.</i></td></tr>
+<tr><th id="271">271</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="272">272</th><td><i class="doc"> * The rte_timer_pending() function tests the PENDING status</i></td></tr>
+<tr><th id="273">273</th><td><i class="doc"> * of the timer handle *tim*. A PENDING timer is one that has been</i></td></tr>
+<tr><th id="274">274</th><td><i class="doc"> * scheduled and whose function has not yet been called.</i></td></tr>
+<tr><th id="275">275</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="276">276</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">tim</span></i></td></tr>
+<tr><th id="277">277</th><td><i class="doc"> *   The timer handle.</i></td></tr>
+<tr><th id="278">278</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="279">279</th><td><i class="doc"> *   - 0: The timer is not pending.</i></td></tr>
+<tr><th id="280">280</th><td><i class="doc"> *   - 1: The timer is pending.</i></td></tr>
+<tr><th id="281">281</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="282">282</th><td><em>int</em> <dfn class="decl fn" id="rte_timer_pending" title='rte_timer_pending' data-ref="rte_timer_pending">rte_timer_pending</dfn>(<b>struct</b> <a class="type" href="#rte_timer" title='rte_timer' data-ref="rte_timer">rte_timer</a> *<dfn class="local col6 decl" id="16tim" title='tim' data-type='struct rte_timer *' data-ref="16tim">tim</dfn>);</td></tr>
+<tr><th id="283">283</th><td></td></tr>
+<tr><th id="284">284</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="285">285</th><td><i class="doc"> * Manage the timer list and execute callback functions.</i></td></tr>
+<tr><th id="286">286</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="287">287</th><td><i class="doc"> * This function must be called periodically from EAL lcores</i></td></tr>
+<tr><th id="288">288</th><td><i class="doc"> * main_loop(). It browses the list of pending timers and runs all</i></td></tr>
+<tr><th id="289">289</th><td><i class="doc"> * timers that are expired.</i></td></tr>
+<tr><th id="290">290</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="291">291</th><td><i class="doc"> * The precision of the timer depends on the call frequency of this</i></td></tr>
+<tr><th id="292">292</th><td><i class="doc"> * function. However, the more often the function is called, the more</i></td></tr>
+<tr><th id="293">293</th><td><i class="doc"> * CPU resources it will use.</i></td></tr>
+<tr><th id="294">294</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="295">295</th><td><em>void</em> <dfn class="decl fn" id="rte_timer_manage" title='rte_timer_manage' data-ref="rte_timer_manage">rte_timer_manage</dfn>(<em>void</em>);</td></tr>
+<tr><th id="296">296</th><td></td></tr>
+<tr><th id="297">297</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="298">298</th><td><i class="doc"> * Dump statistics about timers.</i></td></tr>
+<tr><th id="299">299</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="300">300</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">f</span></i></td></tr>
+<tr><th id="301">301</th><td><i class="doc"> *   A pointer to a file for output</i></td></tr>
+<tr><th id="302">302</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="303">303</th><td><em>void</em> <dfn class="decl fn" id="rte_timer_dump_stats" title='rte_timer_dump_stats' data-ref="rte_timer_dump_stats">rte_timer_dump_stats</dfn>(<a class="typedef" href="../../../include/stdio.h.html#FILE" title='FILE' data-type='struct _IO_FILE' data-ref="FILE">FILE</a> *<dfn class="local col7 decl" id="17f" title='f' data-type='FILE *' data-ref="17f">f</dfn>);</td></tr>
+<tr><th id="304">304</th><td></td></tr>
+<tr><th id="305">305</th><td><u>#<span data-ppcond="305">ifdef</span> <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="306">306</th><td>}</td></tr>
+<tr><th id="307">307</th><td><u>#<span data-ppcond="305">endif</span></u></td></tr>
+<tr><th id="308">308</th><td></td></tr>
+<tr><th id="309">309</th><td><u>#<span data-ppcond="5">endif</span> /* _RTE_TIMER_H_ */</u></td></tr>
+<tr><th id="310">310</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../librte_eventdev/rte_event_timer_adapter.c.html'>dpdk/lib/librte_eventdev/rte_event_timer_adapter.c</a><br/>Generated on <em>2018-Jul-21</em> from project dpdk revision <em>18.05</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>
