@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>eal_lcore.c source code [dpdk_18.05/lib/librte_eal/linuxapp/eal/eal_lcore.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'dpdk_18.05/lib/librte_eal/linuxapp/eal/eal_lcore.c'; var root_path = '../../../../..'; var data_path = '../../../../../../data';</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>dpdk_18.05</a>/<a href='../../..'>lib</a>/<a href='../..'>librte_eal</a>/<a href='..'>linuxapp</a>/<a href='./'>eal</a>/<a href='eal_lcore.c.html'>eal_lcore.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright(c) 2010-2014 Intel Corporation</i></td></tr>
+<tr><th id="3">3</th><td><i> */</i></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><u>#include <a href="../../../../../include/unistd.h.html">&lt;unistd.h&gt;</a></u></td></tr>
+<tr><th id="6">6</th><td><u>#include &lt;limits.h&gt;</u></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="../../../../../include/string.h.html">&lt;string.h&gt;</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="../../../../../include/dirent.h.html">&lt;dirent.h&gt;</a></u></td></tr>
+<tr><th id="9">9</th><td></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../common/include/rte_log.h.html">&lt;rte_log.h&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../common/include/rte_eal.h.html">&lt;rte_eal.h&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../common/include/rte_lcore.h.html">&lt;rte_lcore.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../common/include/rte_common.h.html">&lt;rte_common.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../common/include/rte_string_fns.h.html">&lt;rte_string_fns.h&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../common/include/rte_debug.h.html">&lt;rte_debug.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../common/eal_private.h.html">"eal_private.h"</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../common/eal_filesystem.h.html">"eal_filesystem.h"</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../common/eal_thread.h.html">"eal_thread.h"</a></u></td></tr>
+<tr><th id="20">20</th><td></td></tr>
+<tr><th id="21">21</th><td><u>#define <dfn class="macro" id="_M/SYS_CPU_DIR" data-ref="_M/SYS_CPU_DIR">SYS_CPU_DIR</dfn> "/sys/devices/system/cpu/cpu%u"</u></td></tr>
+<tr><th id="22">22</th><td><u>#define <dfn class="macro" id="_M/CORE_ID_FILE" data-ref="_M/CORE_ID_FILE">CORE_ID_FILE</dfn> "topology/core_id"</u></td></tr>
+<tr><th id="23">23</th><td><u>#define <dfn class="macro" id="_M/NUMA_NODE_PATH" data-ref="_M/NUMA_NODE_PATH">NUMA_NODE_PATH</dfn> "/sys/devices/system/node"</u></td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td><i>/* Check if a cpu is present by the presence of the cpu information for it */</i></td></tr>
+<tr><th id="26">26</th><td><em>int</em></td></tr>
+<tr><th id="27">27</th><td><dfn class="decl def fn" id="eal_cpu_detected" title='eal_cpu_detected' data-ref="eal_cpu_detected">eal_cpu_detected</dfn>(<em>unsigned</em> <dfn class="local col1 decl" id="1lcore_id" title='lcore_id' data-type='unsigned int' data-ref="1lcore_id">lcore_id</dfn>)</td></tr>
+<tr><th id="28">28</th><td>{</td></tr>
+<tr><th id="29">29</th><td>	<em>char</em> <dfn class="local col2 decl" id="2path" title='path' data-type='char [4096]' data-ref="2path">path</dfn>[<a class="macro" href="../../../../../include/linux/limits.h.html#12" title="4096" data-ref="_M/PATH_MAX">PATH_MAX</a>];</td></tr>
+<tr><th id="30">30</th><td>	<em>int</em> <dfn class="local col3 decl" id="3len" title='len' data-type='int' data-ref="3len">len</dfn> = <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a>(<a class="local col2 ref" href="#2path" title='path' data-ref="2path">path</a>, <b>sizeof</b>(<a class="local col2 ref" href="#2path" title='path' data-ref="2path">path</a>), <a class="macro" href="#21" title="&quot;/sys/devices/system/cpu/cpu%u&quot;" data-ref="_M/SYS_CPU_DIR">SYS_CPU_DIR</a></td></tr>
+<tr><th id="31">31</th><td>		<q>"/"</q><a class="macro" href="#22" title="&quot;topology/core_id&quot;" data-ref="_M/CORE_ID_FILE">CORE_ID_FILE</a>, <a class="local col1 ref" href="#1lcore_id" title='lcore_id' data-ref="1lcore_id">lcore_id</a>);</td></tr>
+<tr><th id="32">32</th><td>	<b>if</b> (<a class="local col3 ref" href="#3len" title='len' data-ref="3len">len</a> &lt;= <var>0</var> || (<em>unsigned</em>)<a class="local col3 ref" href="#3len" title='len' data-ref="3len">len</a> &gt;= <b>sizeof</b>(<a class="local col2 ref" href="#2path" title='path' data-ref="2path">path</a>))</td></tr>
+<tr><th id="33">33</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="34">34</th><td>	<b>if</b> (<a class="ref fn" href="../../../../../include/unistd.h.html#access" title='access' data-ref="access">access</a>(<a class="local col2 ref" href="#2path" title='path' data-ref="2path">path</a>, <a class="macro" href="../../../../../include/unistd.h.html#284" title="0" data-ref="_M/F_OK">F_OK</a>) != <var>0</var>)</td></tr>
+<tr><th id="35">35</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="36">36</th><td></td></tr>
+<tr><th id="37">37</th><td>	<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="38">38</th><td>}</td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><i>/*</i></td></tr>
+<tr><th id="41">41</th><td><i> * Get CPU socket id (NUMA node) for a logical core.</i></td></tr>
+<tr><th id="42">42</th><td><i> *</i></td></tr>
+<tr><th id="43">43</th><td><i> * This searches each nodeX directories in /sys for the symlink for the given</i></td></tr>
+<tr><th id="44">44</th><td><i> * lcore_id and returns the numa node where the lcore is found. If lcore is not</i></td></tr>
+<tr><th id="45">45</th><td><i> * found on any numa node, returns zero.</i></td></tr>
+<tr><th id="46">46</th><td><i> */</i></td></tr>
+<tr><th id="47">47</th><td><em>unsigned</em></td></tr>
+<tr><th id="48">48</th><td><dfn class="decl def fn" id="eal_cpu_socket_id" title='eal_cpu_socket_id' data-ref="eal_cpu_socket_id">eal_cpu_socket_id</dfn>(<em>unsigned</em> <dfn class="local col4 decl" id="4lcore_id" title='lcore_id' data-type='unsigned int' data-ref="4lcore_id">lcore_id</dfn>)</td></tr>
+<tr><th id="49">49</th><td>{</td></tr>
+<tr><th id="50">50</th><td>	<em>unsigned</em> <dfn class="local col5 decl" id="5socket" title='socket' data-type='unsigned int' data-ref="5socket">socket</dfn>;</td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td>	<b>for</b> (<a class="local col5 ref" href="#5socket" title='socket' data-ref="5socket">socket</a> = <var>0</var>; <a class="local col5 ref" href="#5socket" title='socket' data-ref="5socket">socket</a> &lt; <a class="macro" href="../../../../build/include/rte_config.h.html#25" title="8" data-ref="_M/RTE_MAX_NUMA_NODES">RTE_MAX_NUMA_NODES</a>; <a class="local col5 ref" href="#5socket" title='socket' data-ref="5socket">socket</a>++) {</td></tr>
+<tr><th id="53">53</th><td>		<em>char</em> <dfn class="local col6 decl" id="6path" title='path' data-type='char [4096]' data-ref="6path">path</dfn>[<a class="macro" href="../../../../../include/linux/limits.h.html#12" title="4096" data-ref="_M/PATH_MAX">PATH_MAX</a>];</td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td>		<a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a>(<a class="local col6 ref" href="#6path" title='path' data-ref="6path">path</a>, <b>sizeof</b>(<a class="local col6 ref" href="#6path" title='path' data-ref="6path">path</a>), <q>"%s/node%u/cpu%u"</q>, <a class="macro" href="#23" title="&quot;/sys/devices/system/node&quot;" data-ref="_M/NUMA_NODE_PATH">NUMA_NODE_PATH</a>,</td></tr>
+<tr><th id="56">56</th><td>				<a class="local col5 ref" href="#5socket" title='socket' data-ref="5socket">socket</a>, <a class="local col4 ref" href="#4lcore_id" title='lcore_id' data-ref="4lcore_id">lcore_id</a>);</td></tr>
+<tr><th id="57">57</th><td>		<b>if</b> (<a class="ref fn" href="../../../../../include/unistd.h.html#access" title='access' data-ref="access">access</a>(<a class="local col6 ref" href="#6path" title='path' data-ref="6path">path</a>, <a class="macro" href="../../../../../include/unistd.h.html#284" title="0" data-ref="_M/F_OK">F_OK</a>) == <var>0</var>)</td></tr>
+<tr><th id="58">58</th><td>			<b>return</b> <a class="local col5 ref" href="#5socket" title='socket' data-ref="5socket">socket</a>;</td></tr>
+<tr><th id="59">59</th><td>	}</td></tr>
+<tr><th id="60">60</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="61">61</th><td>}</td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td><i>/* Get the cpu core id value from the /sys/.../cpuX core_id value */</i></td></tr>
+<tr><th id="64">64</th><td><em>unsigned</em></td></tr>
+<tr><th id="65">65</th><td><dfn class="decl def fn" id="eal_cpu_core_id" title='eal_cpu_core_id' data-ref="eal_cpu_core_id">eal_cpu_core_id</dfn>(<em>unsigned</em> <dfn class="local col7 decl" id="7lcore_id" title='lcore_id' data-type='unsigned int' data-ref="7lcore_id">lcore_id</dfn>)</td></tr>
+<tr><th id="66">66</th><td>{</td></tr>
+<tr><th id="67">67</th><td>	<em>char</em> <dfn class="local col8 decl" id="8path" title='path' data-type='char [4096]' data-ref="8path">path</dfn>[<a class="macro" href="../../../../../include/linux/limits.h.html#12" title="4096" data-ref="_M/PATH_MAX">PATH_MAX</a>];</td></tr>
+<tr><th id="68">68</th><td>	<em>unsigned</em> <em>long</em> <dfn class="local col9 decl" id="9id" title='id' data-type='unsigned long' data-ref="9id">id</dfn>;</td></tr>
+<tr><th id="69">69</th><td></td></tr>
+<tr><th id="70">70</th><td>	<em>int</em> <dfn class="local col0 decl" id="10len" title='len' data-type='int' data-ref="10len">len</dfn> = <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a>(<a class="local col8 ref" href="#8path" title='path' data-ref="8path">path</a>, <b>sizeof</b>(<a class="local col8 ref" href="#8path" title='path' data-ref="8path">path</a>), <a class="macro" href="#21" title="&quot;/sys/devices/system/cpu/cpu%u&quot;" data-ref="_M/SYS_CPU_DIR">SYS_CPU_DIR</a> <q>"/%s"</q>, <a class="local col7 ref" href="#7lcore_id" title='lcore_id' data-ref="7lcore_id">lcore_id</a>, <a class="macro" href="#22" title="&quot;topology/core_id&quot;" data-ref="_M/CORE_ID_FILE">CORE_ID_FILE</a>);</td></tr>
+<tr><th id="71">71</th><td>	<b>if</b> (<a class="local col0 ref" href="#10len" title='len' data-ref="10len">len</a> &lt;= <var>0</var> || (<em>unsigned</em>)<a class="local col0 ref" href="#10len" title='len' data-ref="10len">len</a> &gt;= <b>sizeof</b>(<a class="local col8 ref" href="#8path" title='path' data-ref="8path">path</a>))</td></tr>
+<tr><th id="72">72</th><td>		<b>goto</b> <a class="lbl" href="#11err" data-ref="11err">err</a>;</td></tr>
+<tr><th id="73">73</th><td>	<b>if</b> (<a class="ref fn" href="../../common/eal_filesystem.h.html#eal_parse_sysfs_value" title='eal_parse_sysfs_value' data-ref="eal_parse_sysfs_value">eal_parse_sysfs_value</a>(<a class="local col8 ref" href="#8path" title='path' data-ref="8path">path</a>, &amp;<a class="local col9 ref" href="#9id" title='id' data-ref="9id">id</a>) != <var>0</var>)</td></tr>
+<tr><th id="74">74</th><td>		<b>goto</b> <a class="lbl" href="#11err" data-ref="11err">err</a>;</td></tr>
+<tr><th id="75">75</th><td>	<b>return</b> (<em>unsigned</em>)<a class="local col9 ref" href="#9id" title='id' data-ref="9id">id</a>;</td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td><dfn class="lbl" id="11err" data-ref="11err">err</dfn>:</td></tr>
+<tr><th id="78">78</th><td>	<a class="macro" href="../../common/include/rte_log.h.html#320" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Error reading core id value from %s &quot; &quot;for lcore %u - assuming core 0\n&quot;, &quot;/sys/devices/system/cpu/cpu%u&quot;, lcore_id)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"Error reading core id value from %s "</q></td></tr>
+<tr><th id="79">79</th><td>			<q>"for lcore %u - assuming core 0\n"</q>, <a class="macro" href="#21" title="&quot;/sys/devices/system/cpu/cpu%u&quot;" data-ref="_M/SYS_CPU_DIR">SYS_CPU_DIR</a>, <a class="local col7 ref" href="#7lcore_id" title='lcore_id' data-ref="7lcore_id">lcore_id</a>);</td></tr>
+<tr><th id="80">80</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="81">81</th><td>}</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-25</em> from project dpdk_18.05 revision <em>18.05</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

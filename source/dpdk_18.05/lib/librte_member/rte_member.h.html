@@ -1,0 +1,509 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>rte_member.h source code [dpdk_18.05/lib/librte_member/rte_member.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="rte_member_parameters,rte_member_setsum,rte_member_setsum_type,rte_member_sig_compare_function "/>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'dpdk_18.05/lib/librte_member/rte_member.h'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>dpdk_18.05</a>/<a href='..'>lib</a>/<a href='./'>librte_member</a>/<a href='rte_member.h.html'>rte_member.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright(c) 2017 Intel Corporation</i></td></tr>
+<tr><th id="3">3</th><td><i> */</i></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="6">6</th><td><i class="doc"> *<span class="command"> @file</span></i></td></tr>
+<tr><th id="7">7</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="8">8</th><td><i class="doc"> * RTE Membership Library</i></td></tr>
+<tr><th id="9">9</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="10">10</th><td><i class="doc"> * The Membership Library is an extension and generalization of a traditional</i></td></tr>
+<tr><th id="11">11</th><td><i class="doc"> * filter (for example Bloom Filter and cuckoo filter) structure that has</i></td></tr>
+<tr><th id="12">12</th><td><i class="doc"> * multiple usages in a variety of workloads and applications. The library is</i></td></tr>
+<tr><th id="13">13</th><td><i class="doc"> * used to test if a key belongs to certain sets. Two types of such</i></td></tr>
+<tr><th id="14">14</th><td><i class="doc"> * "set-summary" structures are implemented: hash-table based (HT) and vector</i></td></tr>
+<tr><th id="15">15</th><td><i class="doc"> * bloom filter (vBF). For HT setsummary, two subtypes or modes are available,</i></td></tr>
+<tr><th id="16">16</th><td><i class="doc"> * cache and non-cache modes. The table below summarize some properties of</i></td></tr>
+<tr><th id="17">17</th><td><i class="doc"> * the different implementations.</i></td></tr>
+<tr><th id="18">18</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="19">19</th><td><i class="doc"> * <span class="command">@warning</span></i></td></tr>
+<tr><th id="20">20</th><td><i class="doc"> *<span class="command"> @b</span> <span class="arg">EXPERIMENTAL:</span> this API may change without prior notice</i></td></tr>
+<tr><th id="21">21</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="22">22</th><td></td></tr>
+<tr><th id="23">23</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="24">24</th><td><i class="doc"> * &lt;!--</i></td></tr>
+<tr><th id="25">25</th><td><i class="doc"> * +==========+=====================+================+=========================+</i></td></tr>
+<tr><th id="26">26</th><td><i class="doc"> * |   type   |      vbf            |     HT-cache   |     HT-non-cache        |</i></td></tr>
+<tr><th id="27">27</th><td><i class="doc"> * +==========+=====================+==========================================+</i></td></tr>
+<tr><th id="28">28</th><td><i class="doc"> * |structure |  bloom-filter array |  hash-table like without storing key     |</i></td></tr>
+<tr><th id="29">29</th><td><i class="doc"> * +----------+---------------------+------------------------------------------+</i></td></tr>
+<tr><th id="30">30</th><td><i class="doc"> * |set id    | limited by bf count |           [1, 0x7fff]                    |</i></td></tr>
+<tr><th id="31">31</th><td><i class="doc"> * |          | up to 32.           |                                          |</i></td></tr>
+<tr><th id="32">32</th><td><i class="doc"> * +----------+---------------------+------------------------------------------+</i></td></tr>
+<tr><th id="33">33</th><td><i class="doc"> * |usages &amp;  | small set range,    | can delete,    | cache most recent keys, |</i></td></tr>
+<tr><th id="34">34</th><td><i class="doc"> * |properties| user-specified      | big set range, | have both false-positive|</i></td></tr>
+<tr><th id="35">35</th><td><i class="doc"> * |          | false-positive rate,| small false    | and false-negative      |</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc"> * |          | no deletion support.| positive depend| depend on table size,   |</i></td></tr>
+<tr><th id="37">37</th><td><i class="doc"> * |          |                     | on table size, | automatic overwritten.  |</i></td></tr>
+<tr><th id="38">38</th><td><i class="doc"> * |          |                     | new key does   |                         |</i></td></tr>
+<tr><th id="39">39</th><td><i class="doc"> * |          |                     | not overwrite  |                         |</i></td></tr>
+<tr><th id="40">40</th><td><i class="doc"> * |          |                     | existing key.  |                         |</i></td></tr>
+<tr><th id="41">41</th><td><i class="doc"> * +----------+---------------------+----------------+-------------------------+</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc"> * --&gt;</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td><u>#<span data-ppcond="45">ifndef</span> <span class="macro" data-ref="_M/_RTE_MEMBER_H_">_RTE_MEMBER_H_</span></u></td></tr>
+<tr><th id="46">46</th><td><u>#define <dfn class="macro" id="_M/_RTE_MEMBER_H_" data-ref="_M/_RTE_MEMBER_H_">_RTE_MEMBER_H_</dfn></u></td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td><u>#<span data-ppcond="48">ifdef</span> <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="49">49</th><td><b>extern</b> <q>"C"</q> {</td></tr>
+<tr><th id="50">50</th><td><u>#<span data-ppcond="48">endif</span></u></td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td><u>#include &lt;stdint.h&gt;</u></td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td><u>#include <a href="../librte_eal/common/include/rte_common.h.html">&lt;rte_common.h&gt;</a></u></td></tr>
+<tr><th id="55">55</th><td><u>#include <a href="../../build/include/rte_config.h.html">&lt;rte_config.h&gt;</a></u></td></tr>
+<tr><th id="56">56</th><td></td></tr>
+<tr><th id="57">57</th><td><i class="doc">/** The set ID type that stored internally in hash table based set summary. */</i></td></tr>
+<tr><th id="58">58</th><td><b>typedef</b> <a class="typedef" href="../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="typedef" id="member_set_t" title='member_set_t' data-type='uint16_t' data-ref="member_set_t">member_set_t</dfn>;</td></tr>
+<tr><th id="59">59</th><td><i class="doc">/** Invalid set ID used to mean no match found. */</i></td></tr>
+<tr><th id="60">60</th><td><u>#define <dfn class="macro" id="_M/RTE_MEMBER_NO_MATCH" data-ref="_M/RTE_MEMBER_NO_MATCH">RTE_MEMBER_NO_MATCH</dfn> 0</u></td></tr>
+<tr><th id="61">61</th><td><i class="doc">/** Maximum size of hash table that can be created. */</i></td></tr>
+<tr><th id="62">62</th><td><u>#define <dfn class="macro" id="_M/RTE_MEMBER_ENTRIES_MAX" data-ref="_M/RTE_MEMBER_ENTRIES_MAX">RTE_MEMBER_ENTRIES_MAX</dfn> (1 &lt;&lt; 30)</u></td></tr>
+<tr><th id="63">63</th><td><i class="doc">/** Maximum number of keys that can be searched as a bulk */</i></td></tr>
+<tr><th id="64">64</th><td><u>#define <dfn class="macro" id="_M/RTE_MEMBER_LOOKUP_BULK_MAX" data-ref="_M/RTE_MEMBER_LOOKUP_BULK_MAX">RTE_MEMBER_LOOKUP_BULK_MAX</dfn> 64</u></td></tr>
+<tr><th id="65">65</th><td><i class="doc">/** Entry count per bucket in hash table based mode. */</i></td></tr>
+<tr><th id="66">66</th><td><u>#define <dfn class="macro" id="_M/RTE_MEMBER_BUCKET_ENTRIES" data-ref="_M/RTE_MEMBER_BUCKET_ENTRIES">RTE_MEMBER_BUCKET_ENTRIES</dfn> 16</u></td></tr>
+<tr><th id="67">67</th><td><i class="doc">/** Maximum number of characters in setsum name. */</i></td></tr>
+<tr><th id="68">68</th><td><u>#define <dfn class="macro" id="_M/RTE_MEMBER_NAMESIZE" data-ref="_M/RTE_MEMBER_NAMESIZE">RTE_MEMBER_NAMESIZE</dfn> 32</u></td></tr>
+<tr><th id="69">69</th><td></td></tr>
+<tr><th id="70">70</th><td><i class="doc">/**<span class="command"> @internal</span> Hash function used by membership library. */</i></td></tr>
+<tr><th id="71">71</th><td><u>#<span data-ppcond="71">if</span> defined(<a class="macro" href="../../build/include/rte_config.h.html#486" data-ref="_M/RTE_ARCH_X86">RTE_ARCH_X86</a>) || defined(<span class="macro" data-ref="_M/RTE_MACHINE_CPUFLAG_CRC32">RTE_MACHINE_CPUFLAG_CRC32</span>)</u></td></tr>
+<tr><th id="72">72</th><td><u>#include <a href="../librte_hash/rte_hash_crc.h.html">&lt;rte_hash_crc.h&gt;</a></u></td></tr>
+<tr><th id="73">73</th><td><u>#define <dfn class="macro" id="_M/MEMBER_HASH_FUNC" data-ref="_M/MEMBER_HASH_FUNC">MEMBER_HASH_FUNC</dfn>       rte_hash_crc</u></td></tr>
+<tr><th id="74">74</th><td><u>#<span data-ppcond="71">else</span></u></td></tr>
+<tr><th id="75">75</th><td><u>#include &lt;rte_jhash.h&gt;</u></td></tr>
+<tr><th id="76">76</th><td><u>#define MEMBER_HASH_FUNC       rte_jhash</u></td></tr>
+<tr><th id="77">77</th><td><u>#<span data-ppcond="71">endif</span></u></td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td><b>extern</b> <em>int</em> <dfn class="decl" id="librte_member_logtype" title='librte_member_logtype' data-ref="librte_member_logtype">librte_member_logtype</dfn>;</td></tr>
+<tr><th id="80">80</th><td></td></tr>
+<tr><th id="81">81</th><td><u>#define <dfn class="macro" id="_M/RTE_MEMBER_LOG" data-ref="_M/RTE_MEMBER_LOG">RTE_MEMBER_LOG</dfn>(level, ...) \</u></td></tr>
+<tr><th id="82">82</th><td><u>	rte_log(RTE_LOG_ ## level, \</u></td></tr>
+<tr><th id="83">83</th><td><u>		librte_member_logtype, \</u></td></tr>
+<tr><th id="84">84</th><td><u>		RTE_FMT("%s(): " RTE_FMT_HEAD(__VA_ARGS__,), \</u></td></tr>
+<tr><th id="85">85</th><td><u>			__func__, \</u></td></tr>
+<tr><th id="86">86</th><td><u>			RTE_FMT_TAIL(__VA_ARGS__,)))</u></td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td><i class="doc">/**<span class="command"> @internal</span> setsummary structure. */</i></td></tr>
+<tr><th id="89">89</th><td><b>struct</b> <a class="type" href="#rte_member_setsum" title='rte_member_setsum' data-ref="rte_member_setsum">rte_member_setsum</a>;</td></tr>
+<tr><th id="90">90</th><td></td></tr>
+<tr><th id="91">91</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="92">92</th><td><i class="doc"> * <span class="command">@warning</span></i></td></tr>
+<tr><th id="93">93</th><td><i class="doc"> *<span class="command"> @b</span> <span class="arg">EXPERIMENTAL:</span> this API may change without prior notice</i></td></tr>
+<tr><th id="94">94</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="95">95</th><td><i class="doc"> * Parameter struct used to create set summary</i></td></tr>
+<tr><th id="96">96</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="97">97</th><td><b>struct</b> <a class="type" href="#rte_member_parameters" title='rte_member_parameters' data-ref="rte_member_parameters">rte_member_parameters</a>;</td></tr>
+<tr><th id="98">98</th><td></td></tr>
+<tr><th id="99">99</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="100">100</th><td><i class="doc"> * <span class="command">@warning</span></i></td></tr>
+<tr><th id="101">101</th><td><i class="doc"> *<span class="command"> @b</span> <span class="arg">EXPERIMENTAL:</span> this API may change without prior notice</i></td></tr>
+<tr><th id="102">102</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="103">103</th><td><i class="doc"> * Define different set summary types</i></td></tr>
+<tr><th id="104">104</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="105">105</th><td><b>enum</b> <dfn class="type def" id="rte_member_setsum_type" title='rte_member_setsum_type' data-ref="rte_member_setsum_type">rte_member_setsum_type</dfn> {</td></tr>
+<tr><th id="106">106</th><td>	<dfn class="enum" id="RTE_MEMBER_TYPE_HT" title='RTE_MEMBER_TYPE_HT' data-ref="RTE_MEMBER_TYPE_HT">RTE_MEMBER_TYPE_HT</dfn> = <var>0</var>,  <i class="doc">/**&lt; Hash table based set summary. */</i></td></tr>
+<tr><th id="107">107</th><td>	<dfn class="enum" id="RTE_MEMBER_TYPE_VBF" title='RTE_MEMBER_TYPE_VBF' data-ref="RTE_MEMBER_TYPE_VBF">RTE_MEMBER_TYPE_VBF</dfn>,     <i class="doc">/**&lt; Vector of bloom filters. */</i></td></tr>
+<tr><th id="108">108</th><td>	<dfn class="enum" id="RTE_MEMBER_NUM_TYPE" title='RTE_MEMBER_NUM_TYPE' data-ref="RTE_MEMBER_NUM_TYPE">RTE_MEMBER_NUM_TYPE</dfn></td></tr>
+<tr><th id="109">109</th><td>};</td></tr>
+<tr><th id="110">110</th><td></td></tr>
+<tr><th id="111">111</th><td><i class="doc">/**<span class="command"> @internal</span> compare function for different arch. */</i></td></tr>
+<tr><th id="112">112</th><td><b>enum</b> <dfn class="type def" id="rte_member_sig_compare_function" title='rte_member_sig_compare_function' data-ref="rte_member_sig_compare_function">rte_member_sig_compare_function</dfn> {</td></tr>
+<tr><th id="113">113</th><td>	<dfn class="enum" id="RTE_MEMBER_COMPARE_SCALAR" title='RTE_MEMBER_COMPARE_SCALAR' data-ref="RTE_MEMBER_COMPARE_SCALAR">RTE_MEMBER_COMPARE_SCALAR</dfn> = <var>0</var>,</td></tr>
+<tr><th id="114">114</th><td>	<dfn class="enum" id="RTE_MEMBER_COMPARE_AVX2" title='RTE_MEMBER_COMPARE_AVX2' data-ref="RTE_MEMBER_COMPARE_AVX2">RTE_MEMBER_COMPARE_AVX2</dfn>,</td></tr>
+<tr><th id="115">115</th><td>	<dfn class="enum" id="RTE_MEMBER_COMPARE_NUM" title='RTE_MEMBER_COMPARE_NUM' data-ref="RTE_MEMBER_COMPARE_NUM">RTE_MEMBER_COMPARE_NUM</dfn></td></tr>
+<tr><th id="116">116</th><td>};</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td><i class="doc">/**<span class="command"> @internal</span> setsummary structure. */</i></td></tr>
+<tr><th id="119">119</th><td><b>struct</b> <dfn class="type def" id="rte_member_setsum" title='rte_member_setsum' data-ref="rte_member_setsum">rte_member_setsum</dfn> {</td></tr>
+<tr><th id="120">120</th><td>	<b>enum</b> <a class="type" href="#rte_member_setsum_type" title='rte_member_setsum_type' data-ref="rte_member_setsum_type">rte_member_setsum_type</a> <dfn class="decl field" id="rte_member_setsum::type" title='rte_member_setsum::type' data-ref="rte_member_setsum::type">type</dfn>; <i>/* Type of the set summary. */</i></td></tr>
+<tr><th id="121">121</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_member_setsum::key_len" title='rte_member_setsum::key_len' data-ref="rte_member_setsum::key_len">key_len</dfn>;		<i>/* Length of key. */</i></td></tr>
+<tr><th id="122">122</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_member_setsum::prim_hash_seed" title='rte_member_setsum::prim_hash_seed' data-ref="rte_member_setsum::prim_hash_seed">prim_hash_seed</dfn>;	<i>/* Primary hash function seed. */</i></td></tr>
+<tr><th id="123">123</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_member_setsum::sec_hash_seed" title='rte_member_setsum::sec_hash_seed' data-ref="rte_member_setsum::sec_hash_seed">sec_hash_seed</dfn>;		<i>/* Secondary hash function seed. */</i></td></tr>
+<tr><th id="124">124</th><td></td></tr>
+<tr><th id="125">125</th><td>	<i>/* Hash table based. */</i></td></tr>
+<tr><th id="126">126</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_member_setsum::bucket_cnt" title='rte_member_setsum::bucket_cnt' data-ref="rte_member_setsum::bucket_cnt">bucket_cnt</dfn>;		<i>/* Number of buckets. */</i></td></tr>
+<tr><th id="127">127</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_member_setsum::bucket_mask" title='rte_member_setsum::bucket_mask' data-ref="rte_member_setsum::bucket_mask">bucket_mask</dfn>;		<i>/* Bit mask to get bucket index. */</i></td></tr>
+<tr><th id="128">128</th><td>	<i>/* For runtime selecting AVX, scalar, etc for signature comparison. */</i></td></tr>
+<tr><th id="129">129</th><td>	<b>enum</b> <a class="type" href="#rte_member_sig_compare_function" title='rte_member_sig_compare_function' data-ref="rte_member_sig_compare_function">rte_member_sig_compare_function</a> <dfn class="decl field" id="rte_member_setsum::sig_cmp_fn" title='rte_member_setsum::sig_cmp_fn' data-ref="rte_member_setsum::sig_cmp_fn">sig_cmp_fn</dfn>;</td></tr>
+<tr><th id="130">130</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="rte_member_setsum::cache" title='rte_member_setsum::cache' data-ref="rte_member_setsum::cache">cache</dfn>;			<i>/* If it is cache mode for ht based. */</i></td></tr>
+<tr><th id="131">131</th><td></td></tr>
+<tr><th id="132">132</th><td>	<i>/* Vector bloom filter. */</i></td></tr>
+<tr><th id="133">133</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_member_setsum::num_set" title='rte_member_setsum::num_set' data-ref="rte_member_setsum::num_set">num_set</dfn>;		<i>/* Number of set (bf) in vbf. */</i></td></tr>
+<tr><th id="134">134</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_member_setsum::bits" title='rte_member_setsum::bits' data-ref="rte_member_setsum::bits">bits</dfn>;			<i>/* Number of bits in each bf. */</i></td></tr>
+<tr><th id="135">135</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_member_setsum::bit_mask" title='rte_member_setsum::bit_mask' data-ref="rte_member_setsum::bit_mask">bit_mask</dfn>;	<i>/* Bit mask to get bit location in bf. */</i></td></tr>
+<tr><th id="136">136</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_member_setsum::num_hashes" title='rte_member_setsum::num_hashes' data-ref="rte_member_setsum::num_hashes">num_hashes</dfn>;	<i>/* Number of hash values to index bf. */</i></td></tr>
+<tr><th id="137">137</th><td></td></tr>
+<tr><th id="138">138</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_member_setsum::mul_shift" title='rte_member_setsum::mul_shift' data-ref="rte_member_setsum::mul_shift">mul_shift</dfn>;  <i>/* vbf internal variable used during bit test. */</i></td></tr>
+<tr><th id="139">139</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_member_setsum::div_shift" title='rte_member_setsum::div_shift' data-ref="rte_member_setsum::div_shift">div_shift</dfn>;  <i>/* vbf internal variable used during bit test. */</i></td></tr>
+<tr><th id="140">140</th><td></td></tr>
+<tr><th id="141">141</th><td>	<em>void</em> *<dfn class="decl field" id="rte_member_setsum::table" title='rte_member_setsum::table' data-ref="rte_member_setsum::table">table</dfn>;	<i>/* This is the handler of hash table or vBF array. */</i></td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td></td></tr>
+<tr><th id="144">144</th><td>	<i>/* Second cache line should start here. */</i></td></tr>
+<tr><th id="145">145</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_member_setsum::socket_id" title='rte_member_setsum::socket_id' data-ref="rte_member_setsum::socket_id">socket_id</dfn>;          <i>/* NUMA Socket ID for memory. */</i></td></tr>
+<tr><th id="146">146</th><td>	<em>char</em> <dfn class="decl field" id="rte_member_setsum::name" title='rte_member_setsum::name' data-ref="rte_member_setsum::name">name</dfn>[<a class="macro" href="#68" title="32" data-ref="_M/RTE_MEMBER_NAMESIZE">RTE_MEMBER_NAMESIZE</a>]; <i>/* Name of this set summary. */</i></td></tr>
+<tr><th id="147">147</th><td>} <a class="macro" href="../librte_eal/common/include/rte_memory.h.html#64" title="__attribute__((__aligned__(64)))" data-ref="_M/__rte_cache_aligned">__rte_cache_aligned</a>;</td></tr>
+<tr><th id="148">148</th><td></td></tr>
+<tr><th id="149">149</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="150">150</th><td><i class="doc"> * <span class="command">@warning</span></i></td></tr>
+<tr><th id="151">151</th><td><i class="doc"> *<span class="command"> @b</span> <span class="arg">EXPERIMENTAL:</span> this API may change without prior notice</i></td></tr>
+<tr><th id="152">152</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="153">153</th><td><i class="doc"> * Parameters used when create the set summary table. Currently user can</i></td></tr>
+<tr><th id="154">154</th><td><i class="doc"> * specify two types of setsummary: HT based and vBF. For HT based, user can</i></td></tr>
+<tr><th id="155">155</th><td><i class="doc"> * specify cache or non-cache mode. Here is a table to describe some differences</i></td></tr>
+<tr><th id="156">156</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="157">157</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="158">158</th><td><b>struct</b> <dfn class="type def" id="rte_member_parameters" title='rte_member_parameters' data-ref="rte_member_parameters">rte_member_parameters</dfn> {</td></tr>
+<tr><th id="159">159</th><td>	<em>const</em> <em>char</em> *<dfn class="decl field" id="rte_member_parameters::name" title='rte_member_parameters::name' data-ref="rte_member_parameters::name">name</dfn>;			<i class="doc">/**&lt; Name of the hash. */</i></td></tr>
+<tr><th id="160">160</th><td></td></tr>
+<tr><th id="161">161</th><td>	<i class="doc">/**</i></td></tr>
+<tr><th id="162">162</th><td><i class="doc">	 * User to specify the type of the setsummary from one of</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc">	 * rte_member_setsum_type.</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc">	 *</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc">	 * HT based setsummary is implemented like a hash table. User should use</i></td></tr>
+<tr><th id="166">166</th><td><i class="doc">	 * this type when there are many sets.</i></td></tr>
+<tr><th id="167">167</th><td><i class="doc">	 *</i></td></tr>
+<tr><th id="168">168</th><td><i class="doc">	 * vBF setsummary is a vector of bloom filters. It is used when number</i></td></tr>
+<tr><th id="169">169</th><td><i class="doc">	 * of sets is not big (less than 32 for current implementation).</i></td></tr>
+<tr><th id="170">170</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="171">171</th><td>	<b>enum</b> <a class="type" href="#rte_member_setsum_type" title='rte_member_setsum_type' data-ref="rte_member_setsum_type">rte_member_setsum_type</a> <dfn class="decl field" id="rte_member_parameters::type" title='rte_member_parameters::type' data-ref="rte_member_parameters::type">type</dfn>;</td></tr>
+<tr><th id="172">172</th><td></td></tr>
+<tr><th id="173">173</th><td>	<i class="doc">/**</i></td></tr>
+<tr><th id="174">174</th><td><i class="doc">	 * is_cache is only used for HT based setsummary.</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc">	 *</i></td></tr>
+<tr><th id="176">176</th><td><i class="doc">	 * If it is HT based setsummary, user to specify the subtype or mode</i></td></tr>
+<tr><th id="177">177</th><td><i class="doc">	 * of the setsummary. It could be cache, or non-cache mode.</i></td></tr>
+<tr><th id="178">178</th><td><i class="doc">	 * Set is_cache to be 1 if to use as cache mode.</i></td></tr>
+<tr><th id="179">179</th><td><i class="doc">	 *</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc">	 * For cache mode, keys can be evicted out of the HT setsummary. Keys</i></td></tr>
+<tr><th id="181">181</th><td><i class="doc">	 * with the same signature and map to the same bucket</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc">	 * will overwrite each other in the setsummary table.</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc">	 * This mode is useful for the case that the set-summary only</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc">	 * needs to keep record of the recently inserted keys. Both</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc">	 * false-negative and false-positive could happen.</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc">	 *</i></td></tr>
+<tr><th id="187">187</th><td><i class="doc">	 * For non-cache mode, keys cannot be evicted out of the cache. So for</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc">	 * this mode the setsummary will become full eventually. Keys with the</i></td></tr>
+<tr><th id="189">189</th><td><i class="doc">	 * same signature but map to the same bucket will still occupy multiple</i></td></tr>
+<tr><th id="190">190</th><td><i class="doc">	 * entries. This mode does not give false-negative result.</i></td></tr>
+<tr><th id="191">191</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="192">192</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="rte_member_parameters::is_cache" title='rte_member_parameters::is_cache' data-ref="rte_member_parameters::is_cache">is_cache</dfn>;</td></tr>
+<tr><th id="193">193</th><td></td></tr>
+<tr><th id="194">194</th><td>	<i class="doc">/**</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc">	 * For HT setsummary, num_keys equals to the number of entries of the</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc">	 * table. When the number of keys inserted in the HT setsummary</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">	 * approaches this number, eviction could happen. For cache mode,</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc">	 * keys could be evicted out of the table. For non-cache mode, keys will</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">	 * be evicted to other buckets like cuckoo hash. The table will also</i></td></tr>
+<tr><th id="200">200</th><td><i class="doc">	 * likely to become full before the number of inserted keys equal to the</i></td></tr>
+<tr><th id="201">201</th><td><i class="doc">	 * total number of entries.</i></td></tr>
+<tr><th id="202">202</th><td><i class="doc">	 *</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc">	 * For vBF, num_keys equal to the expected number of keys that will</i></td></tr>
+<tr><th id="204">204</th><td><i class="doc">	 * be inserted into the vBF. The implementation assumes the keys are</i></td></tr>
+<tr><th id="205">205</th><td><i class="doc">	 * evenly distributed to each BF in vBF. This is used to calculate the</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc">	 * number of bits we need for each BF. User does not specify the size of</i></td></tr>
+<tr><th id="207">207</th><td><i class="doc">	 * each BF directly because the optimal size depends on the num_keys</i></td></tr>
+<tr><th id="208">208</th><td><i class="doc">	 * and false positive rate.</i></td></tr>
+<tr><th id="209">209</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="210">210</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_member_parameters::num_keys" title='rte_member_parameters::num_keys' data-ref="rte_member_parameters::num_keys">num_keys</dfn>;</td></tr>
+<tr><th id="211">211</th><td></td></tr>
+<tr><th id="212">212</th><td>	<i class="doc">/**</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc">	 * The length of key is used for hash calculation. Since key is not</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc">	 * stored in set-summary, large key does not require more memory space.</i></td></tr>
+<tr><th id="215">215</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="216">216</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_member_parameters::key_len" title='rte_member_parameters::key_len' data-ref="rte_member_parameters::key_len">key_len</dfn>;</td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td>	<i class="doc">/**</i></td></tr>
+<tr><th id="219">219</th><td><i class="doc">	 * num_set is only used for vBF, but not used for HT setsummary.</i></td></tr>
+<tr><th id="220">220</th><td><i class="doc">	 *</i></td></tr>
+<tr><th id="221">221</th><td><i class="doc">	 * num_set is equal to the number of BFs in vBF. For current</i></td></tr>
+<tr><th id="222">222</th><td><i class="doc">	 * implementation, it only supports 1,2,4,8,16,32 BFs in one vBF set</i></td></tr>
+<tr><th id="223">223</th><td><i class="doc">	 * summary. If other number of sets are needed, for example 5, the user</i></td></tr>
+<tr><th id="224">224</th><td><i class="doc">	 * should allocate the minimum available value that larger than 5,</i></td></tr>
+<tr><th id="225">225</th><td><i class="doc">	 * which is 8.</i></td></tr>
+<tr><th id="226">226</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="227">227</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_member_parameters::num_set" title='rte_member_parameters::num_set' data-ref="rte_member_parameters::num_set">num_set</dfn>;</td></tr>
+<tr><th id="228">228</th><td></td></tr>
+<tr><th id="229">229</th><td>	<i class="doc">/**</i></td></tr>
+<tr><th id="230">230</th><td><i class="doc">	 * false_positive_rate is only used for vBF, but not used for HT</i></td></tr>
+<tr><th id="231">231</th><td><i class="doc">	 * setsummary.</i></td></tr>
+<tr><th id="232">232</th><td><i class="doc">	 *</i></td></tr>
+<tr><th id="233">233</th><td><i class="doc">	 * For vBF, false_positive_rate is the user-defined false positive rate</i></td></tr>
+<tr><th id="234">234</th><td><i class="doc">	 * given expected number of inserted keys (num_keys). It is used to</i></td></tr>
+<tr><th id="235">235</th><td><i class="doc">	 * calculate the total number of bits for each BF, and the number of</i></td></tr>
+<tr><th id="236">236</th><td><i class="doc">	 * hash values used during lookup and insertion. For details please</i></td></tr>
+<tr><th id="237">237</th><td><i class="doc">	 * refer to vBF implementation and membership library documentation.</i></td></tr>
+<tr><th id="238">238</th><td><i class="doc">	 *</i></td></tr>
+<tr><th id="239">239</th><td><i class="doc">	 * For HT, This parameter is not directly set by users.</i></td></tr>
+<tr><th id="240">240</th><td><i class="doc">	 * HT setsummary's false positive rate is in the order of:</i></td></tr>
+<tr><th id="241">241</th><td><i class="doc">	 * false_pos = (1/bucket_count)*(1/2^16), since we use 16-bit signature.</i></td></tr>
+<tr><th id="242">242</th><td><i class="doc">	 * This is because two keys needs to map to same bucket and same</i></td></tr>
+<tr><th id="243">243</th><td><i class="doc">	 * signature to have a collision (false positive). bucket_count is equal</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc">	 * to number of entries (num_keys) divided by entry count per bucket</i></td></tr>
+<tr><th id="245">245</th><td><i class="doc">	 * (RTE_MEMBER_BUCKET_ENTRIES). Thus, the false_positive_rate is not</i></td></tr>
+<tr><th id="246">246</th><td><i class="doc">	 * directly set by users for HT mode.</i></td></tr>
+<tr><th id="247">247</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="248">248</th><td>	<em>float</em> <dfn class="decl field" id="rte_member_parameters::false_positive_rate" title='rte_member_parameters::false_positive_rate' data-ref="rte_member_parameters::false_positive_rate">false_positive_rate</dfn>;</td></tr>
+<tr><th id="249">249</th><td></td></tr>
+<tr><th id="250">250</th><td>	<i class="doc">/**</i></td></tr>
+<tr><th id="251">251</th><td><i class="doc">	 * We use two seeds to calculate two independent hashes for each key.</i></td></tr>
+<tr><th id="252">252</th><td><i class="doc">	 *</i></td></tr>
+<tr><th id="253">253</th><td><i class="doc">	 * For HT type, one hash is used as signature, and the other is used</i></td></tr>
+<tr><th id="254">254</th><td><i class="doc">	 * for bucket location.</i></td></tr>
+<tr><th id="255">255</th><td><i class="doc">	 * For vBF type, these two hashes and their combinations are used as</i></td></tr>
+<tr><th id="256">256</th><td><i class="doc">	 * hash locations to index the bit array.</i></td></tr>
+<tr><th id="257">257</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="258">258</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_member_parameters::prim_hash_seed" title='rte_member_parameters::prim_hash_seed' data-ref="rte_member_parameters::prim_hash_seed">prim_hash_seed</dfn>;</td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td>	<i class="doc">/**</i></td></tr>
+<tr><th id="261">261</th><td><i class="doc">	 * The secondary seed should be a different value from the primary seed.</i></td></tr>
+<tr><th id="262">262</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="263">263</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_member_parameters::sec_hash_seed" title='rte_member_parameters::sec_hash_seed' data-ref="rte_member_parameters::sec_hash_seed">sec_hash_seed</dfn>;</td></tr>
+<tr><th id="264">264</th><td></td></tr>
+<tr><th id="265">265</th><td>	<em>int</em> <dfn class="decl field" id="rte_member_parameters::socket_id" title='rte_member_parameters::socket_id' data-ref="rte_member_parameters::socket_id">socket_id</dfn>;			<i class="doc">/**&lt; NUMA Socket ID for memory. */</i></td></tr>
+<tr><th id="266">266</th><td>};</td></tr>
+<tr><th id="267">267</th><td></td></tr>
+<tr><th id="268">268</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="269">269</th><td><i class="doc"> * <span class="command">@warning</span></i></td></tr>
+<tr><th id="270">270</th><td><i class="doc"> *<span class="command"> @b</span> <span class="arg">EXPERIMENTAL:</span> this API may change without prior notice</i></td></tr>
+<tr><th id="271">271</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="272">272</th><td><i class="doc"> * Find an existing set-summary and return a pointer to it.</i></td></tr>
+<tr><th id="273">273</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="274">274</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">name</span></i></td></tr>
+<tr><th id="275">275</th><td><i class="doc"> *   Name of the set-summary.</i></td></tr>
+<tr><th id="276">276</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="277">277</th><td><i class="doc"> *   Pointer to the set-summary or NULL if object not found</i></td></tr>
+<tr><th id="278">278</th><td><i class="doc"> *   with rte_errno set appropriately. Possible rte_errno values include:</i></td></tr>
+<tr><th id="279">279</th><td><i class="doc"> *    - ENOENT - value not available for return</i></td></tr>
+<tr><th id="280">280</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="281">281</th><td><b>struct</b> <a class="type" href="#rte_member_setsum" title='rte_member_setsum' data-ref="rte_member_setsum">rte_member_setsum</a> *</td></tr>
+<tr><th id="282">282</th><td><a class="decl fn" href="rte_member.c.html#rte_member_find_existing" title='rte_member_find_existing' data-ref="rte_member_find_existing" id="rte_member_find_existing">rte_member_find_existing</a>(<em>const</em> <em>char</em> *<dfn class="local col1 decl" id="1name" title='name' data-type='const char *' data-ref="1name">name</dfn>);</td></tr>
+<tr><th id="283">283</th><td></td></tr>
+<tr><th id="284">284</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="285">285</th><td><i class="doc"> * <span class="command">@warning</span></i></td></tr>
+<tr><th id="286">286</th><td><i class="doc"> *<span class="command"> @b</span> <span class="arg">EXPERIMENTAL:</span> this API may change without prior notice</i></td></tr>
+<tr><th id="287">287</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="288">288</th><td><i class="doc"> * Create set-summary (SS).</i></td></tr>
+<tr><th id="289">289</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="290">290</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">params</span></i></td></tr>
+<tr><th id="291">291</th><td><i class="doc"> *   Parameters to initialize the setsummary.</i></td></tr>
+<tr><th id="292">292</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="293">293</th><td><i class="doc"> *   Return the pointer to the setsummary.</i></td></tr>
+<tr><th id="294">294</th><td><i class="doc"> *   Return value is NULL if the creation failed.</i></td></tr>
+<tr><th id="295">295</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="296">296</th><td><b>struct</b> <a class="type" href="#rte_member_setsum" title='rte_member_setsum' data-ref="rte_member_setsum">rte_member_setsum</a> *</td></tr>
+<tr><th id="297">297</th><td><a class="decl fn" href="rte_member.c.html#rte_member_create" title='rte_member_create' data-ref="rte_member_create" id="rte_member_create">rte_member_create</a>(<em>const</em> <b>struct</b> <a class="type" href="#rte_member_parameters" title='rte_member_parameters' data-ref="rte_member_parameters">rte_member_parameters</a> *<dfn class="local col2 decl" id="2params" title='params' data-type='const struct rte_member_parameters *' data-ref="2params">params</dfn>);</td></tr>
+<tr><th id="298">298</th><td></td></tr>
+<tr><th id="299">299</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="300">300</th><td><i class="doc"> * <span class="command">@warning</span></i></td></tr>
+<tr><th id="301">301</th><td><i class="doc"> *<span class="command"> @b</span> <span class="arg">EXPERIMENTAL:</span> this API may change without prior notice</i></td></tr>
+<tr><th id="302">302</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="303">303</th><td><i class="doc"> * Lookup key in set-summary (SS).</i></td></tr>
+<tr><th id="304">304</th><td><i class="doc"> * Single key lookup and return as soon as the first match found</i></td></tr>
+<tr><th id="305">305</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="306">306</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">setsum</span></i></td></tr>
+<tr><th id="307">307</th><td><i class="doc"> *   Pointer of a setsummary.</i></td></tr>
+<tr><th id="308">308</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">key</span></i></td></tr>
+<tr><th id="309">309</th><td><i class="doc"> *   Pointer of the key to be looked up.</i></td></tr>
+<tr><th id="310">310</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">set_id</span></i></td></tr>
+<tr><th id="311">311</th><td><i class="doc"> *   Output the set id matches the key.</i></td></tr>
+<tr><th id="312">312</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="313">313</th><td><i class="doc"> *   Return 1 for found a match and 0 for not found a match.</i></td></tr>
+<tr><th id="314">314</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="315">315</th><td><em>int</em></td></tr>
+<tr><th id="316">316</th><td><a class="decl fn" href="rte_member.c.html#rte_member_lookup" title='rte_member_lookup' data-ref="rte_member_lookup" id="rte_member_lookup">rte_member_lookup</a>(<em>const</em> <b>struct</b> <a class="type" href="#rte_member_setsum" title='rte_member_setsum' data-ref="rte_member_setsum">rte_member_setsum</a> *<dfn class="local col3 decl" id="3setsum" title='setsum' data-type='const struct rte_member_setsum *' data-ref="3setsum">setsum</dfn>, <em>const</em> <em>void</em> *<dfn class="local col4 decl" id="4key" title='key' data-type='const void *' data-ref="4key">key</dfn>,</td></tr>
+<tr><th id="317">317</th><td>			<a class="typedef" href="#member_set_t" title='member_set_t' data-type='uint16_t' data-ref="member_set_t">member_set_t</a> *<dfn class="local col5 decl" id="5set_id" title='set_id' data-type='member_set_t *' data-ref="5set_id">set_id</dfn>);</td></tr>
+<tr><th id="318">318</th><td></td></tr>
+<tr><th id="319">319</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="320">320</th><td><i class="doc"> * <span class="command">@warning</span></i></td></tr>
+<tr><th id="321">321</th><td><i class="doc"> *<span class="command"> @b</span> <span class="arg">EXPERIMENTAL:</span> this API may change without prior notice</i></td></tr>
+<tr><th id="322">322</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="323">323</th><td><i class="doc"> * Lookup bulk of keys in set-summary (SS).</i></td></tr>
+<tr><th id="324">324</th><td><i class="doc"> * Each key lookup returns as soon as the first match found</i></td></tr>
+<tr><th id="325">325</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="326">326</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">setsum</span></i></td></tr>
+<tr><th id="327">327</th><td><i class="doc"> *   Pointer of a setsummary.</i></td></tr>
+<tr><th id="328">328</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">keys</span></i></td></tr>
+<tr><th id="329">329</th><td><i class="doc"> *   Pointer of the bulk of keys to be looked up.</i></td></tr>
+<tr><th id="330">330</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">num_keys</span></i></td></tr>
+<tr><th id="331">331</th><td><i class="doc"> *   Number of keys that will be lookup.</i></td></tr>
+<tr><th id="332">332</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">set_ids</span></i></td></tr>
+<tr><th id="333">333</th><td><i class="doc"> *   Output set ids for all the keys to this array.</i></td></tr>
+<tr><th id="334">334</th><td><i class="doc"> *   User should preallocate array that can contain all results, which size is</i></td></tr>
+<tr><th id="335">335</th><td><i class="doc"> *   the num_keys.</i></td></tr>
+<tr><th id="336">336</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="337">337</th><td><i class="doc"> *   The number of keys that found a match.</i></td></tr>
+<tr><th id="338">338</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="339">339</th><td><em>int</em></td></tr>
+<tr><th id="340">340</th><td><a class="decl fn" href="rte_member.c.html#rte_member_lookup_bulk" title='rte_member_lookup_bulk' data-ref="rte_member_lookup_bulk" id="rte_member_lookup_bulk">rte_member_lookup_bulk</a>(<em>const</em> <b>struct</b> <a class="type" href="#rte_member_setsum" title='rte_member_setsum' data-ref="rte_member_setsum">rte_member_setsum</a> *<dfn class="local col6 decl" id="6setsum" title='setsum' data-type='const struct rte_member_setsum *' data-ref="6setsum">setsum</dfn>,</td></tr>
+<tr><th id="341">341</th><td>			<em>const</em> <em>void</em> **<dfn class="local col7 decl" id="7keys" title='keys' data-type='const void **' data-ref="7keys">keys</dfn>, <a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="local col8 decl" id="8num_keys" title='num_keys' data-type='uint32_t' data-ref="8num_keys">num_keys</dfn>,</td></tr>
+<tr><th id="342">342</th><td>			<a class="typedef" href="#member_set_t" title='member_set_t' data-type='uint16_t' data-ref="member_set_t">member_set_t</a> *<dfn class="local col9 decl" id="9set_ids" title='set_ids' data-type='member_set_t *' data-ref="9set_ids">set_ids</dfn>);</td></tr>
+<tr><th id="343">343</th><td></td></tr>
+<tr><th id="344">344</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="345">345</th><td><i class="doc"> * <span class="command">@warning</span></i></td></tr>
+<tr><th id="346">346</th><td><i class="doc"> *<span class="command"> @b</span> <span class="arg">EXPERIMENTAL:</span> this API may change without prior notice</i></td></tr>
+<tr><th id="347">347</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="348">348</th><td><i class="doc"> * Lookup a key in set-summary (SS) for multiple matches.</i></td></tr>
+<tr><th id="349">349</th><td><i class="doc"> * The key lookup will find all matched entries (multiple match).</i></td></tr>
+<tr><th id="350">350</th><td><i class="doc"> * Note that for cache mode of HT, each key can have at most one match. This is</i></td></tr>
+<tr><th id="351">351</th><td><i class="doc"> * because keys with same signature that maps to same bucket will overwrite</i></td></tr>
+<tr><th id="352">352</th><td><i class="doc"> * each other. So multi-match lookup should be used for vBF and non-cache HT.</i></td></tr>
+<tr><th id="353">353</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="354">354</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">setsum</span></i></td></tr>
+<tr><th id="355">355</th><td><i class="doc"> *   Pointer of a set-summary.</i></td></tr>
+<tr><th id="356">356</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">key</span></i></td></tr>
+<tr><th id="357">357</th><td><i class="doc"> *   Pointer of the key that to be looked up.</i></td></tr>
+<tr><th id="358">358</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">max_match_per_key</span></i></td></tr>
+<tr><th id="359">359</th><td><i class="doc"> *   User specified maximum number of matches for each key. The function returns</i></td></tr>
+<tr><th id="360">360</th><td><i class="doc"> *   as soon as this number of matches found for the key.</i></td></tr>
+<tr><th id="361">361</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">set_id</span></i></td></tr>
+<tr><th id="362">362</th><td><i class="doc"> *   Output set ids for all the matches of the key. User needs to preallocate</i></td></tr>
+<tr><th id="363">363</th><td><i class="doc"> *   the array that can contain max_match_per_key number of results.</i></td></tr>
+<tr><th id="364">364</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="365">365</th><td><i class="doc"> *   The number of matches that found for the key.</i></td></tr>
+<tr><th id="366">366</th><td><i class="doc"> *   For cache mode HT set-summary, the number should be at most 1.</i></td></tr>
+<tr><th id="367">367</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="368">368</th><td><em>int</em></td></tr>
+<tr><th id="369">369</th><td><a class="decl fn" href="rte_member.c.html#rte_member_lookup_multi" title='rte_member_lookup_multi' data-ref="rte_member_lookup_multi" id="rte_member_lookup_multi">rte_member_lookup_multi</a>(<em>const</em> <b>struct</b> <a class="type" href="#rte_member_setsum" title='rte_member_setsum' data-ref="rte_member_setsum">rte_member_setsum</a> *<dfn class="local col0 decl" id="10setsum" title='setsum' data-type='const struct rte_member_setsum *' data-ref="10setsum">setsum</dfn>,</td></tr>
+<tr><th id="370">370</th><td>		<em>const</em> <em>void</em> *<dfn class="local col1 decl" id="11key" title='key' data-type='const void *' data-ref="11key">key</dfn>, <a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="local col2 decl" id="12max_match_per_key" title='max_match_per_key' data-type='uint32_t' data-ref="12max_match_per_key">max_match_per_key</dfn>,</td></tr>
+<tr><th id="371">371</th><td>		<a class="typedef" href="#member_set_t" title='member_set_t' data-type='uint16_t' data-ref="member_set_t">member_set_t</a> *<dfn class="local col3 decl" id="13set_id" title='set_id' data-type='member_set_t *' data-ref="13set_id">set_id</dfn>);</td></tr>
+<tr><th id="372">372</th><td></td></tr>
+<tr><th id="373">373</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="374">374</th><td><i class="doc"> * <span class="command">@warning</span></i></td></tr>
+<tr><th id="375">375</th><td><i class="doc"> *<span class="command"> @b</span> <span class="arg">EXPERIMENTAL:</span> this API may change without prior notice</i></td></tr>
+<tr><th id="376">376</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="377">377</th><td><i class="doc"> * Lookup a bulk of keys in set-summary (SS) for multiple matches each key.</i></td></tr>
+<tr><th id="378">378</th><td><i class="doc"> * Each key lookup will find all matched entries (multiple match).</i></td></tr>
+<tr><th id="379">379</th><td><i class="doc"> * Note that for cache mode HT, each key can have at most one match. So</i></td></tr>
+<tr><th id="380">380</th><td><i class="doc"> * multi-match function is mainly used for vBF and non-cache mode HT.</i></td></tr>
+<tr><th id="381">381</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="382">382</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">setsum</span></i></td></tr>
+<tr><th id="383">383</th><td><i class="doc"> *   Pointer of a setsummary.</i></td></tr>
+<tr><th id="384">384</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">keys</span></i></td></tr>
+<tr><th id="385">385</th><td><i class="doc"> *   Pointer of the keys to be looked up.</i></td></tr>
+<tr><th id="386">386</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">num_keys</span></i></td></tr>
+<tr><th id="387">387</th><td><i class="doc"> *   The number of keys that will be lookup.</i></td></tr>
+<tr><th id="388">388</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">max_match_per_key</span></i></td></tr>
+<tr><th id="389">389</th><td><i class="doc"> *   The possible maximum number of matches for each key.</i></td></tr>
+<tr><th id="390">390</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">match_count</span></i></td></tr>
+<tr><th id="391">391</th><td><i class="doc"> *   Output the number of matches for each key in an array.</i></td></tr>
+<tr><th id="392">392</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">set_ids</span></i></td></tr>
+<tr><th id="393">393</th><td><i class="doc"> *   Return set ids for all the matches of all keys. Users pass in a</i></td></tr>
+<tr><th id="394">394</th><td><i class="doc"> *   preallocated 2D array with first dimension as key index and second</i></td></tr>
+<tr><th id="395">395</th><td><i class="doc"> *   dimension as match index. For example set_ids[bulk_size][max_match_per_key]</i></td></tr>
+<tr><th id="396">396</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="397">397</th><td><i class="doc"> *   The number of keys that found one or more matches in the set-summary.</i></td></tr>
+<tr><th id="398">398</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="399">399</th><td><em>int</em></td></tr>
+<tr><th id="400">400</th><td><a class="decl fn" href="rte_member.c.html#rte_member_lookup_multi_bulk" title='rte_member_lookup_multi_bulk' data-ref="rte_member_lookup_multi_bulk" id="rte_member_lookup_multi_bulk">rte_member_lookup_multi_bulk</a>(<em>const</em> <b>struct</b> <a class="type" href="#rte_member_setsum" title='rte_member_setsum' data-ref="rte_member_setsum">rte_member_setsum</a> *<dfn class="local col4 decl" id="14setsum" title='setsum' data-type='const struct rte_member_setsum *' data-ref="14setsum">setsum</dfn>,</td></tr>
+<tr><th id="401">401</th><td>		<em>const</em> <em>void</em> **<dfn class="local col5 decl" id="15keys" title='keys' data-type='const void **' data-ref="15keys">keys</dfn>, <a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="local col6 decl" id="16num_keys" title='num_keys' data-type='uint32_t' data-ref="16num_keys">num_keys</dfn>,</td></tr>
+<tr><th id="402">402</th><td>		<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="local col7 decl" id="17max_match_per_key" title='max_match_per_key' data-type='uint32_t' data-ref="17max_match_per_key">max_match_per_key</dfn>,</td></tr>
+<tr><th id="403">403</th><td>		<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> *<dfn class="local col8 decl" id="18match_count" title='match_count' data-type='uint32_t *' data-ref="18match_count">match_count</dfn>,</td></tr>
+<tr><th id="404">404</th><td>		<a class="typedef" href="#member_set_t" title='member_set_t' data-type='uint16_t' data-ref="member_set_t">member_set_t</a> *<dfn class="local col9 decl" id="19set_ids" title='set_ids' data-type='member_set_t *' data-ref="19set_ids">set_ids</dfn>);</td></tr>
+<tr><th id="405">405</th><td></td></tr>
+<tr><th id="406">406</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="407">407</th><td><i class="doc"> * <span class="command">@warning</span></i></td></tr>
+<tr><th id="408">408</th><td><i class="doc"> *<span class="command"> @b</span> <span class="arg">EXPERIMENTAL:</span> this API may change without prior notice</i></td></tr>
+<tr><th id="409">409</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="410">410</th><td><i class="doc"> * Insert key into set-summary (SS).</i></td></tr>
+<tr><th id="411">411</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="412">412</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">setsum</span></i></td></tr>
+<tr><th id="413">413</th><td><i class="doc"> *   Pointer of a set-summary.</i></td></tr>
+<tr><th id="414">414</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">key</span></i></td></tr>
+<tr><th id="415">415</th><td><i class="doc"> *   Pointer of the key to be added.</i></td></tr>
+<tr><th id="416">416</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">set_id</span></i></td></tr>
+<tr><th id="417">417</th><td><i class="doc"> *   The set id associated with the key that needs to be added. Different mode</i></td></tr>
+<tr><th id="418">418</th><td><i class="doc"> *   supports different set_id ranges. 0 cannot be used as set_id since</i></td></tr>
+<tr><th id="419">419</th><td><i class="doc"> *   RTE_MEMBER_NO_MATCH by default is set as 0.</i></td></tr>
+<tr><th id="420">420</th><td><i class="doc"> *   For HT mode, the set_id has range as [1, 0x7FFF], MSB is reserved.</i></td></tr>
+<tr><th id="421">421</th><td><i class="doc"> *   For vBF mode the set id is limited by the num_set parameter when create</i></td></tr>
+<tr><th id="422">422</th><td><i class="doc"> *   the set-summary.</i></td></tr>
+<tr><th id="423">423</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="424">424</th><td><i class="doc"> *   HT (cache mode) and vBF should never fail unless the set_id is not in the</i></td></tr>
+<tr><th id="425">425</th><td><i class="doc"> *   valid range. In such case -EINVAL is returned.</i></td></tr>
+<tr><th id="426">426</th><td><i class="doc"> *   For HT (non-cache mode) it could fail with -ENOSPC error code when table is</i></td></tr>
+<tr><th id="427">427</th><td><i class="doc"> *   full.</i></td></tr>
+<tr><th id="428">428</th><td><i class="doc"> *   For success it returns different values for different modes to provide</i></td></tr>
+<tr><th id="429">429</th><td><i class="doc"> *   extra information for users.</i></td></tr>
+<tr><th id="430">430</th><td><i class="doc"> *   Return 0 for HT (cache mode) if the add does not cause</i></td></tr>
+<tr><th id="431">431</th><td><i class="doc"> *   eviction, return 1 otherwise. Return 0 for non-cache mode if success,</i></td></tr>
+<tr><th id="432">432</th><td><i class="doc"> *   -ENOSPC for full, and 1 if cuckoo eviction happens.</i></td></tr>
+<tr><th id="433">433</th><td><i class="doc"> *   Always returns 0 for vBF mode.</i></td></tr>
+<tr><th id="434">434</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="435">435</th><td><em>int</em></td></tr>
+<tr><th id="436">436</th><td><a class="decl fn" href="rte_member.c.html#rte_member_add" title='rte_member_add' data-ref="rte_member_add" id="rte_member_add">rte_member_add</a>(<em>const</em> <b>struct</b> <a class="type" href="#rte_member_setsum" title='rte_member_setsum' data-ref="rte_member_setsum">rte_member_setsum</a> *<dfn class="local col0 decl" id="20setsum" title='setsum' data-type='const struct rte_member_setsum *' data-ref="20setsum">setsum</dfn>, <em>const</em> <em>void</em> *<dfn class="local col1 decl" id="21key" title='key' data-type='const void *' data-ref="21key">key</dfn>,</td></tr>
+<tr><th id="437">437</th><td>			<a class="typedef" href="#member_set_t" title='member_set_t' data-type='uint16_t' data-ref="member_set_t">member_set_t</a> <dfn class="local col2 decl" id="22set_id" title='set_id' data-type='member_set_t' data-ref="22set_id">set_id</dfn>);</td></tr>
+<tr><th id="438">438</th><td></td></tr>
+<tr><th id="439">439</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="440">440</th><td><i class="doc"> * <span class="command">@warning</span></i></td></tr>
+<tr><th id="441">441</th><td><i class="doc"> *<span class="command"> @b</span> <span class="arg">EXPERIMENTAL:</span> this API may change without prior notice</i></td></tr>
+<tr><th id="442">442</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="443">443</th><td><i class="doc"> * De-allocate memory used by set-summary.</i></td></tr>
+<tr><th id="444">444</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="445">445</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">setsum</span></i></td></tr>
+<tr><th id="446">446</th><td><i class="doc"> *   Pointer to the set summary.</i></td></tr>
+<tr><th id="447">447</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="448">448</th><td><em>void</em></td></tr>
+<tr><th id="449">449</th><td><a class="decl fn" href="rte_member.c.html#rte_member_free" title='rte_member_free' data-ref="rte_member_free" id="rte_member_free">rte_member_free</a>(<b>struct</b> <a class="type" href="#rte_member_setsum" title='rte_member_setsum' data-ref="rte_member_setsum">rte_member_setsum</a> *<dfn class="local col3 decl" id="23setsum" title='setsum' data-type='struct rte_member_setsum *' data-ref="23setsum">setsum</dfn>);</td></tr>
+<tr><th id="450">450</th><td></td></tr>
+<tr><th id="451">451</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="452">452</th><td><i class="doc"> * <span class="command">@warning</span></i></td></tr>
+<tr><th id="453">453</th><td><i class="doc"> *<span class="command"> @b</span> <span class="arg">EXPERIMENTAL:</span> this API may change without prior notice</i></td></tr>
+<tr><th id="454">454</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="455">455</th><td><i class="doc"> * Reset the set-summary tables. E.g. reset bits to be 0 in BF,</i></td></tr>
+<tr><th id="456">456</th><td><i class="doc"> * reset set_id in each entry to be RTE_MEMBER_NO_MATCH in HT based SS.</i></td></tr>
+<tr><th id="457">457</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="458">458</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">setsum</span></i></td></tr>
+<tr><th id="459">459</th><td><i class="doc"> *   Pointer to the set-summary.</i></td></tr>
+<tr><th id="460">460</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="461">461</th><td><em>void</em></td></tr>
+<tr><th id="462">462</th><td><a class="decl fn" href="rte_member.c.html#rte_member_reset" title='rte_member_reset' data-ref="rte_member_reset" id="rte_member_reset">rte_member_reset</a>(<em>const</em> <b>struct</b> <a class="type" href="#rte_member_setsum" title='rte_member_setsum' data-ref="rte_member_setsum">rte_member_setsum</a> *<dfn class="local col4 decl" id="24setsum" title='setsum' data-type='const struct rte_member_setsum *' data-ref="24setsum">setsum</dfn>);</td></tr>
+<tr><th id="463">463</th><td></td></tr>
+<tr><th id="464">464</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="465">465</th><td><i class="doc"> * <span class="command">@warning</span></i></td></tr>
+<tr><th id="466">466</th><td><i class="doc"> *<span class="command"> @b</span> <span class="arg">EXPERIMENTAL:</span> this API may change without prior notice</i></td></tr>
+<tr><th id="467">467</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="468">468</th><td><i class="doc"> * Delete items from the set-summary. Note that vBF does not support deletion</i></td></tr>
+<tr><th id="469">469</th><td><i class="doc"> * in current implementation. For vBF, error code of -EINVAL will be returned.</i></td></tr>
+<tr><th id="470">470</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="471">471</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">setsum</span></i></td></tr>
+<tr><th id="472">472</th><td><i class="doc"> *   Pointer to the set-summary.</i></td></tr>
+<tr><th id="473">473</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">key</span></i></td></tr>
+<tr><th id="474">474</th><td><i class="doc"> *   Pointer of the key to be deleted.</i></td></tr>
+<tr><th id="475">475</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">set_id</span></i></td></tr>
+<tr><th id="476">476</th><td><i class="doc"> *   For HT mode, we need both key and its corresponding set_id to</i></td></tr>
+<tr><th id="477">477</th><td><i class="doc"> *   properly delete the key. Without set_id, we may delete other keys with the</i></td></tr>
+<tr><th id="478">478</th><td><i class="doc"> *   same signature.</i></td></tr>
+<tr><th id="479">479</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="480">480</th><td><i class="doc"> *   If no entry found to delete, an error code of -ENOENT could be returned.</i></td></tr>
+<tr><th id="481">481</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="482">482</th><td><em>int</em></td></tr>
+<tr><th id="483">483</th><td><a class="decl fn" href="rte_member.c.html#rte_member_delete" title='rte_member_delete' data-ref="rte_member_delete" id="rte_member_delete">rte_member_delete</a>(<em>const</em> <b>struct</b> <a class="type" href="#rte_member_setsum" title='rte_member_setsum' data-ref="rte_member_setsum">rte_member_setsum</a> *<dfn class="local col5 decl" id="25setsum" title='setsum' data-type='const struct rte_member_setsum *' data-ref="25setsum">setsum</dfn>, <em>const</em> <em>void</em> *<dfn class="local col6 decl" id="26key" title='key' data-type='const void *' data-ref="26key">key</dfn>,</td></tr>
+<tr><th id="484">484</th><td>			<a class="typedef" href="#member_set_t" title='member_set_t' data-type='uint16_t' data-ref="member_set_t">member_set_t</a> <dfn class="local col7 decl" id="27set_id" title='set_id' data-type='member_set_t' data-ref="27set_id">set_id</dfn>);</td></tr>
+<tr><th id="485">485</th><td></td></tr>
+<tr><th id="486">486</th><td><u>#<span data-ppcond="486">ifdef</span> <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="487">487</th><td>}</td></tr>
+<tr><th id="488">488</th><td><u>#<span data-ppcond="486">endif</span></u></td></tr>
+<tr><th id="489">489</th><td></td></tr>
+<tr><th id="490">490</th><td><u>#<span data-ppcond="45">endif</span> /* _RTE_MEMBER_H_ */</u></td></tr>
+<tr><th id="491">491</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='rte_member.c.html'>dpdk_18.05/lib/librte_member/rte_member.c</a><br/>Generated on <em>2018-Jul-25</em> from project dpdk_18.05 revision <em>18.05</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>
