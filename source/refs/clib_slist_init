@@ -1,0 +1,33 @@
+<dec f='vpp_1804/src/vppinfra/slist.h' l='127' type='clib_error_t * clib_slist_init(clib_slist_t * sp, f64 branching_factor, clib_slist_key_compare_function_t * compare, format_function_t * format_user_element)'/>
+<def f='vpp_1804/src/vppinfra/slist.c' l='51' ll='69' type='clib_error_t * clib_slist_init(clib_slist_t * sp, f64 branching_factor, clib_slist_key_compare_function_t * compare, format_function_t * format_user_element)'/>
+<doc f='vpp_1804/src/vppinfra/slist.c' l='19'>/*
+ * skip-list implementation
+ *
+ * Good news / bad news. As balanced binary tree schemes go,
+ * this one seems pretty fast and is reasonably simple. There&apos;s a very
+ * limited amount that can be done to mitigate sdram read latency.
+ *
+ * Each active clib_slist_elt_t is on from 1 to N lists. Each active element
+ * is always on the &quot;level-0&quot; list. Since most elements are *only* on
+ * level 0, we keep the level 0 (and level 1) in the element. For those
+ * elements on more than two lists, we switch to a vector. Hence, the
+ * &quot;n&quot; union in slib_slist_elt_t.
+ *
+ * The low-order bit of elt-&gt;n.next0[0] is 1 for inlined next indices,
+ * 0 for vector indices (since the allocator always aligns to at least
+ * a 4-byte boundary). We can only represent 2e9 items, but since the
+ * practical performance limit is O(1e7), it doesn&apos;t matter.
+ *
+ * We create a &quot;head&quot; element which (by construction) is always
+ * lexically lighter than any other element. This makes a large number
+ * of irritating special cases go away.
+ *
+ * User code is in charge of comparing a supplied key with
+ * the key component of a user pool element. The user tells this code
+ * to add or delete (opaque key, 32-bit integer) pairs to the skip-list.
+ *
+ * The algorithm adds new elements to one or more lists.
+ * For levels greater than zero, the probability of a new element landing on
+ * a list is branching_factor**N. Branching_factor = 0.2 seems to work
+ * OK, yielding about 50 compares per search at O(1e7) items.
+ */</doc>

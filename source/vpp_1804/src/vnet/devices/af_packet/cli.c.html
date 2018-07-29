@@ -1,0 +1,286 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>cli.c source code [vpp_1804/src/vnet/devices/af_packet/cli.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'vpp_1804/src/vnet/devices/af_packet/cli.c'; var root_path = '../../../../..'; var data_path = '../../../../../../data';</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>vpp_1804</a>/<a href='../../..'>src</a>/<a href='../..'>vnet</a>/<a href='..'>devices</a>/<a href='./'>af_packet</a>/<a href='cli.c.html'>cli.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> *------------------------------------------------------------------</i></td></tr>
+<tr><th id="3">3</th><td><i> * af_packet.c - linux kernel packet interface</i></td></tr>
+<tr><th id="4">4</th><td><i> *</i></td></tr>
+<tr><th id="5">5</th><td><i> * Copyright (c) 2016 Cisco and/or its affiliates.</i></td></tr>
+<tr><th id="6">6</th><td><i> * Licensed under the Apache License, Version 2.0 (the "License");</i></td></tr>
+<tr><th id="7">7</th><td><i> * you may not use this file except in compliance with the License.</i></td></tr>
+<tr><th id="8">8</th><td><i> * You may obtain a copy of the License at:</i></td></tr>
+<tr><th id="9">9</th><td><i> *</i></td></tr>
+<tr><th id="10">10</th><td><i> *     <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></i></td></tr>
+<tr><th id="11">11</th><td><i> *</i></td></tr>
+<tr><th id="12">12</th><td><i> * Unless required by applicable law or agreed to in writing, software</i></td></tr>
+<tr><th id="13">13</th><td><i> * distributed under the License is distributed on an "AS IS" BASIS,</i></td></tr>
+<tr><th id="14">14</th><td><i> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</i></td></tr>
+<tr><th id="15">15</th><td><i> * See the License for the specific language governing permissions and</i></td></tr>
+<tr><th id="16">16</th><td><i> * limitations under the License.</i></td></tr>
+<tr><th id="17">17</th><td><i> *------------------------------------------------------------------</i></td></tr>
+<tr><th id="18">18</th><td><i> */</i></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../../../include/fcntl.h.html">&lt;fcntl.h&gt;</a>		/* for open */</u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../../../include/sys/ioctl.h.html">&lt;sys/ioctl.h&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../../../include/sys/socket.h.html">&lt;sys/socket.h&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../../../../include/sys/stat.h.html">&lt;sys/stat.h&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../../../../../include/sys/types.h.html">&lt;sys/types.h&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../../../../include/sys/uio.h.html">&lt;sys/uio.h&gt;</a>		/* for iovec */</u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../../../../../include/netinet/in.h.html">&lt;netinet/in.h&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../../../vlib/vlib.h.html">&lt;vlib/vlib.h&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../../../vlib/unix/unix.h.html">&lt;vlib/unix/unix.h&gt;</a></u></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="../../ip/ip.h.html">&lt;vnet/ip/ip.h&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="../../ethernet/ethernet.h.html">&lt;vnet/ethernet/ethernet.h&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="af_packet.h.html">&lt;vnet/devices/af_packet/af_packet.h&gt;</a></u></td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td><i class="doc" data-doc="af_packet_create_command_fn">/**</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc" data-doc="af_packet_create_command_fn"> *<span class="command"> @file</span></i></td></tr>
+<tr><th id="37">37</th><td><i class="doc" data-doc="af_packet_create_command_fn"> * <span class="command">@brief</span> CLI for Host Interface Device Driver.</i></td></tr>
+<tr><th id="38">38</th><td><i class="doc" data-doc="af_packet_create_command_fn"> *</i></td></tr>
+<tr><th id="39">39</th><td><i class="doc" data-doc="af_packet_create_command_fn"> * This file contains the source code for CLI for the host interface.</i></td></tr>
+<tr><th id="40">40</th><td><i class="doc" data-doc="af_packet_create_command_fn"> */</i></td></tr>
+<tr><th id="41">41</th><td></td></tr>
+<tr><th id="42">42</th><td><em>static</em> <a class="typedef" href="../../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *</td></tr>
+<tr><th id="43">43</th><td><dfn class="tu decl def fn" id="af_packet_create_command_fn" title='af_packet_create_command_fn' data-type='clib_error_t * af_packet_create_command_fn(vlib_main_t * vm, unformat_input_t * input, vlib_cli_command_t * cmd)' data-ref="af_packet_create_command_fn">af_packet_create_command_fn</dfn> (<a class="typedef" href="../../../vlib/main.h.html#vlib_main_t" title='vlib_main_t' data-type='struct vlib_main_t' data-ref="vlib_main_t">vlib_main_t</a> * <dfn class="local col1 decl" id="1vm" title='vm' data-type='vlib_main_t *' data-ref="1vm">vm</dfn>, <a class="typedef" href="../../../vppinfra/format.h.html#unformat_input_t" title='unformat_input_t' data-type='struct _unformat_input_t' data-ref="unformat_input_t">unformat_input_t</a> * <dfn class="local col2 decl" id="2input" title='input' data-type='unformat_input_t *' data-ref="2input">input</dfn>,</td></tr>
+<tr><th id="44">44</th><td>			     <a class="typedef" href="../../../vlib/cli.h.html#vlib_cli_command_t" title='vlib_cli_command_t' data-type='struct vlib_cli_command_t' data-ref="vlib_cli_command_t">vlib_cli_command_t</a> * <dfn class="local col3 decl" id="3cmd" title='cmd' data-type='vlib_cli_command_t *' data-ref="3cmd">cmd</dfn>)</td></tr>
+<tr><th id="45">45</th><td>{</td></tr>
+<tr><th id="46">46</th><td>  <a class="typedef" href="../../../vppinfra/format.h.html#unformat_input_t" title='unformat_input_t' data-type='struct _unformat_input_t' data-ref="unformat_input_t">unformat_input_t</a> <dfn class="local col4 decl" id="4_line_input" title='_line_input' data-type='unformat_input_t' data-ref="4_line_input">_line_input</dfn>, *<dfn class="local col5 decl" id="5line_input" title='line_input' data-type='unformat_input_t *' data-ref="5line_input">line_input</dfn> = &amp;<a class="local col4 ref" href="#4_line_input" title='_line_input' data-ref="4_line_input">_line_input</a>;</td></tr>
+<tr><th id="47">47</th><td>  <a class="typedef" href="../../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col6 decl" id="6host_if_name" title='host_if_name' data-type='u8 *' data-ref="6host_if_name">host_if_name</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="48">48</th><td>  <a class="typedef" href="../../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="local col7 decl" id="7hwaddr" title='hwaddr' data-type='u8 [6]' data-ref="7hwaddr">hwaddr</dfn>[<var>6</var>];</td></tr>
+<tr><th id="49">49</th><td>  <a class="typedef" href="../../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col8 decl" id="8hw_addr_ptr" title='hw_addr_ptr' data-type='u8 *' data-ref="8hw_addr_ptr">hw_addr_ptr</dfn> = <var>0</var>;</td></tr>
+<tr><th id="50">50</th><td>  <a class="typedef" href="../../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col9 decl" id="9sw_if_index" title='sw_if_index' data-type='u32' data-ref="9sw_if_index">sw_if_index</dfn>;</td></tr>
+<tr><th id="51">51</th><td>  <em>int</em> <dfn class="local col0 decl" id="10r" title='r' data-type='int' data-ref="10r">r</dfn>;</td></tr>
+<tr><th id="52">52</th><td>  <a class="typedef" href="../../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *<dfn class="local col1 decl" id="11error" title='error' data-type='clib_error_t *' data-ref="11error">error</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td>  <i>/* Get a line of input. */</i></td></tr>
+<tr><th id="55">55</th><td>  <b>if</b> (!<a class="ref fn" href="../../../vppinfra/format.h.html#unformat_user" title='unformat_user' data-ref="unformat_user">unformat_user</a> (<a class="local col2 ref" href="#2input" title='input' data-ref="2input">input</a>, <a class="ref fn" href="../../../vppinfra/format.h.html#unformat_line_input" title='unformat_line_input' data-ref="unformat_line_input">unformat_line_input</a>, <a class="local col5 ref" href="#5line_input" title='line_input' data-ref="5line_input">line_input</a>))</td></tr>
+<tr><th id="56">56</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="57">57</th><td></td></tr>
+<tr><th id="58">58</th><td>  <b>while</b> (<a class="ref fn" href="../../../vppinfra/format.h.html#unformat_check_input" title='unformat_check_input' data-ref="unformat_check_input">unformat_check_input</a> (<a class="local col5 ref" href="#5line_input" title='line_input' data-ref="5line_input">line_input</a>) != <a class="macro" href="../../../vppinfra/format.h.html#143" title="(~0)" data-ref="_M/UNFORMAT_END_OF_INPUT">UNFORMAT_END_OF_INPUT</a>)</td></tr>
+<tr><th id="59">59</th><td>    {</td></tr>
+<tr><th id="60">60</th><td>      <b>if</b> (<a class="ref fn" href="../../../vppinfra/format.h.html#unformat" title='unformat' data-ref="unformat">unformat</a> (<a class="local col5 ref" href="#5line_input" title='line_input' data-ref="5line_input">line_input</a>, <q>"name %s"</q>, &amp;<a class="local col6 ref" href="#6host_if_name" title='host_if_name' data-ref="6host_if_name">host_if_name</a>))</td></tr>
+<tr><th id="61">61</th><td>	;</td></tr>
+<tr><th id="62">62</th><td>      <b>else</b></td></tr>
+<tr><th id="63">63</th><td>	<b>if</b> (<a class="ref fn" href="../../../vppinfra/format.h.html#unformat" title='unformat' data-ref="unformat">unformat</a></td></tr>
+<tr><th id="64">64</th><td>	    (<a class="local col5 ref" href="#5line_input" title='line_input' data-ref="5line_input">line_input</a>, <q>"hw-addr %U"</q>, <a class="ref fn" href="../../ethernet/ethernet.h.html#unformat_ethernet_address" title='unformat_ethernet_address' data-ref="unformat_ethernet_address">unformat_ethernet_address</a>, <a class="local col7 ref" href="#7hwaddr" title='hwaddr' data-ref="7hwaddr">hwaddr</a>))</td></tr>
+<tr><th id="65">65</th><td>	<a class="local col8 ref" href="#8hw_addr_ptr" title='hw_addr_ptr' data-ref="8hw_addr_ptr">hw_addr_ptr</a> = <a class="local col7 ref" href="#7hwaddr" title='hwaddr' data-ref="7hwaddr">hwaddr</a>;</td></tr>
+<tr><th id="66">66</th><td>      <b>else</b></td></tr>
+<tr><th id="67">67</th><td>	{</td></tr>
+<tr><th id="68">68</th><td>	  <a class="local col1 ref" href="#11error" title='error' data-ref="11error">error</a> = <a class="macro" href="../../../vppinfra/error.h.html#99" title="_clib_error_return((0),(0),(0),(char *)((char *) __FUNCTION__),&quot;unknown input `%U&apos;&quot;, format_unformat_error, line_input)" data-ref="_M/clib_error_return">clib_error_return</a> (<var>0</var>, <q>"unknown input `%U'"</q>,</td></tr>
+<tr><th id="69">69</th><td>				     <a class="ref fn" href="../../../vppinfra/format.h.html#format_unformat_error" title='format_unformat_error' data-ref="format_unformat_error">format_unformat_error</a>, <a class="local col5 ref" href="#5line_input" title='line_input' data-ref="5line_input">line_input</a>);</td></tr>
+<tr><th id="70">70</th><td>	  <b>goto</b> <a class="lbl" href="#12done" data-ref="12done">done</a>;</td></tr>
+<tr><th id="71">71</th><td>	}</td></tr>
+<tr><th id="72">72</th><td>    }</td></tr>
+<tr><th id="73">73</th><td></td></tr>
+<tr><th id="74">74</th><td>  <b>if</b> (<a class="local col6 ref" href="#6host_if_name" title='host_if_name' data-ref="6host_if_name">host_if_name</a> == <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>)</td></tr>
+<tr><th id="75">75</th><td>    {</td></tr>
+<tr><th id="76">76</th><td>      <a class="local col1 ref" href="#11error" title='error' data-ref="11error">error</a> = <a class="macro" href="../../../vppinfra/error.h.html#99" title="_clib_error_return((0),(0),(0),(char *)((char *) __FUNCTION__),&quot;missing host interface name&quot;)" data-ref="_M/clib_error_return">clib_error_return</a> (<var>0</var>, <q>"missing host interface name"</q>);</td></tr>
+<tr><th id="77">77</th><td>      <b>goto</b> <a class="lbl" href="#12done" data-ref="12done">done</a>;</td></tr>
+<tr><th id="78">78</th><td>    }</td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td>  <a class="local col0 ref" href="#10r" title='r' data-ref="10r">r</a> = <a class="ref fn" href="af_packet.h.html#af_packet_create_if" title='af_packet_create_if' data-ref="af_packet_create_if">af_packet_create_if</a> (<a class="local col1 ref" href="#1vm" title='vm' data-ref="1vm">vm</a>, <a class="local col6 ref" href="#6host_if_name" title='host_if_name' data-ref="6host_if_name">host_if_name</a>, <a class="local col8 ref" href="#8hw_addr_ptr" title='hw_addr_ptr' data-ref="8hw_addr_ptr">hw_addr_ptr</a>, &amp;<a class="local col9 ref" href="#9sw_if_index" title='sw_if_index' data-ref="9sw_if_index">sw_if_index</a>);</td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td>  <b>if</b> (<a class="local col0 ref" href="#10r" title='r' data-ref="10r">r</a> == <a class="enum" href="../../api_errno.h.html#150" title='VNET_API_ERROR_SYSCALL_ERROR_1' data-ref="VNET_API_ERROR_SYSCALL_ERROR_1">VNET_API_ERROR_SYSCALL_ERROR_1</a>)</td></tr>
+<tr><th id="83">83</th><td>    {</td></tr>
+<tr><th id="84">84</th><td>      <a class="local col1 ref" href="#11error" title='error' data-ref="11error">error</a> = <a class="macro" href="../../../vppinfra/error.h.html#99" title="_clib_error_return((0),(0),(0),(char *)((char *) __FUNCTION__),&quot;%s (errno %d)&quot;, strerror ((*__errno_location ())), (*__errno_location ()))" data-ref="_M/clib_error_return">clib_error_return</a> (<var>0</var>, <q>"%s (errno %d)"</q>, <a class="ref fn" href="../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a> (<a class="macro" href="../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>), <a class="macro" href="../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>);</td></tr>
+<tr><th id="85">85</th><td>      <b>goto</b> <a class="lbl" href="#12done" data-ref="12done">done</a>;</td></tr>
+<tr><th id="86">86</th><td>    }</td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td>  <b>if</b> (<a class="local col0 ref" href="#10r" title='r' data-ref="10r">r</a> == <a class="enum" href="../../api_errno.h.html#150" title='VNET_API_ERROR_INVALID_INTERFACE' data-ref="VNET_API_ERROR_INVALID_INTERFACE">VNET_API_ERROR_INVALID_INTERFACE</a>)</td></tr>
+<tr><th id="89">89</th><td>    {</td></tr>
+<tr><th id="90">90</th><td>      <a class="local col1 ref" href="#11error" title='error' data-ref="11error">error</a> = <a class="macro" href="../../../vppinfra/error.h.html#99" title="_clib_error_return((0),(0),(0),(char *)((char *) __FUNCTION__),&quot;Invalid interface name&quot;)" data-ref="_M/clib_error_return">clib_error_return</a> (<var>0</var>, <q>"Invalid interface name"</q>);</td></tr>
+<tr><th id="91">91</th><td>      <b>goto</b> <a class="lbl" href="#12done" data-ref="12done">done</a>;</td></tr>
+<tr><th id="92">92</th><td>    }</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td>  <b>if</b> (<a class="local col0 ref" href="#10r" title='r' data-ref="10r">r</a> == <a class="enum" href="../../api_errno.h.html#150" title='VNET_API_ERROR_SUBIF_ALREADY_EXISTS' data-ref="VNET_API_ERROR_SUBIF_ALREADY_EXISTS">VNET_API_ERROR_SUBIF_ALREADY_EXISTS</a>)</td></tr>
+<tr><th id="95">95</th><td>    {</td></tr>
+<tr><th id="96">96</th><td>      <a class="local col1 ref" href="#11error" title='error' data-ref="11error">error</a> = <a class="macro" href="../../../vppinfra/error.h.html#99" title="_clib_error_return((0),(0),(0),(char *)((char *) __FUNCTION__),&quot;Interface elready exists&quot;)" data-ref="_M/clib_error_return">clib_error_return</a> (<var>0</var>, <q>"Interface elready exists"</q>);</td></tr>
+<tr><th id="97">97</th><td>      <b>goto</b> <a class="lbl" href="#12done" data-ref="12done">done</a>;</td></tr>
+<tr><th id="98">98</th><td>    }</td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td>  <a class="ref fn" href="../../../vlib/cli.h.html#vlib_cli_output" title='vlib_cli_output' data-ref="vlib_cli_output">vlib_cli_output</a> (<a class="local col1 ref" href="#1vm" title='vm' data-ref="1vm">vm</a>, <q>"%U\n"</q>, <a class="ref fn" href="../../interface_funcs.h.html#format_vnet_sw_if_index_name" title='format_vnet_sw_if_index_name' data-ref="format_vnet_sw_if_index_name">format_vnet_sw_if_index_name</a>, <a class="ref fn" href="../../global_funcs.h.html#vnet_get_main" title='vnet_get_main' data-ref="vnet_get_main">vnet_get_main</a> (),</td></tr>
+<tr><th id="101">101</th><td>		   <a class="local col9 ref" href="#9sw_if_index" title='sw_if_index' data-ref="9sw_if_index">sw_if_index</a>);</td></tr>
+<tr><th id="102">102</th><td></td></tr>
+<tr><th id="103">103</th><td><dfn class="lbl" id="12done" data-ref="12done">done</dfn>:</td></tr>
+<tr><th id="104">104</th><td>  <a class="macro" href="../../../vppinfra/vec.h.html#336" title="do { if (host_if_name) { clib_mem_free (vec_header ((host_if_name), (0))); host_if_name = 0; } } while (0)" data-ref="_M/vec_free">vec_free</a> (<a class="local col6 ref" href="#6host_if_name" title='host_if_name' data-ref="6host_if_name">host_if_name</a>);</td></tr>
+<tr><th id="105">105</th><td>  <a class="ref fn" href="../../../vppinfra/format.h.html#unformat_free" title='unformat_free' data-ref="unformat_free">unformat_free</a> (<a class="local col5 ref" href="#5line_input" title='line_input' data-ref="5line_input">line_input</a>);</td></tr>
+<tr><th id="106">106</th><td></td></tr>
+<tr><th id="107">107</th><td>  <b>return</b> <a class="local col1 ref" href="#11error" title='error' data-ref="11error">error</a>;</td></tr>
+<tr><th id="108">108</th><td>}</td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td><i>/*?</i></td></tr>
+<tr><th id="111">111</th><td><i> * Create a host interface that will attach to a linux AF_PACKET</i></td></tr>
+<tr><th id="112">112</th><td><i> * interface, one side of a veth pair. The veth pair must already</i></td></tr>
+<tr><th id="113">113</th><td><i> * exist. Once created, a new host interface will exist in VPP</i></td></tr>
+<tr><th id="114">114</th><td><i> * with the name '&lt;em&gt;host-&lt;ifname&gt;&lt;/em&gt;', where '&lt;em&gt;&lt;ifname&gt;&lt;/em&gt;'</i></td></tr>
+<tr><th id="115">115</th><td><i> * is the name of the specified veth pair. Use the</i></td></tr>
+<tr><th id="116">116</th><td><i> * '&lt;em&gt;show interface&lt;/em&gt;' command to display host interface details.</i></td></tr>
+<tr><th id="117">117</th><td><i> *</i></td></tr>
+<tr><th id="118">118</th><td><i> * This command has the following optional parameters:</i></td></tr>
+<tr><th id="119">119</th><td><i> *</i></td></tr>
+<tr><th id="120">120</th><td><i> * - &lt;b&gt;hw-addr &lt;mac-addr&gt;&lt;/b&gt; - Optional ethernet address, can be in either</i></td></tr>
+<tr><th id="121">121</th><td><i> * X:X:X:X:X:X unix or X.X.X cisco format.</i></td></tr>
+<tr><th id="122">122</th><td><i> *</i></td></tr>
+<tr><th id="123">123</th><td><i> * @cliexpar</i></td></tr>
+<tr><th id="124">124</th><td><i> * Example of how to create a host interface tied to one side of an</i></td></tr>
+<tr><th id="125">125</th><td><i> * existing linux veth pair named vpp1:</i></td></tr>
+<tr><th id="126">126</th><td><i> * @cliexstart{create host-interface name vpp1}</i></td></tr>
+<tr><th id="127">127</th><td><i> * host-vpp1</i></td></tr>
+<tr><th id="128">128</th><td><i> * @cliexend</i></td></tr>
+<tr><th id="129">129</th><td><i> * Once the host interface is created, enable the interface using:</i></td></tr>
+<tr><th id="130">130</th><td><i> * @cliexcmd{set interface state host-vpp1 up}</i></td></tr>
+<tr><th id="131">131</th><td><i>?*/</i></td></tr>
+<tr><th id="132">132</th><td><i>/* *INDENT-OFF* */</i></td></tr>
+<tr><th id="133">133</th><td><a class="macro" href="../../../vlib/cli.h.html#154" title="static vlib_cli_command_t af_packet_create_command; static void __vlib_cli_command_registration_af_packet_create_command (void) __attribute__((__constructor__)) ; static void __vlib_cli_command_registration_af_packet_create_command (void) { vlib_main_t * vm = vlib_get_main(); vlib_cli_main_t *cm = &amp;vm-&gt;cli_main; af_packet_create_command.next_cli_command = cm-&gt;cli_command_registrations; cm-&gt;cli_command_registrations = &amp;af_packet_create_command; } static vlib_cli_command_t af_packet_create_command" data-ref="_M/VLIB_CLI_COMMAND">VLIB_CLI_COMMAND</a> (<dfn class="tu decl def" id="af_packet_create_command" title='af_packet_create_command' data-type='vlib_cli_command_t' data-ref="af_packet_create_command"><a class="tu ref" href="#133" title='af_packet_create_command' data-use='m' data-ref="af_packet_create_command"><a class="tu ref" href="#133" title='af_packet_create_command' data-use='a' data-ref="af_packet_create_command">af_packet_create_command</a></a></dfn>, <em>static</em>) = {</td></tr>
+<tr><th id="134">134</th><td>  .<a class="ref field" href="../../../vlib/cli.h.html#vlib_cli_command_t::path" title='vlib_cli_command_t::path' data-ref="vlib_cli_command_t::path">path</a> = <q>"create host-interface"</q>,</td></tr>
+<tr><th id="135">135</th><td>  .<a class="ref field" href="../../../vlib/cli.h.html#vlib_cli_command_t::short_help" title='vlib_cli_command_t::short_help' data-ref="vlib_cli_command_t::short_help">short_help</a> = <q>"create host-interface name &lt;ifname&gt; [hw-addr &lt;mac-addr&gt;]"</q>,</td></tr>
+<tr><th id="136">136</th><td>  .<a class="ref field" href="../../../vlib/cli.h.html#vlib_cli_command_t::function" title='vlib_cli_command_t::function' data-ref="vlib_cli_command_t::function">function</a> = <a class="tu ref fn" href="#af_packet_create_command_fn" title='af_packet_create_command_fn' data-ref="af_packet_create_command_fn">af_packet_create_command_fn</a>,</td></tr>
+<tr><th id="137">137</th><td>};</td></tr>
+<tr><th id="138">138</th><td><i  data-doc="af_packet_delete_command_fn">/* *INDENT-ON* */</i></td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td><em>static</em> <a class="typedef" href="../../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *</td></tr>
+<tr><th id="141">141</th><td><dfn class="tu decl def fn" id="af_packet_delete_command_fn" title='af_packet_delete_command_fn' data-type='clib_error_t * af_packet_delete_command_fn(vlib_main_t * vm, unformat_input_t * input, vlib_cli_command_t * cmd)' data-ref="af_packet_delete_command_fn">af_packet_delete_command_fn</dfn> (<a class="typedef" href="../../../vlib/main.h.html#vlib_main_t" title='vlib_main_t' data-type='struct vlib_main_t' data-ref="vlib_main_t">vlib_main_t</a> * <dfn class="local col3 decl" id="13vm" title='vm' data-type='vlib_main_t *' data-ref="13vm">vm</dfn>, <a class="typedef" href="../../../vppinfra/format.h.html#unformat_input_t" title='unformat_input_t' data-type='struct _unformat_input_t' data-ref="unformat_input_t">unformat_input_t</a> * <dfn class="local col4 decl" id="14input" title='input' data-type='unformat_input_t *' data-ref="14input">input</dfn>,</td></tr>
+<tr><th id="142">142</th><td>			     <a class="typedef" href="../../../vlib/cli.h.html#vlib_cli_command_t" title='vlib_cli_command_t' data-type='struct vlib_cli_command_t' data-ref="vlib_cli_command_t">vlib_cli_command_t</a> * <dfn class="local col5 decl" id="15cmd" title='cmd' data-type='vlib_cli_command_t *' data-ref="15cmd">cmd</dfn>)</td></tr>
+<tr><th id="143">143</th><td>{</td></tr>
+<tr><th id="144">144</th><td>  <a class="typedef" href="../../../vppinfra/format.h.html#unformat_input_t" title='unformat_input_t' data-type='struct _unformat_input_t' data-ref="unformat_input_t">unformat_input_t</a> <dfn class="local col6 decl" id="16_line_input" title='_line_input' data-type='unformat_input_t' data-ref="16_line_input">_line_input</dfn>, *<dfn class="local col7 decl" id="17line_input" title='line_input' data-type='unformat_input_t *' data-ref="17line_input">line_input</dfn> = &amp;<a class="local col6 ref" href="#16_line_input" title='_line_input' data-ref="16_line_input">_line_input</a>;</td></tr>
+<tr><th id="145">145</th><td>  <a class="typedef" href="../../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col8 decl" id="18host_if_name" title='host_if_name' data-type='u8 *' data-ref="18host_if_name">host_if_name</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="146">146</th><td>  <a class="typedef" href="../../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *<dfn class="local col9 decl" id="19error" title='error' data-type='clib_error_t *' data-ref="19error">error</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="147">147</th><td></td></tr>
+<tr><th id="148">148</th><td>  <i>/* Get a line of input. */</i></td></tr>
+<tr><th id="149">149</th><td>  <b>if</b> (!<a class="ref fn" href="../../../vppinfra/format.h.html#unformat_user" title='unformat_user' data-ref="unformat_user">unformat_user</a> (<a class="local col4 ref" href="#14input" title='input' data-ref="14input">input</a>, <a class="ref fn" href="../../../vppinfra/format.h.html#unformat_line_input" title='unformat_line_input' data-ref="unformat_line_input">unformat_line_input</a>, <a class="local col7 ref" href="#17line_input" title='line_input' data-ref="17line_input">line_input</a>))</td></tr>
+<tr><th id="150">150</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="151">151</th><td></td></tr>
+<tr><th id="152">152</th><td>  <b>while</b> (<a class="ref fn" href="../../../vppinfra/format.h.html#unformat_check_input" title='unformat_check_input' data-ref="unformat_check_input">unformat_check_input</a> (<a class="local col7 ref" href="#17line_input" title='line_input' data-ref="17line_input">line_input</a>) != <a class="macro" href="../../../vppinfra/format.h.html#143" title="(~0)" data-ref="_M/UNFORMAT_END_OF_INPUT">UNFORMAT_END_OF_INPUT</a>)</td></tr>
+<tr><th id="153">153</th><td>    {</td></tr>
+<tr><th id="154">154</th><td>      <b>if</b> (<a class="ref fn" href="../../../vppinfra/format.h.html#unformat" title='unformat' data-ref="unformat">unformat</a> (<a class="local col7 ref" href="#17line_input" title='line_input' data-ref="17line_input">line_input</a>, <q>"name %s"</q>, &amp;<a class="local col8 ref" href="#18host_if_name" title='host_if_name' data-ref="18host_if_name">host_if_name</a>))</td></tr>
+<tr><th id="155">155</th><td>	;</td></tr>
+<tr><th id="156">156</th><td>      <b>else</b></td></tr>
+<tr><th id="157">157</th><td>	{</td></tr>
+<tr><th id="158">158</th><td>	  <a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a> = <a class="macro" href="../../../vppinfra/error.h.html#99" title="_clib_error_return((0),(0),(0),(char *)((char *) __FUNCTION__),&quot;unknown input `%U&apos;&quot;, format_unformat_error, line_input)" data-ref="_M/clib_error_return">clib_error_return</a> (<var>0</var>, <q>"unknown input `%U'"</q>,</td></tr>
+<tr><th id="159">159</th><td>				     <a class="ref fn" href="../../../vppinfra/format.h.html#format_unformat_error" title='format_unformat_error' data-ref="format_unformat_error">format_unformat_error</a>, <a class="local col7 ref" href="#17line_input" title='line_input' data-ref="17line_input">line_input</a>);</td></tr>
+<tr><th id="160">160</th><td>	  <b>goto</b> <a class="lbl" href="#20done" data-ref="20done">done</a>;</td></tr>
+<tr><th id="161">161</th><td>	}</td></tr>
+<tr><th id="162">162</th><td>    }</td></tr>
+<tr><th id="163">163</th><td></td></tr>
+<tr><th id="164">164</th><td>  <b>if</b> (<a class="local col8 ref" href="#18host_if_name" title='host_if_name' data-ref="18host_if_name">host_if_name</a> == <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>)</td></tr>
+<tr><th id="165">165</th><td>    {</td></tr>
+<tr><th id="166">166</th><td>      <a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a> = <a class="macro" href="../../../vppinfra/error.h.html#99" title="_clib_error_return((0),(0),(0),(char *)((char *) __FUNCTION__),&quot;missing host interface name&quot;)" data-ref="_M/clib_error_return">clib_error_return</a> (<var>0</var>, <q>"missing host interface name"</q>);</td></tr>
+<tr><th id="167">167</th><td>      <b>goto</b> <a class="lbl" href="#20done" data-ref="20done">done</a>;</td></tr>
+<tr><th id="168">168</th><td>    }</td></tr>
+<tr><th id="169">169</th><td></td></tr>
+<tr><th id="170">170</th><td>  <a class="ref fn" href="af_packet.h.html#af_packet_delete_if" title='af_packet_delete_if' data-ref="af_packet_delete_if">af_packet_delete_if</a> (<a class="local col3 ref" href="#13vm" title='vm' data-ref="13vm">vm</a>, <a class="local col8 ref" href="#18host_if_name" title='host_if_name' data-ref="18host_if_name">host_if_name</a>);</td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td><dfn class="lbl" id="20done" data-ref="20done">done</dfn>:</td></tr>
+<tr><th id="173">173</th><td>  <a class="macro" href="../../../vppinfra/vec.h.html#336" title="do { if (host_if_name) { clib_mem_free (vec_header ((host_if_name), (0))); host_if_name = 0; } } while (0)" data-ref="_M/vec_free">vec_free</a> (<a class="local col8 ref" href="#18host_if_name" title='host_if_name' data-ref="18host_if_name">host_if_name</a>);</td></tr>
+<tr><th id="174">174</th><td>  <a class="ref fn" href="../../../vppinfra/format.h.html#unformat_free" title='unformat_free' data-ref="unformat_free">unformat_free</a> (<a class="local col7 ref" href="#17line_input" title='line_input' data-ref="17line_input">line_input</a>);</td></tr>
+<tr><th id="175">175</th><td></td></tr>
+<tr><th id="176">176</th><td>  <b>return</b> <a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a>;</td></tr>
+<tr><th id="177">177</th><td>}</td></tr>
+<tr><th id="178">178</th><td></td></tr>
+<tr><th id="179">179</th><td><i>/*?</i></td></tr>
+<tr><th id="180">180</th><td><i> * Delete a host interface. Use the linux interface name to identify</i></td></tr>
+<tr><th id="181">181</th><td><i> * the host interface to be deleted. In VPP, host interfaces are</i></td></tr>
+<tr><th id="182">182</th><td><i> * named as '&lt;em&gt;host-&lt;ifname&gt;&lt;/em&gt;', where '&lt;em&gt;&lt;ifname&gt;&lt;/em&gt;'</i></td></tr>
+<tr><th id="183">183</th><td><i> * is the name of the linux interface.</i></td></tr>
+<tr><th id="184">184</th><td><i> *</i></td></tr>
+<tr><th id="185">185</th><td><i> * @cliexpar</i></td></tr>
+<tr><th id="186">186</th><td><i> * Example of how to delete a host interface named host-vpp1:</i></td></tr>
+<tr><th id="187">187</th><td><i> * @cliexcmd{delete host-interface name vpp1}</i></td></tr>
+<tr><th id="188">188</th><td><i>?*/</i></td></tr>
+<tr><th id="189">189</th><td><i>/* *INDENT-OFF* */</i></td></tr>
+<tr><th id="190">190</th><td><a class="macro" href="../../../vlib/cli.h.html#154" title="static vlib_cli_command_t af_packet_delete_command; static void __vlib_cli_command_registration_af_packet_delete_command (void) __attribute__((__constructor__)) ; static void __vlib_cli_command_registration_af_packet_delete_command (void) { vlib_main_t * vm = vlib_get_main(); vlib_cli_main_t *cm = &amp;vm-&gt;cli_main; af_packet_delete_command.next_cli_command = cm-&gt;cli_command_registrations; cm-&gt;cli_command_registrations = &amp;af_packet_delete_command; } static vlib_cli_command_t af_packet_delete_command" data-ref="_M/VLIB_CLI_COMMAND">VLIB_CLI_COMMAND</a> (<dfn class="tu decl def" id="af_packet_delete_command" title='af_packet_delete_command' data-type='vlib_cli_command_t' data-ref="af_packet_delete_command"><a class="tu ref" href="#190" title='af_packet_delete_command' data-use='m' data-ref="af_packet_delete_command"><a class="tu ref" href="#190" title='af_packet_delete_command' data-use='a' data-ref="af_packet_delete_command">af_packet_delete_command</a></a></dfn>, <em>static</em>) = {</td></tr>
+<tr><th id="191">191</th><td>  .<a class="ref field" href="../../../vlib/cli.h.html#vlib_cli_command_t::path" title='vlib_cli_command_t::path' data-ref="vlib_cli_command_t::path">path</a> = <q>"delete host-interface"</q>,</td></tr>
+<tr><th id="192">192</th><td>  .<a class="ref field" href="../../../vlib/cli.h.html#vlib_cli_command_t::short_help" title='vlib_cli_command_t::short_help' data-ref="vlib_cli_command_t::short_help">short_help</a> = <q>"delete host-interface name &lt;ifname&gt;"</q>,</td></tr>
+<tr><th id="193">193</th><td>  .<a class="ref field" href="../../../vlib/cli.h.html#vlib_cli_command_t::function" title='vlib_cli_command_t::function' data-ref="vlib_cli_command_t::function">function</a> = <a class="tu ref fn" href="#af_packet_delete_command_fn" title='af_packet_delete_command_fn' data-ref="af_packet_delete_command_fn">af_packet_delete_command_fn</a>,</td></tr>
+<tr><th id="194">194</th><td>};</td></tr>
+<tr><th id="195">195</th><td><i  data-doc="af_packet_set_l4_cksum_offload_command_fn">/* *INDENT-ON* */</i></td></tr>
+<tr><th id="196">196</th><td></td></tr>
+<tr><th id="197">197</th><td><em>static</em> <a class="typedef" href="../../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *</td></tr>
+<tr><th id="198">198</th><td><dfn class="tu decl def fn" id="af_packet_set_l4_cksum_offload_command_fn" title='af_packet_set_l4_cksum_offload_command_fn' data-type='clib_error_t * af_packet_set_l4_cksum_offload_command_fn(vlib_main_t * vm, unformat_input_t * input, vlib_cli_command_t * cmd)' data-ref="af_packet_set_l4_cksum_offload_command_fn">af_packet_set_l4_cksum_offload_command_fn</dfn> (<a class="typedef" href="../../../vlib/main.h.html#vlib_main_t" title='vlib_main_t' data-type='struct vlib_main_t' data-ref="vlib_main_t">vlib_main_t</a> * <dfn class="local col1 decl" id="21vm" title='vm' data-type='vlib_main_t *' data-ref="21vm">vm</dfn>,</td></tr>
+<tr><th id="199">199</th><td>					   <a class="typedef" href="../../../vppinfra/format.h.html#unformat_input_t" title='unformat_input_t' data-type='struct _unformat_input_t' data-ref="unformat_input_t">unformat_input_t</a> * <dfn class="local col2 decl" id="22input" title='input' data-type='unformat_input_t *' data-ref="22input">input</dfn>,</td></tr>
+<tr><th id="200">200</th><td>					   <a class="typedef" href="../../../vlib/cli.h.html#vlib_cli_command_t" title='vlib_cli_command_t' data-type='struct vlib_cli_command_t' data-ref="vlib_cli_command_t">vlib_cli_command_t</a> * <dfn class="local col3 decl" id="23cmd" title='cmd' data-type='vlib_cli_command_t *' data-ref="23cmd">cmd</dfn>)</td></tr>
+<tr><th id="201">201</th><td>{</td></tr>
+<tr><th id="202">202</th><td>  <a class="typedef" href="../../../vppinfra/format.h.html#unformat_input_t" title='unformat_input_t' data-type='struct _unformat_input_t' data-ref="unformat_input_t">unformat_input_t</a> <dfn class="local col4 decl" id="24_line_input" title='_line_input' data-type='unformat_input_t' data-ref="24_line_input">_line_input</dfn>, *<dfn class="local col5 decl" id="25line_input" title='line_input' data-type='unformat_input_t *' data-ref="25line_input">line_input</dfn> = &amp;<a class="local col4 ref" href="#24_line_input" title='_line_input' data-ref="24_line_input">_line_input</a>;</td></tr>
+<tr><th id="203">203</th><td>  <a class="typedef" href="../../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="local col6 decl" id="26set" title='set' data-type='u8' data-ref="26set">set</dfn> = <var>0</var>;</td></tr>
+<tr><th id="204">204</th><td>  <a class="typedef" href="../../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *<dfn class="local col7 decl" id="27error" title='error' data-type='clib_error_t *' data-ref="27error">error</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="205">205</th><td>  <a class="typedef" href="../../vnet.h.html#vnet_main_t" title='vnet_main_t' data-type='struct vnet_main_t' data-ref="vnet_main_t">vnet_main_t</a> *<dfn class="local col8 decl" id="28vnm" title='vnm' data-type='vnet_main_t *' data-ref="28vnm">vnm</dfn> = <a class="ref fn" href="../../global_funcs.h.html#vnet_get_main" title='vnet_get_main' data-ref="vnet_get_main">vnet_get_main</a> ();</td></tr>
+<tr><th id="206">206</th><td>  <a class="typedef" href="../../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col9 decl" id="29sw_if_index" title='sw_if_index' data-type='u32' data-ref="29sw_if_index">sw_if_index</dfn>;</td></tr>
+<tr><th id="207">207</th><td></td></tr>
+<tr><th id="208">208</th><td>  <b>if</b> (!<a class="ref fn" href="../../../vppinfra/format.h.html#unformat_user" title='unformat_user' data-ref="unformat_user">unformat_user</a> (<a class="local col2 ref" href="#22input" title='input' data-ref="22input">input</a>, <a class="ref fn" href="../../../vppinfra/format.h.html#unformat_line_input" title='unformat_line_input' data-ref="unformat_line_input">unformat_line_input</a>, <a class="local col5 ref" href="#25line_input" title='line_input' data-ref="25line_input">line_input</a>))</td></tr>
+<tr><th id="209">209</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="210">210</th><td></td></tr>
+<tr><th id="211">211</th><td>  <b>while</b> (<a class="ref fn" href="../../../vppinfra/format.h.html#unformat_check_input" title='unformat_check_input' data-ref="unformat_check_input">unformat_check_input</a> (<a class="local col5 ref" href="#25line_input" title='line_input' data-ref="25line_input">line_input</a>) != <a class="macro" href="../../../vppinfra/format.h.html#143" title="(~0)" data-ref="_M/UNFORMAT_END_OF_INPUT">UNFORMAT_END_OF_INPUT</a>)</td></tr>
+<tr><th id="212">212</th><td>    {</td></tr>
+<tr><th id="213">213</th><td>      <b>if</b> (<a class="ref fn" href="../../../vppinfra/format.h.html#unformat" title='unformat' data-ref="unformat">unformat</a></td></tr>
+<tr><th id="214">214</th><td>	  (<a class="local col5 ref" href="#25line_input" title='line_input' data-ref="25line_input">line_input</a>, <q>"%U"</q>, <a class="ref fn" href="../../interface_funcs.h.html#unformat_vnet_sw_interface" title='unformat_vnet_sw_interface' data-ref="unformat_vnet_sw_interface">unformat_vnet_sw_interface</a>, <a class="local col8 ref" href="#28vnm" title='vnm' data-ref="28vnm">vnm</a>, &amp;<a class="local col9 ref" href="#29sw_if_index" title='sw_if_index' data-ref="29sw_if_index">sw_if_index</a>))</td></tr>
+<tr><th id="215">215</th><td>	;</td></tr>
+<tr><th id="216">216</th><td>      <b>else</b> <b>if</b> (<a class="ref fn" href="../../../vppinfra/format.h.html#unformat" title='unformat' data-ref="unformat">unformat</a> (<a class="local col5 ref" href="#25line_input" title='line_input' data-ref="25line_input">line_input</a>, <q>"on"</q>))</td></tr>
+<tr><th id="217">217</th><td>	<a class="local col6 ref" href="#26set" title='set' data-ref="26set">set</a> = <var>1</var>;</td></tr>
+<tr><th id="218">218</th><td>      <b>else</b> <b>if</b> (<a class="ref fn" href="../../../vppinfra/format.h.html#unformat" title='unformat' data-ref="unformat">unformat</a> (<a class="local col5 ref" href="#25line_input" title='line_input' data-ref="25line_input">line_input</a>, <q>"off"</q>))</td></tr>
+<tr><th id="219">219</th><td>	<a class="local col6 ref" href="#26set" title='set' data-ref="26set">set</a> = <var>0</var>;</td></tr>
+<tr><th id="220">220</th><td>      <b>else</b></td></tr>
+<tr><th id="221">221</th><td>	{</td></tr>
+<tr><th id="222">222</th><td>	  <a class="local col7 ref" href="#27error" title='error' data-ref="27error">error</a> = <a class="macro" href="../../../vppinfra/error.h.html#99" title="_clib_error_return((0),(0),(0),(char *)((char *) __FUNCTION__),&quot;unknown input &apos;%U&apos;&quot;, format_unformat_error, line_input)" data-ref="_M/clib_error_return">clib_error_return</a> (<var>0</var>, <q>"unknown input '%U'"</q>,</td></tr>
+<tr><th id="223">223</th><td>				     <a class="ref fn" href="../../../vppinfra/format.h.html#format_unformat_error" title='format_unformat_error' data-ref="format_unformat_error">format_unformat_error</a>, <a class="local col5 ref" href="#25line_input" title='line_input' data-ref="25line_input">line_input</a>);</td></tr>
+<tr><th id="224">224</th><td>	  <b>goto</b> <a class="lbl" href="#30done" data-ref="30done">done</a>;</td></tr>
+<tr><th id="225">225</th><td>	}</td></tr>
+<tr><th id="226">226</th><td>    }</td></tr>
+<tr><th id="227">227</th><td></td></tr>
+<tr><th id="228">228</th><td>  <b>if</b> (<a class="ref fn" href="af_packet.h.html#af_packet_set_l4_cksum_offload" title='af_packet_set_l4_cksum_offload' data-ref="af_packet_set_l4_cksum_offload">af_packet_set_l4_cksum_offload</a> (<a class="local col1 ref" href="#21vm" title='vm' data-ref="21vm">vm</a>, <a class="local col9 ref" href="#29sw_if_index" title='sw_if_index' data-ref="29sw_if_index">sw_if_index</a>, <a class="local col6 ref" href="#26set" title='set' data-ref="26set">set</a>) &lt; <var>0</var>)</td></tr>
+<tr><th id="229">229</th><td>    <a class="local col7 ref" href="#27error" title='error' data-ref="27error">error</a> = <a class="macro" href="../../../vppinfra/error.h.html#99" title="_clib_error_return((0),(0),(0),(char *)((char *) __FUNCTION__),&quot;not an af_packet interface&quot;)" data-ref="_M/clib_error_return">clib_error_return</a> (<var>0</var>, <q>"not an af_packet interface"</q>);</td></tr>
+<tr><th id="230">230</th><td></td></tr>
+<tr><th id="231">231</th><td><dfn class="lbl" id="30done" data-ref="30done">done</dfn>:</td></tr>
+<tr><th id="232">232</th><td>  <a class="ref fn" href="../../../vppinfra/format.h.html#unformat_free" title='unformat_free' data-ref="unformat_free">unformat_free</a> (<a class="local col5 ref" href="#25line_input" title='line_input' data-ref="25line_input">line_input</a>);</td></tr>
+<tr><th id="233">233</th><td>  <b>return</b> <a class="local col7 ref" href="#27error" title='error' data-ref="27error">error</a>;</td></tr>
+<tr><th id="234">234</th><td>}</td></tr>
+<tr><th id="235">235</th><td></td></tr>
+<tr><th id="236">236</th><td><i>/*?</i></td></tr>
+<tr><th id="237">237</th><td><i> * Set TCP/UDP offload checksum calculation. Use interface</i></td></tr>
+<tr><th id="238">238</th><td><i> * name to identify the interface to set TCP/UDP offload checksum</i></td></tr>
+<tr><th id="239">239</th><td><i> * calculation.</i></td></tr>
+<tr><th id="240">240</th><td><i> *</i></td></tr>
+<tr><th id="241">241</th><td><i> * @cliexpar</i></td></tr>
+<tr><th id="242">242</th><td><i> * Example of how to set TCP/UDP offload checksum calculation on host-vpp0:</i></td></tr>
+<tr><th id="243">243</th><td><i> * @cliexcmd{set host-interface l4-cksum-offload host-vpp0 off}</i></td></tr>
+<tr><th id="244">244</th><td><i> * @cliexcmd{set host-interface l4-cksum-offload host-vpp0 on}</i></td></tr>
+<tr><th id="245">245</th><td><i>?*/</i></td></tr>
+<tr><th id="246">246</th><td><i>/* *INDENT-OFF* */</i></td></tr>
+<tr><th id="247">247</th><td><a class="macro" href="../../../vlib/cli.h.html#154" title="static vlib_cli_command_t af_packet_set_l4_cksum_offload_command; static void __vlib_cli_command_registration_af_packet_set_l4_cksum_offload_command (void) __attribute__((__constructor__)) ; static void __vlib_cli_command_registration_af_packet_set_l4_cksum_offload_command (void) { vlib_main_t * vm = vlib_get_main(); vlib_cli_main_t *cm = &amp;vm-&gt;cli_main; af_packet_set_l4_cksum_offload_command.next_cli_command = cm-&gt;cli_command_registrations; cm-&gt;cli_command_registrations = &amp;af_packet_set_l4_cksum_offload_command; } static vlib_cli_command_t af_packet_set_l4_cksum_offload_command" data-ref="_M/VLIB_CLI_COMMAND">VLIB_CLI_COMMAND</a> (<dfn class="tu decl def" id="af_packet_set_l4_cksum_offload_command" title='af_packet_set_l4_cksum_offload_command' data-type='vlib_cli_command_t' data-ref="af_packet_set_l4_cksum_offload_command"><a class="tu ref" href="#247" title='af_packet_set_l4_cksum_offload_command' data-use='m' data-ref="af_packet_set_l4_cksum_offload_command"><a class="tu ref" href="#247" title='af_packet_set_l4_cksum_offload_command' data-use='a' data-ref="af_packet_set_l4_cksum_offload_command">af_packet_set_l4_cksum_offload_command</a></a></dfn>, <em>static</em>) = {</td></tr>
+<tr><th id="248">248</th><td>  .<a class="ref field" href="../../../vlib/cli.h.html#vlib_cli_command_t::path" title='vlib_cli_command_t::path' data-ref="vlib_cli_command_t::path">path</a> = <q>"set host-interface l4-cksum-offload"</q>,</td></tr>
+<tr><th id="249">249</th><td>  .<a class="ref field" href="../../../vlib/cli.h.html#vlib_cli_command_t::short_help" title='vlib_cli_command_t::short_help' data-ref="vlib_cli_command_t::short_help">short_help</a> = <q>"set host-interface l4-cksum-offload &lt;host-if-name&gt; &lt;on|off&gt;"</q>,</td></tr>
+<tr><th id="250">250</th><td>  .<a class="ref field" href="../../../vlib/cli.h.html#vlib_cli_command_t::function" title='vlib_cli_command_t::function' data-ref="vlib_cli_command_t::function">function</a> = <a class="tu ref fn" href="#af_packet_set_l4_cksum_offload_command_fn" title='af_packet_set_l4_cksum_offload_command_fn' data-ref="af_packet_set_l4_cksum_offload_command_fn">af_packet_set_l4_cksum_offload_command_fn</a>,</td></tr>
+<tr><th id="251">251</th><td>};</td></tr>
+<tr><th id="252">252</th><td><i>/* *INDENT-ON* */</i></td></tr>
+<tr><th id="253">253</th><td></td></tr>
+<tr><th id="254">254</th><td><a class="typedef" href="../../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *</td></tr>
+<tr><th id="255">255</th><td><dfn class="decl def fn" id="af_packet_cli_init" title='af_packet_cli_init' data-ref="af_packet_cli_init">af_packet_cli_init</dfn> (<a class="typedef" href="../../../vlib/main.h.html#vlib_main_t" title='vlib_main_t' data-type='struct vlib_main_t' data-ref="vlib_main_t">vlib_main_t</a> * <dfn class="local col1 decl" id="31vm" title='vm' data-type='vlib_main_t *' data-ref="31vm">vm</dfn>)</td></tr>
+<tr><th id="256">256</th><td>{</td></tr>
+<tr><th id="257">257</th><td>  <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="258">258</th><td>}</td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td><a class="macro" href="../../../vlib/init.h.html#111" title="vlib_init_function_t * _vlib_init_function_af_packet_cli_init = af_packet_cli_init; static void __vlib_add_init_function_af_packet_cli_init (void) __attribute__((__constructor__)) ; static void __vlib_add_init_function_af_packet_cli_init (void) { vlib_main_t * vm = vlib_get_main(); static _vlib_init_function_list_elt_t _vlib_init_function; _vlib_init_function.next_init_function = vm-&gt;init_function_registrations; vm-&gt;init_function_registrations = &amp;_vlib_init_function; _vlib_init_function.f = &amp;af_packet_cli_init; }" data-ref="_M/VLIB_INIT_FUNCTION">VLIB_INIT_FUNCTION</a> (<a class="ref fn" href="#af_packet_cli_init" title='af_packet_cli_init' data-ref="af_packet_cli_init">af_packet_cli_init</a>);</td></tr>
+<tr><th id="261">261</th><td></td></tr>
+<tr><th id="262">262</th><td><i>/*</i></td></tr>
+<tr><th id="263">263</th><td><i> * fd.io coding-style-patch-verification: ON</i></td></tr>
+<tr><th id="264">264</th><td><i> *</i></td></tr>
+<tr><th id="265">265</th><td><i> * Local Variables:</i></td></tr>
+<tr><th id="266">266</th><td><i> * eval: (c-set-style "gnu")</i></td></tr>
+<tr><th id="267">267</th><td><i> * End:</i></td></tr>
+<tr><th id="268">268</th><td><i> */</i></td></tr>
+<tr><th id="269">269</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-29</em> from project vpp_1804 revision <em>18.04</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,379 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>lb.h source code [vpp_1804/src/plugins/lb/lb.h] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'vpp_1804/src/plugins/lb/lb.h'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>vpp_1804</a>/<a href='../..'>src</a>/<a href='..'>plugins</a>/<a href='./'>lb</a>/<a href='lb.h.html'>lb.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright (c) 2016 Cisco and/or its affiliates.</i></td></tr>
+<tr><th id="3">3</th><td><i> * Licensed under the Apache License, Version 2.0 (the "License");</i></td></tr>
+<tr><th id="4">4</th><td><i> * you may not use this file except in compliance with the License.</i></td></tr>
+<tr><th id="5">5</th><td><i> * You may obtain a copy of the License at:</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> *     <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></i></td></tr>
+<tr><th id="8">8</th><td><i> *</i></td></tr>
+<tr><th id="9">9</th><td><i> * Unless required by applicable law or agreed to in writing, software</i></td></tr>
+<tr><th id="10">10</th><td><i> * distributed under the License is distributed on an "AS IS" BASIS,</i></td></tr>
+<tr><th id="11">11</th><td><i> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</i></td></tr>
+<tr><th id="12">12</th><td><i> * See the License for the specific language governing permissions and</i></td></tr>
+<tr><th id="13">13</th><td><i> * limitations under the License.</i></td></tr>
+<tr><th id="14">14</th><td><i> */</i></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="17">17</th><td><i class="doc"> * lb-plugin implements a MagLev-like load balancer.</i></td></tr>
+<tr><th id="18">18</th><td><i class="doc"> * <a href="http://research.google.com/pubs/pub44824.html">http://research.google.com/pubs/pub44824.html</a></i></td></tr>
+<tr><th id="19">19</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="20">20</th><td><i class="doc"> * It hasn't been tested for interoperability with the original MagLev</i></td></tr>
+<tr><th id="21">21</th><td><i class="doc"> * but intends to provide similar functionality.</i></td></tr>
+<tr><th id="22">22</th><td><i class="doc"> * The load-balancer receives traffic destined to VIP (Virtual IP)</i></td></tr>
+<tr><th id="23">23</th><td><i class="doc"> * addresses from one or multiple(ECMP) routers.</i></td></tr>
+<tr><th id="24">24</th><td><i class="doc"> * The load-balancer tunnels the traffic toward many application servers</i></td></tr>
+<tr><th id="25">25</th><td><i class="doc"> * ensuring session stickyness (i.e. that a single sessions is tunneled</i></td></tr>
+<tr><th id="26">26</th><td><i class="doc"> * towards a single application server).</i></td></tr>
+<tr><th id="27">27</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="28">28</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="29">29</th><td></td></tr>
+<tr><th id="30">30</th><td><u>#<span data-ppcond="30">ifndef</span> <span class="macro" data-ref="_M/LB_PLUGIN_LB_LB_H_">LB_PLUGIN_LB_LB_H_</span></u></td></tr>
+<tr><th id="31">31</th><td><u>#define <dfn class="macro" id="_M/LB_PLUGIN_LB_LB_H_" data-ref="_M/LB_PLUGIN_LB_LB_H_">LB_PLUGIN_LB_LB_H_</dfn></u></td></tr>
+<tr><th id="32">32</th><td></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="util.h.html">&lt;lb/util.h&gt;</a></u></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="../../vnet/util/refcount.h.html">&lt;vnet/util/refcount.h&gt;</a></u></td></tr>
+<tr><th id="35">35</th><td></td></tr>
+<tr><th id="36">36</th><td><u>#include <a href="../../vnet/vnet.h.html">&lt;vnet/vnet.h&gt;</a></u></td></tr>
+<tr><th id="37">37</th><td><u>#include <a href="../../vnet/ip/ip.h.html">&lt;vnet/ip/ip.h&gt;</a></u></td></tr>
+<tr><th id="38">38</th><td><u>#include <a href="../../vnet/dpo/dpo.h.html">&lt;vnet/dpo/dpo.h&gt;</a></u></td></tr>
+<tr><th id="39">39</th><td><u>#include <a href="../../vnet/fib/fib_table.h.html">&lt;vnet/fib/fib_table.h&gt;</a></u></td></tr>
+<tr><th id="40">40</th><td><u>#include <a href="../../vppinfra/hash.h.html">&lt;vppinfra/hash.h&gt;</a></u></td></tr>
+<tr><th id="41">41</th><td></td></tr>
+<tr><th id="42">42</th><td><u>#include <a href="lbhash.h.html">&lt;lb/lbhash.h&gt;</a></u></td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td><u>#define <dfn class="macro" id="_M/LB_DEFAULT_PER_CPU_STICKY_BUCKETS" data-ref="_M/LB_DEFAULT_PER_CPU_STICKY_BUCKETS">LB_DEFAULT_PER_CPU_STICKY_BUCKETS</dfn> 1 &lt;&lt; 10</u></td></tr>
+<tr><th id="45">45</th><td><u>#define <dfn class="macro" id="_M/LB_DEFAULT_FLOW_TIMEOUT" data-ref="_M/LB_DEFAULT_FLOW_TIMEOUT">LB_DEFAULT_FLOW_TIMEOUT</dfn> 40</u></td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td><b>typedef</b> <b>enum</b> {</td></tr>
+<tr><th id="48">48</th><td>  <dfn class="enum" id="LB_NEXT_DROP" title='LB_NEXT_DROP' data-ref="LB_NEXT_DROP">LB_NEXT_DROP</dfn>,</td></tr>
+<tr><th id="49">49</th><td>  <dfn class="enum" id="LB_N_NEXT" title='LB_N_NEXT' data-ref="LB_N_NEXT">LB_N_NEXT</dfn>,</td></tr>
+<tr><th id="50">50</th><td>} <dfn class="typedef" id="lb_next_t" title='lb_next_t' data-type='enum lb_next_t' data-ref="lb_next_t">lb_next_t</dfn>;</td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc"> * Each VIP is configured with a set of</i></td></tr>
+<tr><th id="54">54</th><td><i class="doc"> * application server.</i></td></tr>
+<tr><th id="55">55</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="56">56</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="57">57</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="58">58</th><td><i class="doc">   * Registration to FIB event.</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="60">60</th><td>  <a class="typedef" href="../../vnet/fib/fib_node.h.html#fib_node_t" title='fib_node_t' data-type='struct fib_node_t_' data-ref="fib_node_t">fib_node_t</a> <dfn class="decl field" id="(anonymous)::fib_node" title='(anonymous struct)::fib_node' data-ref="(anonymous)::fib_node">fib_node</dfn>;</td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="63">63</th><td><i class="doc">   * Destination address used to tunnel traffic towards</i></td></tr>
+<tr><th id="64">64</th><td><i class="doc">   * that application server.</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc">   * The address is also used as ID and pseudo-random</i></td></tr>
+<tr><th id="66">66</th><td><i class="doc">   * seed for the load-balancing process.</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="68">68</th><td>  <a class="typedef" href="../../vnet/ip/ip6_packet.h.html#ip46_address_t" title='ip46_address_t' data-type='union ip46_address_t' data-ref="ip46_address_t">ip46_address_t</a> <dfn class="decl field" id="(anonymous)::address" title='(anonymous struct)::address' data-ref="(anonymous)::address">address</dfn>;</td></tr>
+<tr><th id="69">69</th><td></td></tr>
+<tr><th id="70">70</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="71">71</th><td><i class="doc">   * ASs are indexed by address and VIP Index.</i></td></tr>
+<tr><th id="72">72</th><td><i class="doc">   * Which means there will be duplicated if the same server</i></td></tr>
+<tr><th id="73">73</th><td><i class="doc">   * address is used for multiple VIPs.</i></td></tr>
+<tr><th id="74">74</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="75">75</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::vip_index" title='(anonymous struct)::vip_index' data-ref="(anonymous)::vip_index">vip_index</dfn>;</td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="78">78</th><td><i class="doc">   * Some per-AS flags.</i></td></tr>
+<tr><th id="79">79</th><td><i class="doc">   * For now only LB_AS_FLAGS_USED is defined.</i></td></tr>
+<tr><th id="80">80</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="81">81</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::flags" title='(anonymous struct)::flags' data-ref="(anonymous)::flags">flags</dfn>;</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td><u>#define <dfn class="macro" id="_M/LB_AS_FLAGS_USED" data-ref="_M/LB_AS_FLAGS_USED">LB_AS_FLAGS_USED</dfn> 0x1</u></td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc">   * Rotating timestamp of when LB_AS_FLAGS_USED flag was last set.</i></td></tr>
+<tr><th id="87">87</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc">   * AS removal is based on garbage collection and reference counting.</i></td></tr>
+<tr><th id="89">89</th><td><i class="doc">   * When an AS is removed, there is a race between configuration core</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc">   * and worker cores which may still add a reference while it should not</i></td></tr>
+<tr><th id="91">91</th><td><i class="doc">   * be used. This timestamp is used to not remove the AS while a race condition</i></td></tr>
+<tr><th id="92">92</th><td><i class="doc">   * may happen.</i></td></tr>
+<tr><th id="93">93</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="94">94</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::last_used" title='(anonymous struct)::last_used' data-ref="(anonymous)::last_used">last_used</dfn>;</td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="97">97</th><td><i class="doc">   * The FIB entry index for the next-hop</i></td></tr>
+<tr><th id="98">98</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="99">99</th><td>  <a class="typedef" href="../../vnet/fib/fib_types.h.html#fib_node_index_t" title='fib_node_index_t' data-type='u32' data-ref="fib_node_index_t">fib_node_index_t</a> <dfn class="decl field" id="(anonymous)::next_hop_fib_entry_index" title='(anonymous struct)::next_hop_fib_entry_index' data-ref="(anonymous)::next_hop_fib_entry_index">next_hop_fib_entry_index</dfn>;</td></tr>
+<tr><th id="100">100</th><td></td></tr>
+<tr><th id="101">101</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="102">102</th><td><i class="doc">   * The child index on the FIB entry</i></td></tr>
+<tr><th id="103">103</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="104">104</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::next_hop_child_index" title='(anonymous struct)::next_hop_child_index' data-ref="(anonymous)::next_hop_child_index">next_hop_child_index</dfn>;</td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="107">107</th><td><i class="doc">   * The next DPO in the graph to follow.</i></td></tr>
+<tr><th id="108">108</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="109">109</th><td>  <a class="typedef" href="../../vnet/dpo/dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> <dfn class="decl field" id="(anonymous)::dpo" title='(anonymous struct)::dpo' data-ref="(anonymous)::dpo">dpo</dfn>;</td></tr>
+<tr><th id="110">110</th><td></td></tr>
+<tr><th id="111">111</th><td>} <dfn class="typedef" id="lb_as_t" title='lb_as_t' data-type='struct lb_as_t' data-ref="lb_as_t">lb_as_t</dfn>;</td></tr>
+<tr><th id="112">112</th><td></td></tr>
+<tr><th id="113">113</th><td><a class="typedef" href="../../vppinfra/format.h.html#format_function_t" title='format_function_t' data-type='u8 *(u8 *, va_list *)' data-ref="format_function_t">format_function_t</a> <dfn class="decl fn" id="format_lb_as" title='format_lb_as' data-ref="format_lb_as">format_lb_as</dfn>;</td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="116">116</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::as_index" title='(anonymous struct)::as_index' data-ref="(anonymous)::as_index">as_index</dfn>;</td></tr>
+<tr><th id="117">117</th><td>} <dfn class="typedef" id="lb_new_flow_entry_t" title='lb_new_flow_entry_t' data-type='struct lb_new_flow_entry_t' data-ref="lb_new_flow_entry_t">lb_new_flow_entry_t</dfn>;</td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td><u>#define <dfn class="macro" id="_M/lb_foreach_vip_counter" data-ref="_M/lb_foreach_vip_counter">lb_foreach_vip_counter</dfn> \</u></td></tr>
+<tr><th id="120">120</th><td><u> _(NEXT_PACKET, "packet from existing sessions", 0) \</u></td></tr>
+<tr><th id="121">121</th><td><u> _(FIRST_PACKET, "first session packet", 1) \</u></td></tr>
+<tr><th id="122">122</th><td><u> _(UNTRACKED_PACKET, "untracked packet", 2) \</u></td></tr>
+<tr><th id="123">123</th><td><u> _(NO_SERVER, "no server configured", 3)</u></td></tr>
+<tr><th id="124">124</th><td></td></tr>
+<tr><th id="125">125</th><td><b>typedef</b> <b>enum</b> {</td></tr>
+<tr><th id="126">126</th><td><u>#define <dfn class="macro" id="_M/_" data-ref="_M/_">_</dfn>(a,b,c) LB_VIP_COUNTER_##a = c,</u></td></tr>
+<tr><th id="127">127</th><td>  <a class="macro" href="#119" title="LB_VIP_COUNTER_NEXT_PACKET = 0, LB_VIP_COUNTER_FIRST_PACKET = 1, LB_VIP_COUNTER_UNTRACKED_PACKET = 2, LB_VIP_COUNTER_NO_SERVER = 3," data-ref="_M/lb_foreach_vip_counter">lb_foreach_vip_counter</a></td></tr>
+<tr><th id="128">128</th><td><u>#undef <a class="macro" href="#126" data-ref="_M/_">_</a></u></td></tr>
+<tr><th id="129">129</th><td>  <dfn class="enum" id="LB_N_VIP_COUNTERS" title='LB_N_VIP_COUNTERS' data-ref="LB_N_VIP_COUNTERS">LB_N_VIP_COUNTERS</dfn></td></tr>
+<tr><th id="130">130</th><td>} <dfn class="typedef" id="lb_vip_counter_t" title='lb_vip_counter_t' data-type='enum lb_vip_counter_t' data-ref="lb_vip_counter_t">lb_vip_counter_t</dfn>;</td></tr>
+<tr><th id="131">131</th><td></td></tr>
+<tr><th id="132">132</th><td><b>typedef</b> <b>enum</b> {</td></tr>
+<tr><th id="133">133</th><td>  <dfn class="enum" id="LB_ENCAP_TYPE_GRE4" title='LB_ENCAP_TYPE_GRE4' data-ref="LB_ENCAP_TYPE_GRE4">LB_ENCAP_TYPE_GRE4</dfn>,</td></tr>
+<tr><th id="134">134</th><td>  <dfn class="enum" id="LB_ENCAP_TYPE_GRE6" title='LB_ENCAP_TYPE_GRE6' data-ref="LB_ENCAP_TYPE_GRE6">LB_ENCAP_TYPE_GRE6</dfn>,</td></tr>
+<tr><th id="135">135</th><td>  <dfn class="enum" id="LB_ENCAP_TYPE_L3DSR" title='LB_ENCAP_TYPE_L3DSR' data-ref="LB_ENCAP_TYPE_L3DSR">LB_ENCAP_TYPE_L3DSR</dfn>,</td></tr>
+<tr><th id="136">136</th><td>  <dfn class="enum" id="LB_ENCAP_N_TYPES" title='LB_ENCAP_N_TYPES' data-ref="LB_ENCAP_N_TYPES">LB_ENCAP_N_TYPES</dfn>,</td></tr>
+<tr><th id="137">137</th><td>} <dfn class="typedef" id="lb_encap_type_t" title='lb_encap_type_t' data-type='enum lb_encap_type_t' data-ref="lb_encap_type_t">lb_encap_type_t</dfn>;</td></tr>
+<tr><th id="138">138</th><td></td></tr>
+<tr><th id="139">139</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="140">140</th><td><i class="doc"> * The load balancer supports IPv4 and IPv6 traffic</i></td></tr>
+<tr><th id="141">141</th><td><i class="doc"> * and GRE4, GRE6 and L3DSR encap.</i></td></tr>
+<tr><th id="142">142</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="143">143</th><td><b>typedef</b> <b>enum</b> {</td></tr>
+<tr><th id="144">144</th><td>  <dfn class="enum" id="LB_VIP_TYPE_IP6_GRE6" title='LB_VIP_TYPE_IP6_GRE6' data-ref="LB_VIP_TYPE_IP6_GRE6">LB_VIP_TYPE_IP6_GRE6</dfn>,</td></tr>
+<tr><th id="145">145</th><td>  <dfn class="enum" id="LB_VIP_TYPE_IP6_GRE4" title='LB_VIP_TYPE_IP6_GRE4' data-ref="LB_VIP_TYPE_IP6_GRE4">LB_VIP_TYPE_IP6_GRE4</dfn>,</td></tr>
+<tr><th id="146">146</th><td>  <dfn class="enum" id="LB_VIP_TYPE_IP4_GRE6" title='LB_VIP_TYPE_IP4_GRE6' data-ref="LB_VIP_TYPE_IP4_GRE6">LB_VIP_TYPE_IP4_GRE6</dfn>,</td></tr>
+<tr><th id="147">147</th><td>  <dfn class="enum" id="LB_VIP_TYPE_IP4_GRE4" title='LB_VIP_TYPE_IP4_GRE4' data-ref="LB_VIP_TYPE_IP4_GRE4">LB_VIP_TYPE_IP4_GRE4</dfn>,</td></tr>
+<tr><th id="148">148</th><td>  <dfn class="enum" id="LB_VIP_TYPE_IP4_L3DSR" title='LB_VIP_TYPE_IP4_L3DSR' data-ref="LB_VIP_TYPE_IP4_L3DSR">LB_VIP_TYPE_IP4_L3DSR</dfn>,</td></tr>
+<tr><th id="149">149</th><td>  <dfn class="enum" id="LB_VIP_N_TYPES" title='LB_VIP_N_TYPES' data-ref="LB_VIP_N_TYPES">LB_VIP_N_TYPES</dfn>,</td></tr>
+<tr><th id="150">150</th><td>} <dfn class="typedef" id="lb_vip_type_t" title='lb_vip_type_t' data-type='enum lb_vip_type_t' data-ref="lb_vip_type_t">lb_vip_type_t</dfn>;</td></tr>
+<tr><th id="151">151</th><td></td></tr>
+<tr><th id="152">152</th><td></td></tr>
+<tr><th id="153">153</th><td><a class="typedef" href="../../vppinfra/format.h.html#format_function_t" title='format_function_t' data-type='u8 *(u8 *, va_list *)' data-ref="format_function_t">format_function_t</a> <dfn class="decl fn" id="format_lb_vip_type" title='format_lb_vip_type' data-ref="format_lb_vip_type">format_lb_vip_type</dfn>;</td></tr>
+<tr><th id="154">154</th><td><a class="typedef" href="../../vppinfra/format.h.html#unformat_function_t" title='unformat_function_t' data-type='uword (unformat_input_t *, va_list *)' data-ref="unformat_function_t">unformat_function_t</a> <dfn class="decl fn" id="unformat_lb_vip_type" title='unformat_lb_vip_type' data-ref="unformat_lb_vip_type">unformat_lb_vip_type</dfn>;</td></tr>
+<tr><th id="155">155</th><td></td></tr>
+<tr><th id="156">156</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="157">157</th><td><i class="doc"> * Load balancing service is provided per VIP.</i></td></tr>
+<tr><th id="158">158</th><td><i class="doc"> * In this data model, a VIP can be a whole prefix.</i></td></tr>
+<tr><th id="159">159</th><td><i class="doc"> * But load balancing only</i></td></tr>
+<tr><th id="160">160</th><td><i class="doc"> * occurs on a per-source-address/port basis. Meaning that if a given source</i></td></tr>
+<tr><th id="161">161</th><td><i class="doc"> * reuses the same port for multiple destinations within the same VIP,</i></td></tr>
+<tr><th id="162">162</th><td><i class="doc"> * they will be considered as a single flow.</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="164">164</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="165">165</th><td></td></tr>
+<tr><th id="166">166</th><td>  <i>//Runtime</i></td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="169">169</th><td><i class="doc">   * Vector mapping (flow-hash &amp; new_connect_table_mask) to AS index.</i></td></tr>
+<tr><th id="170">170</th><td><i class="doc">   * This is used for new flows.</i></td></tr>
+<tr><th id="171">171</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="172">172</th><td>  <a class="typedef" href="#lb_new_flow_entry_t" title='lb_new_flow_entry_t' data-type='struct lb_new_flow_entry_t' data-ref="lb_new_flow_entry_t">lb_new_flow_entry_t</a> *<dfn class="decl field" id="(anonymous)::new_flow_table" title='(anonymous struct)::new_flow_table' data-ref="(anonymous)::new_flow_table">new_flow_table</dfn>;</td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc">   * New flows table length - 1</i></td></tr>
+<tr><th id="176">176</th><td><i class="doc">   * (length MUST be a power of 2)</i></td></tr>
+<tr><th id="177">177</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="178">178</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::new_flow_table_mask" title='(anonymous struct)::new_flow_table_mask' data-ref="(anonymous)::new_flow_table_mask">new_flow_table_mask</dfn>;</td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="181">181</th><td><i class="doc">   * Last time garbage collection was run to free the ASs.</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="183">183</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::last_garbage_collection" title='(anonymous struct)::last_garbage_collection' data-ref="(anonymous)::last_garbage_collection">last_garbage_collection</dfn>;</td></tr>
+<tr><th id="184">184</th><td></td></tr>
+<tr><th id="185">185</th><td>  <i>//Not runtime</i></td></tr>
+<tr><th id="186">186</th><td></td></tr>
+<tr><th id="187">187</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc">   * A Virtual IP represents a given service delivered</i></td></tr>
+<tr><th id="189">189</th><td><i class="doc">   * by a set of application servers. It can be a single</i></td></tr>
+<tr><th id="190">190</th><td><i class="doc">   * address or a prefix.</i></td></tr>
+<tr><th id="191">191</th><td><i class="doc">   * IPv4 prefixes are encoded using IPv4-in-IPv6 embedded address</i></td></tr>
+<tr><th id="192">192</th><td><i class="doc">   * (i.e. ::/96 prefix).</i></td></tr>
+<tr><th id="193">193</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="194">194</th><td>  <a class="typedef" href="../../vnet/ip/ip6_packet.h.html#ip46_address_t" title='ip46_address_t' data-type='union ip46_address_t' data-ref="ip46_address_t">ip46_address_t</a> <dfn class="decl field" id="(anonymous)::prefix" title='(anonymous struct)::prefix' data-ref="(anonymous)::prefix">prefix</dfn>;</td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">   * The VIP prefix length.</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc">   * In case of IPv4, plen = 96 + ip4_plen.</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="200">200</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::plen" title='(anonymous struct)::plen' data-ref="(anonymous)::plen">plen</dfn>;</td></tr>
+<tr><th id="201">201</th><td></td></tr>
+<tr><th id="202">202</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc">   * The type of traffic for this.</i></td></tr>
+<tr><th id="204">204</th><td><i class="doc">   * LB_TYPE_UNDEFINED if unknown.</i></td></tr>
+<tr><th id="205">205</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="206">206</th><td>  <a class="typedef" href="#lb_vip_type_t" title='lb_vip_type_t' data-type='enum lb_vip_type_t' data-ref="lb_vip_type_t">lb_vip_type_t</a> <dfn class="decl field" id="(anonymous)::type" title='(anonymous struct)::type' data-ref="(anonymous)::type">type</dfn>;</td></tr>
+<tr><th id="207">207</th><td></td></tr>
+<tr><th id="208">208</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="209">209</th><td><i class="doc">   * DSCP bits for L3DSR</i></td></tr>
+<tr><th id="210">210</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="211">211</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::dscp" title='(anonymous struct)::dscp' data-ref="(anonymous)::dscp">dscp</dfn>;</td></tr>
+<tr><th id="212">212</th><td></td></tr>
+<tr><th id="213">213</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc">   * Flags related to this VIP.</i></td></tr>
+<tr><th id="215">215</th><td><i class="doc">   * LB_VIP_FLAGS_USED means the VIP is active.</i></td></tr>
+<tr><th id="216">216</th><td><i class="doc">   * When it is not set, the VIP in the process of being removed.</i></td></tr>
+<tr><th id="217">217</th><td><i class="doc">   * We cannot immediately remove a VIP because the VIP index still may be stored</i></td></tr>
+<tr><th id="218">218</th><td><i class="doc">   * in the adjacency index.</i></td></tr>
+<tr><th id="219">219</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="220">220</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::flags" title='(anonymous struct)::flags' data-ref="(anonymous)::flags">flags</dfn>;</td></tr>
+<tr><th id="221">221</th><td><u>#define <dfn class="macro" id="_M/LB_VIP_FLAGS_USED" data-ref="_M/LB_VIP_FLAGS_USED">LB_VIP_FLAGS_USED</dfn> 0x1</u></td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="224">224</th><td><i class="doc">   * Pool of AS indexes used for this VIP.</i></td></tr>
+<tr><th id="225">225</th><td><i class="doc">   * This also includes ASs that have been removed (but are still referenced).</i></td></tr>
+<tr><th id="226">226</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="227">227</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> *<dfn class="decl field" id="(anonymous)::as_indexes" title='(anonymous struct)::as_indexes' data-ref="(anonymous)::as_indexes">as_indexes</dfn>;</td></tr>
+<tr><th id="228">228</th><td>} <dfn class="typedef" id="lb_vip_t" title='lb_vip_t' data-type='struct lb_vip_t' data-ref="lb_vip_t">lb_vip_t</dfn>;</td></tr>
+<tr><th id="229">229</th><td></td></tr>
+<tr><th id="230">230</th><td><u>#define <dfn class="macro" id="_M/lb_vip_is_ip4" data-ref="_M/lb_vip_is_ip4">lb_vip_is_ip4</dfn>(vip) ((vip)-&gt;type == LB_VIP_TYPE_IP4_GRE6 \</u></td></tr>
+<tr><th id="231">231</th><td><u>                            || (vip)-&gt;type == LB_VIP_TYPE_IP4_GRE4 \</u></td></tr>
+<tr><th id="232">232</th><td><u>			    || (vip)-&gt;type == LB_VIP_TYPE_IP4_L3DSR )</u></td></tr>
+<tr><th id="233">233</th><td></td></tr>
+<tr><th id="234">234</th><td><u>#define <dfn class="macro" id="_M/lb_vip_is_gre4" data-ref="_M/lb_vip_is_gre4">lb_vip_is_gre4</dfn>(vip) ((vip)-&gt;type == LB_VIP_TYPE_IP6_GRE4 \</u></td></tr>
+<tr><th id="235">235</th><td><u>                             || (vip)-&gt;type == LB_VIP_TYPE_IP4_GRE4)</u></td></tr>
+<tr><th id="236">236</th><td><u>#define <dfn class="macro" id="_M/lb_vip_is_gre6" data-ref="_M/lb_vip_is_gre6">lb_vip_is_gre6</dfn>(vip) ((vip)-&gt;type == LB_VIP_TYPE_IP6_GRE6 \</u></td></tr>
+<tr><th id="237">237</th><td><u>                             || (vip)-&gt;type == LB_VIP_TYPE_IP4_GRE6)</u></td></tr>
+<tr><th id="238">238</th><td><u>#define <dfn class="macro" id="_M/lb_vip_is_l3dsr" data-ref="_M/lb_vip_is_l3dsr">lb_vip_is_l3dsr</dfn>(vip) (vip)-&gt;type == LB_VIP_TYPE_IP4_L3DSR</u></td></tr>
+<tr><th id="239">239</th><td></td></tr>
+<tr><th id="240">240</th><td><u>#define <dfn class="macro" id="_M/lb_encap_is_ip4" data-ref="_M/lb_encap_is_ip4">lb_encap_is_ip4</dfn>(vip) ((vip)-&gt;type == LB_VIP_TYPE_IP6_GRE4 \</u></td></tr>
+<tr><th id="241">241</th><td><u>                             || (vip)-&gt;type == LB_VIP_TYPE_IP4_GRE4 \</u></td></tr>
+<tr><th id="242">242</th><td><u>			     || (vip)-&gt;type == LB_VIP_TYPE_IP4_L3DSR)</u></td></tr>
+<tr><th id="243">243</th><td></td></tr>
+<tr><th id="244">244</th><td><a class="typedef" href="../../vppinfra/format.h.html#format_function_t" title='format_function_t' data-type='u8 *(u8 *, va_list *)' data-ref="format_function_t">format_function_t</a> <dfn class="decl fn" id="format_lb_vip" title='format_lb_vip' data-ref="format_lb_vip">format_lb_vip</dfn>;</td></tr>
+<tr><th id="245">245</th><td><a class="typedef" href="../../vppinfra/format.h.html#format_function_t" title='format_function_t' data-type='u8 *(u8 *, va_list *)' data-ref="format_function_t">format_function_t</a> <dfn class="decl fn" id="format_lb_vip_detailed" title='format_lb_vip_detailed' data-ref="format_lb_vip_detailed">format_lb_vip_detailed</dfn>;</td></tr>
+<tr><th id="246">246</th><td></td></tr>
+<tr><th id="247">247</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="248">248</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="249">249</th><td><i class="doc">   * Each CPU has its own sticky flow hash table.</i></td></tr>
+<tr><th id="250">250</th><td><i class="doc">   * One single table is used for all VIPs.</i></td></tr>
+<tr><th id="251">251</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="252">252</th><td>  <a class="typedef" href="lbhash.h.html#lb_hash_t" title='lb_hash_t' data-type='struct lb_hash_t' data-ref="lb_hash_t">lb_hash_t</a> *<dfn class="decl field" id="(anonymous)::sticky_ht" title='(anonymous struct)::sticky_ht' data-ref="(anonymous)::sticky_ht">sticky_ht</dfn>;</td></tr>
+<tr><th id="253">253</th><td>} <dfn class="typedef" id="lb_per_cpu_t" title='lb_per_cpu_t' data-type='struct lb_per_cpu_t' data-ref="lb_per_cpu_t">lb_per_cpu_t</dfn>;</td></tr>
+<tr><th id="254">254</th><td></td></tr>
+<tr><th id="255">255</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="256">256</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="257">257</th><td><i class="doc">   * Pool of all Virtual IPs</i></td></tr>
+<tr><th id="258">258</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="259">259</th><td>  <a class="typedef" href="#lb_vip_t" title='lb_vip_t' data-type='struct lb_vip_t' data-ref="lb_vip_t">lb_vip_t</a> *<dfn class="decl field" id="(anonymous)::vips" title='(anonymous struct)::vips' data-ref="(anonymous)::vips">vips</dfn>;</td></tr>
+<tr><th id="260">260</th><td></td></tr>
+<tr><th id="261">261</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="262">262</th><td><i class="doc">   * Pool of ASs.</i></td></tr>
+<tr><th id="263">263</th><td><i class="doc">   * ASs are referenced by address and vip index.</i></td></tr>
+<tr><th id="264">264</th><td><i class="doc">   * The first element (index 0) is special and used only to fill</i></td></tr>
+<tr><th id="265">265</th><td><i class="doc">   * new_flow_tables when no AS has been configured.</i></td></tr>
+<tr><th id="266">266</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="267">267</th><td>  <a class="typedef" href="#lb_as_t" title='lb_as_t' data-type='struct lb_as_t' data-ref="lb_as_t">lb_as_t</a> *<dfn class="decl field" id="(anonymous)::ass" title='(anonymous struct)::ass' data-ref="(anonymous)::ass">ass</dfn>;</td></tr>
+<tr><th id="268">268</th><td></td></tr>
+<tr><th id="269">269</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="270">270</th><td><i class="doc">   * Each AS has an associated reference counter.</i></td></tr>
+<tr><th id="271">271</th><td><i class="doc">   * As ass[0] has a special meaning, its associated counter</i></td></tr>
+<tr><th id="272">272</th><td><i class="doc">   * starts at 0 and is decremented instead. i.e. do not use it.</i></td></tr>
+<tr><th id="273">273</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="274">274</th><td>  <a class="typedef" href="../../vnet/util/refcount.h.html#vlib_refcount_t" title='vlib_refcount_t' data-type='struct vlib_refcount_t' data-ref="vlib_refcount_t">vlib_refcount_t</a> <dfn class="decl field" id="(anonymous)::as_refcount" title='(anonymous struct)::as_refcount' data-ref="(anonymous)::as_refcount">as_refcount</dfn>;</td></tr>
+<tr><th id="275">275</th><td></td></tr>
+<tr><th id="276">276</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="277">277</th><td><i class="doc">   * Some global data is per-cpu</i></td></tr>
+<tr><th id="278">278</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="279">279</th><td>  <a class="typedef" href="#lb_per_cpu_t" title='lb_per_cpu_t' data-type='struct lb_per_cpu_t' data-ref="lb_per_cpu_t">lb_per_cpu_t</a> *<dfn class="decl field" id="(anonymous)::per_cpu" title='(anonymous struct)::per_cpu' data-ref="(anonymous)::per_cpu">per_cpu</dfn>;</td></tr>
+<tr><th id="280">280</th><td></td></tr>
+<tr><th id="281">281</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="282">282</th><td><i class="doc">   * Node next index for IP adjacencies, for each of the traffic types.</i></td></tr>
+<tr><th id="283">283</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="284">284</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::ip_lookup_next_index" title='(anonymous struct)::ip_lookup_next_index' data-ref="(anonymous)::ip_lookup_next_index">ip_lookup_next_index</dfn>[<a class="enum" href="#LB_VIP_N_TYPES" title='LB_VIP_N_TYPES' data-ref="LB_VIP_N_TYPES">LB_VIP_N_TYPES</a>];</td></tr>
+<tr><th id="285">285</th><td></td></tr>
+<tr><th id="286">286</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="287">287</th><td><i class="doc">   * Source address used in IPv6 encapsulated traffic</i></td></tr>
+<tr><th id="288">288</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="289">289</th><td>  <a class="typedef" href="../../vnet/ip/ip6_packet.h.html#ip6_address_t" title='ip6_address_t' data-type='union ip6_address_t' data-ref="ip6_address_t">ip6_address_t</a> <dfn class="decl field" id="(anonymous)::ip6_src_address" title='(anonymous struct)::ip6_src_address' data-ref="(anonymous)::ip6_src_address">ip6_src_address</dfn>;</td></tr>
+<tr><th id="290">290</th><td></td></tr>
+<tr><th id="291">291</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="292">292</th><td><i class="doc">   * Source address used for IPv4 encapsulated traffic</i></td></tr>
+<tr><th id="293">293</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="294">294</th><td>  <a class="typedef" href="../../vnet/ip/ip4_packet.h.html#ip4_address_t" title='ip4_address_t' data-type='union ip4_address_t' data-ref="ip4_address_t">ip4_address_t</a> <dfn class="decl field" id="(anonymous)::ip4_src_address" title='(anonymous struct)::ip4_src_address' data-ref="(anonymous)::ip4_src_address">ip4_src_address</dfn>;</td></tr>
+<tr><th id="295">295</th><td></td></tr>
+<tr><th id="296">296</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="297">297</th><td><i class="doc">   * Number of buckets in the per-cpu sticky hash table.</i></td></tr>
+<tr><th id="298">298</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="299">299</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::per_cpu_sticky_buckets" title='(anonymous struct)::per_cpu_sticky_buckets' data-ref="(anonymous)::per_cpu_sticky_buckets">per_cpu_sticky_buckets</dfn>;</td></tr>
+<tr><th id="300">300</th><td></td></tr>
+<tr><th id="301">301</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="302">302</th><td><i class="doc">   * Flow timeout in seconds.</i></td></tr>
+<tr><th id="303">303</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="304">304</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::flow_timeout" title='(anonymous struct)::flow_timeout' data-ref="(anonymous)::flow_timeout">flow_timeout</dfn>;</td></tr>
+<tr><th id="305">305</th><td></td></tr>
+<tr><th id="306">306</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="307">307</th><td><i class="doc">   * Per VIP counter</i></td></tr>
+<tr><th id="308">308</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="309">309</th><td>  <a class="typedef" href="../../vlib/counter.h.html#vlib_simple_counter_main_t" title='vlib_simple_counter_main_t' data-type='struct vlib_simple_counter_main_t' data-ref="vlib_simple_counter_main_t">vlib_simple_counter_main_t</a> <dfn class="decl field" id="(anonymous)::vip_counters" title='(anonymous struct)::vip_counters' data-ref="(anonymous)::vip_counters">vip_counters</dfn>[<a class="enum" href="#LB_N_VIP_COUNTERS" title='LB_N_VIP_COUNTERS' data-ref="LB_N_VIP_COUNTERS">LB_N_VIP_COUNTERS</a>];</td></tr>
+<tr><th id="310">310</th><td></td></tr>
+<tr><th id="311">311</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="312">312</th><td><i class="doc">   * DPO used to send packet from IP4/6 lookup to LB node.</i></td></tr>
+<tr><th id="313">313</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="314">314</th><td>  <a class="typedef" href="../../vnet/dpo/dpo.h.html#dpo_type_t" title='dpo_type_t' data-type='enum dpo_type_t_' data-ref="dpo_type_t">dpo_type_t</a> <dfn class="decl field" id="(anonymous)::dpo_gre4_type" title='(anonymous struct)::dpo_gre4_type' data-ref="(anonymous)::dpo_gre4_type">dpo_gre4_type</dfn>;</td></tr>
+<tr><th id="315">315</th><td>  <a class="typedef" href="../../vnet/dpo/dpo.h.html#dpo_type_t" title='dpo_type_t' data-type='enum dpo_type_t_' data-ref="dpo_type_t">dpo_type_t</a> <dfn class="decl field" id="(anonymous)::dpo_gre6_type" title='(anonymous struct)::dpo_gre6_type' data-ref="(anonymous)::dpo_gre6_type">dpo_gre6_type</dfn>;</td></tr>
+<tr><th id="316">316</th><td>  <a class="typedef" href="../../vnet/dpo/dpo.h.html#dpo_type_t" title='dpo_type_t' data-type='enum dpo_type_t_' data-ref="dpo_type_t">dpo_type_t</a> <dfn class="decl field" id="(anonymous)::dpo_l3dsr_type" title='(anonymous struct)::dpo_l3dsr_type' data-ref="(anonymous)::dpo_l3dsr_type">dpo_l3dsr_type</dfn>;</td></tr>
+<tr><th id="317">317</th><td></td></tr>
+<tr><th id="318">318</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="319">319</th><td><i class="doc">   * Node type for registering to fib changes.</i></td></tr>
+<tr><th id="320">320</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="321">321</th><td>  <a class="typedef" href="../../vnet/fib/fib_node.h.html#fib_node_type_t" title='fib_node_type_t' data-type='enum fib_node_type_t_' data-ref="fib_node_type_t">fib_node_type_t</a> <dfn class="decl field" id="(anonymous)::fib_node_type" title='(anonymous struct)::fib_node_type' data-ref="(anonymous)::fib_node_type">fib_node_type</dfn>;</td></tr>
+<tr><th id="322">322</th><td></td></tr>
+<tr><th id="323">323</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="324">324</th><td><i class="doc">   * API dynamically registered base ID.</i></td></tr>
+<tr><th id="325">325</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="326">326</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> <dfn class="decl field" id="(anonymous)::msg_id_base" title='(anonymous struct)::msg_id_base' data-ref="(anonymous)::msg_id_base">msg_id_base</dfn>;</td></tr>
+<tr><th id="327">327</th><td></td></tr>
+<tr><th id="328">328</th><td>  <em>volatile</em> <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> *<dfn class="decl field" id="(anonymous)::writer_lock" title='(anonymous struct)::writer_lock' data-ref="(anonymous)::writer_lock">writer_lock</dfn>;</td></tr>
+<tr><th id="329">329</th><td>} <dfn class="typedef" id="lb_main_t" title='lb_main_t' data-type='struct lb_main_t' data-ref="lb_main_t">lb_main_t</dfn>;</td></tr>
+<tr><th id="330">330</th><td></td></tr>
+<tr><th id="331">331</th><td><b>extern</b> <a class="typedef" href="#lb_main_t" title='lb_main_t' data-type='struct lb_main_t' data-ref="lb_main_t">lb_main_t</a> <dfn class="decl" id="lb_main" title='lb_main' data-ref="lb_main">lb_main</dfn>;</td></tr>
+<tr><th id="332">332</th><td><b>extern</b> <a class="typedef" href="../../vlib/node.h.html#vlib_node_registration_t" title='vlib_node_registration_t' data-type='struct _vlib_node_registration' data-ref="vlib_node_registration_t">vlib_node_registration_t</a> <dfn class="decl" id="lb6_node" title='lb6_node' data-ref="lb6_node">lb6_node</dfn>;</td></tr>
+<tr><th id="333">333</th><td><b>extern</b> <a class="typedef" href="../../vlib/node.h.html#vlib_node_registration_t" title='vlib_node_registration_t' data-type='struct _vlib_node_registration' data-ref="vlib_node_registration_t">vlib_node_registration_t</a> <dfn class="decl" id="lb4_node" title='lb4_node' data-ref="lb4_node">lb4_node</dfn>;</td></tr>
+<tr><th id="334">334</th><td></td></tr>
+<tr><th id="335">335</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="336">336</th><td><i class="doc"> * Fix global load-balancer parameters.</i></td></tr>
+<tr><th id="337">337</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">ip4_address</span> IPv4 source address used for encapsulated traffic</i></td></tr>
+<tr><th id="338">338</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">ip6_address</span> IPv6 source address used for encapsulated traffic</i></td></tr>
+<tr><th id="339">339</th><td><i class="doc"> * <span class="command">@return</span> 0 on success. VNET_LB_ERR_XXX on error</i></td></tr>
+<tr><th id="340">340</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="341">341</th><td><em>int</em> <dfn class="decl fn" id="lb_conf" title='lb_conf' data-ref="lb_conf">lb_conf</dfn>(<a class="typedef" href="../../vnet/ip/ip4_packet.h.html#ip4_address_t" title='ip4_address_t' data-type='union ip4_address_t' data-ref="ip4_address_t">ip4_address_t</a> *<dfn class="local col2 decl" id="42ip4_address" title='ip4_address' data-type='ip4_address_t *' data-ref="42ip4_address">ip4_address</dfn>, <a class="typedef" href="../../vnet/ip/ip6_packet.h.html#ip6_address_t" title='ip6_address_t' data-type='union ip6_address_t' data-ref="ip6_address_t">ip6_address_t</a> *<dfn class="local col3 decl" id="43ip6_address" title='ip6_address' data-type='ip6_address_t *' data-ref="43ip6_address">ip6_address</dfn>,</td></tr>
+<tr><th id="342">342</th><td>            <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col4 decl" id="44sticky_buckets" title='sticky_buckets' data-type='u32' data-ref="44sticky_buckets">sticky_buckets</dfn>, <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col5 decl" id="45flow_timeout" title='flow_timeout' data-type='u32' data-ref="45flow_timeout">flow_timeout</dfn>);</td></tr>
+<tr><th id="343">343</th><td></td></tr>
+<tr><th id="344">344</th><td><em>int</em> <dfn class="decl fn" id="lb_vip_add" title='lb_vip_add' data-ref="lb_vip_add">lb_vip_add</dfn>(<a class="typedef" href="../../vnet/ip/ip6_packet.h.html#ip46_address_t" title='ip46_address_t' data-type='union ip46_address_t' data-ref="ip46_address_t">ip46_address_t</a> *<dfn class="local col6 decl" id="46prefix" title='prefix' data-type='ip46_address_t *' data-ref="46prefix">prefix</dfn>, <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="local col7 decl" id="47plen" title='plen' data-type='u8' data-ref="47plen">plen</dfn>, <a class="typedef" href="#lb_vip_type_t" title='lb_vip_type_t' data-type='enum lb_vip_type_t' data-ref="lb_vip_type_t">lb_vip_type_t</a> <dfn class="local col8 decl" id="48type" title='type' data-type='lb_vip_type_t' data-ref="48type">type</dfn>, <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="local col9 decl" id="49dscp" title='dscp' data-type='u8' data-ref="49dscp">dscp</dfn>,</td></tr>
+<tr><th id="345">345</th><td>	       <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col0 decl" id="50new_length" title='new_length' data-type='u32' data-ref="50new_length">new_length</dfn>, <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> *<dfn class="local col1 decl" id="51vip_index" title='vip_index' data-type='u32 *' data-ref="51vip_index">vip_index</dfn>);</td></tr>
+<tr><th id="346">346</th><td><em>int</em> <dfn class="decl fn" id="lb_vip_del" title='lb_vip_del' data-ref="lb_vip_del">lb_vip_del</dfn>(<a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col2 decl" id="52vip_index" title='vip_index' data-type='u32' data-ref="52vip_index">vip_index</dfn>);</td></tr>
+<tr><th id="347">347</th><td></td></tr>
+<tr><th id="348">348</th><td><em>int</em> <dfn class="decl fn" id="lb_vip_find_index" title='lb_vip_find_index' data-ref="lb_vip_find_index">lb_vip_find_index</dfn>(<a class="typedef" href="../../vnet/ip/ip6_packet.h.html#ip46_address_t" title='ip46_address_t' data-type='union ip46_address_t' data-ref="ip46_address_t">ip46_address_t</a> *<dfn class="local col3 decl" id="53prefix" title='prefix' data-type='ip46_address_t *' data-ref="53prefix">prefix</dfn>, <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="local col4 decl" id="54plen" title='plen' data-type='u8' data-ref="54plen">plen</dfn>, <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> *<dfn class="local col5 decl" id="55vip_index" title='vip_index' data-type='u32 *' data-ref="55vip_index">vip_index</dfn>);</td></tr>
+<tr><th id="349">349</th><td></td></tr>
+<tr><th id="350">350</th><td><u>#define <dfn class="macro" id="_M/lb_vip_get_by_index" data-ref="_M/lb_vip_get_by_index">lb_vip_get_by_index</dfn>(index) (pool_is_free_index(lb_main.vips, index)?NULL:pool_elt_at_index(lb_main.vips, index))</u></td></tr>
+<tr><th id="351">351</th><td></td></tr>
+<tr><th id="352">352</th><td><em>int</em> <dfn class="decl fn" id="lb_vip_add_ass" title='lb_vip_add_ass' data-ref="lb_vip_add_ass">lb_vip_add_ass</dfn>(<a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col6 decl" id="56vip_index" title='vip_index' data-type='u32' data-ref="56vip_index">vip_index</dfn>, <a class="typedef" href="../../vnet/ip/ip6_packet.h.html#ip46_address_t" title='ip46_address_t' data-type='union ip46_address_t' data-ref="ip46_address_t">ip46_address_t</a> *<dfn class="local col7 decl" id="57addresses" title='addresses' data-type='ip46_address_t *' data-ref="57addresses">addresses</dfn>, <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col8 decl" id="58n" title='n' data-type='u32' data-ref="58n">n</dfn>);</td></tr>
+<tr><th id="353">353</th><td><em>int</em> <dfn class="decl fn" id="lb_vip_del_ass" title='lb_vip_del_ass' data-ref="lb_vip_del_ass">lb_vip_del_ass</dfn>(<a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col9 decl" id="59vip_index" title='vip_index' data-type='u32' data-ref="59vip_index">vip_index</dfn>, <a class="typedef" href="../../vnet/ip/ip6_packet.h.html#ip46_address_t" title='ip46_address_t' data-type='union ip46_address_t' data-ref="ip46_address_t">ip46_address_t</a> *<dfn class="local col0 decl" id="60addresses" title='addresses' data-type='ip46_address_t *' data-ref="60addresses">addresses</dfn>, <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col1 decl" id="61n" title='n' data-type='u32' data-ref="61n">n</dfn>);</td></tr>
+<tr><th id="354">354</th><td></td></tr>
+<tr><th id="355">355</th><td><a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl fn" id="lb_hash_time_now" title='lb_hash_time_now' data-ref="lb_hash_time_now">lb_hash_time_now</dfn>(<a class="typedef" href="../../vlib/main.h.html#vlib_main_t" title='vlib_main_t' data-type='struct vlib_main_t' data-ref="vlib_main_t">vlib_main_t</a> * <dfn class="local col2 decl" id="62vm" title='vm' data-type='vlib_main_t *' data-ref="62vm">vm</dfn>);</td></tr>
+<tr><th id="356">356</th><td></td></tr>
+<tr><th id="357">357</th><td><em>void</em> <dfn class="decl fn" id="lb_garbage_collection" title='lb_garbage_collection' data-ref="lb_garbage_collection">lb_garbage_collection</dfn>();</td></tr>
+<tr><th id="358">358</th><td></td></tr>
+<tr><th id="359">359</th><td><a class="typedef" href="../../vppinfra/format.h.html#format_function_t" title='format_function_t' data-type='u8 *(u8 *, va_list *)' data-ref="format_function_t">format_function_t</a> <dfn class="decl fn" id="format_lb_main" title='format_lb_main' data-ref="format_lb_main">format_lb_main</dfn>;</td></tr>
+<tr><th id="360">360</th><td></td></tr>
+<tr><th id="361">361</th><td><u>#<span data-ppcond="30">endif</span> /* LB_PLUGIN_LB_LB_H_ */</u></td></tr>
+<tr><th id="362">362</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='api.c.html'>vpp_1804/src/plugins/lb/api.c</a><br/>Generated on <em>2018-Jul-29</em> from project vpp_1804 revision <em>18.04</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,893 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>iterator_facade.hpp source code [include/boost/iterator/iterator_facade.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::detail::always_bool2,boost::detail::choose_difference_type,boost::detail::enable_if_interoperable,boost::detail::is_non_proxy_reference,boost::detail::iterator_facade_types,boost::detail::operator_arrow_dispatch,boost::detail::operator_brackets_proxy,boost::detail::operator_brackets_result,boost::detail::postfix_increment_proxy,boost::detail::postfix_increment_result,boost::detail::use_operator_brackets_proxy,boost::detail::writable_postfix_increment_proxy,boost::iterator_core_access,boost::iterator_facade "/>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'include/boost/iterator/iterator_facade.hpp'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>include</a>/<a href='..'>boost</a>/<a href='./'>iterator</a>/<a href='iterator_facade.hpp.html'>iterator_facade.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// (C) Copyright David Abrahams 2002.</i></td></tr>
+<tr><th id="2">2</th><td><i>// (C) Copyright Jeremy Siek    2002.</i></td></tr>
+<tr><th id="3">3</th><td><i>// (C) Copyright Thomas Witt    2002.</i></td></tr>
+<tr><th id="4">4</th><td><i>// Distributed under the Boost Software License, Version 1.0. (See</i></td></tr>
+<tr><th id="5">5</th><td><i>// accompanying file LICENSE_1_0.txt or copy at</i></td></tr>
+<tr><th id="6">6</th><td><i>// <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="7">7</th><td><u>#<span data-ppcond="7">ifndef</span> <span class="macro" data-ref="_M/BOOST_ITERATOR_FACADE_23022003THW_HPP">BOOST_ITERATOR_FACADE_23022003THW_HPP</span></u></td></tr>
+<tr><th id="8">8</th><td><u>#define <dfn class="macro" id="_M/BOOST_ITERATOR_FACADE_23022003THW_HPP" data-ref="_M/BOOST_ITERATOR_FACADE_23022003THW_HPP">BOOST_ITERATOR_FACADE_23022003THW_HPP</dfn></u></td></tr>
+<tr><th id="9">9</th><td></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../iterator.hpp.html">&lt;boost/iterator.hpp&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="interoperable.hpp.html">&lt;boost/iterator/interoperable.hpp&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="iterator_traits.hpp.html">&lt;boost/iterator/iterator_traits.hpp&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="detail/facade_iterator_category.hpp.html">&lt;boost/iterator/detail/facade_iterator_category.hpp&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="detail/enable_if.hpp.html">&lt;boost/iterator/detail/enable_if.hpp&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../static_assert.hpp.html">&lt;boost/static_assert.hpp&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../utility/addressof.hpp.html">&lt;boost/utility/addressof.hpp&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../type_traits/is_same.hpp.html">&lt;boost/type_traits/is_same.hpp&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../type_traits/add_const.hpp.html">&lt;boost/type_traits/add_const.hpp&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../type_traits/add_pointer.hpp.html">&lt;boost/type_traits/add_pointer.hpp&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../type_traits/remove_const.hpp.html">&lt;boost/type_traits/remove_const.hpp&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../type_traits/remove_reference.hpp.html">&lt;boost/type_traits/remove_reference.hpp&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../type_traits/is_convertible.hpp.html">&lt;boost/type_traits/is_convertible.hpp&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../type_traits/is_pod.hpp.html">&lt;boost/type_traits/is_pod.hpp&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../mpl/eval_if.hpp.html">&lt;boost/mpl/eval_if.hpp&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../mpl/if.hpp.html">&lt;boost/mpl/if.hpp&gt;</a></u></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="../mpl/or.hpp.html">&lt;boost/mpl/or.hpp&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="../mpl/and.hpp.html">&lt;boost/mpl/and.hpp&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="../mpl/not.hpp.html">&lt;boost/mpl/not.hpp&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="../mpl/always.hpp.html">&lt;boost/mpl/always.hpp&gt;</a></u></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="../mpl/apply.hpp.html">&lt;boost/mpl/apply.hpp&gt;</a></u></td></tr>
+<tr><th id="35">35</th><td><u>#include <a href="../mpl/identity.hpp.html">&lt;boost/mpl/identity.hpp&gt;</a></u></td></tr>
+<tr><th id="36">36</th><td></td></tr>
+<tr><th id="37">37</th><td><u>#include <a href="detail/config_def.hpp.html">&lt;boost/iterator/detail/config_def.hpp&gt;</a> // this goes last</u></td></tr>
+<tr><th id="38">38</th><td></td></tr>
+<tr><th id="39">39</th><td><b>namespace</b> <span class="namespace">boost</span></td></tr>
+<tr><th id="40">40</th><td>{</td></tr>
+<tr><th id="41">41</th><td>  <i>// This forward declaration is required for the friend declaration</i></td></tr>
+<tr><th id="42">42</th><td><i>  // in iterator_core_access</i></td></tr>
+<tr><th id="43">43</th><td>  <b>template</b> &lt;<b>class</b> I, <b>class</b> V, <b>class</b> TC, <b>class</b> R, <b>class</b> D&gt; <b>class</b> <a class="type" href="#boost::iterator_facade" title='boost::iterator_facade' data-ref="boost::iterator_facade">iterator_facade</a>;</td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td>  <b>namespace</b> <span class="namespace">detail</span></td></tr>
+<tr><th id="46">46</th><td>  {</td></tr>
+<tr><th id="47">47</th><td>    <i>// A binary metafunction class that always returns bool.  VC6</i></td></tr>
+<tr><th id="48">48</th><td><i>    // ICEs on mpl::always&lt;bool&gt;, probably because of the default</i></td></tr>
+<tr><th id="49">49</th><td><i>    // parameters.</i></td></tr>
+<tr><th id="50">50</th><td>    <b>struct</b> <dfn class="type def" id="boost::detail::always_bool2" title='boost::detail::always_bool2' data-ref="boost::detail::always_bool2">always_bool2</dfn></td></tr>
+<tr><th id="51">51</th><td>    {</td></tr>
+<tr><th id="52">52</th><td>        <b>template</b> &lt;<b>class</b> T, <b>class</b> U&gt;</td></tr>
+<tr><th id="53">53</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::always_bool2::apply" title='boost::detail::always_bool2::apply' data-ref="boost::detail::always_bool2::apply">apply</dfn></td></tr>
+<tr><th id="54">54</th><td>        {</td></tr>
+<tr><th id="55">55</th><td>            <b>typedef</b> <em>bool</em> <dfn class="typedef" id="boost::detail::always_bool2::apply::type" title='boost::detail::always_bool2::apply::type' data-type='bool' data-ref="boost::detail::always_bool2::apply::type">type</dfn>;</td></tr>
+<tr><th id="56">56</th><td>        };</td></tr>
+<tr><th id="57">57</th><td>    };</td></tr>
+<tr><th id="58">58</th><td></td></tr>
+<tr><th id="59">59</th><td>    <i>//</i></td></tr>
+<tr><th id="60">60</th><td><i>    // enable if for use in operator implementation.</i></td></tr>
+<tr><th id="61">61</th><td><i>    //</i></td></tr>
+<tr><th id="62">62</th><td>    <b>template</b> &lt;</td></tr>
+<tr><th id="63">63</th><td>        <b>class</b> Facade1</td></tr>
+<tr><th id="64">64</th><td>      , <b>class</b> Facade2</td></tr>
+<tr><th id="65">65</th><td>      , <b>class</b> Return</td></tr>
+<tr><th id="66">66</th><td>    &gt;</td></tr>
+<tr><th id="67">67</th><td>    <b>struct</b> <dfn class="type def" id="boost::detail::enable_if_interoperable" title='boost::detail::enable_if_interoperable' data-ref="boost::detail::enable_if_interoperable">enable_if_interoperable</dfn></td></tr>
+<tr><th id="68">68</th><td><u>#<span data-ppcond="68">if</span> <a class="macro" href="../detail/workaround.hpp.html#233" title="((1 + 0 == 0) &amp;&amp; (BOOST_MSVC != 0) &amp;&amp; (1 % (( (BOOST_MSVC &lt;= 1300) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_MSVC, &lt;= 1300)</u></td></tr>
+<tr><th id="69">69</th><td>    {</td></tr>
+<tr><th id="70">70</th><td>        <b>typedef</b> <b>typename</b> mpl::if_&lt;</td></tr>
+<tr><th id="71">71</th><td>            mpl::or_&lt;</td></tr>
+<tr><th id="72">72</th><td>                is_convertible&lt;Facade1, Facade2&gt;</td></tr>
+<tr><th id="73">73</th><td>              , is_convertible&lt;Facade2, Facade1&gt;</td></tr>
+<tr><th id="74">74</th><td>            &gt;</td></tr>
+<tr><th id="75">75</th><td>          , Return</td></tr>
+<tr><th id="76">76</th><td>          , <em>int</em>[<var>3</var>]</td></tr>
+<tr><th id="77">77</th><td>        &gt;::type type;</td></tr>
+<tr><th id="78">78</th><td>    };        </td></tr>
+<tr><th id="79">79</th><td><u>#<span data-ppcond="68">else</span></u></td></tr>
+<tr><th id="80">80</th><td>      : <span class="namespace">::boost::iterators::</span><a class="type" href="detail/enable_if.hpp.html#boost::iterators::enable_if" title='boost::iterators::enable_if' data-ref="boost::iterators::enable_if">enable_if</a>&lt;</td></tr>
+<tr><th id="81">81</th><td>           <span class="namespace">mpl::</span><a class="type" href="../mpl/aux_/preprocessed/gcc/or.hpp.html#boost::mpl::or_" title='boost::mpl::or_' data-ref="boost::mpl::or_">or_</a>&lt;</td></tr>
+<tr><th id="82">82</th><td>               <a class="type" href="../type_traits/is_convertible.hpp.html#484" title='boost::is_convertible' data-ref="boost::is_convertible">is_convertible</a>&lt;Facade1, Facade2&gt;</td></tr>
+<tr><th id="83">83</th><td>             , <a class="type" href="../type_traits/is_convertible.hpp.html#484" title='boost::is_convertible' data-ref="boost::is_convertible">is_convertible</a>&lt;Facade2, Facade1&gt;</td></tr>
+<tr><th id="84">84</th><td>           &gt;</td></tr>
+<tr><th id="85">85</th><td>         , Return</td></tr>
+<tr><th id="86">86</th><td>        &gt;</td></tr>
+<tr><th id="87">87</th><td>    {};</td></tr>
+<tr><th id="88">88</th><td><u>#<span data-ppcond="68">endif</span></u> </td></tr>
+<tr><th id="89">89</th><td></td></tr>
+<tr><th id="90">90</th><td>    <i>//</i></td></tr>
+<tr><th id="91">91</th><td><i>    // Generates associated types for an iterator_facade with the</i></td></tr>
+<tr><th id="92">92</th><td><i>    // given parameters.</i></td></tr>
+<tr><th id="93">93</th><td><i>    //</i></td></tr>
+<tr><th id="94">94</th><td>    <b>template</b> &lt;</td></tr>
+<tr><th id="95">95</th><td>        <b>class</b> ValueParam</td></tr>
+<tr><th id="96">96</th><td>      , <b>class</b> CategoryOrTraversal</td></tr>
+<tr><th id="97">97</th><td>      , <b>class</b> Reference </td></tr>
+<tr><th id="98">98</th><td>      , <b>class</b> Difference</td></tr>
+<tr><th id="99">99</th><td>    &gt;</td></tr>
+<tr><th id="100">100</th><td>    <b>struct</b> <dfn class="type def" id="boost::detail::iterator_facade_types" title='boost::detail::iterator_facade_types' data-ref="boost::detail::iterator_facade_types">iterator_facade_types</dfn></td></tr>
+<tr><th id="101">101</th><td>    {</td></tr>
+<tr><th id="102">102</th><td>        <b>typedef</b> <b>typename</b> <a class="type" href="detail/facade_iterator_category.hpp.html#boost::detail::facade_iterator_category" title='boost::detail::facade_iterator_category' data-ref="boost::detail::facade_iterator_category">facade_iterator_category</a>&lt;</td></tr>
+<tr><th id="103">103</th><td>            CategoryOrTraversal, ValueParam, Reference</td></tr>
+<tr><th id="104">104</th><td>        &gt;::type <dfn class="typedef" id="boost::detail::iterator_facade_types::iterator_category" title='boost::detail::iterator_facade_types::iterator_category' data-type='typename facade_iterator_category&lt;CategoryOrTraversal, ValueParam, Reference&gt;::type' data-ref="boost::detail::iterator_facade_types::iterator_category">iterator_category</dfn>;</td></tr>
+<tr><th id="105">105</th><td>        </td></tr>
+<tr><th id="106">106</th><td>        <b>typedef</b> <b>typename</b> <a class="type" href="../type_traits/remove_const.hpp.html#73" title='boost::remove_const' data-ref="boost::remove_const">remove_const</a>&lt;ValueParam&gt;::type <dfn class="typedef" id="boost::detail::iterator_facade_types::value_type" title='boost::detail::iterator_facade_types::value_type' data-type='typename remove_const&lt;ValueParam&gt;::type' data-ref="boost::detail::iterator_facade_types::value_type">value_type</dfn>;</td></tr>
+<tr><th id="107">107</th><td>        </td></tr>
+<tr><th id="108">108</th><td>        <i>// Not the real associated pointer type</i></td></tr>
+<tr><th id="109">109</th><td>        <b>typedef</b> <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../mpl/eval_if.hpp.html#boost::mpl::eval_if" title='boost::mpl::eval_if' data-ref="boost::mpl::eval_if">eval_if</a>&lt;</td></tr>
+<tr><th id="110">110</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="detail/facade_iterator_category.hpp.html#boost::detail::iterator_writability_disabled" title='boost::detail::iterator_writability_disabled' data-ref="boost::detail::iterator_writability_disabled">iterator_writability_disabled</a>&lt;ValueParam,Reference&gt;</td></tr>
+<tr><th id="111">111</th><td>          , <a class="type" href="../type_traits/add_pointer.hpp.html#66" title='boost::add_pointer' data-ref="boost::add_pointer">add_pointer</a>&lt;<em>const</em> <a class="typedef" href="#boost::detail::iterator_facade_types::value_type" title='boost::detail::iterator_facade_types::value_type' data-type='typename remove_const&lt;ValueParam&gt;::type' data-ref="boost::detail::iterator_facade_types::value_type">value_type</a>&gt;</td></tr>
+<tr><th id="112">112</th><td>          , <a class="type" href="../type_traits/add_pointer.hpp.html#66" title='boost::add_pointer' data-ref="boost::add_pointer">add_pointer</a>&lt;<a class="typedef" href="#boost::detail::iterator_facade_types::value_type" title='boost::detail::iterator_facade_types::value_type' data-type='typename remove_const&lt;ValueParam&gt;::type' data-ref="boost::detail::iterator_facade_types::value_type">value_type</a>&gt;</td></tr>
+<tr><th id="113">113</th><td>        &gt;::type <dfn class="typedef" id="boost::detail::iterator_facade_types::pointer" title='boost::detail::iterator_facade_types::pointer' data-type='typename mpl::eval_if&lt;boost::detail::iterator_writability_disabled&lt;ValueParam, Reference&gt;, add_pointer&lt;const value_type&gt;, add_pointer&lt;value_type&gt; &gt;::type' data-ref="boost::detail::iterator_facade_types::pointer">pointer</dfn>;</td></tr>
+<tr><th id="114">114</th><td>      </td></tr>
+<tr><th id="115">115</th><td><u># <span data-ppcond="115">if</span> defined(<span class="macro" data-ref="_M/BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION">BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION</span>)                          \</u></td></tr>
+<tr><th id="116">116</th><td><u>    &amp;&amp; (<a class="macro" href="../detail/workaround.hpp.html#233" title="((1 + 0 == 0) &amp;&amp; (_STLPORT_VERSION != 0) &amp;&amp; (1 % (( (_STLPORT_VERSION != ((0x452)-(0x452))) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(_STLPORT_VERSION, <a class="macro" href="../detail/workaround.hpp.html#258" title="!= ((0x452)-(0x452))" data-ref="_M/BOOST_TESTED_AT">BOOST_TESTED_AT</a>(0x452))              \</u></td></tr>
+<tr><th id="117">117</th><td><u>        || <a class="macro" href="../detail/workaround.hpp.html#233" title="((1 + 0 == 0) &amp;&amp; (BOOST_DINKUMWARE_STDLIB != 0) &amp;&amp; (1 % (( (BOOST_DINKUMWARE_STDLIB != ((310)-(310))) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_DINKUMWARE_STDLIB, <a class="macro" href="../detail/workaround.hpp.html#258" title="!= ((310)-(310))" data-ref="_M/BOOST_TESTED_AT">BOOST_TESTED_AT</a>(310)))     \</u></td></tr>
+<tr><th id="118">118</th><td><u>    || <a class="macro" href="../detail/workaround.hpp.html#233" title="((1 + 0 == 0) &amp;&amp; (BOOST_RWSTD_VER != 0) &amp;&amp; (1 % (( (BOOST_RWSTD_VER != ((0x20101)-(0x20101))) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_RWSTD_VER, <a class="macro" href="../detail/workaround.hpp.html#258" title="!= ((0x20101)-(0x20101))" data-ref="_M/BOOST_TESTED_AT">BOOST_TESTED_AT</a>(0x20101))              \</u></td></tr>
+<tr><th id="119">119</th><td><u>    || <a class="macro" href="../detail/workaround.hpp.html#233" title="((1 + 0 == 0) &amp;&amp; (BOOST_DINKUMWARE_STDLIB != 0) &amp;&amp; (1 % (( (BOOST_DINKUMWARE_STDLIB &lt;= 310) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_DINKUMWARE_STDLIB, &lt;= 310)</u></td></tr>
+<tr><th id="120">120</th><td></td></tr>
+<tr><th id="121">121</th><td>        <i>// To interoperate with some broken library/compiler</i></td></tr>
+<tr><th id="122">122</th><td><i>        // combinations, user-defined iterators must be derived from</i></td></tr>
+<tr><th id="123">123</th><td><i>        // std::iterator.  It is possible to implement a standard</i></td></tr>
+<tr><th id="124">124</th><td><i>        // library for broken compilers without this limitation.</i></td></tr>
+<tr><th id="125">125</th><td><u>#  define BOOST_ITERATOR_FACADE_NEEDS_ITERATOR_BASE 1</u></td></tr>
+<tr><th id="126">126</th><td></td></tr>
+<tr><th id="127">127</th><td>        <b>typedef</b></td></tr>
+<tr><th id="128">128</th><td>           iterator&lt;iterator_category, value_type, Difference, pointer, Reference&gt;</td></tr>
+<tr><th id="129">129</th><td>        base;</td></tr>
+<tr><th id="130">130</th><td><u># <span data-ppcond="115">endif</span></u></td></tr>
+<tr><th id="131">131</th><td>    };</td></tr>
+<tr><th id="132">132</th><td></td></tr>
+<tr><th id="133">133</th><td>    <i>// iterators whose dereference operators reference the same value</i></td></tr>
+<tr><th id="134">134</th><td><i>    // for all iterators into the same sequence (like many input</i></td></tr>
+<tr><th id="135">135</th><td><i>    // iterators) need help with their postfix ++: the referenced</i></td></tr>
+<tr><th id="136">136</th><td><i>    // value must be read and stored away before the increment occurs</i></td></tr>
+<tr><th id="137">137</th><td><i>    // so that *a++ yields the originally referenced element and not</i></td></tr>
+<tr><th id="138">138</th><td><i>    // the next one.</i></td></tr>
+<tr><th id="139">139</th><td>    <b>template</b> &lt;<b>class</b> Iterator&gt;</td></tr>
+<tr><th id="140">140</th><td>    <b>class</b> <dfn class="type def" id="boost::detail::postfix_increment_proxy" title='boost::detail::postfix_increment_proxy' data-ref="boost::detail::postfix_increment_proxy">postfix_increment_proxy</dfn></td></tr>
+<tr><th id="141">141</th><td>    {</td></tr>
+<tr><th id="142">142</th><td>        <b>typedef</b> <b>typename</b> <a class="type" href="iterator_traits.hpp.html#boost::iterator_value" title='boost::iterator_value' data-ref="boost::iterator_value">iterator_value</a>&lt;Iterator&gt;::type <dfn class="typedef" id="boost::detail::postfix_increment_proxy::value_type" title='boost::detail::postfix_increment_proxy::value_type' data-type='typename iterator_value&lt;Iterator&gt;::type' data-ref="boost::detail::postfix_increment_proxy::value_type">value_type</dfn>;</td></tr>
+<tr><th id="143">143</th><td>     <b>public</b>:</td></tr>
+<tr><th id="144">144</th><td>        <b>explicit</b> <dfn class="decl def fn" id="_ZN5boost6detail23postfix_increment_proxyC1ERKT_" title='boost::detail::postfix_increment_proxy::postfix_increment_proxy&lt;Iterator&gt;' data-ref="_ZN5boost6detail23postfix_increment_proxyC1ERKT_">postfix_increment_proxy</dfn>(Iterator <em>const</em>&amp; <dfn class="local col5 decl" id="435x" title='x' data-type='const Iterator &amp;' data-ref="435x">x</dfn>)</td></tr>
+<tr><th id="145">145</th><td>          : <a class="member field" href="#boost::detail::postfix_increment_proxy::stored_value" title='boost::detail::postfix_increment_proxy::stored_value' data-ref="boost::detail::postfix_increment_proxy::stored_value">stored_value</a>(*<a class="local col5 ref" href="#435x" title='x' data-ref="435x">x</a>)</td></tr>
+<tr><th id="146">146</th><td>        {}</td></tr>
+<tr><th id="147">147</th><td></td></tr>
+<tr><th id="148">148</th><td>        <i>// Returning a mutable reference allows nonsense like</i></td></tr>
+<tr><th id="149">149</th><td><i>        // (*r++).mutate(), but it imposes fewer assumptions about the</i></td></tr>
+<tr><th id="150">150</th><td><i>        // behavior of the value_type.  In particular, recall that</i></td></tr>
+<tr><th id="151">151</th><td><i>        // (*r).mutate() is legal if operator* returns by value.</i></td></tr>
+<tr><th id="152">152</th><td>        <a class="typedef" href="#boost::detail::postfix_increment_proxy::value_type" title='boost::detail::postfix_increment_proxy::value_type' data-type='typename iterator_value&lt;Iterator&gt;::type' data-ref="boost::detail::postfix_increment_proxy::value_type">value_type</a>&amp;</td></tr>
+<tr><th id="153">153</th><td>        <dfn class="decl def fn" id="_ZNK5boost6detail23postfix_increment_proxydeEv" title='boost::detail::postfix_increment_proxy::operator*' data-ref="_ZNK5boost6detail23postfix_increment_proxydeEv"><b>operator</b>*</dfn>() <em>const</em></td></tr>
+<tr><th id="154">154</th><td>        {</td></tr>
+<tr><th id="155">155</th><td>            <b>return</b> <b>this</b>-&gt;stored_value;</td></tr>
+<tr><th id="156">156</th><td>        }</td></tr>
+<tr><th id="157">157</th><td>     <b>private</b>:</td></tr>
+<tr><th id="158">158</th><td>        <em>mutable</em> <a class="typedef" href="#boost::detail::postfix_increment_proxy::value_type" title='boost::detail::postfix_increment_proxy::value_type' data-type='typename iterator_value&lt;Iterator&gt;::type' data-ref="boost::detail::postfix_increment_proxy::value_type">value_type</a> <dfn class="decl field" id="boost::detail::postfix_increment_proxy::stored_value" title='boost::detail::postfix_increment_proxy::stored_value' data-ref="boost::detail::postfix_increment_proxy::stored_value">stored_value</dfn>;</td></tr>
+<tr><th id="159">159</th><td>    };</td></tr>
+<tr><th id="160">160</th><td>    </td></tr>
+<tr><th id="161">161</th><td>    <i>//</i></td></tr>
+<tr><th id="162">162</th><td><i>    // In general, we can't determine that such an iterator isn't</i></td></tr>
+<tr><th id="163">163</th><td><i>    // writable -- we also need to store a copy of the old iterator so</i></td></tr>
+<tr><th id="164">164</th><td><i>    // that it can be written into.</i></td></tr>
+<tr><th id="165">165</th><td>    <b>template</b> &lt;<b>class</b> Iterator&gt;</td></tr>
+<tr><th id="166">166</th><td>    <b>class</b> <dfn class="type def" id="boost::detail::writable_postfix_increment_proxy" title='boost::detail::writable_postfix_increment_proxy' data-ref="boost::detail::writable_postfix_increment_proxy">writable_postfix_increment_proxy</dfn></td></tr>
+<tr><th id="167">167</th><td>    {</td></tr>
+<tr><th id="168">168</th><td>        <b>typedef</b> <b>typename</b> <a class="type" href="iterator_traits.hpp.html#boost::iterator_value" title='boost::iterator_value' data-ref="boost::iterator_value">iterator_value</a>&lt;Iterator&gt;::type <dfn class="typedef" id="boost::detail::writable_postfix_increment_proxy::value_type" title='boost::detail::writable_postfix_increment_proxy::value_type' data-type='typename iterator_value&lt;Iterator&gt;::type' data-ref="boost::detail::writable_postfix_increment_proxy::value_type">value_type</dfn>;</td></tr>
+<tr><th id="169">169</th><td>     <b>public</b>:</td></tr>
+<tr><th id="170">170</th><td>        <b>explicit</b> <dfn class="decl def fn" id="_ZN5boost6detail32writable_postfix_increment_proxyC1ERKT_" title='boost::detail::writable_postfix_increment_proxy::writable_postfix_increment_proxy&lt;Iterator&gt;' data-ref="_ZN5boost6detail32writable_postfix_increment_proxyC1ERKT_">writable_postfix_increment_proxy</dfn>(Iterator <em>const</em>&amp; <dfn class="local col6 decl" id="436x" title='x' data-type='const Iterator &amp;' data-ref="436x">x</dfn>)</td></tr>
+<tr><th id="171">171</th><td>          : <a class="member field" href="#boost::detail::writable_postfix_increment_proxy::stored_value" title='boost::detail::writable_postfix_increment_proxy::stored_value' data-ref="boost::detail::writable_postfix_increment_proxy::stored_value">stored_value</a>(*<a class="local col6 ref" href="#436x" title='x' data-ref="436x">x</a>)</td></tr>
+<tr><th id="172">172</th><td>          , <a class="member field" href="#boost::detail::writable_postfix_increment_proxy::stored_iterator" title='boost::detail::writable_postfix_increment_proxy::stored_iterator' data-ref="boost::detail::writable_postfix_increment_proxy::stored_iterator">stored_iterator</a>(<a class="local col6 ref" href="#436x" title='x' data-ref="436x">x</a>)</td></tr>
+<tr><th id="173">173</th><td>        {}</td></tr>
+<tr><th id="174">174</th><td></td></tr>
+<tr><th id="175">175</th><td>        <i>// Dereferencing must return a proxy so that both *r++ = o and</i></td></tr>
+<tr><th id="176">176</th><td><i>        // value_type(*r++) can work.  In this case, *r is the same as</i></td></tr>
+<tr><th id="177">177</th><td><i>        // *r++, and the conversion operator below is used to ensure</i></td></tr>
+<tr><th id="178">178</th><td><i>        // readability.</i></td></tr>
+<tr><th id="179">179</th><td>        writable_postfix_increment_proxy <em>const</em>&amp;</td></tr>
+<tr><th id="180">180</th><td>        <dfn class="decl def fn" id="_ZNK5boost6detail32writable_postfix_increment_proxydeEv" title='boost::detail::writable_postfix_increment_proxy::operator*' data-ref="_ZNK5boost6detail32writable_postfix_increment_proxydeEv"><b>operator</b>*</dfn>() <em>const</em></td></tr>
+<tr><th id="181">181</th><td>        {</td></tr>
+<tr><th id="182">182</th><td>            <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="183">183</th><td>        }</td></tr>
+<tr><th id="184">184</th><td></td></tr>
+<tr><th id="185">185</th><td>        <i>// Provides readability of *r++</i></td></tr>
+<tr><th id="186">186</th><td>        <dfn class="decl def fn" id="_ZNK5boost6detail32writable_postfix_increment_proxycvRNS_14iterator_valueIT_E4typeEEv" title='boost::detail::writable_postfix_increment_proxy::operator typename iterator_value&lt;type-parameter-0-0&gt;::type &amp;' data-ref="_ZNK5boost6detail32writable_postfix_increment_proxycvRNS_14iterator_valueIT_E4typeEEv"><b>operator</b> <a class="typedef" href="#boost::detail::writable_postfix_increment_proxy::value_type" title='boost::detail::writable_postfix_increment_proxy::value_type' data-type='typename iterator_value&lt;Iterator&gt;::type' data-ref="boost::detail::writable_postfix_increment_proxy::value_type">value_type</a>&amp;</dfn>() <em>const</em></td></tr>
+<tr><th id="187">187</th><td>        {</td></tr>
+<tr><th id="188">188</th><td>            <b>return</b> <a class="member field" href="#boost::detail::writable_postfix_increment_proxy::stored_value" title='boost::detail::writable_postfix_increment_proxy::stored_value' data-ref="boost::detail::writable_postfix_increment_proxy::stored_value">stored_value</a>;</td></tr>
+<tr><th id="189">189</th><td>        }</td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td>        <i>// Provides writability of *r++</i></td></tr>
+<tr><th id="192">192</th><td>        <b>template</b> &lt;<b>class</b> T&gt;</td></tr>
+<tr><th id="193">193</th><td>        T <em>const</em>&amp; <dfn class="decl def fn" id="_ZNK5boost6detail32writable_postfix_increment_proxyaSERKT_" title='boost::detail::writable_postfix_increment_proxy::operator=' data-ref="_ZNK5boost6detail32writable_postfix_increment_proxyaSERKT_"><b>operator</b>=</dfn>(T <em>const</em>&amp; <dfn class="local col7 decl" id="437x" title='x' data-type='const T &amp;' data-ref="437x">x</dfn>) <em>const</em></td></tr>
+<tr><th id="194">194</th><td>        {</td></tr>
+<tr><th id="195">195</th><td>            *<b>this</b>-&gt;stored_iterator = <a class="local col7 ref" href="#437x" title='x' data-ref="437x">x</a>;</td></tr>
+<tr><th id="196">196</th><td>            <b>return</b> <a class="local col7 ref" href="#437x" title='x' data-ref="437x">x</a>;</td></tr>
+<tr><th id="197">197</th><td>        }</td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td>        <i>// This overload just in case only non-const objects are writable</i></td></tr>
+<tr><th id="200">200</th><td>        <b>template</b> &lt;<b>class</b> T&gt;</td></tr>
+<tr><th id="201">201</th><td>        T&amp; <dfn class="decl def fn" id="_ZNK5boost6detail32writable_postfix_increment_proxyaSERT_" title='boost::detail::writable_postfix_increment_proxy::operator=' data-ref="_ZNK5boost6detail32writable_postfix_increment_proxyaSERT_"><b>operator</b>=</dfn>(T&amp; <dfn class="local col8 decl" id="438x" title='x' data-type='T &amp;' data-ref="438x">x</dfn>) <em>const</em></td></tr>
+<tr><th id="202">202</th><td>        {</td></tr>
+<tr><th id="203">203</th><td>            *<b>this</b>-&gt;stored_iterator = <a class="local col8 ref" href="#438x" title='x' data-ref="438x">x</a>;</td></tr>
+<tr><th id="204">204</th><td>            <b>return</b> <a class="local col8 ref" href="#438x" title='x' data-ref="438x">x</a>;</td></tr>
+<tr><th id="205">205</th><td>        }</td></tr>
+<tr><th id="206">206</th><td></td></tr>
+<tr><th id="207">207</th><td>        <i>// Provides X(r++)</i></td></tr>
+<tr><th id="208">208</th><td>        <dfn class="decl def fn" id="_ZNK5boost6detail32writable_postfix_increment_proxycvRKT_Ev" title='boost::detail::writable_postfix_increment_proxy::operator const type-parameter-0-0 &amp;' data-ref="_ZNK5boost6detail32writable_postfix_increment_proxycvRKT_Ev"><b>operator</b> Iterator <em>const</em>&amp;</dfn>() <em>const</em></td></tr>
+<tr><th id="209">209</th><td>        {</td></tr>
+<tr><th id="210">210</th><td>            <b>return</b> <a class="member field" href="#boost::detail::writable_postfix_increment_proxy::stored_iterator" title='boost::detail::writable_postfix_increment_proxy::stored_iterator' data-ref="boost::detail::writable_postfix_increment_proxy::stored_iterator">stored_iterator</a>;</td></tr>
+<tr><th id="211">211</th><td>        }</td></tr>
+<tr><th id="212">212</th><td>        </td></tr>
+<tr><th id="213">213</th><td>     <b>private</b>:</td></tr>
+<tr><th id="214">214</th><td>        <em>mutable</em> <a class="typedef" href="#boost::detail::writable_postfix_increment_proxy::value_type" title='boost::detail::writable_postfix_increment_proxy::value_type' data-type='typename iterator_value&lt;Iterator&gt;::type' data-ref="boost::detail::writable_postfix_increment_proxy::value_type">value_type</a> <dfn class="decl field" id="boost::detail::writable_postfix_increment_proxy::stored_value" title='boost::detail::writable_postfix_increment_proxy::stored_value' data-ref="boost::detail::writable_postfix_increment_proxy::stored_value">stored_value</dfn>;</td></tr>
+<tr><th id="215">215</th><td>        Iterator <dfn class="decl field" id="boost::detail::writable_postfix_increment_proxy::stored_iterator" title='boost::detail::writable_postfix_increment_proxy::stored_iterator' data-ref="boost::detail::writable_postfix_increment_proxy::stored_iterator">stored_iterator</dfn>;</td></tr>
+<tr><th id="216">216</th><td>    };</td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td><u># <span data-ppcond="218">ifdef</span> <span class="macro" data-ref="_M/BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION">BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION</span></u></td></tr>
+<tr><th id="219">219</th><td></td></tr>
+<tr><th id="220">220</th><td>    <b>template</b> &lt;<b>class</b> Reference, <b>class</b> Value&gt;</td></tr>
+<tr><th id="221">221</th><td>    <b>struct</b> is_non_proxy_reference_impl</td></tr>
+<tr><th id="222">222</th><td>    {</td></tr>
+<tr><th id="223">223</th><td>        <em>static</em> Reference r;</td></tr>
+<tr><th id="224">224</th><td>        </td></tr>
+<tr><th id="225">225</th><td>        <b>template</b> &lt;<b>class</b> R&gt;</td></tr>
+<tr><th id="226">226</th><td>        <em>static</em> <b>typename</b> mpl::if_&lt;</td></tr>
+<tr><th id="227">227</th><td>            is_convertible&lt;</td></tr>
+<tr><th id="228">228</th><td>                R <em>const</em> <em>volatile</em>*</td></tr>
+<tr><th id="229">229</th><td>              , Value <em>const</em> <em>volatile</em>*</td></tr>
+<tr><th id="230">230</th><td>            &gt;</td></tr>
+<tr><th id="231">231</th><td>          , <em>char</em>[<var>1</var>]</td></tr>
+<tr><th id="232">232</th><td>          , <em>char</em>[<var>2</var>]</td></tr>
+<tr><th id="233">233</th><td>        &gt;::type&amp; helper(R <em>const</em>&amp;);</td></tr>
+<tr><th id="234">234</th><td>        </td></tr>
+<tr><th id="235">235</th><td>        BOOST_STATIC_CONSTANT(<em>bool</em>, value = <b>sizeof</b>(helper(r)) == <var>1</var>);</td></tr>
+<tr><th id="236">236</th><td>    };</td></tr>
+<tr><th id="237">237</th><td>        </td></tr>
+<tr><th id="238">238</th><td>    <b>template</b> &lt;<b>class</b> Reference, <b>class</b> Value&gt;</td></tr>
+<tr><th id="239">239</th><td>    <b>struct</b> is_non_proxy_reference</td></tr>
+<tr><th id="240">240</th><td>      : mpl::bool_&lt;</td></tr>
+<tr><th id="241">241</th><td>            is_non_proxy_reference_impl&lt;Reference, Value&gt;::value</td></tr>
+<tr><th id="242">242</th><td>        &gt;</td></tr>
+<tr><th id="243">243</th><td>    {};</td></tr>
+<tr><th id="244">244</th><td><u># <span data-ppcond="218">else</span></u> </td></tr>
+<tr><th id="245">245</th><td>    <b>template</b> &lt;<b>class</b> Reference, <b>class</b> Value&gt;</td></tr>
+<tr><th id="246">246</th><td>    <b>struct</b> <dfn class="type def" id="boost::detail::is_non_proxy_reference" title='boost::detail::is_non_proxy_reference' data-ref="boost::detail::is_non_proxy_reference">is_non_proxy_reference</dfn></td></tr>
+<tr><th id="247">247</th><td>      : <a class="type" href="../type_traits/is_convertible.hpp.html#484" title='boost::is_convertible' data-ref="boost::is_convertible">is_convertible</a>&lt;</td></tr>
+<tr><th id="248">248</th><td>            <b>typename</b> <a class="type" href="../type_traits/remove_reference.hpp.html#47" title='boost::remove_reference' data-ref="boost::remove_reference">remove_reference</a>&lt;Reference&gt;::type</td></tr>
+<tr><th id="249">249</th><td>            <em>const</em> <em>volatile</em>*</td></tr>
+<tr><th id="250">250</th><td>          , Value <em>const</em> <em>volatile</em>*</td></tr>
+<tr><th id="251">251</th><td>        &gt;</td></tr>
+<tr><th id="252">252</th><td>    {};</td></tr>
+<tr><th id="253">253</th><td><u># <span data-ppcond="218">endif</span></u> </td></tr>
+<tr><th id="254">254</th><td>        </td></tr>
+<tr><th id="255">255</th><td>    <i>// A metafunction to choose the result type of postfix ++</i></td></tr>
+<tr><th id="256">256</th><td><i>    //</i></td></tr>
+<tr><th id="257">257</th><td><i>    // Because the C++98 input iterator requirements say that *r++ has</i></td></tr>
+<tr><th id="258">258</th><td><i>    // type T (value_type), implementations of some standard</i></td></tr>
+<tr><th id="259">259</th><td><i>    // algorithms like lexicographical_compare may use constructions</i></td></tr>
+<tr><th id="260">260</th><td><i>    // like:</i></td></tr>
+<tr><th id="261">261</th><td><i>    //</i></td></tr>
+<tr><th id="262">262</th><td><i>    //          *r++ &lt; *s++</i></td></tr>
+<tr><th id="263">263</th><td><i>    //</i></td></tr>
+<tr><th id="264">264</th><td><i>    // If *r++ returns a proxy (as required if r is writable but not</i></td></tr>
+<tr><th id="265">265</th><td><i>    // multipass), this sort of expression will fail unless the proxy</i></td></tr>
+<tr><th id="266">266</th><td><i>    // supports the operator&lt;.  Since there are any number of such</i></td></tr>
+<tr><th id="267">267</th><td><i>    // operations, we're not going to try to support them.  Therefore,</i></td></tr>
+<tr><th id="268">268</th><td><i>    // even if r++ returns a proxy, *r++ will only return a proxy if</i></td></tr>
+<tr><th id="269">269</th><td><i>    // *r also returns a proxy.</i></td></tr>
+<tr><th id="270">270</th><td>    <b>template</b> &lt;<b>class</b> Iterator, <b>class</b> Value, <b>class</b> Reference, <b>class</b> CategoryOrTraversal&gt;</td></tr>
+<tr><th id="271">271</th><td>    <b>struct</b> <dfn class="type def" id="boost::detail::postfix_increment_result" title='boost::detail::postfix_increment_result' data-ref="boost::detail::postfix_increment_result">postfix_increment_result</dfn></td></tr>
+<tr><th id="272">272</th><td>      : <span class="namespace">mpl::</span><a class="type" href="../mpl/eval_if.hpp.html#boost::mpl::eval_if" title='boost::mpl::eval_if' data-ref="boost::mpl::eval_if">eval_if</a>&lt;</td></tr>
+<tr><th id="273">273</th><td>            <span class="namespace">mpl::</span><a class="type" href="../mpl/aux_/preprocessed/gcc/and.hpp.html#boost::mpl::and_" title='boost::mpl::and_' data-ref="boost::mpl::and_">and_</a>&lt;</td></tr>
+<tr><th id="274">274</th><td>                <i>// A proxy is only needed for readable iterators</i></td></tr>
+<tr><th id="275">275</th><td>                <a class="type" href="../type_traits/is_convertible.hpp.html#484" title='boost::is_convertible' data-ref="boost::is_convertible">is_convertible</a>&lt;Reference,Value <em>const</em>&amp;&gt;</td></tr>
+<tr><th id="276">276</th><td>                </td></tr>
+<tr><th id="277">277</th><td>                <i>// No multipass iterator can have values that disappear</i></td></tr>
+<tr><th id="278">278</th><td><i>                // before positions can be re-visited</i></td></tr>
+<tr><th id="279">279</th><td>              , <span class="namespace">mpl::</span><a class="type" href="../mpl/not.hpp.html#boost::mpl::not_" title='boost::mpl::not_' data-ref="boost::mpl::not_">not_</a>&lt;</td></tr>
+<tr><th id="280">280</th><td>                    <a class="type" href="../type_traits/is_convertible.hpp.html#484" title='boost::is_convertible' data-ref="boost::is_convertible">is_convertible</a>&lt;</td></tr>
+<tr><th id="281">281</th><td>                        <b>typename</b> <a class="type" href="iterator_categories.hpp.html#boost::iterator_category_to_traversal" title='boost::iterator_category_to_traversal' data-ref="boost::iterator_category_to_traversal">iterator_category_to_traversal</a>&lt;CategoryOrTraversal&gt;::type</td></tr>
+<tr><th id="282">282</th><td>                      , <a class="type" href="iterator_categories.hpp.html#boost::forward_traversal_tag" title='boost::forward_traversal_tag' data-ref="boost::forward_traversal_tag">forward_traversal_tag</a></td></tr>
+<tr><th id="283">283</th><td>                    &gt;</td></tr>
+<tr><th id="284">284</th><td>                &gt;</td></tr>
+<tr><th id="285">285</th><td>            &gt;</td></tr>
+<tr><th id="286">286</th><td>          , <span class="namespace">mpl::</span><a class="type" href="../mpl/if.hpp.html#boost::mpl::if_" title='boost::mpl::if_' data-ref="boost::mpl::if_">if_</a>&lt;</td></tr>
+<tr><th id="287">287</th><td>                <a class="type" href="#boost::detail::is_non_proxy_reference" title='boost::detail::is_non_proxy_reference' data-ref="boost::detail::is_non_proxy_reference">is_non_proxy_reference</a>&lt;Reference,Value&gt;</td></tr>
+<tr><th id="288">288</th><td>              , <a class="type" href="#boost::detail::postfix_increment_proxy" title='boost::detail::postfix_increment_proxy' data-ref="boost::detail::postfix_increment_proxy">postfix_increment_proxy</a>&lt;Iterator&gt;</td></tr>
+<tr><th id="289">289</th><td>              , <a class="type" href="#boost::detail::writable_postfix_increment_proxy" title='boost::detail::writable_postfix_increment_proxy' data-ref="boost::detail::writable_postfix_increment_proxy">writable_postfix_increment_proxy</a>&lt;Iterator&gt;</td></tr>
+<tr><th id="290">290</th><td>            &gt;</td></tr>
+<tr><th id="291">291</th><td>          , <span class="namespace">mpl::</span><a class="type" href="../mpl/identity.hpp.html#boost::mpl::identity" title='boost::mpl::identity' data-ref="boost::mpl::identity">identity</a>&lt;Iterator&gt;</td></tr>
+<tr><th id="292">292</th><td>        &gt;</td></tr>
+<tr><th id="293">293</th><td>    {};</td></tr>
+<tr><th id="294">294</th><td></td></tr>
+<tr><th id="295">295</th><td>    <i>// operator-&gt;() needs special support for input iterators to strictly meet the</i></td></tr>
+<tr><th id="296">296</th><td><i>    // standard's requirements. If *i is not a reference type, we must still</i></td></tr>
+<tr><th id="297">297</th><td><i>    // produce an lvalue to which a pointer can be formed.  We do that by</i></td></tr>
+<tr><th id="298">298</th><td><i>    // returning a proxy object containing an instance of the reference object.</i></td></tr>
+<tr><th id="299">299</th><td>    <b>template</b> &lt;<b>class</b> Reference, <b>class</b> Pointer&gt;</td></tr>
+<tr><th id="300">300</th><td>    <b>struct</b> <dfn class="type def" id="boost::detail::operator_arrow_dispatch" title='boost::detail::operator_arrow_dispatch' data-ref="boost::detail::operator_arrow_dispatch">operator_arrow_dispatch</dfn> <i>// proxy references</i></td></tr>
+<tr><th id="301">301</th><td>    {</td></tr>
+<tr><th id="302">302</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::operator_arrow_dispatch::proxy" title='boost::detail::operator_arrow_dispatch::proxy' data-ref="boost::detail::operator_arrow_dispatch::proxy">proxy</dfn></td></tr>
+<tr><th id="303">303</th><td>        {</td></tr>
+<tr><th id="304">304</th><td>            <b>explicit</b> <dfn class="decl def fn" id="_ZN5boost6detail23operator_arrow_dispatch5proxyC1ERKT_" title='boost::detail::operator_arrow_dispatch::proxy::proxy' data-ref="_ZN5boost6detail23operator_arrow_dispatch5proxyC1ERKT_">proxy</dfn>(Reference <em>const</em> &amp; <dfn class="local col9 decl" id="439x" title='x' data-type='const Reference &amp;' data-ref="439x">x</dfn>) : <a class="member field" href="#boost::detail::operator_arrow_dispatch::proxy::m_ref" title='boost::detail::operator_arrow_dispatch::proxy::m_ref' data-ref="boost::detail::operator_arrow_dispatch::proxy::m_ref">m_ref</a>(<a class="local col9 ref" href="#439x" title='x' data-ref="439x">x</a>) {}</td></tr>
+<tr><th id="305">305</th><td>            Reference* <dfn class="decl def fn" id="_ZN5boost6detail23operator_arrow_dispatch5proxyptEv" title='boost::detail::operator_arrow_dispatch::proxy::operator-&gt;' data-ref="_ZN5boost6detail23operator_arrow_dispatch5proxyptEv"><b>operator</b>-&gt;</dfn>() { <b>return</b> <span class="namespace">boost::</span>addressof(<a class="member field" href="#boost::detail::operator_arrow_dispatch::proxy::m_ref" title='boost::detail::operator_arrow_dispatch::proxy::m_ref' data-ref="boost::detail::operator_arrow_dispatch::proxy::m_ref">m_ref</a>); }</td></tr>
+<tr><th id="306">306</th><td>            <i>// This function is needed for MWCW and BCC, which won't call</i></td></tr>
+<tr><th id="307">307</th><td><i>            // operator-&gt; again automatically per 13.3.1.2 para 8</i></td></tr>
+<tr><th id="308">308</th><td>            <dfn class="decl def fn" id="_ZN5boost6detail23operator_arrow_dispatch5proxycvPT_Ev" title='boost::detail::operator_arrow_dispatch::proxy::operator type-parameter-0-0 *' data-ref="_ZN5boost6detail23operator_arrow_dispatch5proxycvPT_Ev"><b>operator</b> Reference*</dfn>() { <b>return</b> <span class="namespace">boost::</span>addressof(<a class="member field" href="#boost::detail::operator_arrow_dispatch::proxy::m_ref" title='boost::detail::operator_arrow_dispatch::proxy::m_ref' data-ref="boost::detail::operator_arrow_dispatch::proxy::m_ref">m_ref</a>); }</td></tr>
+<tr><th id="309">309</th><td>            Reference <dfn class="decl field" id="boost::detail::operator_arrow_dispatch::proxy::m_ref" title='boost::detail::operator_arrow_dispatch::proxy::m_ref' data-ref="boost::detail::operator_arrow_dispatch::proxy::m_ref">m_ref</dfn>;</td></tr>
+<tr><th id="310">310</th><td>        };</td></tr>
+<tr><th id="311">311</th><td>        <b>typedef</b> <a class="type" href="#boost::detail::operator_arrow_dispatch::proxy" title='boost::detail::operator_arrow_dispatch::proxy' data-ref="boost::detail::operator_arrow_dispatch::proxy">proxy</a> <dfn class="typedef" id="boost::detail::operator_arrow_dispatch::result_type" title='boost::detail::operator_arrow_dispatch::result_type' data-type='boost::detail::operator_arrow_dispatch::proxy' data-ref="boost::detail::operator_arrow_dispatch::result_type">result_type</dfn>;</td></tr>
+<tr><th id="312">312</th><td>        <em>static</em> <a class="typedef" href="#boost::detail::operator_arrow_dispatch::result_type" title='boost::detail::operator_arrow_dispatch::result_type' data-type='boost::detail::operator_arrow_dispatch::proxy' data-ref="boost::detail::operator_arrow_dispatch::result_type">result_type</a> <dfn class="decl def fn" id="_ZN5boost6detail23operator_arrow_dispatch5applyERKT_" title='boost::detail::operator_arrow_dispatch::apply' data-ref="_ZN5boost6detail23operator_arrow_dispatch5applyERKT_">apply</dfn>(Reference <em>const</em> &amp; <dfn class="local col0 decl" id="440x" title='x' data-type='const Reference &amp;' data-ref="440x">x</dfn>)</td></tr>
+<tr><th id="313">313</th><td>        {</td></tr>
+<tr><th id="314">314</th><td>            <b>return</b> <a class="typedef" href="#boost::detail::operator_arrow_dispatch::result_type" title='boost::detail::operator_arrow_dispatch::result_type' data-type='boost::detail::operator_arrow_dispatch::proxy' data-ref="boost::detail::operator_arrow_dispatch::result_type">result_type</a>(<a class="local col0 ref" href="#440x" title='x' data-ref="440x">x</a>);</td></tr>
+<tr><th id="315">315</th><td>        }</td></tr>
+<tr><th id="316">316</th><td>    };</td></tr>
+<tr><th id="317">317</th><td></td></tr>
+<tr><th id="318">318</th><td>    <b>template</b> &lt;<b>class</b> T, <b>class</b> Pointer&gt;</td></tr>
+<tr><th id="319">319</th><td>    <b>struct</b> <dfn class="type def" id="boost::detail::operator_arrow_dispatch" title='boost::detail::operator_arrow_dispatch' data-ref="boost::detail::operator_arrow_dispatch">operator_arrow_dispatch</dfn>&lt;T&amp;, Pointer&gt; <i>// "real" references</i></td></tr>
+<tr><th id="320">320</th><td>    {</td></tr>
+<tr><th id="321">321</th><td>        <b>typedef</b> Pointer <dfn class="typedef" id="boost::detail::operator_arrow_dispatch{type-parameter-0-0&amp;,type-parameter-0-1}::result_type" title='boost::detail::operator_arrow_dispatch&lt;type-parameter-0-0 &amp;, type-parameter-0-1&gt;::result_type' data-type='Pointer' data-ref="boost::detail::operator_arrow_dispatch{type-parameter-0-0&amp;,type-parameter-0-1}::result_type">result_type</dfn>;</td></tr>
+<tr><th id="322">322</th><td>        <em>static</em> <a class="typedef" href="#boost::detail::operator_arrow_dispatch{type-parameter-0-0&amp;,type-parameter-0-1}::result_type" title='boost::detail::operator_arrow_dispatch&lt;type-parameter-0-0 &amp;, type-parameter-0-1&gt;::result_type' data-type='Pointer' data-ref="boost::detail::operator_arrow_dispatch{type-parameter-0-0&amp;,type-parameter-0-1}::result_type">result_type</a> <dfn class="decl def fn" id="_ZN5boost6detail23operator_arrow_dispatchIRT_T0_E5applyES3_" title='boost::detail::operator_arrow_dispatch&lt;type-parameter-0-0 &amp;, type-parameter-0-1&gt;::apply' data-ref="_ZN5boost6detail23operator_arrow_dispatchIRT_T0_E5applyES3_">apply</dfn>(T&amp; <dfn class="local col1 decl" id="441x" title='x' data-type='T &amp;' data-ref="441x">x</dfn>)</td></tr>
+<tr><th id="323">323</th><td>        {</td></tr>
+<tr><th id="324">324</th><td>            <b>return</b> <span class="namespace">boost::</span>addressof(<a class="local col1 ref" href="#441x" title='x' data-ref="441x">x</a>);</td></tr>
+<tr><th id="325">325</th><td>        }</td></tr>
+<tr><th id="326">326</th><td>    };</td></tr>
+<tr><th id="327">327</th><td></td></tr>
+<tr><th id="328">328</th><td><u># <span data-ppcond="328">if</span> <a class="macro" href="../detail/workaround.hpp.html#233" title="((1 + 0 == 0) &amp;&amp; (BOOST_MSVC != 0) &amp;&amp; (1 % (( (BOOST_MSVC &lt; 1300) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_MSVC, &lt; 1300)</u></td></tr>
+<tr><th id="329">329</th><td>    <i>// Deal with ETI</i></td></tr>
+<tr><th id="330">330</th><td>    <b>template</b>&lt;&gt;</td></tr>
+<tr><th id="331">331</th><td>    <b>struct</b> operator_arrow_dispatch&lt;<em>int</em>, <em>int</em>&gt;</td></tr>
+<tr><th id="332">332</th><td>    {</td></tr>
+<tr><th id="333">333</th><td>        <b>typedef</b> <em>int</em> result_type;</td></tr>
+<tr><th id="334">334</th><td>    };</td></tr>
+<tr><th id="335">335</th><td><u># <span data-ppcond="328">endif</span></u></td></tr>
+<tr><th id="336">336</th><td></td></tr>
+<tr><th id="337">337</th><td>    <i>// A proxy return type for operator[], needed to deal with</i></td></tr>
+<tr><th id="338">338</th><td><i>    // iterators that may invalidate referents upon destruction.</i></td></tr>
+<tr><th id="339">339</th><td><i>    // Consider the temporary iterator in *(a + n)</i></td></tr>
+<tr><th id="340">340</th><td>    <b>template</b> &lt;<b>class</b> Iterator&gt;</td></tr>
+<tr><th id="341">341</th><td>    <b>class</b> <dfn class="type def" id="boost::detail::operator_brackets_proxy" title='boost::detail::operator_brackets_proxy' data-ref="boost::detail::operator_brackets_proxy">operator_brackets_proxy</dfn></td></tr>
+<tr><th id="342">342</th><td>    {</td></tr>
+<tr><th id="343">343</th><td>        <i>// Iterator is actually an iterator_facade, so we do not have to</i></td></tr>
+<tr><th id="344">344</th><td><i>        // go through iterator_traits to access the traits.</i></td></tr>
+<tr><th id="345">345</th><td>        <b>typedef</b> <b>typename</b> Iterator::reference  <dfn class="typedef" id="boost::detail::operator_brackets_proxy::reference" title='boost::detail::operator_brackets_proxy::reference' data-type='typename Iterator::reference' data-ref="boost::detail::operator_brackets_proxy::reference">reference</dfn>;</td></tr>
+<tr><th id="346">346</th><td>        <b>typedef</b> <b>typename</b> Iterator::value_type <dfn class="typedef" id="boost::detail::operator_brackets_proxy::value_type" title='boost::detail::operator_brackets_proxy::value_type' data-type='typename Iterator::value_type' data-ref="boost::detail::operator_brackets_proxy::value_type">value_type</dfn>;</td></tr>
+<tr><th id="347">347</th><td></td></tr>
+<tr><th id="348">348</th><td>     <b>public</b>:</td></tr>
+<tr><th id="349">349</th><td>        <dfn class="decl def fn" id="_ZN5boost6detail23operator_brackets_proxyC1ERKT_" title='boost::detail::operator_brackets_proxy::operator_brackets_proxy&lt;Iterator&gt;' data-ref="_ZN5boost6detail23operator_brackets_proxyC1ERKT_">operator_brackets_proxy</dfn>(Iterator <em>const</em>&amp; <dfn class="local col2 decl" id="442iter" title='iter' data-type='const Iterator &amp;' data-ref="442iter">iter</dfn>)</td></tr>
+<tr><th id="350">350</th><td>          : <a class="member field" href="#boost::detail::operator_brackets_proxy::m_iter" title='boost::detail::operator_brackets_proxy::m_iter' data-ref="boost::detail::operator_brackets_proxy::m_iter">m_iter</a>(<a class="local col2 ref" href="#442iter" title='iter' data-ref="442iter">iter</a>)</td></tr>
+<tr><th id="351">351</th><td>        {}</td></tr>
+<tr><th id="352">352</th><td></td></tr>
+<tr><th id="353">353</th><td>        <dfn class="decl def fn" id="_ZNK5boost6detail23operator_brackets_proxycvNT_9referenceEEv" title='boost::detail::operator_brackets_proxy::operator typename type-parameter-0-0::reference' data-ref="_ZNK5boost6detail23operator_brackets_proxycvNT_9referenceEEv"><b>operator</b> <a class="typedef" href="#boost::detail::operator_brackets_proxy::reference" title='boost::detail::operator_brackets_proxy::reference' data-type='typename Iterator::reference' data-ref="boost::detail::operator_brackets_proxy::reference">reference</a></dfn>() <em>const</em></td></tr>
+<tr><th id="354">354</th><td>        {</td></tr>
+<tr><th id="355">355</th><td>            <b>return</b> *<a class="member field" href="#boost::detail::operator_brackets_proxy::m_iter" title='boost::detail::operator_brackets_proxy::m_iter' data-ref="boost::detail::operator_brackets_proxy::m_iter">m_iter</a>;</td></tr>
+<tr><th id="356">356</th><td>        }</td></tr>
+<tr><th id="357">357</th><td></td></tr>
+<tr><th id="358">358</th><td>        operator_brackets_proxy&amp; <dfn class="decl def fn" id="_ZN5boost6detail23operator_brackets_proxyaSERKNT_10value_typeE" title='boost::detail::operator_brackets_proxy::operator=' data-ref="_ZN5boost6detail23operator_brackets_proxyaSERKNT_10value_typeE"><b>operator</b>=</dfn>(<a class="typedef" href="#boost::detail::operator_brackets_proxy::value_type" title='boost::detail::operator_brackets_proxy::value_type' data-type='typename Iterator::value_type' data-ref="boost::detail::operator_brackets_proxy::value_type">value_type</a> <em>const</em>&amp; <dfn class="local col3 decl" id="443val" title='val' data-type='const boost::detail::operator_brackets_proxy::value_type &amp;' data-ref="443val">val</dfn>)</td></tr>
+<tr><th id="359">359</th><td>        {</td></tr>
+<tr><th id="360">360</th><td>            *<a class="member field" href="#boost::detail::operator_brackets_proxy::m_iter" title='boost::detail::operator_brackets_proxy::m_iter' data-ref="boost::detail::operator_brackets_proxy::m_iter">m_iter</a> = <a class="local col3 ref" href="#443val" title='val' data-ref="443val">val</a>;</td></tr>
+<tr><th id="361">361</th><td>            <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="362">362</th><td>        }</td></tr>
+<tr><th id="363">363</th><td></td></tr>
+<tr><th id="364">364</th><td>     <b>private</b>:</td></tr>
+<tr><th id="365">365</th><td>        Iterator <dfn class="decl field" id="boost::detail::operator_brackets_proxy::m_iter" title='boost::detail::operator_brackets_proxy::m_iter' data-ref="boost::detail::operator_brackets_proxy::m_iter">m_iter</dfn>;</td></tr>
+<tr><th id="366">366</th><td>    };</td></tr>
+<tr><th id="367">367</th><td></td></tr>
+<tr><th id="368">368</th><td>    <i>// A metafunction that determines whether operator[] must return a</i></td></tr>
+<tr><th id="369">369</th><td><i>    // proxy, or whether it can simply return a copy of the value_type.</i></td></tr>
+<tr><th id="370">370</th><td>    <b>template</b> &lt;<b>class</b> ValueType, <b>class</b> Reference&gt;</td></tr>
+<tr><th id="371">371</th><td>    <b>struct</b> <dfn class="type def" id="boost::detail::use_operator_brackets_proxy" title='boost::detail::use_operator_brackets_proxy' data-ref="boost::detail::use_operator_brackets_proxy">use_operator_brackets_proxy</dfn></td></tr>
+<tr><th id="372">372</th><td>      : <span class="namespace">mpl::</span><a class="type" href="../mpl/not.hpp.html#boost::mpl::not_" title='boost::mpl::not_' data-ref="boost::mpl::not_">not_</a>&lt;</td></tr>
+<tr><th id="373">373</th><td>            <span class="namespace">mpl::</span><a class="type" href="../mpl/aux_/preprocessed/gcc/and.hpp.html#boost::mpl::and_" title='boost::mpl::and_' data-ref="boost::mpl::and_">and_</a>&lt;</td></tr>
+<tr><th id="374">374</th><td>                <i>// Really we want an is_copy_constructible trait here,</i></td></tr>
+<tr><th id="375">375</th><td><i>                // but is_POD will have to suffice in the meantime.</i></td></tr>
+<tr><th id="376">376</th><td>                <span class="namespace">boost::</span><a class="type" href="../type_traits/is_pod.hpp.html#boost::is_POD" title='boost::is_POD' data-ref="boost::is_POD">is_POD</a>&lt;ValueType&gt;</td></tr>
+<tr><th id="377">377</th><td>              , <a class="type" href="detail/facade_iterator_category.hpp.html#boost::detail::iterator_writability_disabled" title='boost::detail::iterator_writability_disabled' data-ref="boost::detail::iterator_writability_disabled">iterator_writability_disabled</a>&lt;ValueType,Reference&gt;</td></tr>
+<tr><th id="378">378</th><td>            &gt;</td></tr>
+<tr><th id="379">379</th><td>        &gt;</td></tr>
+<tr><th id="380">380</th><td>    {};</td></tr>
+<tr><th id="381">381</th><td>        </td></tr>
+<tr><th id="382">382</th><td>    <b>template</b> &lt;<b>class</b> Iterator, <b>class</b> Value, <b>class</b> Reference&gt;</td></tr>
+<tr><th id="383">383</th><td>    <b>struct</b> <dfn class="type def" id="boost::detail::operator_brackets_result" title='boost::detail::operator_brackets_result' data-ref="boost::detail::operator_brackets_result">operator_brackets_result</dfn></td></tr>
+<tr><th id="384">384</th><td>    {</td></tr>
+<tr><th id="385">385</th><td>        <b>typedef</b> <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../mpl/if.hpp.html#boost::mpl::if_" title='boost::mpl::if_' data-ref="boost::mpl::if_">if_</a>&lt;</td></tr>
+<tr><th id="386">386</th><td>            <a class="type" href="#boost::detail::use_operator_brackets_proxy" title='boost::detail::use_operator_brackets_proxy' data-ref="boost::detail::use_operator_brackets_proxy">use_operator_brackets_proxy</a>&lt;Value,Reference&gt;</td></tr>
+<tr><th id="387">387</th><td>          , <a class="type" href="#boost::detail::operator_brackets_proxy" title='boost::detail::operator_brackets_proxy' data-ref="boost::detail::operator_brackets_proxy">operator_brackets_proxy</a>&lt;Iterator&gt;</td></tr>
+<tr><th id="388">388</th><td>          , Value</td></tr>
+<tr><th id="389">389</th><td>        &gt;::type <dfn class="typedef" id="boost::detail::operator_brackets_result::type" title='boost::detail::operator_brackets_result::type' data-type='typename mpl::if_&lt;use_operator_brackets_proxy&lt;Value, Reference&gt;, operator_brackets_proxy&lt;Iterator&gt;, Value&gt;::type' data-ref="boost::detail::operator_brackets_result::type">type</dfn>;</td></tr>
+<tr><th id="390">390</th><td>    };</td></tr>
+<tr><th id="391">391</th><td></td></tr>
+<tr><th id="392">392</th><td>    <b>template</b> &lt;<b>class</b> Iterator&gt;</td></tr>
+<tr><th id="393">393</th><td>    <a class="type" href="#boost::detail::operator_brackets_proxy" title='boost::detail::operator_brackets_proxy' data-ref="boost::detail::operator_brackets_proxy">operator_brackets_proxy</a>&lt;Iterator&gt; <dfn class="decl def fn" id="_ZN5boost6detail29make_operator_brackets_resultERKT_N4mpl_5bool_ILb1EEE" title='boost::detail::make_operator_brackets_result' data-ref="_ZN5boost6detail29make_operator_brackets_resultERKT_N4mpl_5bool_ILb1EEE">make_operator_brackets_result</dfn>(Iterator <em>const</em>&amp; <dfn class="local col4 decl" id="444iter" title='iter' data-type='const Iterator &amp;' data-ref="444iter">iter</dfn>, <span class="namespace">mpl::</span><a class="typedef" href="../mpl/bool_fwd.hpp.html#mpl_::true_" title='mpl_::true_' data-type='bool_&lt;true&gt;' data-ref="mpl_::true_">true_</a>)</td></tr>
+<tr><th id="394">394</th><td>    {</td></tr>
+<tr><th id="395">395</th><td>        <b>return</b> <a class="type" href="#boost::detail::operator_brackets_proxy" title='boost::detail::operator_brackets_proxy' data-ref="boost::detail::operator_brackets_proxy">operator_brackets_proxy</a>&lt;Iterator&gt;(<a class="local col4 ref" href="#444iter" title='iter' data-ref="444iter">iter</a>);</td></tr>
+<tr><th id="396">396</th><td>    }</td></tr>
+<tr><th id="397">397</th><td></td></tr>
+<tr><th id="398">398</th><td>    <b>template</b> &lt;<b>class</b> Iterator&gt;</td></tr>
+<tr><th id="399">399</th><td>    <b>typename</b> Iterator::value_type <dfn class="decl def fn" id="_ZN5boost6detail29make_operator_brackets_resultERKT_N4mpl_5bool_ILb0EEE" title='boost::detail::make_operator_brackets_result' data-ref="_ZN5boost6detail29make_operator_brackets_resultERKT_N4mpl_5bool_ILb0EEE">make_operator_brackets_result</dfn>(Iterator <em>const</em>&amp; <dfn class="local col5 decl" id="445iter" title='iter' data-type='const Iterator &amp;' data-ref="445iter">iter</dfn>, <span class="namespace">mpl::</span><a class="typedef" href="../mpl/bool_fwd.hpp.html#mpl_::false_" title='mpl_::false_' data-type='bool_&lt;false&gt;' data-ref="mpl_::false_">false_</a>)</td></tr>
+<tr><th id="400">400</th><td>    {</td></tr>
+<tr><th id="401">401</th><td>      <b>return</b> *<a class="local col5 ref" href="#445iter" title='iter' data-ref="445iter">iter</a>;</td></tr>
+<tr><th id="402">402</th><td>    }</td></tr>
+<tr><th id="403">403</th><td></td></tr>
+<tr><th id="404">404</th><td>    <b>struct</b> <dfn class="type def" id="boost::detail::choose_difference_type" title='boost::detail::choose_difference_type' data-ref="boost::detail::choose_difference_type">choose_difference_type</dfn></td></tr>
+<tr><th id="405">405</th><td>    {</td></tr>
+<tr><th id="406">406</th><td>        <b>template</b> &lt;<b>class</b> I1, <b>class</b> I2&gt;</td></tr>
+<tr><th id="407">407</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::choose_difference_type::apply" title='boost::detail::choose_difference_type::apply' data-ref="boost::detail::choose_difference_type::apply">apply</dfn></td></tr>
+<tr><th id="408">408</th><td>          :</td></tr>
+<tr><th id="409">409</th><td><u># <span data-ppcond="409">ifdef</span> <span class="macro" data-ref="_M/BOOST_NO_ONE_WAY_ITERATOR_INTEROP">BOOST_NO_ONE_WAY_ITERATOR_INTEROP</span></u></td></tr>
+<tr><th id="410">410</th><td>          iterator_difference&lt;I1&gt;</td></tr>
+<tr><th id="411">411</th><td><u># <span data-ppcond="409">elif</span> <a class="macro" href="../detail/workaround.hpp.html#233" title="((1 + 0 == 0) &amp;&amp; (BOOST_MSVC != 0) &amp;&amp; (1 % (( (BOOST_MSVC &lt; 1300) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_MSVC, &lt; 1300)</u></td></tr>
+<tr><th id="412">412</th><td>          mpl::if_&lt;</td></tr>
+<tr><th id="413">413</th><td>              is_convertible&lt;I2,I1&gt;</td></tr>
+<tr><th id="414">414</th><td>            , <b>typename</b> I1::difference_type</td></tr>
+<tr><th id="415">415</th><td>            , <b>typename</b> I2::difference_type</td></tr>
+<tr><th id="416">416</th><td>          &gt;</td></tr>
+<tr><th id="417">417</th><td><u># <span data-ppcond="409">else</span></u> </td></tr>
+<tr><th id="418">418</th><td>          <span class="namespace">mpl::</span><a class="type" href="../mpl/eval_if.hpp.html#boost::mpl::eval_if" title='boost::mpl::eval_if' data-ref="boost::mpl::eval_if">eval_if</a>&lt;</td></tr>
+<tr><th id="419">419</th><td>              <a class="type" href="../type_traits/is_convertible.hpp.html#484" title='boost::is_convertible' data-ref="boost::is_convertible">is_convertible</a>&lt;I2,I1&gt;</td></tr>
+<tr><th id="420">420</th><td>            , <a class="type" href="iterator_traits.hpp.html#boost::iterator_difference" title='boost::iterator_difference' data-ref="boost::iterator_difference">iterator_difference</a>&lt;I1&gt;</td></tr>
+<tr><th id="421">421</th><td>            , <a class="type" href="iterator_traits.hpp.html#boost::iterator_difference" title='boost::iterator_difference' data-ref="boost::iterator_difference">iterator_difference</a>&lt;I2&gt;</td></tr>
+<tr><th id="422">422</th><td>          &gt;</td></tr>
+<tr><th id="423">423</th><td><u># <span data-ppcond="409">endif</span></u> </td></tr>
+<tr><th id="424">424</th><td>        {};</td></tr>
+<tr><th id="425">425</th><td></td></tr>
+<tr><th id="426">426</th><td>    };</td></tr>
+<tr><th id="427">427</th><td>  } <i>// namespace detail</i></td></tr>
+<tr><th id="428">428</th><td></td></tr>
+<tr><th id="429">429</th><td></td></tr>
+<tr><th id="430">430</th><td>  <i>// Macros which describe the declarations of binary operators</i></td></tr>
+<tr><th id="431">431</th><td><u># <span data-ppcond="431">ifdef</span> <span class="macro" data-ref="_M/BOOST_NO_STRICT_ITERATOR_INTEROPERABILITY">BOOST_NO_STRICT_ITERATOR_INTEROPERABILITY</span></u></td></tr>
+<tr><th id="432">432</th><td><u>#  define BOOST_ITERATOR_FACADE_INTEROP_HEAD(prefix, op, result_type)       \</u></td></tr>
+<tr><th id="433">433</th><td><u>    template &lt;                                                              \</u></td></tr>
+<tr><th id="434">434</th><td><u>        class Derived1, class V1, class TC1, class Reference1, class Difference1 \</u></td></tr>
+<tr><th id="435">435</th><td><u>      , class Derived2, class V2, class TC2, class Reference2, class Difference2 \</u></td></tr>
+<tr><th id="436">436</th><td><u>    &gt;                                                                       \</u></td></tr>
+<tr><th id="437">437</th><td><u>    prefix typename mpl::apply2&lt;result_type,Derived1,Derived2&gt;::type \</u></td></tr>
+<tr><th id="438">438</th><td><u>    operator op(                                                            \</u></td></tr>
+<tr><th id="439">439</th><td><u>        iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; const&amp; lhs   \</u></td></tr>
+<tr><th id="440">440</th><td><u>      , iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; const&amp; rhs)</u></td></tr>
+<tr><th id="441">441</th><td><u># <span data-ppcond="431">else</span></u> </td></tr>
+<tr><th id="442">442</th><td><u>#  define <dfn class="macro" id="_M/BOOST_ITERATOR_FACADE_INTEROP_HEAD" data-ref="_M/BOOST_ITERATOR_FACADE_INTEROP_HEAD">BOOST_ITERATOR_FACADE_INTEROP_HEAD</dfn>(prefix, op, result_type)   \</u></td></tr>
+<tr><th id="443">443</th><td><u>    template &lt;                                                          \</u></td></tr>
+<tr><th id="444">444</th><td><u>        class Derived1, class V1, class TC1, class Reference1, class Difference1 \</u></td></tr>
+<tr><th id="445">445</th><td><u>      , class Derived2, class V2, class TC2, class Reference2, class Difference2 \</u></td></tr>
+<tr><th id="446">446</th><td><u>    &gt;                                                                   \</u></td></tr>
+<tr><th id="447">447</th><td><u>    prefix typename boost::detail::<a class="type" href="#boost::detail::enable_if_interoperable" title='boost::detail::enable_if_interoperable' data-ref="boost::detail::enable_if_interoperable">enable_if_interoperable</a>&lt;             \</u></td></tr>
+<tr><th id="448">448</th><td><u>        Derived1, Derived2                                              \</u></td></tr>
+<tr><th id="449">449</th><td><u>      , typename mpl::<a class="type" href="../mpl/aux_/preprocessed/gcc/apply_fwd.hpp.html#boost::mpl::apply2" title='boost::mpl::apply2' data-ref="boost::mpl::apply2">apply2</a>&lt;result_type,Derived1,Derived2&gt;::type       \</u></td></tr>
+<tr><th id="450">450</th><td><u>    &gt;::type                                                             \</u></td></tr>
+<tr><th id="451">451</th><td><u>    operator op(                                                        \</u></td></tr>
+<tr><th id="452">452</th><td><u>        <a class="type" href="#boost::iterator_facade" title='boost::iterator_facade' data-ref="boost::iterator_facade">iterator_facade</a>&lt;Derived1, V1, TC1, Reference1, Difference1&gt; const&amp; <dfn class="local col6 decl" id="446lhs" title='lhs' data-type='const iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; &amp;' data-ref="446lhs"><dfn class="local col8 decl" id="448lhs" title='lhs' data-type='const iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; &amp;' data-ref="448lhs"><dfn class="local col0 decl" id="450lhs" title='lhs' data-type='const iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; &amp;' data-ref="450lhs"><dfn class="local col2 decl" id="452lhs" title='lhs' data-type='const iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; &amp;' data-ref="452lhs"><dfn class="local col4 decl" id="454lhs" title='lhs' data-type='const iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; &amp;' data-ref="454lhs"><dfn class="local col6 decl" id="456lhs" title='lhs' data-type='const iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; &amp;' data-ref="456lhs"><dfn class="local col8 decl" id="458lhs" title='lhs' data-type='const iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; &amp;' data-ref="458lhs"><dfn class="local col4 decl" id="484lhs" title='lhs' data-type='const iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; &amp;' data-ref="484lhs"><dfn class="local col6 decl" id="486lhs" title='lhs' data-type='const iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; &amp;' data-ref="486lhs"><dfn class="local col8 decl" id="488lhs" title='lhs' data-type='const iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; &amp;' data-ref="488lhs"><dfn class="local col0 decl" id="490lhs" title='lhs' data-type='const iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; &amp;' data-ref="490lhs"><dfn class="local col2 decl" id="492lhs" title='lhs' data-type='const iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; &amp;' data-ref="492lhs"><dfn class="local col4 decl" id="494lhs" title='lhs' data-type='const iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; &amp;' data-ref="494lhs"><dfn class="local col6 decl" id="496lhs" title='lhs' data-type='const iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; &amp;' data-ref="496lhs">lhs</dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn>   \</u></td></tr>
+<tr><th id="453">453</th><td><u>      , <a class="type" href="#boost::iterator_facade" title='boost::iterator_facade' data-ref="boost::iterator_facade">iterator_facade</a>&lt;Derived2, V2, TC2, Reference2, Difference2&gt; const&amp; <dfn class="local col7 decl" id="447rhs" title='rhs' data-type='const iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; &amp;' data-ref="447rhs"><dfn class="local col9 decl" id="449rhs" title='rhs' data-type='const iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; &amp;' data-ref="449rhs"><dfn class="local col1 decl" id="451rhs" title='rhs' data-type='const iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; &amp;' data-ref="451rhs"><dfn class="local col3 decl" id="453rhs" title='rhs' data-type='const iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; &amp;' data-ref="453rhs"><dfn class="local col5 decl" id="455rhs" title='rhs' data-type='const iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; &amp;' data-ref="455rhs"><dfn class="local col7 decl" id="457rhs" title='rhs' data-type='const iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; &amp;' data-ref="457rhs"><dfn class="local col9 decl" id="459rhs" title='rhs' data-type='const iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; &amp;' data-ref="459rhs"><dfn class="local col5 decl" id="485rhs" title='rhs' data-type='const iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; &amp;' data-ref="485rhs"><dfn class="local col7 decl" id="487rhs" title='rhs' data-type='const iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; &amp;' data-ref="487rhs"><dfn class="local col9 decl" id="489rhs" title='rhs' data-type='const iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; &amp;' data-ref="489rhs"><dfn class="local col1 decl" id="491rhs" title='rhs' data-type='const iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; &amp;' data-ref="491rhs"><dfn class="local col3 decl" id="493rhs" title='rhs' data-type='const iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; &amp;' data-ref="493rhs"><dfn class="local col5 decl" id="495rhs" title='rhs' data-type='const iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; &amp;' data-ref="495rhs"><dfn class="local col7 decl" id="497rhs" title='rhs' data-type='const iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; &amp;' data-ref="497rhs">rhs</dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn>)</u></td></tr>
+<tr><th id="454">454</th><td><u># <span data-ppcond="431">endif</span></u> </td></tr>
+<tr><th id="455">455</th><td></td></tr>
+<tr><th id="456">456</th><td><u>#  define <dfn class="macro" id="_M/BOOST_ITERATOR_FACADE_PLUS_HEAD" data-ref="_M/BOOST_ITERATOR_FACADE_PLUS_HEAD">BOOST_ITERATOR_FACADE_PLUS_HEAD</dfn>(prefix,args)              \</u></td></tr>
+<tr><th id="457">457</th><td><u>    template &lt;class Derived, class V, class TC, class R, class D&gt;   \</u></td></tr>
+<tr><th id="458">458</th><td><u>    prefix Derived operator+ args</u></td></tr>
+<tr><th id="459">459</th><td></td></tr>
+<tr><th id="460">460</th><td>  <i>//</i></td></tr>
+<tr><th id="461">461</th><td><i>  // Helper class for granting access to the iterator core interface.</i></td></tr>
+<tr><th id="462">462</th><td><i>  //</i></td></tr>
+<tr><th id="463">463</th><td><i>  // The simple core interface is used by iterator_facade. The core</i></td></tr>
+<tr><th id="464">464</th><td><i>  // interface of a user/library defined iterator type should not be made public</i></td></tr>
+<tr><th id="465">465</th><td><i>  // so that it does not clutter the public interface. Instead iterator_core_access</i></td></tr>
+<tr><th id="466">466</th><td><i>  // should be made friend so that iterator_facade can access the core</i></td></tr>
+<tr><th id="467">467</th><td><i>  // interface through iterator_core_access.</i></td></tr>
+<tr><th id="468">468</th><td><i>  //</i></td></tr>
+<tr><th id="469">469</th><td>  <b>class</b> <dfn class="type def" id="boost::iterator_core_access" title='boost::iterator_core_access' data-ref="boost::iterator_core_access">iterator_core_access</dfn></td></tr>
+<tr><th id="470">470</th><td>  {</td></tr>
+<tr><th id="471">471</th><td><u># <span data-ppcond="471">if</span> defined(<span class="macro" data-ref="_M/BOOST_NO_MEMBER_TEMPLATE_FRIENDS">BOOST_NO_MEMBER_TEMPLATE_FRIENDS</span>)</u>                  </td></tr>
+<tr><th id="472">472</th><td>      <i>// Tasteless as this may seem, making all members public allows member templates</i></td></tr>
+<tr><th id="473">473</th><td><i>      // to work in the absence of member template friends.</i></td></tr>
+<tr><th id="474">474</th><td>   <b>public</b>:</td></tr>
+<tr><th id="475">475</th><td><u># <span data-ppcond="471">else</span></u></td></tr>
+<tr><th id="476">476</th><td>      </td></tr>
+<tr><th id="477">477</th><td>      <b>template</b> &lt;<b>class</b> I, <b>class</b> V, <b>class</b> TC, <b>class</b> R, <b>class</b> D&gt; <b>friend</b> <b>class</b> <a class="type" href="#boost::iterator_facade" title='boost::iterator_facade' data-ref="boost::iterator_facade">iterator_facade</a>;</td></tr>
+<tr><th id="478">478</th><td></td></tr>
+<tr><th id="479">479</th><td><u>#  define <dfn class="macro" id="_M/BOOST_ITERATOR_FACADE_RELATION" data-ref="_M/BOOST_ITERATOR_FACADE_RELATION">BOOST_ITERATOR_FACADE_RELATION</dfn>(op)                                \</u></td></tr>
+<tr><th id="480">480</th><td><u>      BOOST_ITERATOR_FACADE_INTEROP_HEAD(friend,op, boost::detail::<a class="type" href="#boost::detail::always_bool2" title='boost::detail::always_bool2' data-ref="boost::detail::always_bool2">always_bool2</a>);</u></td></tr>
+<tr><th id="481">481</th><td></td></tr>
+<tr><th id="482">482</th><td>      <a class="macro" href="#479" title="template &lt; class Derived1, class V1, class TC1, class Reference1, class Difference1 , class Derived2, class V2, class TC2, class Reference2, class Difference2 &gt; friend typename boost::detail::enable_if_interoperable&lt; Derived1, Derived2 , typename mpl::apply2&lt;boost::detail::always_bool2,Derived1,Derived2&gt;::type &gt;::type operator ==( iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; const&amp; lhs , iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; const&amp; rhs);" data-ref="_M/BOOST_ITERATOR_FACADE_RELATION">BOOST_ITERATOR_FACADE_RELATION</a>(==)</td></tr>
+<tr><th id="483">483</th><td>      <a class="macro" href="#479" title="template &lt; class Derived1, class V1, class TC1, class Reference1, class Difference1 , class Derived2, class V2, class TC2, class Reference2, class Difference2 &gt; friend typename boost::detail::enable_if_interoperable&lt; Derived1, Derived2 , typename mpl::apply2&lt;boost::detail::always_bool2,Derived1,Derived2&gt;::type &gt;::type operator !=( iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; const&amp; lhs , iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; const&amp; rhs);" data-ref="_M/BOOST_ITERATOR_FACADE_RELATION">BOOST_ITERATOR_FACADE_RELATION</a>(!=)</td></tr>
+<tr><th id="484">484</th><td></td></tr>
+<tr><th id="485">485</th><td>      <a class="macro" href="#479" title="template &lt; class Derived1, class V1, class TC1, class Reference1, class Difference1 , class Derived2, class V2, class TC2, class Reference2, class Difference2 &gt; friend typename boost::detail::enable_if_interoperable&lt; Derived1, Derived2 , typename mpl::apply2&lt;boost::detail::always_bool2,Derived1,Derived2&gt;::type &gt;::type operator &lt;( iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; const&amp; lhs , iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; const&amp; rhs);" data-ref="_M/BOOST_ITERATOR_FACADE_RELATION">BOOST_ITERATOR_FACADE_RELATION</a>(&lt;)</td></tr>
+<tr><th id="486">486</th><td>      <a class="macro" href="#479" title="template &lt; class Derived1, class V1, class TC1, class Reference1, class Difference1 , class Derived2, class V2, class TC2, class Reference2, class Difference2 &gt; friend typename boost::detail::enable_if_interoperable&lt; Derived1, Derived2 , typename mpl::apply2&lt;boost::detail::always_bool2,Derived1,Derived2&gt;::type &gt;::type operator &gt;( iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; const&amp; lhs , iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; const&amp; rhs);" data-ref="_M/BOOST_ITERATOR_FACADE_RELATION">BOOST_ITERATOR_FACADE_RELATION</a>(&gt;)</td></tr>
+<tr><th id="487">487</th><td>      <a class="macro" href="#479" title="template &lt; class Derived1, class V1, class TC1, class Reference1, class Difference1 , class Derived2, class V2, class TC2, class Reference2, class Difference2 &gt; friend typename boost::detail::enable_if_interoperable&lt; Derived1, Derived2 , typename mpl::apply2&lt;boost::detail::always_bool2,Derived1,Derived2&gt;::type &gt;::type operator &lt;=( iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; const&amp; lhs , iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; const&amp; rhs);" data-ref="_M/BOOST_ITERATOR_FACADE_RELATION">BOOST_ITERATOR_FACADE_RELATION</a>(&lt;=)</td></tr>
+<tr><th id="488">488</th><td>      <a class="macro" href="#479" title="template &lt; class Derived1, class V1, class TC1, class Reference1, class Difference1 , class Derived2, class V2, class TC2, class Reference2, class Difference2 &gt; friend typename boost::detail::enable_if_interoperable&lt; Derived1, Derived2 , typename mpl::apply2&lt;boost::detail::always_bool2,Derived1,Derived2&gt;::type &gt;::type operator &gt;=( iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; const&amp; lhs , iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; const&amp; rhs);" data-ref="_M/BOOST_ITERATOR_FACADE_RELATION">BOOST_ITERATOR_FACADE_RELATION</a>(&gt;=)</td></tr>
+<tr><th id="489">489</th><td><u>#  undef <a class="macro" href="#479" data-ref="_M/BOOST_ITERATOR_FACADE_RELATION">BOOST_ITERATOR_FACADE_RELATION</a></u></td></tr>
+<tr><th id="490">490</th><td></td></tr>
+<tr><th id="491">491</th><td>      <a class="macro" href="#442" title="template &lt; class Derived1, class V1, class TC1, class Reference1, class Difference1 , class Derived2, class V2, class TC2, class Reference2, class Difference2 &gt; friend typename boost::detail::enable_if_interoperable&lt; Derived1, Derived2 , typename mpl::apply2&lt;boost::detail::choose_difference_type,Derived1,Derived2&gt;::type &gt;::type operator -( iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; const&amp; lhs , iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; const&amp; rhs)" data-ref="_M/BOOST_ITERATOR_FACADE_INTEROP_HEAD">BOOST_ITERATOR_FACADE_INTEROP_HEAD</a>(</td></tr>
+<tr><th id="492">492</th><td>          <b>friend</b>, -, boost::detail::<a class="type" href="#boost::detail::choose_difference_type" title='boost::detail::choose_difference_type' data-ref="boost::detail::choose_difference_type">choose_difference_type</a>)</td></tr>
+<tr><th id="493">493</th><td>      ;</td></tr>
+<tr><th id="494">494</th><td></td></tr>
+<tr><th id="495">495</th><td>      <a class="macro" href="#456" title="template &lt;class Derived, class V, class TC, class R, class D&gt; friend inline Derived operator+ (iterator_facade&lt;Derived, V, TC, R, D&gt; const&amp; , typename Derived::difference_type)" data-ref="_M/BOOST_ITERATOR_FACADE_PLUS_HEAD">BOOST_ITERATOR_FACADE_PLUS_HEAD</a>(</td></tr>
+<tr><th id="496">496</th><td>          <b>friend</b> <b>inline</b></td></tr>
+<tr><th id="497">497</th><td>          , (<a class="type" href="#boost::iterator_facade" title='boost::iterator_facade' data-ref="boost::iterator_facade">iterator_facade</a>&lt;Derived, V, TC, R, D&gt; <em>const</em>&amp;</td></tr>
+<tr><th id="498">498</th><td>           , <b>typename</b> Derived::difference_type)</td></tr>
+<tr><th id="499">499</th><td>      )</td></tr>
+<tr><th id="500">500</th><td>      ;</td></tr>
+<tr><th id="501">501</th><td></td></tr>
+<tr><th id="502">502</th><td>      <a class="macro" href="#456" title="template &lt;class Derived, class V, class TC, class R, class D&gt; friend inline Derived operator+ (typename Derived::difference_type , iterator_facade&lt;Derived, V, TC, R, D&gt; const&amp;)" data-ref="_M/BOOST_ITERATOR_FACADE_PLUS_HEAD">BOOST_ITERATOR_FACADE_PLUS_HEAD</a>(</td></tr>
+<tr><th id="503">503</th><td>          <b>friend</b> <b>inline</b></td></tr>
+<tr><th id="504">504</th><td>        , (<b>typename</b> Derived::difference_type</td></tr>
+<tr><th id="505">505</th><td>           , <a class="type" href="#boost::iterator_facade" title='boost::iterator_facade' data-ref="boost::iterator_facade">iterator_facade</a>&lt;Derived, V, TC, R, D&gt; <em>const</em>&amp;)</td></tr>
+<tr><th id="506">506</th><td>      )</td></tr>
+<tr><th id="507">507</th><td>      ;</td></tr>
+<tr><th id="508">508</th><td></td></tr>
+<tr><th id="509">509</th><td><u># <span data-ppcond="471">endif</span></u></td></tr>
+<tr><th id="510">510</th><td></td></tr>
+<tr><th id="511">511</th><td>      <b>template</b> &lt;<b>class</b> Facade&gt;</td></tr>
+<tr><th id="512">512</th><td>      <em>static</em> <b>typename</b> Facade::reference <dfn class="decl def fn" id="_ZN5boost20iterator_core_access11dereferenceERKT_" title='boost::iterator_core_access::dereference' data-ref="_ZN5boost20iterator_core_access11dereferenceERKT_">dereference</dfn>(Facade <em>const</em>&amp; <dfn class="local col0 decl" id="460f" title='f' data-type='const Facade &amp;' data-ref="460f">f</dfn>)</td></tr>
+<tr><th id="513">513</th><td>      {</td></tr>
+<tr><th id="514">514</th><td>          <b>return</b> <a class="local col0 ref" href="#460f" title='f' data-ref="460f">f</a>.dereference();</td></tr>
+<tr><th id="515">515</th><td>      }</td></tr>
+<tr><th id="516">516</th><td></td></tr>
+<tr><th id="517">517</th><td>      <b>template</b> &lt;<b>class</b> Facade&gt;</td></tr>
+<tr><th id="518">518</th><td>      <em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZN5boost20iterator_core_access9incrementERT_" title='boost::iterator_core_access::increment' data-ref="_ZN5boost20iterator_core_access9incrementERT_">increment</dfn>(Facade&amp; <dfn class="local col1 decl" id="461f" title='f' data-type='Facade &amp;' data-ref="461f">f</dfn>)</td></tr>
+<tr><th id="519">519</th><td>      {</td></tr>
+<tr><th id="520">520</th><td>          <a class="local col1 ref" href="#461f" title='f' data-ref="461f">f</a>.increment();</td></tr>
+<tr><th id="521">521</th><td>      }</td></tr>
+<tr><th id="522">522</th><td></td></tr>
+<tr><th id="523">523</th><td>      <b>template</b> &lt;<b>class</b> Facade&gt;</td></tr>
+<tr><th id="524">524</th><td>      <em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZN5boost20iterator_core_access9decrementERT_" title='boost::iterator_core_access::decrement' data-ref="_ZN5boost20iterator_core_access9decrementERT_">decrement</dfn>(Facade&amp; <dfn class="local col2 decl" id="462f" title='f' data-type='Facade &amp;' data-ref="462f">f</dfn>)</td></tr>
+<tr><th id="525">525</th><td>      {</td></tr>
+<tr><th id="526">526</th><td>          <a class="local col2 ref" href="#462f" title='f' data-ref="462f">f</a>.decrement();</td></tr>
+<tr><th id="527">527</th><td>      }</td></tr>
+<tr><th id="528">528</th><td></td></tr>
+<tr><th id="529">529</th><td>      <b>template</b> &lt;<b>class</b> Facade1, <b>class</b> Facade2&gt;</td></tr>
+<tr><th id="530">530</th><td>      <em>static</em> <em>bool</em> <dfn class="decl def fn" id="_ZN5boost20iterator_core_access5equalERKT_RKT0_N4mpl_5bool_ILb1EEE" title='boost::iterator_core_access::equal' data-ref="_ZN5boost20iterator_core_access5equalERKT_RKT0_N4mpl_5bool_ILb1EEE">equal</dfn>(Facade1 <em>const</em>&amp; <dfn class="local col3 decl" id="463f1" title='f1' data-type='const Facade1 &amp;' data-ref="463f1">f1</dfn>, Facade2 <em>const</em>&amp; <dfn class="local col4 decl" id="464f2" title='f2' data-type='const Facade2 &amp;' data-ref="464f2">f2</dfn>, <span class="namespace">mpl::</span><a class="typedef" href="../mpl/bool_fwd.hpp.html#mpl_::true_" title='mpl_::true_' data-type='bool_&lt;true&gt;' data-ref="mpl_::true_">true_</a>)</td></tr>
+<tr><th id="531">531</th><td>      {</td></tr>
+<tr><th id="532">532</th><td>          <b>return</b> <a class="local col3 ref" href="#463f1" title='f1' data-ref="463f1">f1</a>.equal(<a class="local col4 ref" href="#464f2" title='f2' data-ref="464f2">f2</a>);</td></tr>
+<tr><th id="533">533</th><td>      }</td></tr>
+<tr><th id="534">534</th><td></td></tr>
+<tr><th id="535">535</th><td>      <b>template</b> &lt;<b>class</b> Facade1, <b>class</b> Facade2&gt;</td></tr>
+<tr><th id="536">536</th><td>      <em>static</em> <em>bool</em> <dfn class="decl def fn" id="_ZN5boost20iterator_core_access5equalERKT_RKT0_N4mpl_5bool_ILb0EEE" title='boost::iterator_core_access::equal' data-ref="_ZN5boost20iterator_core_access5equalERKT_RKT0_N4mpl_5bool_ILb0EEE">equal</dfn>(Facade1 <em>const</em>&amp; <dfn class="local col5 decl" id="465f1" title='f1' data-type='const Facade1 &amp;' data-ref="465f1">f1</dfn>, Facade2 <em>const</em>&amp; <dfn class="local col6 decl" id="466f2" title='f2' data-type='const Facade2 &amp;' data-ref="466f2">f2</dfn>, <span class="namespace">mpl::</span><a class="typedef" href="../mpl/bool_fwd.hpp.html#mpl_::false_" title='mpl_::false_' data-type='bool_&lt;false&gt;' data-ref="mpl_::false_">false_</a>)</td></tr>
+<tr><th id="537">537</th><td>      {</td></tr>
+<tr><th id="538">538</th><td>          <b>return</b> <a class="local col6 ref" href="#466f2" title='f2' data-ref="466f2">f2</a>.equal(<a class="local col5 ref" href="#465f1" title='f1' data-ref="465f1">f1</a>);</td></tr>
+<tr><th id="539">539</th><td>      }</td></tr>
+<tr><th id="540">540</th><td></td></tr>
+<tr><th id="541">541</th><td>      <b>template</b> &lt;<b>class</b> Facade&gt;</td></tr>
+<tr><th id="542">542</th><td>      <em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZN5boost20iterator_core_access7advanceERT_NS1_15difference_typeE" title='boost::iterator_core_access::advance' data-ref="_ZN5boost20iterator_core_access7advanceERT_NS1_15difference_typeE">advance</dfn>(Facade&amp; <dfn class="local col7 decl" id="467f" title='f' data-type='Facade &amp;' data-ref="467f">f</dfn>, <b>typename</b> Facade::difference_type <dfn class="local col8 decl" id="468n" title='n' data-type='typename Facade::difference_type' data-ref="468n">n</dfn>)</td></tr>
+<tr><th id="543">543</th><td>      {</td></tr>
+<tr><th id="544">544</th><td>          <a class="local col7 ref" href="#467f" title='f' data-ref="467f">f</a>.advance(<a class="local col8 ref" href="#468n" title='n' data-ref="468n">n</a>);</td></tr>
+<tr><th id="545">545</th><td>      }</td></tr>
+<tr><th id="546">546</th><td></td></tr>
+<tr><th id="547">547</th><td>      <b>template</b> &lt;<b>class</b> Facade1, <b>class</b> Facade2&gt;</td></tr>
+<tr><th id="548">548</th><td>      <em>static</em> <b>typename</b> Facade1::difference_type <dfn class="decl def fn" id="_ZN5boost20iterator_core_access13distance_fromERKT_RKT0_N4mpl_5bool_ILb1EEE" title='boost::iterator_core_access::distance_from' data-ref="_ZN5boost20iterator_core_access13distance_fromERKT_RKT0_N4mpl_5bool_ILb1EEE">distance_from</dfn>(</td></tr>
+<tr><th id="549">549</th><td>          Facade1 <em>const</em>&amp; <dfn class="local col9 decl" id="469f1" title='f1' data-type='const Facade1 &amp;' data-ref="469f1">f1</dfn>, Facade2 <em>const</em>&amp; <dfn class="local col0 decl" id="470f2" title='f2' data-type='const Facade2 &amp;' data-ref="470f2">f2</dfn>, <span class="namespace">mpl::</span><a class="typedef" href="../mpl/bool_fwd.hpp.html#mpl_::true_" title='mpl_::true_' data-type='bool_&lt;true&gt;' data-ref="mpl_::true_">true_</a>)</td></tr>
+<tr><th id="550">550</th><td>      {</td></tr>
+<tr><th id="551">551</th><td>          <b>return</b> -<a class="local col9 ref" href="#469f1" title='f1' data-ref="469f1">f1</a>.distance_to(<a class="local col0 ref" href="#470f2" title='f2' data-ref="470f2">f2</a>);</td></tr>
+<tr><th id="552">552</th><td>      }</td></tr>
+<tr><th id="553">553</th><td></td></tr>
+<tr><th id="554">554</th><td>      <b>template</b> &lt;<b>class</b> Facade1, <b>class</b> Facade2&gt;</td></tr>
+<tr><th id="555">555</th><td>      <em>static</em> <b>typename</b> Facade2::difference_type <dfn class="decl def fn" id="_ZN5boost20iterator_core_access13distance_fromERKT_RKT0_N4mpl_5bool_ILb0EEE" title='boost::iterator_core_access::distance_from' data-ref="_ZN5boost20iterator_core_access13distance_fromERKT_RKT0_N4mpl_5bool_ILb0EEE">distance_from</dfn>(</td></tr>
+<tr><th id="556">556</th><td>          Facade1 <em>const</em>&amp; <dfn class="local col1 decl" id="471f1" title='f1' data-type='const Facade1 &amp;' data-ref="471f1">f1</dfn>, Facade2 <em>const</em>&amp; <dfn class="local col2 decl" id="472f2" title='f2' data-type='const Facade2 &amp;' data-ref="472f2">f2</dfn>, <span class="namespace">mpl::</span><a class="typedef" href="../mpl/bool_fwd.hpp.html#mpl_::false_" title='mpl_::false_' data-type='bool_&lt;false&gt;' data-ref="mpl_::false_">false_</a>)</td></tr>
+<tr><th id="557">557</th><td>      {</td></tr>
+<tr><th id="558">558</th><td>          <b>return</b> <a class="local col2 ref" href="#472f2" title='f2' data-ref="472f2">f2</a>.distance_to(<a class="local col1 ref" href="#471f1" title='f1' data-ref="471f1">f1</a>);</td></tr>
+<tr><th id="559">559</th><td>      }</td></tr>
+<tr><th id="560">560</th><td></td></tr>
+<tr><th id="561">561</th><td>      <i>//</i></td></tr>
+<tr><th id="562">562</th><td><i>      // Curiously Recurring Template interface.</i></td></tr>
+<tr><th id="563">563</th><td><i>      //</i></td></tr>
+<tr><th id="564">564</th><td>      <b>template</b> &lt;<b>class</b> I, <b>class</b> V, <b>class</b> TC, <b>class</b> R, <b>class</b> D&gt;</td></tr>
+<tr><th id="565">565</th><td>      <em>static</em> I&amp; <dfn class="decl def fn" id="_ZN5boost20iterator_core_access7derivedERNS_15iterator_facadeIT_T0_T1_T2_T3_EE" title='boost::iterator_core_access::derived' data-ref="_ZN5boost20iterator_core_access7derivedERNS_15iterator_facadeIT_T0_T1_T2_T3_EE">derived</dfn>(<a class="type" href="#boost::iterator_facade" title='boost::iterator_facade' data-ref="boost::iterator_facade">iterator_facade</a>&lt;I,V,TC,R,D&gt;&amp; <dfn class="local col3 decl" id="473facade" title='facade' data-type='iterator_facade&lt;I, V, TC, R, D&gt; &amp;' data-ref="473facade">facade</dfn>)</td></tr>
+<tr><th id="566">566</th><td>      {</td></tr>
+<tr><th id="567">567</th><td>          <b>return</b> *<b>static_cast</b>&lt;I*&gt;(&amp;<a class="local col3 ref" href="#473facade" title='facade' data-ref="473facade">facade</a>);</td></tr>
+<tr><th id="568">568</th><td>      }</td></tr>
+<tr><th id="569">569</th><td></td></tr>
+<tr><th id="570">570</th><td>      <b>template</b> &lt;<b>class</b> I, <b>class</b> V, <b>class</b> TC, <b>class</b> R, <b>class</b> D&gt;</td></tr>
+<tr><th id="571">571</th><td>      <em>static</em> I <em>const</em>&amp; <dfn class="decl def fn" id="_ZN5boost20iterator_core_access7derivedERKNS_15iterator_facadeIT_T0_T1_T2_T3_EE" title='boost::iterator_core_access::derived' data-ref="_ZN5boost20iterator_core_access7derivedERKNS_15iterator_facadeIT_T0_T1_T2_T3_EE">derived</dfn>(<a class="type" href="#boost::iterator_facade" title='boost::iterator_facade' data-ref="boost::iterator_facade">iterator_facade</a>&lt;I,V,TC,R,D&gt; <em>const</em>&amp; <dfn class="local col4 decl" id="474facade" title='facade' data-type='const iterator_facade&lt;I, V, TC, R, D&gt; &amp;' data-ref="474facade">facade</dfn>)</td></tr>
+<tr><th id="572">572</th><td>      {</td></tr>
+<tr><th id="573">573</th><td>          <b>return</b> *<b>static_cast</b>&lt;I <em>const</em>*&gt;(&amp;<a class="local col4 ref" href="#474facade" title='facade' data-ref="474facade">facade</a>);</td></tr>
+<tr><th id="574">574</th><td>      }</td></tr>
+<tr><th id="575">575</th><td></td></tr>
+<tr><th id="576">576</th><td>   <b>private</b>:</td></tr>
+<tr><th id="577">577</th><td>      <i>// objects of this class are useless</i></td></tr>
+<tr><th id="578">578</th><td>      <dfn class="decl fn" id="_ZN5boost20iterator_core_accessC1Ev" title='boost::iterator_core_access::iterator_core_access' data-ref="_ZN5boost20iterator_core_accessC1Ev">iterator_core_access</dfn>(); <i>//undefined</i></td></tr>
+<tr><th id="579">579</th><td>  };</td></tr>
+<tr><th id="580">580</th><td></td></tr>
+<tr><th id="581">581</th><td>  <i>//</i></td></tr>
+<tr><th id="582">582</th><td><i>  // iterator_facade - use as a public base class for defining new</i></td></tr>
+<tr><th id="583">583</th><td><i>  // standard-conforming iterators.</i></td></tr>
+<tr><th id="584">584</th><td><i>  //</i></td></tr>
+<tr><th id="585">585</th><td>  <b>template</b> &lt;</td></tr>
+<tr><th id="586">586</th><td>      <b>class</b> Derived             <i>// The derived iterator type being constructed</i></td></tr>
+<tr><th id="587">587</th><td>    , <b>class</b> Value</td></tr>
+<tr><th id="588">588</th><td>    , <b>class</b> CategoryOrTraversal</td></tr>
+<tr><th id="589">589</th><td>    , <b>class</b> Reference   = Value&amp;</td></tr>
+<tr><th id="590">590</th><td>    , <b>class</b> Difference  = <span class="namespace">std::</span><a class="typedef" href="../../c++/4.8.2/x86_64-redhat-linux/bits/c++config.h.html#std::ptrdiff_t" title='std::ptrdiff_t' data-type='long' data-ref="std::ptrdiff_t">ptrdiff_t</a></td></tr>
+<tr><th id="591">591</th><td>  &gt;</td></tr>
+<tr><th id="592">592</th><td>  <b>class</b> <dfn class="type def" id="boost::iterator_facade" title='boost::iterator_facade' data-ref="boost::iterator_facade">iterator_facade</dfn></td></tr>
+<tr><th id="593">593</th><td><u># <span data-ppcond="593">ifdef</span> <span class="macro" data-ref="_M/BOOST_ITERATOR_FACADE_NEEDS_ITERATOR_BASE">BOOST_ITERATOR_FACADE_NEEDS_ITERATOR_BASE</span></u></td></tr>
+<tr><th id="594">594</th><td>    : <b>public</b> boost::detail::iterator_facade_types&lt;</td></tr>
+<tr><th id="595">595</th><td>         Value, CategoryOrTraversal, Reference, Difference</td></tr>
+<tr><th id="596">596</th><td>      &gt;::base</td></tr>
+<tr><th id="597">597</th><td><u>#  undef BOOST_ITERATOR_FACADE_NEEDS_ITERATOR_BASE</u></td></tr>
+<tr><th id="598">598</th><td><u># <span data-ppcond="593">endif</span></u></td></tr>
+<tr><th id="599">599</th><td>  {</td></tr>
+<tr><th id="600">600</th><td>   <b>private</b>:</td></tr>
+<tr><th id="601">601</th><td>      <i>//</i></td></tr>
+<tr><th id="602">602</th><td><i>      // Curiously Recurring Template interface.</i></td></tr>
+<tr><th id="603">603</th><td><i>      //</i></td></tr>
+<tr><th id="604">604</th><td>      Derived&amp; <dfn class="decl def fn" id="_ZN5boost15iterator_facade7derivedEv" title='boost::iterator_facade::derived' data-ref="_ZN5boost15iterator_facade7derivedEv">derived</dfn>()</td></tr>
+<tr><th id="605">605</th><td>      {</td></tr>
+<tr><th id="606">606</th><td>          <b>return</b> *<b>static_cast</b>&lt;Derived*&gt;(<b>this</b>);</td></tr>
+<tr><th id="607">607</th><td>      }</td></tr>
+<tr><th id="608">608</th><td></td></tr>
+<tr><th id="609">609</th><td>      Derived <em>const</em>&amp; <dfn class="decl def fn" id="_ZNK5boost15iterator_facade7derivedEv" title='boost::iterator_facade::derived' data-ref="_ZNK5boost15iterator_facade7derivedEv">derived</dfn>() <em>const</em></td></tr>
+<tr><th id="610">610</th><td>      {</td></tr>
+<tr><th id="611">611</th><td>          <b>return</b> *<b>static_cast</b>&lt;Derived <em>const</em>*&gt;(<b>this</b>);</td></tr>
+<tr><th id="612">612</th><td>      }</td></tr>
+<tr><th id="613">613</th><td></td></tr>
+<tr><th id="614">614</th><td>      <b>typedef</b> <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::iterator_facade_types" title='boost::detail::iterator_facade_types' data-ref="boost::detail::iterator_facade_types">iterator_facade_types</a>&lt;</td></tr>
+<tr><th id="615">615</th><td>         Value, CategoryOrTraversal, Reference, Difference</td></tr>
+<tr><th id="616">616</th><td>      &gt; <dfn class="typedef" id="boost::iterator_facade::associated_types" title='boost::iterator_facade::associated_types' data-type='boost::detail::iterator_facade_types&lt;Value, CategoryOrTraversal, Reference, Difference&gt;' data-ref="boost::iterator_facade::associated_types">associated_types</dfn>;</td></tr>
+<tr><th id="617">617</th><td></td></tr>
+<tr><th id="618">618</th><td>      <b>typedef</b> <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::operator_arrow_dispatch" title='boost::detail::operator_arrow_dispatch' data-ref="boost::detail::operator_arrow_dispatch">operator_arrow_dispatch</a>&lt;</td></tr>
+<tr><th id="619">619</th><td>          Reference</td></tr>
+<tr><th id="620">620</th><td>        , <b>typename</b> <a class="typedef" href="#boost::iterator_facade::associated_types" title='boost::iterator_facade::associated_types' data-type='boost::detail::iterator_facade_types&lt;Value, CategoryOrTraversal, Reference, Difference&gt;' data-ref="boost::iterator_facade::associated_types">associated_types</a>::pointer</td></tr>
+<tr><th id="621">621</th><td>      &gt; <dfn class="typedef" id="boost::iterator_facade::operator_arrow_dispatch_" title='boost::iterator_facade::operator_arrow_dispatch_' data-type='boost::detail::operator_arrow_dispatch&lt;Reference, typename associated_types::pointer&gt;' data-ref="boost::iterator_facade::operator_arrow_dispatch_">operator_arrow_dispatch_</dfn>;</td></tr>
+<tr><th id="622">622</th><td></td></tr>
+<tr><th id="623">623</th><td>   <b>protected</b>:</td></tr>
+<tr><th id="624">624</th><td>      <i>// For use by derived classes</i></td></tr>
+<tr><th id="625">625</th><td>      <b>typedef</b> <a class="type" href="#boost::iterator_facade" title='boost::iterator_facade' data-ref="boost::iterator_facade">iterator_facade</a>&lt;Derived,Value,CategoryOrTraversal,Reference,Difference&gt; <dfn class="typedef" id="boost::iterator_facade::iterator_facade_" title='boost::iterator_facade::iterator_facade_' data-type='iterator_facade&lt;Derived, Value, CategoryOrTraversal, Reference, Difference&gt;' data-ref="boost::iterator_facade::iterator_facade_">iterator_facade_</dfn>;</td></tr>
+<tr><th id="626">626</th><td>      </td></tr>
+<tr><th id="627">627</th><td>   <b>public</b>:</td></tr>
+<tr><th id="628">628</th><td></td></tr>
+<tr><th id="629">629</th><td>      <b>typedef</b> <b>typename</b> <a class="typedef" href="#boost::iterator_facade::associated_types" title='boost::iterator_facade::associated_types' data-type='boost::detail::iterator_facade_types&lt;Value, CategoryOrTraversal, Reference, Difference&gt;' data-ref="boost::iterator_facade::associated_types">associated_types</a>::value_type <dfn class="typedef" id="boost::iterator_facade::value_type" title='boost::iterator_facade::value_type' data-type='typename associated_types::value_type' data-ref="boost::iterator_facade::value_type">value_type</dfn>;</td></tr>
+<tr><th id="630">630</th><td>      <b>typedef</b> Reference <dfn class="typedef" id="boost::iterator_facade::reference" title='boost::iterator_facade::reference' data-type='Reference' data-ref="boost::iterator_facade::reference">reference</dfn>;</td></tr>
+<tr><th id="631">631</th><td>      <b>typedef</b> Difference <dfn class="typedef" id="boost::iterator_facade::difference_type" title='boost::iterator_facade::difference_type' data-type='Difference' data-ref="boost::iterator_facade::difference_type">difference_type</dfn>;</td></tr>
+<tr><th id="632">632</th><td></td></tr>
+<tr><th id="633">633</th><td>      <b>typedef</b> <b>typename</b> <a class="typedef" href="#boost::iterator_facade::operator_arrow_dispatch_" title='boost::iterator_facade::operator_arrow_dispatch_' data-type='boost::detail::operator_arrow_dispatch&lt;Reference, typename associated_types::pointer&gt;' data-ref="boost::iterator_facade::operator_arrow_dispatch_">operator_arrow_dispatch_</a>::result_type <dfn class="typedef" id="boost::iterator_facade::pointer" title='boost::iterator_facade::pointer' data-type='typename operator_arrow_dispatch_::result_type' data-ref="boost::iterator_facade::pointer">pointer</dfn>;</td></tr>
+<tr><th id="634">634</th><td></td></tr>
+<tr><th id="635">635</th><td>      <b>typedef</b> <b>typename</b> <a class="typedef" href="#boost::iterator_facade::associated_types" title='boost::iterator_facade::associated_types' data-type='boost::detail::iterator_facade_types&lt;Value, CategoryOrTraversal, Reference, Difference&gt;' data-ref="boost::iterator_facade::associated_types">associated_types</a>::iterator_category <dfn class="typedef" id="boost::iterator_facade::iterator_category" title='boost::iterator_facade::iterator_category' data-type='typename associated_types::iterator_category' data-ref="boost::iterator_facade::iterator_category">iterator_category</dfn>;</td></tr>
+<tr><th id="636">636</th><td></td></tr>
+<tr><th id="637">637</th><td>      <a class="typedef" href="#boost::iterator_facade::reference" title='boost::iterator_facade::reference' data-type='Reference' data-ref="boost::iterator_facade::reference">reference</a> <dfn class="decl def fn" id="_ZNK5boost15iterator_facadedeEv" title='boost::iterator_facade::operator*' data-ref="_ZNK5boost15iterator_facadedeEv"><b>operator</b>*</dfn>() <em>const</em></td></tr>
+<tr><th id="638">638</th><td>      {</td></tr>
+<tr><th id="639">639</th><td>          <b>return</b> <a class="type" href="#boost::iterator_core_access" title='boost::iterator_core_access' data-ref="boost::iterator_core_access">iterator_core_access</a>::dereference(<b>this</b>-&gt;derived());</td></tr>
+<tr><th id="640">640</th><td>      }</td></tr>
+<tr><th id="641">641</th><td></td></tr>
+<tr><th id="642">642</th><td>      <a class="typedef" href="#boost::iterator_facade::pointer" title='boost::iterator_facade::pointer' data-type='typename operator_arrow_dispatch_::result_type' data-ref="boost::iterator_facade::pointer">pointer</a> <dfn class="decl def fn" id="_ZNK5boost15iterator_facadeptEv" title='boost::iterator_facade::operator-&gt;' data-ref="_ZNK5boost15iterator_facadeptEv"><b>operator</b>-&gt;</dfn>() <em>const</em></td></tr>
+<tr><th id="643">643</th><td>      {</td></tr>
+<tr><th id="644">644</th><td>          <b>return</b> <a class="typedef" href="#boost::iterator_facade::operator_arrow_dispatch_" title='boost::iterator_facade::operator_arrow_dispatch_' data-type='boost::detail::operator_arrow_dispatch&lt;Reference, typename associated_types::pointer&gt;' data-ref="boost::iterator_facade::operator_arrow_dispatch_">operator_arrow_dispatch_</a>::apply(*<b>this</b>-&gt;derived());</td></tr>
+<tr><th id="645">645</th><td>      }</td></tr>
+<tr><th id="646">646</th><td>        </td></tr>
+<tr><th id="647">647</th><td>      <b>typename</b> <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::operator_brackets_result" title='boost::detail::operator_brackets_result' data-ref="boost::detail::operator_brackets_result">operator_brackets_result</a>&lt;Derived,Value,<a class="typedef" href="#boost::iterator_facade::reference" title='boost::iterator_facade::reference' data-type='Reference' data-ref="boost::iterator_facade::reference">reference</a>&gt;::type</td></tr>
+<tr><th id="648">648</th><td>      <dfn class="decl def fn" id="_ZNK5boost15iterator_facadeixET3_" title='boost::iterator_facade::operator[]' data-ref="_ZNK5boost15iterator_facadeixET3_"><b>operator</b>[]</dfn>(<a class="typedef" href="#boost::iterator_facade::difference_type" title='boost::iterator_facade::difference_type' data-type='Difference' data-ref="boost::iterator_facade::difference_type">difference_type</a> <dfn class="local col5 decl" id="475n" title='n' data-type='boost::iterator_facade::difference_type' data-ref="475n">n</dfn>) <em>const</em></td></tr>
+<tr><th id="649">649</th><td>      {</td></tr>
+<tr><th id="650">650</th><td>          <b>typedef</b> <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::use_operator_brackets_proxy" title='boost::detail::use_operator_brackets_proxy' data-ref="boost::detail::use_operator_brackets_proxy">use_operator_brackets_proxy</a>&lt;Value,Reference&gt; <dfn class="local col6 typedef" id="476use_proxy" title='use_proxy' data-type='boost::detail::use_operator_brackets_proxy&lt;Value, Reference&gt;' data-ref="476use_proxy">use_proxy</dfn>;</td></tr>
+<tr><th id="651">651</th><td>          </td></tr>
+<tr><th id="652">652</th><td>          <b>return</b> <span class="namespace">boost::detail::</span>make_operator_brackets_result&lt;Derived&gt;(</td></tr>
+<tr><th id="653">653</th><td>              <b>this</b>-&gt;derived() + <a class="local col5 ref" href="#475n" title='n' data-ref="475n">n</a></td></tr>
+<tr><th id="654">654</th><td>            , <a class="local col6 typedef" href="#476use_proxy" title='use_proxy' data-type='boost::detail::use_operator_brackets_proxy&lt;Value, Reference&gt;' data-ref="476use_proxy">use_proxy</a>()</td></tr>
+<tr><th id="655">655</th><td>          );</td></tr>
+<tr><th id="656">656</th><td>      }</td></tr>
+<tr><th id="657">657</th><td></td></tr>
+<tr><th id="658">658</th><td>      Derived&amp; <dfn class="decl def fn" id="_ZN5boost15iterator_facadeppEv" title='boost::iterator_facade::operator++' data-ref="_ZN5boost15iterator_facadeppEv"><b>operator</b>++</dfn>()</td></tr>
+<tr><th id="659">659</th><td>      {</td></tr>
+<tr><th id="660">660</th><td>          <a class="type" href="#boost::iterator_core_access" title='boost::iterator_core_access' data-ref="boost::iterator_core_access">iterator_core_access</a>::increment(<b>this</b>-&gt;derived());</td></tr>
+<tr><th id="661">661</th><td>          <b>return</b> <b>this</b>-&gt;derived();</td></tr>
+<tr><th id="662">662</th><td>      }</td></tr>
+<tr><th id="663">663</th><td></td></tr>
+<tr><th id="664">664</th><td><u># <span data-ppcond="664">if</span> <a class="macro" href="../detail/workaround.hpp.html#233" title="((1 + 0 == 0) &amp;&amp; (BOOST_MSVC != 0) &amp;&amp; (1 % (( (BOOST_MSVC &lt; 1300) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_MSVC, &lt; 1300)</u></td></tr>
+<tr><th id="665">665</th><td>      <b>typename</b> boost::detail::postfix_increment_result&lt;Derived,Value,Reference,CategoryOrTraversal&gt;::type</td></tr>
+<tr><th id="666">666</th><td>      <b>operator</b>++(<em>int</em>)</td></tr>
+<tr><th id="667">667</th><td>      {</td></tr>
+<tr><th id="668">668</th><td>          <b>typename</b> boost::detail::postfix_increment_result&lt;Derived,Value,Reference,CategoryOrTraversal&gt;::type</td></tr>
+<tr><th id="669">669</th><td>          tmp(<b>this</b>-&gt;derived());</td></tr>
+<tr><th id="670">670</th><td>          ++*<b>this</b>;</td></tr>
+<tr><th id="671">671</th><td>          <b>return</b> tmp;</td></tr>
+<tr><th id="672">672</th><td>      }</td></tr>
+<tr><th id="673">673</th><td><u># <span data-ppcond="664">endif</span></u></td></tr>
+<tr><th id="674">674</th><td>      </td></tr>
+<tr><th id="675">675</th><td>      Derived&amp; <dfn class="decl def fn" id="_ZN5boost15iterator_facademmEv" title='boost::iterator_facade::operator--' data-ref="_ZN5boost15iterator_facademmEv"><b>operator</b>--</dfn>()</td></tr>
+<tr><th id="676">676</th><td>      {</td></tr>
+<tr><th id="677">677</th><td>          <a class="type" href="#boost::iterator_core_access" title='boost::iterator_core_access' data-ref="boost::iterator_core_access">iterator_core_access</a>::decrement(<b>this</b>-&gt;derived());</td></tr>
+<tr><th id="678">678</th><td>          <b>return</b> <b>this</b>-&gt;derived();</td></tr>
+<tr><th id="679">679</th><td>      }</td></tr>
+<tr><th id="680">680</th><td></td></tr>
+<tr><th id="681">681</th><td>      Derived <dfn class="decl def fn" id="_ZN5boost15iterator_facademmEi" title='boost::iterator_facade::operator--' data-ref="_ZN5boost15iterator_facademmEi"><b>operator</b>--</dfn>(<em>int</em>)</td></tr>
+<tr><th id="682">682</th><td>      {</td></tr>
+<tr><th id="683">683</th><td>          Derived <dfn class="local col7 decl" id="477tmp" title='tmp' data-type='Derived' data-ref="477tmp">tmp</dfn>(<b>this</b>-&gt;derived());</td></tr>
+<tr><th id="684">684</th><td>          --*<b>this</b>;</td></tr>
+<tr><th id="685">685</th><td>          <b>return</b> <a class="local col7 ref" href="#477tmp" title='tmp' data-ref="477tmp">tmp</a>;</td></tr>
+<tr><th id="686">686</th><td>      }</td></tr>
+<tr><th id="687">687</th><td></td></tr>
+<tr><th id="688">688</th><td>      Derived&amp; <dfn class="decl def fn" id="_ZN5boost15iterator_facadepLET3_" title='boost::iterator_facade::operator+=' data-ref="_ZN5boost15iterator_facadepLET3_"><b>operator</b>+=</dfn>(<a class="typedef" href="#boost::iterator_facade::difference_type" title='boost::iterator_facade::difference_type' data-type='Difference' data-ref="boost::iterator_facade::difference_type">difference_type</a> <dfn class="local col8 decl" id="478n" title='n' data-type='boost::iterator_facade::difference_type' data-ref="478n">n</dfn>)</td></tr>
+<tr><th id="689">689</th><td>      {</td></tr>
+<tr><th id="690">690</th><td>          <a class="type" href="#boost::iterator_core_access" title='boost::iterator_core_access' data-ref="boost::iterator_core_access">iterator_core_access</a>::advance(<b>this</b>-&gt;derived(), <a class="local col8 ref" href="#478n" title='n' data-ref="478n">n</a>);</td></tr>
+<tr><th id="691">691</th><td>          <b>return</b> <b>this</b>-&gt;derived();</td></tr>
+<tr><th id="692">692</th><td>      }</td></tr>
+<tr><th id="693">693</th><td></td></tr>
+<tr><th id="694">694</th><td>      Derived&amp; <dfn class="decl def fn" id="_ZN5boost15iterator_facademIET3_" title='boost::iterator_facade::operator-=' data-ref="_ZN5boost15iterator_facademIET3_"><b>operator</b>-=</dfn>(<a class="typedef" href="#boost::iterator_facade::difference_type" title='boost::iterator_facade::difference_type' data-type='Difference' data-ref="boost::iterator_facade::difference_type">difference_type</a> <dfn class="local col9 decl" id="479n" title='n' data-type='boost::iterator_facade::difference_type' data-ref="479n">n</dfn>)</td></tr>
+<tr><th id="695">695</th><td>      {</td></tr>
+<tr><th id="696">696</th><td>          <a class="type" href="#boost::iterator_core_access" title='boost::iterator_core_access' data-ref="boost::iterator_core_access">iterator_core_access</a>::advance(<b>this</b>-&gt;derived(), -<a class="local col9 ref" href="#479n" title='n' data-ref="479n">n</a>);</td></tr>
+<tr><th id="697">697</th><td>          <b>return</b> <b>this</b>-&gt;derived();</td></tr>
+<tr><th id="698">698</th><td>      }</td></tr>
+<tr><th id="699">699</th><td></td></tr>
+<tr><th id="700">700</th><td>      Derived <dfn class="decl def fn" id="_ZNK5boost15iterator_facademiET3_" title='boost::iterator_facade::operator-' data-ref="_ZNK5boost15iterator_facademiET3_"><b>operator</b>-</dfn>(<a class="typedef" href="#boost::iterator_facade::difference_type" title='boost::iterator_facade::difference_type' data-type='Difference' data-ref="boost::iterator_facade::difference_type">difference_type</a> <dfn class="local col0 decl" id="480x" title='x' data-type='boost::iterator_facade::difference_type' data-ref="480x">x</dfn>) <em>const</em></td></tr>
+<tr><th id="701">701</th><td>      {</td></tr>
+<tr><th id="702">702</th><td>          Derived <dfn class="local col1 decl" id="481result" title='result' data-type='Derived' data-ref="481result">result</dfn>(<b>this</b>-&gt;derived());</td></tr>
+<tr><th id="703">703</th><td>          <b>return</b> <a class="local col1 ref" href="#481result" title='result' data-ref="481result">result</a> -= <a class="local col0 ref" href="#480x" title='x' data-ref="480x">x</a>;</td></tr>
+<tr><th id="704">704</th><td>      }</td></tr>
+<tr><th id="705">705</th><td></td></tr>
+<tr><th id="706">706</th><td><u># <span data-ppcond="706">if</span> <a class="macro" href="../detail/workaround.hpp.html#233" title="((1 + 0 == 0) &amp;&amp; (BOOST_MSVC != 0) &amp;&amp; (1 % (( (BOOST_MSVC &lt; 1300) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_MSVC, &lt; 1300)</u></td></tr>
+<tr><th id="707">707</th><td>      <i>// There appears to be a bug which trashes the data of classes</i></td></tr>
+<tr><th id="708">708</th><td><i>      // derived from iterator_facade when they are assigned unless we</i></td></tr>
+<tr><th id="709">709</th><td><i>      // define this assignment operator.  This bug is only revealed</i></td></tr>
+<tr><th id="710">710</th><td><i>      // (so far) in STLPort debug mode, but it's clearly a codegen</i></td></tr>
+<tr><th id="711">711</th><td><i>      // problem so we apply the workaround for all MSVC6.</i></td></tr>
+<tr><th id="712">712</th><td>      iterator_facade&amp; <b>operator</b>=(iterator_facade <em>const</em>&amp;)</td></tr>
+<tr><th id="713">713</th><td>      {</td></tr>
+<tr><th id="714">714</th><td>          <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="715">715</th><td>      }</td></tr>
+<tr><th id="716">716</th><td><u># <span data-ppcond="706">endif</span></u></td></tr>
+<tr><th id="717">717</th><td>  };</td></tr>
+<tr><th id="718">718</th><td></td></tr>
+<tr><th id="719">719</th><td><u># <span data-ppcond="719">if</span> !<a class="macro" href="../detail/workaround.hpp.html#233" title="((1 + 0 == 0) &amp;&amp; (BOOST_MSVC != 0) &amp;&amp; (1 % (( (BOOST_MSVC &lt; 1300) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_MSVC, &lt; 1300)</u></td></tr>
+<tr><th id="720">720</th><td>  <b>template</b> &lt;<b>class</b> I, <b>class</b> V, <b>class</b> TC, <b>class</b> R, <b>class</b> D&gt;</td></tr>
+<tr><th id="721">721</th><td>  <b>inline</b> <b>typename</b> <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::postfix_increment_result" title='boost::detail::postfix_increment_result' data-ref="boost::detail::postfix_increment_result">postfix_increment_result</a>&lt;I,V,R,TC&gt;::type</td></tr>
+<tr><th id="722">722</th><td>  <dfn class="decl def fn" id="_ZN5boostppERNS_15iterator_facadeIT_T0_T1_T2_T3_EEi" title='boost::operator++' data-ref="_ZN5boostppERNS_15iterator_facadeIT_T0_T1_T2_T3_EEi"><b>operator</b>++</dfn>(</td></tr>
+<tr><th id="723">723</th><td>      <a class="type" href="#boost::iterator_facade" title='boost::iterator_facade' data-ref="boost::iterator_facade">iterator_facade</a>&lt;I,V,TC,R,D&gt;&amp; <dfn class="local col2 decl" id="482i" title='i' data-type='iterator_facade&lt;I, V, TC, R, D&gt; &amp;' data-ref="482i">i</dfn></td></tr>
+<tr><th id="724">724</th><td>    , <em>int</em></td></tr>
+<tr><th id="725">725</th><td>  )</td></tr>
+<tr><th id="726">726</th><td>  {</td></tr>
+<tr><th id="727">727</th><td>      <b>typename</b> <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::postfix_increment_result" title='boost::detail::postfix_increment_result' data-ref="boost::detail::postfix_increment_result">postfix_increment_result</a>&lt;I,V,R,TC&gt;::type</td></tr>
+<tr><th id="728">728</th><td>          <dfn class="local col3 decl" id="483tmp" title='tmp' data-type='typename boost::detail::postfix_increment_result&lt;I, V, R, TC&gt;::type' data-ref="483tmp">tmp</dfn>(*<b>static_cast</b>&lt;I*&gt;(&amp;<a class="local col2 ref" href="#482i" title='i' data-ref="482i">i</a>));</td></tr>
+<tr><th id="729">729</th><td>      </td></tr>
+<tr><th id="730">730</th><td>      ++<a class="local col2 ref" href="#482i" title='i' data-ref="482i">i</a>;</td></tr>
+<tr><th id="731">731</th><td>      </td></tr>
+<tr><th id="732">732</th><td>      <b>return</b> <a class="local col3 ref" href="#483tmp" title='tmp' data-ref="483tmp">tmp</a>;</td></tr>
+<tr><th id="733">733</th><td>  }</td></tr>
+<tr><th id="734">734</th><td><u># <span data-ppcond="719">endif</span></u> </td></tr>
+<tr><th id="735">735</th><td></td></tr>
+<tr><th id="736">736</th><td>  </td></tr>
+<tr><th id="737">737</th><td>  <i>//</i></td></tr>
+<tr><th id="738">738</th><td><i>  // Comparison operator implementation. The library supplied operators</i></td></tr>
+<tr><th id="739">739</th><td><i>  // enables the user to provide fully interoperable constant/mutable</i></td></tr>
+<tr><th id="740">740</th><td><i>  // iterator types. I.e. the library provides all operators</i></td></tr>
+<tr><th id="741">741</th><td><i>  // for all mutable/constant iterator combinations.</i></td></tr>
+<tr><th id="742">742</th><td><i>  //</i></td></tr>
+<tr><th id="743">743</th><td><i>  // Note though that this kind of interoperability for constant/mutable</i></td></tr>
+<tr><th id="744">744</th><td><i>  // iterators is not required by the standard for container iterators.</i></td></tr>
+<tr><th id="745">745</th><td><i>  // All the standard asks for is a conversion mutable -&gt; constant.</i></td></tr>
+<tr><th id="746">746</th><td><i>  // Most standard library implementations nowadays provide fully interoperable</i></td></tr>
+<tr><th id="747">747</th><td><i>  // iterator implementations, but there are still heavily used implementations</i></td></tr>
+<tr><th id="748">748</th><td><i>  // that do not provide them. (Actually it's even worse, they do not provide</i></td></tr>
+<tr><th id="749">749</th><td><i>  // them for only a few iterators.)</i></td></tr>
+<tr><th id="750">750</th><td><i>  //</i></td></tr>
+<tr><th id="751">751</th><td><i>  // ?? Maybe a BOOST_ITERATOR_NO_FULL_INTEROPERABILITY macro should</i></td></tr>
+<tr><th id="752">752</th><td><i>  //    enable the user to turn off mixed type operators</i></td></tr>
+<tr><th id="753">753</th><td><i>  //</i></td></tr>
+<tr><th id="754">754</th><td><i>  // The library takes care to provide only the right operator overloads.</i></td></tr>
+<tr><th id="755">755</th><td><i>  // I.e.</i></td></tr>
+<tr><th id="756">756</th><td><i>  //</i></td></tr>
+<tr><th id="757">757</th><td><i>  // bool operator==(Iterator,      Iterator);</i></td></tr>
+<tr><th id="758">758</th><td><i>  // bool operator==(ConstIterator, Iterator);</i></td></tr>
+<tr><th id="759">759</th><td><i>  // bool operator==(Iterator,      ConstIterator);</i></td></tr>
+<tr><th id="760">760</th><td><i>  // bool operator==(ConstIterator, ConstIterator);</i></td></tr>
+<tr><th id="761">761</th><td><i>  //</i></td></tr>
+<tr><th id="762">762</th><td><i>  //   ...</i></td></tr>
+<tr><th id="763">763</th><td><i>  //</i></td></tr>
+<tr><th id="764">764</th><td><i>  // In order to do so it uses c++ idioms that are not yet widely supported</i></td></tr>
+<tr><th id="765">765</th><td><i>  // by current compiler releases. The library is designed to degrade gracefully</i></td></tr>
+<tr><th id="766">766</th><td><i>  // in the face of compiler deficiencies. In general compiler</i></td></tr>
+<tr><th id="767">767</th><td><i>  // deficiencies result in less strict error checking and more obscure</i></td></tr>
+<tr><th id="768">768</th><td><i>  // error messages, functionality is not affected.</i></td></tr>
+<tr><th id="769">769</th><td><i>  //</i></td></tr>
+<tr><th id="770">770</th><td><i>  // For full operation compiler support for "Substitution Failure Is Not An Error"</i></td></tr>
+<tr><th id="771">771</th><td><i>  // (aka. enable_if) and boost::is_convertible is required.</i></td></tr>
+<tr><th id="772">772</th><td><i>  //</i></td></tr>
+<tr><th id="773">773</th><td><i>  // The following problems occur if support is lacking.</i></td></tr>
+<tr><th id="774">774</th><td><i>  //</i></td></tr>
+<tr><th id="775">775</th><td><i>  // Pseudo code</i></td></tr>
+<tr><th id="776">776</th><td><i>  //</i></td></tr>
+<tr><th id="777">777</th><td><i>  // ---------------</i></td></tr>
+<tr><th id="778">778</th><td><i>  // AdaptorA&lt;Iterator1&gt; a1;</i></td></tr>
+<tr><th id="779">779</th><td><i>  // AdaptorA&lt;Iterator2&gt; a2;</i></td></tr>
+<tr><th id="780">780</th><td><i>  //</i></td></tr>
+<tr><th id="781">781</th><td><i>  // // This will result in a no such overload error in full operation</i></td></tr>
+<tr><th id="782">782</th><td><i>  // // If enable_if or is_convertible is not supported</i></td></tr>
+<tr><th id="783">783</th><td><i>  // // The instantiation will fail with an error hopefully indicating that</i></td></tr>
+<tr><th id="784">784</th><td><i>  // // there is no operator== for Iterator1, Iterator2</i></td></tr>
+<tr><th id="785">785</th><td><i>  // // The same will happen if no enable_if is used to remove</i></td></tr>
+<tr><th id="786">786</th><td><i>  // // false overloads from the templated conversion constructor</i></td></tr>
+<tr><th id="787">787</th><td><i>  // // of AdaptorA.</i></td></tr>
+<tr><th id="788">788</th><td><i>  //</i></td></tr>
+<tr><th id="789">789</th><td><i>  // a1 == a2;</i></td></tr>
+<tr><th id="790">790</th><td><i>  // ----------------</i></td></tr>
+<tr><th id="791">791</th><td><i>  //</i></td></tr>
+<tr><th id="792">792</th><td><i>  // AdaptorA&lt;Iterator&gt; a;</i></td></tr>
+<tr><th id="793">793</th><td><i>  // AdaptorB&lt;Iterator&gt; b;</i></td></tr>
+<tr><th id="794">794</th><td><i>  //</i></td></tr>
+<tr><th id="795">795</th><td><i>  // // This will result in a no such overload error in full operation</i></td></tr>
+<tr><th id="796">796</th><td><i>  // // If enable_if is not supported the static assert used</i></td></tr>
+<tr><th id="797">797</th><td><i>  // // in the operator implementation will fail.</i></td></tr>
+<tr><th id="798">798</th><td><i>  // // This will accidently work if is_convertible is not supported.</i></td></tr>
+<tr><th id="799">799</th><td><i>  //</i></td></tr>
+<tr><th id="800">800</th><td><i>  // a == b;</i></td></tr>
+<tr><th id="801">801</th><td><i>  // ----------------</i></td></tr>
+<tr><th id="802">802</th><td><i>  //</i></td></tr>
+<tr><th id="803">803</th><td></td></tr>
+<tr><th id="804">804</th><td><u># <span data-ppcond="804">ifdef</span> <span class="macro" data-ref="_M/BOOST_NO_ONE_WAY_ITERATOR_INTEROP">BOOST_NO_ONE_WAY_ITERATOR_INTEROP</span></u></td></tr>
+<tr><th id="805">805</th><td><u>#  define BOOST_ITERATOR_CONVERTIBLE(a,b) mpl::true_()</u></td></tr>
+<tr><th id="806">806</th><td><u># <span data-ppcond="804">else</span></u></td></tr>
+<tr><th id="807">807</th><td><u>#  define <dfn class="macro" id="_M/BOOST_ITERATOR_CONVERTIBLE" data-ref="_M/BOOST_ITERATOR_CONVERTIBLE">BOOST_ITERATOR_CONVERTIBLE</dfn>(a,b) <a class="type" href="../type_traits/is_convertible.hpp.html#484" title='boost::is_convertible' data-ref="boost::is_convertible">is_convertible</a>&lt;a,b&gt;()</u></td></tr>
+<tr><th id="808">808</th><td><u># <span data-ppcond="804">endif</span></u></td></tr>
+<tr><th id="809">809</th><td></td></tr>
+<tr><th id="810">810</th><td><u># define <dfn class="macro" id="_M/BOOST_ITERATOR_FACADE_INTEROP" data-ref="_M/BOOST_ITERATOR_FACADE_INTEROP">BOOST_ITERATOR_FACADE_INTEROP</dfn>(op, result_type, return_prefix, base_op) \</u></td></tr>
+<tr><th id="811">811</th><td><u>  BOOST_ITERATOR_FACADE_INTEROP_HEAD(inline, op, result_type)                   \</u></td></tr>
+<tr><th id="812">812</th><td><u>  {                                                                             \</u></td></tr>
+<tr><th id="813">813</th><td><u>      /* For those compilers that do not support enable_if */                   \</u></td></tr>
+<tr><th id="814">814</th><td><u>      BOOST_STATIC_ASSERT((                                                     \</u></td></tr>
+<tr><th id="815">815</th><td><u>          <a class="type" href="interoperable.hpp.html#boost::is_interoperable" title='boost::is_interoperable' data-ref="boost::is_interoperable">is_interoperable</a>&lt; Derived1, Derived2 &gt;::value                         \</u></td></tr>
+<tr><th id="816">816</th><td><u>      ));                                                                       \</u></td></tr>
+<tr><th id="817">817</th><td><u>      return_prefix <a class="type" href="#boost::iterator_core_access" title='boost::iterator_core_access' data-ref="boost::iterator_core_access">iterator_core_access</a>::base_op(                              \</u></td></tr>
+<tr><th id="818">818</th><td><u>          *static_cast&lt;Derived1 const*&gt;(&amp;<a class="local col4 ref" href="#832" title='lhs' data-ref="484lhs"><a class="local col6 ref" href="#833" title='lhs' data-ref="486lhs"><a class="local col8 ref" href="#835" title='lhs' data-ref="488lhs"><a class="local col0 ref" href="#836" title='lhs' data-ref="490lhs"><a class="local col2 ref" href="#837" title='lhs' data-ref="492lhs"><a class="local col4 ref" href="#838" title='lhs' data-ref="494lhs"><a class="local col6 ref" href="#842" title='lhs' data-ref="496lhs">lhs</a></a></a></a></a></a></a>)                                   \</u></td></tr>
+<tr><th id="819">819</th><td><u>        , *static_cast&lt;Derived2 const*&gt;(&amp;<a class="local col5 ref" href="#832" title='rhs' data-ref="485rhs"><a class="local col7 ref" href="#833" title='rhs' data-ref="487rhs"><a class="local col9 ref" href="#835" title='rhs' data-ref="489rhs"><a class="local col1 ref" href="#836" title='rhs' data-ref="491rhs"><a class="local col3 ref" href="#837" title='rhs' data-ref="493rhs"><a class="local col5 ref" href="#838" title='rhs' data-ref="495rhs"><a class="local col7 ref" href="#842" title='rhs' data-ref="497rhs">rhs</a></a></a></a></a></a></a>)                                   \</u></td></tr>
+<tr><th id="820">820</th><td><u>        , BOOST_ITERATOR_CONVERTIBLE(Derived2,Derived1)                         \</u></td></tr>
+<tr><th id="821">821</th><td><u>      );                                                                        \</u></td></tr>
+<tr><th id="822">822</th><td><u>  }</u></td></tr>
+<tr><th id="823">823</th><td></td></tr>
+<tr><th id="824">824</th><td><u># define <dfn class="macro" id="_M/BOOST_ITERATOR_FACADE_RELATION" data-ref="_M/BOOST_ITERATOR_FACADE_RELATION">BOOST_ITERATOR_FACADE_RELATION</dfn>(op, return_prefix, base_op) \</u></td></tr>
+<tr><th id="825">825</th><td><u>  BOOST_ITERATOR_FACADE_INTEROP(                                    \</u></td></tr>
+<tr><th id="826">826</th><td><u>      op                                                            \</u></td></tr>
+<tr><th id="827">827</th><td><u>    , boost::detail::<a class="type" href="#boost::detail::always_bool2" title='boost::detail::always_bool2' data-ref="boost::detail::always_bool2">always_bool2</a>                                   \</u></td></tr>
+<tr><th id="828">828</th><td><u>    , return_prefix                                                 \</u></td></tr>
+<tr><th id="829">829</th><td><u>    , base_op                                                       \</u></td></tr>
+<tr><th id="830">830</th><td><u>  )</u></td></tr>
+<tr><th id="831">831</th><td></td></tr>
+<tr><th id="832">832</th><td>  <a class="macro" href="#824" title="template &lt; class Derived1, class V1, class TC1, class Reference1, class Difference1 , class Derived2, class V2, class TC2, class Reference2, class Difference2 &gt; inline typename boost::detail::enable_if_interoperable&lt; Derived1, Derived2 , typename mpl::apply2&lt;boost::detail::always_bool2,Derived1,Derived2&gt;::type &gt;::type operator ==( iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; const&amp; lhs , iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; const&amp; rhs) { static_assert(( is_interoperable&lt; Derived1, Derived2 &gt;::value ), &quot;( is_interoperable&lt; Derived1, Derived2 &gt;::value )&quot;); return iterator_core_access::equal( *static_cast&lt;Derived1 const*&gt;(&amp;lhs) , *static_cast&lt;Derived2 const*&gt;(&amp;rhs) , is_convertible&lt;Derived2,Derived1&gt;() ); }" data-ref="_M/BOOST_ITERATOR_FACADE_RELATION">BOOST_ITERATOR_FACADE_RELATION</a>(==, <b>return</b>, equal)</td></tr>
+<tr><th id="833">833</th><td>  <a class="macro" href="#824" title="template &lt; class Derived1, class V1, class TC1, class Reference1, class Difference1 , class Derived2, class V2, class TC2, class Reference2, class Difference2 &gt; inline typename boost::detail::enable_if_interoperable&lt; Derived1, Derived2 , typename mpl::apply2&lt;boost::detail::always_bool2,Derived1,Derived2&gt;::type &gt;::type operator !=( iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; const&amp; lhs , iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; const&amp; rhs) { static_assert(( is_interoperable&lt; Derived1, Derived2 &gt;::value ), &quot;( is_interoperable&lt; Derived1, Derived2 &gt;::value )&quot;); return ! iterator_core_access::equal( *static_cast&lt;Derived1 const*&gt;(&amp;lhs) , *static_cast&lt;Derived2 const*&gt;(&amp;rhs) , is_convertible&lt;Derived2,Derived1&gt;() ); }" data-ref="_M/BOOST_ITERATOR_FACADE_RELATION">BOOST_ITERATOR_FACADE_RELATION</a>(!=, <b>return</b> !, equal)</td></tr>
+<tr><th id="834">834</th><td></td></tr>
+<tr><th id="835">835</th><td>  <a class="macro" href="#824" title="template &lt; class Derived1, class V1, class TC1, class Reference1, class Difference1 , class Derived2, class V2, class TC2, class Reference2, class Difference2 &gt; inline typename boost::detail::enable_if_interoperable&lt; Derived1, Derived2 , typename mpl::apply2&lt;boost::detail::always_bool2,Derived1,Derived2&gt;::type &gt;::type operator &lt;( iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; const&amp; lhs , iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; const&amp; rhs) { static_assert(( is_interoperable&lt; Derived1, Derived2 &gt;::value ), &quot;( is_interoperable&lt; Derived1, Derived2 &gt;::value )&quot;); return 0 &gt; iterator_core_access::distance_from( *static_cast&lt;Derived1 const*&gt;(&amp;lhs) , *static_cast&lt;Derived2 const*&gt;(&amp;rhs) , is_convertible&lt;Derived2,Derived1&gt;() ); }" data-ref="_M/BOOST_ITERATOR_FACADE_RELATION">BOOST_ITERATOR_FACADE_RELATION</a>(&lt;, <b>return</b> <var>0</var> &gt;, distance_from)</td></tr>
+<tr><th id="836">836</th><td>  <a class="macro" href="#824" title="template &lt; class Derived1, class V1, class TC1, class Reference1, class Difference1 , class Derived2, class V2, class TC2, class Reference2, class Difference2 &gt; inline typename boost::detail::enable_if_interoperable&lt; Derived1, Derived2 , typename mpl::apply2&lt;boost::detail::always_bool2,Derived1,Derived2&gt;::type &gt;::type operator &gt;( iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; const&amp; lhs , iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; const&amp; rhs) { static_assert(( is_interoperable&lt; Derived1, Derived2 &gt;::value ), &quot;( is_interoperable&lt; Derived1, Derived2 &gt;::value )&quot;); return 0 &lt; iterator_core_access::distance_from( *static_cast&lt;Derived1 const*&gt;(&amp;lhs) , *static_cast&lt;Derived2 const*&gt;(&amp;rhs) , is_convertible&lt;Derived2,Derived1&gt;() ); }" data-ref="_M/BOOST_ITERATOR_FACADE_RELATION">BOOST_ITERATOR_FACADE_RELATION</a>(&gt;, <b>return</b> <var>0</var> &lt;, distance_from)</td></tr>
+<tr><th id="837">837</th><td>  <a class="macro" href="#824" title="template &lt; class Derived1, class V1, class TC1, class Reference1, class Difference1 , class Derived2, class V2, class TC2, class Reference2, class Difference2 &gt; inline typename boost::detail::enable_if_interoperable&lt; Derived1, Derived2 , typename mpl::apply2&lt;boost::detail::always_bool2,Derived1,Derived2&gt;::type &gt;::type operator &lt;=( iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; const&amp; lhs , iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; const&amp; rhs) { static_assert(( is_interoperable&lt; Derived1, Derived2 &gt;::value ), &quot;( is_interoperable&lt; Derived1, Derived2 &gt;::value )&quot;); return 0 &gt;= iterator_core_access::distance_from( *static_cast&lt;Derived1 const*&gt;(&amp;lhs) , *static_cast&lt;Derived2 const*&gt;(&amp;rhs) , is_convertible&lt;Derived2,Derived1&gt;() ); }" data-ref="_M/BOOST_ITERATOR_FACADE_RELATION">BOOST_ITERATOR_FACADE_RELATION</a>(&lt;=, <b>return</b> <var>0</var> &gt;=, distance_from)</td></tr>
+<tr><th id="838">838</th><td>  <a class="macro" href="#824" title="template &lt; class Derived1, class V1, class TC1, class Reference1, class Difference1 , class Derived2, class V2, class TC2, class Reference2, class Difference2 &gt; inline typename boost::detail::enable_if_interoperable&lt; Derived1, Derived2 , typename mpl::apply2&lt;boost::detail::always_bool2,Derived1,Derived2&gt;::type &gt;::type operator &gt;=( iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; const&amp; lhs , iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; const&amp; rhs) { static_assert(( is_interoperable&lt; Derived1, Derived2 &gt;::value ), &quot;( is_interoperable&lt; Derived1, Derived2 &gt;::value )&quot;); return 0 &lt;= iterator_core_access::distance_from( *static_cast&lt;Derived1 const*&gt;(&amp;lhs) , *static_cast&lt;Derived2 const*&gt;(&amp;rhs) , is_convertible&lt;Derived2,Derived1&gt;() ); }" data-ref="_M/BOOST_ITERATOR_FACADE_RELATION">BOOST_ITERATOR_FACADE_RELATION</a>(&gt;=, <b>return</b> <var>0</var> &lt;=, distance_from)</td></tr>
+<tr><th id="839">839</th><td><u># undef <a class="macro" href="#824" data-ref="_M/BOOST_ITERATOR_FACADE_RELATION">BOOST_ITERATOR_FACADE_RELATION</a></u></td></tr>
+<tr><th id="840">840</th><td></td></tr>
+<tr><th id="841">841</th><td>  <i>// operator- requires an additional part in the static assertion</i></td></tr>
+<tr><th id="842">842</th><td>  <a class="macro" href="#810" title="template &lt; class Derived1, class V1, class TC1, class Reference1, class Difference1 , class Derived2, class V2, class TC2, class Reference2, class Difference2 &gt; inline typename boost::detail::enable_if_interoperable&lt; Derived1, Derived2 , typename mpl::apply2&lt;boost::detail::choose_difference_type,Derived1,Derived2&gt;::type &gt;::type operator -( iterator_facade&lt;Derived1, V1, TC1, Reference1, Difference1&gt; const&amp; lhs , iterator_facade&lt;Derived2, V2, TC2, Reference2, Difference2&gt; const&amp; rhs) { static_assert(( is_interoperable&lt; Derived1, Derived2 &gt;::value ), &quot;( is_interoperable&lt; Derived1, Derived2 &gt;::value )&quot;); return iterator_core_access::distance_from( *static_cast&lt;Derived1 const*&gt;(&amp;lhs) , *static_cast&lt;Derived2 const*&gt;(&amp;rhs) , is_convertible&lt;Derived2,Derived1&gt;() ); }" data-ref="_M/BOOST_ITERATOR_FACADE_INTEROP">BOOST_ITERATOR_FACADE_INTEROP</a>(</td></tr>
+<tr><th id="843">843</th><td>      -</td></tr>
+<tr><th id="844">844</th><td>    , boost::detail::<a class="type" href="#boost::detail::choose_difference_type" title='boost::detail::choose_difference_type' data-ref="boost::detail::choose_difference_type">choose_difference_type</a></td></tr>
+<tr><th id="845">845</th><td>    , <b>return</b></td></tr>
+<tr><th id="846">846</th><td>    , distance_from</td></tr>
+<tr><th id="847">847</th><td>  )</td></tr>
+<tr><th id="848">848</th><td><u># undef <a class="macro" href="#810" data-ref="_M/BOOST_ITERATOR_FACADE_INTEROP">BOOST_ITERATOR_FACADE_INTEROP</a></u></td></tr>
+<tr><th id="849">849</th><td><u># undef <a class="macro" href="#442" data-ref="_M/BOOST_ITERATOR_FACADE_INTEROP_HEAD">BOOST_ITERATOR_FACADE_INTEROP_HEAD</a></u></td></tr>
+<tr><th id="850">850</th><td></td></tr>
+<tr><th id="851">851</th><td><u># define <dfn class="macro" id="_M/BOOST_ITERATOR_FACADE_PLUS" data-ref="_M/BOOST_ITERATOR_FACADE_PLUS">BOOST_ITERATOR_FACADE_PLUS</dfn>(args)           \</u></td></tr>
+<tr><th id="852">852</th><td><u>  BOOST_ITERATOR_FACADE_PLUS_HEAD(inline, args)     \</u></td></tr>
+<tr><th id="853">853</th><td><u>  {                                                 \</u></td></tr>
+<tr><th id="854">854</th><td><u>      Derived <dfn class="local col0 decl" id="500tmp" title='tmp' data-type='Derived' data-ref="500tmp"><dfn class="local col3 decl" id="503tmp" title='tmp' data-type='Derived' data-ref="503tmp">tmp</dfn></dfn>(static_cast&lt;Derived const&amp;&gt;(<a class="local col8 ref" href="#858" title='i' data-ref="498i"><a class="local col2 ref" href="#863" title='i' data-ref="502i">i</a></a>));  \</u></td></tr>
+<tr><th id="855">855</th><td><u>      return <a class="local col0 ref" href="#858" title='tmp' data-ref="500tmp"><a class="local col3 ref" href="#863" title='tmp' data-ref="503tmp">tmp</a></a> += <a class="local col9 ref" href="#858" title='n' data-ref="499n"><a class="local col1 ref" href="#863" title='n' data-ref="501n">n</a></a>;                              \</u></td></tr>
+<tr><th id="856">856</th><td><u>  }</u></td></tr>
+<tr><th id="857">857</th><td></td></tr>
+<tr><th id="858">858</th><td><a class="macro" href="#851" title="template &lt;class Derived, class V, class TC, class R, class D&gt; inline Derived operator+ ( iterator_facade&lt;Derived, V, TC, R, D&gt; const&amp; i , typename Derived::difference_type n) { Derived tmp(static_cast&lt;Derived const&amp;&gt;(i)); return tmp += n; }" data-ref="_M/BOOST_ITERATOR_FACADE_PLUS">BOOST_ITERATOR_FACADE_PLUS</a>((</td></tr>
+<tr><th id="859">859</th><td>  <a class="type" href="#boost::iterator_facade" title='boost::iterator_facade' data-ref="boost::iterator_facade">iterator_facade</a>&lt;Derived, V, TC, R, D&gt; <em>const</em>&amp; <dfn class="local col8 decl" id="498i" title='i' data-type='const iterator_facade&lt;Derived, V, TC, R, D&gt; &amp;' data-ref="498i">i</dfn></td></tr>
+<tr><th id="860">860</th><td>  , <b>typename</b> Derived::difference_type <dfn class="local col9 decl" id="499n" title='n' data-type='typename Derived::difference_type' data-ref="499n">n</dfn></td></tr>
+<tr><th id="861">861</th><td>))</td></tr>
+<tr><th id="862">862</th><td></td></tr>
+<tr><th id="863">863</th><td><a class="macro" href="#851" title="template &lt;class Derived, class V, class TC, class R, class D&gt; inline Derived operator+ ( typename Derived::difference_type n , iterator_facade&lt;Derived, V, TC, R, D&gt; const&amp; i) { Derived tmp(static_cast&lt;Derived const&amp;&gt;(i)); return tmp += n; }" data-ref="_M/BOOST_ITERATOR_FACADE_PLUS">BOOST_ITERATOR_FACADE_PLUS</a>((</td></tr>
+<tr><th id="864">864</th><td>    <b>typename</b> Derived::difference_type <dfn class="local col1 decl" id="501n" title='n' data-type='typename Derived::difference_type' data-ref="501n">n</dfn></td></tr>
+<tr><th id="865">865</th><td>    , <a class="type" href="#boost::iterator_facade" title='boost::iterator_facade' data-ref="boost::iterator_facade">iterator_facade</a>&lt;Derived, V, TC, R, D&gt; <em>const</em>&amp; <dfn class="local col2 decl" id="502i" title='i' data-type='const iterator_facade&lt;Derived, V, TC, R, D&gt; &amp;' data-ref="502i">i</dfn></td></tr>
+<tr><th id="866">866</th><td>))</td></tr>
+<tr><th id="867">867</th><td><u># undef <a class="macro" href="#851" data-ref="_M/BOOST_ITERATOR_FACADE_PLUS">BOOST_ITERATOR_FACADE_PLUS</a></u></td></tr>
+<tr><th id="868">868</th><td><u># undef <a class="macro" href="#456" data-ref="_M/BOOST_ITERATOR_FACADE_PLUS_HEAD">BOOST_ITERATOR_FACADE_PLUS_HEAD</a></u></td></tr>
+<tr><th id="869">869</th><td></td></tr>
+<tr><th id="870">870</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="871">871</th><td></td></tr>
+<tr><th id="872">872</th><td><u>#include <a href="detail/config_undef.hpp.html">&lt;boost/iterator/detail/config_undef.hpp&gt;</a></u></td></tr>
+<tr><th id="873">873</th><td></td></tr>
+<tr><th id="874">874</th><td><u>#<span data-ppcond="7">endif</span> // BOOST_ITERATOR_FACADE_23022003THW_HPP</u></td></tr>
+<tr><th id="875">875</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../vpp_1804/src/vpp-api/vom/inspect.cpp.html'>vpp_1804/src/vpp-api/vom/inspect.cpp</a><br/>Generated on <em>2018-Jul-29</em> from project include<br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

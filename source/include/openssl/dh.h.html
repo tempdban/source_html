@@ -1,0 +1,415 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>dh.h source code [include/openssl/dh.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="dh_method,dh_st "/>
+<link rel="stylesheet" href="../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'include/openssl/dh.h'; var root_path = '../..'; var data_path = '../../../data';</script>
+<script src='../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='..'>include</a>/<a href='./'>openssl</a>/<a href='dh.h.html'>dh.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* crypto/dh/dh.h */</i></td></tr>
+<tr><th id="2">2</th><td><i>/* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)</i></td></tr>
+<tr><th id="3">3</th><td><i> * All rights reserved.</i></td></tr>
+<tr><th id="4">4</th><td><i> *</i></td></tr>
+<tr><th id="5">5</th><td><i> * This package is an SSL implementation written</i></td></tr>
+<tr><th id="6">6</th><td><i> * by Eric Young (eay@cryptsoft.com).</i></td></tr>
+<tr><th id="7">7</th><td><i> * The implementation was written so as to conform with Netscapes SSL.</i></td></tr>
+<tr><th id="8">8</th><td><i> *</i></td></tr>
+<tr><th id="9">9</th><td><i> * This library is free for commercial and non-commercial use as long as</i></td></tr>
+<tr><th id="10">10</th><td><i> * the following conditions are aheared to.  The following conditions</i></td></tr>
+<tr><th id="11">11</th><td><i> * apply to all code found in this distribution, be it the RC4, RSA,</i></td></tr>
+<tr><th id="12">12</th><td><i> * lhash, DES, etc., code; not just the SSL code.  The SSL documentation</i></td></tr>
+<tr><th id="13">13</th><td><i> * included with this distribution is covered by the same copyright terms</i></td></tr>
+<tr><th id="14">14</th><td><i> * except that the holder is Tim Hudson (tjh@cryptsoft.com).</i></td></tr>
+<tr><th id="15">15</th><td><i> *</i></td></tr>
+<tr><th id="16">16</th><td><i> * Copyright remains Eric Young's, and as such any Copyright notices in</i></td></tr>
+<tr><th id="17">17</th><td><i> * the code are not to be removed.</i></td></tr>
+<tr><th id="18">18</th><td><i> * If this package is used in a product, Eric Young should be given attribution</i></td></tr>
+<tr><th id="19">19</th><td><i> * as the author of the parts of the library used.</i></td></tr>
+<tr><th id="20">20</th><td><i> * This can be in the form of a textual message at program startup or</i></td></tr>
+<tr><th id="21">21</th><td><i> * in documentation (online or textual) provided with the package.</i></td></tr>
+<tr><th id="22">22</th><td><i> *</i></td></tr>
+<tr><th id="23">23</th><td><i> * Redistribution and use in source and binary forms, with or without</i></td></tr>
+<tr><th id="24">24</th><td><i> * modification, are permitted provided that the following conditions</i></td></tr>
+<tr><th id="25">25</th><td><i> * are met:</i></td></tr>
+<tr><th id="26">26</th><td><i> * 1. Redistributions of source code must retain the copyright</i></td></tr>
+<tr><th id="27">27</th><td><i> *    notice, this list of conditions and the following disclaimer.</i></td></tr>
+<tr><th id="28">28</th><td><i> * 2. Redistributions in binary form must reproduce the above copyright</i></td></tr>
+<tr><th id="29">29</th><td><i> *    notice, this list of conditions and the following disclaimer in the</i></td></tr>
+<tr><th id="30">30</th><td><i> *    documentation and/or other materials provided with the distribution.</i></td></tr>
+<tr><th id="31">31</th><td><i> * 3. All advertising materials mentioning features or use of this software</i></td></tr>
+<tr><th id="32">32</th><td><i> *    must display the following acknowledgement:</i></td></tr>
+<tr><th id="33">33</th><td><i> *    "This product includes cryptographic software written by</i></td></tr>
+<tr><th id="34">34</th><td><i> *     Eric Young (eay@cryptsoft.com)"</i></td></tr>
+<tr><th id="35">35</th><td><i> *    The word 'cryptographic' can be left out if the rouines from the library</i></td></tr>
+<tr><th id="36">36</th><td><i> *    being used are not cryptographic related :-).</i></td></tr>
+<tr><th id="37">37</th><td><i> * 4. If you include any Windows specific code (or a derivative thereof) from</i></td></tr>
+<tr><th id="38">38</th><td><i> *    the apps directory (application code) you must include an acknowledgement:</i></td></tr>
+<tr><th id="39">39</th><td><i> *    "This product includes software written by Tim Hudson (tjh@cryptsoft.com)"</i></td></tr>
+<tr><th id="40">40</th><td><i> *</i></td></tr>
+<tr><th id="41">41</th><td><i> * THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND</i></td></tr>
+<tr><th id="42">42</th><td><i> * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE</i></td></tr>
+<tr><th id="43">43</th><td><i> * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE</i></td></tr>
+<tr><th id="44">44</th><td><i> * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE</i></td></tr>
+<tr><th id="45">45</th><td><i> * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL</i></td></tr>
+<tr><th id="46">46</th><td><i> * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS</i></td></tr>
+<tr><th id="47">47</th><td><i> * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)</i></td></tr>
+<tr><th id="48">48</th><td><i> * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</i></td></tr>
+<tr><th id="49">49</th><td><i> * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY</i></td></tr>
+<tr><th id="50">50</th><td><i> * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF</i></td></tr>
+<tr><th id="51">51</th><td><i> * SUCH DAMAGE.</i></td></tr>
+<tr><th id="52">52</th><td><i> *</i></td></tr>
+<tr><th id="53">53</th><td><i> * The licence and distribution terms for any publically available version or</i></td></tr>
+<tr><th id="54">54</th><td><i> * derivative of this code cannot be changed.  i.e. this code cannot simply be</i></td></tr>
+<tr><th id="55">55</th><td><i> * copied and put under another distribution licence</i></td></tr>
+<tr><th id="56">56</th><td><i> * [including the GNU Public Licence.]</i></td></tr>
+<tr><th id="57">57</th><td><i> */</i></td></tr>
+<tr><th id="58">58</th><td></td></tr>
+<tr><th id="59">59</th><td><u>#<span data-ppcond="59">ifndef</span> <span class="macro" data-ref="_M/HEADER_DH_H">HEADER_DH_H</span></u></td></tr>
+<tr><th id="60">60</th><td><u># define <dfn class="macro" id="_M/HEADER_DH_H" data-ref="_M/HEADER_DH_H">HEADER_DH_H</dfn></u></td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td><u># include <a href="e_os2.h.html">&lt;openssl/e_os2.h&gt;</a></u></td></tr>
+<tr><th id="63">63</th><td></td></tr>
+<tr><th id="64">64</th><td><u># <span data-ppcond="64">ifdef</span> <span class="macro" data-ref="_M/OPENSSL_NO_DH">OPENSSL_NO_DH</span></u></td></tr>
+<tr><th id="65">65</th><td><u>#  error DH is disabled.</u></td></tr>
+<tr><th id="66">66</th><td><u># <span data-ppcond="64">endif</span></u></td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td><u># <span data-ppcond="68">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_BIO">OPENSSL_NO_BIO</span></u></td></tr>
+<tr><th id="69">69</th><td><u>#  include <a href="bio.h.html">&lt;openssl/bio.h&gt;</a></u></td></tr>
+<tr><th id="70">70</th><td><u># <span data-ppcond="68">endif</span></u></td></tr>
+<tr><th id="71">71</th><td><u># include <a href="ossl_typ.h.html">&lt;openssl/ossl_typ.h&gt;</a></u></td></tr>
+<tr><th id="72">72</th><td><u># <span data-ppcond="72">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_DEPRECATED">OPENSSL_NO_DEPRECATED</span></u></td></tr>
+<tr><th id="73">73</th><td><u>#  include <a href="bn.h.html">&lt;openssl/bn.h&gt;</a></u></td></tr>
+<tr><th id="74">74</th><td><u># <span data-ppcond="72">endif</span></u></td></tr>
+<tr><th id="75">75</th><td></td></tr>
+<tr><th id="76">76</th><td><u># <span data-ppcond="76">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_DH_MAX_MODULUS_BITS">OPENSSL_DH_MAX_MODULUS_BITS</span></u></td></tr>
+<tr><th id="77">77</th><td><u>#  define <dfn class="macro" id="_M/OPENSSL_DH_MAX_MODULUS_BITS" data-ref="_M/OPENSSL_DH_MAX_MODULUS_BITS">OPENSSL_DH_MAX_MODULUS_BITS</dfn>    10000</u></td></tr>
+<tr><th id="78">78</th><td><u># <span data-ppcond="76">endif</span></u></td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td><u># define <dfn class="macro" id="_M/OPENSSL_DH_FIPS_MIN_MODULUS_BITS" data-ref="_M/OPENSSL_DH_FIPS_MIN_MODULUS_BITS">OPENSSL_DH_FIPS_MIN_MODULUS_BITS</dfn> 1024</u></td></tr>
+<tr><th id="81">81</th><td><u># define <dfn class="macro" id="_M/OPENSSL_DH_FIPS_MIN_MODULUS_BITS_GEN" data-ref="_M/OPENSSL_DH_FIPS_MIN_MODULUS_BITS_GEN">OPENSSL_DH_FIPS_MIN_MODULUS_BITS_GEN</dfn> 2048</u></td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td><u># define <dfn class="macro" id="_M/DH_FLAG_CACHE_MONT_P" data-ref="_M/DH_FLAG_CACHE_MONT_P">DH_FLAG_CACHE_MONT_P</dfn>     0x01</u></td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td><i>/*</i></td></tr>
+<tr><th id="86">86</th><td><i> * new with 0.9.7h; the built-in DH</i></td></tr>
+<tr><th id="87">87</th><td><i> * implementation now uses constant time</i></td></tr>
+<tr><th id="88">88</th><td><i> * modular exponentiation for secret exponents</i></td></tr>
+<tr><th id="89">89</th><td><i> * by default. This flag causes the</i></td></tr>
+<tr><th id="90">90</th><td><i> * faster variable sliding window method to</i></td></tr>
+<tr><th id="91">91</th><td><i> * be used for all exponents.</i></td></tr>
+<tr><th id="92">92</th><td><i> */</i></td></tr>
+<tr><th id="93">93</th><td><u># define <dfn class="macro" id="_M/DH_FLAG_NO_EXP_CONSTTIME" data-ref="_M/DH_FLAG_NO_EXP_CONSTTIME">DH_FLAG_NO_EXP_CONSTTIME</dfn> 0x02</u></td></tr>
+<tr><th id="94">94</th><td></td></tr>
+<tr><th id="95">95</th><td><i>/*</i></td></tr>
+<tr><th id="96">96</th><td><i> * If this flag is set the DH method is FIPS compliant and can be used in</i></td></tr>
+<tr><th id="97">97</th><td><i> * FIPS mode. This is set in the validated module method. If an application</i></td></tr>
+<tr><th id="98">98</th><td><i> * sets this flag in its own methods it is its reposibility to ensure the</i></td></tr>
+<tr><th id="99">99</th><td><i> * result is compliant.</i></td></tr>
+<tr><th id="100">100</th><td><i> */</i></td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td><u># define <dfn class="macro" id="_M/DH_FLAG_FIPS_METHOD" data-ref="_M/DH_FLAG_FIPS_METHOD">DH_FLAG_FIPS_METHOD</dfn>                     0x0400</u></td></tr>
+<tr><th id="103">103</th><td></td></tr>
+<tr><th id="104">104</th><td><i>/*</i></td></tr>
+<tr><th id="105">105</th><td><i> * If this flag is set the operations normally disabled in FIPS mode are</i></td></tr>
+<tr><th id="106">106</th><td><i> * permitted it is then the applications responsibility to ensure that the</i></td></tr>
+<tr><th id="107">107</th><td><i> * usage is compliant.</i></td></tr>
+<tr><th id="108">108</th><td><i> */</i></td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td><u># define <dfn class="macro" id="_M/DH_FLAG_NON_FIPS_ALLOW" data-ref="_M/DH_FLAG_NON_FIPS_ALLOW">DH_FLAG_NON_FIPS_ALLOW</dfn>                  0x0400</u></td></tr>
+<tr><th id="111">111</th><td></td></tr>
+<tr><th id="112">112</th><td><u>#<span data-ppcond="112">ifdef</span>  <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="113">113</th><td><b>extern</b> <q>"C"</q> {</td></tr>
+<tr><th id="114">114</th><td><u>#<span data-ppcond="112">endif</span></u></td></tr>
+<tr><th id="115">115</th><td></td></tr>
+<tr><th id="116">116</th><td><i>/* Already defined in ossl_typ.h */</i></td></tr>
+<tr><th id="117">117</th><td><i>/* typedef struct dh_st DH; */</i></td></tr>
+<tr><th id="118">118</th><td><i>/* typedef struct dh_method DH_METHOD; */</i></td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td><b>struct</b> <dfn class="type def" id="dh_method" title='dh_method' data-ref="dh_method">dh_method</dfn> {</td></tr>
+<tr><th id="121">121</th><td>    <em>const</em> <em>char</em> *<dfn class="decl field" id="dh_method::name" title='dh_method::name' data-ref="dh_method::name">name</dfn>;</td></tr>
+<tr><th id="122">122</th><td>    <i>/* Methods here */</i></td></tr>
+<tr><th id="123">123</th><td>    <em>int</em> (*<dfn class="decl field" id="dh_method::generate_key" title='dh_method::generate_key' data-ref="dh_method::generate_key">generate_key</dfn>) (<a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col1 decl" id="1dh" title='dh' data-type='DH *' data-ref="1dh">dh</dfn>);</td></tr>
+<tr><th id="124">124</th><td>    <em>int</em> (*<dfn class="decl field" id="dh_method::compute_key" title='dh_method::compute_key' data-ref="dh_method::compute_key">compute_key</dfn>) (<em>unsigned</em> <em>char</em> *<dfn class="local col2 decl" id="2key" title='key' data-type='unsigned char *' data-ref="2key">key</dfn>, <em>const</em> <a class="typedef" href="ossl_typ.h.html#BIGNUM" title='BIGNUM' data-type='struct bignum_st' data-ref="BIGNUM">BIGNUM</a> *<dfn class="local col3 decl" id="3pub_key" title='pub_key' data-type='const BIGNUM *' data-ref="3pub_key">pub_key</dfn>, <a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col4 decl" id="4dh" title='dh' data-type='DH *' data-ref="4dh">dh</dfn>);</td></tr>
+<tr><th id="125">125</th><td>    <i>/* Can be null */</i></td></tr>
+<tr><th id="126">126</th><td>    <em>int</em> (*<dfn class="decl field" id="dh_method::bn_mod_exp" title='dh_method::bn_mod_exp' data-ref="dh_method::bn_mod_exp">bn_mod_exp</dfn>) (<em>const</em> <a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col5 decl" id="5dh" title='dh' data-type='const DH *' data-ref="5dh">dh</dfn>, <a class="typedef" href="ossl_typ.h.html#BIGNUM" title='BIGNUM' data-type='struct bignum_st' data-ref="BIGNUM">BIGNUM</a> *<dfn class="local col6 decl" id="6r" title='r' data-type='BIGNUM *' data-ref="6r">r</dfn>, <em>const</em> <a class="typedef" href="ossl_typ.h.html#BIGNUM" title='BIGNUM' data-type='struct bignum_st' data-ref="BIGNUM">BIGNUM</a> *<dfn class="local col7 decl" id="7a" title='a' data-type='const BIGNUM *' data-ref="7a">a</dfn>,</td></tr>
+<tr><th id="127">127</th><td>                       <em>const</em> <a class="typedef" href="ossl_typ.h.html#BIGNUM" title='BIGNUM' data-type='struct bignum_st' data-ref="BIGNUM">BIGNUM</a> *<dfn class="local col8 decl" id="8p" title='p' data-type='const BIGNUM *' data-ref="8p">p</dfn>, <em>const</em> <a class="typedef" href="ossl_typ.h.html#BIGNUM" title='BIGNUM' data-type='struct bignum_st' data-ref="BIGNUM">BIGNUM</a> *<dfn class="local col9 decl" id="9m" title='m' data-type='const BIGNUM *' data-ref="9m">m</dfn>, <a class="typedef" href="ossl_typ.h.html#BN_CTX" title='BN_CTX' data-type='struct bignum_ctx' data-ref="BN_CTX">BN_CTX</a> *<dfn class="local col0 decl" id="10ctx" title='ctx' data-type='BN_CTX *' data-ref="10ctx">ctx</dfn>,</td></tr>
+<tr><th id="128">128</th><td>                       <a class="typedef" href="ossl_typ.h.html#BN_MONT_CTX" title='BN_MONT_CTX' data-type='struct bn_mont_ctx_st' data-ref="BN_MONT_CTX">BN_MONT_CTX</a> *<dfn class="local col1 decl" id="11m_ctx" title='m_ctx' data-type='BN_MONT_CTX *' data-ref="11m_ctx">m_ctx</dfn>);</td></tr>
+<tr><th id="129">129</th><td>    <em>int</em> (*<dfn class="decl field" id="dh_method::init" title='dh_method::init' data-ref="dh_method::init">init</dfn>) (<a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col2 decl" id="12dh" title='dh' data-type='DH *' data-ref="12dh">dh</dfn>);</td></tr>
+<tr><th id="130">130</th><td>    <em>int</em> (*<dfn class="decl field" id="dh_method::finish" title='dh_method::finish' data-ref="dh_method::finish">finish</dfn>) (<a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col3 decl" id="13dh" title='dh' data-type='DH *' data-ref="13dh">dh</dfn>);</td></tr>
+<tr><th id="131">131</th><td>    <em>int</em> <dfn class="decl field" id="dh_method::flags" title='dh_method::flags' data-ref="dh_method::flags">flags</dfn>;</td></tr>
+<tr><th id="132">132</th><td>    <em>char</em> *<dfn class="decl field" id="dh_method::app_data" title='dh_method::app_data' data-ref="dh_method::app_data">app_data</dfn>;</td></tr>
+<tr><th id="133">133</th><td>    <i>/* If this is non-NULL, it will be used to generate parameters */</i></td></tr>
+<tr><th id="134">134</th><td>    <em>int</em> (*<dfn class="decl field" id="dh_method::generate_params" title='dh_method::generate_params' data-ref="dh_method::generate_params">generate_params</dfn>) (<a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col4 decl" id="14dh" title='dh' data-type='DH *' data-ref="14dh">dh</dfn>, <em>int</em> <dfn class="local col5 decl" id="15prime_len" title='prime_len' data-type='int' data-ref="15prime_len">prime_len</dfn>, <em>int</em> <dfn class="local col6 decl" id="16generator" title='generator' data-type='int' data-ref="16generator">generator</dfn>,</td></tr>
+<tr><th id="135">135</th><td>                            <a class="typedef" href="ossl_typ.h.html#BN_GENCB" title='BN_GENCB' data-type='struct bn_gencb_st' data-ref="BN_GENCB">BN_GENCB</a> *<dfn class="local col7 decl" id="17cb" title='cb' data-type='BN_GENCB *' data-ref="17cb">cb</dfn>);</td></tr>
+<tr><th id="136">136</th><td>};</td></tr>
+<tr><th id="137">137</th><td></td></tr>
+<tr><th id="138">138</th><td><b>struct</b> <dfn class="type def" id="dh_st" title='dh_st' data-ref="dh_st">dh_st</dfn> {</td></tr>
+<tr><th id="139">139</th><td>    <i>/*</i></td></tr>
+<tr><th id="140">140</th><td><i>     * This first argument is used to pick up errors when a DH is passed</i></td></tr>
+<tr><th id="141">141</th><td><i>     * instead of a EVP_PKEY</i></td></tr>
+<tr><th id="142">142</th><td><i>     */</i></td></tr>
+<tr><th id="143">143</th><td>    <em>int</em> <dfn class="decl field" id="dh_st::pad" title='dh_st::pad' data-ref="dh_st::pad">pad</dfn>;</td></tr>
+<tr><th id="144">144</th><td>    <em>int</em> <dfn class="decl field" id="dh_st::version" title='dh_st::version' data-ref="dh_st::version">version</dfn>;</td></tr>
+<tr><th id="145">145</th><td>    <a class="typedef" href="ossl_typ.h.html#BIGNUM" title='BIGNUM' data-type='struct bignum_st' data-ref="BIGNUM">BIGNUM</a> *<dfn class="decl field" id="dh_st::p" title='dh_st::p' data-ref="dh_st::p">p</dfn>;</td></tr>
+<tr><th id="146">146</th><td>    <a class="typedef" href="ossl_typ.h.html#BIGNUM" title='BIGNUM' data-type='struct bignum_st' data-ref="BIGNUM">BIGNUM</a> *<dfn class="decl field" id="dh_st::g" title='dh_st::g' data-ref="dh_st::g">g</dfn>;</td></tr>
+<tr><th id="147">147</th><td>    <em>long</em> <dfn class="decl field" id="dh_st::length" title='dh_st::length' data-ref="dh_st::length">length</dfn>;                <i>/* optional */</i></td></tr>
+<tr><th id="148">148</th><td>    <a class="typedef" href="ossl_typ.h.html#BIGNUM" title='BIGNUM' data-type='struct bignum_st' data-ref="BIGNUM">BIGNUM</a> *<dfn class="decl field" id="dh_st::pub_key" title='dh_st::pub_key' data-ref="dh_st::pub_key">pub_key</dfn>;            <i>/* g^x % p */</i></td></tr>
+<tr><th id="149">149</th><td>    <a class="typedef" href="ossl_typ.h.html#BIGNUM" title='BIGNUM' data-type='struct bignum_st' data-ref="BIGNUM">BIGNUM</a> *<dfn class="decl field" id="dh_st::priv_key" title='dh_st::priv_key' data-ref="dh_st::priv_key">priv_key</dfn>;           <i>/* x */</i></td></tr>
+<tr><th id="150">150</th><td>    <em>int</em> <dfn class="decl field" id="dh_st::flags" title='dh_st::flags' data-ref="dh_st::flags">flags</dfn>;</td></tr>
+<tr><th id="151">151</th><td>    <a class="typedef" href="ossl_typ.h.html#BN_MONT_CTX" title='BN_MONT_CTX' data-type='struct bn_mont_ctx_st' data-ref="BN_MONT_CTX">BN_MONT_CTX</a> *<dfn class="decl field" id="dh_st::method_mont_p" title='dh_st::method_mont_p' data-ref="dh_st::method_mont_p">method_mont_p</dfn>;</td></tr>
+<tr><th id="152">152</th><td>    <i>/* Place holders if we want to do X9.42 DH */</i></td></tr>
+<tr><th id="153">153</th><td>    <a class="typedef" href="ossl_typ.h.html#BIGNUM" title='BIGNUM' data-type='struct bignum_st' data-ref="BIGNUM">BIGNUM</a> *<dfn class="decl field" id="dh_st::q" title='dh_st::q' data-ref="dh_st::q">q</dfn>;</td></tr>
+<tr><th id="154">154</th><td>    <a class="typedef" href="ossl_typ.h.html#BIGNUM" title='BIGNUM' data-type='struct bignum_st' data-ref="BIGNUM">BIGNUM</a> *<dfn class="decl field" id="dh_st::j" title='dh_st::j' data-ref="dh_st::j">j</dfn>;</td></tr>
+<tr><th id="155">155</th><td>    <em>unsigned</em> <em>char</em> *<dfn class="decl field" id="dh_st::seed" title='dh_st::seed' data-ref="dh_st::seed">seed</dfn>;</td></tr>
+<tr><th id="156">156</th><td>    <em>int</em> <dfn class="decl field" id="dh_st::seedlen" title='dh_st::seedlen' data-ref="dh_st::seedlen">seedlen</dfn>;</td></tr>
+<tr><th id="157">157</th><td>    <a class="typedef" href="ossl_typ.h.html#BIGNUM" title='BIGNUM' data-type='struct bignum_st' data-ref="BIGNUM">BIGNUM</a> *<dfn class="decl field" id="dh_st::counter" title='dh_st::counter' data-ref="dh_st::counter">counter</dfn>;</td></tr>
+<tr><th id="158">158</th><td>    <em>int</em> <dfn class="decl field" id="dh_st::references" title='dh_st::references' data-ref="dh_st::references">references</dfn>;</td></tr>
+<tr><th id="159">159</th><td>    <a class="typedef" href="ossl_typ.h.html#CRYPTO_EX_DATA" title='CRYPTO_EX_DATA' data-type='struct crypto_ex_data_st' data-ref="CRYPTO_EX_DATA">CRYPTO_EX_DATA</a> <dfn class="decl field" id="dh_st::ex_data" title='dh_st::ex_data' data-ref="dh_st::ex_data">ex_data</dfn>;</td></tr>
+<tr><th id="160">160</th><td>    <em>const</em> <a class="typedef" href="ossl_typ.h.html#DH_METHOD" title='DH_METHOD' data-type='struct dh_method' data-ref="DH_METHOD">DH_METHOD</a> *<dfn class="decl field" id="dh_st::meth" title='dh_st::meth' data-ref="dh_st::meth">meth</dfn>;</td></tr>
+<tr><th id="161">161</th><td>    <a class="typedef" href="ossl_typ.h.html#ENGINE" title='ENGINE' data-type='struct engine_st' data-ref="ENGINE">ENGINE</a> *<dfn class="decl field" id="dh_st::engine" title='dh_st::engine' data-ref="dh_st::engine">engine</dfn>;</td></tr>
+<tr><th id="162">162</th><td>};</td></tr>
+<tr><th id="163">163</th><td></td></tr>
+<tr><th id="164">164</th><td><u># define <dfn class="macro" id="_M/DH_GENERATOR_2" data-ref="_M/DH_GENERATOR_2">DH_GENERATOR_2</dfn>          2</u></td></tr>
+<tr><th id="165">165</th><td><i>/* #define DH_GENERATOR_3       3 */</i></td></tr>
+<tr><th id="166">166</th><td><u># define <dfn class="macro" id="_M/DH_GENERATOR_5" data-ref="_M/DH_GENERATOR_5">DH_GENERATOR_5</dfn>          5</u></td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td><i>/* DH_check error codes */</i></td></tr>
+<tr><th id="169">169</th><td><u># define <dfn class="macro" id="_M/DH_CHECK_P_NOT_PRIME" data-ref="_M/DH_CHECK_P_NOT_PRIME">DH_CHECK_P_NOT_PRIME</dfn>            0x01</u></td></tr>
+<tr><th id="170">170</th><td><u># define <dfn class="macro" id="_M/DH_CHECK_P_NOT_SAFE_PRIME" data-ref="_M/DH_CHECK_P_NOT_SAFE_PRIME">DH_CHECK_P_NOT_SAFE_PRIME</dfn>       0x02</u></td></tr>
+<tr><th id="171">171</th><td><u># define <dfn class="macro" id="_M/DH_UNABLE_TO_CHECK_GENERATOR" data-ref="_M/DH_UNABLE_TO_CHECK_GENERATOR">DH_UNABLE_TO_CHECK_GENERATOR</dfn>    0x04</u></td></tr>
+<tr><th id="172">172</th><td><u># define <dfn class="macro" id="_M/DH_NOT_SUITABLE_GENERATOR" data-ref="_M/DH_NOT_SUITABLE_GENERATOR">DH_NOT_SUITABLE_GENERATOR</dfn>       0x08</u></td></tr>
+<tr><th id="173">173</th><td><u># define <dfn class="macro" id="_M/DH_CHECK_Q_NOT_PRIME" data-ref="_M/DH_CHECK_Q_NOT_PRIME">DH_CHECK_Q_NOT_PRIME</dfn>            0x10</u></td></tr>
+<tr><th id="174">174</th><td><u># define <dfn class="macro" id="_M/DH_CHECK_INVALID_Q_VALUE" data-ref="_M/DH_CHECK_INVALID_Q_VALUE">DH_CHECK_INVALID_Q_VALUE</dfn>        0x20</u></td></tr>
+<tr><th id="175">175</th><td><u># define <dfn class="macro" id="_M/DH_CHECK_INVALID_J_VALUE" data-ref="_M/DH_CHECK_INVALID_J_VALUE">DH_CHECK_INVALID_J_VALUE</dfn>        0x40</u></td></tr>
+<tr><th id="176">176</th><td></td></tr>
+<tr><th id="177">177</th><td><i>/* DH_check_pub_key error codes */</i></td></tr>
+<tr><th id="178">178</th><td><u># define <dfn class="macro" id="_M/DH_CHECK_PUBKEY_TOO_SMALL" data-ref="_M/DH_CHECK_PUBKEY_TOO_SMALL">DH_CHECK_PUBKEY_TOO_SMALL</dfn>       0x01</u></td></tr>
+<tr><th id="179">179</th><td><u># define <dfn class="macro" id="_M/DH_CHECK_PUBKEY_TOO_LARGE" data-ref="_M/DH_CHECK_PUBKEY_TOO_LARGE">DH_CHECK_PUBKEY_TOO_LARGE</dfn>       0x02</u></td></tr>
+<tr><th id="180">180</th><td><u># define <dfn class="macro" id="_M/DH_CHECK_PUBKEY_INVALID" data-ref="_M/DH_CHECK_PUBKEY_INVALID">DH_CHECK_PUBKEY_INVALID</dfn>         0x04</u></td></tr>
+<tr><th id="181">181</th><td></td></tr>
+<tr><th id="182">182</th><td><i>/*</i></td></tr>
+<tr><th id="183">183</th><td><i> * primes p where (p-1)/2 is prime too are called "safe"; we define this for</i></td></tr>
+<tr><th id="184">184</th><td><i> * backward compatibility:</i></td></tr>
+<tr><th id="185">185</th><td><i> */</i></td></tr>
+<tr><th id="186">186</th><td><u># define <dfn class="macro" id="_M/DH_CHECK_P_NOT_STRONG_PRIME" data-ref="_M/DH_CHECK_P_NOT_STRONG_PRIME">DH_CHECK_P_NOT_STRONG_PRIME</dfn>     DH_CHECK_P_NOT_SAFE_PRIME</u></td></tr>
+<tr><th id="187">187</th><td></td></tr>
+<tr><th id="188">188</th><td><u># define <dfn class="macro" id="_M/d2i_DHparams_fp" data-ref="_M/d2i_DHparams_fp">d2i_DHparams_fp</dfn>(fp,x) (DH *)ASN1_d2i_fp((char *(*)())DH_new, \</u></td></tr>
+<tr><th id="189">189</th><td><u>                (char *(*)())d2i_DHparams,(fp),(unsigned char **)(x))</u></td></tr>
+<tr><th id="190">190</th><td><u># define <dfn class="macro" id="_M/i2d_DHparams_fp" data-ref="_M/i2d_DHparams_fp">i2d_DHparams_fp</dfn>(fp,x) ASN1_i2d_fp(i2d_DHparams,(fp), \</u></td></tr>
+<tr><th id="191">191</th><td><u>                (unsigned char *)(x))</u></td></tr>
+<tr><th id="192">192</th><td><u># define <dfn class="macro" id="_M/d2i_DHparams_bio" data-ref="_M/d2i_DHparams_bio">d2i_DHparams_bio</dfn>(bp,x) ASN1_d2i_bio_of(DH,DH_new,d2i_DHparams,bp,x)</u></td></tr>
+<tr><th id="193">193</th><td><u># define <dfn class="macro" id="_M/i2d_DHparams_bio" data-ref="_M/i2d_DHparams_bio">i2d_DHparams_bio</dfn>(bp,x) ASN1_i2d_bio_of_const(DH,i2d_DHparams,bp,x)</u></td></tr>
+<tr><th id="194">194</th><td></td></tr>
+<tr><th id="195">195</th><td><a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="decl fn" id="DHparams_dup" title='DHparams_dup' data-ref="DHparams_dup">DHparams_dup</dfn>(<a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *);</td></tr>
+<tr><th id="196">196</th><td></td></tr>
+<tr><th id="197">197</th><td><em>const</em> <a class="typedef" href="ossl_typ.h.html#DH_METHOD" title='DH_METHOD' data-type='struct dh_method' data-ref="DH_METHOD">DH_METHOD</a> *<dfn class="decl fn" id="DH_OpenSSL" title='DH_OpenSSL' data-ref="DH_OpenSSL">DH_OpenSSL</dfn>(<em>void</em>);</td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td><em>void</em> <dfn class="decl fn" id="DH_set_default_method" title='DH_set_default_method' data-ref="DH_set_default_method">DH_set_default_method</dfn>(<em>const</em> <a class="typedef" href="ossl_typ.h.html#DH_METHOD" title='DH_METHOD' data-type='struct dh_method' data-ref="DH_METHOD">DH_METHOD</a> *<dfn class="local col8 decl" id="18meth" title='meth' data-type='const DH_METHOD *' data-ref="18meth">meth</dfn>);</td></tr>
+<tr><th id="200">200</th><td><em>const</em> <a class="typedef" href="ossl_typ.h.html#DH_METHOD" title='DH_METHOD' data-type='struct dh_method' data-ref="DH_METHOD">DH_METHOD</a> *<dfn class="decl fn" id="DH_get_default_method" title='DH_get_default_method' data-ref="DH_get_default_method">DH_get_default_method</dfn>(<em>void</em>);</td></tr>
+<tr><th id="201">201</th><td><em>int</em> <dfn class="decl fn" id="DH_set_method" title='DH_set_method' data-ref="DH_set_method">DH_set_method</dfn>(<a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col9 decl" id="19dh" title='dh' data-type='DH *' data-ref="19dh">dh</dfn>, <em>const</em> <a class="typedef" href="ossl_typ.h.html#DH_METHOD" title='DH_METHOD' data-type='struct dh_method' data-ref="DH_METHOD">DH_METHOD</a> *<dfn class="local col0 decl" id="20meth" title='meth' data-type='const DH_METHOD *' data-ref="20meth">meth</dfn>);</td></tr>
+<tr><th id="202">202</th><td><a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="decl fn" id="DH_new_method" title='DH_new_method' data-ref="DH_new_method">DH_new_method</dfn>(<a class="typedef" href="ossl_typ.h.html#ENGINE" title='ENGINE' data-type='struct engine_st' data-ref="ENGINE">ENGINE</a> *<dfn class="local col1 decl" id="21engine" title='engine' data-type='ENGINE *' data-ref="21engine">engine</dfn>);</td></tr>
+<tr><th id="203">203</th><td></td></tr>
+<tr><th id="204">204</th><td><a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="decl fn" id="DH_new" title='DH_new' data-ref="DH_new">DH_new</dfn>(<em>void</em>);</td></tr>
+<tr><th id="205">205</th><td><em>void</em> <dfn class="decl fn" id="DH_free" title='DH_free' data-ref="DH_free">DH_free</dfn>(<a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col2 decl" id="22dh" title='dh' data-type='DH *' data-ref="22dh">dh</dfn>);</td></tr>
+<tr><th id="206">206</th><td><em>int</em> <dfn class="decl fn" id="DH_up_ref" title='DH_up_ref' data-ref="DH_up_ref">DH_up_ref</dfn>(<a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col3 decl" id="23dh" title='dh' data-type='DH *' data-ref="23dh">dh</dfn>);</td></tr>
+<tr><th id="207">207</th><td><em>int</em> <dfn class="decl fn" id="DH_size" title='DH_size' data-ref="DH_size">DH_size</dfn>(<em>const</em> <a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col4 decl" id="24dh" title='dh' data-type='const DH *' data-ref="24dh">dh</dfn>);</td></tr>
+<tr><th id="208">208</th><td><em>int</em> <dfn class="decl fn" id="DH_get_ex_new_index" title='DH_get_ex_new_index' data-ref="DH_get_ex_new_index">DH_get_ex_new_index</dfn>(<em>long</em> <dfn class="local col5 decl" id="25argl" title='argl' data-type='long' data-ref="25argl">argl</dfn>, <em>void</em> *<dfn class="local col6 decl" id="26argp" title='argp' data-type='void *' data-ref="26argp">argp</dfn>, <a class="typedef" href="ossl_typ.h.html#CRYPTO_EX_new" title='CRYPTO_EX_new' data-type='int (void *, void *, CRYPTO_EX_DATA *, int, long, void *)' data-ref="CRYPTO_EX_new">CRYPTO_EX_new</a> *<dfn class="local col7 decl" id="27new_func" title='new_func' data-type='CRYPTO_EX_new *' data-ref="27new_func">new_func</dfn>,</td></tr>
+<tr><th id="209">209</th><td>                        <a class="typedef" href="ossl_typ.h.html#CRYPTO_EX_dup" title='CRYPTO_EX_dup' data-type='int (CRYPTO_EX_DATA *, CRYPTO_EX_DATA *, void *, int, long, void *)' data-ref="CRYPTO_EX_dup">CRYPTO_EX_dup</a> *<dfn class="local col8 decl" id="28dup_func" title='dup_func' data-type='CRYPTO_EX_dup *' data-ref="28dup_func">dup_func</dfn>, <a class="typedef" href="ossl_typ.h.html#CRYPTO_EX_free" title='CRYPTO_EX_free' data-type='void (void *, void *, CRYPTO_EX_DATA *, int, long, void *)' data-ref="CRYPTO_EX_free">CRYPTO_EX_free</a> *<dfn class="local col9 decl" id="29free_func" title='free_func' data-type='CRYPTO_EX_free *' data-ref="29free_func">free_func</dfn>);</td></tr>
+<tr><th id="210">210</th><td><em>int</em> <dfn class="decl fn" id="DH_set_ex_data" title='DH_set_ex_data' data-ref="DH_set_ex_data">DH_set_ex_data</dfn>(<a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col0 decl" id="30d" title='d' data-type='DH *' data-ref="30d">d</dfn>, <em>int</em> <dfn class="local col1 decl" id="31idx" title='idx' data-type='int' data-ref="31idx">idx</dfn>, <em>void</em> *<dfn class="local col2 decl" id="32arg" title='arg' data-type='void *' data-ref="32arg">arg</dfn>);</td></tr>
+<tr><th id="211">211</th><td><em>void</em> *<dfn class="decl fn" id="DH_get_ex_data" title='DH_get_ex_data' data-ref="DH_get_ex_data">DH_get_ex_data</dfn>(<a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col3 decl" id="33d" title='d' data-type='DH *' data-ref="33d">d</dfn>, <em>int</em> <dfn class="local col4 decl" id="34idx" title='idx' data-type='int' data-ref="34idx">idx</dfn>);</td></tr>
+<tr><th id="212">212</th><td></td></tr>
+<tr><th id="213">213</th><td><i>/* Deprecated version */</i></td></tr>
+<tr><th id="214">214</th><td><u># <span data-ppcond="214">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_DEPRECATED">OPENSSL_NO_DEPRECATED</span></u></td></tr>
+<tr><th id="215">215</th><td><a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="decl fn" id="DH_generate_parameters" title='DH_generate_parameters' data-ref="DH_generate_parameters">DH_generate_parameters</dfn>(<em>int</em> <dfn class="local col5 decl" id="35prime_len" title='prime_len' data-type='int' data-ref="35prime_len">prime_len</dfn>, <em>int</em> <dfn class="local col6 decl" id="36generator" title='generator' data-type='int' data-ref="36generator">generator</dfn>,</td></tr>
+<tr><th id="216">216</th><td>                           <em>void</em> (*<dfn class="local col7 decl" id="37callback" title='callback' data-type='void (*)(int, int, void *)' data-ref="37callback">callback</dfn>) (<em>int</em>, <em>int</em>, <em>void</em> *), <em>void</em> *<dfn class="local col8 decl" id="38cb_arg" title='cb_arg' data-type='void *' data-ref="38cb_arg">cb_arg</dfn>);</td></tr>
+<tr><th id="217">217</th><td><u># <span data-ppcond="214">endif</span>                         /* !defined(OPENSSL_NO_DEPRECATED) */</u></td></tr>
+<tr><th id="218">218</th><td></td></tr>
+<tr><th id="219">219</th><td><i>/* New version */</i></td></tr>
+<tr><th id="220">220</th><td><em>int</em> <dfn class="decl fn" id="DH_generate_parameters_ex" title='DH_generate_parameters_ex' data-ref="DH_generate_parameters_ex">DH_generate_parameters_ex</dfn>(<a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col9 decl" id="39dh" title='dh' data-type='DH *' data-ref="39dh">dh</dfn>, <em>int</em> <dfn class="local col0 decl" id="40prime_len" title='prime_len' data-type='int' data-ref="40prime_len">prime_len</dfn>, <em>int</em> <dfn class="local col1 decl" id="41generator" title='generator' data-type='int' data-ref="41generator">generator</dfn>,</td></tr>
+<tr><th id="221">221</th><td>                              <a class="typedef" href="ossl_typ.h.html#BN_GENCB" title='BN_GENCB' data-type='struct bn_gencb_st' data-ref="BN_GENCB">BN_GENCB</a> *<dfn class="local col2 decl" id="42cb" title='cb' data-type='BN_GENCB *' data-ref="42cb">cb</dfn>);</td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td><em>int</em> <dfn class="decl fn" id="DH_check" title='DH_check' data-ref="DH_check">DH_check</dfn>(<em>const</em> <a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col3 decl" id="43dh" title='dh' data-type='const DH *' data-ref="43dh">dh</dfn>, <em>int</em> *<dfn class="local col4 decl" id="44codes" title='codes' data-type='int *' data-ref="44codes">codes</dfn>);</td></tr>
+<tr><th id="224">224</th><td><em>int</em> <dfn class="decl fn" id="DH_check_pub_key" title='DH_check_pub_key' data-ref="DH_check_pub_key">DH_check_pub_key</dfn>(<em>const</em> <a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col5 decl" id="45dh" title='dh' data-type='const DH *' data-ref="45dh">dh</dfn>, <em>const</em> <a class="typedef" href="ossl_typ.h.html#BIGNUM" title='BIGNUM' data-type='struct bignum_st' data-ref="BIGNUM">BIGNUM</a> *<dfn class="local col6 decl" id="46pub_key" title='pub_key' data-type='const BIGNUM *' data-ref="46pub_key">pub_key</dfn>, <em>int</em> *<dfn class="local col7 decl" id="47codes" title='codes' data-type='int *' data-ref="47codes">codes</dfn>);</td></tr>
+<tr><th id="225">225</th><td><em>int</em> <dfn class="decl fn" id="DH_generate_key" title='DH_generate_key' data-ref="DH_generate_key">DH_generate_key</dfn>(<a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col8 decl" id="48dh" title='dh' data-type='DH *' data-ref="48dh">dh</dfn>);</td></tr>
+<tr><th id="226">226</th><td><em>int</em> <dfn class="decl fn" id="DH_compute_key" title='DH_compute_key' data-ref="DH_compute_key">DH_compute_key</dfn>(<em>unsigned</em> <em>char</em> *<dfn class="local col9 decl" id="49key" title='key' data-type='unsigned char *' data-ref="49key">key</dfn>, <em>const</em> <a class="typedef" href="ossl_typ.h.html#BIGNUM" title='BIGNUM' data-type='struct bignum_st' data-ref="BIGNUM">BIGNUM</a> *<dfn class="local col0 decl" id="50pub_key" title='pub_key' data-type='const BIGNUM *' data-ref="50pub_key">pub_key</dfn>, <a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col1 decl" id="51dh" title='dh' data-type='DH *' data-ref="51dh">dh</dfn>);</td></tr>
+<tr><th id="227">227</th><td><em>int</em> <dfn class="decl fn" id="DH_compute_key_padded" title='DH_compute_key_padded' data-ref="DH_compute_key_padded">DH_compute_key_padded</dfn>(<em>unsigned</em> <em>char</em> *<dfn class="local col2 decl" id="52key" title='key' data-type='unsigned char *' data-ref="52key">key</dfn>, <em>const</em> <a class="typedef" href="ossl_typ.h.html#BIGNUM" title='BIGNUM' data-type='struct bignum_st' data-ref="BIGNUM">BIGNUM</a> *<dfn class="local col3 decl" id="53pub_key" title='pub_key' data-type='const BIGNUM *' data-ref="53pub_key">pub_key</dfn>, <a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col4 decl" id="54dh" title='dh' data-type='DH *' data-ref="54dh">dh</dfn>);</td></tr>
+<tr><th id="228">228</th><td><a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="decl fn" id="d2i_DHparams" title='d2i_DHparams' data-ref="d2i_DHparams">d2i_DHparams</dfn>(<a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> **<dfn class="local col5 decl" id="55a" title='a' data-type='DH **' data-ref="55a">a</dfn>, <em>const</em> <em>unsigned</em> <em>char</em> **<dfn class="local col6 decl" id="56pp" title='pp' data-type='const unsigned char **' data-ref="56pp">pp</dfn>, <em>long</em> <dfn class="local col7 decl" id="57length" title='length' data-type='long' data-ref="57length">length</dfn>);</td></tr>
+<tr><th id="229">229</th><td><em>int</em> <dfn class="decl fn" id="i2d_DHparams" title='i2d_DHparams' data-ref="i2d_DHparams">i2d_DHparams</dfn>(<em>const</em> <a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col8 decl" id="58a" title='a' data-type='const DH *' data-ref="58a">a</dfn>, <em>unsigned</em> <em>char</em> **<dfn class="local col9 decl" id="59pp" title='pp' data-type='unsigned char **' data-ref="59pp">pp</dfn>);</td></tr>
+<tr><th id="230">230</th><td><a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="decl fn" id="d2i_DHxparams" title='d2i_DHxparams' data-ref="d2i_DHxparams">d2i_DHxparams</dfn>(<a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> **<dfn class="local col0 decl" id="60a" title='a' data-type='DH **' data-ref="60a">a</dfn>, <em>const</em> <em>unsigned</em> <em>char</em> **<dfn class="local col1 decl" id="61pp" title='pp' data-type='const unsigned char **' data-ref="61pp">pp</dfn>, <em>long</em> <dfn class="local col2 decl" id="62length" title='length' data-type='long' data-ref="62length">length</dfn>);</td></tr>
+<tr><th id="231">231</th><td><em>int</em> <dfn class="decl fn" id="i2d_DHxparams" title='i2d_DHxparams' data-ref="i2d_DHxparams">i2d_DHxparams</dfn>(<em>const</em> <a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col3 decl" id="63a" title='a' data-type='const DH *' data-ref="63a">a</dfn>, <em>unsigned</em> <em>char</em> **<dfn class="local col4 decl" id="64pp" title='pp' data-type='unsigned char **' data-ref="64pp">pp</dfn>);</td></tr>
+<tr><th id="232">232</th><td><u># <span data-ppcond="232">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_FP_API">OPENSSL_NO_FP_API</span></u></td></tr>
+<tr><th id="233">233</th><td><em>int</em> <dfn class="decl fn" id="DHparams_print_fp" title='DHparams_print_fp' data-ref="DHparams_print_fp">DHparams_print_fp</dfn>(<a class="typedef" href="../stdio.h.html#FILE" title='FILE' data-type='struct _IO_FILE' data-ref="FILE">FILE</a> *<dfn class="local col5 decl" id="65fp" title='fp' data-type='FILE *' data-ref="65fp">fp</dfn>, <em>const</em> <a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col6 decl" id="66x" title='x' data-type='const DH *' data-ref="66x">x</dfn>);</td></tr>
+<tr><th id="234">234</th><td><u># <span data-ppcond="232">endif</span></u></td></tr>
+<tr><th id="235">235</th><td><u># <span data-ppcond="235">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_BIO">OPENSSL_NO_BIO</span></u></td></tr>
+<tr><th id="236">236</th><td><em>int</em> <dfn class="decl fn" id="DHparams_print" title='DHparams_print' data-ref="DHparams_print">DHparams_print</dfn>(<a class="typedef" href="bio.h.html#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col7 decl" id="67bp" title='bp' data-type='BIO *' data-ref="67bp">bp</dfn>, <em>const</em> <a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="local col8 decl" id="68x" title='x' data-type='const DH *' data-ref="68x">x</dfn>);</td></tr>
+<tr><th id="237">237</th><td><u># <span data-ppcond="235">else</span></u></td></tr>
+<tr><th id="238">238</th><td><em>int</em> DHparams_print(<em>char</em> *bp, <em>const</em> DH *x);</td></tr>
+<tr><th id="239">239</th><td><u># <span data-ppcond="235">endif</span></u></td></tr>
+<tr><th id="240">240</th><td></td></tr>
+<tr><th id="241">241</th><td><i>/* RFC 5114 parameters */</i></td></tr>
+<tr><th id="242">242</th><td><a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="decl fn" id="DH_get_1024_160" title='DH_get_1024_160' data-ref="DH_get_1024_160">DH_get_1024_160</dfn>(<em>void</em>);</td></tr>
+<tr><th id="243">243</th><td><a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="decl fn" id="DH_get_2048_224" title='DH_get_2048_224' data-ref="DH_get_2048_224">DH_get_2048_224</dfn>(<em>void</em>);</td></tr>
+<tr><th id="244">244</th><td><a class="typedef" href="ossl_typ.h.html#DH" title='DH' data-type='struct dh_st' data-ref="DH">DH</a> *<dfn class="decl fn" id="DH_get_2048_256" title='DH_get_2048_256' data-ref="DH_get_2048_256">DH_get_2048_256</dfn>(<em>void</em>);</td></tr>
+<tr><th id="245">245</th><td></td></tr>
+<tr><th id="246">246</th><td><i>/* RFC2631 KDF */</i></td></tr>
+<tr><th id="247">247</th><td><em>int</em> <dfn class="decl fn" id="DH_KDF_X9_42" title='DH_KDF_X9_42' data-ref="DH_KDF_X9_42">DH_KDF_X9_42</dfn>(<em>unsigned</em> <em>char</em> *<dfn class="local col9 decl" id="69out" title='out' data-type='unsigned char *' data-ref="69out">out</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col0 decl" id="70outlen" title='outlen' data-type='size_t' data-ref="70outlen">outlen</dfn>,</td></tr>
+<tr><th id="248">248</th><td>                 <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col1 decl" id="71Z" title='Z' data-type='const unsigned char *' data-ref="71Z">Z</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col2 decl" id="72Zlen" title='Zlen' data-type='size_t' data-ref="72Zlen">Zlen</dfn>,</td></tr>
+<tr><th id="249">249</th><td>                 <a class="typedef" href="ossl_typ.h.html#ASN1_OBJECT" title='ASN1_OBJECT' data-type='struct asn1_object_st' data-ref="ASN1_OBJECT">ASN1_OBJECT</a> *<dfn class="local col3 decl" id="73key_oid" title='key_oid' data-type='ASN1_OBJECT *' data-ref="73key_oid">key_oid</dfn>,</td></tr>
+<tr><th id="250">250</th><td>                 <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col4 decl" id="74ukm" title='ukm' data-type='const unsigned char *' data-ref="74ukm">ukm</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col5 decl" id="75ukmlen" title='ukmlen' data-type='size_t' data-ref="75ukmlen">ukmlen</dfn>, <em>const</em> <a class="typedef" href="ossl_typ.h.html#EVP_MD" title='EVP_MD' data-type='struct env_md_st' data-ref="EVP_MD">EVP_MD</a> *<dfn class="local col6 decl" id="76md" title='md' data-type='const EVP_MD *' data-ref="76md">md</dfn>);</td></tr>
+<tr><th id="251">251</th><td></td></tr>
+<tr><th id="252">252</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTX_set_dh_paramgen_prime_len" data-ref="_M/EVP_PKEY_CTX_set_dh_paramgen_prime_len">EVP_PKEY_CTX_set_dh_paramgen_prime_len</dfn>(ctx, len) \</u></td></tr>
+<tr><th id="253">253</th><td><u>        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DH, EVP_PKEY_OP_PARAMGEN, \</u></td></tr>
+<tr><th id="254">254</th><td><u>                        EVP_PKEY_CTRL_DH_PARAMGEN_PRIME_LEN, len, NULL)</u></td></tr>
+<tr><th id="255">255</th><td></td></tr>
+<tr><th id="256">256</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTX_set_dh_paramgen_subprime_len" data-ref="_M/EVP_PKEY_CTX_set_dh_paramgen_subprime_len">EVP_PKEY_CTX_set_dh_paramgen_subprime_len</dfn>(ctx, len) \</u></td></tr>
+<tr><th id="257">257</th><td><u>        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DH, EVP_PKEY_OP_PARAMGEN, \</u></td></tr>
+<tr><th id="258">258</th><td><u>                        EVP_PKEY_CTRL_DH_PARAMGEN_SUBPRIME_LEN, len, NULL)</u></td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTX_set_dh_paramgen_type" data-ref="_M/EVP_PKEY_CTX_set_dh_paramgen_type">EVP_PKEY_CTX_set_dh_paramgen_type</dfn>(ctx, typ) \</u></td></tr>
+<tr><th id="261">261</th><td><u>        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DH, EVP_PKEY_OP_PARAMGEN, \</u></td></tr>
+<tr><th id="262">262</th><td><u>                        EVP_PKEY_CTRL_DH_PARAMGEN_TYPE, typ, NULL)</u></td></tr>
+<tr><th id="263">263</th><td></td></tr>
+<tr><th id="264">264</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTX_set_dh_paramgen_generator" data-ref="_M/EVP_PKEY_CTX_set_dh_paramgen_generator">EVP_PKEY_CTX_set_dh_paramgen_generator</dfn>(ctx, gen) \</u></td></tr>
+<tr><th id="265">265</th><td><u>        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DH, EVP_PKEY_OP_PARAMGEN, \</u></td></tr>
+<tr><th id="266">266</th><td><u>                        EVP_PKEY_CTRL_DH_PARAMGEN_GENERATOR, gen, NULL)</u></td></tr>
+<tr><th id="267">267</th><td></td></tr>
+<tr><th id="268">268</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTX_set_dh_rfc5114" data-ref="_M/EVP_PKEY_CTX_set_dh_rfc5114">EVP_PKEY_CTX_set_dh_rfc5114</dfn>(ctx, gen) \</u></td></tr>
+<tr><th id="269">269</th><td><u>        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, EVP_PKEY_OP_PARAMGEN, \</u></td></tr>
+<tr><th id="270">270</th><td><u>                        EVP_PKEY_CTRL_DH_RFC5114, gen, NULL)</u></td></tr>
+<tr><th id="271">271</th><td></td></tr>
+<tr><th id="272">272</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTX_set_dhx_rfc5114" data-ref="_M/EVP_PKEY_CTX_set_dhx_rfc5114">EVP_PKEY_CTX_set_dhx_rfc5114</dfn>(ctx, gen) \</u></td></tr>
+<tr><th id="273">273</th><td><u>        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, EVP_PKEY_OP_PARAMGEN, \</u></td></tr>
+<tr><th id="274">274</th><td><u>                        EVP_PKEY_CTRL_DH_RFC5114, gen, NULL)</u></td></tr>
+<tr><th id="275">275</th><td></td></tr>
+<tr><th id="276">276</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTX_set_dh_kdf_type" data-ref="_M/EVP_PKEY_CTX_set_dh_kdf_type">EVP_PKEY_CTX_set_dh_kdf_type</dfn>(ctx, kdf) \</u></td></tr>
+<tr><th id="277">277</th><td><u>        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, \</u></td></tr>
+<tr><th id="278">278</th><td><u>                                EVP_PKEY_OP_DERIVE, \</u></td></tr>
+<tr><th id="279">279</th><td><u>                                EVP_PKEY_CTRL_DH_KDF_TYPE, kdf, NULL)</u></td></tr>
+<tr><th id="280">280</th><td></td></tr>
+<tr><th id="281">281</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTX_get_dh_kdf_type" data-ref="_M/EVP_PKEY_CTX_get_dh_kdf_type">EVP_PKEY_CTX_get_dh_kdf_type</dfn>(ctx) \</u></td></tr>
+<tr><th id="282">282</th><td><u>        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, \</u></td></tr>
+<tr><th id="283">283</th><td><u>                                EVP_PKEY_OP_DERIVE, \</u></td></tr>
+<tr><th id="284">284</th><td><u>                                EVP_PKEY_CTRL_DH_KDF_TYPE, -2, NULL)</u></td></tr>
+<tr><th id="285">285</th><td></td></tr>
+<tr><th id="286">286</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTX_set0_dh_kdf_oid" data-ref="_M/EVP_PKEY_CTX_set0_dh_kdf_oid">EVP_PKEY_CTX_set0_dh_kdf_oid</dfn>(ctx, oid) \</u></td></tr>
+<tr><th id="287">287</th><td><u>        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, \</u></td></tr>
+<tr><th id="288">288</th><td><u>                                EVP_PKEY_OP_DERIVE, \</u></td></tr>
+<tr><th id="289">289</th><td><u>                                EVP_PKEY_CTRL_DH_KDF_OID, 0, (void *)oid)</u></td></tr>
+<tr><th id="290">290</th><td></td></tr>
+<tr><th id="291">291</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTX_get0_dh_kdf_oid" data-ref="_M/EVP_PKEY_CTX_get0_dh_kdf_oid">EVP_PKEY_CTX_get0_dh_kdf_oid</dfn>(ctx, poid) \</u></td></tr>
+<tr><th id="292">292</th><td><u>        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, \</u></td></tr>
+<tr><th id="293">293</th><td><u>                                EVP_PKEY_OP_DERIVE, \</u></td></tr>
+<tr><th id="294">294</th><td><u>                                EVP_PKEY_CTRL_GET_DH_KDF_OID, 0, (void *)poid)</u></td></tr>
+<tr><th id="295">295</th><td></td></tr>
+<tr><th id="296">296</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTX_set_dh_kdf_md" data-ref="_M/EVP_PKEY_CTX_set_dh_kdf_md">EVP_PKEY_CTX_set_dh_kdf_md</dfn>(ctx, md) \</u></td></tr>
+<tr><th id="297">297</th><td><u>        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, \</u></td></tr>
+<tr><th id="298">298</th><td><u>                                EVP_PKEY_OP_DERIVE, \</u></td></tr>
+<tr><th id="299">299</th><td><u>                                EVP_PKEY_CTRL_DH_KDF_MD, 0, (void *)md)</u></td></tr>
+<tr><th id="300">300</th><td></td></tr>
+<tr><th id="301">301</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTX_get_dh_kdf_md" data-ref="_M/EVP_PKEY_CTX_get_dh_kdf_md">EVP_PKEY_CTX_get_dh_kdf_md</dfn>(ctx, pmd) \</u></td></tr>
+<tr><th id="302">302</th><td><u>        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, \</u></td></tr>
+<tr><th id="303">303</th><td><u>                                EVP_PKEY_OP_DERIVE, \</u></td></tr>
+<tr><th id="304">304</th><td><u>                                EVP_PKEY_CTRL_GET_DH_KDF_MD, 0, (void *)pmd)</u></td></tr>
+<tr><th id="305">305</th><td></td></tr>
+<tr><th id="306">306</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTX_set_dh_kdf_outlen" data-ref="_M/EVP_PKEY_CTX_set_dh_kdf_outlen">EVP_PKEY_CTX_set_dh_kdf_outlen</dfn>(ctx, len) \</u></td></tr>
+<tr><th id="307">307</th><td><u>        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, \</u></td></tr>
+<tr><th id="308">308</th><td><u>                                EVP_PKEY_OP_DERIVE, \</u></td></tr>
+<tr><th id="309">309</th><td><u>                                EVP_PKEY_CTRL_DH_KDF_OUTLEN, len, NULL)</u></td></tr>
+<tr><th id="310">310</th><td></td></tr>
+<tr><th id="311">311</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTX_get_dh_kdf_outlen" data-ref="_M/EVP_PKEY_CTX_get_dh_kdf_outlen">EVP_PKEY_CTX_get_dh_kdf_outlen</dfn>(ctx, plen) \</u></td></tr>
+<tr><th id="312">312</th><td><u>        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, \</u></td></tr>
+<tr><th id="313">313</th><td><u>                                EVP_PKEY_OP_DERIVE, \</u></td></tr>
+<tr><th id="314">314</th><td><u>                        EVP_PKEY_CTRL_GET_DH_KDF_OUTLEN, 0, (void *)plen)</u></td></tr>
+<tr><th id="315">315</th><td></td></tr>
+<tr><th id="316">316</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTX_set0_dh_kdf_ukm" data-ref="_M/EVP_PKEY_CTX_set0_dh_kdf_ukm">EVP_PKEY_CTX_set0_dh_kdf_ukm</dfn>(ctx, p, plen) \</u></td></tr>
+<tr><th id="317">317</th><td><u>        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, \</u></td></tr>
+<tr><th id="318">318</th><td><u>                                EVP_PKEY_OP_DERIVE, \</u></td></tr>
+<tr><th id="319">319</th><td><u>                                EVP_PKEY_CTRL_DH_KDF_UKM, plen, (void *)p)</u></td></tr>
+<tr><th id="320">320</th><td></td></tr>
+<tr><th id="321">321</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTX_get0_dh_kdf_ukm" data-ref="_M/EVP_PKEY_CTX_get0_dh_kdf_ukm">EVP_PKEY_CTX_get0_dh_kdf_ukm</dfn>(ctx, p) \</u></td></tr>
+<tr><th id="322">322</th><td><u>        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, \</u></td></tr>
+<tr><th id="323">323</th><td><u>                                EVP_PKEY_OP_DERIVE, \</u></td></tr>
+<tr><th id="324">324</th><td><u>                                EVP_PKEY_CTRL_GET_DH_KDF_UKM, 0, (void *)p)</u></td></tr>
+<tr><th id="325">325</th><td></td></tr>
+<tr><th id="326">326</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTRL_DH_PARAMGEN_PRIME_LEN" data-ref="_M/EVP_PKEY_CTRL_DH_PARAMGEN_PRIME_LEN">EVP_PKEY_CTRL_DH_PARAMGEN_PRIME_LEN</dfn>     (EVP_PKEY_ALG_CTRL + 1)</u></td></tr>
+<tr><th id="327">327</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTRL_DH_PARAMGEN_GENERATOR" data-ref="_M/EVP_PKEY_CTRL_DH_PARAMGEN_GENERATOR">EVP_PKEY_CTRL_DH_PARAMGEN_GENERATOR</dfn>     (EVP_PKEY_ALG_CTRL + 2)</u></td></tr>
+<tr><th id="328">328</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTRL_DH_RFC5114" data-ref="_M/EVP_PKEY_CTRL_DH_RFC5114">EVP_PKEY_CTRL_DH_RFC5114</dfn>                (EVP_PKEY_ALG_CTRL + 3)</u></td></tr>
+<tr><th id="329">329</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTRL_DH_PARAMGEN_SUBPRIME_LEN" data-ref="_M/EVP_PKEY_CTRL_DH_PARAMGEN_SUBPRIME_LEN">EVP_PKEY_CTRL_DH_PARAMGEN_SUBPRIME_LEN</dfn>  (EVP_PKEY_ALG_CTRL + 4)</u></td></tr>
+<tr><th id="330">330</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTRL_DH_PARAMGEN_TYPE" data-ref="_M/EVP_PKEY_CTRL_DH_PARAMGEN_TYPE">EVP_PKEY_CTRL_DH_PARAMGEN_TYPE</dfn>          (EVP_PKEY_ALG_CTRL + 5)</u></td></tr>
+<tr><th id="331">331</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTRL_DH_KDF_TYPE" data-ref="_M/EVP_PKEY_CTRL_DH_KDF_TYPE">EVP_PKEY_CTRL_DH_KDF_TYPE</dfn>               (EVP_PKEY_ALG_CTRL + 6)</u></td></tr>
+<tr><th id="332">332</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTRL_DH_KDF_MD" data-ref="_M/EVP_PKEY_CTRL_DH_KDF_MD">EVP_PKEY_CTRL_DH_KDF_MD</dfn>                 (EVP_PKEY_ALG_CTRL + 7)</u></td></tr>
+<tr><th id="333">333</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTRL_GET_DH_KDF_MD" data-ref="_M/EVP_PKEY_CTRL_GET_DH_KDF_MD">EVP_PKEY_CTRL_GET_DH_KDF_MD</dfn>             (EVP_PKEY_ALG_CTRL + 8)</u></td></tr>
+<tr><th id="334">334</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTRL_DH_KDF_OUTLEN" data-ref="_M/EVP_PKEY_CTRL_DH_KDF_OUTLEN">EVP_PKEY_CTRL_DH_KDF_OUTLEN</dfn>             (EVP_PKEY_ALG_CTRL + 9)</u></td></tr>
+<tr><th id="335">335</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTRL_GET_DH_KDF_OUTLEN" data-ref="_M/EVP_PKEY_CTRL_GET_DH_KDF_OUTLEN">EVP_PKEY_CTRL_GET_DH_KDF_OUTLEN</dfn>         (EVP_PKEY_ALG_CTRL + 10)</u></td></tr>
+<tr><th id="336">336</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTRL_DH_KDF_UKM" data-ref="_M/EVP_PKEY_CTRL_DH_KDF_UKM">EVP_PKEY_CTRL_DH_KDF_UKM</dfn>                (EVP_PKEY_ALG_CTRL + 11)</u></td></tr>
+<tr><th id="337">337</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTRL_GET_DH_KDF_UKM" data-ref="_M/EVP_PKEY_CTRL_GET_DH_KDF_UKM">EVP_PKEY_CTRL_GET_DH_KDF_UKM</dfn>            (EVP_PKEY_ALG_CTRL + 12)</u></td></tr>
+<tr><th id="338">338</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTRL_DH_KDF_OID" data-ref="_M/EVP_PKEY_CTRL_DH_KDF_OID">EVP_PKEY_CTRL_DH_KDF_OID</dfn>                (EVP_PKEY_ALG_CTRL + 13)</u></td></tr>
+<tr><th id="339">339</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_CTRL_GET_DH_KDF_OID" data-ref="_M/EVP_PKEY_CTRL_GET_DH_KDF_OID">EVP_PKEY_CTRL_GET_DH_KDF_OID</dfn>            (EVP_PKEY_ALG_CTRL + 14)</u></td></tr>
+<tr><th id="340">340</th><td></td></tr>
+<tr><th id="341">341</th><td><i>/* KDF types */</i></td></tr>
+<tr><th id="342">342</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_DH_KDF_NONE" data-ref="_M/EVP_PKEY_DH_KDF_NONE">EVP_PKEY_DH_KDF_NONE</dfn>                            1</u></td></tr>
+<tr><th id="343">343</th><td><u># define <dfn class="macro" id="_M/EVP_PKEY_DH_KDF_X9_42" data-ref="_M/EVP_PKEY_DH_KDF_X9_42">EVP_PKEY_DH_KDF_X9_42</dfn>                           2</u></td></tr>
+<tr><th id="344">344</th><td></td></tr>
+<tr><th id="345">345</th><td><i>/* BEGIN ERROR CODES */</i></td></tr>
+<tr><th id="346">346</th><td><i>/*</i></td></tr>
+<tr><th id="347">347</th><td><i> * The following lines are auto generated by the script mkerr.pl. Any changes</i></td></tr>
+<tr><th id="348">348</th><td><i> * made after this point may be overwritten when the script is next run.</i></td></tr>
+<tr><th id="349">349</th><td><i> */</i></td></tr>
+<tr><th id="350">350</th><td><em>void</em> <dfn class="decl fn" id="ERR_load_DH_strings" title='ERR_load_DH_strings' data-ref="ERR_load_DH_strings">ERR_load_DH_strings</dfn>(<em>void</em>);</td></tr>
+<tr><th id="351">351</th><td></td></tr>
+<tr><th id="352">352</th><td><i>/* Error codes for the DH functions. */</i></td></tr>
+<tr><th id="353">353</th><td></td></tr>
+<tr><th id="354">354</th><td><i>/* Function codes. */</i></td></tr>
+<tr><th id="355">355</th><td><u># define <dfn class="macro" id="_M/DH_F_COMPUTE_KEY" data-ref="_M/DH_F_COMPUTE_KEY">DH_F_COMPUTE_KEY</dfn>                                 102</u></td></tr>
+<tr><th id="356">356</th><td><u># define <dfn class="macro" id="_M/DH_F_DHPARAMS_PRINT_FP" data-ref="_M/DH_F_DHPARAMS_PRINT_FP">DH_F_DHPARAMS_PRINT_FP</dfn>                           101</u></td></tr>
+<tr><th id="357">357</th><td><u># define <dfn class="macro" id="_M/DH_F_DH_BUILTIN_GENPARAMS" data-ref="_M/DH_F_DH_BUILTIN_GENPARAMS">DH_F_DH_BUILTIN_GENPARAMS</dfn>                        106</u></td></tr>
+<tr><th id="358">358</th><td><u># define <dfn class="macro" id="_M/DH_F_DH_CMS_DECRYPT" data-ref="_M/DH_F_DH_CMS_DECRYPT">DH_F_DH_CMS_DECRYPT</dfn>                              117</u></td></tr>
+<tr><th id="359">359</th><td><u># define <dfn class="macro" id="_M/DH_F_DH_CMS_SET_PEERKEY" data-ref="_M/DH_F_DH_CMS_SET_PEERKEY">DH_F_DH_CMS_SET_PEERKEY</dfn>                          118</u></td></tr>
+<tr><th id="360">360</th><td><u># define <dfn class="macro" id="_M/DH_F_DH_CMS_SET_SHARED_INFO" data-ref="_M/DH_F_DH_CMS_SET_SHARED_INFO">DH_F_DH_CMS_SET_SHARED_INFO</dfn>                      119</u></td></tr>
+<tr><th id="361">361</th><td><u># define <dfn class="macro" id="_M/DH_F_DH_COMPUTE_KEY" data-ref="_M/DH_F_DH_COMPUTE_KEY">DH_F_DH_COMPUTE_KEY</dfn>                              114</u></td></tr>
+<tr><th id="362">362</th><td><u># define <dfn class="macro" id="_M/DH_F_DH_GENERATE_KEY" data-ref="_M/DH_F_DH_GENERATE_KEY">DH_F_DH_GENERATE_KEY</dfn>                             115</u></td></tr>
+<tr><th id="363">363</th><td><u># define <dfn class="macro" id="_M/DH_F_DH_GENERATE_PARAMETERS_EX" data-ref="_M/DH_F_DH_GENERATE_PARAMETERS_EX">DH_F_DH_GENERATE_PARAMETERS_EX</dfn>                   116</u></td></tr>
+<tr><th id="364">364</th><td><u># define <dfn class="macro" id="_M/DH_F_DH_NEW_METHOD" data-ref="_M/DH_F_DH_NEW_METHOD">DH_F_DH_NEW_METHOD</dfn>                               105</u></td></tr>
+<tr><th id="365">365</th><td><u># define <dfn class="macro" id="_M/DH_F_DH_PARAM_DECODE" data-ref="_M/DH_F_DH_PARAM_DECODE">DH_F_DH_PARAM_DECODE</dfn>                             107</u></td></tr>
+<tr><th id="366">366</th><td><u># define <dfn class="macro" id="_M/DH_F_DH_PRIV_DECODE" data-ref="_M/DH_F_DH_PRIV_DECODE">DH_F_DH_PRIV_DECODE</dfn>                              110</u></td></tr>
+<tr><th id="367">367</th><td><u># define <dfn class="macro" id="_M/DH_F_DH_PRIV_ENCODE" data-ref="_M/DH_F_DH_PRIV_ENCODE">DH_F_DH_PRIV_ENCODE</dfn>                              111</u></td></tr>
+<tr><th id="368">368</th><td><u># define <dfn class="macro" id="_M/DH_F_DH_PUB_DECODE" data-ref="_M/DH_F_DH_PUB_DECODE">DH_F_DH_PUB_DECODE</dfn>                               108</u></td></tr>
+<tr><th id="369">369</th><td><u># define <dfn class="macro" id="_M/DH_F_DH_PUB_ENCODE" data-ref="_M/DH_F_DH_PUB_ENCODE">DH_F_DH_PUB_ENCODE</dfn>                               109</u></td></tr>
+<tr><th id="370">370</th><td><u># define <dfn class="macro" id="_M/DH_F_DO_DH_PRINT" data-ref="_M/DH_F_DO_DH_PRINT">DH_F_DO_DH_PRINT</dfn>                                 100</u></td></tr>
+<tr><th id="371">371</th><td><u># define <dfn class="macro" id="_M/DH_F_GENERATE_KEY" data-ref="_M/DH_F_GENERATE_KEY">DH_F_GENERATE_KEY</dfn>                                103</u></td></tr>
+<tr><th id="372">372</th><td><u># define <dfn class="macro" id="_M/DH_F_GENERATE_PARAMETERS" data-ref="_M/DH_F_GENERATE_PARAMETERS">DH_F_GENERATE_PARAMETERS</dfn>                         104</u></td></tr>
+<tr><th id="373">373</th><td><u># define <dfn class="macro" id="_M/DH_F_PKEY_DH_DERIVE" data-ref="_M/DH_F_PKEY_DH_DERIVE">DH_F_PKEY_DH_DERIVE</dfn>                              112</u></td></tr>
+<tr><th id="374">374</th><td><u># define <dfn class="macro" id="_M/DH_F_PKEY_DH_KEYGEN" data-ref="_M/DH_F_PKEY_DH_KEYGEN">DH_F_PKEY_DH_KEYGEN</dfn>                              113</u></td></tr>
+<tr><th id="375">375</th><td></td></tr>
+<tr><th id="376">376</th><td><i>/* Reason codes. */</i></td></tr>
+<tr><th id="377">377</th><td><u># define <dfn class="macro" id="_M/DH_R_BAD_GENERATOR" data-ref="_M/DH_R_BAD_GENERATOR">DH_R_BAD_GENERATOR</dfn>                               101</u></td></tr>
+<tr><th id="378">378</th><td><u># define <dfn class="macro" id="_M/DH_R_BN_DECODE_ERROR" data-ref="_M/DH_R_BN_DECODE_ERROR">DH_R_BN_DECODE_ERROR</dfn>                             109</u></td></tr>
+<tr><th id="379">379</th><td><u># define <dfn class="macro" id="_M/DH_R_BN_ERROR" data-ref="_M/DH_R_BN_ERROR">DH_R_BN_ERROR</dfn>                                    106</u></td></tr>
+<tr><th id="380">380</th><td><u># define <dfn class="macro" id="_M/DH_R_DECODE_ERROR" data-ref="_M/DH_R_DECODE_ERROR">DH_R_DECODE_ERROR</dfn>                                104</u></td></tr>
+<tr><th id="381">381</th><td><u># define <dfn class="macro" id="_M/DH_R_INVALID_PUBKEY" data-ref="_M/DH_R_INVALID_PUBKEY">DH_R_INVALID_PUBKEY</dfn>                              102</u></td></tr>
+<tr><th id="382">382</th><td><u># define <dfn class="macro" id="_M/DH_R_KDF_PARAMETER_ERROR" data-ref="_M/DH_R_KDF_PARAMETER_ERROR">DH_R_KDF_PARAMETER_ERROR</dfn>                         112</u></td></tr>
+<tr><th id="383">383</th><td><u># define <dfn class="macro" id="_M/DH_R_KEYS_NOT_SET" data-ref="_M/DH_R_KEYS_NOT_SET">DH_R_KEYS_NOT_SET</dfn>                                108</u></td></tr>
+<tr><th id="384">384</th><td><u># define <dfn class="macro" id="_M/DH_R_KEY_SIZE_TOO_SMALL" data-ref="_M/DH_R_KEY_SIZE_TOO_SMALL">DH_R_KEY_SIZE_TOO_SMALL</dfn>                          110</u></td></tr>
+<tr><th id="385">385</th><td><u># define <dfn class="macro" id="_M/DH_R_MODULUS_TOO_LARGE" data-ref="_M/DH_R_MODULUS_TOO_LARGE">DH_R_MODULUS_TOO_LARGE</dfn>                           103</u></td></tr>
+<tr><th id="386">386</th><td><u># define <dfn class="macro" id="_M/DH_R_NON_FIPS_METHOD" data-ref="_M/DH_R_NON_FIPS_METHOD">DH_R_NON_FIPS_METHOD</dfn>                             111</u></td></tr>
+<tr><th id="387">387</th><td><u># define <dfn class="macro" id="_M/DH_R_NO_PARAMETERS_SET" data-ref="_M/DH_R_NO_PARAMETERS_SET">DH_R_NO_PARAMETERS_SET</dfn>                           107</u></td></tr>
+<tr><th id="388">388</th><td><u># define <dfn class="macro" id="_M/DH_R_NO_PRIVATE_VALUE" data-ref="_M/DH_R_NO_PRIVATE_VALUE">DH_R_NO_PRIVATE_VALUE</dfn>                            100</u></td></tr>
+<tr><th id="389">389</th><td><u># define <dfn class="macro" id="_M/DH_R_PARAMETER_ENCODING_ERROR" data-ref="_M/DH_R_PARAMETER_ENCODING_ERROR">DH_R_PARAMETER_ENCODING_ERROR</dfn>                    105</u></td></tr>
+<tr><th id="390">390</th><td><u># define <dfn class="macro" id="_M/DH_R_PEER_KEY_ERROR" data-ref="_M/DH_R_PEER_KEY_ERROR">DH_R_PEER_KEY_ERROR</dfn>                              113</u></td></tr>
+<tr><th id="391">391</th><td><u># define <dfn class="macro" id="_M/DH_R_SHARED_INFO_ERROR" data-ref="_M/DH_R_SHARED_INFO_ERROR">DH_R_SHARED_INFO_ERROR</dfn>                           114</u></td></tr>
+<tr><th id="392">392</th><td></td></tr>
+<tr><th id="393">393</th><td><u>#<span data-ppcond="393">ifdef</span>  <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="394">394</th><td>}</td></tr>
+<tr><th id="395">395</th><td><u>#<span data-ppcond="393">endif</span></u></td></tr>
+<tr><th id="396">396</th><td><u>#<span data-ppcond="59">endif</span></u></td></tr>
+<tr><th id="397">397</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../vpp_1804/src/vnet/ipsec/ikev2.c.html'>vpp_1804/src/vnet/ipsec/ikev2.c</a><br/>Generated on <em>2018-Jul-29</em> from project include<br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

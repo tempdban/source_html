@@ -1,0 +1,279 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>pcap.c source code [vpp_1804/src/vnet/unix/pcap.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'vpp_1804/src/vnet/unix/pcap.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>vpp_1804</a>/<a href='../..'>src</a>/<a href='..'>vnet</a>/<a href='./'>unix</a>/<a href='pcap.c.html'>pcap.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright (c) 2015 Cisco and/or its affiliates.</i></td></tr>
+<tr><th id="3">3</th><td><i> * Licensed under the Apache License, Version 2.0 (the "License");</i></td></tr>
+<tr><th id="4">4</th><td><i> * you may not use this file except in compliance with the License.</i></td></tr>
+<tr><th id="5">5</th><td><i> * You may obtain a copy of the License at:</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> *     <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></i></td></tr>
+<tr><th id="8">8</th><td><i> *</i></td></tr>
+<tr><th id="9">9</th><td><i> * Unless required by applicable law or agreed to in writing, software</i></td></tr>
+<tr><th id="10">10</th><td><i> * distributed under the License is distributed on an "AS IS" BASIS,</i></td></tr>
+<tr><th id="11">11</th><td><i> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</i></td></tr>
+<tr><th id="12">12</th><td><i> * See the License for the specific language governing permissions and</i></td></tr>
+<tr><th id="13">13</th><td><i> * limitations under the License.</i></td></tr>
+<tr><th id="14">14</th><td><i> */</i></td></tr>
+<tr><th id="15">15</th><td><i>/*</i></td></tr>
+<tr><th id="16">16</th><td><i> * pcap.c: libpcap packet capture format</i></td></tr>
+<tr><th id="17">17</th><td><i> *</i></td></tr>
+<tr><th id="18">18</th><td><i> * Copyright (c) 2008 Eliot Dresselhaus</i></td></tr>
+<tr><th id="19">19</th><td><i> *</i></td></tr>
+<tr><th id="20">20</th><td><i> * Permission is hereby granted, free of charge, to any person obtaining</i></td></tr>
+<tr><th id="21">21</th><td><i> * a copy of this software and associated documentation files (the</i></td></tr>
+<tr><th id="22">22</th><td><i> * "Software"), to deal in the Software without restriction, including</i></td></tr>
+<tr><th id="23">23</th><td><i> * without limitation the rights to use, copy, modify, merge, publish,</i></td></tr>
+<tr><th id="24">24</th><td><i> * distribute, sublicense, and/or sell copies of the Software, and to</i></td></tr>
+<tr><th id="25">25</th><td><i> * permit persons to whom the Software is furnished to do so, subject to</i></td></tr>
+<tr><th id="26">26</th><td><i> * the following conditions:</i></td></tr>
+<tr><th id="27">27</th><td><i> *</i></td></tr>
+<tr><th id="28">28</th><td><i> * The above copyright notice and this permission notice shall be</i></td></tr>
+<tr><th id="29">29</th><td><i> * included in all copies or substantial portions of the Software.</i></td></tr>
+<tr><th id="30">30</th><td><i> *</i></td></tr>
+<tr><th id="31">31</th><td><i> *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,</i></td></tr>
+<tr><th id="32">32</th><td><i> *  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF</i></td></tr>
+<tr><th id="33">33</th><td><i> *  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND</i></td></tr>
+<tr><th id="34">34</th><td><i> *  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE</i></td></tr>
+<tr><th id="35">35</th><td><i> *  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION</i></td></tr>
+<tr><th id="36">36</th><td><i> *  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION</i></td></tr>
+<tr><th id="37">37</th><td><i> *  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</i></td></tr>
+<tr><th id="38">38</th><td><i> */</i></td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><u>#include <a href="pcap.h.html">&lt;vnet/unix/pcap.h&gt;</a></u></td></tr>
+<tr><th id="41">41</th><td><u>#include <a href="../../../../include/sys/fcntl.h.html">&lt;sys/fcntl.h&gt;</a></u></td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc"> *<span class="command"> @file</span></i></td></tr>
+<tr><th id="45">45</th><td><i class="doc"> * <span class="command">@brief</span> PCAP function.</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="47">47</th><td><i class="doc"> * Usage:</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="49">49</th><td><i class="doc"> * <span class="tag">&lt;code&gt;</span><span class="tag">&lt;pre&gt;</span></i></td></tr>
+<tr><th id="50">50</th><td><i class="doc"> * \#include &lt;vnet/unix/pcap.h&gt;</i></td></tr>
+<tr><th id="51">51</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="52">52</th><td><i class="doc"> * static pcap_main_t pcap = {</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc"> *  .file_name = "/tmp/ip4",</i></td></tr>
+<tr><th id="54">54</th><td><i class="doc"> *  .n_packets_to_capture = 2,</i></td></tr>
+<tr><th id="55">55</th><td><i class="doc"> *  .packet_type = PCAP_PACKET_TYPE_ip,</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc"> * };</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc"> * <span class="tag">&lt;/pre&gt;</span><span class="tag">&lt;/code&gt;</span></i></td></tr>
+<tr><th id="58">58</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc"> * To add a buffer:</i></td></tr>
+<tr><th id="60">60</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc"> *  <span class="tag">&lt;code&gt;</span><span class="tag">&lt;pre&gt;</span>pcap_add_buffer (&amp;pcap, vm, pi0, 128);<span class="tag">&lt;/pre&gt;</span><span class="tag">&lt;/code&gt;</span></i></td></tr>
+<tr><th id="62">62</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="63">63</th><td><i class="doc"> * File will be written after<span class="command"> @c</span> <span class="arg">n_packets_to_capture</span> or call to pcap_write (&amp;amp;pcap).</i></td></tr>
+<tr><th id="64">64</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="68">68</th><td><i class="doc"> * <span class="command">@brief</span> Close PCAP file</i></td></tr>
+<tr><th id="69">69</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="70">70</th><td><i class="doc"> * <span class="command">@return</span> rc - clib_error_t</i></td></tr>
+<tr><th id="71">71</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="72">72</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="73">73</th><td><a class="typedef" href="../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *</td></tr>
+<tr><th id="74">74</th><td><dfn class="decl def fn" id="pcap_close" title='pcap_close' data-ref="pcap_close">pcap_close</dfn> (<a class="typedef" href="pcap.h.html#pcap_main_t" title='pcap_main_t' data-type='struct pcap_main_t' data-ref="pcap_main_t">pcap_main_t</a> * <dfn class="local col1 decl" id="1pm" title='pm' data-type='pcap_main_t *' data-ref="1pm">pm</dfn>)</td></tr>
+<tr><th id="75">75</th><td>{</td></tr>
+<tr><th id="76">76</th><td>  <a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a> (<a class="local col1 ref" href="#1pm" title='pm' data-ref="1pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_descriptor" title='(anonymous struct)::file_descriptor' data-ref="(anonymous)::file_descriptor">file_descriptor</a>);</td></tr>
+<tr><th id="77">77</th><td>  <a class="local col1 ref" href="#1pm" title='pm' data-ref="1pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::flags" title='(anonymous struct)::flags' data-ref="(anonymous)::flags">flags</a> &amp;= ~<a class="macro" href="pcap.h.html#140" title="(1 &lt;&lt; 0)" data-ref="_M/PCAP_MAIN_INIT_DONE">PCAP_MAIN_INIT_DONE</a>;</td></tr>
+<tr><th id="78">78</th><td>  <a class="local col1 ref" href="#1pm" title='pm' data-ref="1pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_descriptor" title='(anonymous struct)::file_descriptor' data-ref="(anonymous)::file_descriptor">file_descriptor</a> = -<var>1</var>;</td></tr>
+<tr><th id="79">79</th><td>  <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="80">80</th><td>}</td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="83">83</th><td><i class="doc"> * <span class="command">@brief</span> Write PCAP file</i></td></tr>
+<tr><th id="84">84</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="85">85</th><td><i class="doc"> * <span class="command">@return</span> rc - clib_error_t</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="87">87</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="88">88</th><td><a class="typedef" href="../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *</td></tr>
+<tr><th id="89">89</th><td><dfn class="decl def fn" id="pcap_write" title='pcap_write' data-ref="pcap_write">pcap_write</dfn> (<a class="typedef" href="pcap.h.html#pcap_main_t" title='pcap_main_t' data-type='struct pcap_main_t' data-ref="pcap_main_t">pcap_main_t</a> * <dfn class="local col2 decl" id="2pm" title='pm' data-type='pcap_main_t *' data-ref="2pm">pm</dfn>)</td></tr>
+<tr><th id="90">90</th><td>{</td></tr>
+<tr><th id="91">91</th><td>  <a class="typedef" href="../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *<dfn class="local col3 decl" id="3error" title='error' data-type='clib_error_t *' data-ref="3error">error</dfn> = <var>0</var>;</td></tr>
+<tr><th id="92">92</th><td></td></tr>
+<tr><th id="93">93</th><td>  <b>if</b> (!(<a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::flags" title='(anonymous struct)::flags' data-ref="(anonymous)::flags">flags</a> &amp; <a class="macro" href="pcap.h.html#140" title="(1 &lt;&lt; 0)" data-ref="_M/PCAP_MAIN_INIT_DONE">PCAP_MAIN_INIT_DONE</a>))</td></tr>
+<tr><th id="94">94</th><td>    {</td></tr>
+<tr><th id="95">95</th><td>      <a class="typedef" href="pcap.h.html#pcap_file_header_t" title='pcap_file_header_t' data-type='struct pcap_file_header_t' data-ref="pcap_file_header_t">pcap_file_header_t</a> <dfn class="local col4 decl" id="4fh" title='fh' data-type='pcap_file_header_t' data-ref="4fh">fh</dfn>;</td></tr>
+<tr><th id="96">96</th><td>      <em>int</em> <dfn class="local col5 decl" id="5n" title='n' data-type='int' data-ref="5n">n</dfn>;</td></tr>
+<tr><th id="97">97</th><td></td></tr>
+<tr><th id="98">98</th><td>      <b>if</b> (!<a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_name" title='(anonymous struct)::file_name' data-ref="(anonymous)::file_name">file_name</a>)</td></tr>
+<tr><th id="99">99</th><td>	<a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_name" title='(anonymous struct)::file_name' data-ref="(anonymous)::file_name">file_name</a> = <q>"/tmp/vnet.pcap"</q>;</td></tr>
+<tr><th id="100">100</th><td></td></tr>
+<tr><th id="101">101</th><td>      <a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_descriptor" title='(anonymous struct)::file_descriptor' data-ref="(anonymous)::file_descriptor">file_descriptor</a> =</td></tr>
+<tr><th id="102">102</th><td>	<a class="ref fn" href="../../../../include/fcntl.h.html#open" title='open' data-ref="open">open</a> (<a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_name" title='(anonymous struct)::file_name' data-ref="(anonymous)::file_name">file_name</a>, <a class="macro" href="../../../../include/bits/fcntl-linux.h.html#47" title="0100" data-ref="_M/O_CREAT">O_CREAT</a> | <a class="macro" href="../../../../include/bits/fcntl-linux.h.html#56" title="01000" data-ref="_M/O_TRUNC">O_TRUNC</a> | <a class="macro" href="../../../../include/bits/fcntl-linux.h.html#44" title="01" data-ref="_M/O_WRONLY">O_WRONLY</a>, <var>0664</var>);</td></tr>
+<tr><th id="103">103</th><td>      <b>if</b> (<a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_descriptor" title='(anonymous struct)::file_descriptor' data-ref="(anonymous)::file_descriptor">file_descriptor</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="104">104</th><td>	{</td></tr>
+<tr><th id="105">105</th><td>	  <a class="local col3 ref" href="#3error" title='error' data-ref="3error">error</a> =</td></tr>
+<tr><th id="106">106</th><td>	    <a class="macro" href="../../vppinfra/error.h.html#102" title="_clib_error_return((0),((*__errno_location ())),(CLIB_ERROR_ERRNO_VALID),(char *)((char *) __FUNCTION__),&quot;failed to open `%s&apos;&quot;, pm-&gt;file_name)" data-ref="_M/clib_error_return_unix">clib_error_return_unix</a> (<var>0</var>, <q>"failed to open `%s'"</q>, <a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_name" title='(anonymous struct)::file_name' data-ref="(anonymous)::file_name">file_name</a>);</td></tr>
+<tr><th id="107">107</th><td>	  <b>goto</b> <a class="lbl" href="#6done" data-ref="6done">done</a>;</td></tr>
+<tr><th id="108">108</th><td>	}</td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td>      <a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::flags" title='(anonymous struct)::flags' data-ref="(anonymous)::flags">flags</a> |= <a class="macro" href="pcap.h.html#140" title="(1 &lt;&lt; 0)" data-ref="_M/PCAP_MAIN_INIT_DONE">PCAP_MAIN_INIT_DONE</a>;</td></tr>
+<tr><th id="111">111</th><td>      <a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::n_packets_captured" title='(anonymous struct)::n_packets_captured' data-ref="(anonymous)::n_packets_captured">n_packets_captured</a> = <var>0</var>;</td></tr>
+<tr><th id="112">112</th><td>      <a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::n_pcap_data_written" title='(anonymous struct)::n_pcap_data_written' data-ref="(anonymous)::n_pcap_data_written">n_pcap_data_written</a> = <var>0</var>;</td></tr>
+<tr><th id="113">113</th><td></td></tr>
+<tr><th id="114">114</th><td>      <i>/* Write file header. */</i></td></tr>
+<tr><th id="115">115</th><td>      <a class="ref fn" href="../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a> (&amp;<a class="local col4 ref" href="#4fh" title='fh' data-ref="4fh">fh</a>, <var>0</var>, <b>sizeof</b> (<a class="local col4 ref" href="#4fh" title='fh' data-ref="4fh">fh</a>));</td></tr>
+<tr><th id="116">116</th><td>      <a class="local col4 ref" href="#4fh" title='fh' data-ref="4fh">fh</a>.<a class="ref field" href="pcap.h.html#96" title='(anonymous struct)::magic' data-ref="(anonymous)::magic">magic</a> = <var>0xa1b2c3d4</var>;</td></tr>
+<tr><th id="117">117</th><td>      <a class="local col4 ref" href="#4fh" title='fh' data-ref="4fh">fh</a>.<a class="ref field" href="pcap.h.html#96" title='(anonymous struct)::major_version' data-ref="(anonymous)::major_version">major_version</a> = <var>2</var>;</td></tr>
+<tr><th id="118">118</th><td>      <a class="local col4 ref" href="#4fh" title='fh' data-ref="4fh">fh</a>.<a class="ref field" href="pcap.h.html#96" title='(anonymous struct)::minor_version' data-ref="(anonymous)::minor_version">minor_version</a> = <var>4</var>;</td></tr>
+<tr><th id="119">119</th><td>      <a class="local col4 ref" href="#4fh" title='fh' data-ref="4fh">fh</a>.<a class="ref field" href="pcap.h.html#96" title='(anonymous struct)::time_zone' data-ref="(anonymous)::time_zone">time_zone</a> = <var>0</var>;</td></tr>
+<tr><th id="120">120</th><td>      <a class="local col4 ref" href="#4fh" title='fh' data-ref="4fh">fh</a>.<a class="ref field" href="pcap.h.html#96" title='(anonymous struct)::max_packet_size_in_bytes' data-ref="(anonymous)::max_packet_size_in_bytes">max_packet_size_in_bytes</a> = <var>1</var> &lt;&lt; <var>16</var>;</td></tr>
+<tr><th id="121">121</th><td>      <a class="local col4 ref" href="#4fh" title='fh' data-ref="4fh">fh</a>.<a class="ref field" href="pcap.h.html#96" title='(anonymous struct)::packet_type' data-ref="(anonymous)::packet_type">packet_type</a> = <a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::packet_type" title='(anonymous struct)::packet_type' data-ref="(anonymous)::packet_type">packet_type</a>;</td></tr>
+<tr><th id="122">122</th><td>      <a class="local col5 ref" href="#5n" title='n' data-ref="5n">n</a> = <a class="ref fn" href="../../../../include/unistd.h.html#write" title='write' data-ref="write">write</a> (<a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_descriptor" title='(anonymous struct)::file_descriptor' data-ref="(anonymous)::file_descriptor">file_descriptor</a>, &amp;<a class="local col4 ref" href="#4fh" title='fh' data-ref="4fh">fh</a>, <b>sizeof</b> (<a class="local col4 ref" href="#4fh" title='fh' data-ref="4fh">fh</a>));</td></tr>
+<tr><th id="123">123</th><td>      <b>if</b> (<a class="local col5 ref" href="#5n" title='n' data-ref="5n">n</a> != <b>sizeof</b> (<a class="local col4 ref" href="#4fh" title='fh' data-ref="4fh">fh</a>))</td></tr>
+<tr><th id="124">124</th><td>	{</td></tr>
+<tr><th id="125">125</th><td>	  <b>if</b> (<a class="local col5 ref" href="#5n" title='n' data-ref="5n">n</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="126">126</th><td>	    <a class="local col3 ref" href="#3error" title='error' data-ref="3error">error</a> =</td></tr>
+<tr><th id="127">127</th><td>	      <a class="macro" href="../../vppinfra/error.h.html#102" title="_clib_error_return((0),((*__errno_location ())),(CLIB_ERROR_ERRNO_VALID),(char *)((char *) __FUNCTION__),&quot;write file header `%s&apos;&quot;, pm-&gt;file_name)" data-ref="_M/clib_error_return_unix">clib_error_return_unix</a> (<var>0</var>, <q>"write file header `%s'"</q>,</td></tr>
+<tr><th id="128">128</th><td>				      <a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_name" title='(anonymous struct)::file_name' data-ref="(anonymous)::file_name">file_name</a>);</td></tr>
+<tr><th id="129">129</th><td>	  <b>else</b></td></tr>
+<tr><th id="130">130</th><td>	    <a class="local col3 ref" href="#3error" title='error' data-ref="3error">error</a> =</td></tr>
+<tr><th id="131">131</th><td>	      <a class="macro" href="../../vppinfra/error.h.html#99" title="_clib_error_return((0),(0),(0),(char *)((char *) __FUNCTION__),&quot;short write of file header `%s&apos;&quot;, pm-&gt;file_name)" data-ref="_M/clib_error_return">clib_error_return</a> (<var>0</var>, <q>"short write of file header `%s'"</q>,</td></tr>
+<tr><th id="132">132</th><td>				 <a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_name" title='(anonymous struct)::file_name' data-ref="(anonymous)::file_name">file_name</a>);</td></tr>
+<tr><th id="133">133</th><td>	  <b>goto</b> <a class="lbl" href="#6done" data-ref="6done">done</a>;</td></tr>
+<tr><th id="134">134</th><td>	}</td></tr>
+<tr><th id="135">135</th><td>    }</td></tr>
+<tr><th id="136">136</th><td></td></tr>
+<tr><th id="137">137</th><td>  <b>while</b> (<a class="macro" href="../../vppinfra/vec_bootstrap.h.html#142" title="((pm-&gt;pcap_data) ? (((vec_header_t *) (pm-&gt;pcap_data) - 1)-&gt;len) : 0)" data-ref="_M/vec_len">vec_len</a> (<a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::pcap_data" title='(anonymous struct)::pcap_data' data-ref="(anonymous)::pcap_data">pcap_data</a>) &gt; <a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::n_pcap_data_written" title='(anonymous struct)::n_pcap_data_written' data-ref="(anonymous)::n_pcap_data_written">n_pcap_data_written</a>)</td></tr>
+<tr><th id="138">138</th><td>    {</td></tr>
+<tr><th id="139">139</th><td>      <em>int</em> <dfn class="local col7 decl" id="7n" title='n' data-type='int' data-ref="7n">n</dfn> = <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#142" title="((pm-&gt;pcap_data) ? (((vec_header_t *) (pm-&gt;pcap_data) - 1)-&gt;len) : 0)" data-ref="_M/vec_len">vec_len</a> (<a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::pcap_data" title='(anonymous struct)::pcap_data' data-ref="(anonymous)::pcap_data">pcap_data</a>) - <a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::n_pcap_data_written" title='(anonymous struct)::n_pcap_data_written' data-ref="(anonymous)::n_pcap_data_written">n_pcap_data_written</a>;</td></tr>
+<tr><th id="140">140</th><td></td></tr>
+<tr><th id="141">141</th><td>      <a class="local col7 ref" href="#7n" title='n' data-ref="7n">n</a> = <a class="ref fn" href="../../../../include/unistd.h.html#write" title='write' data-ref="write">write</a> (<a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_descriptor" title='(anonymous struct)::file_descriptor' data-ref="(anonymous)::file_descriptor">file_descriptor</a>,</td></tr>
+<tr><th id="142">142</th><td>		 <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#174" title="({ do { if ((1 &gt; 0) &amp;&amp; ! ((pm-&gt;n_pcap_data_written) &lt; ((pm-&gt;pcap_data) ? (((vec_header_t *) (pm-&gt;pcap_data) - 1)-&gt;len) : 0))) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/vpp/../../../src/vnet/unix/pcap.c&quot;, (uword) 142, ((char *) __FUNCTION__), &quot;(pm-&gt;n_pcap_data_written) &lt; vec_len (pm-&gt;pcap_data)&quot;); } } while (0); (pm-&gt;pcap_data) + (pm-&gt;n_pcap_data_written); })" data-ref="_M/vec_elt_at_index">vec_elt_at_index</a> (<a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::pcap_data" title='(anonymous struct)::pcap_data' data-ref="(anonymous)::pcap_data">pcap_data</a>, <a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::n_pcap_data_written" title='(anonymous struct)::n_pcap_data_written' data-ref="(anonymous)::n_pcap_data_written">n_pcap_data_written</a>),</td></tr>
+<tr><th id="143">143</th><td>		 <a class="local col7 ref" href="#7n" title='n' data-ref="7n">n</a>);</td></tr>
+<tr><th id="144">144</th><td></td></tr>
+<tr><th id="145">145</th><td>      <b>if</b> (<a class="local col7 ref" href="#7n" title='n' data-ref="7n">n</a> &lt; <var>0</var> &amp;&amp; <a class="ref fn" href="../../vppinfra/error.h.html#unix_error_is_fatal" title='unix_error_is_fatal' data-ref="unix_error_is_fatal">unix_error_is_fatal</a> (<a class="macro" href="../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>))</td></tr>
+<tr><th id="146">146</th><td>	{</td></tr>
+<tr><th id="147">147</th><td>	  <a class="local col3 ref" href="#3error" title='error' data-ref="3error">error</a> = <a class="macro" href="../../vppinfra/error.h.html#102" title="_clib_error_return((0),((*__errno_location ())),(CLIB_ERROR_ERRNO_VALID),(char *)((char *) __FUNCTION__),&quot;write `%s&apos;&quot;, pm-&gt;file_name)" data-ref="_M/clib_error_return_unix">clib_error_return_unix</a> (<var>0</var>, <q>"write `%s'"</q>, <a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_name" title='(anonymous struct)::file_name' data-ref="(anonymous)::file_name">file_name</a>);</td></tr>
+<tr><th id="148">148</th><td>	  <b>goto</b> <a class="lbl" href="#6done" data-ref="6done">done</a>;</td></tr>
+<tr><th id="149">149</th><td>	}</td></tr>
+<tr><th id="150">150</th><td>      <a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::n_pcap_data_written" title='(anonymous struct)::n_pcap_data_written' data-ref="(anonymous)::n_pcap_data_written">n_pcap_data_written</a> += <a class="local col7 ref" href="#7n" title='n' data-ref="7n">n</a>;</td></tr>
+<tr><th id="151">151</th><td>    }</td></tr>
+<tr><th id="152">152</th><td></td></tr>
+<tr><th id="153">153</th><td>  <b>if</b> (<a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::n_pcap_data_written" title='(anonymous struct)::n_pcap_data_written' data-ref="(anonymous)::n_pcap_data_written">n_pcap_data_written</a> &gt;= <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#142" title="((pm-&gt;pcap_data) ? (((vec_header_t *) (pm-&gt;pcap_data) - 1)-&gt;len) : 0)" data-ref="_M/vec_len">vec_len</a> (<a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::pcap_data" title='(anonymous struct)::pcap_data' data-ref="(anonymous)::pcap_data">pcap_data</a>))</td></tr>
+<tr><th id="154">154</th><td>    {</td></tr>
+<tr><th id="155">155</th><td>      <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#148" title="do { if (pm-&gt;pcap_data) (((vec_header_t *) (pm-&gt;pcap_data) - 1)-&gt;len) = 0; } while (0)" data-ref="_M/vec_reset_length">vec_reset_length</a> (<a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::pcap_data" title='(anonymous struct)::pcap_data' data-ref="(anonymous)::pcap_data">pcap_data</a>);</td></tr>
+<tr><th id="156">156</th><td>      <a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::n_pcap_data_written" title='(anonymous struct)::n_pcap_data_written' data-ref="(anonymous)::n_pcap_data_written">n_pcap_data_written</a> = <var>0</var>;</td></tr>
+<tr><th id="157">157</th><td>    }</td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td>  <b>if</b> (<a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::n_packets_captured" title='(anonymous struct)::n_packets_captured' data-ref="(anonymous)::n_packets_captured">n_packets_captured</a> &gt;= <a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::n_packets_to_capture" title='(anonymous struct)::n_packets_to_capture' data-ref="(anonymous)::n_packets_to_capture">n_packets_to_capture</a>)</td></tr>
+<tr><th id="160">160</th><td>    <a class="ref fn" href="#pcap_close" title='pcap_close' data-ref="pcap_close">pcap_close</a> (<a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>);</td></tr>
+<tr><th id="161">161</th><td></td></tr>
+<tr><th id="162">162</th><td><dfn class="lbl" id="6done" data-ref="6done">done</dfn>:</td></tr>
+<tr><th id="163">163</th><td>  <b>if</b> (<a class="local col3 ref" href="#3error" title='error' data-ref="3error">error</a>)</td></tr>
+<tr><th id="164">164</th><td>    {</td></tr>
+<tr><th id="165">165</th><td>      <b>if</b> (<a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_descriptor" title='(anonymous struct)::file_descriptor' data-ref="(anonymous)::file_descriptor">file_descriptor</a> &gt;= <var>0</var>)</td></tr>
+<tr><th id="166">166</th><td>	<a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a> (<a class="local col2 ref" href="#2pm" title='pm' data-ref="2pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_descriptor" title='(anonymous struct)::file_descriptor' data-ref="(anonymous)::file_descriptor">file_descriptor</a>);</td></tr>
+<tr><th id="167">167</th><td>    }</td></tr>
+<tr><th id="168">168</th><td>  <b>return</b> <a class="local col3 ref" href="#3error" title='error' data-ref="3error">error</a>;</td></tr>
+<tr><th id="169">169</th><td>}</td></tr>
+<tr><th id="170">170</th><td></td></tr>
+<tr><th id="171">171</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc"> * <span class="command">@brief</span> Read PCAP file</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="174">174</th><td><i class="doc"> * <span class="command">@return</span> rc - clib_error_t</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="176">176</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="177">177</th><td><a class="typedef" href="../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *</td></tr>
+<tr><th id="178">178</th><td><dfn class="decl def fn" id="pcap_read" title='pcap_read' data-ref="pcap_read">pcap_read</dfn> (<a class="typedef" href="pcap.h.html#pcap_main_t" title='pcap_main_t' data-type='struct pcap_main_t' data-ref="pcap_main_t">pcap_main_t</a> * <dfn class="local col8 decl" id="8pm" title='pm' data-type='pcap_main_t *' data-ref="8pm">pm</dfn>)</td></tr>
+<tr><th id="179">179</th><td>{</td></tr>
+<tr><th id="180">180</th><td>  <a class="typedef" href="../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *<dfn class="local col9 decl" id="9error" title='error' data-type='clib_error_t *' data-ref="9error">error</dfn> = <var>0</var>;</td></tr>
+<tr><th id="181">181</th><td>  <em>int</em> <dfn class="local col0 decl" id="10fd" title='fd' data-type='int' data-ref="10fd">fd</dfn>, <dfn class="local col1 decl" id="11need_swap" title='need_swap' data-type='int' data-ref="11need_swap">need_swap</dfn>, <dfn class="local col2 decl" id="12n" title='n' data-type='int' data-ref="12n">n</dfn>;</td></tr>
+<tr><th id="182">182</th><td>  <a class="typedef" href="pcap.h.html#pcap_file_header_t" title='pcap_file_header_t' data-type='struct pcap_file_header_t' data-ref="pcap_file_header_t">pcap_file_header_t</a> <dfn class="local col3 decl" id="13fh" title='fh' data-type='pcap_file_header_t' data-ref="13fh">fh</dfn>;</td></tr>
+<tr><th id="183">183</th><td>  <a class="typedef" href="pcap.h.html#pcap_packet_header_t" title='pcap_packet_header_t' data-type='struct pcap_packet_header_t' data-ref="pcap_packet_header_t">pcap_packet_header_t</a> <dfn class="local col4 decl" id="14ph" title='ph' data-type='pcap_packet_header_t' data-ref="14ph">ph</dfn>;</td></tr>
+<tr><th id="184">184</th><td></td></tr>
+<tr><th id="185">185</th><td>  <a class="local col0 ref" href="#10fd" title='fd' data-ref="10fd">fd</a> = <a class="ref fn" href="../../../../include/fcntl.h.html#open" title='open' data-ref="open">open</a> (<a class="local col8 ref" href="#8pm" title='pm' data-ref="8pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_name" title='(anonymous struct)::file_name' data-ref="(anonymous)::file_name">file_name</a>, <a class="macro" href="../../../../include/bits/fcntl-linux.h.html#43" title="00" data-ref="_M/O_RDONLY">O_RDONLY</a>);</td></tr>
+<tr><th id="186">186</th><td>  <b>if</b> (<a class="local col0 ref" href="#10fd" title='fd' data-ref="10fd">fd</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="187">187</th><td>    {</td></tr>
+<tr><th id="188">188</th><td>      <a class="local col9 ref" href="#9error" title='error' data-ref="9error">error</a> = <a class="macro" href="../../vppinfra/error.h.html#102" title="_clib_error_return((0),((*__errno_location ())),(CLIB_ERROR_ERRNO_VALID),(char *)((char *) __FUNCTION__),&quot;open `%s&apos;&quot;, pm-&gt;file_name)" data-ref="_M/clib_error_return_unix">clib_error_return_unix</a> (<var>0</var>, <q>"open `%s'"</q>, <a class="local col8 ref" href="#8pm" title='pm' data-ref="8pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_name" title='(anonymous struct)::file_name' data-ref="(anonymous)::file_name">file_name</a>);</td></tr>
+<tr><th id="189">189</th><td>      <b>goto</b> <a class="lbl" href="#15done" data-ref="15done">done</a>;</td></tr>
+<tr><th id="190">190</th><td>    }</td></tr>
+<tr><th id="191">191</th><td></td></tr>
+<tr><th id="192">192</th><td>  <b>if</b> (<a class="ref fn" href="../../../../include/unistd.h.html#read" title='read' data-ref="read">read</a> (<a class="local col0 ref" href="#10fd" title='fd' data-ref="10fd">fd</a>, &amp;<a class="local col3 ref" href="#13fh" title='fh' data-ref="13fh">fh</a>, <b>sizeof</b> (<a class="local col3 ref" href="#13fh" title='fh' data-ref="13fh">fh</a>)) != <b>sizeof</b> (<a class="local col3 ref" href="#13fh" title='fh' data-ref="13fh">fh</a>))</td></tr>
+<tr><th id="193">193</th><td>    {</td></tr>
+<tr><th id="194">194</th><td>      <a class="local col9 ref" href="#9error" title='error' data-ref="9error">error</a> =</td></tr>
+<tr><th id="195">195</th><td>	<a class="macro" href="../../vppinfra/error.h.html#102" title="_clib_error_return((0),((*__errno_location ())),(CLIB_ERROR_ERRNO_VALID),(char *)((char *) __FUNCTION__),&quot;read file header `%s&apos;&quot;, pm-&gt;file_name)" data-ref="_M/clib_error_return_unix">clib_error_return_unix</a> (<var>0</var>, <q>"read file header `%s'"</q>, <a class="local col8 ref" href="#8pm" title='pm' data-ref="8pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_name" title='(anonymous struct)::file_name' data-ref="(anonymous)::file_name">file_name</a>);</td></tr>
+<tr><th id="196">196</th><td>      <b>goto</b> <a class="lbl" href="#15done" data-ref="15done">done</a>;</td></tr>
+<tr><th id="197">197</th><td>    }</td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td>  <a class="local col1 ref" href="#11need_swap" title='need_swap' data-ref="11need_swap">need_swap</a> = <var>0</var>;</td></tr>
+<tr><th id="200">200</th><td>  <b>if</b> (<a class="local col3 ref" href="#13fh" title='fh' data-ref="13fh">fh</a>.<a class="ref field" href="pcap.h.html#96" title='(anonymous struct)::magic' data-ref="(anonymous)::magic">magic</a> == <var>0xd4c3b2a1</var>)</td></tr>
+<tr><th id="201">201</th><td>    {</td></tr>
+<tr><th id="202">202</th><td>      <a class="local col1 ref" href="#11need_swap" title='need_swap' data-ref="11need_swap">need_swap</a> = <var>1</var>;</td></tr>
+<tr><th id="203">203</th><td><u>#define <dfn class="macro" id="_M/_" data-ref="_M/_">_</dfn>(t,f) <a class="local col3 ref" href="#13fh" title='fh' data-ref="13fh">fh</a>.f = clib_byte_swap_##t (<a class="local col3 ref" href="#13fh" title='fh' data-ref="13fh">fh</a>.f);</u></td></tr>
+<tr><th id="204">204</th><td>      <a class="macro" href="pcap.h.html#71" title="fh.magic = clib_byte_swap_u32 (fh.magic); fh.major_version = clib_byte_swap_u16 (fh.major_version); fh.minor_version = clib_byte_swap_u16 (fh.minor_version); fh.time_zone = clib_byte_swap_u32 (fh.time_zone); fh.sigfigs = clib_byte_swap_u32 (fh.sigfigs); fh.max_packet_size_in_bytes = clib_byte_swap_u32 (fh.max_packet_size_in_bytes); fh.packet_type = clib_byte_swap_u32 (fh.packet_type);" data-ref="_M/foreach_pcap_file_header">foreach_pcap_file_header</a>;</td></tr>
+<tr><th id="205">205</th><td><u>#undef <a class="macro" href="#203" data-ref="_M/_">_</a></u></td></tr>
+<tr><th id="206">206</th><td>    }</td></tr>
+<tr><th id="207">207</th><td></td></tr>
+<tr><th id="208">208</th><td>  <b>if</b> (<a class="local col3 ref" href="#13fh" title='fh' data-ref="13fh">fh</a>.<a class="ref field" href="pcap.h.html#96" title='(anonymous struct)::magic' data-ref="(anonymous)::magic">magic</a> != <var>0xa1b2c3d4</var>)</td></tr>
+<tr><th id="209">209</th><td>    {</td></tr>
+<tr><th id="210">210</th><td>      <a class="local col9 ref" href="#9error" title='error' data-ref="9error">error</a> = <a class="macro" href="../../vppinfra/error.h.html#99" title="_clib_error_return((0),(0),(0),(char *)((char *) __FUNCTION__),&quot;bad magic `%s&apos;&quot;, pm-&gt;file_name)" data-ref="_M/clib_error_return">clib_error_return</a> (<var>0</var>, <q>"bad magic `%s'"</q>, <a class="local col8 ref" href="#8pm" title='pm' data-ref="8pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_name" title='(anonymous struct)::file_name' data-ref="(anonymous)::file_name">file_name</a>);</td></tr>
+<tr><th id="211">211</th><td>      <b>goto</b> <a class="lbl" href="#15done" data-ref="15done">done</a>;</td></tr>
+<tr><th id="212">212</th><td>    }</td></tr>
+<tr><th id="213">213</th><td></td></tr>
+<tr><th id="214">214</th><td>  <a class="local col8 ref" href="#8pm" title='pm' data-ref="8pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::min_packet_bytes" title='(anonymous struct)::min_packet_bytes' data-ref="(anonymous)::min_packet_bytes">min_packet_bytes</a> = <var>0</var>;</td></tr>
+<tr><th id="215">215</th><td>  <a class="local col8 ref" href="#8pm" title='pm' data-ref="8pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::max_packet_bytes" title='(anonymous struct)::max_packet_bytes' data-ref="(anonymous)::max_packet_bytes">max_packet_bytes</a> = <var>0</var>;</td></tr>
+<tr><th id="216">216</th><td>  <b>while</b> ((<a class="local col2 ref" href="#12n" title='n' data-ref="12n">n</a> = <a class="ref fn" href="../../../../include/unistd.h.html#read" title='read' data-ref="read">read</a> (<a class="local col0 ref" href="#10fd" title='fd' data-ref="10fd">fd</a>, &amp;<a class="local col4 ref" href="#14ph" title='ph' data-ref="14ph">ph</a>, <b>sizeof</b> (<a class="local col4 ref" href="#14ph" title='ph' data-ref="14ph">ph</a>))) != <var>0</var>)</td></tr>
+<tr><th id="217">217</th><td>    {</td></tr>
+<tr><th id="218">218</th><td>      <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col6 decl" id="16data" title='data' data-type='u8 *' data-ref="16data">data</dfn>;</td></tr>
+<tr><th id="219">219</th><td></td></tr>
+<tr><th id="220">220</th><td>      <b>if</b> (<a class="local col1 ref" href="#11need_swap" title='need_swap' data-ref="11need_swap">need_swap</a>)</td></tr>
+<tr><th id="221">221</th><td>	{</td></tr>
+<tr><th id="222">222</th><td><u>#define <dfn class="macro" id="_M/_" data-ref="_M/_">_</dfn>(t,f) <a class="local col4 ref" href="#14ph" title='ph' data-ref="14ph">ph</a>.f = clib_byte_swap_##t (<a class="local col4 ref" href="#14ph" title='ph' data-ref="14ph">ph</a>.f);</u></td></tr>
+<tr><th id="223">223</th><td>	  <a class="macro" href="pcap.h.html#100" title="ph.time_in_sec = clib_byte_swap_u32 (ph.time_in_sec); ph.time_in_usec = clib_byte_swap_u32 (ph.time_in_usec); ph.n_packet_bytes_stored_in_file = clib_byte_swap_u32 (ph.n_packet_bytes_stored_in_file); ph.n_bytes_in_packet = clib_byte_swap_u32 (ph.n_bytes_in_packet);" data-ref="_M/foreach_pcap_packet_header">foreach_pcap_packet_header</a>;</td></tr>
+<tr><th id="224">224</th><td><u>#undef <a class="macro" href="#222" data-ref="_M/_">_</a></u></td></tr>
+<tr><th id="225">225</th><td>	}</td></tr>
+<tr><th id="226">226</th><td></td></tr>
+<tr><th id="227">227</th><td>      <a class="local col6 ref" href="#16data" title='data' data-ref="16data">data</a> = <a class="macro" href="../../vppinfra/vec.h.html#306" title="({ word _vec_n = (ph.n_bytes_in_packet); _vec_resize ((u8 *) 0, _vec_n, _vec_n * sizeof (u8), (0), (0)); })" data-ref="_M/vec_new">vec_new</a> (<a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>, <a class="local col4 ref" href="#14ph" title='ph' data-ref="14ph">ph</a>.<a class="ref field" href="pcap.h.html#115" title='(anonymous struct)::n_bytes_in_packet' data-ref="(anonymous)::n_bytes_in_packet">n_bytes_in_packet</a>);</td></tr>
+<tr><th id="228">228</th><td>      <b>if</b> (<a class="ref fn" href="../../../../include/unistd.h.html#read" title='read' data-ref="read">read</a> (<a class="local col0 ref" href="#10fd" title='fd' data-ref="10fd">fd</a>, <a class="local col6 ref" href="#16data" title='data' data-ref="16data">data</a>, <a class="local col4 ref" href="#14ph" title='ph' data-ref="14ph">ph</a>.<a class="ref field" href="pcap.h.html#115" title='(anonymous struct)::n_packet_bytes_stored_in_file' data-ref="(anonymous)::n_packet_bytes_stored_in_file">n_packet_bytes_stored_in_file</a>) !=</td></tr>
+<tr><th id="229">229</th><td>	  <a class="local col4 ref" href="#14ph" title='ph' data-ref="14ph">ph</a>.<a class="ref field" href="pcap.h.html#115" title='(anonymous struct)::n_packet_bytes_stored_in_file' data-ref="(anonymous)::n_packet_bytes_stored_in_file">n_packet_bytes_stored_in_file</a>)</td></tr>
+<tr><th id="230">230</th><td>	{</td></tr>
+<tr><th id="231">231</th><td>	  <a class="local col9 ref" href="#9error" title='error' data-ref="9error">error</a> = <a class="macro" href="../../vppinfra/error.h.html#99" title="_clib_error_return((0),(0),(0),(char *)((char *) __FUNCTION__),&quot;short read `%s&apos;&quot;, pm-&gt;file_name)" data-ref="_M/clib_error_return">clib_error_return</a> (<var>0</var>, <q>"short read `%s'"</q>, <a class="local col8 ref" href="#8pm" title='pm' data-ref="8pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::file_name" title='(anonymous struct)::file_name' data-ref="(anonymous)::file_name">file_name</a>);</td></tr>
+<tr><th id="232">232</th><td>	  <b>goto</b> <a class="lbl" href="#15done" data-ref="15done">done</a>;</td></tr>
+<tr><th id="233">233</th><td>	}</td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td>      <b>if</b> (<a class="macro" href="../../vppinfra/vec_bootstrap.h.html#142" title="((pm-&gt;packets_read) ? (((vec_header_t *) (pm-&gt;packets_read) - 1)-&gt;len) : 0)" data-ref="_M/vec_len">vec_len</a> (<a class="local col8 ref" href="#8pm" title='pm' data-ref="8pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::packets_read" title='(anonymous struct)::packets_read' data-ref="(anonymous)::packets_read">packets_read</a>) == <var>0</var>)</td></tr>
+<tr><th id="236">236</th><td>	<a class="local col8 ref" href="#8pm" title='pm' data-ref="8pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::min_packet_bytes" title='(anonymous struct)::min_packet_bytes' data-ref="(anonymous)::min_packet_bytes">min_packet_bytes</a> = <a class="local col8 ref" href="#8pm" title='pm' data-ref="8pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::max_packet_bytes" title='(anonymous struct)::max_packet_bytes' data-ref="(anonymous)::max_packet_bytes">max_packet_bytes</a> = <a class="local col4 ref" href="#14ph" title='ph' data-ref="14ph">ph</a>.<a class="ref field" href="pcap.h.html#115" title='(anonymous struct)::n_bytes_in_packet' data-ref="(anonymous)::n_bytes_in_packet">n_bytes_in_packet</a>;</td></tr>
+<tr><th id="237">237</th><td>      <b>else</b></td></tr>
+<tr><th id="238">238</th><td>	{</td></tr>
+<tr><th id="239">239</th><td>	  <a class="local col8 ref" href="#8pm" title='pm' data-ref="8pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::min_packet_bytes" title='(anonymous struct)::min_packet_bytes' data-ref="(anonymous)::min_packet_bytes">min_packet_bytes</a> =</td></tr>
+<tr><th id="240">240</th><td>	    <a class="macro" href="../../vppinfra/clib.h.html#340" title="({ __typeof__ (pm-&gt;min_packet_bytes) _x = (pm-&gt;min_packet_bytes); __typeof__ (ph.n_bytes_in_packet) _y = (ph.n_bytes_in_packet); _x &lt; _y ? _x : _y; })" data-ref="_M/clib_min">clib_min</a> (<a class="local col8 ref" href="#8pm" title='pm' data-ref="8pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::min_packet_bytes" title='(anonymous struct)::min_packet_bytes' data-ref="(anonymous)::min_packet_bytes">min_packet_bytes</a>, <a class="local col4 ref" href="#14ph" title='ph' data-ref="14ph">ph</a>.<a class="ref field" href="pcap.h.html#115" title='(anonymous struct)::n_bytes_in_packet' data-ref="(anonymous)::n_bytes_in_packet">n_bytes_in_packet</a>);</td></tr>
+<tr><th id="241">241</th><td>	  <a class="local col8 ref" href="#8pm" title='pm' data-ref="8pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::max_packet_bytes" title='(anonymous struct)::max_packet_bytes' data-ref="(anonymous)::max_packet_bytes">max_packet_bytes</a> =</td></tr>
+<tr><th id="242">242</th><td>	    <a class="macro" href="../../vppinfra/clib.h.html#333" title="({ __typeof__ (pm-&gt;max_packet_bytes) _x = (pm-&gt;max_packet_bytes); __typeof__ (ph.n_bytes_in_packet) _y = (ph.n_bytes_in_packet); _x &gt; _y ? _x : _y; })" data-ref="_M/clib_max">clib_max</a> (<a class="local col8 ref" href="#8pm" title='pm' data-ref="8pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::max_packet_bytes" title='(anonymous struct)::max_packet_bytes' data-ref="(anonymous)::max_packet_bytes">max_packet_bytes</a>, <a class="local col4 ref" href="#14ph" title='ph' data-ref="14ph">ph</a>.<a class="ref field" href="pcap.h.html#115" title='(anonymous struct)::n_bytes_in_packet' data-ref="(anonymous)::n_bytes_in_packet">n_bytes_in_packet</a>);</td></tr>
+<tr><th id="243">243</th><td>	}</td></tr>
+<tr><th id="244">244</th><td></td></tr>
+<tr><th id="245">245</th><td>      <a class="macro" href="../../vppinfra/vec.h.html#520" title="do { word _vec_l = ((pm-&gt;packets_read) ? (((vec_header_t *) (pm-&gt;packets_read) - 1)-&gt;len) : 0); pm-&gt;packets_read = _vec_resize ((pm-&gt;packets_read), 1, (_vec_l + 1) * sizeof ((pm-&gt;packets_read)[0]), (0), (0)); (pm-&gt;packets_read)[_vec_l] = (data); } while (0)" data-ref="_M/vec_add1">vec_add1</a> (<a class="local col8 ref" href="#8pm" title='pm' data-ref="8pm">pm</a>-&gt;<a class="ref field" href="pcap.h.html#(anonymous)::packets_read" title='(anonymous struct)::packets_read' data-ref="(anonymous)::packets_read">packets_read</a>, <a class="local col6 ref" href="#16data" title='data' data-ref="16data">data</a>);</td></tr>
+<tr><th id="246">246</th><td>    }</td></tr>
+<tr><th id="247">247</th><td></td></tr>
+<tr><th id="248">248</th><td><dfn class="lbl" id="15done" data-ref="15done">done</dfn>:</td></tr>
+<tr><th id="249">249</th><td>  <b>if</b> (<a class="local col0 ref" href="#10fd" title='fd' data-ref="10fd">fd</a> &gt;= <var>0</var>)</td></tr>
+<tr><th id="250">250</th><td>    <a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a> (<a class="local col0 ref" href="#10fd" title='fd' data-ref="10fd">fd</a>);</td></tr>
+<tr><th id="251">251</th><td>  <b>return</b> <a class="local col9 ref" href="#9error" title='error' data-ref="9error">error</a>;</td></tr>
+<tr><th id="252">252</th><td></td></tr>
+<tr><th id="253">253</th><td>}</td></tr>
+<tr><th id="254">254</th><td></td></tr>
+<tr><th id="255">255</th><td><i>/*</i></td></tr>
+<tr><th id="256">256</th><td><i> * fd.io coding-style-patch-verification: ON</i></td></tr>
+<tr><th id="257">257</th><td><i> *</i></td></tr>
+<tr><th id="258">258</th><td><i> * Local Variables:</i></td></tr>
+<tr><th id="259">259</th><td><i> * eval: (c-set-style "gnu")</i></td></tr>
+<tr><th id="260">260</th><td><i> * End:</i></td></tr>
+<tr><th id="261">261</th><td><i> */</i></td></tr>
+<tr><th id="262">262</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-29</em> from project vpp_1804 revision <em>18.04</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

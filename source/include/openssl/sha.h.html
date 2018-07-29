@@ -1,0 +1,219 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>sha.h source code [include/openssl/sha.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="SHA256state_st,SHA512state_st,SHAstate_st "/>
+<link rel="stylesheet" href="../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'include/openssl/sha.h'; var root_path = '../..'; var data_path = '../../../data';</script>
+<script src='../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='..'>include</a>/<a href='./'>openssl</a>/<a href='sha.h.html'>sha.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* crypto/sha/sha.h */</i></td></tr>
+<tr><th id="2">2</th><td><i>/* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)</i></td></tr>
+<tr><th id="3">3</th><td><i> * All rights reserved.</i></td></tr>
+<tr><th id="4">4</th><td><i> *</i></td></tr>
+<tr><th id="5">5</th><td><i> * This package is an SSL implementation written</i></td></tr>
+<tr><th id="6">6</th><td><i> * by Eric Young (eay@cryptsoft.com).</i></td></tr>
+<tr><th id="7">7</th><td><i> * The implementation was written so as to conform with Netscapes SSL.</i></td></tr>
+<tr><th id="8">8</th><td><i> *</i></td></tr>
+<tr><th id="9">9</th><td><i> * This library is free for commercial and non-commercial use as long as</i></td></tr>
+<tr><th id="10">10</th><td><i> * the following conditions are aheared to.  The following conditions</i></td></tr>
+<tr><th id="11">11</th><td><i> * apply to all code found in this distribution, be it the RC4, RSA,</i></td></tr>
+<tr><th id="12">12</th><td><i> * lhash, DES, etc., code; not just the SSL code.  The SSL documentation</i></td></tr>
+<tr><th id="13">13</th><td><i> * included with this distribution is covered by the same copyright terms</i></td></tr>
+<tr><th id="14">14</th><td><i> * except that the holder is Tim Hudson (tjh@cryptsoft.com).</i></td></tr>
+<tr><th id="15">15</th><td><i> *</i></td></tr>
+<tr><th id="16">16</th><td><i> * Copyright remains Eric Young's, and as such any Copyright notices in</i></td></tr>
+<tr><th id="17">17</th><td><i> * the code are not to be removed.</i></td></tr>
+<tr><th id="18">18</th><td><i> * If this package is used in a product, Eric Young should be given attribution</i></td></tr>
+<tr><th id="19">19</th><td><i> * as the author of the parts of the library used.</i></td></tr>
+<tr><th id="20">20</th><td><i> * This can be in the form of a textual message at program startup or</i></td></tr>
+<tr><th id="21">21</th><td><i> * in documentation (online or textual) provided with the package.</i></td></tr>
+<tr><th id="22">22</th><td><i> *</i></td></tr>
+<tr><th id="23">23</th><td><i> * Redistribution and use in source and binary forms, with or without</i></td></tr>
+<tr><th id="24">24</th><td><i> * modification, are permitted provided that the following conditions</i></td></tr>
+<tr><th id="25">25</th><td><i> * are met:</i></td></tr>
+<tr><th id="26">26</th><td><i> * 1. Redistributions of source code must retain the copyright</i></td></tr>
+<tr><th id="27">27</th><td><i> *    notice, this list of conditions and the following disclaimer.</i></td></tr>
+<tr><th id="28">28</th><td><i> * 2. Redistributions in binary form must reproduce the above copyright</i></td></tr>
+<tr><th id="29">29</th><td><i> *    notice, this list of conditions and the following disclaimer in the</i></td></tr>
+<tr><th id="30">30</th><td><i> *    documentation and/or other materials provided with the distribution.</i></td></tr>
+<tr><th id="31">31</th><td><i> * 3. All advertising materials mentioning features or use of this software</i></td></tr>
+<tr><th id="32">32</th><td><i> *    must display the following acknowledgement:</i></td></tr>
+<tr><th id="33">33</th><td><i> *    "This product includes cryptographic software written by</i></td></tr>
+<tr><th id="34">34</th><td><i> *     Eric Young (eay@cryptsoft.com)"</i></td></tr>
+<tr><th id="35">35</th><td><i> *    The word 'cryptographic' can be left out if the rouines from the library</i></td></tr>
+<tr><th id="36">36</th><td><i> *    being used are not cryptographic related :-).</i></td></tr>
+<tr><th id="37">37</th><td><i> * 4. If you include any Windows specific code (or a derivative thereof) from</i></td></tr>
+<tr><th id="38">38</th><td><i> *    the apps directory (application code) you must include an acknowledgement:</i></td></tr>
+<tr><th id="39">39</th><td><i> *    "This product includes software written by Tim Hudson (tjh@cryptsoft.com)"</i></td></tr>
+<tr><th id="40">40</th><td><i> *</i></td></tr>
+<tr><th id="41">41</th><td><i> * THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND</i></td></tr>
+<tr><th id="42">42</th><td><i> * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE</i></td></tr>
+<tr><th id="43">43</th><td><i> * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE</i></td></tr>
+<tr><th id="44">44</th><td><i> * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE</i></td></tr>
+<tr><th id="45">45</th><td><i> * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL</i></td></tr>
+<tr><th id="46">46</th><td><i> * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS</i></td></tr>
+<tr><th id="47">47</th><td><i> * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)</i></td></tr>
+<tr><th id="48">48</th><td><i> * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</i></td></tr>
+<tr><th id="49">49</th><td><i> * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY</i></td></tr>
+<tr><th id="50">50</th><td><i> * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF</i></td></tr>
+<tr><th id="51">51</th><td><i> * SUCH DAMAGE.</i></td></tr>
+<tr><th id="52">52</th><td><i> *</i></td></tr>
+<tr><th id="53">53</th><td><i> * The licence and distribution terms for any publically available version or</i></td></tr>
+<tr><th id="54">54</th><td><i> * derivative of this code cannot be changed.  i.e. this code cannot simply be</i></td></tr>
+<tr><th id="55">55</th><td><i> * copied and put under another distribution licence</i></td></tr>
+<tr><th id="56">56</th><td><i> * [including the GNU Public Licence.]</i></td></tr>
+<tr><th id="57">57</th><td><i> */</i></td></tr>
+<tr><th id="58">58</th><td></td></tr>
+<tr><th id="59">59</th><td><u>#<span data-ppcond="59">ifndef</span> <span class="macro" data-ref="_M/HEADER_SHA_H">HEADER_SHA_H</span></u></td></tr>
+<tr><th id="60">60</th><td><u># define <dfn class="macro" id="_M/HEADER_SHA_H" data-ref="_M/HEADER_SHA_H">HEADER_SHA_H</dfn></u></td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td><u># include <a href="e_os2.h.html">&lt;openssl/e_os2.h&gt;</a></u></td></tr>
+<tr><th id="63">63</th><td><u># include &lt;stddef.h&gt;</u></td></tr>
+<tr><th id="64">64</th><td></td></tr>
+<tr><th id="65">65</th><td><u>#<span data-ppcond="65">ifdef</span>  <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="66">66</th><td><b>extern</b> <q>"C"</q> {</td></tr>
+<tr><th id="67">67</th><td><u>#<span data-ppcond="65">endif</span></u></td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td><u># <span data-ppcond="69">if</span> defined(<span class="macro" data-ref="_M/OPENSSL_NO_SHA">OPENSSL_NO_SHA</span>) || (defined(<span class="macro" data-ref="_M/OPENSSL_NO_SHA0">OPENSSL_NO_SHA0</span>) &amp;&amp; defined(<span class="macro" data-ref="_M/OPENSSL_NO_SHA1">OPENSSL_NO_SHA1</span>))</u></td></tr>
+<tr><th id="70">70</th><td><u>#  error SHA is disabled.</u></td></tr>
+<tr><th id="71">71</th><td><u># <span data-ppcond="69">endif</span></u></td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td><u># <span data-ppcond="73">if</span> defined(<a class="macro" href="opensslconf-x86_64.h.html#67" data-ref="_M/OPENSSL_FIPS">OPENSSL_FIPS</a>)</u></td></tr>
+<tr><th id="74">74</th><td><u>#  define <dfn class="macro" id="_M/FIPS_SHA_SIZE_T" data-ref="_M/FIPS_SHA_SIZE_T">FIPS_SHA_SIZE_T</dfn> size_t</u></td></tr>
+<tr><th id="75">75</th><td><u># <span data-ppcond="73">endif</span></u></td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td><i>/*-</i></td></tr>
+<tr><th id="78">78</th><td><i> * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!</i></td></tr>
+<tr><th id="79">79</th><td><i> * ! SHA_LONG has to be at least 32 bits wide. If it's wider, then !</i></td></tr>
+<tr><th id="80">80</th><td><i> * ! SHA_LONG_LOG2 has to be defined along.                        !</i></td></tr>
+<tr><th id="81">81</th><td><i> * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!</i></td></tr>
+<tr><th id="82">82</th><td><i> */</i></td></tr>
+<tr><th id="83">83</th><td></td></tr>
+<tr><th id="84">84</th><td><u># <span data-ppcond="84">if</span> defined(<span class="macro" data-ref="_M/__LP32__">__LP32__</span>)</u></td></tr>
+<tr><th id="85">85</th><td><u>#  define SHA_LONG unsigned long</u></td></tr>
+<tr><th id="86">86</th><td><u># <span data-ppcond="84">elif</span> defined(<span class="macro" data-ref="_M/OPENSSL_SYS_CRAY">OPENSSL_SYS_CRAY</span>) || defined(<span class="macro" data-ref="_M/__ILP64__">__ILP64__</span>)</u></td></tr>
+<tr><th id="87">87</th><td><u>#  define SHA_LONG unsigned long</u></td></tr>
+<tr><th id="88">88</th><td><u>#  define SHA_LONG_LOG2 3</u></td></tr>
+<tr><th id="89">89</th><td><u># <span data-ppcond="84">else</span></u></td></tr>
+<tr><th id="90">90</th><td><u>#  define <dfn class="macro" id="_M/SHA_LONG" data-ref="_M/SHA_LONG">SHA_LONG</dfn> unsigned int</u></td></tr>
+<tr><th id="91">91</th><td><u># <span data-ppcond="84">endif</span></u></td></tr>
+<tr><th id="92">92</th><td></td></tr>
+<tr><th id="93">93</th><td><u># define <dfn class="macro" id="_M/SHA_LBLOCK" data-ref="_M/SHA_LBLOCK">SHA_LBLOCK</dfn>      16</u></td></tr>
+<tr><th id="94">94</th><td><u># define <dfn class="macro" id="_M/SHA_CBLOCK" data-ref="_M/SHA_CBLOCK">SHA_CBLOCK</dfn>      (SHA_LBLOCK*4)/* SHA treats input data as a</u></td></tr>
+<tr><th id="95">95</th><td><u>                                        * contiguous array of 32 bit wide</u></td></tr>
+<tr><th id="96">96</th><td><u>                                        * big-endian values. */</u></td></tr>
+<tr><th id="97">97</th><td><u># define <dfn class="macro" id="_M/SHA_LAST_BLOCK" data-ref="_M/SHA_LAST_BLOCK">SHA_LAST_BLOCK</dfn>  (SHA_CBLOCK-8)</u></td></tr>
+<tr><th id="98">98</th><td><u># define <dfn class="macro" id="_M/SHA_DIGEST_LENGTH" data-ref="_M/SHA_DIGEST_LENGTH">SHA_DIGEST_LENGTH</dfn> 20</u></td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="SHAstate_st" title='SHAstate_st' data-ref="SHAstate_st"><a class="type" href="#SHAstate_st" title='SHAstate_st' data-ref="SHAstate_st">SHAstate_st</a></dfn> {</td></tr>
+<tr><th id="101">101</th><td>    <a class="macro" href="#90" title="unsigned int" data-ref="_M/SHA_LONG">SHA_LONG</a> <dfn class="decl field" id="SHAstate_st::h0" title='SHAstate_st::h0' data-ref="SHAstate_st::h0">h0</dfn>, <dfn class="decl field" id="SHAstate_st::h1" title='SHAstate_st::h1' data-ref="SHAstate_st::h1">h1</dfn>, <dfn class="decl field" id="SHAstate_st::h2" title='SHAstate_st::h2' data-ref="SHAstate_st::h2">h2</dfn>, <dfn class="decl field" id="SHAstate_st::h3" title='SHAstate_st::h3' data-ref="SHAstate_st::h3">h3</dfn>, <dfn class="decl field" id="SHAstate_st::h4" title='SHAstate_st::h4' data-ref="SHAstate_st::h4">h4</dfn>;</td></tr>
+<tr><th id="102">102</th><td>    <a class="macro" href="#90" title="unsigned int" data-ref="_M/SHA_LONG">SHA_LONG</a> <dfn class="decl field" id="SHAstate_st::Nl" title='SHAstate_st::Nl' data-ref="SHAstate_st::Nl">Nl</dfn>, <dfn class="decl field" id="SHAstate_st::Nh" title='SHAstate_st::Nh' data-ref="SHAstate_st::Nh">Nh</dfn>;</td></tr>
+<tr><th id="103">103</th><td>    <a class="macro" href="#90" title="unsigned int" data-ref="_M/SHA_LONG">SHA_LONG</a> <dfn class="decl field" id="SHAstate_st::data" title='SHAstate_st::data' data-ref="SHAstate_st::data">data</dfn>[<a class="macro" href="#93" title="16" data-ref="_M/SHA_LBLOCK">SHA_LBLOCK</a>];</td></tr>
+<tr><th id="104">104</th><td>    <em>unsigned</em> <em>int</em> <dfn class="decl field" id="SHAstate_st::num" title='SHAstate_st::num' data-ref="SHAstate_st::num">num</dfn>;</td></tr>
+<tr><th id="105">105</th><td>} <dfn class="typedef" id="SHA_CTX" title='SHA_CTX' data-type='struct SHAstate_st' data-ref="SHA_CTX">SHA_CTX</dfn>;</td></tr>
+<tr><th id="106">106</th><td></td></tr>
+<tr><th id="107">107</th><td><u># <span data-ppcond="107">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_SHA0">OPENSSL_NO_SHA0</span></u></td></tr>
+<tr><th id="108">108</th><td><em>int</em> <dfn class="decl fn" id="SHA_Init" title='SHA_Init' data-ref="SHA_Init">SHA_Init</dfn>(<a class="typedef" href="#SHA_CTX" title='SHA_CTX' data-type='struct SHAstate_st' data-ref="SHA_CTX">SHA_CTX</a> *<dfn class="local col1 decl" id="1c" title='c' data-type='SHA_CTX *' data-ref="1c">c</dfn>);</td></tr>
+<tr><th id="109">109</th><td><em>int</em> <dfn class="decl fn" id="SHA_Update" title='SHA_Update' data-ref="SHA_Update">SHA_Update</dfn>(<a class="typedef" href="#SHA_CTX" title='SHA_CTX' data-type='struct SHAstate_st' data-ref="SHA_CTX">SHA_CTX</a> *<dfn class="local col2 decl" id="2c" title='c' data-type='SHA_CTX *' data-ref="2c">c</dfn>, <em>const</em> <em>void</em> *<dfn class="local col3 decl" id="3data" title='data' data-type='const void *' data-ref="3data">data</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col4 decl" id="4len" title='len' data-type='size_t' data-ref="4len">len</dfn>);</td></tr>
+<tr><th id="110">110</th><td><em>int</em> <dfn class="decl fn" id="SHA_Final" title='SHA_Final' data-ref="SHA_Final">SHA_Final</dfn>(<em>unsigned</em> <em>char</em> *<dfn class="local col5 decl" id="5md" title='md' data-type='unsigned char *' data-ref="5md">md</dfn>, <a class="typedef" href="#SHA_CTX" title='SHA_CTX' data-type='struct SHAstate_st' data-ref="SHA_CTX">SHA_CTX</a> *<dfn class="local col6 decl" id="6c" title='c' data-type='SHA_CTX *' data-ref="6c">c</dfn>);</td></tr>
+<tr><th id="111">111</th><td><em>unsigned</em> <em>char</em> *<dfn class="decl fn" id="SHA" title='SHA' data-ref="SHA">SHA</dfn>(<em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col7 decl" id="7d" title='d' data-type='const unsigned char *' data-ref="7d">d</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col8 decl" id="8n" title='n' data-type='size_t' data-ref="8n">n</dfn>, <em>unsigned</em> <em>char</em> *<dfn class="local col9 decl" id="9md" title='md' data-type='unsigned char *' data-ref="9md">md</dfn>);</td></tr>
+<tr><th id="112">112</th><td><em>void</em> <dfn class="decl fn" id="SHA_Transform" title='SHA_Transform' data-ref="SHA_Transform">SHA_Transform</dfn>(<a class="typedef" href="#SHA_CTX" title='SHA_CTX' data-type='struct SHAstate_st' data-ref="SHA_CTX">SHA_CTX</a> *<dfn class="local col0 decl" id="10c" title='c' data-type='SHA_CTX *' data-ref="10c">c</dfn>, <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col1 decl" id="11data" title='data' data-type='const unsigned char *' data-ref="11data">data</dfn>);</td></tr>
+<tr><th id="113">113</th><td><u># <span data-ppcond="107">endif</span></u></td></tr>
+<tr><th id="114">114</th><td><u># <span data-ppcond="114">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_SHA1">OPENSSL_NO_SHA1</span></u></td></tr>
+<tr><th id="115">115</th><td><em>int</em> <dfn class="decl fn" id="SHA1_Init" title='SHA1_Init' data-ref="SHA1_Init">SHA1_Init</dfn>(<a class="typedef" href="#SHA_CTX" title='SHA_CTX' data-type='struct SHAstate_st' data-ref="SHA_CTX">SHA_CTX</a> *<dfn class="local col2 decl" id="12c" title='c' data-type='SHA_CTX *' data-ref="12c">c</dfn>);</td></tr>
+<tr><th id="116">116</th><td><em>int</em> <dfn class="decl fn" id="SHA1_Update" title='SHA1_Update' data-ref="SHA1_Update">SHA1_Update</dfn>(<a class="typedef" href="#SHA_CTX" title='SHA_CTX' data-type='struct SHAstate_st' data-ref="SHA_CTX">SHA_CTX</a> *<dfn class="local col3 decl" id="13c" title='c' data-type='SHA_CTX *' data-ref="13c">c</dfn>, <em>const</em> <em>void</em> *<dfn class="local col4 decl" id="14data" title='data' data-type='const void *' data-ref="14data">data</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col5 decl" id="15len" title='len' data-type='size_t' data-ref="15len">len</dfn>);</td></tr>
+<tr><th id="117">117</th><td><em>int</em> <dfn class="decl fn" id="SHA1_Final" title='SHA1_Final' data-ref="SHA1_Final">SHA1_Final</dfn>(<em>unsigned</em> <em>char</em> *<dfn class="local col6 decl" id="16md" title='md' data-type='unsigned char *' data-ref="16md">md</dfn>, <a class="typedef" href="#SHA_CTX" title='SHA_CTX' data-type='struct SHAstate_st' data-ref="SHA_CTX">SHA_CTX</a> *<dfn class="local col7 decl" id="17c" title='c' data-type='SHA_CTX *' data-ref="17c">c</dfn>);</td></tr>
+<tr><th id="118">118</th><td><em>unsigned</em> <em>char</em> *<dfn class="decl fn" id="SHA1" title='SHA1' data-ref="SHA1">SHA1</dfn>(<em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col8 decl" id="18d" title='d' data-type='const unsigned char *' data-ref="18d">d</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col9 decl" id="19n" title='n' data-type='size_t' data-ref="19n">n</dfn>, <em>unsigned</em> <em>char</em> *<dfn class="local col0 decl" id="20md" title='md' data-type='unsigned char *' data-ref="20md">md</dfn>);</td></tr>
+<tr><th id="119">119</th><td><em>void</em> <dfn class="decl fn" id="SHA1_Transform" title='SHA1_Transform' data-ref="SHA1_Transform">SHA1_Transform</dfn>(<a class="typedef" href="#SHA_CTX" title='SHA_CTX' data-type='struct SHAstate_st' data-ref="SHA_CTX">SHA_CTX</a> *<dfn class="local col1 decl" id="21c" title='c' data-type='SHA_CTX *' data-ref="21c">c</dfn>, <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col2 decl" id="22data" title='data' data-type='const unsigned char *' data-ref="22data">data</dfn>);</td></tr>
+<tr><th id="120">120</th><td><u># <span data-ppcond="114">endif</span></u></td></tr>
+<tr><th id="121">121</th><td></td></tr>
+<tr><th id="122">122</th><td><u># define <dfn class="macro" id="_M/SHA256_CBLOCK" data-ref="_M/SHA256_CBLOCK">SHA256_CBLOCK</dfn>   (SHA_LBLOCK*4)/* SHA-256 treats input data as a</u></td></tr>
+<tr><th id="123">123</th><td><u>                                        * contiguous array of 32 bit wide</u></td></tr>
+<tr><th id="124">124</th><td><u>                                        * big-endian values. */</u></td></tr>
+<tr><th id="125">125</th><td><u># define <dfn class="macro" id="_M/SHA224_DIGEST_LENGTH" data-ref="_M/SHA224_DIGEST_LENGTH">SHA224_DIGEST_LENGTH</dfn>    28</u></td></tr>
+<tr><th id="126">126</th><td><u># define <dfn class="macro" id="_M/SHA256_DIGEST_LENGTH" data-ref="_M/SHA256_DIGEST_LENGTH">SHA256_DIGEST_LENGTH</dfn>    32</u></td></tr>
+<tr><th id="127">127</th><td></td></tr>
+<tr><th id="128">128</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="SHA256state_st" title='SHA256state_st' data-ref="SHA256state_st"><a class="type" href="#SHA256state_st" title='SHA256state_st' data-ref="SHA256state_st">SHA256state_st</a></dfn> {</td></tr>
+<tr><th id="129">129</th><td>    <a class="macro" href="#90" title="unsigned int" data-ref="_M/SHA_LONG">SHA_LONG</a> <dfn class="decl field" id="SHA256state_st::h" title='SHA256state_st::h' data-ref="SHA256state_st::h">h</dfn>[<var>8</var>];</td></tr>
+<tr><th id="130">130</th><td>    <a class="macro" href="#90" title="unsigned int" data-ref="_M/SHA_LONG">SHA_LONG</a> <dfn class="decl field" id="SHA256state_st::Nl" title='SHA256state_st::Nl' data-ref="SHA256state_st::Nl">Nl</dfn>, <dfn class="decl field" id="SHA256state_st::Nh" title='SHA256state_st::Nh' data-ref="SHA256state_st::Nh">Nh</dfn>;</td></tr>
+<tr><th id="131">131</th><td>    <a class="macro" href="#90" title="unsigned int" data-ref="_M/SHA_LONG">SHA_LONG</a> <dfn class="decl field" id="SHA256state_st::data" title='SHA256state_st::data' data-ref="SHA256state_st::data">data</dfn>[<a class="macro" href="#93" title="16" data-ref="_M/SHA_LBLOCK">SHA_LBLOCK</a>];</td></tr>
+<tr><th id="132">132</th><td>    <em>unsigned</em> <em>int</em> <dfn class="decl field" id="SHA256state_st::num" title='SHA256state_st::num' data-ref="SHA256state_st::num">num</dfn>, <dfn class="decl field" id="SHA256state_st::md_len" title='SHA256state_st::md_len' data-ref="SHA256state_st::md_len">md_len</dfn>;</td></tr>
+<tr><th id="133">133</th><td>} <dfn class="typedef" id="SHA256_CTX" title='SHA256_CTX' data-type='struct SHA256state_st' data-ref="SHA256_CTX">SHA256_CTX</dfn>;</td></tr>
+<tr><th id="134">134</th><td></td></tr>
+<tr><th id="135">135</th><td><u># <span data-ppcond="135">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_SHA256">OPENSSL_NO_SHA256</span></u></td></tr>
+<tr><th id="136">136</th><td><em>int</em> <dfn class="decl fn" id="SHA224_Init" title='SHA224_Init' data-ref="SHA224_Init">SHA224_Init</dfn>(<a class="typedef" href="#SHA256_CTX" title='SHA256_CTX' data-type='struct SHA256state_st' data-ref="SHA256_CTX">SHA256_CTX</a> *<dfn class="local col3 decl" id="23c" title='c' data-type='SHA256_CTX *' data-ref="23c">c</dfn>);</td></tr>
+<tr><th id="137">137</th><td><em>int</em> <dfn class="decl fn" id="SHA224_Update" title='SHA224_Update' data-ref="SHA224_Update">SHA224_Update</dfn>(<a class="typedef" href="#SHA256_CTX" title='SHA256_CTX' data-type='struct SHA256state_st' data-ref="SHA256_CTX">SHA256_CTX</a> *<dfn class="local col4 decl" id="24c" title='c' data-type='SHA256_CTX *' data-ref="24c">c</dfn>, <em>const</em> <em>void</em> *<dfn class="local col5 decl" id="25data" title='data' data-type='const void *' data-ref="25data">data</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col6 decl" id="26len" title='len' data-type='size_t' data-ref="26len">len</dfn>);</td></tr>
+<tr><th id="138">138</th><td><em>int</em> <dfn class="decl fn" id="SHA224_Final" title='SHA224_Final' data-ref="SHA224_Final">SHA224_Final</dfn>(<em>unsigned</em> <em>char</em> *<dfn class="local col7 decl" id="27md" title='md' data-type='unsigned char *' data-ref="27md">md</dfn>, <a class="typedef" href="#SHA256_CTX" title='SHA256_CTX' data-type='struct SHA256state_st' data-ref="SHA256_CTX">SHA256_CTX</a> *<dfn class="local col8 decl" id="28c" title='c' data-type='SHA256_CTX *' data-ref="28c">c</dfn>);</td></tr>
+<tr><th id="139">139</th><td><em>unsigned</em> <em>char</em> *<dfn class="decl fn" id="SHA224" title='SHA224' data-ref="SHA224">SHA224</dfn>(<em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col9 decl" id="29d" title='d' data-type='const unsigned char *' data-ref="29d">d</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col0 decl" id="30n" title='n' data-type='size_t' data-ref="30n">n</dfn>, <em>unsigned</em> <em>char</em> *<dfn class="local col1 decl" id="31md" title='md' data-type='unsigned char *' data-ref="31md">md</dfn>);</td></tr>
+<tr><th id="140">140</th><td><em>int</em> <dfn class="decl fn" id="SHA256_Init" title='SHA256_Init' data-ref="SHA256_Init">SHA256_Init</dfn>(<a class="typedef" href="#SHA256_CTX" title='SHA256_CTX' data-type='struct SHA256state_st' data-ref="SHA256_CTX">SHA256_CTX</a> *<dfn class="local col2 decl" id="32c" title='c' data-type='SHA256_CTX *' data-ref="32c">c</dfn>);</td></tr>
+<tr><th id="141">141</th><td><em>int</em> <dfn class="decl fn" id="SHA256_Update" title='SHA256_Update' data-ref="SHA256_Update">SHA256_Update</dfn>(<a class="typedef" href="#SHA256_CTX" title='SHA256_CTX' data-type='struct SHA256state_st' data-ref="SHA256_CTX">SHA256_CTX</a> *<dfn class="local col3 decl" id="33c" title='c' data-type='SHA256_CTX *' data-ref="33c">c</dfn>, <em>const</em> <em>void</em> *<dfn class="local col4 decl" id="34data" title='data' data-type='const void *' data-ref="34data">data</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col5 decl" id="35len" title='len' data-type='size_t' data-ref="35len">len</dfn>);</td></tr>
+<tr><th id="142">142</th><td><em>int</em> <dfn class="decl fn" id="SHA256_Final" title='SHA256_Final' data-ref="SHA256_Final">SHA256_Final</dfn>(<em>unsigned</em> <em>char</em> *<dfn class="local col6 decl" id="36md" title='md' data-type='unsigned char *' data-ref="36md">md</dfn>, <a class="typedef" href="#SHA256_CTX" title='SHA256_CTX' data-type='struct SHA256state_st' data-ref="SHA256_CTX">SHA256_CTX</a> *<dfn class="local col7 decl" id="37c" title='c' data-type='SHA256_CTX *' data-ref="37c">c</dfn>);</td></tr>
+<tr><th id="143">143</th><td><em>unsigned</em> <em>char</em> *<dfn class="decl fn" id="SHA256" title='SHA256' data-ref="SHA256">SHA256</dfn>(<em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col8 decl" id="38d" title='d' data-type='const unsigned char *' data-ref="38d">d</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col9 decl" id="39n" title='n' data-type='size_t' data-ref="39n">n</dfn>, <em>unsigned</em> <em>char</em> *<dfn class="local col0 decl" id="40md" title='md' data-type='unsigned char *' data-ref="40md">md</dfn>);</td></tr>
+<tr><th id="144">144</th><td><em>void</em> <dfn class="decl fn" id="SHA256_Transform" title='SHA256_Transform' data-ref="SHA256_Transform">SHA256_Transform</dfn>(<a class="typedef" href="#SHA256_CTX" title='SHA256_CTX' data-type='struct SHA256state_st' data-ref="SHA256_CTX">SHA256_CTX</a> *<dfn class="local col1 decl" id="41c" title='c' data-type='SHA256_CTX *' data-ref="41c">c</dfn>, <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col2 decl" id="42data" title='data' data-type='const unsigned char *' data-ref="42data">data</dfn>);</td></tr>
+<tr><th id="145">145</th><td><u># <span data-ppcond="135">endif</span></u></td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td><u># define <dfn class="macro" id="_M/SHA384_DIGEST_LENGTH" data-ref="_M/SHA384_DIGEST_LENGTH">SHA384_DIGEST_LENGTH</dfn>    48</u></td></tr>
+<tr><th id="148">148</th><td><u># define <dfn class="macro" id="_M/SHA512_DIGEST_LENGTH" data-ref="_M/SHA512_DIGEST_LENGTH">SHA512_DIGEST_LENGTH</dfn>    64</u></td></tr>
+<tr><th id="149">149</th><td></td></tr>
+<tr><th id="150">150</th><td><u># <span data-ppcond="150">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_SHA512">OPENSSL_NO_SHA512</span></u></td></tr>
+<tr><th id="151">151</th><td><i>/*</i></td></tr>
+<tr><th id="152">152</th><td><i> * Unlike 32-bit digest algorithms, SHA-512 *relies* on SHA_LONG64</i></td></tr>
+<tr><th id="153">153</th><td><i> * being exactly 64-bit wide. See Implementation Notes in sha512.c</i></td></tr>
+<tr><th id="154">154</th><td><i> * for further details.</i></td></tr>
+<tr><th id="155">155</th><td><i> */</i></td></tr>
+<tr><th id="156">156</th><td><i>/*</i></td></tr>
+<tr><th id="157">157</th><td><i> * SHA-512 treats input data as a</i></td></tr>
+<tr><th id="158">158</th><td><i> * contiguous array of 64 bit</i></td></tr>
+<tr><th id="159">159</th><td><i> * wide big-endian values.</i></td></tr>
+<tr><th id="160">160</th><td><i> */</i></td></tr>
+<tr><th id="161">161</th><td><u>#  define <dfn class="macro" id="_M/SHA512_CBLOCK" data-ref="_M/SHA512_CBLOCK">SHA512_CBLOCK</dfn>   (SHA_LBLOCK*8)</u></td></tr>
+<tr><th id="162">162</th><td><u>#  <span data-ppcond="162">if</span> (defined(<span class="macro" data-ref="_M/_WIN32">_WIN32</span>) || defined(<span class="macro" data-ref="_M/_WIN64">_WIN64</span>)) &amp;&amp; !defined(<span class="macro" data-ref="_M/__MINGW32__">__MINGW32__</span>)</u></td></tr>
+<tr><th id="163">163</th><td><u>#   define SHA_LONG64 unsigned __int64</u></td></tr>
+<tr><th id="164">164</th><td><u>#   define U64(C)     C##UI64</u></td></tr>
+<tr><th id="165">165</th><td><u>#  <span data-ppcond="162">elif</span> defined(<span class="macro" data-ref="_M/__arch64__">__arch64__</span>)</u></td></tr>
+<tr><th id="166">166</th><td><u>#   define SHA_LONG64 unsigned long</u></td></tr>
+<tr><th id="167">167</th><td><u>#   define U64(C)     C##UL</u></td></tr>
+<tr><th id="168">168</th><td><u>#  <span data-ppcond="162">else</span></u></td></tr>
+<tr><th id="169">169</th><td><u>#   define <dfn class="macro" id="_M/SHA_LONG64" data-ref="_M/SHA_LONG64">SHA_LONG64</dfn> unsigned long long</u></td></tr>
+<tr><th id="170">170</th><td><u>#   define <dfn class="macro" id="_M/U64" data-ref="_M/U64">U64</dfn>(C)     C##ULL</u></td></tr>
+<tr><th id="171">171</th><td><u>#  <span data-ppcond="162">endif</span></u></td></tr>
+<tr><th id="172">172</th><td></td></tr>
+<tr><th id="173">173</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="SHA512state_st" title='SHA512state_st' data-ref="SHA512state_st"><a class="type" href="#SHA512state_st" title='SHA512state_st' data-ref="SHA512state_st">SHA512state_st</a></dfn> {</td></tr>
+<tr><th id="174">174</th><td>    <a class="macro" href="#169" title="unsigned long long" data-ref="_M/SHA_LONG64">SHA_LONG64</a> <dfn class="decl field" id="SHA512state_st::h" title='SHA512state_st::h' data-ref="SHA512state_st::h">h</dfn>[<var>8</var>];</td></tr>
+<tr><th id="175">175</th><td>    <a class="macro" href="#169" title="unsigned long long" data-ref="_M/SHA_LONG64">SHA_LONG64</a> <dfn class="decl field" id="SHA512state_st::Nl" title='SHA512state_st::Nl' data-ref="SHA512state_st::Nl">Nl</dfn>, <dfn class="decl field" id="SHA512state_st::Nh" title='SHA512state_st::Nh' data-ref="SHA512state_st::Nh">Nh</dfn>;</td></tr>
+<tr><th id="176">176</th><td>    <b>union</b> {</td></tr>
+<tr><th id="177">177</th><td>        <a class="macro" href="#169" title="unsigned long long" data-ref="_M/SHA_LONG64">SHA_LONG64</a> <dfn class="decl field" id="SHA512state_st::(anonymous)::d" title='SHA512state_st::(anonymous union)::d' data-ref="SHA512state_st::(anonymous)::d">d</dfn>[<a class="macro" href="#93" title="16" data-ref="_M/SHA_LBLOCK">SHA_LBLOCK</a>];</td></tr>
+<tr><th id="178">178</th><td>        <em>unsigned</em> <em>char</em> <dfn class="decl field" id="SHA512state_st::(anonymous)::p" title='SHA512state_st::(anonymous union)::p' data-ref="SHA512state_st::(anonymous)::p">p</dfn>[<a class="macro" href="#161" title="(16*8)" data-ref="_M/SHA512_CBLOCK">SHA512_CBLOCK</a>];</td></tr>
+<tr><th id="179">179</th><td>    } <dfn class="decl field" id="SHA512state_st::u" title='SHA512state_st::u' data-ref="SHA512state_st::u">u</dfn>;</td></tr>
+<tr><th id="180">180</th><td>    <em>unsigned</em> <em>int</em> <dfn class="decl field" id="SHA512state_st::num" title='SHA512state_st::num' data-ref="SHA512state_st::num">num</dfn>, <dfn class="decl field" id="SHA512state_st::md_len" title='SHA512state_st::md_len' data-ref="SHA512state_st::md_len">md_len</dfn>;</td></tr>
+<tr><th id="181">181</th><td>} <dfn class="typedef" id="SHA512_CTX" title='SHA512_CTX' data-type='struct SHA512state_st' data-ref="SHA512_CTX">SHA512_CTX</dfn>;</td></tr>
+<tr><th id="182">182</th><td><u># <span data-ppcond="150">endif</span></u></td></tr>
+<tr><th id="183">183</th><td></td></tr>
+<tr><th id="184">184</th><td><u># <span data-ppcond="184">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_SHA512">OPENSSL_NO_SHA512</span></u></td></tr>
+<tr><th id="185">185</th><td><em>int</em> <dfn class="decl fn" id="SHA384_Init" title='SHA384_Init' data-ref="SHA384_Init">SHA384_Init</dfn>(<a class="typedef" href="#SHA512_CTX" title='SHA512_CTX' data-type='struct SHA512state_st' data-ref="SHA512_CTX">SHA512_CTX</a> *<dfn class="local col3 decl" id="43c" title='c' data-type='SHA512_CTX *' data-ref="43c">c</dfn>);</td></tr>
+<tr><th id="186">186</th><td><em>int</em> <dfn class="decl fn" id="SHA384_Update" title='SHA384_Update' data-ref="SHA384_Update">SHA384_Update</dfn>(<a class="typedef" href="#SHA512_CTX" title='SHA512_CTX' data-type='struct SHA512state_st' data-ref="SHA512_CTX">SHA512_CTX</a> *<dfn class="local col4 decl" id="44c" title='c' data-type='SHA512_CTX *' data-ref="44c">c</dfn>, <em>const</em> <em>void</em> *<dfn class="local col5 decl" id="45data" title='data' data-type='const void *' data-ref="45data">data</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col6 decl" id="46len" title='len' data-type='size_t' data-ref="46len">len</dfn>);</td></tr>
+<tr><th id="187">187</th><td><em>int</em> <dfn class="decl fn" id="SHA384_Final" title='SHA384_Final' data-ref="SHA384_Final">SHA384_Final</dfn>(<em>unsigned</em> <em>char</em> *<dfn class="local col7 decl" id="47md" title='md' data-type='unsigned char *' data-ref="47md">md</dfn>, <a class="typedef" href="#SHA512_CTX" title='SHA512_CTX' data-type='struct SHA512state_st' data-ref="SHA512_CTX">SHA512_CTX</a> *<dfn class="local col8 decl" id="48c" title='c' data-type='SHA512_CTX *' data-ref="48c">c</dfn>);</td></tr>
+<tr><th id="188">188</th><td><em>unsigned</em> <em>char</em> *<dfn class="decl fn" id="SHA384" title='SHA384' data-ref="SHA384">SHA384</dfn>(<em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col9 decl" id="49d" title='d' data-type='const unsigned char *' data-ref="49d">d</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col0 decl" id="50n" title='n' data-type='size_t' data-ref="50n">n</dfn>, <em>unsigned</em> <em>char</em> *<dfn class="local col1 decl" id="51md" title='md' data-type='unsigned char *' data-ref="51md">md</dfn>);</td></tr>
+<tr><th id="189">189</th><td><em>int</em> <dfn class="decl fn" id="SHA512_Init" title='SHA512_Init' data-ref="SHA512_Init">SHA512_Init</dfn>(<a class="typedef" href="#SHA512_CTX" title='SHA512_CTX' data-type='struct SHA512state_st' data-ref="SHA512_CTX">SHA512_CTX</a> *<dfn class="local col2 decl" id="52c" title='c' data-type='SHA512_CTX *' data-ref="52c">c</dfn>);</td></tr>
+<tr><th id="190">190</th><td><em>int</em> <dfn class="decl fn" id="SHA512_Update" title='SHA512_Update' data-ref="SHA512_Update">SHA512_Update</dfn>(<a class="typedef" href="#SHA512_CTX" title='SHA512_CTX' data-type='struct SHA512state_st' data-ref="SHA512_CTX">SHA512_CTX</a> *<dfn class="local col3 decl" id="53c" title='c' data-type='SHA512_CTX *' data-ref="53c">c</dfn>, <em>const</em> <em>void</em> *<dfn class="local col4 decl" id="54data" title='data' data-type='const void *' data-ref="54data">data</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col5 decl" id="55len" title='len' data-type='size_t' data-ref="55len">len</dfn>);</td></tr>
+<tr><th id="191">191</th><td><em>int</em> <dfn class="decl fn" id="SHA512_Final" title='SHA512_Final' data-ref="SHA512_Final">SHA512_Final</dfn>(<em>unsigned</em> <em>char</em> *<dfn class="local col6 decl" id="56md" title='md' data-type='unsigned char *' data-ref="56md">md</dfn>, <a class="typedef" href="#SHA512_CTX" title='SHA512_CTX' data-type='struct SHA512state_st' data-ref="SHA512_CTX">SHA512_CTX</a> *<dfn class="local col7 decl" id="57c" title='c' data-type='SHA512_CTX *' data-ref="57c">c</dfn>);</td></tr>
+<tr><th id="192">192</th><td><em>unsigned</em> <em>char</em> *<dfn class="decl fn" id="SHA512" title='SHA512' data-ref="SHA512">SHA512</dfn>(<em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col8 decl" id="58d" title='d' data-type='const unsigned char *' data-ref="58d">d</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col9 decl" id="59n" title='n' data-type='size_t' data-ref="59n">n</dfn>, <em>unsigned</em> <em>char</em> *<dfn class="local col0 decl" id="60md" title='md' data-type='unsigned char *' data-ref="60md">md</dfn>);</td></tr>
+<tr><th id="193">193</th><td><em>void</em> <dfn class="decl fn" id="SHA512_Transform" title='SHA512_Transform' data-ref="SHA512_Transform">SHA512_Transform</dfn>(<a class="typedef" href="#SHA512_CTX" title='SHA512_CTX' data-type='struct SHA512state_st' data-ref="SHA512_CTX">SHA512_CTX</a> *<dfn class="local col1 decl" id="61c" title='c' data-type='SHA512_CTX *' data-ref="61c">c</dfn>, <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col2 decl" id="62data" title='data' data-type='const unsigned char *' data-ref="62data">data</dfn>);</td></tr>
+<tr><th id="194">194</th><td><u># <span data-ppcond="184">endif</span></u></td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td><u>#<span data-ppcond="196">ifdef</span>  <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="197">197</th><td>}</td></tr>
+<tr><th id="198">198</th><td><u>#<span data-ppcond="196">endif</span></u></td></tr>
+<tr><th id="199">199</th><td></td></tr>
+<tr><th id="200">200</th><td><u>#<span data-ppcond="59">endif</span></u></td></tr>
+<tr><th id="201">201</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../vpp_1804/build-root/build-vpp_debug-native/dpdk/dpdk-stable-18.02.1/drivers/crypto/qat/qat_adf/qat_algs_build_desc.c.html'>vpp_1804/build-root/build-vpp_debug-native/dpdk/dpdk-stable-18.02.1/drivers/crypto/qat/qat_adf/qat_algs_build_desc.c</a><br/>Generated on <em>2018-Jul-29</em> from project include<br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

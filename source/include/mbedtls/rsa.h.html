@@ -1,0 +1,1156 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>rsa.h source code [include/mbedtls/rsa.h] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'include/mbedtls/rsa.h'; var root_path = '../..'; var data_path = '../../../data';</script>
+<script src='../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='..'>include</a>/<a href='./'>mbedtls</a>/<a href='rsa.h.html'>rsa.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="2">2</th><td><i class="doc"> *<span class="command"> \file</span> rsa.h</i></td></tr>
+<tr><th id="3">3</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="4">4</th><td><i class="doc"> * <span class="command">\brief</span> The RSA public-key cryptosystem.</i></td></tr>
+<tr><th id="5">5</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="6">6</th><td><i class="doc"> * For more information, see <span class="tag">&lt;em&gt;</span>Public-Key Cryptography Standards (PKCS)</i></td></tr>
+<tr><th id="7">7</th><td><i class="doc"> * #1 v1.5: RSA Encryption<span class="tag">&lt;/em&gt;</span> and <span class="tag">&lt;em&gt;</span>Public-Key Cryptography Standards</i></td></tr>
+<tr><th id="8">8</th><td><i class="doc"> * (PKCS) #1 v2.1: RSA Cryptography Specifications<span class="tag">&lt;/em&gt;</span>.</i></td></tr>
+<tr><th id="9">9</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="10">10</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="11">11</th><td><i>/*</i></td></tr>
+<tr><th id="12">12</th><td><i> *  Copyright (C) 2006-2018, Arm Limited (or its affiliates), All Rights Reserved</i></td></tr>
+<tr><th id="13">13</th><td><i> *  SPDX-License-Identifier: Apache-2.0</i></td></tr>
+<tr><th id="14">14</th><td><i> *</i></td></tr>
+<tr><th id="15">15</th><td><i> *  Licensed under the Apache License, Version 2.0 (the "License"); you may</i></td></tr>
+<tr><th id="16">16</th><td><i> *  not use this file except in compliance with the License.</i></td></tr>
+<tr><th id="17">17</th><td><i> *  You may obtain a copy of the License at</i></td></tr>
+<tr><th id="18">18</th><td><i> *</i></td></tr>
+<tr><th id="19">19</th><td><i> *  <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></i></td></tr>
+<tr><th id="20">20</th><td><i> *</i></td></tr>
+<tr><th id="21">21</th><td><i> *  Unless required by applicable law or agreed to in writing, software</i></td></tr>
+<tr><th id="22">22</th><td><i> *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT</i></td></tr>
+<tr><th id="23">23</th><td><i> *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</i></td></tr>
+<tr><th id="24">24</th><td><i> *  See the License for the specific language governing permissions and</i></td></tr>
+<tr><th id="25">25</th><td><i> *  limitations under the License.</i></td></tr>
+<tr><th id="26">26</th><td><i> *</i></td></tr>
+<tr><th id="27">27</th><td><i> *  This file is part of Mbed TLS (<a href="https://tls.mbed.org">https://tls.mbed.org</a>)</i></td></tr>
+<tr><th id="28">28</th><td><i> */</i></td></tr>
+<tr><th id="29">29</th><td><u>#<span data-ppcond="29">ifndef</span> <span class="macro" data-ref="_M/MBEDTLS_RSA_H">MBEDTLS_RSA_H</span></u></td></tr>
+<tr><th id="30">30</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_RSA_H" data-ref="_M/MBEDTLS_RSA_H">MBEDTLS_RSA_H</dfn></u></td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><u>#<span data-ppcond="32">if</span> !defined(<span class="macro" data-ref="_M/MBEDTLS_CONFIG_FILE">MBEDTLS_CONFIG_FILE</span>)</u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="config.h.html">"config.h"</a></u></td></tr>
+<tr><th id="34">34</th><td><u>#<span data-ppcond="32">else</span></u></td></tr>
+<tr><th id="35">35</th><td><u>#include MBEDTLS_CONFIG_FILE</u></td></tr>
+<tr><th id="36">36</th><td><u>#<span data-ppcond="32">endif</span></u></td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><u>#include <a href="bignum.h.html">"bignum.h"</a></u></td></tr>
+<tr><th id="39">39</th><td><u>#include <a href="md.h.html">"md.h"</a></u></td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td><u>#<span data-ppcond="41">if</span> defined(<span class="macro" data-ref="_M/MBEDTLS_THREADING_C">MBEDTLS_THREADING_C</span>)</u></td></tr>
+<tr><th id="42">42</th><td><u>#include "threading.h"</u></td></tr>
+<tr><th id="43">43</th><td><u>#<span data-ppcond="41">endif</span></u></td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td><i>/*</i></td></tr>
+<tr><th id="46">46</th><td><i> * RSA Error codes</i></td></tr>
+<tr><th id="47">47</th><td><i> */</i></td></tr>
+<tr><th id="48">48</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_ERR_RSA_BAD_INPUT_DATA" data-ref="_M/MBEDTLS_ERR_RSA_BAD_INPUT_DATA">MBEDTLS_ERR_RSA_BAD_INPUT_DATA</dfn>                    -0x4080  /**&lt; Bad input parameters to function. */</u></td></tr>
+<tr><th id="49">49</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_ERR_RSA_INVALID_PADDING" data-ref="_M/MBEDTLS_ERR_RSA_INVALID_PADDING">MBEDTLS_ERR_RSA_INVALID_PADDING</dfn>                   -0x4100  /**&lt; Input data contains invalid padding and is rejected. */</u></td></tr>
+<tr><th id="50">50</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_ERR_RSA_KEY_GEN_FAILED" data-ref="_M/MBEDTLS_ERR_RSA_KEY_GEN_FAILED">MBEDTLS_ERR_RSA_KEY_GEN_FAILED</dfn>                    -0x4180  /**&lt; Something failed during generation of a key. */</u></td></tr>
+<tr><th id="51">51</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_ERR_RSA_KEY_CHECK_FAILED" data-ref="_M/MBEDTLS_ERR_RSA_KEY_CHECK_FAILED">MBEDTLS_ERR_RSA_KEY_CHECK_FAILED</dfn>                  -0x4200  /**&lt; Key failed to pass the validity check of the library. */</u></td></tr>
+<tr><th id="52">52</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_ERR_RSA_PUBLIC_FAILED" data-ref="_M/MBEDTLS_ERR_RSA_PUBLIC_FAILED">MBEDTLS_ERR_RSA_PUBLIC_FAILED</dfn>                     -0x4280  /**&lt; The public key operation failed. */</u></td></tr>
+<tr><th id="53">53</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_ERR_RSA_PRIVATE_FAILED" data-ref="_M/MBEDTLS_ERR_RSA_PRIVATE_FAILED">MBEDTLS_ERR_RSA_PRIVATE_FAILED</dfn>                    -0x4300  /**&lt; The private key operation failed. */</u></td></tr>
+<tr><th id="54">54</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_ERR_RSA_VERIFY_FAILED" data-ref="_M/MBEDTLS_ERR_RSA_VERIFY_FAILED">MBEDTLS_ERR_RSA_VERIFY_FAILED</dfn>                     -0x4380  /**&lt; The PKCS#1 verification failed. */</u></td></tr>
+<tr><th id="55">55</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_ERR_RSA_OUTPUT_TOO_LARGE" data-ref="_M/MBEDTLS_ERR_RSA_OUTPUT_TOO_LARGE">MBEDTLS_ERR_RSA_OUTPUT_TOO_LARGE</dfn>                  -0x4400  /**&lt; The output buffer for decryption is not large enough. */</u></td></tr>
+<tr><th id="56">56</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_ERR_RSA_RNG_FAILED" data-ref="_M/MBEDTLS_ERR_RSA_RNG_FAILED">MBEDTLS_ERR_RSA_RNG_FAILED</dfn>                        -0x4480  /**&lt; The random generator failed to generate non-zeros. */</u></td></tr>
+<tr><th id="57">57</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION" data-ref="_M/MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION">MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION</dfn>             -0x4500  /**&lt; The implementation does not offer the requested operation, for example, because of security violations or lack of functionality. */</u></td></tr>
+<tr><th id="58">58</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_ERR_RSA_HW_ACCEL_FAILED" data-ref="_M/MBEDTLS_ERR_RSA_HW_ACCEL_FAILED">MBEDTLS_ERR_RSA_HW_ACCEL_FAILED</dfn>                   -0x4580  /**&lt; RSA hardware accelerator failed. */</u></td></tr>
+<tr><th id="59">59</th><td></td></tr>
+<tr><th id="60">60</th><td><i>/*</i></td></tr>
+<tr><th id="61">61</th><td><i> * RSA constants</i></td></tr>
+<tr><th id="62">62</th><td><i> */</i></td></tr>
+<tr><th id="63">63</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_RSA_PUBLIC" data-ref="_M/MBEDTLS_RSA_PUBLIC">MBEDTLS_RSA_PUBLIC</dfn>      0 /**&lt; Request private key operation. */</u></td></tr>
+<tr><th id="64">64</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_RSA_PRIVATE" data-ref="_M/MBEDTLS_RSA_PRIVATE">MBEDTLS_RSA_PRIVATE</dfn>     1 /**&lt; Request public key operation. */</u></td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_RSA_PKCS_V15" data-ref="_M/MBEDTLS_RSA_PKCS_V15">MBEDTLS_RSA_PKCS_V15</dfn>    0 /**&lt; Use PKCS-1 v1.5 encoding. */</u></td></tr>
+<tr><th id="67">67</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_RSA_PKCS_V21" data-ref="_M/MBEDTLS_RSA_PKCS_V21">MBEDTLS_RSA_PKCS_V21</dfn>    1 /**&lt; Use PKCS-1 v2.1 encoding. */</u></td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_RSA_SIGN" data-ref="_M/MBEDTLS_RSA_SIGN">MBEDTLS_RSA_SIGN</dfn>        1 /**&lt; Identifier for RSA signature operations. */</u></td></tr>
+<tr><th id="70">70</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_RSA_CRYPT" data-ref="_M/MBEDTLS_RSA_CRYPT">MBEDTLS_RSA_CRYPT</dfn>       2 /**&lt; Identifier for RSA encryption and decryption operations. */</u></td></tr>
+<tr><th id="71">71</th><td></td></tr>
+<tr><th id="72">72</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_RSA_SALT_LEN_ANY" data-ref="_M/MBEDTLS_RSA_SALT_LEN_ANY">MBEDTLS_RSA_SALT_LEN_ANY</dfn>    -1</u></td></tr>
+<tr><th id="73">73</th><td></td></tr>
+<tr><th id="74">74</th><td><i>/*</i></td></tr>
+<tr><th id="75">75</th><td><i> * The above constants may be used even if the RSA module is compile out,</i></td></tr>
+<tr><th id="76">76</th><td><i> * eg for alternative (PKCS#11) RSA implemenations in the PK layers.</i></td></tr>
+<tr><th id="77">77</th><td><i> */</i></td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td><u>#<span data-ppcond="79">if</span> !defined(<span class="macro" data-ref="_M/MBEDTLS_RSA_ALT">MBEDTLS_RSA_ALT</span>)</u></td></tr>
+<tr><th id="80">80</th><td><i>// Regular implementation</i></td></tr>
+<tr><th id="81">81</th><td><i>//</i></td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td><u>#<span data-ppcond="83">ifdef</span> <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="84">84</th><td><b>extern</b> <q>"C"</q> {</td></tr>
+<tr><th id="85">85</th><td><u>#<span data-ppcond="83">endif</span></u></td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc"> * <span class="command">\brief</span>   The RSA context structure.</i></td></tr>
+<tr><th id="89">89</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc"> * <span class="command">\note</span>    Direct manipulation of the members of this structure</i></td></tr>
+<tr><th id="91">91</th><td><i class="doc"> *          is deprecated. All manipulation should instead be done through</i></td></tr>
+<tr><th id="92">92</th><td><i class="doc"> *          the public interface functions.</i></td></tr>
+<tr><th id="93">93</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="94">94</th><td><b>typedef</b> <b>struct</b></td></tr>
+<tr><th id="95">95</th><td>{</td></tr>
+<tr><th id="96">96</th><td>    <em>int</em> <dfn class="decl field" id="(anonymous)::ver" title='(anonymous struct)::ver' data-ref="(anonymous)::ver">ver</dfn>;                    <i class="doc">/*!&lt;  Always 0.*/</i></td></tr>
+<tr><th id="97">97</th><td>    <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="decl field" id="(anonymous)::len" title='(anonymous struct)::len' data-ref="(anonymous)::len">len</dfn>;                 <i class="doc">/*!&lt;  The size of<span class="command"> \p</span> <span class="arg">N</span> in Bytes. */</i></td></tr>
+<tr><th id="98">98</th><td></td></tr>
+<tr><th id="99">99</th><td>    <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> <dfn class="decl field" id="(anonymous)::N" title='(anonymous struct)::N' data-ref="(anonymous)::N">N</dfn>;                      <i class="doc">/*!&lt;  The public modulus. */</i></td></tr>
+<tr><th id="100">100</th><td>    <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> <dfn class="decl field" id="(anonymous)::E" title='(anonymous struct)::E' data-ref="(anonymous)::E">E</dfn>;                      <i class="doc">/*!&lt;  The public exponent. */</i></td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td>    <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> <dfn class="decl field" id="(anonymous)::D" title='(anonymous struct)::D' data-ref="(anonymous)::D">D</dfn>;                      <i class="doc">/*!&lt;  The private exponent. */</i></td></tr>
+<tr><th id="103">103</th><td>    <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> <dfn class="decl field" id="(anonymous)::P" title='(anonymous struct)::P' data-ref="(anonymous)::P">P</dfn>;                      <i class="doc">/*!&lt;  The first prime factor. */</i></td></tr>
+<tr><th id="104">104</th><td>    <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> <dfn class="decl field" id="(anonymous)::Q" title='(anonymous struct)::Q' data-ref="(anonymous)::Q">Q</dfn>;                      <i class="doc">/*!&lt;  The second prime factor. */</i></td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td>    <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> <dfn class="decl field" id="(anonymous)::DP" title='(anonymous struct)::DP' data-ref="(anonymous)::DP">DP</dfn>;                     <i class="doc">/*!&lt; <span class="command"> \p</span> <span class="arg">D</span> % (P - 1)       */</i></td></tr>
+<tr><th id="107">107</th><td>    <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> <dfn class="decl field" id="(anonymous)::DQ" title='(anonymous struct)::DQ' data-ref="(anonymous)::DQ">DQ</dfn>;                     <i class="doc">/*!&lt; <span class="command"> \p</span> <span class="arg">D</span> % (Q - 1)       */</i></td></tr>
+<tr><th id="108">108</th><td>    <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> <dfn class="decl field" id="(anonymous)::QP" title='(anonymous struct)::QP' data-ref="(anonymous)::QP">QP</dfn>;                     <i class="doc">/*!&lt;  1 / (Q % P)       */</i></td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td>    <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> <dfn class="decl field" id="(anonymous)::RN" title='(anonymous struct)::RN' data-ref="(anonymous)::RN">RN</dfn>;                     <i class="doc">/*!&lt;  cached R^2 mod<span class="command"> \p</span> <span class="arg">N</span>  */</i></td></tr>
+<tr><th id="111">111</th><td></td></tr>
+<tr><th id="112">112</th><td>    <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> <dfn class="decl field" id="(anonymous)::RP" title='(anonymous struct)::RP' data-ref="(anonymous)::RP">RP</dfn>;                     <i class="doc">/*!&lt;  cached R^2 mod<span class="command"> \p</span> <span class="arg">P</span>  */</i></td></tr>
+<tr><th id="113">113</th><td>    <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> <dfn class="decl field" id="(anonymous)::RQ" title='(anonymous struct)::RQ' data-ref="(anonymous)::RQ">RQ</dfn>;                     <i class="doc">/*!&lt;  cached R^2 mod<span class="command"> \p</span> <span class="arg">Q</span>  */</i></td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td>    <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> <dfn class="decl field" id="(anonymous)::Vi" title='(anonymous struct)::Vi' data-ref="(anonymous)::Vi">Vi</dfn>;                     <i class="doc">/*!&lt;  The cached blinding value. */</i></td></tr>
+<tr><th id="116">116</th><td>    <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> <dfn class="decl field" id="(anonymous)::Vf" title='(anonymous struct)::Vf' data-ref="(anonymous)::Vf">Vf</dfn>;                     <i class="doc">/*!&lt;  The cached un-blinding value. */</i></td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td>    <em>int</em> <dfn class="decl field" id="(anonymous)::padding" title='(anonymous struct)::padding' data-ref="(anonymous)::padding">padding</dfn>;                <i class="doc">/*!&lt; Selects padding mode:</i></td></tr>
+<tr><th id="119">119</th><td><i class="doc">                                     #MBEDTLS_RSA_PKCS_V15 for 1.5 padding and</i></td></tr>
+<tr><th id="120">120</th><td><i class="doc">                                     #MBEDTLS_RSA_PKCS_V21 for OAEP or PSS. */</i></td></tr>
+<tr><th id="121">121</th><td>    <em>int</em> <dfn class="decl field" id="(anonymous)::hash_id" title='(anonymous struct)::hash_id' data-ref="(anonymous)::hash_id">hash_id</dfn>;                <i class="doc">/*!&lt; Hash identifier of mbedtls_md_type_t type,</i></td></tr>
+<tr><th id="122">122</th><td><i class="doc">                                     as specified in md.h for use in the MGF</i></td></tr>
+<tr><th id="123">123</th><td><i class="doc">                                     mask generating function used in the</i></td></tr>
+<tr><th id="124">124</th><td><i class="doc">                                     EME-OAEP and EMSA-PSS encodings. */</i></td></tr>
+<tr><th id="125">125</th><td><u>#<span data-ppcond="125">if</span> defined(<span class="macro" data-ref="_M/MBEDTLS_THREADING_C">MBEDTLS_THREADING_C</span>)</u></td></tr>
+<tr><th id="126">126</th><td>    mbedtls_threading_mutex_t mutex;    <i class="doc">/*!&lt;  Thread-safety mutex. */</i></td></tr>
+<tr><th id="127">127</th><td><u>#<span data-ppcond="125">endif</span></u></td></tr>
+<tr><th id="128">128</th><td>}</td></tr>
+<tr><th id="129">129</th><td><dfn class="typedef" id="mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</dfn>;</td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="132">132</th><td><i class="doc"> * <span class="command">\brief</span>          This function initializes an RSA context.</i></td></tr>
+<tr><th id="133">133</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="134">134</th><td><i class="doc"> * <span class="command">\note</span>           Set padding to #MBEDTLS_RSA_PKCS_V21 for the RSAES-OAEP</i></td></tr>
+<tr><th id="135">135</th><td><i class="doc"> *                 encryption scheme and the RSASSA-PSS signature scheme.</i></td></tr>
+<tr><th id="136">136</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="137">137</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The RSA context to initialize.</i></td></tr>
+<tr><th id="138">138</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">padding</span>  Selects padding mode: #MBEDTLS_RSA_PKCS_V15 or</i></td></tr>
+<tr><th id="139">139</th><td><i class="doc"> *                 #MBEDTLS_RSA_PKCS_V21.</i></td></tr>
+<tr><th id="140">140</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">hash_id</span>  The hash identifier of #mbedtls_md_type_t type, if</i></td></tr>
+<tr><th id="141">141</th><td><i class="doc"> *                <span class="command"> \p</span> <span class="arg">padding</span> is #MBEDTLS_RSA_PKCS_V21.</i></td></tr>
+<tr><th id="142">142</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="143">143</th><td><i class="doc"> * <span class="command">\note</span>           The<span class="command"> \p</span> <span class="arg">hash_id</span> parameter is ignored when using</i></td></tr>
+<tr><th id="144">144</th><td><i class="doc"> *                 #MBEDTLS_RSA_PKCS_V15 padding.</i></td></tr>
+<tr><th id="145">145</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="146">146</th><td><i class="doc"> * <span class="command">\note</span>           The choice of padding mode is strictly enforced for private key</i></td></tr>
+<tr><th id="147">147</th><td><i class="doc"> *                 operations, since there might be security concerns in</i></td></tr>
+<tr><th id="148">148</th><td><i class="doc"> *                 mixing padding modes. For public key operations it is</i></td></tr>
+<tr><th id="149">149</th><td><i class="doc"> *                 a default value, which can be overriden by calling specific</i></td></tr>
+<tr><th id="150">150</th><td><i class="doc"> *                <span class="command"> \c</span> <span class="arg">rsa_rsaes_xxx</span> or<span class="command"> \c</span> <span class="arg">rsa_rsassa_xxx</span> functions.</i></td></tr>
+<tr><th id="151">151</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="152">152</th><td><i class="doc"> * <span class="command">\note</span>           The hash selected in<span class="command"> \p</span> <span class="arg">hash_id</span> is always used for OEAP</i></td></tr>
+<tr><th id="153">153</th><td><i class="doc"> *                 encryption. For PSS signatures, it is always used for</i></td></tr>
+<tr><th id="154">154</th><td><i class="doc"> *                 making signatures, but can be overriden for verifying them.</i></td></tr>
+<tr><th id="155">155</th><td><i class="doc"> *                 If set to #MBEDTLS_MD_NONE, it is always overriden.</i></td></tr>
+<tr><th id="156">156</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="157">157</th><td><em>void</em> <dfn class="decl fn" id="mbedtls_rsa_init" title='mbedtls_rsa_init' data-ref="mbedtls_rsa_init">mbedtls_rsa_init</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col8 decl" id="248ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="248ctx">ctx</dfn>,</td></tr>
+<tr><th id="158">158</th><td>                       <em>int</em> <dfn class="local col9 decl" id="249padding" title='padding' data-type='int' data-ref="249padding">padding</dfn>,</td></tr>
+<tr><th id="159">159</th><td>                       <em>int</em> <dfn class="local col0 decl" id="250hash_id" title='hash_id' data-type='int' data-ref="250hash_id">hash_id</dfn>);</td></tr>
+<tr><th id="160">160</th><td></td></tr>
+<tr><th id="161">161</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="162">162</th><td><i class="doc"> * <span class="command">\brief</span>          This function imports a set of core parameters into an</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc"> *                 RSA context.</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The initialized RSA context to store the parameters in.</i></td></tr>
+<tr><th id="166">166</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">N</span>        The RSA modulus, or NULL.</i></td></tr>
+<tr><th id="167">167</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">P</span>        The first prime factor of<span class="command"> \p</span> <span class="arg">N,</span> or NULL.</i></td></tr>
+<tr><th id="168">168</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">Q</span>        The second prime factor of<span class="command"> \p</span> <span class="arg">N,</span> or NULL.</i></td></tr>
+<tr><th id="169">169</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">D</span>        The private exponent, or NULL.</i></td></tr>
+<tr><th id="170">170</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">E</span>        The public exponent, or NULL.</i></td></tr>
+<tr><th id="171">171</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc"> * <span class="command">\note</span>           This function can be called multiple times for successive</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc"> *                 imports, if the parameters are not simultaneously present.</i></td></tr>
+<tr><th id="174">174</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc"> *                 Any sequence of calls to this function should be followed</i></td></tr>
+<tr><th id="176">176</th><td><i class="doc"> *                 by a call to mbedtls_rsa_complete(), which checks and</i></td></tr>
+<tr><th id="177">177</th><td><i class="doc"> *                 completes the provided information to a ready-for-use</i></td></tr>
+<tr><th id="178">178</th><td><i class="doc"> *                 public or private RSA key.</i></td></tr>
+<tr><th id="179">179</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc"> * <span class="command">\note</span>           See mbedtls_rsa_complete() for more information on which</i></td></tr>
+<tr><th id="181">181</th><td><i class="doc"> *                 parameters are necessary to set up a private or public</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc"> *                 RSA key.</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc"> * <span class="command">\note</span>           The imported parameters are copied and need not be preserved</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc"> *                 for the lifetime of the RSA context being set up.</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="187">187</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success, or a non-zero error code on failure.</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="189">189</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_import" title='mbedtls_rsa_import' data-ref="mbedtls_rsa_import">mbedtls_rsa_import</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col1 decl" id="251ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="251ctx">ctx</dfn>,</td></tr>
+<tr><th id="190">190</th><td>                        <em>const</em> <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> *<dfn class="local col2 decl" id="252N" title='N' data-type='const mbedtls_mpi *' data-ref="252N">N</dfn>,</td></tr>
+<tr><th id="191">191</th><td>                        <em>const</em> <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> *<dfn class="local col3 decl" id="253P" title='P' data-type='const mbedtls_mpi *' data-ref="253P">P</dfn>, <em>const</em> <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> *<dfn class="local col4 decl" id="254Q" title='Q' data-type='const mbedtls_mpi *' data-ref="254Q">Q</dfn>,</td></tr>
+<tr><th id="192">192</th><td>                        <em>const</em> <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> *<dfn class="local col5 decl" id="255D" title='D' data-type='const mbedtls_mpi *' data-ref="255D">D</dfn>, <em>const</em> <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> *<dfn class="local col6 decl" id="256E" title='E' data-type='const mbedtls_mpi *' data-ref="256E">E</dfn> );</td></tr>
+<tr><th id="193">193</th><td></td></tr>
+<tr><th id="194">194</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc"> * <span class="command">\brief</span>          This function imports core RSA parameters, in raw big-endian</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc"> *                 binary format, into an RSA context.</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The initialized RSA context to store the parameters in.</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">N</span>        The RSA modulus, or NULL.</i></td></tr>
+<tr><th id="200">200</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">N_len</span>    The Byte length of<span class="command"> \p</span> <span class="arg">N,</span> ignored if<span class="command"> \p</span> <span class="arg">N</span> == NULL.</i></td></tr>
+<tr><th id="201">201</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">P</span>        The first prime factor of<span class="command"> \p</span> <span class="arg">N,</span> or NULL.</i></td></tr>
+<tr><th id="202">202</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">P_len</span>    The Byte length of<span class="command"> \p</span> <span class="arg">P,</span> ignored if<span class="command"> \p</span> <span class="arg">P</span> == NULL.</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">Q</span>        The second prime factor of<span class="command"> \p</span> <span class="arg">N,</span> or NULL.</i></td></tr>
+<tr><th id="204">204</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">Q_len</span>    The Byte length of<span class="command"> \p</span> <span class="arg">Q,</span> ignored if<span class="command"> \p</span> <span class="arg">Q</span> == NULL.</i></td></tr>
+<tr><th id="205">205</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">D</span>        The private exponent, or NULL.</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">D_len</span>    The Byte length of<span class="command"> \p</span> <span class="arg">D,</span> ignored if<span class="command"> \p</span> <span class="arg">D</span> == NULL.</i></td></tr>
+<tr><th id="207">207</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">E</span>        The public exponent, or NULL.</i></td></tr>
+<tr><th id="208">208</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">E_len</span>    The Byte length of<span class="command"> \p</span> <span class="arg">E,</span> ignored if<span class="command"> \p</span> <span class="arg">E</span> == NULL.</i></td></tr>
+<tr><th id="209">209</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="210">210</th><td><i class="doc"> * <span class="command">\note</span>           This function can be called multiple times for successive</i></td></tr>
+<tr><th id="211">211</th><td><i class="doc"> *                 imports, if the parameters are not simultaneously present.</i></td></tr>
+<tr><th id="212">212</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc"> *                 Any sequence of calls to this function should be followed</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc"> *                 by a call to mbedtls_rsa_complete(), which checks and</i></td></tr>
+<tr><th id="215">215</th><td><i class="doc"> *                 completes the provided information to a ready-for-use</i></td></tr>
+<tr><th id="216">216</th><td><i class="doc"> *                 public or private RSA key.</i></td></tr>
+<tr><th id="217">217</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="218">218</th><td><i class="doc"> * <span class="command">\note</span>           See mbedtls_rsa_complete() for more information on which</i></td></tr>
+<tr><th id="219">219</th><td><i class="doc"> *                 parameters are necessary to set up a private or public</i></td></tr>
+<tr><th id="220">220</th><td><i class="doc"> *                 RSA key.</i></td></tr>
+<tr><th id="221">221</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="222">222</th><td><i class="doc"> * <span class="command">\note</span>           The imported parameters are copied and need not be preserved</i></td></tr>
+<tr><th id="223">223</th><td><i class="doc"> *                 for the lifetime of the RSA context being set up.</i></td></tr>
+<tr><th id="224">224</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="225">225</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success, or a non-zero error code on failure.</i></td></tr>
+<tr><th id="226">226</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="227">227</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_import_raw" title='mbedtls_rsa_import_raw' data-ref="mbedtls_rsa_import_raw">mbedtls_rsa_import_raw</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col7 decl" id="257ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="257ctx">ctx</dfn>,</td></tr>
+<tr><th id="228">228</th><td>                            <em>unsigned</em> <em>char</em> <em>const</em> *<dfn class="local col8 decl" id="258N" title='N' data-type='const unsigned char *' data-ref="258N">N</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col9 decl" id="259N_len" title='N_len' data-type='size_t' data-ref="259N_len">N_len</dfn>,</td></tr>
+<tr><th id="229">229</th><td>                            <em>unsigned</em> <em>char</em> <em>const</em> *<dfn class="local col0 decl" id="260P" title='P' data-type='const unsigned char *' data-ref="260P">P</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col1 decl" id="261P_len" title='P_len' data-type='size_t' data-ref="261P_len">P_len</dfn>,</td></tr>
+<tr><th id="230">230</th><td>                            <em>unsigned</em> <em>char</em> <em>const</em> *<dfn class="local col2 decl" id="262Q" title='Q' data-type='const unsigned char *' data-ref="262Q">Q</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col3 decl" id="263Q_len" title='Q_len' data-type='size_t' data-ref="263Q_len">Q_len</dfn>,</td></tr>
+<tr><th id="231">231</th><td>                            <em>unsigned</em> <em>char</em> <em>const</em> *<dfn class="local col4 decl" id="264D" title='D' data-type='const unsigned char *' data-ref="264D">D</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col5 decl" id="265D_len" title='D_len' data-type='size_t' data-ref="265D_len">D_len</dfn>,</td></tr>
+<tr><th id="232">232</th><td>                            <em>unsigned</em> <em>char</em> <em>const</em> *<dfn class="local col6 decl" id="266E" title='E' data-type='const unsigned char *' data-ref="266E">E</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col7 decl" id="267E_len" title='E_len' data-type='size_t' data-ref="267E_len">E_len</dfn> );</td></tr>
+<tr><th id="233">233</th><td></td></tr>
+<tr><th id="234">234</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="235">235</th><td><i class="doc"> * <span class="command">\brief</span>          This function completes an RSA context from</i></td></tr>
+<tr><th id="236">236</th><td><i class="doc"> *                 a set of imported core parameters.</i></td></tr>
+<tr><th id="237">237</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="238">238</th><td><i class="doc"> *                 To setup an RSA public key, precisely<span class="command"> \p</span> <span class="arg">N</span> and<span class="command"> \p</span> <span class="arg">E</span></i></td></tr>
+<tr><th id="239">239</th><td><i class="doc"> *                 must have been imported.</i></td></tr>
+<tr><th id="240">240</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="241">241</th><td><i class="doc"> *                 To setup an RSA private key, sufficient information must</i></td></tr>
+<tr><th id="242">242</th><td><i class="doc"> *                 be present for the other parameters to be derivable.</i></td></tr>
+<tr><th id="243">243</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc"> *                 The default implementation supports the following:</i></td></tr>
+<tr><th id="245">245</th><td><i class="doc"> *                 <span class="tag">&lt;ul&gt;</span><span class="tag">&lt;li&gt;</span>Derive<span class="command"> \p</span> <span class="arg">P,</span><span class="command"> \p</span> <span class="arg">Q</span> from<span class="command"> \p</span> <span class="arg">N,</span><span class="command"> \p</span> <span class="arg">D,</span><span class="command"> \p</span> <span class="arg">E.</span><span class="tag">&lt;/li&gt;</span></i></td></tr>
+<tr><th id="246">246</th><td><i class="doc"> *                 <span class="tag">&lt;li&gt;</span>Derive<span class="command"> \p</span> <span class="arg">N,</span><span class="command"> \p</span> <span class="arg">D</span> from<span class="command"> \p</span> <span class="arg">P,</span><span class="command"> \p</span> <span class="arg">Q,</span><span class="command"> \p</span> <span class="arg">E.</span><span class="tag">&lt;/li&gt;</span><span class="tag">&lt;/ul&gt;</span></i></td></tr>
+<tr><th id="247">247</th><td><i class="doc"> *                 Alternative implementations need not support these.</i></td></tr>
+<tr><th id="248">248</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="249">249</th><td><i class="doc"> *                 If this function runs successfully, it guarantees that</i></td></tr>
+<tr><th id="250">250</th><td><i class="doc"> *                 the RSA context can be used for RSA operations without</i></td></tr>
+<tr><th id="251">251</th><td><i class="doc"> *                 the risk of failure or crash.</i></td></tr>
+<tr><th id="252">252</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="253">253</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The initialized RSA context holding imported parameters.</i></td></tr>
+<tr><th id="254">254</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="255">255</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success, or #MBEDTLS_ERR_RSA_BAD_INPUT_DATA if the</i></td></tr>
+<tr><th id="256">256</th><td><i class="doc"> *                 attempted derivations failed.</i></td></tr>
+<tr><th id="257">257</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="258">258</th><td><i class="doc"> * <span class="command">\warning</span>        This function need not perform consistency checks</i></td></tr>
+<tr><th id="259">259</th><td><i class="doc"> *                 for the imported parameters. In particular, parameters that</i></td></tr>
+<tr><th id="260">260</th><td><i class="doc"> *                 are not needed by the implementation might be silently</i></td></tr>
+<tr><th id="261">261</th><td><i class="doc"> *                 discarded and left unchecked. To check the consistency</i></td></tr>
+<tr><th id="262">262</th><td><i class="doc"> *                 of the key material, see mbedtls_rsa_check_privkey().</i></td></tr>
+<tr><th id="263">263</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="264">264</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="265">265</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_complete" title='mbedtls_rsa_complete' data-ref="mbedtls_rsa_complete">mbedtls_rsa_complete</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col8 decl" id="268ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="268ctx">ctx</dfn> );</td></tr>
+<tr><th id="266">266</th><td></td></tr>
+<tr><th id="267">267</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="268">268</th><td><i class="doc"> * <span class="command">\brief</span>          This function exports the core parameters of an RSA key.</i></td></tr>
+<tr><th id="269">269</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="270">270</th><td><i class="doc"> *                 If this function runs successfully, the non-NULL buffers</i></td></tr>
+<tr><th id="271">271</th><td><i class="doc"> *                 pointed to by<span class="command"> \p</span> <span class="arg">N,</span><span class="command"> \p</span> <span class="arg">P,</span><span class="command"> \p</span> <span class="arg">Q,</span><span class="command"> \p</span> <span class="arg">D,</span> and<span class="command"> \p</span> <span class="arg">E</span> are fully</i></td></tr>
+<tr><th id="272">272</th><td><i class="doc"> *                 written, with additional unused space filled leading by</i></td></tr>
+<tr><th id="273">273</th><td><i class="doc"> *                 zero Bytes.</i></td></tr>
+<tr><th id="274">274</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="275">275</th><td><i class="doc"> *                 Possible reasons for returning</i></td></tr>
+<tr><th id="276">276</th><td><i class="doc"> *                 #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION:<span class="tag">&lt;ul&gt;</span></i></td></tr>
+<tr><th id="277">277</th><td><i class="doc"> *                 <span class="tag">&lt;li&gt;</span>An alternative RSA implementation is in use, which</i></td></tr>
+<tr><th id="278">278</th><td><i class="doc"> *                 stores the key externally, and either cannot or should</i></td></tr>
+<tr><th id="279">279</th><td><i class="doc"> *                 not export it into RAM.<span class="tag">&lt;/li&gt;</span></i></td></tr>
+<tr><th id="280">280</th><td><i class="doc"> *                 <span class="tag">&lt;li&gt;</span>A SW or HW implementation might not support a certain</i></td></tr>
+<tr><th id="281">281</th><td><i class="doc"> *                 deduction. For example,<span class="command"> \p</span> <span class="arg">P,</span><span class="command"> \p</span> <span class="arg">Q</span> from<span class="command"> \p</span> <span class="arg">N,</span><span class="command"> \p</span> <span class="arg">D,</span></i></td></tr>
+<tr><th id="282">282</th><td><i class="doc"> *                 and<span class="command"> \p</span> <span class="arg">E</span> if the former are not part of the</i></td></tr>
+<tr><th id="283">283</th><td><i class="doc"> *                 implementation.<span class="tag">&lt;/li&gt;</span><span class="tag">&lt;/ul&gt;</span></i></td></tr>
+<tr><th id="284">284</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="285">285</th><td><i class="doc"> *                 If the function fails due to an unsupported operation,</i></td></tr>
+<tr><th id="286">286</th><td><i class="doc"> *                 the RSA context stays intact and remains usable.</i></td></tr>
+<tr><th id="287">287</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="288">288</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The initialized RSA context.</i></td></tr>
+<tr><th id="289">289</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">N</span>        The MPI to hold the RSA modulus, or NULL.</i></td></tr>
+<tr><th id="290">290</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">P</span>        The MPI to hold the first prime factor of<span class="command"> \p</span> <span class="arg">N,</span> or NULL.</i></td></tr>
+<tr><th id="291">291</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">Q</span>        The MPI to hold the second prime factor of<span class="command"> \p</span> <span class="arg">N,</span> or NULL.</i></td></tr>
+<tr><th id="292">292</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">D</span>        The MPI to hold the private exponent, or NULL.</i></td></tr>
+<tr><th id="293">293</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">E</span>        The MPI to hold the public exponent, or NULL.</i></td></tr>
+<tr><th id="294">294</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="295">295</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success,</i></td></tr>
+<tr><th id="296">296</th><td><i class="doc"> *                 #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION if exporting the</i></td></tr>
+<tr><th id="297">297</th><td><i class="doc"> *                 requested parameters cannot be done due to missing</i></td></tr>
+<tr><th id="298">298</th><td><i class="doc"> *                 functionality or because of security policies,</i></td></tr>
+<tr><th id="299">299</th><td><i class="doc"> *                 or a non-zero return code on any other failure.</i></td></tr>
+<tr><th id="300">300</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="301">301</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="302">302</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_export" title='mbedtls_rsa_export' data-ref="mbedtls_rsa_export">mbedtls_rsa_export</dfn>( <em>const</em> <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col9 decl" id="269ctx" title='ctx' data-type='const mbedtls_rsa_context *' data-ref="269ctx">ctx</dfn>,</td></tr>
+<tr><th id="303">303</th><td>                        <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> *<dfn class="local col0 decl" id="270N" title='N' data-type='mbedtls_mpi *' data-ref="270N">N</dfn>, <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> *<dfn class="local col1 decl" id="271P" title='P' data-type='mbedtls_mpi *' data-ref="271P">P</dfn>, <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> *<dfn class="local col2 decl" id="272Q" title='Q' data-type='mbedtls_mpi *' data-ref="272Q">Q</dfn>,</td></tr>
+<tr><th id="304">304</th><td>                        <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> *<dfn class="local col3 decl" id="273D" title='D' data-type='mbedtls_mpi *' data-ref="273D">D</dfn>, <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> *<dfn class="local col4 decl" id="274E" title='E' data-type='mbedtls_mpi *' data-ref="274E">E</dfn> );</td></tr>
+<tr><th id="305">305</th><td></td></tr>
+<tr><th id="306">306</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="307">307</th><td><i class="doc"> * <span class="command">\brief</span>          This function exports core parameters of an RSA key</i></td></tr>
+<tr><th id="308">308</th><td><i class="doc"> *                 in raw big-endian binary format.</i></td></tr>
+<tr><th id="309">309</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="310">310</th><td><i class="doc"> *                 If this function runs successfully, the non-NULL buffers</i></td></tr>
+<tr><th id="311">311</th><td><i class="doc"> *                 pointed to by<span class="command"> \p</span> <span class="arg">N,</span><span class="command"> \p</span> <span class="arg">P,</span><span class="command"> \p</span> <span class="arg">Q,</span><span class="command"> \p</span> <span class="arg">D,</span> and<span class="command"> \p</span> <span class="arg">E</span> are fully</i></td></tr>
+<tr><th id="312">312</th><td><i class="doc"> *                 written, with additional unused space filled leading by</i></td></tr>
+<tr><th id="313">313</th><td><i class="doc"> *                 zero Bytes.</i></td></tr>
+<tr><th id="314">314</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="315">315</th><td><i class="doc"> *                 Possible reasons for returning</i></td></tr>
+<tr><th id="316">316</th><td><i class="doc"> *                 #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION:<span class="tag">&lt;ul&gt;</span></i></td></tr>
+<tr><th id="317">317</th><td><i class="doc"> *                 <span class="tag">&lt;li&gt;</span>An alternative RSA implementation is in use, which</i></td></tr>
+<tr><th id="318">318</th><td><i class="doc"> *                 stores the key externally, and either cannot or should</i></td></tr>
+<tr><th id="319">319</th><td><i class="doc"> *                 not export it into RAM.<span class="tag">&lt;/li&gt;</span></i></td></tr>
+<tr><th id="320">320</th><td><i class="doc"> *                 <span class="tag">&lt;li&gt;</span>A SW or HW implementation might not support a certain</i></td></tr>
+<tr><th id="321">321</th><td><i class="doc"> *                 deduction. For example,<span class="command"> \p</span> <span class="arg">P,</span><span class="command"> \p</span> <span class="arg">Q</span> from<span class="command"> \p</span> <span class="arg">N,</span><span class="command"> \p</span> <span class="arg">D,</span></i></td></tr>
+<tr><th id="322">322</th><td><i class="doc"> *                 and<span class="command"> \p</span> <span class="arg">E</span> if the former are not part of the</i></td></tr>
+<tr><th id="323">323</th><td><i class="doc"> *                 implementation.<span class="tag">&lt;/li&gt;</span><span class="tag">&lt;/ul&gt;</span></i></td></tr>
+<tr><th id="324">324</th><td><i class="doc"> *                 If the function fails due to an unsupported operation,</i></td></tr>
+<tr><th id="325">325</th><td><i class="doc"> *                 the RSA context stays intact and remains usable.</i></td></tr>
+<tr><th id="326">326</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="327">327</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The initialized RSA context.</i></td></tr>
+<tr><th id="328">328</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">N</span>        The Byte array to store the RSA modulus, or NULL.</i></td></tr>
+<tr><th id="329">329</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">N_len</span>    The size of the buffer for the modulus.</i></td></tr>
+<tr><th id="330">330</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">P</span>        The Byte array to hold the first prime factor of<span class="command"> \p</span> <span class="arg">N,</span> or</i></td></tr>
+<tr><th id="331">331</th><td><i class="doc"> *                 NULL.</i></td></tr>
+<tr><th id="332">332</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">P_len</span>    The size of the buffer for the first prime factor.</i></td></tr>
+<tr><th id="333">333</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">Q</span>        The Byte array to hold the second prime factor of<span class="command"> \p</span> <span class="arg">N,</span> or</i></td></tr>
+<tr><th id="334">334</th><td><i class="doc">                   NULL.</i></td></tr>
+<tr><th id="335">335</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">Q_len</span>    The size of the buffer for the second prime factor.</i></td></tr>
+<tr><th id="336">336</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">D</span>        The Byte array to hold the private exponent, or NULL.</i></td></tr>
+<tr><th id="337">337</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">D_len</span>    The size of the buffer for the private exponent.</i></td></tr>
+<tr><th id="338">338</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">E</span>        The Byte array to hold the public exponent, or NULL.</i></td></tr>
+<tr><th id="339">339</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">E_len</span>    The size of the buffer for the public exponent.</i></td></tr>
+<tr><th id="340">340</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="341">341</th><td><i class="doc"> * <span class="command">\note</span>           The length fields are ignored if the corresponding</i></td></tr>
+<tr><th id="342">342</th><td><i class="doc"> *                 buffer pointers are NULL.</i></td></tr>
+<tr><th id="343">343</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="344">344</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success,</i></td></tr>
+<tr><th id="345">345</th><td><i class="doc"> *                 #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION if exporting the</i></td></tr>
+<tr><th id="346">346</th><td><i class="doc"> *                 requested parameters cannot be done due to missing</i></td></tr>
+<tr><th id="347">347</th><td><i class="doc"> *                 functionality or because of security policies,</i></td></tr>
+<tr><th id="348">348</th><td><i class="doc"> *                 or a non-zero return code on any other failure.</i></td></tr>
+<tr><th id="349">349</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="350">350</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_export_raw" title='mbedtls_rsa_export_raw' data-ref="mbedtls_rsa_export_raw">mbedtls_rsa_export_raw</dfn>( <em>const</em> <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col5 decl" id="275ctx" title='ctx' data-type='const mbedtls_rsa_context *' data-ref="275ctx">ctx</dfn>,</td></tr>
+<tr><th id="351">351</th><td>                            <em>unsigned</em> <em>char</em> *<dfn class="local col6 decl" id="276N" title='N' data-type='unsigned char *' data-ref="276N">N</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col7 decl" id="277N_len" title='N_len' data-type='size_t' data-ref="277N_len">N_len</dfn>,</td></tr>
+<tr><th id="352">352</th><td>                            <em>unsigned</em> <em>char</em> *<dfn class="local col8 decl" id="278P" title='P' data-type='unsigned char *' data-ref="278P">P</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col9 decl" id="279P_len" title='P_len' data-type='size_t' data-ref="279P_len">P_len</dfn>,</td></tr>
+<tr><th id="353">353</th><td>                            <em>unsigned</em> <em>char</em> *<dfn class="local col0 decl" id="280Q" title='Q' data-type='unsigned char *' data-ref="280Q">Q</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col1 decl" id="281Q_len" title='Q_len' data-type='size_t' data-ref="281Q_len">Q_len</dfn>,</td></tr>
+<tr><th id="354">354</th><td>                            <em>unsigned</em> <em>char</em> *<dfn class="local col2 decl" id="282D" title='D' data-type='unsigned char *' data-ref="282D">D</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col3 decl" id="283D_len" title='D_len' data-type='size_t' data-ref="283D_len">D_len</dfn>,</td></tr>
+<tr><th id="355">355</th><td>                            <em>unsigned</em> <em>char</em> *<dfn class="local col4 decl" id="284E" title='E' data-type='unsigned char *' data-ref="284E">E</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col5 decl" id="285E_len" title='E_len' data-type='size_t' data-ref="285E_len">E_len</dfn> );</td></tr>
+<tr><th id="356">356</th><td></td></tr>
+<tr><th id="357">357</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="358">358</th><td><i class="doc"> * <span class="command">\brief</span>          This function exports CRT parameters of a private RSA key.</i></td></tr>
+<tr><th id="359">359</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="360">360</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The initialized RSA context.</i></td></tr>
+<tr><th id="361">361</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">DP</span>       The MPI to hold D modulo P-1, or NULL.</i></td></tr>
+<tr><th id="362">362</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">DQ</span>       The MPI to hold D modulo Q-1, or NULL.</i></td></tr>
+<tr><th id="363">363</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">QP</span>       The MPI to hold modular inverse of Q modulo P, or NULL.</i></td></tr>
+<tr><th id="364">364</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="365">365</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success, non-zero error code otherwise.</i></td></tr>
+<tr><th id="366">366</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="367">367</th><td><i class="doc"> * <span class="command">\note</span>           Alternative RSA implementations not using CRT-parameters</i></td></tr>
+<tr><th id="368">368</th><td><i class="doc"> *                 internally can implement this function based on</i></td></tr>
+<tr><th id="369">369</th><td><i class="doc"> *                 mbedtls_rsa_deduce_opt().</i></td></tr>
+<tr><th id="370">370</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="371">371</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="372">372</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_export_crt" title='mbedtls_rsa_export_crt' data-ref="mbedtls_rsa_export_crt">mbedtls_rsa_export_crt</dfn>( <em>const</em> <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col6 decl" id="286ctx" title='ctx' data-type='const mbedtls_rsa_context *' data-ref="286ctx">ctx</dfn>,</td></tr>
+<tr><th id="373">373</th><td>                            <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> *<dfn class="local col7 decl" id="287DP" title='DP' data-type='mbedtls_mpi *' data-ref="287DP">DP</dfn>, <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> *<dfn class="local col8 decl" id="288DQ" title='DQ' data-type='mbedtls_mpi *' data-ref="288DQ">DQ</dfn>, <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> *<dfn class="local col9 decl" id="289QP" title='QP' data-type='mbedtls_mpi *' data-ref="289QP">QP</dfn> );</td></tr>
+<tr><th id="374">374</th><td></td></tr>
+<tr><th id="375">375</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="376">376</th><td><i class="doc"> * <span class="command">\brief</span>          This function sets padding for an already initialized RSA</i></td></tr>
+<tr><th id="377">377</th><td><i class="doc"> *                 context. See mbedtls_rsa_init() for details.</i></td></tr>
+<tr><th id="378">378</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="379">379</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The RSA context to be set.</i></td></tr>
+<tr><th id="380">380</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">padding</span>  Selects padding mode: #MBEDTLS_RSA_PKCS_V15 or</i></td></tr>
+<tr><th id="381">381</th><td><i class="doc"> *                 #MBEDTLS_RSA_PKCS_V21.</i></td></tr>
+<tr><th id="382">382</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">hash_id</span>  The #MBEDTLS_RSA_PKCS_V21 hash identifier.</i></td></tr>
+<tr><th id="383">383</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="384">384</th><td><em>void</em> <dfn class="decl fn" id="mbedtls_rsa_set_padding" title='mbedtls_rsa_set_padding' data-ref="mbedtls_rsa_set_padding">mbedtls_rsa_set_padding</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col0 decl" id="290ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="290ctx">ctx</dfn>, <em>int</em> <dfn class="local col1 decl" id="291padding" title='padding' data-type='int' data-ref="291padding">padding</dfn>,</td></tr>
+<tr><th id="385">385</th><td>                              <em>int</em> <dfn class="local col2 decl" id="292hash_id" title='hash_id' data-type='int' data-ref="292hash_id">hash_id</dfn>);</td></tr>
+<tr><th id="386">386</th><td></td></tr>
+<tr><th id="387">387</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="388">388</th><td><i class="doc"> * <span class="command">\brief</span>          This function retrieves the length of RSA modulus in Bytes.</i></td></tr>
+<tr><th id="389">389</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="390">390</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The initialized RSA context.</i></td></tr>
+<tr><th id="391">391</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="392">392</th><td><i class="doc"> * <span class="command">\return</span>         The length of the RSA modulus in Bytes.</i></td></tr>
+<tr><th id="393">393</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="394">394</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="395">395</th><td><span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="decl fn" id="mbedtls_rsa_get_len" title='mbedtls_rsa_get_len' data-ref="mbedtls_rsa_get_len">mbedtls_rsa_get_len</dfn>( <em>const</em> <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col3 decl" id="293ctx" title='ctx' data-type='const mbedtls_rsa_context *' data-ref="293ctx">ctx</dfn> );</td></tr>
+<tr><th id="396">396</th><td></td></tr>
+<tr><th id="397">397</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="398">398</th><td><i class="doc"> * <span class="command">\brief</span>          This function generates an RSA keypair.</i></td></tr>
+<tr><th id="399">399</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="400">400</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The RSA context used to hold the key.</i></td></tr>
+<tr><th id="401">401</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_rng</span>    The RNG function.</i></td></tr>
+<tr><th id="402">402</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_rng</span>    The RNG parameter.</i></td></tr>
+<tr><th id="403">403</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">nbits</span>    The size of the public key in bits.</i></td></tr>
+<tr><th id="404">404</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">exponent</span> The public exponent. For example, 65537.</i></td></tr>
+<tr><th id="405">405</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="406">406</th><td><i class="doc"> * <span class="command">\note</span>           mbedtls_rsa_init() must be called before this function,</i></td></tr>
+<tr><th id="407">407</th><td><i class="doc"> *                 to set up the RSA context.</i></td></tr>
+<tr><th id="408">408</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="409">409</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success, or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code</i></td></tr>
+<tr><th id="410">410</th><td><i class="doc">                   on failure.</i></td></tr>
+<tr><th id="411">411</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="412">412</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_gen_key" title='mbedtls_rsa_gen_key' data-ref="mbedtls_rsa_gen_key">mbedtls_rsa_gen_key</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col4 decl" id="294ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="294ctx">ctx</dfn>,</td></tr>
+<tr><th id="413">413</th><td>                         <em>int</em> (*<dfn class="local col5 decl" id="295f_rng" title='f_rng' data-type='int (*)(void *, unsigned char *, size_t)' data-ref="295f_rng">f_rng</dfn>)(<em>void</em> *, <em>unsigned</em> <em>char</em> *, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>),</td></tr>
+<tr><th id="414">414</th><td>                         <em>void</em> *<dfn class="local col6 decl" id="296p_rng" title='p_rng' data-type='void *' data-ref="296p_rng">p_rng</dfn>,</td></tr>
+<tr><th id="415">415</th><td>                         <em>unsigned</em> <em>int</em> <dfn class="local col7 decl" id="297nbits" title='nbits' data-type='unsigned int' data-ref="297nbits">nbits</dfn>, <em>int</em> <dfn class="local col8 decl" id="298exponent" title='exponent' data-type='int' data-ref="298exponent">exponent</dfn> );</td></tr>
+<tr><th id="416">416</th><td></td></tr>
+<tr><th id="417">417</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="418">418</th><td><i class="doc"> * <span class="command">\brief</span>          This function checks if a context contains at least an RSA</i></td></tr>
+<tr><th id="419">419</th><td><i class="doc"> *                 public key.</i></td></tr>
+<tr><th id="420">420</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="421">421</th><td><i class="doc"> *                 If the function runs successfully, it is guaranteed that</i></td></tr>
+<tr><th id="422">422</th><td><i class="doc"> *                 enough information is present to perform an RSA public key</i></td></tr>
+<tr><th id="423">423</th><td><i class="doc"> *                 operation using mbedtls_rsa_public().</i></td></tr>
+<tr><th id="424">424</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="425">425</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The RSA context to check.</i></td></tr>
+<tr><th id="426">426</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="427">427</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success, or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code</i></td></tr>
+<tr><th id="428">428</th><td><i class="doc"> *                 on failure.</i></td></tr>
+<tr><th id="429">429</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="430">430</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="431">431</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_check_pubkey" title='mbedtls_rsa_check_pubkey' data-ref="mbedtls_rsa_check_pubkey">mbedtls_rsa_check_pubkey</dfn>( <em>const</em> <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col9 decl" id="299ctx" title='ctx' data-type='const mbedtls_rsa_context *' data-ref="299ctx">ctx</dfn> );</td></tr>
+<tr><th id="432">432</th><td></td></tr>
+<tr><th id="433">433</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="434">434</th><td><i class="doc"> * <span class="command">\brief</span>      This function checks if a context contains an RSA private key</i></td></tr>
+<tr><th id="435">435</th><td><i class="doc"> *             and perform basic consistency checks.</i></td></tr>
+<tr><th id="436">436</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="437">437</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>  The RSA context to check.</i></td></tr>
+<tr><th id="438">438</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="439">439</th><td><i class="doc"> * <span class="command">\return</span>    <span class="command"> \c</span> <span class="arg">0</span> on success, or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code on</i></td></tr>
+<tr><th id="440">440</th><td><i class="doc"> *             failure.</i></td></tr>
+<tr><th id="441">441</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="442">442</th><td><i class="doc"> * <span class="command">\note</span>       The consistency checks performed by this function not only</i></td></tr>
+<tr><th id="443">443</th><td><i class="doc"> *             ensure that mbedtls_rsa_private() can be called successfully</i></td></tr>
+<tr><th id="444">444</th><td><i class="doc"> *             on the given context, but that the various parameters are</i></td></tr>
+<tr><th id="445">445</th><td><i class="doc"> *             mutually consistent with high probability, in the sense that</i></td></tr>
+<tr><th id="446">446</th><td><i class="doc"> *             mbedtls_rsa_public() and mbedtls_rsa_private() are inverses.</i></td></tr>
+<tr><th id="447">447</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="448">448</th><td><i class="doc"> * <span class="command">\warning</span>    This function should catch accidental misconfigurations</i></td></tr>
+<tr><th id="449">449</th><td><i class="doc"> *             like swapping of parameters, but it cannot establish full</i></td></tr>
+<tr><th id="450">450</th><td><i class="doc"> *             trust in neither the quality nor the consistency of the key</i></td></tr>
+<tr><th id="451">451</th><td><i class="doc"> *             material that was used to setup the given RSA context:</i></td></tr>
+<tr><th id="452">452</th><td><i class="doc"> *             <span class="tag">&lt;ul&gt;</span><span class="tag">&lt;li&gt;</span>Consistency: Imported parameters that are irrelevant</i></td></tr>
+<tr><th id="453">453</th><td><i class="doc"> *             for the implementation might be silently dropped. If dropped,</i></td></tr>
+<tr><th id="454">454</th><td><i class="doc"> *             the current function does not have access to them,</i></td></tr>
+<tr><th id="455">455</th><td><i class="doc"> *             and therefore cannot check them. See mbedtls_rsa_complete().</i></td></tr>
+<tr><th id="456">456</th><td><i class="doc"> *             If you want to check the consistency of the entire</i></td></tr>
+<tr><th id="457">457</th><td><i class="doc"> *             content of an PKCS1-encoded RSA private key, for example, you</i></td></tr>
+<tr><th id="458">458</th><td><i class="doc"> *             should use mbedtls_rsa_validate_params() before setting</i></td></tr>
+<tr><th id="459">459</th><td><i class="doc"> *             up the RSA context.</i></td></tr>
+<tr><th id="460">460</th><td><i class="doc"> *             Additionally, if the implementation performs empirical checks,</i></td></tr>
+<tr><th id="461">461</th><td><i class="doc"> *             these checks substantiate but do not guarantee consistency.<span class="tag">&lt;/li&gt;</span></i></td></tr>
+<tr><th id="462">462</th><td><i class="doc"> *             <span class="tag">&lt;li&gt;</span>Quality: This function is not expected to perform</i></td></tr>
+<tr><th id="463">463</th><td><i class="doc"> *             extended quality assessments like checking that the prime</i></td></tr>
+<tr><th id="464">464</th><td><i class="doc"> *             factors are safe. Additionally, it is the responsibility of the</i></td></tr>
+<tr><th id="465">465</th><td><i class="doc"> *             user to ensure the trustworthiness of the source of his RSA</i></td></tr>
+<tr><th id="466">466</th><td><i class="doc"> *             parameters, which goes beyond what is effectively checkable</i></td></tr>
+<tr><th id="467">467</th><td><i class="doc"> *             by the library.<span class="tag">&lt;/li&gt;</span><span class="tag">&lt;/ul&gt;</span></i></td></tr>
+<tr><th id="468">468</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="469">469</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_check_privkey" title='mbedtls_rsa_check_privkey' data-ref="mbedtls_rsa_check_privkey">mbedtls_rsa_check_privkey</dfn>( <em>const</em> <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col0 decl" id="300ctx" title='ctx' data-type='const mbedtls_rsa_context *' data-ref="300ctx">ctx</dfn> );</td></tr>
+<tr><th id="470">470</th><td></td></tr>
+<tr><th id="471">471</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="472">472</th><td><i class="doc"> * <span class="command">\brief</span>          This function checks a public-private RSA key pair.</i></td></tr>
+<tr><th id="473">473</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="474">474</th><td><i class="doc"> *                 It checks each of the contexts, and makes sure they match.</i></td></tr>
+<tr><th id="475">475</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="476">476</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">pub</span>      The RSA context holding the public key.</i></td></tr>
+<tr><th id="477">477</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">prv</span>      The RSA context holding the private key.</i></td></tr>
+<tr><th id="478">478</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="479">479</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success, or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code</i></td></tr>
+<tr><th id="480">480</th><td><i class="doc"> *                 on failure.</i></td></tr>
+<tr><th id="481">481</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="482">482</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_check_pub_priv" title='mbedtls_rsa_check_pub_priv' data-ref="mbedtls_rsa_check_pub_priv">mbedtls_rsa_check_pub_priv</dfn>( <em>const</em> <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col1 decl" id="301pub" title='pub' data-type='const mbedtls_rsa_context *' data-ref="301pub">pub</dfn>,</td></tr>
+<tr><th id="483">483</th><td>                                <em>const</em> <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col2 decl" id="302prv" title='prv' data-type='const mbedtls_rsa_context *' data-ref="302prv">prv</dfn> );</td></tr>
+<tr><th id="484">484</th><td></td></tr>
+<tr><th id="485">485</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="486">486</th><td><i class="doc"> * <span class="command">\brief</span>          This function performs an RSA public key operation.</i></td></tr>
+<tr><th id="487">487</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="488">488</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The RSA context.</i></td></tr>
+<tr><th id="489">489</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">input</span>    The input buffer.</i></td></tr>
+<tr><th id="490">490</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">output</span>   The output buffer.</i></td></tr>
+<tr><th id="491">491</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="492">492</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success, or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code</i></td></tr>
+<tr><th id="493">493</th><td><i class="doc"> *                 on failure.</i></td></tr>
+<tr><th id="494">494</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="495">495</th><td><i class="doc"> * <span class="command">\note</span>           This function does not handle message padding.</i></td></tr>
+<tr><th id="496">496</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="497">497</th><td><i class="doc"> * <span class="command">\note</span>           Make sure to set<span class="command"> \p</span> <span class="arg">input[0]</span> = 0 or ensure that</i></td></tr>
+<tr><th id="498">498</th><td><i class="doc"> *                 input is smaller than<span class="command"> \p</span> <span class="arg">N.</span></i></td></tr>
+<tr><th id="499">499</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="500">500</th><td><i class="doc"> * <span class="command">\note</span>           The input and output buffers must be large</i></td></tr>
+<tr><th id="501">501</th><td><i class="doc"> *                 enough. For example, 128 Bytes if RSA-1024 is used.</i></td></tr>
+<tr><th id="502">502</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="503">503</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_public" title='mbedtls_rsa_public' data-ref="mbedtls_rsa_public">mbedtls_rsa_public</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col3 decl" id="303ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="303ctx">ctx</dfn>,</td></tr>
+<tr><th id="504">504</th><td>                <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col4 decl" id="304input" title='input' data-type='const unsigned char *' data-ref="304input">input</dfn>,</td></tr>
+<tr><th id="505">505</th><td>                <em>unsigned</em> <em>char</em> *<dfn class="local col5 decl" id="305output" title='output' data-type='unsigned char *' data-ref="305output">output</dfn> );</td></tr>
+<tr><th id="506">506</th><td></td></tr>
+<tr><th id="507">507</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="508">508</th><td><i class="doc"> * <span class="command">\brief</span>          This function performs an RSA private key operation.</i></td></tr>
+<tr><th id="509">509</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="510">510</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The RSA context.</i></td></tr>
+<tr><th id="511">511</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_rng</span>    The RNG function. Needed for blinding.</i></td></tr>
+<tr><th id="512">512</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_rng</span>    The RNG parameter.</i></td></tr>
+<tr><th id="513">513</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">input</span>    The input buffer.</i></td></tr>
+<tr><th id="514">514</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">output</span>   The output buffer.</i></td></tr>
+<tr><th id="515">515</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="516">516</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success, or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code</i></td></tr>
+<tr><th id="517">517</th><td><i class="doc"> *                 on failure.</i></td></tr>
+<tr><th id="518">518</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="519">519</th><td><i class="doc"> * <span class="command">\note</span>           The input and output buffers must be large</i></td></tr>
+<tr><th id="520">520</th><td><i class="doc"> *                 enough. For example, 128 Bytes if RSA-1024 is used.</i></td></tr>
+<tr><th id="521">521</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="522">522</th><td><i class="doc"> * <span class="command">\note</span>           Blinding is used if and only if a PRNG is provided.</i></td></tr>
+<tr><th id="523">523</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="524">524</th><td><i class="doc"> * <span class="command">\note</span>           If blinding is used, both the base of exponentation</i></td></tr>
+<tr><th id="525">525</th><td><i class="doc"> *                 and the exponent are blinded, providing protection</i></td></tr>
+<tr><th id="526">526</th><td><i class="doc"> *                 against some side-channel attacks.</i></td></tr>
+<tr><th id="527">527</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="528">528</th><td><i class="doc"> * <span class="command">\warning</span>        It is deprecated and a security risk to not provide</i></td></tr>
+<tr><th id="529">529</th><td><i class="doc"> *                 a PRNG here and thereby prevent the use of blinding.</i></td></tr>
+<tr><th id="530">530</th><td><i class="doc"> *                 Future versions of the library may enforce the presence</i></td></tr>
+<tr><th id="531">531</th><td><i class="doc"> *                 of a PRNG.</i></td></tr>
+<tr><th id="532">532</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="533">533</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="534">534</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_private" title='mbedtls_rsa_private' data-ref="mbedtls_rsa_private">mbedtls_rsa_private</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col6 decl" id="306ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="306ctx">ctx</dfn>,</td></tr>
+<tr><th id="535">535</th><td>                 <em>int</em> (*<dfn class="local col7 decl" id="307f_rng" title='f_rng' data-type='int (*)(void *, unsigned char *, size_t)' data-ref="307f_rng">f_rng</dfn>)(<em>void</em> *, <em>unsigned</em> <em>char</em> *, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>),</td></tr>
+<tr><th id="536">536</th><td>                 <em>void</em> *<dfn class="local col8 decl" id="308p_rng" title='p_rng' data-type='void *' data-ref="308p_rng">p_rng</dfn>,</td></tr>
+<tr><th id="537">537</th><td>                 <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col9 decl" id="309input" title='input' data-type='const unsigned char *' data-ref="309input">input</dfn>,</td></tr>
+<tr><th id="538">538</th><td>                 <em>unsigned</em> <em>char</em> *<dfn class="local col0 decl" id="310output" title='output' data-type='unsigned char *' data-ref="310output">output</dfn> );</td></tr>
+<tr><th id="539">539</th><td></td></tr>
+<tr><th id="540">540</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="541">541</th><td><i class="doc"> * <span class="command">\brief</span>          This function adds the message padding, then performs an RSA</i></td></tr>
+<tr><th id="542">542</th><td><i class="doc"> *                 operation.</i></td></tr>
+<tr><th id="543">543</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="544">544</th><td><i class="doc"> *                 It is the generic wrapper for performing a PKCS#1 encryption</i></td></tr>
+<tr><th id="545">545</th><td><i class="doc"> *                 operation using the<span class="command"> \p</span> <span class="arg">mode</span> from the context.</i></td></tr>
+<tr><th id="546">546</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="547">547</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="548">548</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The RSA context.</i></td></tr>
+<tr><th id="549">549</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_rng</span>    The RNG function. Needed for padding, PKCS#1 v2.1</i></td></tr>
+<tr><th id="550">550</th><td><i class="doc"> *                 encoding, and #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="551">551</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_rng</span>    The RNG parameter.</i></td></tr>
+<tr><th id="552">552</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">mode</span>     #MBEDTLS_RSA_PUBLIC or #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="553">553</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ilen</span>     The length of the plaintext.</i></td></tr>
+<tr><th id="554">554</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">input</span>    The buffer holding the data to encrypt.</i></td></tr>
+<tr><th id="555">555</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">output</span>   The buffer used to hold the ciphertext.</i></td></tr>
+<tr><th id="556">556</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="557">557</th><td><i class="doc"> * <span class="command">\deprecated</span>     It is deprecated and discouraged to call this function</i></td></tr>
+<tr><th id="558">558</th><td><i class="doc"> *                 in #MBEDTLS_RSA_PRIVATE mode. Future versions of the library</i></td></tr>
+<tr><th id="559">559</th><td><i class="doc"> *                 are likely to remove the<span class="command"> \p</span> <span class="arg">mode</span> argument and have it</i></td></tr>
+<tr><th id="560">560</th><td><i class="doc"> *                 implicitly set to #MBEDTLS_RSA_PUBLIC.</i></td></tr>
+<tr><th id="561">561</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="562">562</th><td><i class="doc"> * <span class="command">\note</span>           Alternative implementations of RSA need not support</i></td></tr>
+<tr><th id="563">563</th><td><i class="doc"> *                 mode being set to #MBEDTLS_RSA_PRIVATE and might instead</i></td></tr>
+<tr><th id="564">564</th><td><i class="doc"> *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.</i></td></tr>
+<tr><th id="565">565</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="566">566</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success, or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code</i></td></tr>
+<tr><th id="567">567</th><td><i class="doc"> *                 on failure.</i></td></tr>
+<tr><th id="568">568</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="569">569</th><td><i class="doc"> * <span class="command">\note</span>           The input and output buffers must be as large as the size</i></td></tr>
+<tr><th id="570">570</th><td><i class="doc"> *                 of<span class="command"> \p</span> <span class="arg">ctx-&gt;N.</span> For example, 128 Bytes if RSA-1024 is used.</i></td></tr>
+<tr><th id="571">571</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="572">572</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_pkcs1_encrypt" title='mbedtls_rsa_pkcs1_encrypt' data-ref="mbedtls_rsa_pkcs1_encrypt">mbedtls_rsa_pkcs1_encrypt</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col1 decl" id="311ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="311ctx">ctx</dfn>,</td></tr>
+<tr><th id="573">573</th><td>                       <em>int</em> (*<dfn class="local col2 decl" id="312f_rng" title='f_rng' data-type='int (*)(void *, unsigned char *, size_t)' data-ref="312f_rng">f_rng</dfn>)(<em>void</em> *, <em>unsigned</em> <em>char</em> *, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>),</td></tr>
+<tr><th id="574">574</th><td>                       <em>void</em> *<dfn class="local col3 decl" id="313p_rng" title='p_rng' data-type='void *' data-ref="313p_rng">p_rng</dfn>,</td></tr>
+<tr><th id="575">575</th><td>                       <em>int</em> <dfn class="local col4 decl" id="314mode" title='mode' data-type='int' data-ref="314mode">mode</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col5 decl" id="315ilen" title='ilen' data-type='size_t' data-ref="315ilen">ilen</dfn>,</td></tr>
+<tr><th id="576">576</th><td>                       <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col6 decl" id="316input" title='input' data-type='const unsigned char *' data-ref="316input">input</dfn>,</td></tr>
+<tr><th id="577">577</th><td>                       <em>unsigned</em> <em>char</em> *<dfn class="local col7 decl" id="317output" title='output' data-type='unsigned char *' data-ref="317output">output</dfn> );</td></tr>
+<tr><th id="578">578</th><td></td></tr>
+<tr><th id="579">579</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="580">580</th><td><i class="doc"> * <span class="command">\brief</span>          This function performs a PKCS#1 v1.5 encryption operation</i></td></tr>
+<tr><th id="581">581</th><td><i class="doc"> *                 (RSAES-PKCS1-v1_5-ENCRYPT).</i></td></tr>
+<tr><th id="582">582</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="583">583</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The RSA context.</i></td></tr>
+<tr><th id="584">584</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_rng</span>    The RNG function. Needed for padding and</i></td></tr>
+<tr><th id="585">585</th><td><i class="doc"> *                 #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="586">586</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_rng</span>    The RNG parameter.</i></td></tr>
+<tr><th id="587">587</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">mode</span>     #MBEDTLS_RSA_PUBLIC or #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="588">588</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ilen</span>     The length of the plaintext.</i></td></tr>
+<tr><th id="589">589</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">input</span>    The buffer holding the data to encrypt.</i></td></tr>
+<tr><th id="590">590</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">output</span>   The buffer used to hold the ciphertext.</i></td></tr>
+<tr><th id="591">591</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="592">592</th><td><i class="doc"> * <span class="command">\deprecated</span>     It is deprecated and discouraged to call this function</i></td></tr>
+<tr><th id="593">593</th><td><i class="doc"> *                 in #MBEDTLS_RSA_PRIVATE mode. Future versions of the library</i></td></tr>
+<tr><th id="594">594</th><td><i class="doc"> *                 are likely to remove the<span class="command"> \p</span> <span class="arg">mode</span> argument and have it</i></td></tr>
+<tr><th id="595">595</th><td><i class="doc"> *                 implicitly set to #MBEDTLS_RSA_PUBLIC.</i></td></tr>
+<tr><th id="596">596</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="597">597</th><td><i class="doc"> * <span class="command">\note</span>           Alternative implementations of RSA need not support</i></td></tr>
+<tr><th id="598">598</th><td><i class="doc"> *                 mode being set to #MBEDTLS_RSA_PRIVATE and might instead</i></td></tr>
+<tr><th id="599">599</th><td><i class="doc"> *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.</i></td></tr>
+<tr><th id="600">600</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="601">601</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success, or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code</i></td></tr>
+<tr><th id="602">602</th><td><i class="doc"> *                 on failure.</i></td></tr>
+<tr><th id="603">603</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="604">604</th><td><i class="doc"> * <span class="command">\note</span>           The output buffer must be as large as the size</i></td></tr>
+<tr><th id="605">605</th><td><i class="doc"> *                 of<span class="command"> \p</span> <span class="arg">ctx-&gt;N.</span> For example, 128 Bytes if RSA-1024 is used.</i></td></tr>
+<tr><th id="606">606</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="607">607</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_rsaes_pkcs1_v15_encrypt" title='mbedtls_rsa_rsaes_pkcs1_v15_encrypt' data-ref="mbedtls_rsa_rsaes_pkcs1_v15_encrypt">mbedtls_rsa_rsaes_pkcs1_v15_encrypt</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col8 decl" id="318ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="318ctx">ctx</dfn>,</td></tr>
+<tr><th id="608">608</th><td>                                 <em>int</em> (*<dfn class="local col9 decl" id="319f_rng" title='f_rng' data-type='int (*)(void *, unsigned char *, size_t)' data-ref="319f_rng">f_rng</dfn>)(<em>void</em> *, <em>unsigned</em> <em>char</em> *, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>),</td></tr>
+<tr><th id="609">609</th><td>                                 <em>void</em> *<dfn class="local col0 decl" id="320p_rng" title='p_rng' data-type='void *' data-ref="320p_rng">p_rng</dfn>,</td></tr>
+<tr><th id="610">610</th><td>                                 <em>int</em> <dfn class="local col1 decl" id="321mode" title='mode' data-type='int' data-ref="321mode">mode</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col2 decl" id="322ilen" title='ilen' data-type='size_t' data-ref="322ilen">ilen</dfn>,</td></tr>
+<tr><th id="611">611</th><td>                                 <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col3 decl" id="323input" title='input' data-type='const unsigned char *' data-ref="323input">input</dfn>,</td></tr>
+<tr><th id="612">612</th><td>                                 <em>unsigned</em> <em>char</em> *<dfn class="local col4 decl" id="324output" title='output' data-type='unsigned char *' data-ref="324output">output</dfn> );</td></tr>
+<tr><th id="613">613</th><td></td></tr>
+<tr><th id="614">614</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="615">615</th><td><i class="doc"> * <span class="command">\brief</span>            This function performs a PKCS#1 v2.1 OAEP encryption</i></td></tr>
+<tr><th id="616">616</th><td><i class="doc"> *                   operation (RSAES-OAEP-ENCRYPT).</i></td></tr>
+<tr><th id="617">617</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="618">618</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>        The RSA context.</i></td></tr>
+<tr><th id="619">619</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_rng</span>      The RNG function. Needed for padding and PKCS#1 v2.1</i></td></tr>
+<tr><th id="620">620</th><td><i class="doc"> *                   encoding and #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="621">621</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_rng</span>      The RNG parameter.</i></td></tr>
+<tr><th id="622">622</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">mode</span>       #MBEDTLS_RSA_PUBLIC or #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="623">623</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">label</span>      The buffer holding the custom label to use.</i></td></tr>
+<tr><th id="624">624</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">label_len</span>  The length of the label.</i></td></tr>
+<tr><th id="625">625</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ilen</span>       The length of the plaintext.</i></td></tr>
+<tr><th id="626">626</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">input</span>      The buffer holding the data to encrypt.</i></td></tr>
+<tr><th id="627">627</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">output</span>     The buffer used to hold the ciphertext.</i></td></tr>
+<tr><th id="628">628</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="629">629</th><td><i class="doc"> * <span class="command">\deprecated</span>     It is deprecated and discouraged to call this function</i></td></tr>
+<tr><th id="630">630</th><td><i class="doc"> *                 in #MBEDTLS_RSA_PRIVATE mode. Future versions of the library</i></td></tr>
+<tr><th id="631">631</th><td><i class="doc"> *                 are likely to remove the<span class="command"> \p</span> <span class="arg">mode</span> argument and have it</i></td></tr>
+<tr><th id="632">632</th><td><i class="doc"> *                 implicitly set to #MBEDTLS_RSA_PUBLIC.</i></td></tr>
+<tr><th id="633">633</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="634">634</th><td><i class="doc"> * <span class="command">\note</span>           Alternative implementations of RSA need not support</i></td></tr>
+<tr><th id="635">635</th><td><i class="doc"> *                 mode being set to #MBEDTLS_RSA_PRIVATE and might instead</i></td></tr>
+<tr><th id="636">636</th><td><i class="doc"> *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.</i></td></tr>
+<tr><th id="637">637</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="638">638</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success, or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code</i></td></tr>
+<tr><th id="639">639</th><td><i class="doc"> *                 on failure.</i></td></tr>
+<tr><th id="640">640</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="641">641</th><td><i class="doc"> * <span class="command">\note</span>           The output buffer must be as large as the size</i></td></tr>
+<tr><th id="642">642</th><td><i class="doc"> *                 of ctx-&gt;N. For example, 128 Bytes if RSA-1024 is used.</i></td></tr>
+<tr><th id="643">643</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="644">644</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_rsaes_oaep_encrypt" title='mbedtls_rsa_rsaes_oaep_encrypt' data-ref="mbedtls_rsa_rsaes_oaep_encrypt">mbedtls_rsa_rsaes_oaep_encrypt</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col5 decl" id="325ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="325ctx">ctx</dfn>,</td></tr>
+<tr><th id="645">645</th><td>                            <em>int</em> (*<dfn class="local col6 decl" id="326f_rng" title='f_rng' data-type='int (*)(void *, unsigned char *, size_t)' data-ref="326f_rng">f_rng</dfn>)(<em>void</em> *, <em>unsigned</em> <em>char</em> *, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>),</td></tr>
+<tr><th id="646">646</th><td>                            <em>void</em> *<dfn class="local col7 decl" id="327p_rng" title='p_rng' data-type='void *' data-ref="327p_rng">p_rng</dfn>,</td></tr>
+<tr><th id="647">647</th><td>                            <em>int</em> <dfn class="local col8 decl" id="328mode" title='mode' data-type='int' data-ref="328mode">mode</dfn>,</td></tr>
+<tr><th id="648">648</th><td>                            <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col9 decl" id="329label" title='label' data-type='const unsigned char *' data-ref="329label">label</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col0 decl" id="330label_len" title='label_len' data-type='size_t' data-ref="330label_len">label_len</dfn>,</td></tr>
+<tr><th id="649">649</th><td>                            <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col1 decl" id="331ilen" title='ilen' data-type='size_t' data-ref="331ilen">ilen</dfn>,</td></tr>
+<tr><th id="650">650</th><td>                            <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col2 decl" id="332input" title='input' data-type='const unsigned char *' data-ref="332input">input</dfn>,</td></tr>
+<tr><th id="651">651</th><td>                            <em>unsigned</em> <em>char</em> *<dfn class="local col3 decl" id="333output" title='output' data-type='unsigned char *' data-ref="333output">output</dfn> );</td></tr>
+<tr><th id="652">652</th><td></td></tr>
+<tr><th id="653">653</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="654">654</th><td><i class="doc"> * <span class="command">\brief</span>          This function performs an RSA operation, then removes the</i></td></tr>
+<tr><th id="655">655</th><td><i class="doc"> *                 message padding.</i></td></tr>
+<tr><th id="656">656</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="657">657</th><td><i class="doc"> *                 It is the generic wrapper for performing a PKCS#1 decryption</i></td></tr>
+<tr><th id="658">658</th><td><i class="doc"> *                 operation using the<span class="command"> \p</span> <span class="arg">mode</span> from the context.</i></td></tr>
+<tr><th id="659">659</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="660">660</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The RSA context.</i></td></tr>
+<tr><th id="661">661</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_rng</span>    The RNG function. Only needed for #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="662">662</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_rng</span>    The RNG parameter.</i></td></tr>
+<tr><th id="663">663</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">mode</span>     #MBEDTLS_RSA_PUBLIC or #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="664">664</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">olen</span>     The length of the plaintext.</i></td></tr>
+<tr><th id="665">665</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">input</span>    The buffer holding the encrypted data.</i></td></tr>
+<tr><th id="666">666</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">output</span>   The buffer used to hold the plaintext.</i></td></tr>
+<tr><th id="667">667</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">output_max_len</span>    The maximum length of the output buffer.</i></td></tr>
+<tr><th id="668">668</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="669">669</th><td><i class="doc"> * <span class="command">\deprecated</span>     It is deprecated and discouraged to call this function</i></td></tr>
+<tr><th id="670">670</th><td><i class="doc"> *                 in #MBEDTLS_RSA_PUBLIC mode. Future versions of the library</i></td></tr>
+<tr><th id="671">671</th><td><i class="doc"> *                 are likely to remove the<span class="command"> \p</span> <span class="arg">mode</span> argument and have it</i></td></tr>
+<tr><th id="672">672</th><td><i class="doc"> *                 implicitly set to #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="673">673</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="674">674</th><td><i class="doc"> * <span class="command">\note</span>           Alternative implementations of RSA need not support</i></td></tr>
+<tr><th id="675">675</th><td><i class="doc"> *                 mode being set to #MBEDTLS_RSA_PUBLIC and might instead</i></td></tr>
+<tr><th id="676">676</th><td><i class="doc"> *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.</i></td></tr>
+<tr><th id="677">677</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="678">678</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success, or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code</i></td></tr>
+<tr><th id="679">679</th><td><i class="doc"> *                 on failure.</i></td></tr>
+<tr><th id="680">680</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="681">681</th><td><i class="doc"> * <span class="command">\note</span>           The output buffer length<span class="command"> \c</span> <span class="arg">output_max_len</span> should be</i></td></tr>
+<tr><th id="682">682</th><td><i class="doc"> *                 as large as the size<span class="command"> \p</span> <span class="arg">ctx-&gt;len</span> of<span class="command"> \p</span> <span class="arg">ctx-&gt;N</span> (for example,</i></td></tr>
+<tr><th id="683">683</th><td><i class="doc"> *                 128 Bytes if RSA-1024 is used) to be able to hold an</i></td></tr>
+<tr><th id="684">684</th><td><i class="doc"> *                 arbitrary decrypted message. If it is not large enough to</i></td></tr>
+<tr><th id="685">685</th><td><i class="doc"> *                 hold the decryption of the particular ciphertext provided,</i></td></tr>
+<tr><th id="686">686</th><td><i class="doc"> *                 the function returns<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_OUTPUT_TOO_LARGE.</span></i></td></tr>
+<tr><th id="687">687</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="688">688</th><td><i class="doc"> * <span class="command">\note</span>           The input buffer must be as large as the size</i></td></tr>
+<tr><th id="689">689</th><td><i class="doc"> *                 of<span class="command"> \p</span> <span class="arg">ctx-&gt;N.</span> For example, 128 Bytes if RSA-1024 is used.</i></td></tr>
+<tr><th id="690">690</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="691">691</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_pkcs1_decrypt" title='mbedtls_rsa_pkcs1_decrypt' data-ref="mbedtls_rsa_pkcs1_decrypt">mbedtls_rsa_pkcs1_decrypt</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col4 decl" id="334ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="334ctx">ctx</dfn>,</td></tr>
+<tr><th id="692">692</th><td>                       <em>int</em> (*<dfn class="local col5 decl" id="335f_rng" title='f_rng' data-type='int (*)(void *, unsigned char *, size_t)' data-ref="335f_rng">f_rng</dfn>)(<em>void</em> *, <em>unsigned</em> <em>char</em> *, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>),</td></tr>
+<tr><th id="693">693</th><td>                       <em>void</em> *<dfn class="local col6 decl" id="336p_rng" title='p_rng' data-type='void *' data-ref="336p_rng">p_rng</dfn>,</td></tr>
+<tr><th id="694">694</th><td>                       <em>int</em> <dfn class="local col7 decl" id="337mode" title='mode' data-type='int' data-ref="337mode">mode</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> *<dfn class="local col8 decl" id="338olen" title='olen' data-type='size_t *' data-ref="338olen">olen</dfn>,</td></tr>
+<tr><th id="695">695</th><td>                       <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col9 decl" id="339input" title='input' data-type='const unsigned char *' data-ref="339input">input</dfn>,</td></tr>
+<tr><th id="696">696</th><td>                       <em>unsigned</em> <em>char</em> *<dfn class="local col0 decl" id="340output" title='output' data-type='unsigned char *' data-ref="340output">output</dfn>,</td></tr>
+<tr><th id="697">697</th><td>                       <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col1 decl" id="341output_max_len" title='output_max_len' data-type='size_t' data-ref="341output_max_len">output_max_len</dfn> );</td></tr>
+<tr><th id="698">698</th><td></td></tr>
+<tr><th id="699">699</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="700">700</th><td><i class="doc"> * <span class="command">\brief</span>          This function performs a PKCS#1 v1.5 decryption</i></td></tr>
+<tr><th id="701">701</th><td><i class="doc"> *                 operation (RSAES-PKCS1-v1_5-DECRYPT).</i></td></tr>
+<tr><th id="702">702</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="703">703</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The RSA context.</i></td></tr>
+<tr><th id="704">704</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_rng</span>    The RNG function. Only needed for #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="705">705</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_rng</span>    The RNG parameter.</i></td></tr>
+<tr><th id="706">706</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">mode</span>     #MBEDTLS_RSA_PUBLIC or #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="707">707</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">olen</span>     The length of the plaintext.</i></td></tr>
+<tr><th id="708">708</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">input</span>    The buffer holding the encrypted data.</i></td></tr>
+<tr><th id="709">709</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">output</span>   The buffer to hold the plaintext.</i></td></tr>
+<tr><th id="710">710</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">output_max_len</span>    The maximum length of the output buffer.</i></td></tr>
+<tr><th id="711">711</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="712">712</th><td><i class="doc"> * <span class="command">\deprecated</span>     It is deprecated and discouraged to call this function</i></td></tr>
+<tr><th id="713">713</th><td><i class="doc"> *                 in #MBEDTLS_RSA_PUBLIC mode. Future versions of the library</i></td></tr>
+<tr><th id="714">714</th><td><i class="doc"> *                 are likely to remove the<span class="command"> \p</span> <span class="arg">mode</span> argument and have it</i></td></tr>
+<tr><th id="715">715</th><td><i class="doc"> *                 implicitly set to #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="716">716</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="717">717</th><td><i class="doc"> * <span class="command">\note</span>           Alternative implementations of RSA need not support</i></td></tr>
+<tr><th id="718">718</th><td><i class="doc"> *                 mode being set to #MBEDTLS_RSA_PUBLIC and might instead</i></td></tr>
+<tr><th id="719">719</th><td><i class="doc"> *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.</i></td></tr>
+<tr><th id="720">720</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="721">721</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success, or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code</i></td></tr>
+<tr><th id="722">722</th><td><i class="doc"> *                 on failure.</i></td></tr>
+<tr><th id="723">723</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="724">724</th><td><i class="doc"> * <span class="command">\note</span>           The output buffer length<span class="command"> \c</span> <span class="arg">output_max_len</span> should be</i></td></tr>
+<tr><th id="725">725</th><td><i class="doc"> *                 as large as the size<span class="command"> \p</span> <span class="arg">ctx-&gt;len</span> of<span class="command"> \p</span> <span class="arg">ctx-&gt;N,</span> for example,</i></td></tr>
+<tr><th id="726">726</th><td><i class="doc"> *                 128 Bytes if RSA-1024 is used, to be able to hold an</i></td></tr>
+<tr><th id="727">727</th><td><i class="doc"> *                 arbitrary decrypted message. If it is not large enough to</i></td></tr>
+<tr><th id="728">728</th><td><i class="doc"> *                 hold the decryption of the particular ciphertext provided,</i></td></tr>
+<tr><th id="729">729</th><td><i class="doc"> *                 the function returns #MBEDTLS_ERR_RSA_OUTPUT_TOO_LARGE.</i></td></tr>
+<tr><th id="730">730</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="731">731</th><td><i class="doc"> * <span class="command">\note</span>           The input buffer must be as large as the size</i></td></tr>
+<tr><th id="732">732</th><td><i class="doc"> *                 of<span class="command"> \p</span> <span class="arg">ctx-&gt;N.</span> For example, 128 Bytes if RSA-1024 is used.</i></td></tr>
+<tr><th id="733">733</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="734">734</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_rsaes_pkcs1_v15_decrypt" title='mbedtls_rsa_rsaes_pkcs1_v15_decrypt' data-ref="mbedtls_rsa_rsaes_pkcs1_v15_decrypt">mbedtls_rsa_rsaes_pkcs1_v15_decrypt</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col2 decl" id="342ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="342ctx">ctx</dfn>,</td></tr>
+<tr><th id="735">735</th><td>                                 <em>int</em> (*<dfn class="local col3 decl" id="343f_rng" title='f_rng' data-type='int (*)(void *, unsigned char *, size_t)' data-ref="343f_rng">f_rng</dfn>)(<em>void</em> *, <em>unsigned</em> <em>char</em> *, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>),</td></tr>
+<tr><th id="736">736</th><td>                                 <em>void</em> *<dfn class="local col4 decl" id="344p_rng" title='p_rng' data-type='void *' data-ref="344p_rng">p_rng</dfn>,</td></tr>
+<tr><th id="737">737</th><td>                                 <em>int</em> <dfn class="local col5 decl" id="345mode" title='mode' data-type='int' data-ref="345mode">mode</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> *<dfn class="local col6 decl" id="346olen" title='olen' data-type='size_t *' data-ref="346olen">olen</dfn>,</td></tr>
+<tr><th id="738">738</th><td>                                 <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col7 decl" id="347input" title='input' data-type='const unsigned char *' data-ref="347input">input</dfn>,</td></tr>
+<tr><th id="739">739</th><td>                                 <em>unsigned</em> <em>char</em> *<dfn class="local col8 decl" id="348output" title='output' data-type='unsigned char *' data-ref="348output">output</dfn>,</td></tr>
+<tr><th id="740">740</th><td>                                 <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col9 decl" id="349output_max_len" title='output_max_len' data-type='size_t' data-ref="349output_max_len">output_max_len</dfn> );</td></tr>
+<tr><th id="741">741</th><td></td></tr>
+<tr><th id="742">742</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="743">743</th><td><i class="doc"> * <span class="command">\brief</span>          This function performs a PKCS#1 v2.1 OAEP decryption</i></td></tr>
+<tr><th id="744">744</th><td><i class="doc"> *                 operation (RSAES-OAEP-DECRYPT).</i></td></tr>
+<tr><th id="745">745</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="746">746</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>        The RSA context.</i></td></tr>
+<tr><th id="747">747</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_rng</span>      The RNG function. Only needed for #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="748">748</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_rng</span>      The RNG parameter.</i></td></tr>
+<tr><th id="749">749</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">mode</span>       #MBEDTLS_RSA_PUBLIC or #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="750">750</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">label</span>      The buffer holding the custom label to use.</i></td></tr>
+<tr><th id="751">751</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">label_len</span>  The length of the label.</i></td></tr>
+<tr><th id="752">752</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">olen</span>       The length of the plaintext.</i></td></tr>
+<tr><th id="753">753</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">input</span>      The buffer holding the encrypted data.</i></td></tr>
+<tr><th id="754">754</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">output</span>     The buffer to hold the plaintext.</i></td></tr>
+<tr><th id="755">755</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">output_max_len</span>    The maximum length of the output buffer.</i></td></tr>
+<tr><th id="756">756</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="757">757</th><td><i class="doc"> * <span class="command">\deprecated</span>     It is deprecated and discouraged to call this function</i></td></tr>
+<tr><th id="758">758</th><td><i class="doc"> *                 in #MBEDTLS_RSA_PUBLIC mode. Future versions of the library</i></td></tr>
+<tr><th id="759">759</th><td><i class="doc"> *                 are likely to remove the<span class="command"> \p</span> <span class="arg">mode</span> argument and have it</i></td></tr>
+<tr><th id="760">760</th><td><i class="doc"> *                 implicitly set to #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="761">761</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="762">762</th><td><i class="doc"> * <span class="command">\note</span>           Alternative implementations of RSA need not support</i></td></tr>
+<tr><th id="763">763</th><td><i class="doc"> *                 mode being set to #MBEDTLS_RSA_PUBLIC and might instead</i></td></tr>
+<tr><th id="764">764</th><td><i class="doc"> *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.</i></td></tr>
+<tr><th id="765">765</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="766">766</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success, or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code</i></td></tr>
+<tr><th id="767">767</th><td><i class="doc"> *                 on failure.</i></td></tr>
+<tr><th id="768">768</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="769">769</th><td><i class="doc"> * <span class="command">\note</span>           The output buffer length<span class="command"> \c</span> <span class="arg">output_max_len</span> should be</i></td></tr>
+<tr><th id="770">770</th><td><i class="doc"> *                 as large as the size<span class="command"> \p</span> <span class="arg">ctx-&gt;len</span> of<span class="command"> \p</span> <span class="arg">ctx-&gt;N,</span> for</i></td></tr>
+<tr><th id="771">771</th><td><i class="doc"> *                 example, 128 Bytes if RSA-1024 is used, to be able to</i></td></tr>
+<tr><th id="772">772</th><td><i class="doc"> *                 hold an arbitrary decrypted message. If it is not</i></td></tr>
+<tr><th id="773">773</th><td><i class="doc"> *                 large enough to hold the decryption of the particular</i></td></tr>
+<tr><th id="774">774</th><td><i class="doc"> *                 ciphertext provided, the function returns</i></td></tr>
+<tr><th id="775">775</th><td><i class="doc"> *                 #MBEDTLS_ERR_RSA_OUTPUT_TOO_LARGE.</i></td></tr>
+<tr><th id="776">776</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="777">777</th><td><i class="doc"> * <span class="command">\note</span>           The input buffer must be as large as the size</i></td></tr>
+<tr><th id="778">778</th><td><i class="doc"> *                 of<span class="command"> \p</span> <span class="arg">ctx-&gt;N.</span> For example, 128 Bytes if RSA-1024 is used.</i></td></tr>
+<tr><th id="779">779</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="780">780</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_rsaes_oaep_decrypt" title='mbedtls_rsa_rsaes_oaep_decrypt' data-ref="mbedtls_rsa_rsaes_oaep_decrypt">mbedtls_rsa_rsaes_oaep_decrypt</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col0 decl" id="350ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="350ctx">ctx</dfn>,</td></tr>
+<tr><th id="781">781</th><td>                            <em>int</em> (*<dfn class="local col1 decl" id="351f_rng" title='f_rng' data-type='int (*)(void *, unsigned char *, size_t)' data-ref="351f_rng">f_rng</dfn>)(<em>void</em> *, <em>unsigned</em> <em>char</em> *, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>),</td></tr>
+<tr><th id="782">782</th><td>                            <em>void</em> *<dfn class="local col2 decl" id="352p_rng" title='p_rng' data-type='void *' data-ref="352p_rng">p_rng</dfn>,</td></tr>
+<tr><th id="783">783</th><td>                            <em>int</em> <dfn class="local col3 decl" id="353mode" title='mode' data-type='int' data-ref="353mode">mode</dfn>,</td></tr>
+<tr><th id="784">784</th><td>                            <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col4 decl" id="354label" title='label' data-type='const unsigned char *' data-ref="354label">label</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col5 decl" id="355label_len" title='label_len' data-type='size_t' data-ref="355label_len">label_len</dfn>,</td></tr>
+<tr><th id="785">785</th><td>                            <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> *<dfn class="local col6 decl" id="356olen" title='olen' data-type='size_t *' data-ref="356olen">olen</dfn>,</td></tr>
+<tr><th id="786">786</th><td>                            <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col7 decl" id="357input" title='input' data-type='const unsigned char *' data-ref="357input">input</dfn>,</td></tr>
+<tr><th id="787">787</th><td>                            <em>unsigned</em> <em>char</em> *<dfn class="local col8 decl" id="358output" title='output' data-type='unsigned char *' data-ref="358output">output</dfn>,</td></tr>
+<tr><th id="788">788</th><td>                            <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col9 decl" id="359output_max_len" title='output_max_len' data-type='size_t' data-ref="359output_max_len">output_max_len</dfn> );</td></tr>
+<tr><th id="789">789</th><td></td></tr>
+<tr><th id="790">790</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="791">791</th><td><i class="doc"> * <span class="command">\brief</span>          This function performs a private RSA operation to sign</i></td></tr>
+<tr><th id="792">792</th><td><i class="doc"> *                 a message digest using PKCS#1.</i></td></tr>
+<tr><th id="793">793</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="794">794</th><td><i class="doc"> *                 It is the generic wrapper for performing a PKCS#1</i></td></tr>
+<tr><th id="795">795</th><td><i class="doc"> *                 signature using the<span class="command"> \p</span> <span class="arg">mode</span> from the context.</i></td></tr>
+<tr><th id="796">796</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="797">797</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The RSA context.</i></td></tr>
+<tr><th id="798">798</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_rng</span>    The RNG function. Needed for PKCS#1 v2.1 encoding and for</i></td></tr>
+<tr><th id="799">799</th><td><i class="doc"> *                 #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="800">800</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_rng</span>    The RNG parameter.</i></td></tr>
+<tr><th id="801">801</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">mode</span>     #MBEDTLS_RSA_PUBLIC or #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="802">802</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">md_alg</span>   The message-digest algorithm used to hash the original data.</i></td></tr>
+<tr><th id="803">803</th><td><i class="doc"> *                 Use #MBEDTLS_MD_NONE for signing raw data.</i></td></tr>
+<tr><th id="804">804</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">hashlen</span>  The length of the message digest. Only used if<span class="command"> \p</span> <span class="arg">md_alg</span> is #MBEDTLS_MD_NONE.</i></td></tr>
+<tr><th id="805">805</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">hash</span>     The buffer holding the message digest.</i></td></tr>
+<tr><th id="806">806</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">sig</span>      The buffer to hold the ciphertext.</i></td></tr>
+<tr><th id="807">807</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="808">808</th><td><i class="doc"> * <span class="command">\deprecated</span>     It is deprecated and discouraged to call this function</i></td></tr>
+<tr><th id="809">809</th><td><i class="doc"> *                 in #MBEDTLS_RSA_PUBLIC mode. Future versions of the library</i></td></tr>
+<tr><th id="810">810</th><td><i class="doc"> *                 are likely to remove the<span class="command"> \p</span> <span class="arg">mode</span> argument and have it</i></td></tr>
+<tr><th id="811">811</th><td><i class="doc"> *                 implicitly set to #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="812">812</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="813">813</th><td><i class="doc"> * <span class="command">\note</span>           Alternative implementations of RSA need not support</i></td></tr>
+<tr><th id="814">814</th><td><i class="doc"> *                 mode being set to #MBEDTLS_RSA_PUBLIC and might instead</i></td></tr>
+<tr><th id="815">815</th><td><i class="doc"> *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.</i></td></tr>
+<tr><th id="816">816</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="817">817</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> if the signing operation was successful,</i></td></tr>
+<tr><th id="818">818</th><td><i class="doc"> *                 or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code on failure.</i></td></tr>
+<tr><th id="819">819</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="820">820</th><td><i class="doc"> * <span class="command">\note</span>           The<span class="command"> \p</span> <span class="arg">sig</span> buffer must be as large as the size</i></td></tr>
+<tr><th id="821">821</th><td><i class="doc"> *                 of<span class="command"> \p</span> <span class="arg">ctx-&gt;N.</span> For example, 128 Bytes if RSA-1024 is used.</i></td></tr>
+<tr><th id="822">822</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="823">823</th><td><i class="doc"> * <span class="command">\note</span>           For PKCS#1 v2.1 encoding, see comments on</i></td></tr>
+<tr><th id="824">824</th><td><i class="doc"> *                 mbedtls_rsa_rsassa_pss_sign() for details on</i></td></tr>
+<tr><th id="825">825</th><td><i class="doc"> *                <span class="command"> \p</span> <span class="arg">md_alg</span> and<span class="command"> \p</span> <span class="arg">hash_id.</span></i></td></tr>
+<tr><th id="826">826</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="827">827</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_pkcs1_sign" title='mbedtls_rsa_pkcs1_sign' data-ref="mbedtls_rsa_pkcs1_sign">mbedtls_rsa_pkcs1_sign</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col0 decl" id="360ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="360ctx">ctx</dfn>,</td></tr>
+<tr><th id="828">828</th><td>                    <em>int</em> (*<dfn class="local col1 decl" id="361f_rng" title='f_rng' data-type='int (*)(void *, unsigned char *, size_t)' data-ref="361f_rng">f_rng</dfn>)(<em>void</em> *, <em>unsigned</em> <em>char</em> *, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>),</td></tr>
+<tr><th id="829">829</th><td>                    <em>void</em> *<dfn class="local col2 decl" id="362p_rng" title='p_rng' data-type='void *' data-ref="362p_rng">p_rng</dfn>,</td></tr>
+<tr><th id="830">830</th><td>                    <em>int</em> <dfn class="local col3 decl" id="363mode" title='mode' data-type='int' data-ref="363mode">mode</dfn>,</td></tr>
+<tr><th id="831">831</th><td>                    <a class="typedef" href="md.h.html#mbedtls_md_type_t" title='mbedtls_md_type_t' data-type='enum mbedtls_md_type_t' data-ref="mbedtls_md_type_t">mbedtls_md_type_t</a> <dfn class="local col4 decl" id="364md_alg" title='md_alg' data-type='mbedtls_md_type_t' data-ref="364md_alg">md_alg</dfn>,</td></tr>
+<tr><th id="832">832</th><td>                    <em>unsigned</em> <em>int</em> <dfn class="local col5 decl" id="365hashlen" title='hashlen' data-type='unsigned int' data-ref="365hashlen">hashlen</dfn>,</td></tr>
+<tr><th id="833">833</th><td>                    <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col6 decl" id="366hash" title='hash' data-type='const unsigned char *' data-ref="366hash">hash</dfn>,</td></tr>
+<tr><th id="834">834</th><td>                    <em>unsigned</em> <em>char</em> *<dfn class="local col7 decl" id="367sig" title='sig' data-type='unsigned char *' data-ref="367sig">sig</dfn> );</td></tr>
+<tr><th id="835">835</th><td></td></tr>
+<tr><th id="836">836</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="837">837</th><td><i class="doc"> * <span class="command">\brief</span>          This function performs a PKCS#1 v1.5 signature</i></td></tr>
+<tr><th id="838">838</th><td><i class="doc"> *                 operation (RSASSA-PKCS1-v1_5-SIGN).</i></td></tr>
+<tr><th id="839">839</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="840">840</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The RSA context.</i></td></tr>
+<tr><th id="841">841</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_rng</span>    The RNG function. Only needed for #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="842">842</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_rng</span>    The RNG parameter.</i></td></tr>
+<tr><th id="843">843</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">mode</span>     #MBEDTLS_RSA_PUBLIC or #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="844">844</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">md_alg</span>   The message-digest algorithm used to hash the original data.</i></td></tr>
+<tr><th id="845">845</th><td><i class="doc"> *                 Use #MBEDTLS_MD_NONE for signing raw data.</i></td></tr>
+<tr><th id="846">846</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">hashlen</span>  The length of the message digest. Only used if<span class="command"> \p</span> <span class="arg">md_alg</span> is #MBEDTLS_MD_NONE.</i></td></tr>
+<tr><th id="847">847</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">hash</span>     The buffer holding the message digest.</i></td></tr>
+<tr><th id="848">848</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">sig</span>      The buffer to hold the ciphertext.</i></td></tr>
+<tr><th id="849">849</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="850">850</th><td><i class="doc"> * <span class="command">\deprecated</span>     It is deprecated and discouraged to call this function</i></td></tr>
+<tr><th id="851">851</th><td><i class="doc"> *                 in #MBEDTLS_RSA_PUBLIC mode. Future versions of the library</i></td></tr>
+<tr><th id="852">852</th><td><i class="doc"> *                 are likely to remove the<span class="command"> \p</span> <span class="arg">mode</span> argument and have it</i></td></tr>
+<tr><th id="853">853</th><td><i class="doc"> *                 implicitly set to #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="854">854</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="855">855</th><td><i class="doc"> * <span class="command">\note</span>           Alternative implementations of RSA need not support</i></td></tr>
+<tr><th id="856">856</th><td><i class="doc"> *                 mode being set to #MBEDTLS_RSA_PUBLIC and might instead</i></td></tr>
+<tr><th id="857">857</th><td><i class="doc"> *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.</i></td></tr>
+<tr><th id="858">858</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="859">859</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> if the signing operation was successful,</i></td></tr>
+<tr><th id="860">860</th><td><i class="doc"> *                 or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code</i></td></tr>
+<tr><th id="861">861</th><td><i class="doc"> *                 on failure.</i></td></tr>
+<tr><th id="862">862</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="863">863</th><td><i class="doc"> * <span class="command">\note</span>           The<span class="command"> \p</span> <span class="arg">sig</span> buffer must be as large as the size</i></td></tr>
+<tr><th id="864">864</th><td><i class="doc"> *                 of<span class="command"> \p</span> <span class="arg">ctx-&gt;N.</span> For example, 128 Bytes if RSA-1024 is used.</i></td></tr>
+<tr><th id="865">865</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="866">866</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_rsassa_pkcs1_v15_sign" title='mbedtls_rsa_rsassa_pkcs1_v15_sign' data-ref="mbedtls_rsa_rsassa_pkcs1_v15_sign">mbedtls_rsa_rsassa_pkcs1_v15_sign</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col8 decl" id="368ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="368ctx">ctx</dfn>,</td></tr>
+<tr><th id="867">867</th><td>                               <em>int</em> (*<dfn class="local col9 decl" id="369f_rng" title='f_rng' data-type='int (*)(void *, unsigned char *, size_t)' data-ref="369f_rng">f_rng</dfn>)(<em>void</em> *, <em>unsigned</em> <em>char</em> *, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>),</td></tr>
+<tr><th id="868">868</th><td>                               <em>void</em> *<dfn class="local col0 decl" id="370p_rng" title='p_rng' data-type='void *' data-ref="370p_rng">p_rng</dfn>,</td></tr>
+<tr><th id="869">869</th><td>                               <em>int</em> <dfn class="local col1 decl" id="371mode" title='mode' data-type='int' data-ref="371mode">mode</dfn>,</td></tr>
+<tr><th id="870">870</th><td>                               <a class="typedef" href="md.h.html#mbedtls_md_type_t" title='mbedtls_md_type_t' data-type='enum mbedtls_md_type_t' data-ref="mbedtls_md_type_t">mbedtls_md_type_t</a> <dfn class="local col2 decl" id="372md_alg" title='md_alg' data-type='mbedtls_md_type_t' data-ref="372md_alg">md_alg</dfn>,</td></tr>
+<tr><th id="871">871</th><td>                               <em>unsigned</em> <em>int</em> <dfn class="local col3 decl" id="373hashlen" title='hashlen' data-type='unsigned int' data-ref="373hashlen">hashlen</dfn>,</td></tr>
+<tr><th id="872">872</th><td>                               <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col4 decl" id="374hash" title='hash' data-type='const unsigned char *' data-ref="374hash">hash</dfn>,</td></tr>
+<tr><th id="873">873</th><td>                               <em>unsigned</em> <em>char</em> *<dfn class="local col5 decl" id="375sig" title='sig' data-type='unsigned char *' data-ref="375sig">sig</dfn> );</td></tr>
+<tr><th id="874">874</th><td></td></tr>
+<tr><th id="875">875</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="876">876</th><td><i class="doc"> * <span class="command">\brief</span>          This function performs a PKCS#1 v2.1 PSS signature</i></td></tr>
+<tr><th id="877">877</th><td><i class="doc"> *                 operation (RSASSA-PSS-SIGN).</i></td></tr>
+<tr><th id="878">878</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="879">879</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The RSA context.</i></td></tr>
+<tr><th id="880">880</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_rng</span>    The RNG function. Needed for PKCS#1 v2.1 encoding and for</i></td></tr>
+<tr><th id="881">881</th><td><i class="doc"> *                 #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="882">882</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_rng</span>    The RNG parameter.</i></td></tr>
+<tr><th id="883">883</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">mode</span>     #MBEDTLS_RSA_PUBLIC or #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="884">884</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">md_alg</span>   The message-digest algorithm used to hash the original data.</i></td></tr>
+<tr><th id="885">885</th><td><i class="doc"> *                 Use #MBEDTLS_MD_NONE for signing raw data.</i></td></tr>
+<tr><th id="886">886</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">hashlen</span>  The length of the message digest. Only used if<span class="command"> \p</span> <span class="arg">md_alg</span> is #MBEDTLS_MD_NONE.</i></td></tr>
+<tr><th id="887">887</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">hash</span>     The buffer holding the message digest.</i></td></tr>
+<tr><th id="888">888</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">sig</span>      The buffer to hold the ciphertext.</i></td></tr>
+<tr><th id="889">889</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="890">890</th><td><i class="doc"> * <span class="command">\deprecated</span>     It is deprecated and discouraged to call this function</i></td></tr>
+<tr><th id="891">891</th><td><i class="doc"> *                 in #MBEDTLS_RSA_PUBLIC mode. Future versions of the library</i></td></tr>
+<tr><th id="892">892</th><td><i class="doc"> *                 are likely to remove the<span class="command"> \p</span> <span class="arg">mode</span> argument and have it</i></td></tr>
+<tr><th id="893">893</th><td><i class="doc"> *                 implicitly set to #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="894">894</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="895">895</th><td><i class="doc"> * <span class="command">\note</span>           Alternative implementations of RSA need not support</i></td></tr>
+<tr><th id="896">896</th><td><i class="doc"> *                 mode being set to #MBEDTLS_RSA_PUBLIC and might instead</i></td></tr>
+<tr><th id="897">897</th><td><i class="doc"> *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.</i></td></tr>
+<tr><th id="898">898</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="899">899</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> if the signing operation was successful,</i></td></tr>
+<tr><th id="900">900</th><td><i class="doc"> *                 or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code</i></td></tr>
+<tr><th id="901">901</th><td><i class="doc"> *                 on failure.</i></td></tr>
+<tr><th id="902">902</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="903">903</th><td><i class="doc"> * <span class="command">\note</span>           The<span class="command"> \p</span> <span class="arg">sig</span> buffer must be as large as the size</i></td></tr>
+<tr><th id="904">904</th><td><i class="doc"> *                 of<span class="command"> \p</span> <span class="arg">ctx-&gt;N.</span> For example, 128 Bytes if RSA-1024 is used.</i></td></tr>
+<tr><th id="905">905</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="906">906</th><td><i class="doc"> * <span class="command">\note</span>           The<span class="command"> \p</span> <span class="arg">hash_id</span> in the RSA context is the one used for the</i></td></tr>
+<tr><th id="907">907</th><td><i class="doc"> *                 encoding.<span class="command"> \p</span> <span class="arg">md_alg</span> in the function call is the type of hash</i></td></tr>
+<tr><th id="908">908</th><td><i class="doc"> *                 that is encoded. According to <span class="tag">&lt;em&gt;</span>RFC-3447: Public-Key</i></td></tr>
+<tr><th id="909">909</th><td><i class="doc"> *                 Cryptography Standards (PKCS) #1 v2.1: RSA Cryptography</i></td></tr>
+<tr><th id="910">910</th><td><i class="doc"> *                 Specifications<span class="tag">&lt;/em&gt;</span> it is advised to keep both hashes the</i></td></tr>
+<tr><th id="911">911</th><td><i class="doc"> *                 same.</i></td></tr>
+<tr><th id="912">912</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="913">913</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_rsassa_pss_sign" title='mbedtls_rsa_rsassa_pss_sign' data-ref="mbedtls_rsa_rsassa_pss_sign">mbedtls_rsa_rsassa_pss_sign</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col6 decl" id="376ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="376ctx">ctx</dfn>,</td></tr>
+<tr><th id="914">914</th><td>                         <em>int</em> (*<dfn class="local col7 decl" id="377f_rng" title='f_rng' data-type='int (*)(void *, unsigned char *, size_t)' data-ref="377f_rng">f_rng</dfn>)(<em>void</em> *, <em>unsigned</em> <em>char</em> *, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>),</td></tr>
+<tr><th id="915">915</th><td>                         <em>void</em> *<dfn class="local col8 decl" id="378p_rng" title='p_rng' data-type='void *' data-ref="378p_rng">p_rng</dfn>,</td></tr>
+<tr><th id="916">916</th><td>                         <em>int</em> <dfn class="local col9 decl" id="379mode" title='mode' data-type='int' data-ref="379mode">mode</dfn>,</td></tr>
+<tr><th id="917">917</th><td>                         <a class="typedef" href="md.h.html#mbedtls_md_type_t" title='mbedtls_md_type_t' data-type='enum mbedtls_md_type_t' data-ref="mbedtls_md_type_t">mbedtls_md_type_t</a> <dfn class="local col0 decl" id="380md_alg" title='md_alg' data-type='mbedtls_md_type_t' data-ref="380md_alg">md_alg</dfn>,</td></tr>
+<tr><th id="918">918</th><td>                         <em>unsigned</em> <em>int</em> <dfn class="local col1 decl" id="381hashlen" title='hashlen' data-type='unsigned int' data-ref="381hashlen">hashlen</dfn>,</td></tr>
+<tr><th id="919">919</th><td>                         <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col2 decl" id="382hash" title='hash' data-type='const unsigned char *' data-ref="382hash">hash</dfn>,</td></tr>
+<tr><th id="920">920</th><td>                         <em>unsigned</em> <em>char</em> *<dfn class="local col3 decl" id="383sig" title='sig' data-type='unsigned char *' data-ref="383sig">sig</dfn> );</td></tr>
+<tr><th id="921">921</th><td></td></tr>
+<tr><th id="922">922</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="923">923</th><td><i class="doc"> * <span class="command">\brief</span>          This function performs a public RSA operation and checks</i></td></tr>
+<tr><th id="924">924</th><td><i class="doc"> *                 the message digest.</i></td></tr>
+<tr><th id="925">925</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="926">926</th><td><i class="doc"> *                 This is the generic wrapper for performing a PKCS#1</i></td></tr>
+<tr><th id="927">927</th><td><i class="doc"> *                 verification using the mode from the context.</i></td></tr>
+<tr><th id="928">928</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="929">929</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The RSA public key context.</i></td></tr>
+<tr><th id="930">930</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_rng</span>    The RNG function. Only needed for #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="931">931</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_rng</span>    The RNG parameter.</i></td></tr>
+<tr><th id="932">932</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">mode</span>     #MBEDTLS_RSA_PUBLIC or #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="933">933</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">md_alg</span>   The message-digest algorithm used to hash the original data.</i></td></tr>
+<tr><th id="934">934</th><td><i class="doc"> *                 Use #MBEDTLS_MD_NONE for signing raw data.</i></td></tr>
+<tr><th id="935">935</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">hashlen</span>  The length of the message digest. Only used if<span class="command"> \p</span> <span class="arg">md_alg</span> is #MBEDTLS_MD_NONE.</i></td></tr>
+<tr><th id="936">936</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">hash</span>     The buffer holding the message digest.</i></td></tr>
+<tr><th id="937">937</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">sig</span>      The buffer holding the ciphertext.</i></td></tr>
+<tr><th id="938">938</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="939">939</th><td><i class="doc"> * <span class="command">\deprecated</span>     It is deprecated and discouraged to call this function</i></td></tr>
+<tr><th id="940">940</th><td><i class="doc"> *                 in #MBEDTLS_RSA_PRIVATE mode. Future versions of the library</i></td></tr>
+<tr><th id="941">941</th><td><i class="doc"> *                 are likely to remove the<span class="command"> \p</span> <span class="arg">mode</span> argument and have it</i></td></tr>
+<tr><th id="942">942</th><td><i class="doc"> *                 set to #MBEDTLS_RSA_PUBLIC.</i></td></tr>
+<tr><th id="943">943</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="944">944</th><td><i class="doc"> * <span class="command">\note</span>           Alternative implementations of RSA need not support</i></td></tr>
+<tr><th id="945">945</th><td><i class="doc"> *                 mode being set to #MBEDTLS_RSA_PRIVATE and might instead</i></td></tr>
+<tr><th id="946">946</th><td><i class="doc"> *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.</i></td></tr>
+<tr><th id="947">947</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="948">948</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> if the verify operation was successful,</i></td></tr>
+<tr><th id="949">949</th><td><i class="doc"> *                 or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code</i></td></tr>
+<tr><th id="950">950</th><td><i class="doc"> *                 on failure.</i></td></tr>
+<tr><th id="951">951</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="952">952</th><td><i class="doc"> * <span class="command">\note</span>           The<span class="command"> \p</span> <span class="arg">sig</span> buffer must be as large as the size</i></td></tr>
+<tr><th id="953">953</th><td><i class="doc"> *                 of<span class="command"> \p</span> <span class="arg">ctx-&gt;N.</span> For example, 128 Bytes if RSA-1024 is used.</i></td></tr>
+<tr><th id="954">954</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="955">955</th><td><i class="doc"> * <span class="command">\note</span>           For PKCS#1 v2.1 encoding, see comments on</i></td></tr>
+<tr><th id="956">956</th><td><i class="doc"> *                 mbedtls_rsa_rsassa_pss_verify() about<span class="command"> \p</span> <span class="arg">md_alg</span> and</i></td></tr>
+<tr><th id="957">957</th><td><i class="doc"> *                <span class="command"> \p</span> <span class="arg">hash_id.</span></i></td></tr>
+<tr><th id="958">958</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="959">959</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_pkcs1_verify" title='mbedtls_rsa_pkcs1_verify' data-ref="mbedtls_rsa_pkcs1_verify">mbedtls_rsa_pkcs1_verify</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col4 decl" id="384ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="384ctx">ctx</dfn>,</td></tr>
+<tr><th id="960">960</th><td>                      <em>int</em> (*<dfn class="local col5 decl" id="385f_rng" title='f_rng' data-type='int (*)(void *, unsigned char *, size_t)' data-ref="385f_rng">f_rng</dfn>)(<em>void</em> *, <em>unsigned</em> <em>char</em> *, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>),</td></tr>
+<tr><th id="961">961</th><td>                      <em>void</em> *<dfn class="local col6 decl" id="386p_rng" title='p_rng' data-type='void *' data-ref="386p_rng">p_rng</dfn>,</td></tr>
+<tr><th id="962">962</th><td>                      <em>int</em> <dfn class="local col7 decl" id="387mode" title='mode' data-type='int' data-ref="387mode">mode</dfn>,</td></tr>
+<tr><th id="963">963</th><td>                      <a class="typedef" href="md.h.html#mbedtls_md_type_t" title='mbedtls_md_type_t' data-type='enum mbedtls_md_type_t' data-ref="mbedtls_md_type_t">mbedtls_md_type_t</a> <dfn class="local col8 decl" id="388md_alg" title='md_alg' data-type='mbedtls_md_type_t' data-ref="388md_alg">md_alg</dfn>,</td></tr>
+<tr><th id="964">964</th><td>                      <em>unsigned</em> <em>int</em> <dfn class="local col9 decl" id="389hashlen" title='hashlen' data-type='unsigned int' data-ref="389hashlen">hashlen</dfn>,</td></tr>
+<tr><th id="965">965</th><td>                      <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col0 decl" id="390hash" title='hash' data-type='const unsigned char *' data-ref="390hash">hash</dfn>,</td></tr>
+<tr><th id="966">966</th><td>                      <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col1 decl" id="391sig" title='sig' data-type='const unsigned char *' data-ref="391sig">sig</dfn> );</td></tr>
+<tr><th id="967">967</th><td></td></tr>
+<tr><th id="968">968</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="969">969</th><td><i class="doc"> * <span class="command">\brief</span>          This function performs a PKCS#1 v1.5 verification</i></td></tr>
+<tr><th id="970">970</th><td><i class="doc"> *                 operation (RSASSA-PKCS1-v1_5-VERIFY).</i></td></tr>
+<tr><th id="971">971</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="972">972</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The RSA public key context.</i></td></tr>
+<tr><th id="973">973</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_rng</span>    The RNG function. Only needed for #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="974">974</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_rng</span>    The RNG parameter.</i></td></tr>
+<tr><th id="975">975</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">mode</span>     #MBEDTLS_RSA_PUBLIC or #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="976">976</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">md_alg</span>   The message-digest algorithm used to hash the original data.</i></td></tr>
+<tr><th id="977">977</th><td><i class="doc"> *                 Use #MBEDTLS_MD_NONE for signing raw data.</i></td></tr>
+<tr><th id="978">978</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">hashlen</span>  The length of the message digest. Only used if<span class="command"> \p</span> <span class="arg">md_alg</span> is #MBEDTLS_MD_NONE.</i></td></tr>
+<tr><th id="979">979</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">hash</span>     The buffer holding the message digest.</i></td></tr>
+<tr><th id="980">980</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">sig</span>      The buffer holding the ciphertext.</i></td></tr>
+<tr><th id="981">981</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="982">982</th><td><i class="doc"> * <span class="command">\deprecated</span>     It is deprecated and discouraged to call this function</i></td></tr>
+<tr><th id="983">983</th><td><i class="doc"> *                 in #MBEDTLS_RSA_PRIVATE mode. Future versions of the library</i></td></tr>
+<tr><th id="984">984</th><td><i class="doc"> *                 are likely to remove the<span class="command"> \p</span> <span class="arg">mode</span> argument and have it</i></td></tr>
+<tr><th id="985">985</th><td><i class="doc"> *                 set to #MBEDTLS_RSA_PUBLIC.</i></td></tr>
+<tr><th id="986">986</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="987">987</th><td><i class="doc"> * <span class="command">\note</span>           Alternative implementations of RSA need not support</i></td></tr>
+<tr><th id="988">988</th><td><i class="doc"> *                 mode being set to #MBEDTLS_RSA_PRIVATE and might instead</i></td></tr>
+<tr><th id="989">989</th><td><i class="doc"> *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.</i></td></tr>
+<tr><th id="990">990</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="991">991</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> if the verify operation was successful,</i></td></tr>
+<tr><th id="992">992</th><td><i class="doc"> *                 or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code</i></td></tr>
+<tr><th id="993">993</th><td><i class="doc"> *                 on failure.</i></td></tr>
+<tr><th id="994">994</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="995">995</th><td><i class="doc"> * <span class="command">\note</span>           The<span class="command"> \p</span> <span class="arg">sig</span> buffer must be as large as the size</i></td></tr>
+<tr><th id="996">996</th><td><i class="doc"> *                 of<span class="command"> \p</span> <span class="arg">ctx-&gt;N.</span> For example, 128 Bytes if RSA-1024 is used.</i></td></tr>
+<tr><th id="997">997</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="998">998</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_rsassa_pkcs1_v15_verify" title='mbedtls_rsa_rsassa_pkcs1_v15_verify' data-ref="mbedtls_rsa_rsassa_pkcs1_v15_verify">mbedtls_rsa_rsassa_pkcs1_v15_verify</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col2 decl" id="392ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="392ctx">ctx</dfn>,</td></tr>
+<tr><th id="999">999</th><td>                                 <em>int</em> (*<dfn class="local col3 decl" id="393f_rng" title='f_rng' data-type='int (*)(void *, unsigned char *, size_t)' data-ref="393f_rng">f_rng</dfn>)(<em>void</em> *, <em>unsigned</em> <em>char</em> *, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>),</td></tr>
+<tr><th id="1000">1000</th><td>                                 <em>void</em> *<dfn class="local col4 decl" id="394p_rng" title='p_rng' data-type='void *' data-ref="394p_rng">p_rng</dfn>,</td></tr>
+<tr><th id="1001">1001</th><td>                                 <em>int</em> <dfn class="local col5 decl" id="395mode" title='mode' data-type='int' data-ref="395mode">mode</dfn>,</td></tr>
+<tr><th id="1002">1002</th><td>                                 <a class="typedef" href="md.h.html#mbedtls_md_type_t" title='mbedtls_md_type_t' data-type='enum mbedtls_md_type_t' data-ref="mbedtls_md_type_t">mbedtls_md_type_t</a> <dfn class="local col6 decl" id="396md_alg" title='md_alg' data-type='mbedtls_md_type_t' data-ref="396md_alg">md_alg</dfn>,</td></tr>
+<tr><th id="1003">1003</th><td>                                 <em>unsigned</em> <em>int</em> <dfn class="local col7 decl" id="397hashlen" title='hashlen' data-type='unsigned int' data-ref="397hashlen">hashlen</dfn>,</td></tr>
+<tr><th id="1004">1004</th><td>                                 <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col8 decl" id="398hash" title='hash' data-type='const unsigned char *' data-ref="398hash">hash</dfn>,</td></tr>
+<tr><th id="1005">1005</th><td>                                 <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col9 decl" id="399sig" title='sig' data-type='const unsigned char *' data-ref="399sig">sig</dfn> );</td></tr>
+<tr><th id="1006">1006</th><td></td></tr>
+<tr><th id="1007">1007</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="1008">1008</th><td><i class="doc"> * <span class="command">\brief</span>          This function performs a PKCS#1 v2.1 PSS verification</i></td></tr>
+<tr><th id="1009">1009</th><td><i class="doc"> *                 operation (RSASSA-PSS-VERIFY).</i></td></tr>
+<tr><th id="1010">1010</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1011">1011</th><td><i class="doc"> *                 The hash function for the MGF mask generating function</i></td></tr>
+<tr><th id="1012">1012</th><td><i class="doc"> *                 is that specified in the RSA context.</i></td></tr>
+<tr><th id="1013">1013</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1014">1014</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The RSA public key context.</i></td></tr>
+<tr><th id="1015">1015</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_rng</span>    The RNG function. Only needed for #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="1016">1016</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_rng</span>    The RNG parameter.</i></td></tr>
+<tr><th id="1017">1017</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">mode</span>     #MBEDTLS_RSA_PUBLIC or #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="1018">1018</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">md_alg</span>   The message-digest algorithm used to hash the original data.</i></td></tr>
+<tr><th id="1019">1019</th><td><i class="doc"> *                 Use #MBEDTLS_MD_NONE for signing raw data.</i></td></tr>
+<tr><th id="1020">1020</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">hashlen</span>  The length of the message digest. Only used if<span class="command"> \p</span> <span class="arg">md_alg</span> is #MBEDTLS_MD_NONE.</i></td></tr>
+<tr><th id="1021">1021</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">hash</span>     The buffer holding the message digest.</i></td></tr>
+<tr><th id="1022">1022</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">sig</span>      The buffer holding the ciphertext.</i></td></tr>
+<tr><th id="1023">1023</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1024">1024</th><td><i class="doc"> * <span class="command">\deprecated</span>     It is deprecated and discouraged to call this function</i></td></tr>
+<tr><th id="1025">1025</th><td><i class="doc"> *                 in #MBEDTLS_RSA_PRIVATE mode. Future versions of the library</i></td></tr>
+<tr><th id="1026">1026</th><td><i class="doc"> *                 are likely to remove the<span class="command"> \p</span> <span class="arg">mode</span> argument and have it</i></td></tr>
+<tr><th id="1027">1027</th><td><i class="doc"> *                 implicitly set to #MBEDTLS_RSA_PUBLIC.</i></td></tr>
+<tr><th id="1028">1028</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1029">1029</th><td><i class="doc"> * <span class="command">\note</span>           Alternative implementations of RSA need not support</i></td></tr>
+<tr><th id="1030">1030</th><td><i class="doc"> *                 mode being set to #MBEDTLS_RSA_PRIVATE and might instead</i></td></tr>
+<tr><th id="1031">1031</th><td><i class="doc"> *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.</i></td></tr>
+<tr><th id="1032">1032</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1033">1033</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> if the verify operation was successful,</i></td></tr>
+<tr><th id="1034">1034</th><td><i class="doc"> *                 or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code</i></td></tr>
+<tr><th id="1035">1035</th><td><i class="doc"> *                 on failure.</i></td></tr>
+<tr><th id="1036">1036</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1037">1037</th><td><i class="doc"> * <span class="command">\note</span>           The<span class="command"> \p</span> <span class="arg">sig</span> buffer must be as large as the size</i></td></tr>
+<tr><th id="1038">1038</th><td><i class="doc"> *                 of<span class="command"> \p</span> <span class="arg">ctx-&gt;N.</span> For example, 128 Bytes if RSA-1024 is used.</i></td></tr>
+<tr><th id="1039">1039</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1040">1040</th><td><i class="doc"> * <span class="command">\note</span>           The<span class="command"> \p</span> <span class="arg">hash_id</span> in the RSA context is the one used for the</i></td></tr>
+<tr><th id="1041">1041</th><td><i class="doc"> *                 verification.<span class="command"> \p</span> <span class="arg">md_alg</span> in the function call is the type of</i></td></tr>
+<tr><th id="1042">1042</th><td><i class="doc"> *                 hash that is verified. According to <span class="tag">&lt;em&gt;</span>RFC-3447: Public-Key</i></td></tr>
+<tr><th id="1043">1043</th><td><i class="doc"> *                 Cryptography Standards (PKCS) #1 v2.1: RSA Cryptography</i></td></tr>
+<tr><th id="1044">1044</th><td><i class="doc"> *                 Specifications<span class="tag">&lt;/em&gt;</span> it is advised to keep both hashes the</i></td></tr>
+<tr><th id="1045">1045</th><td><i class="doc"> *                 same. If<span class="command"> \p</span> <span class="arg">hash_id</span> in the RSA context is unset,</i></td></tr>
+<tr><th id="1046">1046</th><td><i class="doc"> *                 the<span class="command"> \p</span> <span class="arg">md_alg</span> from the function call is used.</i></td></tr>
+<tr><th id="1047">1047</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="1048">1048</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_rsassa_pss_verify" title='mbedtls_rsa_rsassa_pss_verify' data-ref="mbedtls_rsa_rsassa_pss_verify">mbedtls_rsa_rsassa_pss_verify</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col0 decl" id="400ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="400ctx">ctx</dfn>,</td></tr>
+<tr><th id="1049">1049</th><td>                           <em>int</em> (*<dfn class="local col1 decl" id="401f_rng" title='f_rng' data-type='int (*)(void *, unsigned char *, size_t)' data-ref="401f_rng">f_rng</dfn>)(<em>void</em> *, <em>unsigned</em> <em>char</em> *, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>),</td></tr>
+<tr><th id="1050">1050</th><td>                           <em>void</em> *<dfn class="local col2 decl" id="402p_rng" title='p_rng' data-type='void *' data-ref="402p_rng">p_rng</dfn>,</td></tr>
+<tr><th id="1051">1051</th><td>                           <em>int</em> <dfn class="local col3 decl" id="403mode" title='mode' data-type='int' data-ref="403mode">mode</dfn>,</td></tr>
+<tr><th id="1052">1052</th><td>                           <a class="typedef" href="md.h.html#mbedtls_md_type_t" title='mbedtls_md_type_t' data-type='enum mbedtls_md_type_t' data-ref="mbedtls_md_type_t">mbedtls_md_type_t</a> <dfn class="local col4 decl" id="404md_alg" title='md_alg' data-type='mbedtls_md_type_t' data-ref="404md_alg">md_alg</dfn>,</td></tr>
+<tr><th id="1053">1053</th><td>                           <em>unsigned</em> <em>int</em> <dfn class="local col5 decl" id="405hashlen" title='hashlen' data-type='unsigned int' data-ref="405hashlen">hashlen</dfn>,</td></tr>
+<tr><th id="1054">1054</th><td>                           <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col6 decl" id="406hash" title='hash' data-type='const unsigned char *' data-ref="406hash">hash</dfn>,</td></tr>
+<tr><th id="1055">1055</th><td>                           <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col7 decl" id="407sig" title='sig' data-type='const unsigned char *' data-ref="407sig">sig</dfn> );</td></tr>
+<tr><th id="1056">1056</th><td></td></tr>
+<tr><th id="1057">1057</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="1058">1058</th><td><i class="doc"> * <span class="command">\brief</span>          This function performs a PKCS#1 v2.1 PSS verification</i></td></tr>
+<tr><th id="1059">1059</th><td><i class="doc"> *                 operation (RSASSA-PSS-VERIFY).</i></td></tr>
+<tr><th id="1060">1060</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1061">1061</th><td><i class="doc"> *                 The hash function for the MGF mask generating function</i></td></tr>
+<tr><th id="1062">1062</th><td><i class="doc"> *                 is that specified in<span class="command"> \p</span> <span class="arg">mgf1_hash_id.</span></i></td></tr>
+<tr><th id="1063">1063</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1064">1064</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The RSA public key context.</i></td></tr>
+<tr><th id="1065">1065</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_rng</span>    The RNG function. Only needed for #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="1066">1066</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_rng</span>    The RNG parameter.</i></td></tr>
+<tr><th id="1067">1067</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">mode</span>     #MBEDTLS_RSA_PUBLIC or #MBEDTLS_RSA_PRIVATE.</i></td></tr>
+<tr><th id="1068">1068</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">md_alg</span>   The message-digest algorithm used to hash the original data.</i></td></tr>
+<tr><th id="1069">1069</th><td><i class="doc"> *                 Use #MBEDTLS_MD_NONE for signing raw data.</i></td></tr>
+<tr><th id="1070">1070</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">hashlen</span>  The length of the message digest. Only used if<span class="command"> \p</span> <span class="arg">md_alg</span> is #MBEDTLS_MD_NONE.</i></td></tr>
+<tr><th id="1071">1071</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">hash</span>     The buffer holding the message digest.</i></td></tr>
+<tr><th id="1072">1072</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">mgf1_hash_id</span> The message digest used for mask generation.</i></td></tr>
+<tr><th id="1073">1073</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">expected_salt_len</span> The length of the salt used in padding. Use</i></td></tr>
+<tr><th id="1074">1074</th><td><i class="doc"> *                 #MBEDTLS_RSA_SALT_LEN_ANY to accept any salt length.</i></td></tr>
+<tr><th id="1075">1075</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">sig</span>      The buffer holding the ciphertext.</i></td></tr>
+<tr><th id="1076">1076</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1077">1077</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> if the verify operation was successful,</i></td></tr>
+<tr><th id="1078">1078</th><td><i class="doc"> *                 or an<span class="command"> \c</span> <span class="arg">MBEDTLS_ERR_RSA_XXX</span> error code</i></td></tr>
+<tr><th id="1079">1079</th><td><i class="doc"> *                 on failure.</i></td></tr>
+<tr><th id="1080">1080</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1081">1081</th><td><i class="doc"> * <span class="command">\note</span>           The<span class="command"> \p</span> <span class="arg">sig</span> buffer must be as large as the size</i></td></tr>
+<tr><th id="1082">1082</th><td><i class="doc"> *                 of<span class="command"> \p</span> <span class="arg">ctx-&gt;N.</span> For example, 128 Bytes if RSA-1024 is used.</i></td></tr>
+<tr><th id="1083">1083</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1084">1084</th><td><i class="doc"> * <span class="command">\note</span>           The<span class="command"> \p</span> <span class="arg">hash_id</span> in the RSA context is ignored.</i></td></tr>
+<tr><th id="1085">1085</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="1086">1086</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_rsassa_pss_verify_ext" title='mbedtls_rsa_rsassa_pss_verify_ext' data-ref="mbedtls_rsa_rsassa_pss_verify_ext">mbedtls_rsa_rsassa_pss_verify_ext</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col8 decl" id="408ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="408ctx">ctx</dfn>,</td></tr>
+<tr><th id="1087">1087</th><td>                               <em>int</em> (*<dfn class="local col9 decl" id="409f_rng" title='f_rng' data-type='int (*)(void *, unsigned char *, size_t)' data-ref="409f_rng">f_rng</dfn>)(<em>void</em> *, <em>unsigned</em> <em>char</em> *, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>),</td></tr>
+<tr><th id="1088">1088</th><td>                               <em>void</em> *<dfn class="local col0 decl" id="410p_rng" title='p_rng' data-type='void *' data-ref="410p_rng">p_rng</dfn>,</td></tr>
+<tr><th id="1089">1089</th><td>                               <em>int</em> <dfn class="local col1 decl" id="411mode" title='mode' data-type='int' data-ref="411mode">mode</dfn>,</td></tr>
+<tr><th id="1090">1090</th><td>                               <a class="typedef" href="md.h.html#mbedtls_md_type_t" title='mbedtls_md_type_t' data-type='enum mbedtls_md_type_t' data-ref="mbedtls_md_type_t">mbedtls_md_type_t</a> <dfn class="local col2 decl" id="412md_alg" title='md_alg' data-type='mbedtls_md_type_t' data-ref="412md_alg">md_alg</dfn>,</td></tr>
+<tr><th id="1091">1091</th><td>                               <em>unsigned</em> <em>int</em> <dfn class="local col3 decl" id="413hashlen" title='hashlen' data-type='unsigned int' data-ref="413hashlen">hashlen</dfn>,</td></tr>
+<tr><th id="1092">1092</th><td>                               <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col4 decl" id="414hash" title='hash' data-type='const unsigned char *' data-ref="414hash">hash</dfn>,</td></tr>
+<tr><th id="1093">1093</th><td>                               <a class="typedef" href="md.h.html#mbedtls_md_type_t" title='mbedtls_md_type_t' data-type='enum mbedtls_md_type_t' data-ref="mbedtls_md_type_t">mbedtls_md_type_t</a> <dfn class="local col5 decl" id="415mgf1_hash_id" title='mgf1_hash_id' data-type='mbedtls_md_type_t' data-ref="415mgf1_hash_id">mgf1_hash_id</dfn>,</td></tr>
+<tr><th id="1094">1094</th><td>                               <em>int</em> <dfn class="local col6 decl" id="416expected_salt_len" title='expected_salt_len' data-type='int' data-ref="416expected_salt_len">expected_salt_len</dfn>,</td></tr>
+<tr><th id="1095">1095</th><td>                               <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col7 decl" id="417sig" title='sig' data-type='const unsigned char *' data-ref="417sig">sig</dfn> );</td></tr>
+<tr><th id="1096">1096</th><td></td></tr>
+<tr><th id="1097">1097</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="1098">1098</th><td><i class="doc"> * <span class="command">\brief</span>          This function copies the components of an RSA context.</i></td></tr>
+<tr><th id="1099">1099</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1100">1100</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">dst</span>      The destination context.</i></td></tr>
+<tr><th id="1101">1101</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">src</span>      The source context.</i></td></tr>
+<tr><th id="1102">1102</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1103">1103</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success,</i></td></tr>
+<tr><th id="1104">1104</th><td><i class="doc"> *                 #MBEDTLS_ERR_MPI_ALLOC_FAILED on memory allocation failure.</i></td></tr>
+<tr><th id="1105">1105</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="1106">1106</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_copy" title='mbedtls_rsa_copy' data-ref="mbedtls_rsa_copy">mbedtls_rsa_copy</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col8 decl" id="418dst" title='dst' data-type='mbedtls_rsa_context *' data-ref="418dst">dst</dfn>, <em>const</em> <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col9 decl" id="419src" title='src' data-type='const mbedtls_rsa_context *' data-ref="419src">src</dfn> );</td></tr>
+<tr><th id="1107">1107</th><td></td></tr>
+<tr><th id="1108">1108</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="1109">1109</th><td><i class="doc"> * <span class="command">\brief</span>          This function frees the components of an RSA key.</i></td></tr>
+<tr><th id="1110">1110</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1111">1111</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>      The RSA Context to free.</i></td></tr>
+<tr><th id="1112">1112</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="1113">1113</th><td><em>void</em> <dfn class="decl fn" id="mbedtls_rsa_free" title='mbedtls_rsa_free' data-ref="mbedtls_rsa_free">mbedtls_rsa_free</dfn>( <a class="typedef" href="#mbedtls_rsa_context" title='mbedtls_rsa_context' data-type='struct mbedtls_rsa_context' data-ref="mbedtls_rsa_context">mbedtls_rsa_context</a> *<dfn class="local col0 decl" id="420ctx" title='ctx' data-type='mbedtls_rsa_context *' data-ref="420ctx">ctx</dfn> );</td></tr>
+<tr><th id="1114">1114</th><td></td></tr>
+<tr><th id="1115">1115</th><td><u>#<span data-ppcond="1115">ifdef</span> <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="1116">1116</th><td>}</td></tr>
+<tr><th id="1117">1117</th><td><u>#<span data-ppcond="1115">endif</span></u></td></tr>
+<tr><th id="1118">1118</th><td></td></tr>
+<tr><th id="1119">1119</th><td><u>#<span data-ppcond="79">else</span>  /* MBEDTLS_RSA_ALT */</u></td></tr>
+<tr><th id="1120">1120</th><td><u>#include "rsa_alt.h"</u></td></tr>
+<tr><th id="1121">1121</th><td><u>#<span data-ppcond="79">endif</span> /* MBEDTLS_RSA_ALT */</u></td></tr>
+<tr><th id="1122">1122</th><td></td></tr>
+<tr><th id="1123">1123</th><td><u>#<span data-ppcond="1123">ifdef</span> <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="1124">1124</th><td><b>extern</b> <q>"C"</q> {</td></tr>
+<tr><th id="1125">1125</th><td><u>#<span data-ppcond="1123">endif</span></u></td></tr>
+<tr><th id="1126">1126</th><td></td></tr>
+<tr><th id="1127">1127</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="1128">1128</th><td><i class="doc"> * <span class="command">\brief</span>          The RSA checkup routine.</i></td></tr>
+<tr><th id="1129">1129</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1130">1130</th><td><i class="doc"> * <span class="command">\return</span>        <span class="command"> \c</span> <span class="arg">0</span> on success, or<span class="command"> \c</span> <span class="arg">1</span> on failure.</i></td></tr>
+<tr><th id="1131">1131</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="1132">1132</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_rsa_self_test" title='mbedtls_rsa_self_test' data-ref="mbedtls_rsa_self_test">mbedtls_rsa_self_test</dfn>( <em>int</em> <dfn class="local col1 decl" id="421verbose" title='verbose' data-type='int' data-ref="421verbose">verbose</dfn> );</td></tr>
+<tr><th id="1133">1133</th><td></td></tr>
+<tr><th id="1134">1134</th><td><u>#<span data-ppcond="1134">ifdef</span> <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="1135">1135</th><td>}</td></tr>
+<tr><th id="1136">1136</th><td><u>#<span data-ppcond="1134">endif</span></u></td></tr>
+<tr><th id="1137">1137</th><td></td></tr>
+<tr><th id="1138">1138</th><td><u>#<span data-ppcond="29">endif</span> /* rsa.h */</u></td></tr>
+<tr><th id="1139">1139</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../vpp_1804/src/plugins/tlsmbedtls/tls_mbedtls.c.html'>vpp_1804/src/plugins/tlsmbedtls/tls_mbedtls.c</a><br/>Generated on <em>2018-Jul-29</em> from project include<br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

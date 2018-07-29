@@ -1,0 +1,657 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>dpo.c source code [vpp_1804/src/vnet/dpo/dpo.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'vpp_1804/src/vnet/dpo/dpo.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>vpp_1804</a>/<a href='../..'>src</a>/<a href='..'>vnet</a>/<a href='./'>dpo</a>/<a href='dpo.c.html'>dpo.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright (c) 2016 Cisco and/or its affiliates.</i></td></tr>
+<tr><th id="3">3</th><td><i> * Licensed under the Apache License, Version 2.0 (the "License");</i></td></tr>
+<tr><th id="4">4</th><td><i> * you may not use this file except in compliance with the License.</i></td></tr>
+<tr><th id="5">5</th><td><i> * You may obtain a copy of the License at:</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> *     <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></i></td></tr>
+<tr><th id="8">8</th><td><i> *</i></td></tr>
+<tr><th id="9">9</th><td><i> * Unless required by applicable law or agreed to in writing, software</i></td></tr>
+<tr><th id="10">10</th><td><i> * distributed under the License is distributed on an "AS IS" BASIS,</i></td></tr>
+<tr><th id="11">11</th><td><i> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</i></td></tr>
+<tr><th id="12">12</th><td><i> * See the License for the specific language governing permissions and</i></td></tr>
+<tr><th id="13">13</th><td><i> * limitations under the License.</i></td></tr>
+<tr><th id="14">14</th><td><i> */</i></td></tr>
+<tr><th id="15">15</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="16">16</th><td><i class="doc"> * <span class="command">@brief</span></i></td></tr>
+<tr><th id="17">17</th><td><i class="doc"> * A Data-Path Object is an object that represents actions that are</i></td></tr>
+<tr><th id="18">18</th><td><i class="doc"> * applied to packets are they are switched through VPP.</i></td></tr>
+<tr><th id="19">19</th><td><i class="doc"> * </i></td></tr>
+<tr><th id="20">20</th><td><i class="doc"> * The DPO is a base class that is specialised by other objects to provide</i></td></tr>
+<tr><th id="21">21</th><td><i class="doc"> * concreate actions</i></td></tr>
+<tr><th id="22">22</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="23">23</th><td><i class="doc"> * The VLIB graph nodes are graph of types, the DPO graph is a graph of instances.</i></td></tr>
+<tr><th id="24">24</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="25">25</th><td></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="dpo.h.html">&lt;vnet/dpo/dpo.h&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../ip/lookup.h.html">&lt;vnet/ip/lookup.h&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../ip/format.h.html">&lt;vnet/ip/format.h&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../adj/adj.h.html">&lt;vnet/adj/adj.h&gt;</a></u></td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="load_balance.h.html">&lt;vnet/dpo/load_balance.h&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="mpls_label_dpo.h.html">&lt;vnet/dpo/mpls_label_dpo.h&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="lookup_dpo.h.html">&lt;vnet/dpo/lookup_dpo.h&gt;</a></u></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="drop_dpo.h.html">&lt;vnet/dpo/drop_dpo.h&gt;</a></u></td></tr>
+<tr><th id="35">35</th><td><u>#include <a href="receive_dpo.h.html">&lt;vnet/dpo/receive_dpo.h&gt;</a></u></td></tr>
+<tr><th id="36">36</th><td><u>#include <a href="punt_dpo.h.html">&lt;vnet/dpo/punt_dpo.h&gt;</a></u></td></tr>
+<tr><th id="37">37</th><td><u>#include <a href="classify_dpo.h.html">&lt;vnet/dpo/classify_dpo.h&gt;</a></u></td></tr>
+<tr><th id="38">38</th><td><u>#include <a href="ip_null_dpo.h.html">&lt;vnet/dpo/ip_null_dpo.h&gt;</a></u></td></tr>
+<tr><th id="39">39</th><td><u>#include <a href="replicate_dpo.h.html">&lt;vnet/dpo/replicate_dpo.h&gt;</a></u></td></tr>
+<tr><th id="40">40</th><td><u>#include <a href="interface_rx_dpo.h.html">&lt;vnet/dpo/interface_rx_dpo.h&gt;</a></u></td></tr>
+<tr><th id="41">41</th><td><u>#include <a href="interface_tx_dpo.h.html">&lt;vnet/dpo/interface_tx_dpo.h&gt;</a></u></td></tr>
+<tr><th id="42">42</th><td><u>#include <a href="mpls_disposition.h.html">&lt;vnet/dpo/mpls_disposition.h&gt;</a></u></td></tr>
+<tr><th id="43">43</th><td><u>#include <a href="dvr_dpo.h.html">&lt;vnet/dpo/dvr_dpo.h&gt;</a></u></td></tr>
+<tr><th id="44">44</th><td><u>#include <a href="l3_proxy_dpo.h.html">&lt;vnet/dpo/l3_proxy_dpo.h&gt;</a></u></td></tr>
+<tr><th id="45">45</th><td><u>#include <a href="ip6_ll_dpo.h.html">&lt;vnet/dpo/ip6_ll_dpo.h&gt;</a></u></td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td><i class="doc" data-doc="dpo_type_names">/**</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc" data-doc="dpo_type_names"> * Array of char* names for the DPO types and protos</i></td></tr>
+<tr><th id="49">49</th><td><i class="doc" data-doc="dpo_type_names"> */</i></td></tr>
+<tr><th id="50">50</th><td><em>static</em> <em>const</em> <em>char</em>* <dfn class="tu decl def" id="dpo_type_names" title='dpo_type_names' data-type='const char *[29]' data-ref="dpo_type_names">dpo_type_names</dfn>[] = <a class="macro" href="dpo.h.html#132" title="{ [DPO_FIRST] = &quot;dpo-invalid&quot;, [DPO_DROP] = &quot;dpo-drop&quot;, [DPO_IP_NULL] = &quot;dpo-ip-null&quot;, [DPO_PUNT] = &quot;dpo-punt&quot;, [DPO_ADJACENCY] = &quot;dpo-adjacency&quot;, [DPO_ADJACENCY_INCOMPLETE] = &quot;dpo-adjacency-incomplete&quot;, [DPO_ADJACENCY_MIDCHAIN] = &quot;dpo-adjacency-midcahin&quot;, [DPO_ADJACENCY_GLEAN] = &quot;dpo-glean&quot;, [DPO_ADJACENCY_MCAST] = &quot;dpo-adj-mcast&quot;, [DPO_ADJACENCY_MCAST_MIDCHAIN] = &quot;dpo-adj-mcast-midchain&quot;, [DPO_RECEIVE] = &quot;dpo-receive&quot;, [DPO_LOOKUP] = &quot;dpo-lookup&quot;, [DPO_LOAD_BALANCE] = &quot;dpo-load-balance&quot;, [DPO_REPLICATE] = &quot;dpo-replicate&quot;, [DPO_LISP_CP] = &quot;dpo-lisp-cp&quot;, [DPO_CLASSIFY] = &quot;dpo-classify&quot;, [DPO_MPLS_DISPOSITION_PIPE] = &quot;dpo-mpls-diposition-pipe&quot;, [DPO_MPLS_DISPOSITION_UNIFORM] = &quot;dpo-mpls-diposition-uniform&quot;, [DPO_MFIB_ENTRY] = &quot;dpo-mfib-entry&quot;, [DPO_INTERFACE_RX] = &quot;dpo-interface-rx&quot;, [DPO_INTERFACE_TX] = &quot;dpo-interface-tx&quot;, [DPO_DVR] = &quot;dpo-dvr&quot;, [DPO_L3_PROXY] = &quot;dpo-l3-proxy&quot;, [DPO_BIER_TABLE] = &quot;bier-table&quot;, [DPO_BIER_FMASK] = &quot;bier-fmask&quot;, [DPO_BIER_IMP] = &quot;bier-imposition&quot;, [DPO_BIER_DISP_ENTRY] = &quot;bier-disp-entry&quot;, [DPO_BIER_DISP_TABLE] = &quot;bier-disp-table&quot;, [DPO_IP6_LL] = &quot;ip6-link-local&quot;, }" data-ref="_M/DPO_TYPES">DPO_TYPES</a>;</td></tr>
+<tr><th id="51">51</th><td><em>static</em> <em>const</em> <em>char</em>* <dfn class="tu decl def" id="dpo_proto_names" title='dpo_proto_names' data-type='const char *[6]' data-ref="dpo_proto_names">dpo_proto_names</dfn>[] = <a class="macro" href="dpo.h.html#73" title="{ [DPO_PROTO_IP4] = &quot;ip4&quot;, [DPO_PROTO_IP6] = &quot;ip6&quot;, [DPO_PROTO_ETHERNET] = &quot;ethernet&quot;, [DPO_PROTO_MPLS] = &quot;mpls&quot;, [DPO_PROTO_NSH] = &quot;nsh&quot;, [DPO_PROTO_BIER] = &quot;bier&quot;, }" data-ref="_M/DPO_PROTOS">DPO_PROTOS</a>;</td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td><i class="doc" data-doc="dpo_vfts">/**</i></td></tr>
+<tr><th id="54">54</th><td><i class="doc" data-doc="dpo_vfts"> * <span class="command">@brief</span> Vector of virtual function tables for the DPO types</i></td></tr>
+<tr><th id="55">55</th><td><i class="doc" data-doc="dpo_vfts"> *</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc" data-doc="dpo_vfts"> * This is a vector so we can dynamically register new DPO types in plugins.</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc" data-doc="dpo_vfts"> */</i></td></tr>
+<tr><th id="58">58</th><td><em>static</em> <a class="typedef" href="dpo.h.html#dpo_vft_t" title='dpo_vft_t' data-type='struct dpo_vft_t_' data-ref="dpo_vft_t">dpo_vft_t</a> *<dfn class="tu decl def" id="dpo_vfts" title='dpo_vfts' data-type='dpo_vft_t *' data-ref="dpo_vfts">dpo_vfts</dfn>;</td></tr>
+<tr><th id="59">59</th><td></td></tr>
+<tr><th id="60">60</th><td><i class="doc" data-doc="dpo_nodes">/**</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc" data-doc="dpo_nodes"> * <span class="command">@brief</span> vector of graph node names associated with each DPO type and protocol.</i></td></tr>
+<tr><th id="62">62</th><td><i class="doc" data-doc="dpo_nodes"> *</i></td></tr>
+<tr><th id="63">63</th><td><i class="doc" data-doc="dpo_nodes"> *   dpo_nodes[child_type][child_proto][node_X] = node_name;</i></td></tr>
+<tr><th id="64">64</th><td><i class="doc" data-doc="dpo_nodes"> * i.e.</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc" data-doc="dpo_nodes"> *   dpo_node[DPO_LOAD_BALANCE][DPO_PROTO_IP4][0] = "ip4-lookup"</i></td></tr>
+<tr><th id="66">66</th><td><i class="doc" data-doc="dpo_nodes"> *   dpo_node[DPO_LOAD_BALANCE][DPO_PROTO_IP4][1] = "ip4-load-balance"</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc" data-doc="dpo_nodes"> *</i></td></tr>
+<tr><th id="68">68</th><td><i class="doc" data-doc="dpo_nodes"> * This is a vector so we can dynamically register new DPO types in plugins.</i></td></tr>
+<tr><th id="69">69</th><td><i class="doc" data-doc="dpo_nodes"> */</i></td></tr>
+<tr><th id="70">70</th><td><em>static</em> <em>const</em> <em>char</em>* <em>const</em> * <em>const</em> ** <dfn class="tu decl def" id="dpo_nodes" title='dpo_nodes' data-type='const char *const *const **' data-ref="dpo_nodes">dpo_nodes</dfn>;</td></tr>
+<tr><th id="71">71</th><td></td></tr>
+<tr><th id="72">72</th><td><i class="doc" data-doc="dpo_edges">/**</i></td></tr>
+<tr><th id="73">73</th><td><i class="doc" data-doc="dpo_edges"> * <span class="command">@brief</span> Vector of edge indicies from parent DPO nodes to child</i></td></tr>
+<tr><th id="74">74</th><td><i class="doc" data-doc="dpo_edges"> *</i></td></tr>
+<tr><th id="75">75</th><td><i class="doc" data-doc="dpo_edges"> * dpo_edges[child_type][child_proto][parent_type][parent_proto] = edge_index</i></td></tr>
+<tr><th id="76">76</th><td><i class="doc" data-doc="dpo_edges"> *</i></td></tr>
+<tr><th id="77">77</th><td><i class="doc" data-doc="dpo_edges"> * This array is derived at init time from the dpo_nodes above. Note that</i></td></tr>
+<tr><th id="78">78</th><td><i class="doc" data-doc="dpo_edges"> * the third dimension in dpo_nodes is lost, hence, the edge index from each</i></td></tr>
+<tr><th id="79">79</th><td><i class="doc" data-doc="dpo_edges"> * node MUST be the same.</i></td></tr>
+<tr><th id="80">80</th><td><i class="doc" data-doc="dpo_edges"> * Including both the child and parent protocol is required to support the</i></td></tr>
+<tr><th id="81">81</th><td><i class="doc" data-doc="dpo_edges"> * case where it changes as the grapth is traversed, most notablly when an</i></td></tr>
+<tr><th id="82">82</th><td><i class="doc" data-doc="dpo_edges"> * MPLS label is popped.</i></td></tr>
+<tr><th id="83">83</th><td><i class="doc" data-doc="dpo_edges"> *</i></td></tr>
+<tr><th id="84">84</th><td><i class="doc" data-doc="dpo_edges"> * Note that this array is child type specific, not child instance specific.</i></td></tr>
+<tr><th id="85">85</th><td><i class="doc" data-doc="dpo_edges"> */</i></td></tr>
+<tr><th id="86">86</th><td><em>static</em> <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> ****<dfn class="tu decl def" id="dpo_edges" title='dpo_edges' data-type='u32 ****' data-ref="dpo_edges">dpo_edges</dfn>;</td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td><i class="doc" data-doc="dpo_dynamic">/**</i></td></tr>
+<tr><th id="89">89</th><td><i class="doc" data-doc="dpo_dynamic"> * <span class="command">@brief</span> The DPO type value that can be assigend to the next dynamic</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc" data-doc="dpo_dynamic"> *        type registration.</i></td></tr>
+<tr><th id="91">91</th><td><i class="doc" data-doc="dpo_dynamic"> */</i></td></tr>
+<tr><th id="92">92</th><td><em>static</em> <a class="typedef" href="dpo.h.html#dpo_type_t" title='dpo_type_t' data-type='enum dpo_type_t_' data-ref="dpo_type_t">dpo_type_t</a> <dfn class="tu decl def" id="dpo_dynamic" title='dpo_dynamic' data-type='dpo_type_t' data-ref="dpo_dynamic">dpo_dynamic</dfn> = <a class="enum" href="dpo.h.html#DPO_LAST" title='DPO_LAST' data-ref="DPO_LAST">DPO_LAST</a>;</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td><a class="typedef" href="dpo.h.html#dpo_proto_t" title='dpo_proto_t' data-type='enum dpo_proto_t_' data-ref="dpo_proto_t">dpo_proto_t</a></td></tr>
+<tr><th id="95">95</th><td><dfn class="decl def fn" id="vnet_link_to_dpo_proto" title='vnet_link_to_dpo_proto' data-ref="vnet_link_to_dpo_proto">vnet_link_to_dpo_proto</dfn> (<a class="typedef" href="../interface.h.html#vnet_link_t" title='vnet_link_t' data-type='enum vnet_link_t_' data-ref="vnet_link_t">vnet_link_t</a> <dfn class="local col2 decl" id="42linkt" title='linkt' data-type='vnet_link_t' data-ref="42linkt">linkt</dfn>)</td></tr>
+<tr><th id="96">96</th><td>{</td></tr>
+<tr><th id="97">97</th><td>    <b>switch</b> (<a class="local col2 ref" href="#42linkt" title='linkt' data-ref="42linkt">linkt</a>)</td></tr>
+<tr><th id="98">98</th><td>    {</td></tr>
+<tr><th id="99">99</th><td>    <b>case</b> <a class="enum" href="../interface.h.html#VNET_LINK_IP6" title='VNET_LINK_IP6' data-ref="VNET_LINK_IP6">VNET_LINK_IP6</a>:</td></tr>
+<tr><th id="100">100</th><td>        <b>return</b> (<a class="enum" href="dpo.h.html#DPO_PROTO_IP6" title='DPO_PROTO_IP6' data-ref="DPO_PROTO_IP6">DPO_PROTO_IP6</a>);</td></tr>
+<tr><th id="101">101</th><td>    <b>case</b> <a class="enum" href="../interface.h.html#VNET_LINK_IP4" title='VNET_LINK_IP4' data-ref="VNET_LINK_IP4">VNET_LINK_IP4</a>:</td></tr>
+<tr><th id="102">102</th><td>        <b>return</b> (<a class="enum" href="dpo.h.html#DPO_PROTO_IP4" title='DPO_PROTO_IP4' data-ref="DPO_PROTO_IP4">DPO_PROTO_IP4</a>);</td></tr>
+<tr><th id="103">103</th><td>    <b>case</b> <a class="enum" href="../interface.h.html#VNET_LINK_MPLS" title='VNET_LINK_MPLS' data-ref="VNET_LINK_MPLS">VNET_LINK_MPLS</a>:</td></tr>
+<tr><th id="104">104</th><td>        <b>return</b> (<a class="enum" href="dpo.h.html#DPO_PROTO_MPLS" title='DPO_PROTO_MPLS' data-ref="DPO_PROTO_MPLS">DPO_PROTO_MPLS</a>);</td></tr>
+<tr><th id="105">105</th><td>    <b>case</b> <a class="enum" href="../interface.h.html#VNET_LINK_ETHERNET" title='VNET_LINK_ETHERNET' data-ref="VNET_LINK_ETHERNET">VNET_LINK_ETHERNET</a>:</td></tr>
+<tr><th id="106">106</th><td>        <b>return</b> (<a class="enum" href="dpo.h.html#DPO_PROTO_ETHERNET" title='DPO_PROTO_ETHERNET' data-ref="DPO_PROTO_ETHERNET">DPO_PROTO_ETHERNET</a>);</td></tr>
+<tr><th id="107">107</th><td>    <b>case</b> <a class="enum" href="../interface.h.html#VNET_LINK_NSH" title='VNET_LINK_NSH' data-ref="VNET_LINK_NSH">VNET_LINK_NSH</a>:</td></tr>
+<tr><th id="108">108</th><td>        <b>return</b> (<a class="enum" href="dpo.h.html#DPO_PROTO_NSH" title='DPO_PROTO_NSH' data-ref="DPO_PROTO_NSH">DPO_PROTO_NSH</a>);</td></tr>
+<tr><th id="109">109</th><td>    <b>case</b> <a class="enum" href="../interface.h.html#VNET_LINK_ARP" title='VNET_LINK_ARP' data-ref="VNET_LINK_ARP">VNET_LINK_ARP</a>:</td></tr>
+<tr><th id="110">110</th><td>	<b>break</b>;</td></tr>
+<tr><th id="111">111</th><td>    }</td></tr>
+<tr><th id="112">112</th><td>    <a class="macro" href="../../vppinfra/error_bootstrap.h.html#69" title="do { if ((1 &gt; 0) &amp;&amp; ! (0)) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/vpp/../../../src/vnet/dpo/dpo.c&quot;, (uword) 112, ((char *) __FUNCTION__), &quot;0&quot;); } } while (0)" data-ref="_M/ASSERT">ASSERT</a>(<var>0</var>);</td></tr>
+<tr><th id="113">113</th><td>    <b>return</b> (<var>0</var>);</td></tr>
+<tr><th id="114">114</th><td>}</td></tr>
+<tr><th id="115">115</th><td></td></tr>
+<tr><th id="116">116</th><td><a class="typedef" href="../interface.h.html#vnet_link_t" title='vnet_link_t' data-type='enum vnet_link_t_' data-ref="vnet_link_t">vnet_link_t</a></td></tr>
+<tr><th id="117">117</th><td><dfn class="decl def fn" id="dpo_proto_to_link" title='dpo_proto_to_link' data-ref="dpo_proto_to_link">dpo_proto_to_link</dfn> (<a class="typedef" href="dpo.h.html#dpo_proto_t" title='dpo_proto_t' data-type='enum dpo_proto_t_' data-ref="dpo_proto_t">dpo_proto_t</a> <dfn class="local col3 decl" id="43dp" title='dp' data-type='dpo_proto_t' data-ref="43dp">dp</dfn>)</td></tr>
+<tr><th id="118">118</th><td>{</td></tr>
+<tr><th id="119">119</th><td>    <b>switch</b> (<a class="local col3 ref" href="#43dp" title='dp' data-ref="43dp">dp</a>)</td></tr>
+<tr><th id="120">120</th><td>    {</td></tr>
+<tr><th id="121">121</th><td>    <b>case</b> <a class="enum" href="dpo.h.html#DPO_PROTO_IP6" title='DPO_PROTO_IP6' data-ref="DPO_PROTO_IP6">DPO_PROTO_IP6</a>:</td></tr>
+<tr><th id="122">122</th><td>        <b>return</b> (<a class="enum" href="../interface.h.html#VNET_LINK_IP6" title='VNET_LINK_IP6' data-ref="VNET_LINK_IP6">VNET_LINK_IP6</a>);</td></tr>
+<tr><th id="123">123</th><td>    <b>case</b> <a class="enum" href="dpo.h.html#DPO_PROTO_IP4" title='DPO_PROTO_IP4' data-ref="DPO_PROTO_IP4">DPO_PROTO_IP4</a>:</td></tr>
+<tr><th id="124">124</th><td>        <b>return</b> (<a class="enum" href="../interface.h.html#VNET_LINK_IP4" title='VNET_LINK_IP4' data-ref="VNET_LINK_IP4">VNET_LINK_IP4</a>);</td></tr>
+<tr><th id="125">125</th><td>    <b>case</b> <a class="enum" href="dpo.h.html#DPO_PROTO_MPLS" title='DPO_PROTO_MPLS' data-ref="DPO_PROTO_MPLS">DPO_PROTO_MPLS</a>:</td></tr>
+<tr><th id="126">126</th><td>    <b>case</b> <a class="enum" href="dpo.h.html#DPO_PROTO_BIER" title='DPO_PROTO_BIER' data-ref="DPO_PROTO_BIER">DPO_PROTO_BIER</a>:</td></tr>
+<tr><th id="127">127</th><td>        <b>return</b> (<a class="enum" href="../interface.h.html#VNET_LINK_MPLS" title='VNET_LINK_MPLS' data-ref="VNET_LINK_MPLS">VNET_LINK_MPLS</a>);</td></tr>
+<tr><th id="128">128</th><td>    <b>case</b> <a class="enum" href="dpo.h.html#DPO_PROTO_ETHERNET" title='DPO_PROTO_ETHERNET' data-ref="DPO_PROTO_ETHERNET">DPO_PROTO_ETHERNET</a>:</td></tr>
+<tr><th id="129">129</th><td>        <b>return</b> (<a class="enum" href="../interface.h.html#VNET_LINK_ETHERNET" title='VNET_LINK_ETHERNET' data-ref="VNET_LINK_ETHERNET">VNET_LINK_ETHERNET</a>);</td></tr>
+<tr><th id="130">130</th><td>    <b>case</b> <a class="enum" href="dpo.h.html#DPO_PROTO_NSH" title='DPO_PROTO_NSH' data-ref="DPO_PROTO_NSH">DPO_PROTO_NSH</a>:</td></tr>
+<tr><th id="131">131</th><td>        <b>return</b> (<a class="enum" href="../interface.h.html#VNET_LINK_NSH" title='VNET_LINK_NSH' data-ref="VNET_LINK_NSH">VNET_LINK_NSH</a>);</td></tr>
+<tr><th id="132">132</th><td>    }</td></tr>
+<tr><th id="133">133</th><td>    <b>return</b> (~<var>0</var>);</td></tr>
+<tr><th id="134">134</th><td>}</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td><a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *</td></tr>
+<tr><th id="137">137</th><td><dfn class="decl def fn" id="format_dpo_type" title='format_dpo_type' data-ref="format_dpo_type">format_dpo_type</dfn> (<a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col4 decl" id="44s" title='s' data-type='u8 *' data-ref="44s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col5 decl" id="45args" title='args' data-type='va_list *' data-ref="45args">args</dfn>)</td></tr>
+<tr><th id="138">138</th><td>{</td></tr>
+<tr><th id="139">139</th><td>    <a class="typedef" href="dpo.h.html#dpo_type_t" title='dpo_type_t' data-type='enum dpo_type_t_' data-ref="dpo_type_t">dpo_type_t</a> <dfn class="local col6 decl" id="46type" title='type' data-type='dpo_type_t' data-ref="46type">type</dfn> = <span class="macro" title="__builtin_va_arg(*args, int)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col5 ref" href="#45args" title='args' data-ref="45args">args</a>, <em>int</em>);</td></tr>
+<tr><th id="140">140</th><td></td></tr>
+<tr><th id="141">141</th><td>    <a class="local col4 ref" href="#44s" title='s' data-ref="44s">s</a> = <a class="ref fn" href="../../vppinfra/format.h.html#format" title='format' data-ref="format">format</a>(<a class="local col4 ref" href="#44s" title='s' data-ref="44s">s</a>, <q>"%s"</q>, <a class="tu ref" href="#dpo_type_names" title='dpo_type_names' data-use='r' data-ref="dpo_type_names">dpo_type_names</a>[<a class="local col6 ref" href="#46type" title='type' data-ref="46type">type</a>]);</td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td>    <b>return</b> (<a class="local col4 ref" href="#44s" title='s' data-ref="44s">s</a>);</td></tr>
+<tr><th id="144">144</th><td>}</td></tr>
+<tr><th id="145">145</th><td></td></tr>
+<tr><th id="146">146</th><td><a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *</td></tr>
+<tr><th id="147">147</th><td><dfn class="decl def fn" id="format_dpo_id" title='format_dpo_id' data-ref="format_dpo_id">format_dpo_id</dfn> (<a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col7 decl" id="47s" title='s' data-type='u8 *' data-ref="47s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col8 decl" id="48args" title='args' data-type='va_list *' data-ref="48args">args</dfn>)</td></tr>
+<tr><th id="148">148</th><td>{</td></tr>
+<tr><th id="149">149</th><td>    <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col9 decl" id="49dpo" title='dpo' data-type='dpo_id_t *' data-ref="49dpo">dpo</dfn> = <span class="macro" title="__builtin_va_arg(*args, dpo_id_t*)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col8 ref" href="#48args" title='args' data-ref="48args">args</a>, <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a>*);</td></tr>
+<tr><th id="150">150</th><td>    <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col0 decl" id="50indent" title='indent' data-type='u32' data-ref="50indent">indent</dfn> = <span class="macro" title="__builtin_va_arg(*args, u32)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col8 ref" href="#48args" title='args' data-ref="48args">args</a>, <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>);</td></tr>
+<tr><th id="151">151</th><td></td></tr>
+<tr><th id="152">152</th><td>    <a class="local col7 ref" href="#47s" title='s' data-ref="47s">s</a> = <a class="ref fn" href="../../vppinfra/format.h.html#format" title='format' data-ref="format">format</a>(<a class="local col7 ref" href="#47s" title='s' data-ref="47s">s</a>, <q>"[@%d]: "</q>, <a class="local col9 ref" href="#49dpo" title='dpo' data-ref="49dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_next_node" title='dpo_id_t_::dpoi_next_node' data-ref="dpo_id_t_::dpoi_next_node">dpoi_next_node</a>);</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td>    <b>if</b> (<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> != <a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='r' data-ref="dpo_vfts">dpo_vfts</a>[<a class="local col9 ref" href="#49dpo" title='dpo' data-ref="49dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a>].<a class="ref field" href="dpo.h.html#dpo_vft_t_::dv_format" title='dpo_vft_t_::dv_format' data-ref="dpo_vft_t_::dv_format">dv_format</a>)</td></tr>
+<tr><th id="155">155</th><td>    {</td></tr>
+<tr><th id="156">156</th><td>        <a class="local col7 ref" href="#47s" title='s' data-ref="47s">s</a> = <a class="ref fn" href="../../vppinfra/format.h.html#format" title='format' data-ref="format">format</a>(<a class="local col7 ref" href="#47s" title='s' data-ref="47s">s</a>, <q>"%U"</q>,</td></tr>
+<tr><th id="157">157</th><td>                   <a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='r' data-ref="dpo_vfts">dpo_vfts</a>[<a class="local col9 ref" href="#49dpo" title='dpo' data-ref="49dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a>].<a class="ref field" href="dpo.h.html#dpo_vft_t_::dv_format" title='dpo_vft_t_::dv_format' data-ref="dpo_vft_t_::dv_format">dv_format</a>,</td></tr>
+<tr><th id="158">158</th><td>                   <a class="local col9 ref" href="#49dpo" title='dpo' data-ref="49dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_index" title='dpo_id_t_::dpoi_index' data-ref="dpo_id_t_::dpoi_index">dpoi_index</a>,</td></tr>
+<tr><th id="159">159</th><td>                   <a class="local col0 ref" href="#50indent" title='indent' data-ref="50indent">indent</a>);</td></tr>
+<tr><th id="160">160</th><td>    }</td></tr>
+<tr><th id="161">161</th><td>    <b>else</b></td></tr>
+<tr><th id="162">162</th><td>    {</td></tr>
+<tr><th id="163">163</th><td>        <b>switch</b> (<a class="local col9 ref" href="#49dpo" title='dpo' data-ref="49dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a>)</td></tr>
+<tr><th id="164">164</th><td>        {</td></tr>
+<tr><th id="165">165</th><td>        <b>case</b> <a class="enum" href="dpo.h.html#DPO_FIRST" title='DPO_FIRST' data-ref="DPO_FIRST">DPO_FIRST</a>:</td></tr>
+<tr><th id="166">166</th><td>            <a class="local col7 ref" href="#47s" title='s' data-ref="47s">s</a> = <a class="ref fn" href="../../vppinfra/format.h.html#format" title='format' data-ref="format">format</a>(<a class="local col7 ref" href="#47s" title='s' data-ref="47s">s</a>, <q>"unset"</q>);</td></tr>
+<tr><th id="167">167</th><td>            <b>break</b>;</td></tr>
+<tr><th id="168">168</th><td>        <b>default</b>:</td></tr>
+<tr><th id="169">169</th><td>            <a class="local col7 ref" href="#47s" title='s' data-ref="47s">s</a> = <a class="ref fn" href="../../vppinfra/format.h.html#format" title='format' data-ref="format">format</a>(<a class="local col7 ref" href="#47s" title='s' data-ref="47s">s</a>, <q>"unknown"</q>);</td></tr>
+<tr><th id="170">170</th><td>            <b>break</b>;</td></tr>
+<tr><th id="171">171</th><td>        }</td></tr>
+<tr><th id="172">172</th><td>    }</td></tr>
+<tr><th id="173">173</th><td>    <b>return</b> (<a class="local col7 ref" href="#47s" title='s' data-ref="47s">s</a>);</td></tr>
+<tr><th id="174">174</th><td>}</td></tr>
+<tr><th id="175">175</th><td></td></tr>
+<tr><th id="176">176</th><td><a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *</td></tr>
+<tr><th id="177">177</th><td><dfn class="decl def fn" id="format_dpo_proto" title='format_dpo_proto' data-ref="format_dpo_proto">format_dpo_proto</dfn> (<a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col1 decl" id="51s" title='s' data-type='u8 *' data-ref="51s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col2 decl" id="52args" title='args' data-type='va_list *' data-ref="52args">args</dfn>)</td></tr>
+<tr><th id="178">178</th><td>{</td></tr>
+<tr><th id="179">179</th><td>    <a class="typedef" href="dpo.h.html#dpo_proto_t" title='dpo_proto_t' data-type='enum dpo_proto_t_' data-ref="dpo_proto_t">dpo_proto_t</a> <dfn class="local col3 decl" id="53proto" title='proto' data-type='dpo_proto_t' data-ref="53proto">proto</dfn> = <span class="macro" title="__builtin_va_arg(*args, int)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col2 ref" href="#52args" title='args' data-ref="52args">args</a>, <em>int</em>);</td></tr>
+<tr><th id="180">180</th><td></td></tr>
+<tr><th id="181">181</th><td>    <b>return</b> (<a class="ref fn" href="../../vppinfra/format.h.html#format" title='format' data-ref="format">format</a>(<a class="local col1 ref" href="#51s" title='s' data-ref="51s">s</a>, <q>"%s"</q>, <a class="tu ref" href="#dpo_proto_names" title='dpo_proto_names' data-use='r' data-ref="dpo_proto_names">dpo_proto_names</a>[<a class="local col3 ref" href="#53proto" title='proto' data-ref="53proto">proto</a>]));</td></tr>
+<tr><th id="182">182</th><td>}</td></tr>
+<tr><th id="183">183</th><td></td></tr>
+<tr><th id="184">184</th><td><em>void</em></td></tr>
+<tr><th id="185">185</th><td><dfn class="decl def fn" id="dpo_set" title='dpo_set' data-ref="dpo_set">dpo_set</dfn> (<a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col4 decl" id="54dpo" title='dpo' data-type='dpo_id_t *' data-ref="54dpo">dpo</dfn>,</td></tr>
+<tr><th id="186">186</th><td>	 <a class="typedef" href="dpo.h.html#dpo_type_t" title='dpo_type_t' data-type='enum dpo_type_t_' data-ref="dpo_type_t">dpo_type_t</a> <dfn class="local col5 decl" id="55type" title='type' data-type='dpo_type_t' data-ref="55type">type</dfn>,</td></tr>
+<tr><th id="187">187</th><td>	 <a class="typedef" href="dpo.h.html#dpo_proto_t" title='dpo_proto_t' data-type='enum dpo_proto_t_' data-ref="dpo_proto_t">dpo_proto_t</a> <dfn class="local col6 decl" id="56proto" title='proto' data-type='dpo_proto_t' data-ref="56proto">proto</dfn>,</td></tr>
+<tr><th id="188">188</th><td>	 <a class="typedef" href="dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> <dfn class="local col7 decl" id="57index" title='index' data-type='index_t' data-ref="57index">index</dfn>)</td></tr>
+<tr><th id="189">189</th><td>{</td></tr>
+<tr><th id="190">190</th><td>    <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> <dfn class="local col8 decl" id="58tmp" title='tmp' data-type='dpo_id_t' data-ref="58tmp">tmp</dfn> = *<a class="local col4 ref" href="#54dpo" title='dpo' data-ref="54dpo">dpo</a>;</td></tr>
+<tr><th id="191">191</th><td></td></tr>
+<tr><th id="192">192</th><td>    <a class="local col4 ref" href="#54dpo" title='dpo' data-ref="54dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a> = <a class="local col5 ref" href="#55type" title='type' data-ref="55type">type</a>;</td></tr>
+<tr><th id="193">193</th><td>    <a class="local col4 ref" href="#54dpo" title='dpo' data-ref="54dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_proto" title='dpo_id_t_::dpoi_proto' data-ref="dpo_id_t_::dpoi_proto">dpoi_proto</a> = <a class="local col6 ref" href="#56proto" title='proto' data-ref="56proto">proto</a>,</td></tr>
+<tr><th id="194">194</th><td>    <a class="local col4 ref" href="#54dpo" title='dpo' data-ref="54dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_index" title='dpo_id_t_::dpoi_index' data-ref="dpo_id_t_::dpoi_index">dpoi_index</a> = <a class="local col7 ref" href="#57index" title='index' data-ref="57index">index</a>;</td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td>    <b>if</b> (<a class="enum" href="dpo.h.html#DPO_ADJACENCY" title='DPO_ADJACENCY' data-ref="DPO_ADJACENCY">DPO_ADJACENCY</a> == <a class="local col5 ref" href="#55type" title='type' data-ref="55type">type</a>)</td></tr>
+<tr><th id="197">197</th><td>    {</td></tr>
+<tr><th id="198">198</th><td>	<i>/*</i></td></tr>
+<tr><th id="199">199</th><td><i>	 * set the adj subtype</i></td></tr>
+<tr><th id="200">200</th><td><i>	 */</i></td></tr>
+<tr><th id="201">201</th><td>	<a class="typedef" href="../adj/adj.h.html#ip_adjacency_t" title='ip_adjacency_t' data-type='struct ip_adjacency_t_' data-ref="ip_adjacency_t">ip_adjacency_t</a> *<dfn class="local col9 decl" id="59adj" title='adj' data-type='ip_adjacency_t *' data-ref="59adj">adj</dfn>;</td></tr>
+<tr><th id="202">202</th><td></td></tr>
+<tr><th id="203">203</th><td>	<a class="local col9 ref" href="#59adj" title='adj' data-ref="59adj">adj</a> = <a class="ref fn" href="../adj/adj.h.html#adj_get" title='adj_get' data-ref="adj_get">adj_get</a>(<a class="local col7 ref" href="#57index" title='index' data-ref="57index">index</a>);</td></tr>
+<tr><th id="204">204</th><td></td></tr>
+<tr><th id="205">205</th><td>	<b>switch</b> (<a class="local col9 ref" href="#59adj" title='adj' data-ref="59adj">adj</a>-&gt;<a class="ref field" href="../adj/adj.h.html#ip_adjacency_t_::lookup_next_index" title='ip_adjacency_t_::lookup_next_index' data-ref="ip_adjacency_t_::lookup_next_index">lookup_next_index</a>)</td></tr>
+<tr><th id="206">206</th><td>	{</td></tr>
+<tr><th id="207">207</th><td>	<b>case</b> <a class="enum" href="../adj/adj.h.html#IP_LOOKUP_NEXT_ARP" title='IP_LOOKUP_NEXT_ARP' data-ref="IP_LOOKUP_NEXT_ARP">IP_LOOKUP_NEXT_ARP</a>:</td></tr>
+<tr><th id="208">208</th><td>	    <a class="local col4 ref" href="#54dpo" title='dpo' data-ref="54dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a> = <a class="enum" href="dpo.h.html#DPO_ADJACENCY_INCOMPLETE" title='DPO_ADJACENCY_INCOMPLETE' data-ref="DPO_ADJACENCY_INCOMPLETE">DPO_ADJACENCY_INCOMPLETE</a>;</td></tr>
+<tr><th id="209">209</th><td>	    <b>break</b>;</td></tr>
+<tr><th id="210">210</th><td>	<b>case</b> <a class="enum" href="../adj/adj.h.html#IP_LOOKUP_NEXT_MIDCHAIN" title='IP_LOOKUP_NEXT_MIDCHAIN' data-ref="IP_LOOKUP_NEXT_MIDCHAIN">IP_LOOKUP_NEXT_MIDCHAIN</a>:</td></tr>
+<tr><th id="211">211</th><td>	    <a class="local col4 ref" href="#54dpo" title='dpo' data-ref="54dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a> = <a class="enum" href="dpo.h.html#DPO_ADJACENCY_MIDCHAIN" title='DPO_ADJACENCY_MIDCHAIN' data-ref="DPO_ADJACENCY_MIDCHAIN">DPO_ADJACENCY_MIDCHAIN</a>;</td></tr>
+<tr><th id="212">212</th><td>	    <b>break</b>;</td></tr>
+<tr><th id="213">213</th><td>	<b>case</b> <a class="enum" href="../adj/adj.h.html#IP_LOOKUP_NEXT_MCAST_MIDCHAIN" title='IP_LOOKUP_NEXT_MCAST_MIDCHAIN' data-ref="IP_LOOKUP_NEXT_MCAST_MIDCHAIN">IP_LOOKUP_NEXT_MCAST_MIDCHAIN</a>:</td></tr>
+<tr><th id="214">214</th><td>	    <a class="local col4 ref" href="#54dpo" title='dpo' data-ref="54dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a> = <a class="enum" href="dpo.h.html#DPO_ADJACENCY_MCAST_MIDCHAIN" title='DPO_ADJACENCY_MCAST_MIDCHAIN' data-ref="DPO_ADJACENCY_MCAST_MIDCHAIN">DPO_ADJACENCY_MCAST_MIDCHAIN</a>;</td></tr>
+<tr><th id="215">215</th><td>	    <b>break</b>;</td></tr>
+<tr><th id="216">216</th><td>	<b>case</b> <a class="enum" href="../adj/adj.h.html#IP_LOOKUP_NEXT_MCAST" title='IP_LOOKUP_NEXT_MCAST' data-ref="IP_LOOKUP_NEXT_MCAST">IP_LOOKUP_NEXT_MCAST</a>:</td></tr>
+<tr><th id="217">217</th><td>	    <a class="local col4 ref" href="#54dpo" title='dpo' data-ref="54dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a> = <a class="enum" href="dpo.h.html#DPO_ADJACENCY_MCAST" title='DPO_ADJACENCY_MCAST' data-ref="DPO_ADJACENCY_MCAST">DPO_ADJACENCY_MCAST</a>;</td></tr>
+<tr><th id="218">218</th><td>            <b>break</b>;</td></tr>
+<tr><th id="219">219</th><td>	<b>case</b> <a class="enum" href="../adj/adj.h.html#IP_LOOKUP_NEXT_GLEAN" title='IP_LOOKUP_NEXT_GLEAN' data-ref="IP_LOOKUP_NEXT_GLEAN">IP_LOOKUP_NEXT_GLEAN</a>:</td></tr>
+<tr><th id="220">220</th><td>	    <a class="local col4 ref" href="#54dpo" title='dpo' data-ref="54dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a> = <a class="enum" href="dpo.h.html#DPO_ADJACENCY_GLEAN" title='DPO_ADJACENCY_GLEAN' data-ref="DPO_ADJACENCY_GLEAN">DPO_ADJACENCY_GLEAN</a>;</td></tr>
+<tr><th id="221">221</th><td>	    <b>break</b>;</td></tr>
+<tr><th id="222">222</th><td>	<b>default</b>:</td></tr>
+<tr><th id="223">223</th><td>	    <b>break</b>;</td></tr>
+<tr><th id="224">224</th><td>	}</td></tr>
+<tr><th id="225">225</th><td>    }</td></tr>
+<tr><th id="226">226</th><td>    <a class="ref fn" href="#dpo_lock" title='dpo_lock' data-ref="dpo_lock">dpo_lock</a>(<a class="local col4 ref" href="#54dpo" title='dpo' data-ref="54dpo">dpo</a>);</td></tr>
+<tr><th id="227">227</th><td>    <a class="ref fn" href="#dpo_unlock" title='dpo_unlock' data-ref="dpo_unlock">dpo_unlock</a>(&amp;<a class="local col8 ref" href="#58tmp" title='tmp' data-ref="58tmp">tmp</a>);</td></tr>
+<tr><th id="228">228</th><td>}</td></tr>
+<tr><th id="229">229</th><td></td></tr>
+<tr><th id="230">230</th><td><em>void</em></td></tr>
+<tr><th id="231">231</th><td><dfn class="decl def fn" id="dpo_reset" title='dpo_reset' data-ref="dpo_reset">dpo_reset</dfn> (<a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col0 decl" id="60dpo" title='dpo' data-type='dpo_id_t *' data-ref="60dpo">dpo</dfn>)</td></tr>
+<tr><th id="232">232</th><td>{</td></tr>
+<tr><th id="233">233</th><td>    <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> <dfn class="local col1 decl" id="61tmp" title='tmp' data-type='dpo_id_t' data-ref="61tmp">tmp</dfn> = <a class="macro" href="dpo.h.html#195" title="{ .dpoi_type = DPO_FIRST, .dpoi_proto = ((dpo_proto_t)(((dpo_proto_t)(DPO_PROTO_NSH+1))+1)), .dpoi_index = ((index_t)(~0)), .dpoi_next_node = 0, }" data-ref="_M/DPO_INVALID">DPO_INVALID</a>;</td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td>    <i>/*</i></td></tr>
+<tr><th id="236">236</th><td><i>     * use the atomic copy operation.</i></td></tr>
+<tr><th id="237">237</th><td><i>     */</i></td></tr>
+<tr><th id="238">238</th><td>    <a class="ref fn" href="#dpo_copy" title='dpo_copy' data-ref="dpo_copy">dpo_copy</a>(<a class="local col0 ref" href="#60dpo" title='dpo' data-ref="60dpo">dpo</a>, &amp;<a class="local col1 ref" href="#61tmp" title='tmp' data-ref="61tmp">tmp</a>);</td></tr>
+<tr><th id="239">239</th><td>}</td></tr>
+<tr><th id="240">240</th><td></td></tr>
+<tr><th id="241">241</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="242">242</th><td><i class="doc"> * <span class="command">\brief</span></i></td></tr>
+<tr><th id="243">243</th><td><i class="doc"> * Compare two Data-path objects</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="245">245</th><td><i class="doc"> * like memcmp, return 0 is matching, !0 otherwise.</i></td></tr>
+<tr><th id="246">246</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="247">247</th><td><em>int</em></td></tr>
+<tr><th id="248">248</th><td><dfn class="decl def fn" id="dpo_cmp" title='dpo_cmp' data-ref="dpo_cmp">dpo_cmp</dfn> (<em>const</em> <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col2 decl" id="62dpo1" title='dpo1' data-type='const dpo_id_t *' data-ref="62dpo1">dpo1</dfn>,</td></tr>
+<tr><th id="249">249</th><td>	 <em>const</em> <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col3 decl" id="63dpo2" title='dpo2' data-type='const dpo_id_t *' data-ref="63dpo2">dpo2</dfn>)</td></tr>
+<tr><th id="250">250</th><td>{</td></tr>
+<tr><th id="251">251</th><td>    <em>int</em> <dfn class="local col4 decl" id="64res" title='res' data-type='int' data-ref="64res">res</dfn>;</td></tr>
+<tr><th id="252">252</th><td></td></tr>
+<tr><th id="253">253</th><td>    <a class="local col4 ref" href="#64res" title='res' data-ref="64res">res</a> = <a class="local col2 ref" href="#62dpo1" title='dpo1' data-ref="62dpo1">dpo1</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a> - <a class="local col3 ref" href="#63dpo2" title='dpo2' data-ref="63dpo2">dpo2</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a>;</td></tr>
+<tr><th id="254">254</th><td></td></tr>
+<tr><th id="255">255</th><td>    <b>if</b> (<var>0</var> != <a class="local col4 ref" href="#64res" title='res' data-ref="64res">res</a>) <b>return</b> (<a class="local col4 ref" href="#64res" title='res' data-ref="64res">res</a>);</td></tr>
+<tr><th id="256">256</th><td></td></tr>
+<tr><th id="257">257</th><td>    <b>return</b> (<a class="local col2 ref" href="#62dpo1" title='dpo1' data-ref="62dpo1">dpo1</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_index" title='dpo_id_t_::dpoi_index' data-ref="dpo_id_t_::dpoi_index">dpoi_index</a> - <a class="local col3 ref" href="#63dpo2" title='dpo2' data-ref="63dpo2">dpo2</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_index" title='dpo_id_t_::dpoi_index' data-ref="dpo_id_t_::dpoi_index">dpoi_index</a>);</td></tr>
+<tr><th id="258">258</th><td>}</td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td><em>void</em></td></tr>
+<tr><th id="261">261</th><td><dfn class="decl def fn" id="dpo_copy" title='dpo_copy' data-ref="dpo_copy">dpo_copy</dfn> (<a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col5 decl" id="65dst" title='dst' data-type='dpo_id_t *' data-ref="65dst">dst</dfn>,</td></tr>
+<tr><th id="262">262</th><td>	  <em>const</em> <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col6 decl" id="66src" title='src' data-type='const dpo_id_t *' data-ref="66src">src</dfn>)</td></tr>
+<tr><th id="263">263</th><td>{</td></tr>
+<tr><th id="264">264</th><td>    <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> <dfn class="local col7 decl" id="67tmp" title='tmp' data-type='dpo_id_t' data-ref="67tmp">tmp</dfn> = *<a class="local col5 ref" href="#65dst" title='dst' data-ref="65dst">dst</a>;</td></tr>
+<tr><th id="265">265</th><td></td></tr>
+<tr><th id="266">266</th><td>    <i>/*</i></td></tr>
+<tr><th id="267">267</th><td><i>     * the destination is written in a single u64 write - hence atomically w.r.t</i></td></tr>
+<tr><th id="268">268</th><td><i>     * any packets inflight.</i></td></tr>
+<tr><th id="269">269</th><td><i>     */</i></td></tr>
+<tr><th id="270">270</th><td>    *((<a class="typedef" href="../../vppinfra/types.h.html#u64" title='u64' data-type='unsigned long' data-ref="u64">u64</a>*)<a class="local col5 ref" href="#65dst" title='dst' data-ref="65dst">dst</a>) = *(<a class="typedef" href="../../vppinfra/types.h.html#u64" title='u64' data-type='unsigned long' data-ref="u64">u64</a>*)<a class="local col6 ref" href="#66src" title='src' data-ref="66src">src</a>; </td></tr>
+<tr><th id="271">271</th><td></td></tr>
+<tr><th id="272">272</th><td>    <a class="ref fn" href="#dpo_lock" title='dpo_lock' data-ref="dpo_lock">dpo_lock</a>(<a class="local col5 ref" href="#65dst" title='dst' data-ref="65dst">dst</a>);</td></tr>
+<tr><th id="273">273</th><td>    <a class="ref fn" href="#dpo_unlock" title='dpo_unlock' data-ref="dpo_unlock">dpo_unlock</a>(&amp;<a class="local col7 ref" href="#67tmp" title='tmp' data-ref="67tmp">tmp</a>);    </td></tr>
+<tr><th id="274">274</th><td>}</td></tr>
+<tr><th id="275">275</th><td></td></tr>
+<tr><th id="276">276</th><td><em>int</em></td></tr>
+<tr><th id="277">277</th><td><dfn class="decl def fn" id="dpo_is_adj" title='dpo_is_adj' data-ref="dpo_is_adj">dpo_is_adj</dfn> (<em>const</em> <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col8 decl" id="68dpo" title='dpo' data-type='const dpo_id_t *' data-ref="68dpo">dpo</dfn>)</td></tr>
+<tr><th id="278">278</th><td>{</td></tr>
+<tr><th id="279">279</th><td>    <b>return</b> ((<a class="local col8 ref" href="#68dpo" title='dpo' data-ref="68dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a> == <a class="enum" href="dpo.h.html#DPO_ADJACENCY" title='DPO_ADJACENCY' data-ref="DPO_ADJACENCY">DPO_ADJACENCY</a>) ||</td></tr>
+<tr><th id="280">280</th><td>	    (<a class="local col8 ref" href="#68dpo" title='dpo' data-ref="68dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a> == <a class="enum" href="dpo.h.html#DPO_ADJACENCY_INCOMPLETE" title='DPO_ADJACENCY_INCOMPLETE' data-ref="DPO_ADJACENCY_INCOMPLETE">DPO_ADJACENCY_INCOMPLETE</a>) ||</td></tr>
+<tr><th id="281">281</th><td>	    (<a class="local col8 ref" href="#68dpo" title='dpo' data-ref="68dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a> == <a class="enum" href="dpo.h.html#DPO_ADJACENCY_MIDCHAIN" title='DPO_ADJACENCY_MIDCHAIN' data-ref="DPO_ADJACENCY_MIDCHAIN">DPO_ADJACENCY_MIDCHAIN</a>) ||</td></tr>
+<tr><th id="282">282</th><td>	    (<a class="local col8 ref" href="#68dpo" title='dpo' data-ref="68dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a> == <a class="enum" href="dpo.h.html#DPO_ADJACENCY_GLEAN" title='DPO_ADJACENCY_GLEAN' data-ref="DPO_ADJACENCY_GLEAN">DPO_ADJACENCY_GLEAN</a>));</td></tr>
+<tr><th id="283">283</th><td>}</td></tr>
+<tr><th id="284">284</th><td></td></tr>
+<tr><th id="285">285</th><td><em>static</em> <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> *</td></tr>
+<tr><th id="286">286</th><td><dfn class="tu decl def fn" id="dpo_default_get_next_node" title='dpo_default_get_next_node' data-type='u32 * dpo_default_get_next_node(const dpo_id_t * dpo)' data-ref="dpo_default_get_next_node">dpo_default_get_next_node</dfn> (<em>const</em> <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col9 decl" id="69dpo" title='dpo' data-type='const dpo_id_t *' data-ref="69dpo">dpo</dfn>)</td></tr>
+<tr><th id="287">287</th><td>{</td></tr>
+<tr><th id="288">288</th><td>    <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> *<dfn class="local col0 decl" id="70node_indices" title='node_indices' data-type='u32 *' data-ref="70node_indices">node_indices</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="289">289</th><td>    <em>const</em> <em>char</em> *<dfn class="local col1 decl" id="71node_name" title='node_name' data-type='const char *' data-ref="71node_name">node_name</dfn>;</td></tr>
+<tr><th id="290">290</th><td>    <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col2 decl" id="72ii" title='ii' data-type='u32' data-ref="72ii">ii</dfn> = <var>0</var>;</td></tr>
+<tr><th id="291">291</th><td></td></tr>
+<tr><th id="292">292</th><td>    <a class="local col1 ref" href="#71node_name" title='node_name' data-ref="71node_name">node_name</a> = <a class="tu ref" href="#dpo_nodes" title='dpo_nodes' data-use='r' data-ref="dpo_nodes">dpo_nodes</a>[<a class="local col9 ref" href="#69dpo" title='dpo' data-ref="69dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a>][<a class="local col9 ref" href="#69dpo" title='dpo' data-ref="69dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_proto" title='dpo_id_t_::dpoi_proto' data-ref="dpo_id_t_::dpoi_proto">dpoi_proto</a>][<a class="local col2 ref" href="#72ii" title='ii' data-ref="72ii">ii</a>];</td></tr>
+<tr><th id="293">293</th><td>    <b>while</b> (<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> != <a class="local col1 ref" href="#71node_name" title='node_name' data-ref="71node_name">node_name</a>)</td></tr>
+<tr><th id="294">294</th><td>    {</td></tr>
+<tr><th id="295">295</th><td>        <a class="typedef" href="../../vlib/node.h.html#vlib_node_t" title='vlib_node_t' data-type='struct vlib_node_t' data-ref="vlib_node_t">vlib_node_t</a> *<dfn class="local col3 decl" id="73node" title='node' data-type='vlib_node_t *' data-ref="73node">node</dfn>;</td></tr>
+<tr><th id="296">296</th><td></td></tr>
+<tr><th id="297">297</th><td>        <a class="local col3 ref" href="#73node" title='node' data-ref="73node">node</a> = <a class="ref fn" href="../../vlib/node_funcs.h.html#vlib_get_node_by_name" title='vlib_get_node_by_name' data-ref="vlib_get_node_by_name">vlib_get_node_by_name</a>(<a class="ref fn" href="../../vlib/global_funcs.h.html#vlib_get_main" title='vlib_get_main' data-ref="vlib_get_main">vlib_get_main</a>(), (<a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>*) <a class="local col1 ref" href="#71node_name" title='node_name' data-ref="71node_name">node_name</a>);</td></tr>
+<tr><th id="298">298</th><td>        <a class="macro" href="../../vppinfra/error_bootstrap.h.html#69" title="do { if ((1 &gt; 0) &amp;&amp; ! (((void*)0) != node)) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/vpp/../../../src/vnet/dpo/dpo.c&quot;, (uword) 298, ((char *) __FUNCTION__), &quot;NULL != node&quot;); } } while (0)" data-ref="_M/ASSERT">ASSERT</a>(<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> != <a class="local col3 ref" href="#73node" title='node' data-ref="73node">node</a>);</td></tr>
+<tr><th id="299">299</th><td>        <a class="macro" href="../../vppinfra/vec.h.html#520" title="do { word _vec_l = ((node_indices) ? (((vec_header_t *) (node_indices) - 1)-&gt;len) : 0); node_indices = _vec_resize ((node_indices), 1, (_vec_l + 1) * sizeof ((node_indices)[0]), (0), (0)); (node_indices)[_vec_l] = (node-&gt;index); } while (0)" data-ref="_M/vec_add1">vec_add1</a>(<a class="local col0 ref" href="#70node_indices" title='node_indices' data-ref="70node_indices">node_indices</a>, <a class="local col3 ref" href="#73node" title='node' data-ref="73node">node</a>-&gt;<a class="ref field" href="../../vlib/node.h.html#vlib_node_t::index" title='vlib_node_t::index' data-ref="vlib_node_t::index">index</a>);</td></tr>
+<tr><th id="300">300</th><td></td></tr>
+<tr><th id="301">301</th><td>        ++<a class="local col2 ref" href="#72ii" title='ii' data-ref="72ii">ii</a>;</td></tr>
+<tr><th id="302">302</th><td>        <a class="local col1 ref" href="#71node_name" title='node_name' data-ref="71node_name">node_name</a> = <a class="tu ref" href="#dpo_nodes" title='dpo_nodes' data-use='r' data-ref="dpo_nodes">dpo_nodes</a>[<a class="local col9 ref" href="#69dpo" title='dpo' data-ref="69dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a>][<a class="local col9 ref" href="#69dpo" title='dpo' data-ref="69dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_proto" title='dpo_id_t_::dpoi_proto' data-ref="dpo_id_t_::dpoi_proto">dpoi_proto</a>][<a class="local col2 ref" href="#72ii" title='ii' data-ref="72ii">ii</a>];</td></tr>
+<tr><th id="303">303</th><td>    }</td></tr>
+<tr><th id="304">304</th><td></td></tr>
+<tr><th id="305">305</th><td>    <b>return</b> (<a class="local col0 ref" href="#70node_indices" title='node_indices' data-ref="70node_indices">node_indices</a>);</td></tr>
+<tr><th id="306">306</th><td>}</td></tr>
+<tr><th id="307">307</th><td></td></tr>
+<tr><th id="308">308</th><td><i class="doc" data-doc="dpo_default_mk_interpose">/**</i></td></tr>
+<tr><th id="309">309</th><td><i class="doc" data-doc="dpo_default_mk_interpose"> * A default variant of the make interpose function that just returns</i></td></tr>
+<tr><th id="310">310</th><td><i class="doc" data-doc="dpo_default_mk_interpose"> * the original</i></td></tr>
+<tr><th id="311">311</th><td><i class="doc" data-doc="dpo_default_mk_interpose"> */</i></td></tr>
+<tr><th id="312">312</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="313">313</th><td><dfn class="tu decl def fn" id="dpo_default_mk_interpose" title='dpo_default_mk_interpose' data-type='void dpo_default_mk_interpose(const dpo_id_t * original, const dpo_id_t * parent, dpo_id_t * clone)' data-ref="dpo_default_mk_interpose">dpo_default_mk_interpose</dfn> (<em>const</em> <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col4 decl" id="74original" title='original' data-type='const dpo_id_t *' data-ref="74original">original</dfn>,</td></tr>
+<tr><th id="314">314</th><td>                          <em>const</em> <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col5 decl" id="75parent" title='parent' data-type='const dpo_id_t *' data-ref="75parent">parent</dfn>,</td></tr>
+<tr><th id="315">315</th><td>                          <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col6 decl" id="76clone" title='clone' data-type='dpo_id_t *' data-ref="76clone">clone</dfn>)</td></tr>
+<tr><th id="316">316</th><td>{</td></tr>
+<tr><th id="317">317</th><td>    <a class="ref fn" href="#dpo_copy" title='dpo_copy' data-ref="dpo_copy">dpo_copy</a>(<a class="local col6 ref" href="#76clone" title='clone' data-ref="76clone">clone</a>, <a class="local col4 ref" href="#74original" title='original' data-ref="74original">original</a>);</td></tr>
+<tr><th id="318">318</th><td>}</td></tr>
+<tr><th id="319">319</th><td></td></tr>
+<tr><th id="320">320</th><td><em>void</em></td></tr>
+<tr><th id="321">321</th><td><dfn class="decl def fn" id="dpo_register" title='dpo_register' data-ref="dpo_register">dpo_register</dfn> (<a class="typedef" href="dpo.h.html#dpo_type_t" title='dpo_type_t' data-type='enum dpo_type_t_' data-ref="dpo_type_t">dpo_type_t</a> <dfn class="local col7 decl" id="77type" title='type' data-type='dpo_type_t' data-ref="77type">type</dfn>,</td></tr>
+<tr><th id="322">322</th><td>	      <em>const</em> <a class="typedef" href="dpo.h.html#dpo_vft_t" title='dpo_vft_t' data-type='struct dpo_vft_t_' data-ref="dpo_vft_t">dpo_vft_t</a> *<dfn class="local col8 decl" id="78vft" title='vft' data-type='const dpo_vft_t *' data-ref="78vft">vft</dfn>,</td></tr>
+<tr><th id="323">323</th><td>              <em>const</em> <em>char</em> * <em>const</em> * <em>const</em> * <dfn class="local col9 decl" id="79nodes" title='nodes' data-type='const char *const *const *' data-ref="79nodes">nodes</dfn>)</td></tr>
+<tr><th id="324">324</th><td>{</td></tr>
+<tr><th id="325">325</th><td>    <a class="macro" href="../../vppinfra/vec.h.html#434" title="do { ; word _vec_i = (type); word _vec_l = ((dpo_vfts) ? (((vec_header_t *) (dpo_vfts) - 1)-&gt;len) : 0); if (_vec_i &gt;= _vec_l) { do { word _vec_n = (1 + (_vec_i - _vec_l)); word _vec_l = (((dpo_vfts)) ? (((vec_header_t *) ((dpo_vfts)) - 1)-&gt;len) : 0); (dpo_vfts) = _vec_resize (((dpo_vfts)), _vec_n, (_vec_l + _vec_n) * sizeof (((dpo_vfts))[0]), ((0)), ((0))); } while (0); memset ((dpo_vfts) + _vec_l, 0, (1 + (_vec_i - _vec_l)) * sizeof ((dpo_vfts)[0])); } } while (0)" data-ref="_M/vec_validate">vec_validate</a>(<a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='r' data-ref="dpo_vfts"><a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='w' data-ref="dpo_vfts">dpo_vfts</a></a>, <a class="local col7 ref" href="#77type" title='type' data-ref="77type">type</a>);</td></tr>
+<tr><th id="326">326</th><td>    <a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='r' data-ref="dpo_vfts">dpo_vfts</a>[<a class="local col7 ref" href="#77type" title='type' data-ref="77type">type</a>] = *<a class="local col8 ref" href="#78vft" title='vft' data-ref="78vft">vft</a>;</td></tr>
+<tr><th id="327">327</th><td>    <b>if</b> (<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> == <a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='r' data-ref="dpo_vfts">dpo_vfts</a>[<a class="local col7 ref" href="#77type" title='type' data-ref="77type">type</a>].<a class="ref field" href="dpo.h.html#dpo_vft_t_::dv_get_next_node" title='dpo_vft_t_::dv_get_next_node' data-ref="dpo_vft_t_::dv_get_next_node">dv_get_next_node</a>)</td></tr>
+<tr><th id="328">328</th><td>    {</td></tr>
+<tr><th id="329">329</th><td>        <a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='r' data-ref="dpo_vfts">dpo_vfts</a>[<a class="local col7 ref" href="#77type" title='type' data-ref="77type">type</a>].<a class="ref field" href="dpo.h.html#dpo_vft_t_::dv_get_next_node" title='dpo_vft_t_::dv_get_next_node' data-ref="dpo_vft_t_::dv_get_next_node">dv_get_next_node</a> = <a class="tu ref fn" href="#dpo_default_get_next_node" title='dpo_default_get_next_node' data-use='r' data-ref="dpo_default_get_next_node">dpo_default_get_next_node</a>;</td></tr>
+<tr><th id="330">330</th><td>    }</td></tr>
+<tr><th id="331">331</th><td>    <b>if</b> (<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> == <a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='r' data-ref="dpo_vfts">dpo_vfts</a>[<a class="local col7 ref" href="#77type" title='type' data-ref="77type">type</a>].<a class="ref field" href="dpo.h.html#dpo_vft_t_::dv_mk_interpose" title='dpo_vft_t_::dv_mk_interpose' data-ref="dpo_vft_t_::dv_mk_interpose">dv_mk_interpose</a>)</td></tr>
+<tr><th id="332">332</th><td>    {</td></tr>
+<tr><th id="333">333</th><td>        <a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='r' data-ref="dpo_vfts">dpo_vfts</a>[<a class="local col7 ref" href="#77type" title='type' data-ref="77type">type</a>].<a class="ref field" href="dpo.h.html#dpo_vft_t_::dv_mk_interpose" title='dpo_vft_t_::dv_mk_interpose' data-ref="dpo_vft_t_::dv_mk_interpose">dv_mk_interpose</a> = <a class="tu ref fn" href="#dpo_default_mk_interpose" title='dpo_default_mk_interpose' data-use='r' data-ref="dpo_default_mk_interpose">dpo_default_mk_interpose</a>;</td></tr>
+<tr><th id="334">334</th><td>    }</td></tr>
+<tr><th id="335">335</th><td></td></tr>
+<tr><th id="336">336</th><td>    <a class="macro" href="../../vppinfra/vec.h.html#434" title="do { ; word _vec_i = (type); word _vec_l = ((dpo_nodes) ? (((vec_header_t *) (dpo_nodes) - 1)-&gt;len) : 0); if (_vec_i &gt;= _vec_l) { do { word _vec_n = (1 + (_vec_i - _vec_l)); word _vec_l = (((dpo_nodes)) ? (((vec_header_t *) ((dpo_nodes)) - 1)-&gt;len) : 0); (dpo_nodes) = _vec_resize (((dpo_nodes)), _vec_n, (_vec_l + _vec_n) * sizeof (((dpo_nodes))[0]), ((0)), ((0))); } while (0); memset ((dpo_nodes) + _vec_l, 0, (1 + (_vec_i - _vec_l)) * sizeof ((dpo_nodes)[0])); } } while (0)" data-ref="_M/vec_validate">vec_validate</a>(<a class="tu ref" href="#dpo_nodes" title='dpo_nodes' data-use='r' data-ref="dpo_nodes"><a class="tu ref" href="#dpo_nodes" title='dpo_nodes' data-use='w' data-ref="dpo_nodes">dpo_nodes</a></a>, <a class="local col7 ref" href="#77type" title='type' data-ref="77type">type</a>);</td></tr>
+<tr><th id="337">337</th><td>    <a class="tu ref" href="#dpo_nodes" title='dpo_nodes' data-use='r' data-ref="dpo_nodes">dpo_nodes</a>[<a class="local col7 ref" href="#77type" title='type' data-ref="77type">type</a>] = <a class="local col9 ref" href="#79nodes" title='nodes' data-ref="79nodes">nodes</a>;</td></tr>
+<tr><th id="338">338</th><td>}</td></tr>
+<tr><th id="339">339</th><td></td></tr>
+<tr><th id="340">340</th><td><a class="typedef" href="dpo.h.html#dpo_type_t" title='dpo_type_t' data-type='enum dpo_type_t_' data-ref="dpo_type_t">dpo_type_t</a></td></tr>
+<tr><th id="341">341</th><td><dfn class="decl def fn" id="dpo_register_new_type" title='dpo_register_new_type' data-ref="dpo_register_new_type">dpo_register_new_type</dfn> (<em>const</em> <a class="typedef" href="dpo.h.html#dpo_vft_t" title='dpo_vft_t' data-type='struct dpo_vft_t_' data-ref="dpo_vft_t">dpo_vft_t</a> *<dfn class="local col0 decl" id="80vft" title='vft' data-type='const dpo_vft_t *' data-ref="80vft">vft</dfn>,</td></tr>
+<tr><th id="342">342</th><td>                       <em>const</em> <em>char</em> * <em>const</em> * <em>const</em> * <dfn class="local col1 decl" id="81nodes" title='nodes' data-type='const char *const *const *' data-ref="81nodes">nodes</dfn>)</td></tr>
+<tr><th id="343">343</th><td>{</td></tr>
+<tr><th id="344">344</th><td>    <a class="typedef" href="dpo.h.html#dpo_type_t" title='dpo_type_t' data-type='enum dpo_type_t_' data-ref="dpo_type_t">dpo_type_t</a> <dfn class="local col2 decl" id="82type" title='type' data-type='dpo_type_t' data-ref="82type">type</dfn> = <a class="tu ref" href="#dpo_dynamic" title='dpo_dynamic' data-use='w' data-ref="dpo_dynamic">dpo_dynamic</a>++;</td></tr>
+<tr><th id="345">345</th><td></td></tr>
+<tr><th id="346">346</th><td>    <a class="ref fn" href="#dpo_register" title='dpo_register' data-ref="dpo_register">dpo_register</a>(<a class="local col2 ref" href="#82type" title='type' data-ref="82type">type</a>, <a class="local col0 ref" href="#80vft" title='vft' data-ref="80vft">vft</a>, <a class="local col1 ref" href="#81nodes" title='nodes' data-ref="81nodes">nodes</a>);</td></tr>
+<tr><th id="347">347</th><td></td></tr>
+<tr><th id="348">348</th><td>    <b>return</b> (<a class="local col2 ref" href="#82type" title='type' data-ref="82type">type</a>);</td></tr>
+<tr><th id="349">349</th><td>}</td></tr>
+<tr><th id="350">350</th><td></td></tr>
+<tr><th id="351">351</th><td><em>void</em></td></tr>
+<tr><th id="352">352</th><td><dfn class="decl def fn" id="dpo_mk_interpose" title='dpo_mk_interpose' data-ref="dpo_mk_interpose">dpo_mk_interpose</dfn> (<em>const</em> <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col3 decl" id="83original" title='original' data-type='const dpo_id_t *' data-ref="83original">original</dfn>,</td></tr>
+<tr><th id="353">353</th><td>                  <em>const</em> <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col4 decl" id="84parent" title='parent' data-type='const dpo_id_t *' data-ref="84parent">parent</dfn>,</td></tr>
+<tr><th id="354">354</th><td>                  <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col5 decl" id="85clone" title='clone' data-type='dpo_id_t *' data-ref="85clone">clone</dfn>)</td></tr>
+<tr><th id="355">355</th><td>{</td></tr>
+<tr><th id="356">356</th><td>    <b>if</b> (!<a class="ref fn" href="dpo.h.html#dpo_id_is_valid" title='dpo_id_is_valid' data-ref="dpo_id_is_valid">dpo_id_is_valid</a>(<a class="local col3 ref" href="#83original" title='original' data-ref="83original">original</a>))</td></tr>
+<tr><th id="357">357</th><td>	<b>return</b>;</td></tr>
+<tr><th id="358">358</th><td></td></tr>
+<tr><th id="359">359</th><td>    <a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='r' data-ref="dpo_vfts">dpo_vfts</a>[<a class="local col3 ref" href="#83original" title='original' data-ref="83original">original</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a>].<a class="ref field" href="dpo.h.html#dpo_vft_t_::dv_mk_interpose" title='dpo_vft_t_::dv_mk_interpose' data-ref="dpo_vft_t_::dv_mk_interpose">dv_mk_interpose</a>(<a class="local col3 ref" href="#83original" title='original' data-ref="83original">original</a>, <a class="local col4 ref" href="#84parent" title='parent' data-ref="84parent">parent</a>, <a class="local col5 ref" href="#85clone" title='clone' data-ref="85clone">clone</a>);</td></tr>
+<tr><th id="360">360</th><td>}</td></tr>
+<tr><th id="361">361</th><td></td></tr>
+<tr><th id="362">362</th><td><em>void</em></td></tr>
+<tr><th id="363">363</th><td><dfn class="decl def fn" id="dpo_lock" title='dpo_lock' data-ref="dpo_lock">dpo_lock</dfn> (<a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col6 decl" id="86dpo" title='dpo' data-type='dpo_id_t *' data-ref="86dpo">dpo</dfn>)</td></tr>
+<tr><th id="364">364</th><td>{</td></tr>
+<tr><th id="365">365</th><td>    <b>if</b> (!<a class="ref fn" href="dpo.h.html#dpo_id_is_valid" title='dpo_id_is_valid' data-ref="dpo_id_is_valid">dpo_id_is_valid</a>(<a class="local col6 ref" href="#86dpo" title='dpo' data-ref="86dpo">dpo</a>))</td></tr>
+<tr><th id="366">366</th><td>	<b>return</b>;</td></tr>
+<tr><th id="367">367</th><td></td></tr>
+<tr><th id="368">368</th><td>    <a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='r' data-ref="dpo_vfts">dpo_vfts</a>[<a class="local col6 ref" href="#86dpo" title='dpo' data-ref="86dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a>].<a class="ref field" href="dpo.h.html#dpo_vft_t_::dv_lock" title='dpo_vft_t_::dv_lock' data-ref="dpo_vft_t_::dv_lock">dv_lock</a>(<a class="local col6 ref" href="#86dpo" title='dpo' data-ref="86dpo">dpo</a>);</td></tr>
+<tr><th id="369">369</th><td>}</td></tr>
+<tr><th id="370">370</th><td></td></tr>
+<tr><th id="371">371</th><td><em>void</em></td></tr>
+<tr><th id="372">372</th><td><dfn class="decl def fn" id="dpo_unlock" title='dpo_unlock' data-ref="dpo_unlock">dpo_unlock</dfn> (<a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col7 decl" id="87dpo" title='dpo' data-type='dpo_id_t *' data-ref="87dpo">dpo</dfn>)</td></tr>
+<tr><th id="373">373</th><td>{</td></tr>
+<tr><th id="374">374</th><td>    <b>if</b> (!<a class="ref fn" href="dpo.h.html#dpo_id_is_valid" title='dpo_id_is_valid' data-ref="dpo_id_is_valid">dpo_id_is_valid</a>(<a class="local col7 ref" href="#87dpo" title='dpo' data-ref="87dpo">dpo</a>))</td></tr>
+<tr><th id="375">375</th><td>	<b>return</b>;</td></tr>
+<tr><th id="376">376</th><td></td></tr>
+<tr><th id="377">377</th><td>    <a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='r' data-ref="dpo_vfts">dpo_vfts</a>[<a class="local col7 ref" href="#87dpo" title='dpo' data-ref="87dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a>].<a class="ref field" href="dpo.h.html#dpo_vft_t_::dv_unlock" title='dpo_vft_t_::dv_unlock' data-ref="dpo_vft_t_::dv_unlock">dv_unlock</a>(<a class="local col7 ref" href="#87dpo" title='dpo' data-ref="87dpo">dpo</a>);</td></tr>
+<tr><th id="378">378</th><td>}</td></tr>
+<tr><th id="379">379</th><td></td></tr>
+<tr><th id="380">380</th><td><a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a></td></tr>
+<tr><th id="381">381</th><td><dfn class="decl def fn" id="dpo_get_urpf" title='dpo_get_urpf' data-ref="dpo_get_urpf">dpo_get_urpf</dfn>(<em>const</em> <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col8 decl" id="88dpo" title='dpo' data-type='const dpo_id_t *' data-ref="88dpo">dpo</dfn>)</td></tr>
+<tr><th id="382">382</th><td>{</td></tr>
+<tr><th id="383">383</th><td>    <b>if</b> (<a class="ref fn" href="dpo.h.html#dpo_id_is_valid" title='dpo_id_is_valid' data-ref="dpo_id_is_valid">dpo_id_is_valid</a>(<a class="local col8 ref" href="#88dpo" title='dpo' data-ref="88dpo">dpo</a>) &amp;&amp;</td></tr>
+<tr><th id="384">384</th><td>        (<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> != <a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='r' data-ref="dpo_vfts">dpo_vfts</a>[<a class="local col8 ref" href="#88dpo" title='dpo' data-ref="88dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a>].<a class="ref field" href="dpo.h.html#dpo_vft_t_::dv_get_urpf" title='dpo_vft_t_::dv_get_urpf' data-ref="dpo_vft_t_::dv_get_urpf">dv_get_urpf</a>))</td></tr>
+<tr><th id="385">385</th><td>    {</td></tr>
+<tr><th id="386">386</th><td>        <b>return</b> (<a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='r' data-ref="dpo_vfts">dpo_vfts</a>[<a class="local col8 ref" href="#88dpo" title='dpo' data-ref="88dpo">dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a>].<a class="ref field" href="dpo.h.html#dpo_vft_t_::dv_get_urpf" title='dpo_vft_t_::dv_get_urpf' data-ref="dpo_vft_t_::dv_get_urpf">dv_get_urpf</a>(<a class="local col8 ref" href="#88dpo" title='dpo' data-ref="88dpo">dpo</a>));</td></tr>
+<tr><th id="387">387</th><td>    }</td></tr>
+<tr><th id="388">388</th><td></td></tr>
+<tr><th id="389">389</th><td>    <b>return</b> (~<var>0</var>);</td></tr>
+<tr><th id="390">390</th><td>}</td></tr>
+<tr><th id="391">391</th><td></td></tr>
+<tr><th id="392">392</th><td><em>static</em> <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a></td></tr>
+<tr><th id="393">393</th><td><dfn class="tu decl def fn" id="dpo_get_next_node" title='dpo_get_next_node' data-type='u32 dpo_get_next_node(dpo_type_t child_type, dpo_proto_t child_proto, const dpo_id_t * parent_dpo)' data-ref="dpo_get_next_node">dpo_get_next_node</dfn> (<a class="typedef" href="dpo.h.html#dpo_type_t" title='dpo_type_t' data-type='enum dpo_type_t_' data-ref="dpo_type_t">dpo_type_t</a> <dfn class="local col9 decl" id="89child_type" title='child_type' data-type='dpo_type_t' data-ref="89child_type">child_type</dfn>,</td></tr>
+<tr><th id="394">394</th><td>                   <a class="typedef" href="dpo.h.html#dpo_proto_t" title='dpo_proto_t' data-type='enum dpo_proto_t_' data-ref="dpo_proto_t">dpo_proto_t</a> <dfn class="local col0 decl" id="90child_proto" title='child_proto' data-type='dpo_proto_t' data-ref="90child_proto">child_proto</dfn>,</td></tr>
+<tr><th id="395">395</th><td>                   <em>const</em> <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col1 decl" id="91parent_dpo" title='parent_dpo' data-type='const dpo_id_t *' data-ref="91parent_dpo">parent_dpo</dfn>)</td></tr>
+<tr><th id="396">396</th><td>{</td></tr>
+<tr><th id="397">397</th><td>    <a class="typedef" href="dpo.h.html#dpo_proto_t" title='dpo_proto_t' data-type='enum dpo_proto_t_' data-ref="dpo_proto_t">dpo_proto_t</a> <dfn class="local col2 decl" id="92parent_proto" title='parent_proto' data-type='dpo_proto_t' data-ref="92parent_proto">parent_proto</dfn>;</td></tr>
+<tr><th id="398">398</th><td>    <a class="typedef" href="dpo.h.html#dpo_type_t" title='dpo_type_t' data-type='enum dpo_type_t_' data-ref="dpo_type_t">dpo_type_t</a> <dfn class="local col3 decl" id="93parent_type" title='parent_type' data-type='dpo_type_t' data-ref="93parent_type">parent_type</dfn>;</td></tr>
+<tr><th id="399">399</th><td></td></tr>
+<tr><th id="400">400</th><td>    <a class="local col3 ref" href="#93parent_type" title='parent_type' data-ref="93parent_type">parent_type</a> = <a class="local col1 ref" href="#91parent_dpo" title='parent_dpo' data-ref="91parent_dpo">parent_dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a>;</td></tr>
+<tr><th id="401">401</th><td>    <a class="local col2 ref" href="#92parent_proto" title='parent_proto' data-ref="92parent_proto">parent_proto</a> = <a class="local col1 ref" href="#91parent_dpo" title='parent_dpo' data-ref="91parent_dpo">parent_dpo</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_proto" title='dpo_id_t_::dpoi_proto' data-ref="dpo_id_t_::dpoi_proto">dpoi_proto</a>;</td></tr>
+<tr><th id="402">402</th><td></td></tr>
+<tr><th id="403">403</th><td>    <a class="macro" href="../../vppinfra/vec.h.html#434" title="do { ; word _vec_i = (child_type); word _vec_l = ((dpo_edges) ? (((vec_header_t *) (dpo_edges) - 1)-&gt;len) : 0); if (_vec_i &gt;= _vec_l) { do { word _vec_n = (1 + (_vec_i - _vec_l)); word _vec_l = (((dpo_edges)) ? (((vec_header_t *) ((dpo_edges)) - 1)-&gt;len) : 0); (dpo_edges) = _vec_resize (((dpo_edges)), _vec_n, (_vec_l + _vec_n) * sizeof (((dpo_edges))[0]), ((0)), ((0))); } while (0); memset ((dpo_edges) + _vec_l, 0, (1 + (_vec_i - _vec_l)) * sizeof ((dpo_edges)[0])); } } while (0)" data-ref="_M/vec_validate">vec_validate</a>(<a class="tu ref" href="#dpo_edges" title='dpo_edges' data-use='r' data-ref="dpo_edges"><a class="tu ref" href="#dpo_edges" title='dpo_edges' data-use='w' data-ref="dpo_edges">dpo_edges</a></a>, <a class="local col9 ref" href="#89child_type" title='child_type' data-ref="89child_type">child_type</a>);</td></tr>
+<tr><th id="404">404</th><td>    <a class="macro" href="../../vppinfra/vec.h.html#434" title="do { ; word _vec_i = (child_proto); word _vec_l = ((dpo_edges[child_type]) ? (((vec_header_t *) (dpo_edges[child_type]) - 1)-&gt;len) : 0); if (_vec_i &gt;= _vec_l) { do { word _vec_n = (1 + (_vec_i - _vec_l)); word _vec_l = (((dpo_edges[child_type])) ? (((vec_header_t *) ((dpo_edges[child_type])) - 1)-&gt;len) : 0); (dpo_edges[child_type]) = _vec_resize (((dpo_edges[child_type])), _vec_n, (_vec_l + _vec_n) * sizeof (((dpo_edges[child_type]))[0]), ((0)), ((0))); } while (0); memset ((dpo_edges[child_type]) + _vec_l, 0, (1 + (_vec_i - _vec_l)) * sizeof ((dpo_edges[child_type])[0])); } } while (0)" data-ref="_M/vec_validate">vec_validate</a>(<a class="tu ref" href="#dpo_edges" title='dpo_edges' data-use='r' data-ref="dpo_edges">dpo_edges</a>[<a class="local col9 ref" href="#89child_type" title='child_type' data-ref="89child_type">child_type</a>], <a class="local col0 ref" href="#90child_proto" title='child_proto' data-ref="90child_proto">child_proto</a>);</td></tr>
+<tr><th id="405">405</th><td>    <a class="macro" href="../../vppinfra/vec.h.html#434" title="do { ; word _vec_i = (parent_type); word _vec_l = ((dpo_edges[child_type][child_proto]) ? (((vec_header_t *) (dpo_edges[child_type][child_proto]) - 1)-&gt;len) : 0); if (_vec_i &gt;= _vec_l) { do { word _vec_n = (1 + (_vec_i - _vec_l)); word _vec_l = (((dpo_edges[child_type][child_proto])) ? (((vec_header_t *) ((dpo_edges[child_type][child_proto])) - 1)-&gt;len) : 0); (dpo_edges[child_type][child_proto]) = _vec_resize (((dpo_edges[child_type][child_proto])), _vec_n, (_vec_l + _vec_n) * sizeof (((dpo_edges[child_type][child_proto]))[0]), ((0)), ((0))); } while (0); memset ((dpo_edges[child_type][child_proto]) + _vec_l, 0, (1 + (_vec_i - _vec_l)) * sizeof ((dpo_edges[child_type][child_proto])[0])); } } while (0)" data-ref="_M/vec_validate">vec_validate</a>(<a class="tu ref" href="#dpo_edges" title='dpo_edges' data-use='r' data-ref="dpo_edges">dpo_edges</a>[<a class="local col9 ref" href="#89child_type" title='child_type' data-ref="89child_type">child_type</a>][<a class="local col0 ref" href="#90child_proto" title='child_proto' data-ref="90child_proto">child_proto</a>], <a class="local col3 ref" href="#93parent_type" title='parent_type' data-ref="93parent_type">parent_type</a>);</td></tr>
+<tr><th id="406">406</th><td>    <a class="macro" href="../../vppinfra/vec.h.html#483" title="do { word _vec_i = (parent_proto); word _vec_l = ((dpo_edges[child_type][child_proto][parent_type]) ? (((vec_header_t *) (dpo_edges[child_type][child_proto][parent_type]) - 1)-&gt;len) : 0); if (_vec_i &gt;= _vec_l) { do { word _vec_n = (1 + (_vec_i - _vec_l)); word _vec_l = (((dpo_edges[child_type][child_proto][parent_type])) ? (((vec_header_t *) ((dpo_edges[child_type][child_proto][parent_type])) - 1)-&gt;len) : 0); (dpo_edges[child_type][child_proto][parent_type]) = _vec_resize (((dpo_edges[child_type][child_proto][parent_type])), _vec_n, (_vec_l + _vec_n) * sizeof (((dpo_edges[child_type][child_proto][parent_type]))[0]), ((0)), ((0))); } while (0); while (_vec_l &lt;= _vec_i) { (dpo_edges[child_type][child_proto][parent_type])[_vec_l] = (~0); _vec_l++; } } } while (0)" data-ref="_M/vec_validate_init_empty">vec_validate_init_empty</a>(</td></tr>
+<tr><th id="407">407</th><td>        <a class="tu ref" href="#dpo_edges" title='dpo_edges' data-use='r' data-ref="dpo_edges">dpo_edges</a>[<a class="local col9 ref" href="#89child_type" title='child_type' data-ref="89child_type">child_type</a>][<a class="local col0 ref" href="#90child_proto" title='child_proto' data-ref="90child_proto">child_proto</a>][<a class="local col3 ref" href="#93parent_type" title='parent_type' data-ref="93parent_type">parent_type</a>],</td></tr>
+<tr><th id="408">408</th><td>        <a class="local col2 ref" href="#92parent_proto" title='parent_proto' data-ref="92parent_proto">parent_proto</a>, ~<var>0</var>);</td></tr>
+<tr><th id="409">409</th><td></td></tr>
+<tr><th id="410">410</th><td>    <i>/*</i></td></tr>
+<tr><th id="411">411</th><td><i>     * if the edge index has not yet been created for this node to node transistion</i></td></tr>
+<tr><th id="412">412</th><td><i>     */</i></td></tr>
+<tr><th id="413">413</th><td>    <b>if</b> (~<var>0</var> == <a class="tu ref" href="#dpo_edges" title='dpo_edges' data-use='r' data-ref="dpo_edges">dpo_edges</a>[<a class="local col9 ref" href="#89child_type" title='child_type' data-ref="89child_type">child_type</a>][<a class="local col0 ref" href="#90child_proto" title='child_proto' data-ref="90child_proto">child_proto</a>][<a class="local col3 ref" href="#93parent_type" title='parent_type' data-ref="93parent_type">parent_type</a>][<a class="local col2 ref" href="#92parent_proto" title='parent_proto' data-ref="92parent_proto">parent_proto</a>])</td></tr>
+<tr><th id="414">414</th><td>    {</td></tr>
+<tr><th id="415">415</th><td>        <a class="typedef" href="../../vlib/node.h.html#vlib_node_t" title='vlib_node_t' data-type='struct vlib_node_t' data-ref="vlib_node_t">vlib_node_t</a> *<dfn class="local col4 decl" id="94child_node" title='child_node' data-type='vlib_node_t *' data-ref="94child_node">child_node</dfn>;</td></tr>
+<tr><th id="416">416</th><td>        <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> *<dfn class="local col5 decl" id="95parent_indices" title='parent_indices' data-type='u32 *' data-ref="95parent_indices">parent_indices</dfn>;</td></tr>
+<tr><th id="417">417</th><td>        <a class="typedef" href="../../vlib/main.h.html#vlib_main_t" title='vlib_main_t' data-type='struct vlib_main_t' data-ref="vlib_main_t">vlib_main_t</a> *<dfn class="local col6 decl" id="96vm" title='vm' data-type='vlib_main_t *' data-ref="96vm">vm</dfn>;</td></tr>
+<tr><th id="418">418</th><td>        <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col7 decl" id="97edge" title='edge' data-type='u32' data-ref="97edge">edge</dfn>, *<dfn class="local col8 decl" id="98pi" title='pi' data-type='u32 *' data-ref="98pi">pi</dfn>, <dfn class="local col9 decl" id="99cc" title='cc' data-type='u32' data-ref="99cc">cc</dfn>;</td></tr>
+<tr><th id="419">419</th><td></td></tr>
+<tr><th id="420">420</th><td>        <a class="local col6 ref" href="#96vm" title='vm' data-ref="96vm">vm</a> = <a class="ref fn" href="../../vlib/global_funcs.h.html#vlib_get_main" title='vlib_get_main' data-ref="vlib_get_main">vlib_get_main</a>();</td></tr>
+<tr><th id="421">421</th><td></td></tr>
+<tr><th id="422">422</th><td>        <a class="macro" href="../../vppinfra/error_bootstrap.h.html#69" title="do { if ((1 &gt; 0) &amp;&amp; ! (((void*)0) != dpo_vfts[parent_type].dv_get_next_node)) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/vpp/../../../src/vnet/dpo/dpo.c&quot;, (uword) 422, ((char *) __FUNCTION__), &quot;NULL != dpo_vfts[parent_type].dv_get_next_node&quot;); } } while (0)" data-ref="_M/ASSERT">ASSERT</a>(<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> != <a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='r' data-ref="dpo_vfts">dpo_vfts</a>[<a class="local col3 ref" href="#93parent_type" title='parent_type' data-ref="93parent_type">parent_type</a>].<a class="ref field" href="dpo.h.html#dpo_vft_t_::dv_get_next_node" title='dpo_vft_t_::dv_get_next_node' data-ref="dpo_vft_t_::dv_get_next_node">dv_get_next_node</a>);</td></tr>
+<tr><th id="423">423</th><td>        <a class="macro" href="../../vppinfra/error_bootstrap.h.html#69" title="do { if ((1 &gt; 0) &amp;&amp; ! (((void*)0) != dpo_nodes[child_type])) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/vpp/../../../src/vnet/dpo/dpo.c&quot;, (uword) 423, ((char *) __FUNCTION__), &quot;NULL != dpo_nodes[child_type]&quot;); } } while (0)" data-ref="_M/ASSERT">ASSERT</a>(<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> != <a class="tu ref" href="#dpo_nodes" title='dpo_nodes' data-use='r' data-ref="dpo_nodes">dpo_nodes</a>[<a class="local col9 ref" href="#89child_type" title='child_type' data-ref="89child_type">child_type</a>]);</td></tr>
+<tr><th id="424">424</th><td>        <a class="macro" href="../../vppinfra/error_bootstrap.h.html#69" title="do { if ((1 &gt; 0) &amp;&amp; ! (((void*)0) != dpo_nodes[child_type][child_proto])) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/vpp/../../../src/vnet/dpo/dpo.c&quot;, (uword) 424, ((char *) __FUNCTION__), &quot;NULL != dpo_nodes[child_type][child_proto]&quot;); } } while (0)" data-ref="_M/ASSERT">ASSERT</a>(<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> != <a class="tu ref" href="#dpo_nodes" title='dpo_nodes' data-use='r' data-ref="dpo_nodes">dpo_nodes</a>[<a class="local col9 ref" href="#89child_type" title='child_type' data-ref="89child_type">child_type</a>][<a class="local col0 ref" href="#90child_proto" title='child_proto' data-ref="90child_proto">child_proto</a>]);</td></tr>
+<tr><th id="425">425</th><td></td></tr>
+<tr><th id="426">426</th><td>        <a class="local col9 ref" href="#99cc" title='cc' data-ref="99cc">cc</a> = <var>0</var>;</td></tr>
+<tr><th id="427">427</th><td>        <a class="local col5 ref" href="#95parent_indices" title='parent_indices' data-ref="95parent_indices">parent_indices</a> = <a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='r' data-ref="dpo_vfts">dpo_vfts</a>[<a class="local col3 ref" href="#93parent_type" title='parent_type' data-ref="93parent_type">parent_type</a>].<a class="ref field" href="dpo.h.html#dpo_vft_t_::dv_get_next_node" title='dpo_vft_t_::dv_get_next_node' data-ref="dpo_vft_t_::dv_get_next_node">dv_get_next_node</a>(<a class="local col1 ref" href="#91parent_dpo" title='parent_dpo' data-ref="91parent_dpo">parent_dpo</a>);</td></tr>
+<tr><th id="428">428</th><td></td></tr>
+<tr><th id="429">429</th><td>        <a class="macro" href="../../vlib/threads.h.html#212" title="vlib_worker_thread_barrier_sync_int(vm)" data-ref="_M/vlib_worker_thread_barrier_sync">vlib_worker_thread_barrier_sync</a>(<a class="local col6 ref" href="#96vm" title='vm' data-ref="96vm">vm</a>);</td></tr>
+<tr><th id="430">430</th><td></td></tr>
+<tr><th id="431">431</th><td>        <i>/*</i></td></tr>
+<tr><th id="432">432</th><td><i>         * create a graph arc from each of the child's registered node types,</i></td></tr>
+<tr><th id="433">433</th><td><i>         * to each of the parent's.</i></td></tr>
+<tr><th id="434">434</th><td><i>         */</i></td></tr>
+<tr><th id="435">435</th><td>        <b>while</b> (<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> != <a class="tu ref" href="#dpo_nodes" title='dpo_nodes' data-use='r' data-ref="dpo_nodes">dpo_nodes</a>[<a class="local col9 ref" href="#89child_type" title='child_type' data-ref="89child_type">child_type</a>][<a class="local col0 ref" href="#90child_proto" title='child_proto' data-ref="90child_proto">child_proto</a>][<a class="local col9 ref" href="#99cc" title='cc' data-ref="99cc">cc</a>])</td></tr>
+<tr><th id="436">436</th><td>        {</td></tr>
+<tr><th id="437">437</th><td>            <a class="local col4 ref" href="#94child_node" title='child_node' data-ref="94child_node">child_node</a> =</td></tr>
+<tr><th id="438">438</th><td>                <a class="ref fn" href="../../vlib/node_funcs.h.html#vlib_get_node_by_name" title='vlib_get_node_by_name' data-ref="vlib_get_node_by_name">vlib_get_node_by_name</a>(<a class="local col6 ref" href="#96vm" title='vm' data-ref="96vm">vm</a>,</td></tr>
+<tr><th id="439">439</th><td>                                      (<a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>*) <a class="tu ref" href="#dpo_nodes" title='dpo_nodes' data-use='r' data-ref="dpo_nodes">dpo_nodes</a>[<a class="local col9 ref" href="#89child_type" title='child_type' data-ref="89child_type">child_type</a>][<a class="local col0 ref" href="#90child_proto" title='child_proto' data-ref="90child_proto">child_proto</a>][<a class="local col9 ref" href="#99cc" title='cc' data-ref="99cc">cc</a>]);</td></tr>
+<tr><th id="440">440</th><td></td></tr>
+<tr><th id="441">441</th><td>            <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#184" title="for (pi = (parent_indices); pi &lt; ((parent_indices) + ((parent_indices) ? (((vec_header_t *) (parent_indices) - 1)-&gt;len) : 0)); pi++)" data-ref="_M/vec_foreach">vec_foreach</a>(<a class="local col8 ref" href="#98pi" title='pi' data-ref="98pi">pi</a>, <a class="local col5 ref" href="#95parent_indices" title='parent_indices' data-ref="95parent_indices">parent_indices</a>)</td></tr>
+<tr><th id="442">442</th><td>            {</td></tr>
+<tr><th id="443">443</th><td>                <a class="local col7 ref" href="#97edge" title='edge' data-ref="97edge">edge</a> = <a class="ref fn" href="../../vlib/node_funcs.h.html#vlib_node_add_next" title='vlib_node_add_next' data-ref="vlib_node_add_next">vlib_node_add_next</a>(<a class="local col6 ref" href="#96vm" title='vm' data-ref="96vm">vm</a>, <a class="local col4 ref" href="#94child_node" title='child_node' data-ref="94child_node">child_node</a>-&gt;<a class="ref field" href="../../vlib/node.h.html#vlib_node_t::index" title='vlib_node_t::index' data-ref="vlib_node_t::index">index</a>, *<a class="local col8 ref" href="#98pi" title='pi' data-ref="98pi">pi</a>);</td></tr>
+<tr><th id="444">444</th><td></td></tr>
+<tr><th id="445">445</th><td>                <b>if</b> (~<var>0</var> == <a class="tu ref" href="#dpo_edges" title='dpo_edges' data-use='r' data-ref="dpo_edges">dpo_edges</a>[<a class="local col9 ref" href="#89child_type" title='child_type' data-ref="89child_type">child_type</a>][<a class="local col0 ref" href="#90child_proto" title='child_proto' data-ref="90child_proto">child_proto</a>][<a class="local col3 ref" href="#93parent_type" title='parent_type' data-ref="93parent_type">parent_type</a>][<a class="local col2 ref" href="#92parent_proto" title='parent_proto' data-ref="92parent_proto">parent_proto</a>])</td></tr>
+<tr><th id="446">446</th><td>                {</td></tr>
+<tr><th id="447">447</th><td>                    <a class="tu ref" href="#dpo_edges" title='dpo_edges' data-use='r' data-ref="dpo_edges">dpo_edges</a>[<a class="local col9 ref" href="#89child_type" title='child_type' data-ref="89child_type">child_type</a>][<a class="local col0 ref" href="#90child_proto" title='child_proto' data-ref="90child_proto">child_proto</a>][<a class="local col3 ref" href="#93parent_type" title='parent_type' data-ref="93parent_type">parent_type</a>][<a class="local col2 ref" href="#92parent_proto" title='parent_proto' data-ref="92parent_proto">parent_proto</a>] = <a class="local col7 ref" href="#97edge" title='edge' data-ref="97edge">edge</a>;</td></tr>
+<tr><th id="448">448</th><td>                }</td></tr>
+<tr><th id="449">449</th><td>                <b>else</b></td></tr>
+<tr><th id="450">450</th><td>                {</td></tr>
+<tr><th id="451">451</th><td>                    <a class="macro" href="../../vppinfra/error_bootstrap.h.html#69" title="do { if ((1 &gt; 0) &amp;&amp; ! (dpo_edges[child_type][child_proto][parent_type][parent_proto] == edge)) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/vpp/../../../src/vnet/dpo/dpo.c&quot;, (uword) 451, ((char *) __FUNCTION__), &quot;dpo_edges[child_type][child_proto][parent_type][parent_proto] == edge&quot;); } } while (0)" data-ref="_M/ASSERT">ASSERT</a>(<a class="tu ref" href="#dpo_edges" title='dpo_edges' data-use='r' data-ref="dpo_edges">dpo_edges</a>[<a class="local col9 ref" href="#89child_type" title='child_type' data-ref="89child_type">child_type</a>][<a class="local col0 ref" href="#90child_proto" title='child_proto' data-ref="90child_proto">child_proto</a>][<a class="local col3 ref" href="#93parent_type" title='parent_type' data-ref="93parent_type">parent_type</a>][<a class="local col2 ref" href="#92parent_proto" title='parent_proto' data-ref="92parent_proto">parent_proto</a>] == <a class="local col7 ref" href="#97edge" title='edge' data-ref="97edge">edge</a>);</td></tr>
+<tr><th id="452">452</th><td>                }</td></tr>
+<tr><th id="453">453</th><td>            }</td></tr>
+<tr><th id="454">454</th><td>            <a class="local col9 ref" href="#99cc" title='cc' data-ref="99cc">cc</a>++;</td></tr>
+<tr><th id="455">455</th><td>        }</td></tr>
+<tr><th id="456">456</th><td></td></tr>
+<tr><th id="457">457</th><td>        <a class="ref fn" href="../../vlib/threads.h.html#vlib_worker_thread_barrier_release" title='vlib_worker_thread_barrier_release' data-ref="vlib_worker_thread_barrier_release">vlib_worker_thread_barrier_release</a>(<a class="local col6 ref" href="#96vm" title='vm' data-ref="96vm">vm</a>);</td></tr>
+<tr><th id="458">458</th><td>        <a class="macro" href="../../vppinfra/vec.h.html#336" title="do { if (parent_indices) { clib_mem_free (vec_header ((parent_indices), (0))); parent_indices = 0; } } while (0)" data-ref="_M/vec_free">vec_free</a>(<a class="local col5 ref" href="#95parent_indices" title='parent_indices' data-ref="95parent_indices">parent_indices</a>);</td></tr>
+<tr><th id="459">459</th><td>    }</td></tr>
+<tr><th id="460">460</th><td></td></tr>
+<tr><th id="461">461</th><td>    <b>return</b> (<a class="tu ref" href="#dpo_edges" title='dpo_edges' data-use='r' data-ref="dpo_edges">dpo_edges</a>[<a class="local col9 ref" href="#89child_type" title='child_type' data-ref="89child_type">child_type</a>][<a class="local col0 ref" href="#90child_proto" title='child_proto' data-ref="90child_proto">child_proto</a>][<a class="local col3 ref" href="#93parent_type" title='parent_type' data-ref="93parent_type">parent_type</a>][<a class="local col2 ref" href="#92parent_proto" title='parent_proto' data-ref="92parent_proto">parent_proto</a>]);</td></tr>
+<tr><th id="462">462</th><td>}</td></tr>
+<tr><th id="463">463</th><td></td></tr>
+<tr><th id="464">464</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="465">465</th><td><i class="doc"> * <span class="command">@brief</span> return already stacked up next node index for a given</i></td></tr>
+<tr><th id="466">466</th><td><i class="doc"> * child_type/child_proto and parent_type/patent_proto.</i></td></tr>
+<tr><th id="467">467</th><td><i class="doc"> * The VLIB graph arc used is taken from the parent and child types</i></td></tr>
+<tr><th id="468">468</th><td><i class="doc"> * passed.</i></td></tr>
+<tr><th id="469">469</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="470">470</th><td><a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a></td></tr>
+<tr><th id="471">471</th><td><dfn class="decl def fn" id="dpo_get_next_node_by_type_and_proto" title='dpo_get_next_node_by_type_and_proto' data-ref="dpo_get_next_node_by_type_and_proto">dpo_get_next_node_by_type_and_proto</dfn> (<a class="typedef" href="dpo.h.html#dpo_type_t" title='dpo_type_t' data-type='enum dpo_type_t_' data-ref="dpo_type_t">dpo_type_t</a>   <dfn class="local col0 decl" id="100child_type" title='child_type' data-type='dpo_type_t' data-ref="100child_type">child_type</dfn>,</td></tr>
+<tr><th id="472">472</th><td>                                     <a class="typedef" href="dpo.h.html#dpo_proto_t" title='dpo_proto_t' data-type='enum dpo_proto_t_' data-ref="dpo_proto_t">dpo_proto_t</a>  <dfn class="local col1 decl" id="101child_proto" title='child_proto' data-type='dpo_proto_t' data-ref="101child_proto">child_proto</dfn>,</td></tr>
+<tr><th id="473">473</th><td>                                     <a class="typedef" href="dpo.h.html#dpo_type_t" title='dpo_type_t' data-type='enum dpo_type_t_' data-ref="dpo_type_t">dpo_type_t</a>   <dfn class="local col2 decl" id="102parent_type" title='parent_type' data-type='dpo_type_t' data-ref="102parent_type">parent_type</dfn>,</td></tr>
+<tr><th id="474">474</th><td>                                     <a class="typedef" href="dpo.h.html#dpo_proto_t" title='dpo_proto_t' data-type='enum dpo_proto_t_' data-ref="dpo_proto_t">dpo_proto_t</a>  <dfn class="local col3 decl" id="103parent_proto" title='parent_proto' data-type='dpo_proto_t' data-ref="103parent_proto">parent_proto</dfn>)</td></tr>
+<tr><th id="475">475</th><td>{</td></tr>
+<tr><th id="476">476</th><td>   <b>return</b> (<a class="tu ref" href="#dpo_edges" title='dpo_edges' data-use='r' data-ref="dpo_edges">dpo_edges</a>[<a class="local col0 ref" href="#100child_type" title='child_type' data-ref="100child_type">child_type</a>][<a class="local col1 ref" href="#101child_proto" title='child_proto' data-ref="101child_proto">child_proto</a>][<a class="local col2 ref" href="#102parent_type" title='parent_type' data-ref="102parent_type">parent_type</a>][<a class="local col3 ref" href="#103parent_proto" title='parent_proto' data-ref="103parent_proto">parent_proto</a>]);</td></tr>
+<tr><th id="477">477</th><td>}</td></tr>
+<tr><th id="478">478</th><td></td></tr>
+<tr><th id="479">479</th><td><i class="doc" data-doc="dpo_stack_i">/**</i></td></tr>
+<tr><th id="480">480</th><td><i class="doc" data-doc="dpo_stack_i"> * <span class="command">@brief</span> Stack one DPO object on another, and thus establish a child parent</i></td></tr>
+<tr><th id="481">481</th><td><i class="doc" data-doc="dpo_stack_i"> * relationship. The VLIB graph arc used is taken from the parent and child types</i></td></tr>
+<tr><th id="482">482</th><td><i class="doc" data-doc="dpo_stack_i"> * passed.</i></td></tr>
+<tr><th id="483">483</th><td><i class="doc" data-doc="dpo_stack_i"> */</i></td></tr>
+<tr><th id="484">484</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="485">485</th><td><dfn class="tu decl def fn" id="dpo_stack_i" title='dpo_stack_i' data-type='void dpo_stack_i(u32 edge, dpo_id_t * dpo, const dpo_id_t * parent)' data-ref="dpo_stack_i">dpo_stack_i</dfn> (<a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col4 decl" id="104edge" title='edge' data-type='u32' data-ref="104edge">edge</dfn>,</td></tr>
+<tr><th id="486">486</th><td>             <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col5 decl" id="105dpo" title='dpo' data-type='dpo_id_t *' data-ref="105dpo">dpo</dfn>,</td></tr>
+<tr><th id="487">487</th><td>             <em>const</em> <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col6 decl" id="106parent" title='parent' data-type='const dpo_id_t *' data-ref="106parent">parent</dfn>)</td></tr>
+<tr><th id="488">488</th><td>{</td></tr>
+<tr><th id="489">489</th><td>    <i>/*</i></td></tr>
+<tr><th id="490">490</th><td><i>     * in order to get an atomic update of the parent we create a temporary,</i></td></tr>
+<tr><th id="491">491</th><td><i>     * from a copy of the child, and add the next_node. then we copy to the parent</i></td></tr>
+<tr><th id="492">492</th><td><i>     */</i></td></tr>
+<tr><th id="493">493</th><td>    <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> <dfn class="local col7 decl" id="107tmp" title='tmp' data-type='dpo_id_t' data-ref="107tmp">tmp</dfn> = <a class="macro" href="dpo.h.html#195" title="{ .dpoi_type = DPO_FIRST, .dpoi_proto = ((dpo_proto_t)(((dpo_proto_t)(DPO_PROTO_NSH+1))+1)), .dpoi_index = ((index_t)(~0)), .dpoi_next_node = 0, }" data-ref="_M/DPO_INVALID">DPO_INVALID</a>;</td></tr>
+<tr><th id="494">494</th><td>    <a class="ref fn" href="#dpo_copy" title='dpo_copy' data-ref="dpo_copy">dpo_copy</a>(&amp;<a class="local col7 ref" href="#107tmp" title='tmp' data-ref="107tmp">tmp</a>, <a class="local col6 ref" href="#106parent" title='parent' data-ref="106parent">parent</a>);</td></tr>
+<tr><th id="495">495</th><td></td></tr>
+<tr><th id="496">496</th><td>    <i>/*</i></td></tr>
+<tr><th id="497">497</th><td><i>     * get the edge index for the parent to child VLIB graph transisition</i></td></tr>
+<tr><th id="498">498</th><td><i>     */</i></td></tr>
+<tr><th id="499">499</th><td>    <a class="local col7 ref" href="#107tmp" title='tmp' data-ref="107tmp">tmp</a>.<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_next_node" title='dpo_id_t_::dpoi_next_node' data-ref="dpo_id_t_::dpoi_next_node">dpoi_next_node</a> = <a class="local col4 ref" href="#104edge" title='edge' data-ref="104edge">edge</a>;</td></tr>
+<tr><th id="500">500</th><td></td></tr>
+<tr><th id="501">501</th><td>    <i>/*</i></td></tr>
+<tr><th id="502">502</th><td><i>     * this update is atomic.</i></td></tr>
+<tr><th id="503">503</th><td><i>     */</i></td></tr>
+<tr><th id="504">504</th><td>    <a class="ref fn" href="#dpo_copy" title='dpo_copy' data-ref="dpo_copy">dpo_copy</a>(<a class="local col5 ref" href="#105dpo" title='dpo' data-ref="105dpo">dpo</a>, &amp;<a class="local col7 ref" href="#107tmp" title='tmp' data-ref="107tmp">tmp</a>);</td></tr>
+<tr><th id="505">505</th><td></td></tr>
+<tr><th id="506">506</th><td>    <a class="ref fn" href="#dpo_reset" title='dpo_reset' data-ref="dpo_reset">dpo_reset</a>(&amp;<a class="local col7 ref" href="#107tmp" title='tmp' data-ref="107tmp">tmp</a>);</td></tr>
+<tr><th id="507">507</th><td>}</td></tr>
+<tr><th id="508">508</th><td></td></tr>
+<tr><th id="509">509</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="510">510</th><td><i class="doc"> * <span class="command">@brief</span> Stack one DPO object on another, and thus establish a child-parent</i></td></tr>
+<tr><th id="511">511</th><td><i class="doc"> * relationship. The VLIB graph arc used is taken from the parent and child types</i></td></tr>
+<tr><th id="512">512</th><td><i class="doc"> * passed.</i></td></tr>
+<tr><th id="513">513</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="514">514</th><td><em>void</em></td></tr>
+<tr><th id="515">515</th><td><dfn class="decl def fn" id="dpo_stack" title='dpo_stack' data-ref="dpo_stack">dpo_stack</dfn> (<a class="typedef" href="dpo.h.html#dpo_type_t" title='dpo_type_t' data-type='enum dpo_type_t_' data-ref="dpo_type_t">dpo_type_t</a> <dfn class="local col8 decl" id="108child_type" title='child_type' data-type='dpo_type_t' data-ref="108child_type">child_type</dfn>,</td></tr>
+<tr><th id="516">516</th><td>           <a class="typedef" href="dpo.h.html#dpo_proto_t" title='dpo_proto_t' data-type='enum dpo_proto_t_' data-ref="dpo_proto_t">dpo_proto_t</a> <dfn class="local col9 decl" id="109child_proto" title='child_proto' data-type='dpo_proto_t' data-ref="109child_proto">child_proto</dfn>,</td></tr>
+<tr><th id="517">517</th><td>           <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col0 decl" id="110dpo" title='dpo' data-type='dpo_id_t *' data-ref="110dpo">dpo</dfn>,</td></tr>
+<tr><th id="518">518</th><td>           <em>const</em> <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col1 decl" id="111parent" title='parent' data-type='const dpo_id_t *' data-ref="111parent">parent</dfn>)</td></tr>
+<tr><th id="519">519</th><td>{</td></tr>
+<tr><th id="520">520</th><td>    <a class="tu ref fn" href="#dpo_stack_i" title='dpo_stack_i' data-use='c' data-ref="dpo_stack_i">dpo_stack_i</a>(<a class="tu ref fn" href="#dpo_get_next_node" title='dpo_get_next_node' data-use='c' data-ref="dpo_get_next_node">dpo_get_next_node</a>(<a class="local col8 ref" href="#108child_type" title='child_type' data-ref="108child_type">child_type</a>, <a class="local col9 ref" href="#109child_proto" title='child_proto' data-ref="109child_proto">child_proto</a>, <a class="local col1 ref" href="#111parent" title='parent' data-ref="111parent">parent</a>), <a class="local col0 ref" href="#110dpo" title='dpo' data-ref="110dpo">dpo</a>, <a class="local col1 ref" href="#111parent" title='parent' data-ref="111parent">parent</a>);</td></tr>
+<tr><th id="521">521</th><td>}</td></tr>
+<tr><th id="522">522</th><td></td></tr>
+<tr><th id="523">523</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="524">524</th><td><i class="doc"> * <span class="command">@brief</span> Stack one DPO object on another, and thus establish a child parent</i></td></tr>
+<tr><th id="525">525</th><td><i class="doc"> * relationship. A new VLIB graph arc is created from the child node passed</i></td></tr>
+<tr><th id="526">526</th><td><i class="doc"> * to the nodes registered by the parent. The VLIB infra will ensure this arc</i></td></tr>
+<tr><th id="527">527</th><td><i class="doc"> * is added only once.</i></td></tr>
+<tr><th id="528">528</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="529">529</th><td><em>void</em></td></tr>
+<tr><th id="530">530</th><td><dfn class="decl def fn" id="dpo_stack_from_node" title='dpo_stack_from_node' data-ref="dpo_stack_from_node">dpo_stack_from_node</dfn> (<a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col2 decl" id="112child_node_index" title='child_node_index' data-type='u32' data-ref="112child_node_index">child_node_index</dfn>,</td></tr>
+<tr><th id="531">531</th><td>                     <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col3 decl" id="113dpo" title='dpo' data-type='dpo_id_t *' data-ref="113dpo">dpo</dfn>,</td></tr>
+<tr><th id="532">532</th><td>                     <em>const</em> <a class="typedef" href="dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col4 decl" id="114parent" title='parent' data-type='const dpo_id_t *' data-ref="114parent">parent</dfn>)</td></tr>
+<tr><th id="533">533</th><td>{</td></tr>
+<tr><th id="534">534</th><td>    <a class="typedef" href="dpo.h.html#dpo_type_t" title='dpo_type_t' data-type='enum dpo_type_t_' data-ref="dpo_type_t">dpo_type_t</a> <dfn class="local col5 decl" id="115parent_type" title='parent_type' data-type='dpo_type_t' data-ref="115parent_type">parent_type</dfn>;</td></tr>
+<tr><th id="535">535</th><td>    <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> *<dfn class="local col6 decl" id="116parent_indices" title='parent_indices' data-type='u32 *' data-ref="116parent_indices">parent_indices</dfn>;</td></tr>
+<tr><th id="536">536</th><td>    <a class="typedef" href="../../vlib/main.h.html#vlib_main_t" title='vlib_main_t' data-type='struct vlib_main_t' data-ref="vlib_main_t">vlib_main_t</a> *<dfn class="local col7 decl" id="117vm" title='vm' data-type='vlib_main_t *' data-ref="117vm">vm</dfn>;</td></tr>
+<tr><th id="537">537</th><td>    <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col8 decl" id="118edge" title='edge' data-type='u32' data-ref="118edge">edge</dfn>, *<dfn class="local col9 decl" id="119pi" title='pi' data-type='u32 *' data-ref="119pi">pi</dfn>;</td></tr>
+<tr><th id="538">538</th><td></td></tr>
+<tr><th id="539">539</th><td>    <a class="local col8 ref" href="#118edge" title='edge' data-ref="118edge">edge</a> = <var>0</var>;</td></tr>
+<tr><th id="540">540</th><td>    <a class="local col5 ref" href="#115parent_type" title='parent_type' data-ref="115parent_type">parent_type</a> = <a class="local col4 ref" href="#114parent" title='parent' data-ref="114parent">parent</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_id_t_::dpoi_type" title='dpo_id_t_::dpoi_type' data-ref="dpo_id_t_::dpoi_type">dpoi_type</a>;</td></tr>
+<tr><th id="541">541</th><td>    <a class="local col7 ref" href="#117vm" title='vm' data-ref="117vm">vm</a> = <a class="ref fn" href="../../vlib/global_funcs.h.html#vlib_get_main" title='vlib_get_main' data-ref="vlib_get_main">vlib_get_main</a>();</td></tr>
+<tr><th id="542">542</th><td></td></tr>
+<tr><th id="543">543</th><td>    <a class="macro" href="../../vppinfra/error_bootstrap.h.html#69" title="do { if ((1 &gt; 0) &amp;&amp; ! (((void*)0) != dpo_vfts[parent_type].dv_get_next_node)) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/vpp/../../../src/vnet/dpo/dpo.c&quot;, (uword) 543, ((char *) __FUNCTION__), &quot;NULL != dpo_vfts[parent_type].dv_get_next_node&quot;); } } while (0)" data-ref="_M/ASSERT">ASSERT</a>(<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> != <a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='r' data-ref="dpo_vfts">dpo_vfts</a>[<a class="local col5 ref" href="#115parent_type" title='parent_type' data-ref="115parent_type">parent_type</a>].<a class="ref field" href="dpo.h.html#dpo_vft_t_::dv_get_next_node" title='dpo_vft_t_::dv_get_next_node' data-ref="dpo_vft_t_::dv_get_next_node">dv_get_next_node</a>);</td></tr>
+<tr><th id="544">544</th><td>    <a class="local col6 ref" href="#116parent_indices" title='parent_indices' data-ref="116parent_indices">parent_indices</a> = <a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='r' data-ref="dpo_vfts">dpo_vfts</a>[<a class="local col5 ref" href="#115parent_type" title='parent_type' data-ref="115parent_type">parent_type</a>].<a class="ref field" href="dpo.h.html#dpo_vft_t_::dv_get_next_node" title='dpo_vft_t_::dv_get_next_node' data-ref="dpo_vft_t_::dv_get_next_node">dv_get_next_node</a>(<a class="local col4 ref" href="#114parent" title='parent' data-ref="114parent">parent</a>);</td></tr>
+<tr><th id="545">545</th><td>    <a class="macro" href="../../vppinfra/error_bootstrap.h.html#69" title="do { if ((1 &gt; 0) &amp;&amp; ! (parent_indices)) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/vpp/../../../src/vnet/dpo/dpo.c&quot;, (uword) 545, ((char *) __FUNCTION__), &quot;parent_indices&quot;); } } while (0)" data-ref="_M/ASSERT">ASSERT</a>(<a class="local col6 ref" href="#116parent_indices" title='parent_indices' data-ref="116parent_indices">parent_indices</a>);</td></tr>
+<tr><th id="546">546</th><td></td></tr>
+<tr><th id="547">547</th><td>    <i>/*</i></td></tr>
+<tr><th id="548">548</th><td><i>     * This loop is purposefully written with the worker thread lock in the</i></td></tr>
+<tr><th id="549">549</th><td><i>     * inner loop because;</i></td></tr>
+<tr><th id="550">550</th><td><i>     *  1) the likelihood that the edge does not exist is smaller</i></td></tr>
+<tr><th id="551">551</th><td><i>     *  2) the likelihood there is more than one node is even smaller</i></td></tr>
+<tr><th id="552">552</th><td><i>     * so we are optimising for not need to take the lock</i></td></tr>
+<tr><th id="553">553</th><td><i>     */</i></td></tr>
+<tr><th id="554">554</th><td>    <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#184" title="for (pi = (parent_indices); pi &lt; ((parent_indices) + ((parent_indices) ? (((vec_header_t *) (parent_indices) - 1)-&gt;len) : 0)); pi++)" data-ref="_M/vec_foreach">vec_foreach</a>(<a class="local col9 ref" href="#119pi" title='pi' data-ref="119pi">pi</a>, <a class="local col6 ref" href="#116parent_indices" title='parent_indices' data-ref="116parent_indices">parent_indices</a>)</td></tr>
+<tr><th id="555">555</th><td>    {</td></tr>
+<tr><th id="556">556</th><td>        <a class="local col8 ref" href="#118edge" title='edge' data-ref="118edge">edge</a> = <a class="ref fn" href="../../vlib/node_funcs.h.html#vlib_node_get_next" title='vlib_node_get_next' data-ref="vlib_node_get_next">vlib_node_get_next</a>(<a class="local col7 ref" href="#117vm" title='vm' data-ref="117vm">vm</a>, <a class="local col2 ref" href="#112child_node_index" title='child_node_index' data-ref="112child_node_index">child_node_index</a>, *<a class="local col9 ref" href="#119pi" title='pi' data-ref="119pi">pi</a>);</td></tr>
+<tr><th id="557">557</th><td></td></tr>
+<tr><th id="558">558</th><td>        <b>if</b> (~<var>0</var> == <a class="local col8 ref" href="#118edge" title='edge' data-ref="118edge">edge</a>)</td></tr>
+<tr><th id="559">559</th><td>        {</td></tr>
+<tr><th id="560">560</th><td>            <a class="macro" href="../../vlib/threads.h.html#212" title="vlib_worker_thread_barrier_sync_int(vm)" data-ref="_M/vlib_worker_thread_barrier_sync">vlib_worker_thread_barrier_sync</a>(<a class="local col7 ref" href="#117vm" title='vm' data-ref="117vm">vm</a>);</td></tr>
+<tr><th id="561">561</th><td></td></tr>
+<tr><th id="562">562</th><td>            <a class="local col8 ref" href="#118edge" title='edge' data-ref="118edge">edge</a> = <a class="ref fn" href="../../vlib/node_funcs.h.html#vlib_node_add_next" title='vlib_node_add_next' data-ref="vlib_node_add_next">vlib_node_add_next</a>(<a class="local col7 ref" href="#117vm" title='vm' data-ref="117vm">vm</a>, <a class="local col2 ref" href="#112child_node_index" title='child_node_index' data-ref="112child_node_index">child_node_index</a>, *<a class="local col9 ref" href="#119pi" title='pi' data-ref="119pi">pi</a>);</td></tr>
+<tr><th id="563">563</th><td></td></tr>
+<tr><th id="564">564</th><td>            <a class="ref fn" href="../../vlib/threads.h.html#vlib_worker_thread_barrier_release" title='vlib_worker_thread_barrier_release' data-ref="vlib_worker_thread_barrier_release">vlib_worker_thread_barrier_release</a>(<a class="local col7 ref" href="#117vm" title='vm' data-ref="117vm">vm</a>);</td></tr>
+<tr><th id="565">565</th><td>        }</td></tr>
+<tr><th id="566">566</th><td>    }</td></tr>
+<tr><th id="567">567</th><td>    <a class="tu ref fn" href="#dpo_stack_i" title='dpo_stack_i' data-use='c' data-ref="dpo_stack_i">dpo_stack_i</a>(<a class="local col8 ref" href="#118edge" title='edge' data-ref="118edge">edge</a>, <a class="local col3 ref" href="#113dpo" title='dpo' data-ref="113dpo">dpo</a>, <a class="local col4 ref" href="#114parent" title='parent' data-ref="114parent">parent</a>);</td></tr>
+<tr><th id="568">568</th><td></td></tr>
+<tr><th id="569">569</th><td>    <i>/* should free this local vector to avoid memory leak */</i></td></tr>
+<tr><th id="570">570</th><td>    <a class="macro" href="../../vppinfra/vec.h.html#336" title="do { if (parent_indices) { clib_mem_free (vec_header ((parent_indices), (0))); parent_indices = 0; } } while (0)" data-ref="_M/vec_free">vec_free</a>(<a class="local col6 ref" href="#116parent_indices" title='parent_indices' data-ref="116parent_indices">parent_indices</a>);</td></tr>
+<tr><th id="571">571</th><td>}</td></tr>
+<tr><th id="572">572</th><td></td></tr>
+<tr><th id="573">573</th><td><em>static</em> <a class="typedef" href="../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *</td></tr>
+<tr><th id="574">574</th><td><dfn class="tu decl def fn" id="dpo_module_init" title='dpo_module_init' data-type='clib_error_t * dpo_module_init(vlib_main_t * vm)' data-ref="dpo_module_init">dpo_module_init</dfn> (<a class="typedef" href="../../vlib/main.h.html#vlib_main_t" title='vlib_main_t' data-type='struct vlib_main_t' data-ref="vlib_main_t">vlib_main_t</a> * <dfn class="local col0 decl" id="120vm" title='vm' data-type='vlib_main_t *' data-ref="120vm">vm</dfn>)</td></tr>
+<tr><th id="575">575</th><td>{</td></tr>
+<tr><th id="576">576</th><td>    <a class="ref fn" href="drop_dpo.h.html#drop_dpo_module_init" title='drop_dpo_module_init' data-ref="drop_dpo_module_init">drop_dpo_module_init</a>();</td></tr>
+<tr><th id="577">577</th><td>    <a class="ref fn" href="punt_dpo.h.html#punt_dpo_module_init" title='punt_dpo_module_init' data-ref="punt_dpo_module_init">punt_dpo_module_init</a>();</td></tr>
+<tr><th id="578">578</th><td>    <a class="ref fn" href="receive_dpo.h.html#receive_dpo_module_init" title='receive_dpo_module_init' data-ref="receive_dpo_module_init">receive_dpo_module_init</a>();</td></tr>
+<tr><th id="579">579</th><td>    <a class="ref fn" href="load_balance.h.html#load_balance_module_init" title='load_balance_module_init' data-ref="load_balance_module_init">load_balance_module_init</a>();</td></tr>
+<tr><th id="580">580</th><td>    <a class="ref fn" href="mpls_label_dpo.h.html#mpls_label_dpo_module_init" title='mpls_label_dpo_module_init' data-ref="mpls_label_dpo_module_init">mpls_label_dpo_module_init</a>();</td></tr>
+<tr><th id="581">581</th><td>    <a class="ref fn" href="classify_dpo.h.html#classify_dpo_module_init" title='classify_dpo_module_init' data-ref="classify_dpo_module_init">classify_dpo_module_init</a>();</td></tr>
+<tr><th id="582">582</th><td>    <a class="ref fn" href="lookup_dpo.h.html#lookup_dpo_module_init" title='lookup_dpo_module_init' data-ref="lookup_dpo_module_init">lookup_dpo_module_init</a>();</td></tr>
+<tr><th id="583">583</th><td>    <a class="ref fn" href="ip_null_dpo.h.html#ip_null_dpo_module_init" title='ip_null_dpo_module_init' data-ref="ip_null_dpo_module_init">ip_null_dpo_module_init</a>();</td></tr>
+<tr><th id="584">584</th><td>    <a class="ref fn" href="ip6_ll_dpo.h.html#ip6_ll_dpo_module_init" title='ip6_ll_dpo_module_init' data-ref="ip6_ll_dpo_module_init">ip6_ll_dpo_module_init</a>();</td></tr>
+<tr><th id="585">585</th><td>    <a class="ref fn" href="replicate_dpo.h.html#replicate_module_init" title='replicate_module_init' data-ref="replicate_module_init">replicate_module_init</a>();</td></tr>
+<tr><th id="586">586</th><td>    <a class="ref fn" href="interface_rx_dpo.h.html#interface_rx_dpo_module_init" title='interface_rx_dpo_module_init' data-ref="interface_rx_dpo_module_init">interface_rx_dpo_module_init</a>();</td></tr>
+<tr><th id="587">587</th><td>    <a class="ref fn" href="interface_tx_dpo.h.html#interface_tx_dpo_module_init" title='interface_tx_dpo_module_init' data-ref="interface_tx_dpo_module_init">interface_tx_dpo_module_init</a>();</td></tr>
+<tr><th id="588">588</th><td>    <a class="ref fn" href="mpls_disposition.h.html#mpls_disp_dpo_module_init" title='mpls_disp_dpo_module_init' data-ref="mpls_disp_dpo_module_init">mpls_disp_dpo_module_init</a>();</td></tr>
+<tr><th id="589">589</th><td>    <a class="ref fn" href="dvr_dpo.h.html#dvr_dpo_module_init" title='dvr_dpo_module_init' data-ref="dvr_dpo_module_init">dvr_dpo_module_init</a>();</td></tr>
+<tr><th id="590">590</th><td>    <a class="ref fn" href="l3_proxy_dpo.h.html#l3_proxy_dpo_module_init" title='l3_proxy_dpo_module_init' data-ref="l3_proxy_dpo_module_init">l3_proxy_dpo_module_init</a>();</td></tr>
+<tr><th id="591">591</th><td></td></tr>
+<tr><th id="592">592</th><td>    <b>return</b> (<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>);</td></tr>
+<tr><th id="593">593</th><td>}</td></tr>
+<tr><th id="594">594</th><td></td></tr>
+<tr><th id="595">595</th><td><a class="macro" href="../../vlib/init.h.html#111" title="vlib_init_function_t * _vlib_init_function_dpo_module_init = dpo_module_init; static void __vlib_add_init_function_dpo_module_init (void) __attribute__((__constructor__)) ; static void __vlib_add_init_function_dpo_module_init (void) { vlib_main_t * vm = vlib_get_main(); static _vlib_init_function_list_elt_t _vlib_init_function; _vlib_init_function.next_init_function = vm-&gt;init_function_registrations; vm-&gt;init_function_registrations = &amp;_vlib_init_function; _vlib_init_function.f = &amp;dpo_module_init; }" data-ref="_M/VLIB_INIT_FUNCTION">VLIB_INIT_FUNCTION</a>(<a class="tu ref fn" href="#dpo_module_init" title='dpo_module_init' data-ref="dpo_module_init"><a class="tu ref fn" href="#dpo_module_init" title='dpo_module_init' data-use='a' data-ref="dpo_module_init">dpo_module_init</a></a>);</td></tr>
+<tr><th id="596">596</th><td></td></tr>
+<tr><th id="597">597</th><td><em>static</em> <a class="typedef" href="../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *</td></tr>
+<tr><th id="598">598</th><td><dfn class="tu decl def fn" id="dpo_memory_show" title='dpo_memory_show' data-type='clib_error_t * dpo_memory_show(vlib_main_t * vm, unformat_input_t * input, vlib_cli_command_t * cmd)' data-ref="dpo_memory_show">dpo_memory_show</dfn> (<a class="typedef" href="../../vlib/main.h.html#vlib_main_t" title='vlib_main_t' data-type='struct vlib_main_t' data-ref="vlib_main_t">vlib_main_t</a> * <dfn class="local col1 decl" id="121vm" title='vm' data-type='vlib_main_t *' data-ref="121vm">vm</dfn>,</td></tr>
+<tr><th id="599">599</th><td>		 <a class="typedef" href="../../vppinfra/format.h.html#unformat_input_t" title='unformat_input_t' data-type='struct _unformat_input_t' data-ref="unformat_input_t">unformat_input_t</a> * <dfn class="local col2 decl" id="122input" title='input' data-type='unformat_input_t *' data-ref="122input">input</dfn>,</td></tr>
+<tr><th id="600">600</th><td>		 <a class="typedef" href="../../vlib/cli.h.html#vlib_cli_command_t" title='vlib_cli_command_t' data-type='struct vlib_cli_command_t' data-ref="vlib_cli_command_t">vlib_cli_command_t</a> * <dfn class="local col3 decl" id="123cmd" title='cmd' data-type='vlib_cli_command_t *' data-ref="123cmd">cmd</dfn>)</td></tr>
+<tr><th id="601">601</th><td>{</td></tr>
+<tr><th id="602">602</th><td>    <a class="typedef" href="dpo.h.html#dpo_vft_t" title='dpo_vft_t' data-type='struct dpo_vft_t_' data-ref="dpo_vft_t">dpo_vft_t</a> *<dfn class="local col4 decl" id="124vft" title='vft' data-type='dpo_vft_t *' data-ref="124vft">vft</dfn>;</td></tr>
+<tr><th id="603">603</th><td></td></tr>
+<tr><th id="604">604</th><td>    <a class="ref fn" href="../../vlib/cli.h.html#vlib_cli_output" title='vlib_cli_output' data-ref="vlib_cli_output">vlib_cli_output</a> (<a class="local col1 ref" href="#121vm" title='vm' data-ref="121vm">vm</a>, <q>"DPO memory"</q>);</td></tr>
+<tr><th id="605">605</th><td>    <a class="ref fn" href="../../vlib/cli.h.html#vlib_cli_output" title='vlib_cli_output' data-ref="vlib_cli_output">vlib_cli_output</a> (<a class="local col1 ref" href="#121vm" title='vm' data-ref="121vm">vm</a>, <q>"%=30s %=5s %=8s/%=9s   totals"</q>,</td></tr>
+<tr><th id="606">606</th><td>		     <q>"Name"</q>,<q>"Size"</q>, <q>"in-use"</q>, <q>"allocated"</q>);</td></tr>
+<tr><th id="607">607</th><td></td></tr>
+<tr><th id="608">608</th><td>    <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#184" title="for (vft = (dpo_vfts); vft &lt; ((dpo_vfts) + ((dpo_vfts) ? (((vec_header_t *) (dpo_vfts) - 1)-&gt;len) : 0)); vft++)" data-ref="_M/vec_foreach">vec_foreach</a>(<a class="local col4 ref" href="#124vft" title='vft' data-ref="124vft">vft</a>, <a class="tu ref" href="#dpo_vfts" title='dpo_vfts' data-use='r' data-ref="dpo_vfts">dpo_vfts</a>)</td></tr>
+<tr><th id="609">609</th><td>    {</td></tr>
+<tr><th id="610">610</th><td>	<b>if</b> (<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> != <a class="local col4 ref" href="#124vft" title='vft' data-ref="124vft">vft</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_vft_t_::dv_mem_show" title='dpo_vft_t_::dv_mem_show' data-ref="dpo_vft_t_::dv_mem_show">dv_mem_show</a>)</td></tr>
+<tr><th id="611">611</th><td>	    <a class="local col4 ref" href="#124vft" title='vft' data-ref="124vft">vft</a>-&gt;<a class="ref field" href="dpo.h.html#dpo_vft_t_::dv_mem_show" title='dpo_vft_t_::dv_mem_show' data-ref="dpo_vft_t_::dv_mem_show">dv_mem_show</a>();</td></tr>
+<tr><th id="612">612</th><td>    }</td></tr>
+<tr><th id="613">613</th><td></td></tr>
+<tr><th id="614">614</th><td>    <b>return</b> (<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>);</td></tr>
+<tr><th id="615">615</th><td>}</td></tr>
+<tr><th id="616">616</th><td></td></tr>
+<tr><th id="617">617</th><td><i>/* *INDENT-OFF* */</i></td></tr>
+<tr><th id="618">618</th><td><i>/*?</i></td></tr>
+<tr><th id="619">619</th><td><i> * The '&lt;em&gt;sh dpo memory &lt;/em&gt;' command displays the memory usage for each</i></td></tr>
+<tr><th id="620">620</th><td><i> * data-plane object type.</i></td></tr>
+<tr><th id="621">621</th><td><i> *</i></td></tr>
+<tr><th id="622">622</th><td><i> * @cliexpar</i></td></tr>
+<tr><th id="623">623</th><td><i> * @cliexstart{show dpo memory}</i></td></tr>
+<tr><th id="624">624</th><td><i> * DPO memory</i></td></tr>
+<tr><th id="625">625</th><td><i> *             Name               Size  in-use /allocated   totals</i></td></tr>
+<tr><th id="626">626</th><td><i> *         load-balance            64     12   /    12      768/768</i></td></tr>
+<tr><th id="627">627</th><td><i> *           Adjacency            256      1   /    1       256/256</i></td></tr>
+<tr><th id="628">628</th><td><i> *            Receive              24      5   /    5       120/120</i></td></tr>
+<tr><th id="629">629</th><td><i> *            Lookup               12      0   /    0       0/0</i></td></tr>
+<tr><th id="630">630</th><td><i> *           Classify              12      0   /    0       0/0</i></td></tr>
+<tr><th id="631">631</th><td><i> *          MPLS label             24      0   /    0       0/0</i></td></tr>
+<tr><th id="632">632</th><td><i> * @cliexend</i></td></tr>
+<tr><th id="633">633</th><td><i>?*/</i></td></tr>
+<tr><th id="634">634</th><td><a class="macro" href="../../vlib/cli.h.html#154" title="static vlib_cli_command_t show_fib_memory; static void __vlib_cli_command_registration_show_fib_memory (void) __attribute__((__constructor__)) ; static void __vlib_cli_command_registration_show_fib_memory (void) { vlib_main_t * vm = vlib_get_main(); vlib_cli_main_t *cm = &amp;vm-&gt;cli_main; show_fib_memory.next_cli_command = cm-&gt;cli_command_registrations; cm-&gt;cli_command_registrations = &amp;show_fib_memory; } static vlib_cli_command_t show_fib_memory" data-ref="_M/VLIB_CLI_COMMAND">VLIB_CLI_COMMAND</a> (<dfn class="tu decl def" id="show_fib_memory" title='show_fib_memory' data-type='vlib_cli_command_t' data-ref="show_fib_memory"><a class="tu ref" href="#634" title='show_fib_memory' data-use='m' data-ref="show_fib_memory"><a class="tu ref" href="#634" title='show_fib_memory' data-use='a' data-ref="show_fib_memory">show_fib_memory</a></a></dfn>, <em>static</em>) = {</td></tr>
+<tr><th id="635">635</th><td>    .<a class="ref field" href="../../vlib/cli.h.html#vlib_cli_command_t::path" title='vlib_cli_command_t::path' data-ref="vlib_cli_command_t::path">path</a> = <q>"show dpo memory"</q>,</td></tr>
+<tr><th id="636">636</th><td>    .<a class="ref field" href="../../vlib/cli.h.html#vlib_cli_command_t::function" title='vlib_cli_command_t::function' data-ref="vlib_cli_command_t::function">function</a> = <a class="tu ref fn" href="#dpo_memory_show" title='dpo_memory_show' data-ref="dpo_memory_show">dpo_memory_show</a>,</td></tr>
+<tr><th id="637">637</th><td>    .<a class="ref field" href="../../vlib/cli.h.html#vlib_cli_command_t::short_help" title='vlib_cli_command_t::short_help' data-ref="vlib_cli_command_t::short_help">short_help</a> = <q>"show dpo memory"</q>,</td></tr>
+<tr><th id="638">638</th><td>};</td></tr>
+<tr><th id="639">639</th><td><i>/* *INDENT-ON* */</i></td></tr>
+<tr><th id="640">640</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-29</em> from project vpp_1804 revision <em>18.04</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,974 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>unix-formats.c source code [vpp_1804/src/vppinfra/unix-formats.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'vpp_1804/src/vppinfra/unix-formats.c'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>vpp_1804</a>/<a href='..'>src</a>/<a href='./'>vppinfra</a>/<a href='unix-formats.c.html'>unix-formats.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright (c) 2015 Cisco and/or its affiliates.</i></td></tr>
+<tr><th id="3">3</th><td><i> * Licensed under the Apache License, Version 2.0 (the "License");</i></td></tr>
+<tr><th id="4">4</th><td><i> * you may not use this file except in compliance with the License.</i></td></tr>
+<tr><th id="5">5</th><td><i> * You may obtain a copy of the License at:</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> *     <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></i></td></tr>
+<tr><th id="8">8</th><td><i> *</i></td></tr>
+<tr><th id="9">9</th><td><i> * Unless required by applicable law or agreed to in writing, software</i></td></tr>
+<tr><th id="10">10</th><td><i> * distributed under the License is distributed on an "AS IS" BASIS,</i></td></tr>
+<tr><th id="11">11</th><td><i> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</i></td></tr>
+<tr><th id="12">12</th><td><i> * See the License for the specific language governing permissions and</i></td></tr>
+<tr><th id="13">13</th><td><i> * limitations under the License.</i></td></tr>
+<tr><th id="14">14</th><td><i> */</i></td></tr>
+<tr><th id="15">15</th><td><i>/*</i></td></tr>
+<tr><th id="16">16</th><td><i>  Copyright (c) 2001, 2002, 2003 Eliot Dresselhaus</i></td></tr>
+<tr><th id="17">17</th><td><i></i></td></tr>
+<tr><th id="18">18</th><td><i>  Permission is hereby granted, free of charge, to any person obtaining</i></td></tr>
+<tr><th id="19">19</th><td><i>  a copy of this software and associated documentation files (the</i></td></tr>
+<tr><th id="20">20</th><td><i>  "Software"), to deal in the Software without restriction, including</i></td></tr>
+<tr><th id="21">21</th><td><i>  without limitation the rights to use, copy, modify, merge, publish,</i></td></tr>
+<tr><th id="22">22</th><td><i>  distribute, sublicense, and/or sell copies of the Software, and to</i></td></tr>
+<tr><th id="23">23</th><td><i>  permit persons to whom the Software is furnished to do so, subject to</i></td></tr>
+<tr><th id="24">24</th><td><i>  the following conditions:</i></td></tr>
+<tr><th id="25">25</th><td><i></i></td></tr>
+<tr><th id="26">26</th><td><i>  The above copyright notice and this permission notice shall be</i></td></tr>
+<tr><th id="27">27</th><td><i>  included in all copies or substantial portions of the Software.</i></td></tr>
+<tr><th id="28">28</th><td><i></i></td></tr>
+<tr><th id="29">29</th><td><i>  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,</i></td></tr>
+<tr><th id="30">30</th><td><i>  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF</i></td></tr>
+<tr><th id="31">31</th><td><i>  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND</i></td></tr>
+<tr><th id="32">32</th><td><i>  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE</i></td></tr>
+<tr><th id="33">33</th><td><i>  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION</i></td></tr>
+<tr><th id="34">34</th><td><i>  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION</i></td></tr>
+<tr><th id="35">35</th><td><i>  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</i></td></tr>
+<tr><th id="36">36</th><td><i>*/</i></td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><u>#<span data-ppcond="38">ifdef</span> <span class="macro" data-ref="_M/__KERNEL__">__KERNEL__</span></u></td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><u># include &lt;linux/unistd.h&gt;</u></td></tr>
+<tr><th id="41">41</th><td><u># include &lt;linux/signal.h&gt;</u></td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><u>#<span data-ppcond="38">else</span> /* ! __KERNEL__ */</u></td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td><u>#define <dfn class="macro" id="_M/_GNU_SOURCE" data-ref="_M/_GNU_SOURCE">_GNU_SOURCE</dfn>		/* to get REG_* in ucontext.h */</u></td></tr>
+<tr><th id="46">46</th><td><u>#include <a href="../../../include/ucontext.h.html">&lt;ucontext.h&gt;</a></u></td></tr>
+<tr><th id="47">47</th><td><u>#undef <a class="macro" href="#45" data-ref="_M/_GNU_SOURCE">_GNU_SOURCE</a></u></td></tr>
+<tr><th id="48">48</th><td><u>#undef <a class="macro" href="../../../include/features.h.html#321" data-ref="_M/__USE_GNU">__USE_GNU</a></u></td></tr>
+<tr><th id="49">49</th><td></td></tr>
+<tr><th id="50">50</th><td><u>#include <a href="../../../include/unistd.h.html">&lt;unistd.h&gt;</a></u></td></tr>
+<tr><th id="51">51</th><td><u>#include <a href="../../../include/signal.h.html">&lt;signal.h&gt;</a></u></td></tr>
+<tr><th id="52">52</th><td><u>#include <a href="../../../include/grp.h.html">&lt;grp.h&gt;</a></u></td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td><u>#include <a href="../../../include/time.h.html">&lt;time.h&gt;</a></u></td></tr>
+<tr><th id="55">55</th><td><u>#include <a href="../../../include/sys/socket.h.html">&lt;sys/socket.h&gt;</a></u></td></tr>
+<tr><th id="56">56</th><td><u>#include <a href="../../../include/netdb.h.html">&lt;netdb.h&gt;</a></u></td></tr>
+<tr><th id="57">57</th><td><u>#include <a href="../../../include/math.h.html">&lt;math.h&gt;</a></u></td></tr>
+<tr><th id="58">58</th><td></td></tr>
+<tr><th id="59">59</th><td><u>#include <a href="time.h.html">&lt;vppinfra/time.h&gt;</a></u></td></tr>
+<tr><th id="60">60</th><td></td></tr>
+<tr><th id="61">61</th><td><u>#<span data-ppcond="61">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#105" data-ref="_M/AF_NETLINK">AF_NETLINK</a></u></td></tr>
+<tr><th id="62">62</th><td><u>#include <a href="../../../include/linux/types.h.html">&lt;linux/types.h&gt;</a></u></td></tr>
+<tr><th id="63">63</th><td><u>#include <a href="../../../include/linux/netlink.h.html">&lt;linux/netlink.h&gt;</a></u></td></tr>
+<tr><th id="64">64</th><td><u>#<span data-ppcond="61">endif</span></u></td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td><u>#<span data-ppcond="38">endif</span> /* ! __KERNEL__ */</u></td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td><u>#<span data-ppcond="69">ifdef</span> <span class="macro" data-ref="_M/__KERNEL__">__KERNEL__</span></u></td></tr>
+<tr><th id="70">70</th><td><u># include &lt;linux/socket.h&gt;</u></td></tr>
+<tr><th id="71">71</th><td><u># include &lt;linux/in.h&gt;</u></td></tr>
+<tr><th id="72">72</th><td><u># include &lt;linux/ip.h&gt;</u></td></tr>
+<tr><th id="73">73</th><td><u># include &lt;linux/tcp.h&gt;</u></td></tr>
+<tr><th id="74">74</th><td><u># include &lt;linux/udp.h&gt;</u></td></tr>
+<tr><th id="75">75</th><td><u># include &lt;linux/icmp.h&gt;</u></td></tr>
+<tr><th id="76">76</th><td><u># include &lt;linux/if_ether.h&gt;</u></td></tr>
+<tr><th id="77">77</th><td><u># include &lt;linux/if_arp.h&gt;</u></td></tr>
+<tr><th id="78">78</th><td><u>#<span data-ppcond="69">else</span></u></td></tr>
+<tr><th id="79">79</th><td><u># include <a href="../../../include/net/if.h.html">&lt;net/if.h&gt;</a>            /* struct ifnet may live here */</u></td></tr>
+<tr><th id="80">80</th><td><u># include <a href="../../../include/netinet/in.h.html">&lt;netinet/in.h&gt;</a></u></td></tr>
+<tr><th id="81">81</th><td><u># include <a href="../../../include/netinet/ip.h.html">&lt;netinet/ip.h&gt;</a></u></td></tr>
+<tr><th id="82">82</th><td><u># include <a href="../../../include/netinet/tcp.h.html">&lt;netinet/tcp.h&gt;</a></u></td></tr>
+<tr><th id="83">83</th><td><u># include <a href="../../../include/netinet/udp.h.html">&lt;netinet/udp.h&gt;</a></u></td></tr>
+<tr><th id="84">84</th><td><u># include <a href="../../../include/netinet/ip_icmp.h.html">&lt;netinet/ip_icmp.h&gt;</a></u></td></tr>
+<tr><th id="85">85</th><td><u># include <a href="../../../include/netinet/if_ether.h.html">&lt;netinet/if_ether.h&gt;</a></u></td></tr>
+<tr><th id="86">86</th><td><u>#<span data-ppcond="69">endif</span> /* __KERNEL__ */</u></td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td><u>#include <a href="bitops.h.html">&lt;vppinfra/bitops.h&gt;</a> /* foreach_set_bit */</u></td></tr>
+<tr><th id="89">89</th><td><u>#include <a href="format.h.html">&lt;vppinfra/format.h&gt;</a></u></td></tr>
+<tr><th id="90">90</th><td><u>#include <a href="error.h.html">&lt;vppinfra/error.h&gt;</a></u></td></tr>
+<tr><th id="91">91</th><td></td></tr>
+<tr><th id="92">92</th><td><i>/* Format unix network address family (e.g. AF_INET). */</i></td></tr>
+<tr><th id="93">93</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_address_family" title='format_address_family' data-ref="format_address_family">format_address_family</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col8 decl" id="8s" title='s' data-type='u8 *' data-ref="8s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col9 decl" id="9va" title='va' data-type='va_list *' data-ref="9va">va</dfn>)</td></tr>
+<tr><th id="94">94</th><td>{</td></tr>
+<tr><th id="95">95</th><td>  <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> <dfn class="local col0 decl" id="10family" title='family' data-type='uword' data-ref="10family">family</dfn> = <span class="macro" title="__builtin_va_arg(*va, uword)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col9 ref" href="#9va" title='va' data-ref="9va">va</a>, <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a>);</td></tr>
+<tr><th id="96">96</th><td>  <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col1 decl" id="11t" title='t' data-type='u8 *' data-ref="11t">t</dfn> = (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *) <q>"UNKNOWN"</q>;</td></tr>
+<tr><th id="97">97</th><td>  <b>switch</b> (<a class="local col0 ref" href="#10family" title='family' data-ref="10family">family</a>)</td></tr>
+<tr><th id="98">98</th><td>    {</td></tr>
+<tr><th id="99">99</th><td><u>#define <dfn class="macro" id="_M/_" data-ref="_M/_">_</dfn>(x) case PF_##x: <a class="local col1 ref" href="#11t" title='t' data-ref="11t">t</a> = (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *) #x; break</u></td></tr>
+<tr><th id="100">100</th><td>      <a class="macro" href="#99" title="case 0: t = (u8 *) &quot;UNSPEC&quot;; break" data-ref="_M/_">_</a> (UNSPEC);</td></tr>
+<tr><th id="101">101</th><td>      <a class="macro" href="#99" title="case 1: t = (u8 *) &quot;UNIX&quot;; break" data-ref="_M/_">_</a> (UNIX);			<i>/* Unix domain sockets 		*/</i></td></tr>
+<tr><th id="102">102</th><td>      <a class="macro" href="#99" title="case 2: t = (u8 *) &quot;INET&quot;; break" data-ref="_M/_">_</a> (INET);			<i>/* Internet IP Protocol 	*/</i></td></tr>
+<tr><th id="103">103</th><td><u>#<span data-ppcond="103">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#47" data-ref="_M/PF_AX25">PF_AX25</a></u></td></tr>
+<tr><th id="104">104</th><td>      <a class="macro" href="#99" title="case 3: t = (u8 *) &quot;AX25&quot;; break" data-ref="_M/_">_</a> (AX25);			<i>/* Amateur Radio AX.25 		*/</i></td></tr>
+<tr><th id="105">105</th><td><u>#<span data-ppcond="103">endif</span></u></td></tr>
+<tr><th id="106">106</th><td><u>#<span data-ppcond="106">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#48" data-ref="_M/PF_IPX">PF_IPX</a></u></td></tr>
+<tr><th id="107">107</th><td>      <a class="macro" href="#99" title="case 4: t = (u8 *) &quot;IPX&quot;; break" data-ref="_M/_">_</a> (IPX);			<i>/* Novell IPX 			*/</i></td></tr>
+<tr><th id="108">108</th><td><u>#<span data-ppcond="106">endif</span></u></td></tr>
+<tr><th id="109">109</th><td><u>#<span data-ppcond="109">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#49" data-ref="_M/PF_APPLETALK">PF_APPLETALK</a></u></td></tr>
+<tr><th id="110">110</th><td>      <a class="macro" href="#99" title="case 5: t = (u8 *) &quot;APPLETALK&quot;; break" data-ref="_M/_">_</a> (APPLETALK);		<i>/* AppleTalk DDP 		*/</i></td></tr>
+<tr><th id="111">111</th><td><u>#<span data-ppcond="109">endif</span></u></td></tr>
+<tr><th id="112">112</th><td><u>#<span data-ppcond="112">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#50" data-ref="_M/PF_NETROM">PF_NETROM</a></u></td></tr>
+<tr><th id="113">113</th><td>      <a class="macro" href="#99" title="case 6: t = (u8 *) &quot;NETROM&quot;; break" data-ref="_M/_">_</a> (NETROM);		<i>/* Amateur Radio NET/ROM 	*/</i></td></tr>
+<tr><th id="114">114</th><td><u>#<span data-ppcond="112">endif</span></u></td></tr>
+<tr><th id="115">115</th><td><u>#<span data-ppcond="115">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#51" data-ref="_M/PF_BRIDGE">PF_BRIDGE</a></u></td></tr>
+<tr><th id="116">116</th><td>      <a class="macro" href="#99" title="case 7: t = (u8 *) &quot;BRIDGE&quot;; break" data-ref="_M/_">_</a> (BRIDGE);		<i>/* Multiprotocol bridge 	*/</i></td></tr>
+<tr><th id="117">117</th><td><u>#<span data-ppcond="115">endif</span></u></td></tr>
+<tr><th id="118">118</th><td><u>#<span data-ppcond="118">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#52" data-ref="_M/PF_ATMPVC">PF_ATMPVC</a></u></td></tr>
+<tr><th id="119">119</th><td>      <a class="macro" href="#99" title="case 8: t = (u8 *) &quot;ATMPVC&quot;; break" data-ref="_M/_">_</a> (ATMPVC);		<i>/* ATM PVCs			*/</i></td></tr>
+<tr><th id="120">120</th><td><u>#<span data-ppcond="118">endif</span></u></td></tr>
+<tr><th id="121">121</th><td><u>#<span data-ppcond="121">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#53" data-ref="_M/PF_X25">PF_X25</a></u></td></tr>
+<tr><th id="122">122</th><td>      <a class="macro" href="#99" title="case 9: t = (u8 *) &quot;X25&quot;; break" data-ref="_M/_">_</a> (X25);			<i>/* Reserved for X.25 project 	*/</i></td></tr>
+<tr><th id="123">123</th><td><u>#<span data-ppcond="121">endif</span></u></td></tr>
+<tr><th id="124">124</th><td><u>#<span data-ppcond="124">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#54" data-ref="_M/PF_INET6">PF_INET6</a></u></td></tr>
+<tr><th id="125">125</th><td>      <a class="macro" href="#99" title="case 10: t = (u8 *) &quot;INET6&quot;; break" data-ref="_M/_">_</a> (INET6);		<i>/* IP version 6			*/</i></td></tr>
+<tr><th id="126">126</th><td><u>#<span data-ppcond="124">endif</span></u></td></tr>
+<tr><th id="127">127</th><td><u>#<span data-ppcond="127">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#55" data-ref="_M/PF_ROSE">PF_ROSE</a></u></td></tr>
+<tr><th id="128">128</th><td>      <a class="macro" href="#99" title="case 11: t = (u8 *) &quot;ROSE&quot;; break" data-ref="_M/_">_</a> (ROSE);			<i>/* Amateur Radio X.25 PLP	*/</i></td></tr>
+<tr><th id="129">129</th><td><u>#<span data-ppcond="127">endif</span></u></td></tr>
+<tr><th id="130">130</th><td><u>#<span data-ppcond="130">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#56" data-ref="_M/PF_DECnet">PF_DECnet</a></u></td></tr>
+<tr><th id="131">131</th><td>      <a class="macro" href="#99" title="case 12: t = (u8 *) &quot;DECnet&quot;; break" data-ref="_M/_">_</a> (DECnet);		<i>/* Reserved for DECnet project	*/</i></td></tr>
+<tr><th id="132">132</th><td><u>#<span data-ppcond="130">endif</span></u></td></tr>
+<tr><th id="133">133</th><td><u>#<span data-ppcond="133">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#57" data-ref="_M/PF_NETBEUI">PF_NETBEUI</a></u></td></tr>
+<tr><th id="134">134</th><td>      <a class="macro" href="#99" title="case 13: t = (u8 *) &quot;NETBEUI&quot;; break" data-ref="_M/_">_</a> (NETBEUI);		<i>/* Reserved for 802.2LLC project*/</i></td></tr>
+<tr><th id="135">135</th><td><u>#<span data-ppcond="133">endif</span></u></td></tr>
+<tr><th id="136">136</th><td><u>#<span data-ppcond="136">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#58" data-ref="_M/PF_SECURITY">PF_SECURITY</a></u></td></tr>
+<tr><th id="137">137</th><td>      <a class="macro" href="#99" title="case 14: t = (u8 *) &quot;SECURITY&quot;; break" data-ref="_M/_">_</a> (SECURITY);		<i>/* Security callback pseudo AF */</i></td></tr>
+<tr><th id="138">138</th><td><u>#<span data-ppcond="136">endif</span></u></td></tr>
+<tr><th id="139">139</th><td><u>#<span data-ppcond="139">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#59" data-ref="_M/PF_KEY">PF_KEY</a></u></td></tr>
+<tr><th id="140">140</th><td>      <a class="macro" href="#99" title="case 15: t = (u8 *) &quot;KEY&quot;; break" data-ref="_M/_">_</a> (KEY);			<i>/* PF_KEY key management API */</i></td></tr>
+<tr><th id="141">141</th><td><u>#<span data-ppcond="139">endif</span></u></td></tr>
+<tr><th id="142">142</th><td><u>#<span data-ppcond="142">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#60" data-ref="_M/PF_NETLINK">PF_NETLINK</a></u></td></tr>
+<tr><th id="143">143</th><td>      <a class="macro" href="#99" title="case 16: t = (u8 *) &quot;NETLINK&quot;; break" data-ref="_M/_">_</a> (NETLINK);</td></tr>
+<tr><th id="144">144</th><td><u>#<span data-ppcond="142">endif</span></u></td></tr>
+<tr><th id="145">145</th><td><u>#<span data-ppcond="145">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#62" data-ref="_M/PF_PACKET">PF_PACKET</a></u></td></tr>
+<tr><th id="146">146</th><td>      <a class="macro" href="#99" title="case 17: t = (u8 *) &quot;PACKET&quot;; break" data-ref="_M/_">_</a> (PACKET);		<i>/* Packet family		*/</i></td></tr>
+<tr><th id="147">147</th><td><u>#<span data-ppcond="145">endif</span></u></td></tr>
+<tr><th id="148">148</th><td><u>#<span data-ppcond="148">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#63" data-ref="_M/PF_ASH">PF_ASH</a></u></td></tr>
+<tr><th id="149">149</th><td>      <a class="macro" href="#99" title="case 18: t = (u8 *) &quot;ASH&quot;; break" data-ref="_M/_">_</a> (ASH);			<i>/* Ash				*/</i></td></tr>
+<tr><th id="150">150</th><td><u>#<span data-ppcond="148">endif</span></u></td></tr>
+<tr><th id="151">151</th><td><u>#<span data-ppcond="151">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#64" data-ref="_M/PF_ECONET">PF_ECONET</a></u></td></tr>
+<tr><th id="152">152</th><td>      <a class="macro" href="#99" title="case 19: t = (u8 *) &quot;ECONET&quot;; break" data-ref="_M/_">_</a> (ECONET);		<i>/* Acorn Econet			*/</i></td></tr>
+<tr><th id="153">153</th><td><u>#<span data-ppcond="151">endif</span></u></td></tr>
+<tr><th id="154">154</th><td><u>#<span data-ppcond="154">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#65" data-ref="_M/PF_ATMSVC">PF_ATMSVC</a></u></td></tr>
+<tr><th id="155">155</th><td>      <a class="macro" href="#99" title="case 20: t = (u8 *) &quot;ATMSVC&quot;; break" data-ref="_M/_">_</a> (ATMSVC);		<i>/* ATM SVCs			*/</i></td></tr>
+<tr><th id="156">156</th><td><u>#<span data-ppcond="154">endif</span></u></td></tr>
+<tr><th id="157">157</th><td><u>#<span data-ppcond="157">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#67" data-ref="_M/PF_SNA">PF_SNA</a></u></td></tr>
+<tr><th id="158">158</th><td>      <a class="macro" href="#99" title="case 22: t = (u8 *) &quot;SNA&quot;; break" data-ref="_M/_">_</a> (SNA);			<i>/* Linux SNA Project */</i></td></tr>
+<tr><th id="159">159</th><td><u>#<span data-ppcond="157">endif</span></u></td></tr>
+<tr><th id="160">160</th><td><u>#<span data-ppcond="160">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#68" data-ref="_M/PF_IRDA">PF_IRDA</a></u></td></tr>
+<tr><th id="161">161</th><td>      <a class="macro" href="#99" title="case 23: t = (u8 *) &quot;IRDA&quot;; break" data-ref="_M/_">_</a> (IRDA);			<i>/* IRDA sockets			*/</i></td></tr>
+<tr><th id="162">162</th><td><u>#<span data-ppcond="160">endif</span></u></td></tr>
+<tr><th id="163">163</th><td><u>#undef <a class="macro" href="#99" data-ref="_M/_">_</a></u></td></tr>
+<tr><th id="164">164</th><td>    }</td></tr>
+<tr><th id="165">165</th><td>  <a class="macro" href="vec.h.html#597" title="do { word _vec_n = (strlen ((char *) t)); word _vec_l = ((s) ? (((vec_header_t *) (s) - 1)-&gt;len) : 0); s = _vec_resize ((s), _vec_n, (_vec_l + _vec_n) * sizeof ((s)[0]), (0), (0)); clib_memcpy ((s) + _vec_l, (t), _vec_n * sizeof ((s)[0])); } while (0)" data-ref="_M/vec_add">vec_add</a> (<a class="local col8 ref" href="#8s" title='s' data-ref="8s">s</a>, <a class="local col1 ref" href="#11t" title='t' data-ref="11t">t</a>, <a class="ref fn" href="../../../include/string.h.html#strlen" title='strlen' data-ref="strlen">strlen</a> ((<em>char</em> *) <a class="local col1 ref" href="#11t" title='t' data-ref="11t">t</a>));</td></tr>
+<tr><th id="166">166</th><td>  <b>return</b> <a class="local col8 ref" href="#8s" title='s' data-ref="8s">s</a>;</td></tr>
+<tr><th id="167">167</th><td>}</td></tr>
+<tr><th id="168">168</th><td></td></tr>
+<tr><th id="169">169</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_network_protocol" title='format_network_protocol' data-ref="format_network_protocol">format_network_protocol</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col2 decl" id="12s" title='s' data-type='u8 *' data-ref="12s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col3 decl" id="13args" title='args' data-type='va_list *' data-ref="13args">args</dfn>)</td></tr>
+<tr><th id="170">170</th><td>{</td></tr>
+<tr><th id="171">171</th><td>  <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> <dfn class="local col4 decl" id="14family" title='family' data-type='uword' data-ref="14family">family</dfn> = <span class="macro" title="__builtin_va_arg(*args, uword)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col3 ref" href="#13args" title='args' data-ref="13args">args</a>, <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a>);</td></tr>
+<tr><th id="172">172</th><td>  <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> <dfn class="local col5 decl" id="15protocol" title='protocol' data-type='uword' data-ref="15protocol">protocol</dfn> = <span class="macro" title="__builtin_va_arg(*args, uword)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col3 ref" href="#13args" title='args' data-ref="13args">args</a>, <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a>);</td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td><u>#<span data-ppcond="174">ifndef</span> <span class="macro" data-ref="_M/__KERNEL__">__KERNEL__</span></u></td></tr>
+<tr><th id="175">175</th><td>  <b>struct</b> <a class="type" href="../../../include/netdb.h.html#protoent" title='protoent' data-ref="protoent">protoent</a> * <dfn class="local col6 decl" id="16p" title='p' data-type='struct protoent *' data-ref="16p">p</dfn> = <a class="ref fn" href="../../../include/netdb.h.html#getprotobynumber" title='getprotobynumber' data-ref="getprotobynumber">getprotobynumber</a> (<a class="local col5 ref" href="#15protocol" title='protocol' data-ref="15protocol">protocol</a>);</td></tr>
+<tr><th id="176">176</th><td></td></tr>
+<tr><th id="177">177</th><td>  <a class="macro" href="error_bootstrap.h.html#69" title="do { if ((1 &gt; 0) &amp;&amp; ! (family == 2)) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/vpp/../../../src/vppinfra/unix-formats.c&quot;, (uword) 177, ((char *) __FUNCTION__), &quot;family == AF_INET&quot;); } } while (0)" data-ref="_M/ASSERT">ASSERT</a> (<a class="local col4 ref" href="#14family" title='family' data-ref="14family">family</a> == <a class="macro" href="../../../include/bits/socket.h.html#91" title="2" data-ref="_M/AF_INET">AF_INET</a>);</td></tr>
+<tr><th id="178">178</th><td>  <b>if</b> (<a class="local col6 ref" href="#16p" title='p' data-ref="16p">p</a>)</td></tr>
+<tr><th id="179">179</th><td>    <b>return</b> <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col2 ref" href="#12s" title='s' data-ref="12s">s</a>, <q>"%s"</q>, <a class="local col6 ref" href="#16p" title='p' data-ref="16p">p</a>-&gt;<a class="ref field" href="../../../include/netdb.h.html#protoent::p_name" title='protoent::p_name' data-ref="protoent::p_name">p_name</a>);</td></tr>
+<tr><th id="180">180</th><td>  <b>else</b></td></tr>
+<tr><th id="181">181</th><td>    <b>return</b> <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col2 ref" href="#12s" title='s' data-ref="12s">s</a>, <q>"%d"</q>, <a class="local col5 ref" href="#15protocol" title='protocol' data-ref="15protocol">protocol</a>);</td></tr>
+<tr><th id="182">182</th><td><u>#<span data-ppcond="174">else</span></u></td></tr>
+<tr><th id="183">183</th><td>  <b>return</b> format (s, <q>"%d/%d"</q>, family, protocol);</td></tr>
+<tr><th id="184">184</th><td><u>#<span data-ppcond="174">endif</span></u></td></tr>
+<tr><th id="185">185</th><td>}</td></tr>
+<tr><th id="186">186</th><td></td></tr>
+<tr><th id="187">187</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_network_port" title='format_network_port' data-ref="format_network_port">format_network_port</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col7 decl" id="17s" title='s' data-type='u8 *' data-ref="17s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col8 decl" id="18args" title='args' data-type='va_list *' data-ref="18args">args</dfn>)</td></tr>
+<tr><th id="188">188</th><td>{</td></tr>
+<tr><th id="189">189</th><td>  <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> <dfn class="local col9 decl" id="19proto" title='proto' data-type='uword' data-ref="19proto">proto</dfn> = <span class="macro" title="__builtin_va_arg(*args, uword)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col8 ref" href="#18args" title='args' data-ref="18args">args</a>, <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a>);</td></tr>
+<tr><th id="190">190</th><td>  <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> <dfn class="local col0 decl" id="20port" title='port' data-type='uword' data-ref="20port">port</dfn> = <span class="macro" title="__builtin_va_arg(*args, uword)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col8 ref" href="#18args" title='args' data-ref="18args">args</a>, <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a>);</td></tr>
+<tr><th id="191">191</th><td></td></tr>
+<tr><th id="192">192</th><td><u>#<span data-ppcond="192">ifndef</span> <span class="macro" data-ref="_M/__KERNEL__">__KERNEL__</span></u></td></tr>
+<tr><th id="193">193</th><td>  <b>struct</b> <a class="type" href="../../../include/netdb.h.html#servent" title='servent' data-ref="servent">servent</a> * <dfn class="local col1 decl" id="21p" title='p' data-type='struct servent *' data-ref="21p">p</dfn> = <a class="ref fn" href="../../../include/netdb.h.html#getservbyport" title='getservbyport' data-ref="getservbyport">getservbyport</a> (<a class="local col0 ref" href="#20port" title='port' data-ref="20port">port</a>, <a class="local col9 ref" href="#19proto" title='proto' data-ref="19proto">proto</a> == <a class="macro" href="../../../include/netinet/in.h.html#58" title="IPPROTO_UDP" data-ref="_M/IPPROTO_UDP">IPPROTO_UDP</a> ? <q>"udp"</q> : <q>"tcp"</q>);</td></tr>
+<tr><th id="194">194</th><td></td></tr>
+<tr><th id="195">195</th><td>  <b>if</b> (<a class="local col1 ref" href="#21p" title='p' data-ref="21p">p</a>)</td></tr>
+<tr><th id="196">196</th><td>    <b>return</b> <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col7 ref" href="#17s" title='s' data-ref="17s">s</a>, <q>"%s"</q>, <a class="local col1 ref" href="#21p" title='p' data-ref="21p">p</a>-&gt;<a class="ref field" href="../../../include/netdb.h.html#servent::s_name" title='servent::s_name' data-ref="servent::s_name">s_name</a>);</td></tr>
+<tr><th id="197">197</th><td>  <b>else</b></td></tr>
+<tr><th id="198">198</th><td>    <b>return</b> <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col7 ref" href="#17s" title='s' data-ref="17s">s</a>, <q>"%d"</q>, <a class="local col0 ref" href="#20port" title='port' data-ref="20port">port</a>);</td></tr>
+<tr><th id="199">199</th><td><u>#<span data-ppcond="192">else</span></u></td></tr>
+<tr><th id="200">200</th><td>  <b>return</b> format (s, <q>"%s/%d"</q>, proto == IPPROTO_UDP ? <q>"udp"</q> : <q>"tcp"</q>, port);</td></tr>
+<tr><th id="201">201</th><td><u>#<span data-ppcond="192">endif</span></u></td></tr>
+<tr><th id="202">202</th><td>}</td></tr>
+<tr><th id="203">203</th><td></td></tr>
+<tr><th id="204">204</th><td><i>/* Format generic network address: takes two arguments family and address.</i></td></tr>
+<tr><th id="205">205</th><td><i>   Assumes network byte order. */</i></td></tr>
+<tr><th id="206">206</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_network_address" title='format_network_address' data-ref="format_network_address">format_network_address</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col2 decl" id="22s" title='s' data-type='u8 *' data-ref="22s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col3 decl" id="23args" title='args' data-type='va_list *' data-ref="23args">args</dfn>)</td></tr>
+<tr><th id="207">207</th><td>{</td></tr>
+<tr><th id="208">208</th><td>  <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> <dfn class="local col4 decl" id="24family" title='family' data-type='uword' data-ref="24family">family</dfn> = <span class="macro" title="__builtin_va_arg(*args, uword)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col3 ref" href="#23args" title='args' data-ref="23args">args</a>, <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a>);</td></tr>
+<tr><th id="209">209</th><td>  <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col5 decl" id="25addr" title='addr' data-type='u8 *' data-ref="25addr">addr</dfn>    = <span class="macro" title="__builtin_va_arg(*args, u8 *)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col3 ref" href="#23args" title='args' data-ref="23args">args</a>, <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *);</td></tr>
+<tr><th id="210">210</th><td></td></tr>
+<tr><th id="211">211</th><td>  <b>switch</b> (<a class="local col4 ref" href="#24family" title='family' data-ref="24family">family</a>)</td></tr>
+<tr><th id="212">212</th><td>    {</td></tr>
+<tr><th id="213">213</th><td>    <b>case</b> <a class="macro" href="../../../include/bits/socket.h.html#91" title="2" data-ref="_M/AF_INET">AF_INET</a>:</td></tr>
+<tr><th id="214">214</th><td>      <a class="local col2 ref" href="#22s" title='s' data-ref="22s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col2 ref" href="#22s" title='s' data-ref="22s">s</a>, <q>"%d.%d.%d.%d"</q>, <a class="local col5 ref" href="#25addr" title='addr' data-ref="25addr">addr</a>[<var>0</var>], <a class="local col5 ref" href="#25addr" title='addr' data-ref="25addr">addr</a>[<var>1</var>], <a class="local col5 ref" href="#25addr" title='addr' data-ref="25addr">addr</a>[<var>2</var>], <a class="local col5 ref" href="#25addr" title='addr' data-ref="25addr">addr</a>[<var>3</var>]);</td></tr>
+<tr><th id="215">215</th><td>      <b>break</b>;</td></tr>
+<tr><th id="216">216</th><td></td></tr>
+<tr><th id="217">217</th><td>    <b>case</b> <a class="macro" href="../../../include/bits/socket.h.html#87" title="0" data-ref="_M/AF_UNSPEC">AF_UNSPEC</a>:</td></tr>
+<tr><th id="218">218</th><td>      <i>/* We use AF_UNSPEC for ethernet addresses. */</i></td></tr>
+<tr><th id="219">219</th><td>      <a class="local col2 ref" href="#22s" title='s' data-ref="22s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col2 ref" href="#22s" title='s' data-ref="22s">s</a>, <q>"%02x:%02x:%02x:%02x:%02x:%02x"</q>,</td></tr>
+<tr><th id="220">220</th><td>		  <a class="local col5 ref" href="#25addr" title='addr' data-ref="25addr">addr</a>[<var>0</var>], <a class="local col5 ref" href="#25addr" title='addr' data-ref="25addr">addr</a>[<var>1</var>], <a class="local col5 ref" href="#25addr" title='addr' data-ref="25addr">addr</a>[<var>2</var>], <a class="local col5 ref" href="#25addr" title='addr' data-ref="25addr">addr</a>[<var>3</var>], <a class="local col5 ref" href="#25addr" title='addr' data-ref="25addr">addr</a>[<var>4</var>], <a class="local col5 ref" href="#25addr" title='addr' data-ref="25addr">addr</a>[<var>5</var>]);</td></tr>
+<tr><th id="221">221</th><td>      <b>break</b>;</td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td>    <b>default</b>:</td></tr>
+<tr><th id="224">224</th><td>      <a class="macro" href="error.h.html#62" title="_clib_error (CLIB_ERROR_FATAL, ((char *) __FUNCTION__), 224, &quot;unsupported address family %d&quot;, family)" data-ref="_M/clib_error">clib_error</a> (<q>"unsupported address family %d"</q>, <a class="local col4 ref" href="#24family" title='family' data-ref="24family">family</a>);</td></tr>
+<tr><th id="225">225</th><td>    }</td></tr>
+<tr><th id="226">226</th><td></td></tr>
+<tr><th id="227">227</th><td>  <b>return</b> <a class="local col2 ref" href="#22s" title='s' data-ref="22s">s</a>;</td></tr>
+<tr><th id="228">228</th><td>}</td></tr>
+<tr><th id="229">229</th><td></td></tr>
+<tr><th id="230">230</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_sockaddr" title='format_sockaddr' data-ref="format_sockaddr">format_sockaddr</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col6 decl" id="26s" title='s' data-type='u8 *' data-ref="26s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col7 decl" id="27args" title='args' data-type='va_list *' data-ref="27args">args</dfn>)</td></tr>
+<tr><th id="231">231</th><td>{</td></tr>
+<tr><th id="232">232</th><td>  <em>void</em> * <dfn class="local col8 decl" id="28v" title='v' data-type='void *' data-ref="28v">v</dfn> = <span class="macro" title="__builtin_va_arg(*args, void *)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col7 ref" href="#27args" title='args' data-ref="27args">args</a>, <em>void</em> *);</td></tr>
+<tr><th id="233">233</th><td>  <b>struct</b> <a class="type" href="../../../include/bits/socket.h.html#sockaddr" title='sockaddr' data-ref="sockaddr">sockaddr</a> * <dfn class="local col9 decl" id="29sa" title='sa' data-type='struct sockaddr *' data-ref="29sa">sa</dfn> = <a class="local col8 ref" href="#28v" title='v' data-ref="28v">v</a>;</td></tr>
+<tr><th id="234">234</th><td>  <em>static</em> <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col0 decl" id="30local_counter" title='local_counter' data-type='u32' data-ref="30local_counter">local_counter</dfn>;</td></tr>
+<tr><th id="235">235</th><td></td></tr>
+<tr><th id="236">236</th><td>  <b>switch</b> (<a class="local col9 ref" href="#29sa" title='sa' data-ref="29sa">sa</a>-&gt;<a class="ref field" href="../../../include/bits/socket.h.html#152" title='sockaddr::sa_family' data-ref="sockaddr::sa_family">sa_family</a>)</td></tr>
+<tr><th id="237">237</th><td>    {</td></tr>
+<tr><th id="238">238</th><td>    <b>case</b> <a class="macro" href="../../../include/bits/socket.h.html#91" title="2" data-ref="_M/AF_INET">AF_INET</a>:</td></tr>
+<tr><th id="239">239</th><td>      {</td></tr>
+<tr><th id="240">240</th><td>	<b>struct</b> <a class="type" href="../../../include/netinet/in.h.html#sockaddr_in" title='sockaddr_in' data-ref="sockaddr_in">sockaddr_in</a> * <dfn class="local col1 decl" id="31i" title='i' data-type='struct sockaddr_in *' data-ref="31i">i</dfn> = <a class="local col8 ref" href="#28v" title='v' data-ref="28v">v</a>;</td></tr>
+<tr><th id="241">241</th><td>	<a class="local col6 ref" href="#26s" title='s' data-ref="26s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col6 ref" href="#26s" title='s' data-ref="26s">s</a>, <q>"%U:%U"</q>,</td></tr>
+<tr><th id="242">242</th><td>		    <a class="ref fn" href="#format_network_address" title='format_network_address' data-ref="format_network_address">format_network_address</a>, <a class="macro" href="../../../include/bits/socket.h.html#91" title="2" data-ref="_M/AF_INET">AF_INET</a>, &amp;<a class="local col1 ref" href="#31i" title='i' data-ref="31i">i</a>-&gt;<a class="ref field" href="../../../include/netinet/in.h.html#sockaddr_in::sin_addr" title='sockaddr_in::sin_addr' data-ref="sockaddr_in::sin_addr">sin_addr</a>.<a class="ref field" href="../../../include/netinet/in.h.html#in_addr::s_addr" title='in_addr::s_addr' data-ref="in_addr::s_addr">s_addr</a>,</td></tr>
+<tr><th id="243">243</th><td>		    <a class="ref fn" href="#format_network_port" title='format_network_port' data-ref="format_network_port">format_network_port</a>, <a class="macro" href="../../../include/netinet/in.h.html#52" title="IPPROTO_TCP" data-ref="_M/IPPROTO_TCP">IPPROTO_TCP</a>, <a class="ref fn" href="../../../include/netinet/in.h.html#ntohs" title='ntohs' data-ref="ntohs">ntohs</a> (<a class="local col1 ref" href="#31i" title='i' data-ref="31i">i</a>-&gt;<a class="ref field" href="../../../include/netinet/in.h.html#sockaddr_in::sin_port" title='sockaddr_in::sin_port' data-ref="sockaddr_in::sin_port">sin_port</a>));</td></tr>
+<tr><th id="244">244</th><td>      }</td></tr>
+<tr><th id="245">245</th><td>      <b>break</b>;</td></tr>
+<tr><th id="246">246</th><td></td></tr>
+<tr><th id="247">247</th><td>    <b>case</b> <a class="macro" href="../../../include/bits/socket.h.html#88" title="1" data-ref="_M/AF_LOCAL">AF_LOCAL</a>:</td></tr>
+<tr><th id="248">248</th><td>      {</td></tr>
+<tr><th id="249">249</th><td>        <i>/* </i></td></tr>
+<tr><th id="250">250</th><td><i>         * There isn't anything useful to print.</i></td></tr>
+<tr><th id="251">251</th><td><i>         * The unix cli world uses the output to make a node name,</i></td></tr>
+<tr><th id="252">252</th><td><i>         * so we need to return a unique name. </i></td></tr>
+<tr><th id="253">253</th><td><i>         */</i></td></tr>
+<tr><th id="254">254</th><td>        <a class="local col6 ref" href="#26s" title='s' data-ref="26s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col6 ref" href="#26s" title='s' data-ref="26s">s</a>, <q>"local:%u"</q>, <a class="local col0 ref" href="#30local_counter" title='local_counter' data-ref="30local_counter">local_counter</a>++);</td></tr>
+<tr><th id="255">255</th><td>      }</td></tr>
+<tr><th id="256">256</th><td>      <b>break</b>;</td></tr>
+<tr><th id="257">257</th><td></td></tr>
+<tr><th id="258">258</th><td><u>#<span data-ppcond="258">ifndef</span> <span class="macro" data-ref="_M/__KERNEL__">__KERNEL__</span></u></td></tr>
+<tr><th id="259">259</th><td><u>#<span data-ppcond="259">ifdef</span> <a class="macro" href="../../../include/bits/socket.h.html#105" data-ref="_M/AF_NETLINK">AF_NETLINK</a></u></td></tr>
+<tr><th id="260">260</th><td>    <b>case</b> <a class="macro" href="../../../include/bits/socket.h.html#105" title="16" data-ref="_M/AF_NETLINK">AF_NETLINK</a>:</td></tr>
+<tr><th id="261">261</th><td>      {</td></tr>
+<tr><th id="262">262</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/netlink.h.html#sockaddr_nl" title='sockaddr_nl' data-ref="sockaddr_nl">sockaddr_nl</a> * <dfn class="local col2 decl" id="32n" title='n' data-type='struct sockaddr_nl *' data-ref="32n">n</dfn> = <a class="local col8 ref" href="#28v" title='v' data-ref="28v">v</a>;</td></tr>
+<tr><th id="263">263</th><td>	<a class="local col6 ref" href="#26s" title='s' data-ref="26s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col6 ref" href="#26s" title='s' data-ref="26s">s</a>, <q>"KERNEL-NETLINK"</q>);</td></tr>
+<tr><th id="264">264</th><td>	<b>if</b> (<a class="local col2 ref" href="#32n" title='n' data-ref="32n">n</a>-&gt;<a class="ref field" href="../../../include/linux/netlink.h.html#sockaddr_nl::nl_groups" title='sockaddr_nl::nl_groups' data-ref="sockaddr_nl::nl_groups">nl_groups</a>)</td></tr>
+<tr><th id="265">265</th><td>	  <a class="local col6 ref" href="#26s" title='s' data-ref="26s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col6 ref" href="#26s" title='s' data-ref="26s">s</a>, <q>" (groups 0x%x)"</q>, <a class="local col2 ref" href="#32n" title='n' data-ref="32n">n</a>-&gt;<a class="ref field" href="../../../include/linux/netlink.h.html#sockaddr_nl::nl_groups" title='sockaddr_nl::nl_groups' data-ref="sockaddr_nl::nl_groups">nl_groups</a>);</td></tr>
+<tr><th id="266">266</th><td>	<b>break</b>;</td></tr>
+<tr><th id="267">267</th><td>      }</td></tr>
+<tr><th id="268">268</th><td><u>#<span data-ppcond="259">endif</span></u></td></tr>
+<tr><th id="269">269</th><td><u>#<span data-ppcond="258">endif</span></u></td></tr>
+<tr><th id="270">270</th><td></td></tr>
+<tr><th id="271">271</th><td>    <b>default</b>:</td></tr>
+<tr><th id="272">272</th><td>      <a class="local col6 ref" href="#26s" title='s' data-ref="26s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col6 ref" href="#26s" title='s' data-ref="26s">s</a>, <q>"sockaddr family %d"</q>, <a class="local col9 ref" href="#29sa" title='sa' data-ref="29sa">sa</a>-&gt;<a class="ref field" href="../../../include/bits/socket.h.html#152" title='sockaddr::sa_family' data-ref="sockaddr::sa_family">sa_family</a>);</td></tr>
+<tr><th id="273">273</th><td>      <b>break</b>;</td></tr>
+<tr><th id="274">274</th><td>    }</td></tr>
+<tr><th id="275">275</th><td></td></tr>
+<tr><th id="276">276</th><td>  <b>return</b> <a class="local col6 ref" href="#26s" title='s' data-ref="26s">s</a>;</td></tr>
+<tr><th id="277">277</th><td>}</td></tr>
+<tr><th id="278">278</th><td></td></tr>
+<tr><th id="279">279</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_tcp4_packet" title='format_tcp4_packet' data-ref="format_tcp4_packet">format_tcp4_packet</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col3 decl" id="33s" title='s' data-type='u8 *' data-ref="33s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col4 decl" id="34args" title='args' data-type='va_list *' data-ref="34args">args</dfn>)</td></tr>
+<tr><th id="280">280</th><td>{</td></tr>
+<tr><th id="281">281</th><td>  <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col5 decl" id="35p" title='p' data-type='u8 *' data-ref="35p">p</dfn> = <span class="macro" title="__builtin_va_arg(*args, u8 *)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col4 ref" href="#34args" title='args' data-ref="34args">args</a>, <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *);</td></tr>
+<tr><th id="282">282</th><td>  <b>struct</b> <a class="type" href="../../../include/netinet/ip.h.html#iphdr" title='iphdr' data-ref="iphdr">iphdr</a> * <dfn class="local col6 decl" id="36ip" title='ip' data-type='struct iphdr *' data-ref="36ip">ip</dfn> = (<em>void</em> *) <a class="local col5 ref" href="#35p" title='p' data-ref="35p">p</a>;</td></tr>
+<tr><th id="283">283</th><td>  <b>struct</b> <a class="type" href="../../../include/netinet/tcp.h.html#tcphdr" title='tcphdr' data-ref="tcphdr">tcphdr</a> * <dfn class="local col7 decl" id="37tcp" title='tcp' data-type='struct tcphdr *' data-ref="37tcp">tcp</dfn> = (<em>void</em> *) (<a class="local col6 ref" href="#36ip" title='ip' data-ref="36ip">ip</a> + <var>1</var>);</td></tr>
+<tr><th id="284">284</th><td></td></tr>
+<tr><th id="285">285</th><td>  <a class="local col3 ref" href="#33s" title='s' data-ref="33s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col3 ref" href="#33s" title='s' data-ref="33s">s</a>, <q>"tcp %U:%U -&gt; %U:%U"</q>,</td></tr>
+<tr><th id="286">286</th><td>	      <a class="ref fn" href="#format_network_address" title='format_network_address' data-ref="format_network_address">format_network_address</a>, <a class="macro" href="../../../include/bits/socket.h.html#91" title="2" data-ref="_M/AF_INET">AF_INET</a>,  &amp;<a class="local col6 ref" href="#36ip" title='ip' data-ref="36ip">ip</a>-&gt;<a class="ref field" href="../../../include/netinet/ip.h.html#iphdr::saddr" title='iphdr::saddr' data-ref="iphdr::saddr">saddr</a>,</td></tr>
+<tr><th id="287">287</th><td>	      <a class="ref fn" href="#format_network_port" title='format_network_port' data-ref="format_network_port">format_network_port</a>, <a class="macro" href="../../../include/netinet/in.h.html#52" title="IPPROTO_TCP" data-ref="_M/IPPROTO_TCP">IPPROTO_TCP</a>, <a class="ref fn" href="../../../include/netinet/in.h.html#ntohs" title='ntohs' data-ref="ntohs">ntohs</a> (<a class="local col7 ref" href="#37tcp" title='tcp' data-ref="37tcp">tcp</a>-&gt;<a class="ref field" href="../../../include/netinet/tcp.h.html#tcphdr::source" title='tcphdr::source' data-ref="tcphdr::source">source</a>),</td></tr>
+<tr><th id="288">288</th><td>	      <a class="ref fn" href="#format_network_address" title='format_network_address' data-ref="format_network_address">format_network_address</a>, <a class="macro" href="../../../include/bits/socket.h.html#91" title="2" data-ref="_M/AF_INET">AF_INET</a>,  &amp;<a class="local col6 ref" href="#36ip" title='ip' data-ref="36ip">ip</a>-&gt;<a class="ref field" href="../../../include/netinet/ip.h.html#iphdr::daddr" title='iphdr::daddr' data-ref="iphdr::daddr">daddr</a>,</td></tr>
+<tr><th id="289">289</th><td>	      <a class="ref fn" href="#format_network_port" title='format_network_port' data-ref="format_network_port">format_network_port</a>, <a class="macro" href="../../../include/netinet/in.h.html#52" title="IPPROTO_TCP" data-ref="_M/IPPROTO_TCP">IPPROTO_TCP</a>, <a class="ref fn" href="../../../include/netinet/in.h.html#ntohs" title='ntohs' data-ref="ntohs">ntohs</a> (<a class="local col7 ref" href="#37tcp" title='tcp' data-ref="37tcp">tcp</a>-&gt;<a class="ref field" href="../../../include/netinet/tcp.h.html#tcphdr::dest" title='tcphdr::dest' data-ref="tcphdr::dest">dest</a>));</td></tr>
+<tr><th id="290">290</th><td></td></tr>
+<tr><th id="291">291</th><td>  <a class="local col3 ref" href="#33s" title='s' data-ref="33s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col3 ref" href="#33s" title='s' data-ref="33s">s</a>, <q>", seq 0x%08x -&gt; 0x%08x"</q>, <a class="local col7 ref" href="#37tcp" title='tcp' data-ref="37tcp">tcp</a>-&gt;<a class="ref field" href="../../../include/netinet/tcp.h.html#tcphdr::seq" title='tcphdr::seq' data-ref="tcphdr::seq">seq</a>, <a class="local col7 ref" href="#37tcp" title='tcp' data-ref="37tcp">tcp</a>-&gt;<a class="ref field" href="../../../include/netinet/tcp.h.html#tcphdr::ack_seq" title='tcphdr::ack_seq' data-ref="tcphdr::ack_seq">ack_seq</a>);</td></tr>
+<tr><th id="292">292</th><td><u>#define <dfn class="macro" id="_M/_" data-ref="_M/_">_</dfn>(f) if (<a class="local col7 ref" href="#37tcp" title='tcp' data-ref="37tcp">tcp</a>-&gt;f) <a class="local col3 ref" href="#33s" title='s' data-ref="33s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col3 ref" href="#33s" title='s' data-ref="33s">s</a>, ", " #f);</u></td></tr>
+<tr><th id="293">293</th><td>  <a class="macro" href="#292" title="if (tcp-&gt;syn) s = format (s, &quot;, &quot; &quot;syn&quot;);" data-ref="_M/_">_</a> (<a class="ref field" href="../../../include/netinet/tcp.h.html#tcphdr::syn" title='tcphdr::syn' data-ref="tcphdr::syn">syn</a>); <a class="macro" href="#292" title="if (tcp-&gt;ack) s = format (s, &quot;, &quot; &quot;ack&quot;);" data-ref="_M/_">_</a> (<a class="ref field" href="../../../include/netinet/tcp.h.html#tcphdr::ack" title='tcphdr::ack' data-ref="tcphdr::ack">ack</a>); <a class="macro" href="#292" title="if (tcp-&gt;fin) s = format (s, &quot;, &quot; &quot;fin&quot;);" data-ref="_M/_">_</a> (<a class="ref field" href="../../../include/netinet/tcp.h.html#tcphdr::fin" title='tcphdr::fin' data-ref="tcphdr::fin">fin</a>); <a class="macro" href="#292" title="if (tcp-&gt;rst) s = format (s, &quot;, &quot; &quot;rst&quot;);" data-ref="_M/_">_</a> (<a class="ref field" href="../../../include/netinet/tcp.h.html#tcphdr::rst" title='tcphdr::rst' data-ref="tcphdr::rst">rst</a>); <a class="macro" href="#292" title="if (tcp-&gt;psh) s = format (s, &quot;, &quot; &quot;psh&quot;);" data-ref="_M/_">_</a> (<a class="ref field" href="../../../include/netinet/tcp.h.html#tcphdr::psh" title='tcphdr::psh' data-ref="tcphdr::psh">psh</a>); <a class="macro" href="#292" title="if (tcp-&gt;urg) s = format (s, &quot;, &quot; &quot;urg&quot;);" data-ref="_M/_">_</a> (<a class="ref field" href="../../../include/netinet/tcp.h.html#tcphdr::urg" title='tcphdr::urg' data-ref="tcphdr::urg">urg</a>);</td></tr>
+<tr><th id="294">294</th><td><u>#undef <a class="macro" href="#292" data-ref="_M/_">_</a></u></td></tr>
+<tr><th id="295">295</th><td></td></tr>
+<tr><th id="296">296</th><td>  <b>if</b> (<a class="local col7 ref" href="#37tcp" title='tcp' data-ref="37tcp">tcp</a>-&gt;<a class="ref field" href="../../../include/netinet/tcp.h.html#tcphdr::window" title='tcphdr::window' data-ref="tcphdr::window">window</a>)</td></tr>
+<tr><th id="297">297</th><td>    <a class="local col3 ref" href="#33s" title='s' data-ref="33s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col3 ref" href="#33s" title='s' data-ref="33s">s</a>, <q>", window 0x%04x"</q>, <a class="local col7 ref" href="#37tcp" title='tcp' data-ref="37tcp">tcp</a>-&gt;<a class="ref field" href="../../../include/netinet/tcp.h.html#tcphdr::window" title='tcphdr::window' data-ref="tcphdr::window">window</a>);</td></tr>
+<tr><th id="298">298</th><td>  <b>if</b> (<a class="local col7 ref" href="#37tcp" title='tcp' data-ref="37tcp">tcp</a>-&gt;<a class="ref field" href="../../../include/netinet/tcp.h.html#tcphdr::urg" title='tcphdr::urg' data-ref="tcphdr::urg">urg</a>)</td></tr>
+<tr><th id="299">299</th><td>    <a class="local col3 ref" href="#33s" title='s' data-ref="33s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col3 ref" href="#33s" title='s' data-ref="33s">s</a>, <q>", urg 0x%04x"</q>, <a class="local col7 ref" href="#37tcp" title='tcp' data-ref="37tcp">tcp</a>-&gt;<a class="ref field" href="../../../include/netinet/tcp.h.html#tcphdr::urg_ptr" title='tcphdr::urg_ptr' data-ref="tcphdr::urg_ptr">urg_ptr</a>);</td></tr>
+<tr><th id="300">300</th><td></td></tr>
+<tr><th id="301">301</th><td>  <b>return</b> <a class="local col3 ref" href="#33s" title='s' data-ref="33s">s</a>;</td></tr>
+<tr><th id="302">302</th><td>}</td></tr>
+<tr><th id="303">303</th><td></td></tr>
+<tr><th id="304">304</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_udp4_packet" title='format_udp4_packet' data-ref="format_udp4_packet">format_udp4_packet</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col8 decl" id="38s" title='s' data-type='u8 *' data-ref="38s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col9 decl" id="39args" title='args' data-type='va_list *' data-ref="39args">args</dfn>)</td></tr>
+<tr><th id="305">305</th><td>{</td></tr>
+<tr><th id="306">306</th><td>  <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col0 decl" id="40p" title='p' data-type='u8 *' data-ref="40p">p</dfn> = <span class="macro" title="__builtin_va_arg(*args, u8 *)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col9 ref" href="#39args" title='args' data-ref="39args">args</a>, <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *);</td></tr>
+<tr><th id="307">307</th><td>  <b>struct</b> <a class="type" href="../../../include/netinet/ip.h.html#iphdr" title='iphdr' data-ref="iphdr">iphdr</a> * <dfn class="local col1 decl" id="41ip" title='ip' data-type='struct iphdr *' data-ref="41ip">ip</dfn> = (<em>void</em> *) <a class="local col0 ref" href="#40p" title='p' data-ref="40p">p</a>;</td></tr>
+<tr><th id="308">308</th><td>  <b>struct</b> <a class="type" href="../../../include/netinet/udp.h.html#udphdr" title='udphdr' data-ref="udphdr">udphdr</a> * <dfn class="local col2 decl" id="42udp" title='udp' data-type='struct udphdr *' data-ref="42udp">udp</dfn> = (<em>void</em> *) (<a class="local col1 ref" href="#41ip" title='ip' data-ref="41ip">ip</a> + <var>1</var>);</td></tr>
+<tr><th id="309">309</th><td></td></tr>
+<tr><th id="310">310</th><td>  <a class="local col8 ref" href="#38s" title='s' data-ref="38s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col8 ref" href="#38s" title='s' data-ref="38s">s</a>, <q>"udp %U:%U -&gt; %U:%U"</q>,</td></tr>
+<tr><th id="311">311</th><td>	      <a class="ref fn" href="#format_network_address" title='format_network_address' data-ref="format_network_address">format_network_address</a>, <a class="macro" href="../../../include/bits/socket.h.html#91" title="2" data-ref="_M/AF_INET">AF_INET</a>,  &amp;<a class="local col1 ref" href="#41ip" title='ip' data-ref="41ip">ip</a>-&gt;<a class="ref field" href="../../../include/netinet/ip.h.html#iphdr::saddr" title='iphdr::saddr' data-ref="iphdr::saddr">saddr</a>,</td></tr>
+<tr><th id="312">312</th><td>	      <a class="ref fn" href="#format_network_port" title='format_network_port' data-ref="format_network_port">format_network_port</a>, <a class="macro" href="../../../include/netinet/in.h.html#58" title="IPPROTO_UDP" data-ref="_M/IPPROTO_UDP">IPPROTO_UDP</a>, <a class="ref fn" href="../../../include/netinet/in.h.html#ntohs" title='ntohs' data-ref="ntohs">ntohs</a> (<a class="local col2 ref" href="#42udp" title='udp' data-ref="42udp">udp</a>-&gt;<a class="ref field" href="../../../include/netinet/udp.h.html#udphdr::source" title='udphdr::source' data-ref="udphdr::source">source</a>),</td></tr>
+<tr><th id="313">313</th><td>	      <a class="ref fn" href="#format_network_address" title='format_network_address' data-ref="format_network_address">format_network_address</a>, <a class="macro" href="../../../include/bits/socket.h.html#91" title="2" data-ref="_M/AF_INET">AF_INET</a>,  &amp;<a class="local col1 ref" href="#41ip" title='ip' data-ref="41ip">ip</a>-&gt;<a class="ref field" href="../../../include/netinet/ip.h.html#iphdr::daddr" title='iphdr::daddr' data-ref="iphdr::daddr">daddr</a>,</td></tr>
+<tr><th id="314">314</th><td>	      <a class="ref fn" href="#format_network_port" title='format_network_port' data-ref="format_network_port">format_network_port</a>, <a class="macro" href="../../../include/netinet/in.h.html#58" title="IPPROTO_UDP" data-ref="_M/IPPROTO_UDP">IPPROTO_UDP</a>, <a class="ref fn" href="../../../include/netinet/in.h.html#ntohs" title='ntohs' data-ref="ntohs">ntohs</a> (<a class="local col2 ref" href="#42udp" title='udp' data-ref="42udp">udp</a>-&gt;<a class="ref field" href="../../../include/netinet/udp.h.html#udphdr::dest" title='udphdr::dest' data-ref="udphdr::dest">dest</a>));</td></tr>
+<tr><th id="315">315</th><td></td></tr>
+<tr><th id="316">316</th><td>  <b>return</b> <a class="local col8 ref" href="#38s" title='s' data-ref="38s">s</a>;</td></tr>
+<tr><th id="317">317</th><td>}</td></tr>
+<tr><th id="318">318</th><td></td></tr>
+<tr><th id="319">319</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_icmp4_type_and_code" title='format_icmp4_type_and_code' data-ref="format_icmp4_type_and_code">format_icmp4_type_and_code</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col3 decl" id="43s" title='s' data-type='u8 *' data-ref="43s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col4 decl" id="44args" title='args' data-type='va_list *' data-ref="44args">args</dfn>)</td></tr>
+<tr><th id="320">320</th><td>{</td></tr>
+<tr><th id="321">321</th><td>  <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> <dfn class="local col5 decl" id="45icmp_type" title='icmp_type' data-type='uword' data-ref="45icmp_type">icmp_type</dfn> = <span class="macro" title="__builtin_va_arg(*args, uword)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col4 ref" href="#44args" title='args' data-ref="44args">args</a>, <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a>);</td></tr>
+<tr><th id="322">322</th><td>  <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> <dfn class="local col6 decl" id="46icmp_code" title='icmp_code' data-type='uword' data-ref="46icmp_code">icmp_code</dfn> = <span class="macro" title="__builtin_va_arg(*args, uword)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col4 ref" href="#44args" title='args' data-ref="44args">args</a>, <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a>);</td></tr>
+<tr><th id="323">323</th><td></td></tr>
+<tr><th id="324">324</th><td>  <b>switch</b> (<a class="local col5 ref" href="#45icmp_type" title='icmp_type' data-ref="45icmp_type">icmp_type</a>)</td></tr>
+<tr><th id="325">325</th><td>    {</td></tr>
+<tr><th id="326">326</th><td><u>#define <dfn class="macro" id="_M/_" data-ref="_M/_">_</dfn>(f,str) case ICMP_##f: <a class="local col3 ref" href="#43s" title='s' data-ref="43s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col3 ref" href="#43s" title='s' data-ref="43s">s</a>, str); break;</u></td></tr>
+<tr><th id="327">327</th><td>      <a class="macro" href="#326" title="case 0: s = format (s, &quot;echo reply&quot;); break;" data-ref="_M/_">_</a> (ECHOREPLY, <q>"echo reply"</q>);</td></tr>
+<tr><th id="328">328</th><td>      <a class="macro" href="#326" title="case 3: s = format (s, &quot;unreachable&quot;); break;" data-ref="_M/_">_</a> (DEST_UNREACH, <q>"unreachable"</q>);</td></tr>
+<tr><th id="329">329</th><td>      <a class="macro" href="#326" title="case 4: s = format (s, &quot;source quench&quot;); break;" data-ref="_M/_">_</a> (SOURCE_QUENCH, <q>"source quench"</q>);</td></tr>
+<tr><th id="330">330</th><td>      <a class="macro" href="#326" title="case 5: s = format (s, &quot;redirect&quot;); break;" data-ref="_M/_">_</a> (REDIRECT, <q>"redirect"</q>);</td></tr>
+<tr><th id="331">331</th><td>      <a class="macro" href="#326" title="case 8: s = format (s, &quot;echo request&quot;); break;" data-ref="_M/_">_</a> (ECHO, <q>"echo request"</q>);</td></tr>
+<tr><th id="332">332</th><td>      <a class="macro" href="#326" title="case 11: s = format (s, &quot;time exceeded&quot;); break;" data-ref="_M/_">_</a> (TIME_EXCEEDED, <q>"time exceeded"</q>);</td></tr>
+<tr><th id="333">333</th><td>      <a class="macro" href="#326" title="case 12: s = format (s, &quot;parameter problem&quot;); break;" data-ref="_M/_">_</a> (PARAMETERPROB, <q>"parameter problem"</q>);</td></tr>
+<tr><th id="334">334</th><td>      <a class="macro" href="#326" title="case 13: s = format (s, &quot;timestamp request&quot;); break;" data-ref="_M/_">_</a> (TIMESTAMP, <q>"timestamp request"</q>);</td></tr>
+<tr><th id="335">335</th><td>      <a class="macro" href="#326" title="case 14: s = format (s, &quot;timestamp reply&quot;); break;" data-ref="_M/_">_</a> (TIMESTAMPREPLY, <q>"timestamp reply"</q>);</td></tr>
+<tr><th id="336">336</th><td>      <a class="macro" href="#326" title="case 15: s = format (s, &quot;information request&quot;); break;" data-ref="_M/_">_</a> (INFO_REQUEST, <q>"information request"</q>);</td></tr>
+<tr><th id="337">337</th><td>      <a class="macro" href="#326" title="case 16: s = format (s, &quot;information reply&quot;); break;" data-ref="_M/_">_</a> (INFO_REPLY, <q>"information reply"</q>);</td></tr>
+<tr><th id="338">338</th><td>      <a class="macro" href="#326" title="case 17: s = format (s, &quot;address mask request&quot;); break;" data-ref="_M/_">_</a> (ADDRESS, <q>"address mask request"</q>);</td></tr>
+<tr><th id="339">339</th><td>      <a class="macro" href="#326" title="case 18: s = format (s, &quot;address mask reply&quot;); break;" data-ref="_M/_">_</a> (ADDRESSREPLY, <q>"address mask reply"</q>);</td></tr>
+<tr><th id="340">340</th><td><u>#undef <a class="macro" href="#326" data-ref="_M/_">_</a></u></td></tr>
+<tr><th id="341">341</th><td>    <b>default</b>:</td></tr>
+<tr><th id="342">342</th><td>      <a class="local col3 ref" href="#43s" title='s' data-ref="43s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col3 ref" href="#43s" title='s' data-ref="43s">s</a>, <q>"unknown type 0x%x"</q>, <a class="local col5 ref" href="#45icmp_type" title='icmp_type' data-ref="45icmp_type">icmp_type</a>);</td></tr>
+<tr><th id="343">343</th><td>    }</td></tr>
+<tr><th id="344">344</th><td></td></tr>
+<tr><th id="345">345</th><td>  <b>if</b> (<a class="local col5 ref" href="#45icmp_type" title='icmp_type' data-ref="45icmp_type">icmp_type</a> == <a class="macro" href="../../../include/netinet/ip_icmp.h.html#48" title="3" data-ref="_M/ICMP_DEST_UNREACH">ICMP_DEST_UNREACH</a>)</td></tr>
+<tr><th id="346">346</th><td>    {</td></tr>
+<tr><th id="347">347</th><td>      <b>switch</b> (<a class="local col6 ref" href="#46icmp_code" title='icmp_code' data-ref="46icmp_code">icmp_code</a>)</td></tr>
+<tr><th id="348">348</th><td>	{</td></tr>
+<tr><th id="349">349</th><td><u>#define <dfn class="macro" id="_M/_" data-ref="_M/_">_</dfn>(f,str) case ICMP_##f: <a class="local col3 ref" href="#43s" title='s' data-ref="43s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col3 ref" href="#43s" title='s' data-ref="43s">s</a>, " " # str); break;</u></td></tr>
+<tr><th id="350">350</th><td>	  <a class="macro" href="#349" title="case 0: s = format (s, &quot; &quot; &quot;\&quot;network\&quot;&quot;); break;" data-ref="_M/_">_</a> (NET_UNREACH, <q>"network"</q>);</td></tr>
+<tr><th id="351">351</th><td>	  <a class="macro" href="#349" title="case 1: s = format (s, &quot; &quot; &quot;\&quot;host\&quot;&quot;); break;" data-ref="_M/_">_</a> (HOST_UNREACH, <q>"host"</q>);</td></tr>
+<tr><th id="352">352</th><td>	  <a class="macro" href="#349" title="case 2: s = format (s, &quot; &quot; &quot;\&quot;protocol\&quot;&quot;); break;" data-ref="_M/_">_</a> (PROT_UNREACH, <q>"protocol"</q>);</td></tr>
+<tr><th id="353">353</th><td>	  <a class="macro" href="#349" title="case 3: s = format (s, &quot; &quot; &quot;\&quot;port\&quot;&quot;); break;" data-ref="_M/_">_</a> (PORT_UNREACH, <q>"port"</q>);</td></tr>
+<tr><th id="354">354</th><td>	  <a class="macro" href="#349" title="case 4: s = format (s, &quot; &quot; &quot;\&quot;: fragmentation needed/DF set\&quot;&quot;); break;" data-ref="_M/_">_</a> (FRAG_NEEDED, <q>": fragmentation needed/DF set"</q>);</td></tr>
+<tr><th id="355">355</th><td>	  <a class="macro" href="#349" title="case 5: s = format (s, &quot; &quot; &quot;\&quot;source route failed\&quot;&quot;); break;" data-ref="_M/_">_</a> (SR_FAILED, <q>"source route failed"</q>);</td></tr>
+<tr><th id="356">356</th><td>	  <a class="macro" href="#349" title="case 6: s = format (s, &quot; &quot; &quot;\&quot;network unknown\&quot;&quot;); break;" data-ref="_M/_">_</a> (NET_UNKNOWN, <q>"network unknown"</q>);</td></tr>
+<tr><th id="357">357</th><td>	  <a class="macro" href="#349" title="case 7: s = format (s, &quot; &quot; &quot;\&quot;host unknown\&quot;&quot;); break;" data-ref="_M/_">_</a> (HOST_UNKNOWN, <q>"host unknown"</q>);</td></tr>
+<tr><th id="358">358</th><td>	  <a class="macro" href="#349" title="case 8: s = format (s, &quot; &quot; &quot;\&quot;host isolated\&quot;&quot;); break;" data-ref="_M/_">_</a> (HOST_ISOLATED, <q>"host isolated"</q>);</td></tr>
+<tr><th id="359">359</th><td>	  <a class="macro" href="#349" title="case 9: s = format (s, &quot; &quot; &quot;\&quot;network: admin. prohibited\&quot;&quot;); break;" data-ref="_M/_">_</a> (NET_ANO, <q>"network: admin. prohibited"</q>);</td></tr>
+<tr><th id="360">360</th><td>	  <a class="macro" href="#349" title="case 10: s = format (s, &quot; &quot; &quot;\&quot;host: admin. prohibited\&quot;&quot;); break;" data-ref="_M/_">_</a> (HOST_ANO, <q>"host: admin. prohibited"</q>);</td></tr>
+<tr><th id="361">361</th><td>	  <a class="macro" href="#349" title="case 11: s = format (s, &quot; &quot; &quot;\&quot;network for type-of-service\&quot;&quot;); break;" data-ref="_M/_">_</a> (NET_UNR_TOS, <q>"network for type-of-service"</q>);</td></tr>
+<tr><th id="362">362</th><td>	  <a class="macro" href="#349" title="case 12: s = format (s, &quot; &quot; &quot;\&quot;host for type-of-service\&quot;&quot;); break;" data-ref="_M/_">_</a> (HOST_UNR_TOS, <q>"host for type-of-service"</q>);</td></tr>
+<tr><th id="363">363</th><td>	  <a class="macro" href="#349" title="case 13: s = format (s, &quot; &quot; &quot;\&quot;: packet filtered\&quot;&quot;); break;" data-ref="_M/_">_</a> (PKT_FILTERED, <q>": packet filtered"</q>);</td></tr>
+<tr><th id="364">364</th><td>	  <a class="macro" href="#349" title="case 14: s = format (s, &quot; &quot; &quot;\&quot;precedence violation\&quot;&quot;); break;" data-ref="_M/_">_</a> (PREC_VIOLATION, <q>"precedence violation"</q>);</td></tr>
+<tr><th id="365">365</th><td>	  <a class="macro" href="#349" title="case 15: s = format (s, &quot; &quot; &quot;\&quot;precedence cut off\&quot;&quot;); break;" data-ref="_M/_">_</a> (PREC_CUTOFF, <q>"precedence cut off"</q>);</td></tr>
+<tr><th id="366">366</th><td><u>#undef <a class="macro" href="#349" data-ref="_M/_">_</a></u></td></tr>
+<tr><th id="367">367</th><td>	<b>default</b>:</td></tr>
+<tr><th id="368">368</th><td>	  <a class="local col3 ref" href="#43s" title='s' data-ref="43s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col3 ref" href="#43s" title='s' data-ref="43s">s</a>, <q>"unknown code 0x%x"</q>, <a class="local col6 ref" href="#46icmp_code" title='icmp_code' data-ref="46icmp_code">icmp_code</a>);</td></tr>
+<tr><th id="369">369</th><td>	}</td></tr>
+<tr><th id="370">370</th><td>    }</td></tr>
+<tr><th id="371">371</th><td>  <b>else</b> <b>if</b> (<a class="local col5 ref" href="#45icmp_type" title='icmp_type' data-ref="45icmp_type">icmp_type</a> == <a class="macro" href="../../../include/netinet/ip_icmp.h.html#50" title="5" data-ref="_M/ICMP_REDIRECT">ICMP_REDIRECT</a>)</td></tr>
+<tr><th id="372">372</th><td>    {</td></tr>
+<tr><th id="373">373</th><td>      <b>switch</b> (<a class="local col6 ref" href="#46icmp_code" title='icmp_code' data-ref="46icmp_code">icmp_code</a>)</td></tr>
+<tr><th id="374">374</th><td>	{</td></tr>
+<tr><th id="375">375</th><td><u>#define <dfn class="macro" id="_M/_" data-ref="_M/_">_</dfn>(f,str) case ICMP_##f: <a class="local col3 ref" href="#43s" title='s' data-ref="43s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col3 ref" href="#43s" title='s' data-ref="43s">s</a>, " " # str); break;</u></td></tr>
+<tr><th id="376">376</th><td>	  <a class="macro" href="#375" title="case 0: s = format (s, &quot; &quot; &quot;\&quot;network\&quot;&quot;); break;" data-ref="_M/_">_</a> (REDIR_NET, <q>"network"</q>);</td></tr>
+<tr><th id="377">377</th><td>	  <a class="macro" href="#375" title="case 1: s = format (s, &quot; &quot; &quot;\&quot;host\&quot;&quot;); break;" data-ref="_M/_">_</a> (REDIR_HOST, <q>"host"</q>);</td></tr>
+<tr><th id="378">378</th><td>	  <a class="macro" href="#375" title="case 2: s = format (s, &quot; &quot; &quot;\&quot;network for type-of-service\&quot;&quot;); break;" data-ref="_M/_">_</a> (REDIR_NETTOS, <q>"network for type-of-service"</q>);</td></tr>
+<tr><th id="379">379</th><td>	  <a class="macro" href="#375" title="case 3: s = format (s, &quot; &quot; &quot;\&quot;host for type-of-service\&quot;&quot;); break;" data-ref="_M/_">_</a> (REDIR_HOSTTOS, <q>"host for type-of-service"</q>);</td></tr>
+<tr><th id="380">380</th><td><u>#undef <a class="macro" href="#375" data-ref="_M/_">_</a></u></td></tr>
+<tr><th id="381">381</th><td>	<b>default</b>:</td></tr>
+<tr><th id="382">382</th><td>	  <a class="local col3 ref" href="#43s" title='s' data-ref="43s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col3 ref" href="#43s" title='s' data-ref="43s">s</a>, <q>"unknown code 0x%x"</q>, <a class="local col6 ref" href="#46icmp_code" title='icmp_code' data-ref="46icmp_code">icmp_code</a>);</td></tr>
+<tr><th id="383">383</th><td>	}</td></tr>
+<tr><th id="384">384</th><td>    }</td></tr>
+<tr><th id="385">385</th><td>  <b>else</b> <b>if</b> (<a class="local col5 ref" href="#45icmp_type" title='icmp_type' data-ref="45icmp_type">icmp_type</a> == <a class="macro" href="../../../include/netinet/ip_icmp.h.html#52" title="11" data-ref="_M/ICMP_TIME_EXCEEDED">ICMP_TIME_EXCEEDED</a>)</td></tr>
+<tr><th id="386">386</th><td>    {</td></tr>
+<tr><th id="387">387</th><td>      <b>switch</b> (<a class="local col6 ref" href="#46icmp_code" title='icmp_code' data-ref="46icmp_code">icmp_code</a>)</td></tr>
+<tr><th id="388">388</th><td>	{</td></tr>
+<tr><th id="389">389</th><td><u>#define <dfn class="macro" id="_M/_" data-ref="_M/_">_</dfn>(f,str) case ICMP_##f: <a class="local col3 ref" href="#43s" title='s' data-ref="43s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col3 ref" href="#43s" title='s' data-ref="43s">s</a>, " " # str); break;</u></td></tr>
+<tr><th id="390">390</th><td>	  <a class="macro" href="#389" title="case 0: s = format (s, &quot; &quot; &quot;\&quot;time-to-live zero in transit\&quot;&quot;); break;" data-ref="_M/_">_</a> (EXC_TTL, <q>"time-to-live zero in transit"</q>);</td></tr>
+<tr><th id="391">391</th><td>	  <a class="macro" href="#389" title="case 1: s = format (s, &quot; &quot; &quot;\&quot;time-to-live zero during reassembly\&quot;&quot;); break;" data-ref="_M/_">_</a> (EXC_FRAGTIME, <q>"time-to-live zero during reassembly"</q>);</td></tr>
+<tr><th id="392">392</th><td><u>#undef <a class="macro" href="#389" data-ref="_M/_">_</a></u></td></tr>
+<tr><th id="393">393</th><td>	<b>default</b>:</td></tr>
+<tr><th id="394">394</th><td>	  <a class="local col3 ref" href="#43s" title='s' data-ref="43s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col3 ref" href="#43s" title='s' data-ref="43s">s</a>, <q>"unknown code 0x%x"</q>, <a class="local col6 ref" href="#46icmp_code" title='icmp_code' data-ref="46icmp_code">icmp_code</a>);</td></tr>
+<tr><th id="395">395</th><td>	}</td></tr>
+<tr><th id="396">396</th><td>    }</td></tr>
+<tr><th id="397">397</th><td></td></tr>
+<tr><th id="398">398</th><td>  <b>return</b> <a class="local col3 ref" href="#43s" title='s' data-ref="43s">s</a>;</td></tr>
+<tr><th id="399">399</th><td>}</td></tr>
+<tr><th id="400">400</th><td></td></tr>
+<tr><th id="401">401</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="402">402</th><td>  <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="tu decl field" id="(anonymous)::type" title='(anonymous struct)::type' data-type='u8' data-ref="(anonymous)::type">type</dfn>;</td></tr>
+<tr><th id="403">403</th><td>  <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="tu decl field" id="(anonymous)::code" title='(anonymous struct)::code' data-type='u8' data-ref="(anonymous)::code">code</dfn>;</td></tr>
+<tr><th id="404">404</th><td>  <a class="typedef" href="types.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> <dfn class="tu decl field" id="(anonymous)::checksum" title='(anonymous struct)::checksum' data-type='u16' data-ref="(anonymous)::checksum">checksum</dfn>;</td></tr>
+<tr><th id="405">405</th><td>} <dfn class="typedef" id="icmp4_t" title='icmp4_t' data-type='struct icmp4_t' data-ref="icmp4_t">icmp4_t</dfn>;</td></tr>
+<tr><th id="406">406</th><td></td></tr>
+<tr><th id="407">407</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_icmp4_packet" title='format_icmp4_packet' data-ref="format_icmp4_packet">format_icmp4_packet</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col7 decl" id="47s" title='s' data-type='u8 *' data-ref="47s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col8 decl" id="48args" title='args' data-type='va_list *' data-ref="48args">args</dfn>)</td></tr>
+<tr><th id="408">408</th><td>{</td></tr>
+<tr><th id="409">409</th><td>  <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col9 decl" id="49p" title='p' data-type='u8 *' data-ref="49p">p</dfn> = <span class="macro" title="__builtin_va_arg(*args, u8 *)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col8 ref" href="#48args" title='args' data-ref="48args">args</a>, <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *);</td></tr>
+<tr><th id="410">410</th><td>  <b>struct</b> <a class="type" href="../../../include/netinet/ip.h.html#iphdr" title='iphdr' data-ref="iphdr">iphdr</a> * <dfn class="local col0 decl" id="50ip" title='ip' data-type='struct iphdr *' data-ref="50ip">ip</dfn> = (<em>void</em> *) <a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a>;</td></tr>
+<tr><th id="411">411</th><td>  <a class="typedef" href="#icmp4_t" title='icmp4_t' data-type='struct icmp4_t' data-ref="icmp4_t">icmp4_t</a> * <dfn class="local col1 decl" id="51icmp" title='icmp' data-type='icmp4_t *' data-ref="51icmp">icmp</dfn> = (<em>void</em> *) (<a class="local col0 ref" href="#50ip" title='ip' data-ref="50ip">ip</a> + <var>1</var>);</td></tr>
+<tr><th id="412">412</th><td>  <a class="local col7 ref" href="#47s" title='s' data-ref="47s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col7 ref" href="#47s" title='s' data-ref="47s">s</a>, <q>"icmp %U %U -&gt; %U"</q>,</td></tr>
+<tr><th id="413">413</th><td>	      <a class="ref fn" href="#format_icmp4_type_and_code" title='format_icmp4_type_and_code' data-ref="format_icmp4_type_and_code">format_icmp4_type_and_code</a>, <a class="local col1 ref" href="#51icmp" title='icmp' data-ref="51icmp">icmp</a>-&gt;<a class="tu ref field" href="#(anonymous)::type" title='(anonymous struct)::type' data-use='r' data-ref="(anonymous)::type">type</a>, <a class="local col1 ref" href="#51icmp" title='icmp' data-ref="51icmp">icmp</a>-&gt;<a class="tu ref field" href="#(anonymous)::code" title='(anonymous struct)::code' data-use='r' data-ref="(anonymous)::code">code</a>,</td></tr>
+<tr><th id="414">414</th><td>	      <a class="ref fn" href="#format_network_address" title='format_network_address' data-ref="format_network_address">format_network_address</a>, <a class="macro" href="../../../include/bits/socket.h.html#91" title="2" data-ref="_M/AF_INET">AF_INET</a>,  &amp;<a class="local col0 ref" href="#50ip" title='ip' data-ref="50ip">ip</a>-&gt;<a class="ref field" href="../../../include/netinet/ip.h.html#iphdr::saddr" title='iphdr::saddr' data-ref="iphdr::saddr">saddr</a>,</td></tr>
+<tr><th id="415">415</th><td>	      <a class="ref fn" href="#format_network_address" title='format_network_address' data-ref="format_network_address">format_network_address</a>, <a class="macro" href="../../../include/bits/socket.h.html#91" title="2" data-ref="_M/AF_INET">AF_INET</a>,  &amp;<a class="local col0 ref" href="#50ip" title='ip' data-ref="50ip">ip</a>-&gt;<a class="ref field" href="../../../include/netinet/ip.h.html#iphdr::daddr" title='iphdr::daddr' data-ref="iphdr::daddr">daddr</a>);</td></tr>
+<tr><th id="416">416</th><td></td></tr>
+<tr><th id="417">417</th><td>  <b>return</b> <a class="local col7 ref" href="#47s" title='s' data-ref="47s">s</a>;</td></tr>
+<tr><th id="418">418</th><td>}</td></tr>
+<tr><th id="419">419</th><td></td></tr>
+<tr><th id="420">420</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_ip4_tos_byte" title='format_ip4_tos_byte' data-ref="format_ip4_tos_byte">format_ip4_tos_byte</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col2 decl" id="52s" title='s' data-type='u8 *' data-ref="52s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col3 decl" id="53args" title='args' data-type='va_list *' data-ref="53args">args</dfn>)</td></tr>
+<tr><th id="421">421</th><td>{</td></tr>
+<tr><th id="422">422</th><td>  <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> <dfn class="local col4 decl" id="54tos" title='tos' data-type='uword' data-ref="54tos">tos</dfn> = <span class="macro" title="__builtin_va_arg(*args, uword)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col3 ref" href="#53args" title='args' data-ref="53args">args</a>, <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a>);</td></tr>
+<tr><th id="423">423</th><td></td></tr>
+<tr><th id="424">424</th><td>  <b>if</b> (<a class="local col4 ref" href="#54tos" title='tos' data-ref="54tos">tos</a> &amp; <a class="macro" href="../../../include/netinet/ip.h.html#213" title="0x10" data-ref="_M/IPTOS_LOWDELAY">IPTOS_LOWDELAY</a>)</td></tr>
+<tr><th id="425">425</th><td>    <a class="local col2 ref" href="#52s" title='s' data-ref="52s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col2 ref" href="#52s" title='s' data-ref="52s">s</a>, <q>"minimize-delay, "</q>);</td></tr>
+<tr><th id="426">426</th><td>  <b>if</b> (<a class="local col4 ref" href="#54tos" title='tos' data-ref="54tos">tos</a> &amp; <a class="macro" href="../../../include/netinet/ip.h.html#217" title="0x02" data-ref="_M/IPTOS_MINCOST">IPTOS_MINCOST</a>)</td></tr>
+<tr><th id="427">427</th><td>    <a class="local col2 ref" href="#52s" title='s' data-ref="52s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col2 ref" href="#52s" title='s' data-ref="52s">s</a>, <q>"minimize-cost, "</q>);</td></tr>
+<tr><th id="428">428</th><td>  <b>if</b> (<a class="local col4 ref" href="#54tos" title='tos' data-ref="54tos">tos</a> &amp; <a class="macro" href="../../../include/netinet/ip.h.html#214" title="0x08" data-ref="_M/IPTOS_THROUGHPUT">IPTOS_THROUGHPUT</a>)</td></tr>
+<tr><th id="429">429</th><td>    <a class="local col2 ref" href="#52s" title='s' data-ref="52s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col2 ref" href="#52s" title='s' data-ref="52s">s</a>, <q>"maximize-throughput, "</q>);</td></tr>
+<tr><th id="430">430</th><td>  <b>if</b> (<a class="local col4 ref" href="#54tos" title='tos' data-ref="54tos">tos</a> &amp; <a class="macro" href="../../../include/netinet/ip.h.html#215" title="0x04" data-ref="_M/IPTOS_RELIABILITY">IPTOS_RELIABILITY</a>)</td></tr>
+<tr><th id="431">431</th><td>    <a class="local col2 ref" href="#52s" title='s' data-ref="52s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col2 ref" href="#52s" title='s' data-ref="52s">s</a>, <q>"maximize-reliability, "</q>);</td></tr>
+<tr><th id="432">432</th><td></td></tr>
+<tr><th id="433">433</th><td>  <b>switch</b> (<a class="macro" href="../../../include/netinet/ip.h.html#223" title="((tos) &amp; 0xe0)" data-ref="_M/IPTOS_PREC">IPTOS_PREC</a> (<a class="local col4 ref" href="#54tos" title='tos' data-ref="54tos">tos</a>))</td></tr>
+<tr><th id="434">434</th><td>    {</td></tr>
+<tr><th id="435">435</th><td><u>#define <dfn class="macro" id="_M/_" data-ref="_M/_">_</dfn>(x,y) case IPTOS_PREC_##x: <a class="local col2 ref" href="#52s" title='s' data-ref="52s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col2 ref" href="#52s" title='s' data-ref="52s">s</a>, y); break</u></td></tr>
+<tr><th id="436">436</th><td>      <a class="macro" href="#435" title="case 0xe0: s = format (s, &quot;network&quot;); break" data-ref="_M/_">_</a> (NETCONTROL, <q>"network"</q>);</td></tr>
+<tr><th id="437">437</th><td>      <a class="macro" href="#435" title="case 0xc0: s = format (s, &quot;internet&quot;); break" data-ref="_M/_">_</a> (INTERNETCONTROL, <q>"internet"</q>);</td></tr>
+<tr><th id="438">438</th><td>      <a class="macro" href="#435" title="case 0xa0: s = format (s, &quot;critical&quot;); break" data-ref="_M/_">_</a> (CRITIC_ECP, <q>"critical"</q>);</td></tr>
+<tr><th id="439">439</th><td>      <a class="macro" href="#435" title="case 0x60: s = format (s, &quot;flash&quot;); break" data-ref="_M/_">_</a> (FLASH, <q>"flash"</q>);</td></tr>
+<tr><th id="440">440</th><td>      <a class="macro" href="#435" title="case 0x80: s = format (s, &quot;flash-override&quot;); break" data-ref="_M/_">_</a> (FLASHOVERRIDE, <q>"flash-override"</q>);</td></tr>
+<tr><th id="441">441</th><td>      <a class="macro" href="#435" title="case 0x40: s = format (s, &quot;immediate&quot;); break" data-ref="_M/_">_</a> (IMMEDIATE, <q>"immediate"</q>);</td></tr>
+<tr><th id="442">442</th><td>      <a class="macro" href="#435" title="case 0x20: s = format (s, &quot;priority&quot;); break" data-ref="_M/_">_</a> (PRIORITY, <q>"priority"</q>);</td></tr>
+<tr><th id="443">443</th><td>      <a class="macro" href="#435" title="case 0x00: s = format (s, &quot;routine&quot;); break" data-ref="_M/_">_</a> (ROUTINE, <q>"routine"</q>);</td></tr>
+<tr><th id="444">444</th><td><u>#undef <a class="macro" href="#435" data-ref="_M/_">_</a></u></td></tr>
+<tr><th id="445">445</th><td>    }</td></tr>
+<tr><th id="446">446</th><td></td></tr>
+<tr><th id="447">447</th><td>  <b>return</b> <a class="local col2 ref" href="#52s" title='s' data-ref="52s">s</a>;</td></tr>
+<tr><th id="448">448</th><td>}</td></tr>
+<tr><th id="449">449</th><td></td></tr>
+<tr><th id="450">450</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_ip4_packet" title='format_ip4_packet' data-ref="format_ip4_packet">format_ip4_packet</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col5 decl" id="55s" title='s' data-type='u8 *' data-ref="55s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col6 decl" id="56args" title='args' data-type='va_list *' data-ref="56args">args</dfn>)</td></tr>
+<tr><th id="451">451</th><td>{</td></tr>
+<tr><th id="452">452</th><td>  <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col7 decl" id="57p" title='p' data-type='u8 *' data-ref="57p">p</dfn> = <span class="macro" title="__builtin_va_arg(*args, u8 *)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col6 ref" href="#56args" title='args' data-ref="56args">args</a>, <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *);</td></tr>
+<tr><th id="453">453</th><td>  <b>struct</b> <a class="type" href="../../../include/netinet/ip.h.html#iphdr" title='iphdr' data-ref="iphdr">iphdr</a> * <dfn class="local col8 decl" id="58ip" title='ip' data-type='struct iphdr *' data-ref="58ip">ip</dfn> = (<em>void</em> *) <a class="local col7 ref" href="#57p" title='p' data-ref="57p">p</a>;</td></tr>
+<tr><th id="454">454</th><td></td></tr>
+<tr><th id="455">455</th><td>  <em>static</em> <a class="typedef" href="format.h.html#format_function_t" title='format_function_t' data-type='u8 *(u8 *, va_list *)' data-ref="format_function_t">format_function_t</a> * <dfn class="local col9 decl" id="59f" title='f' data-type='format_function_t *[256]' data-ref="59f">f</dfn>[<var>256</var>];</td></tr>
+<tr><th id="456">456</th><td></td></tr>
+<tr><th id="457">457</th><td>  <b>if</b> (! <a class="local col9 ref" href="#59f" title='f' data-ref="59f">f</a>[<a class="macro" href="../../../include/netinet/in.h.html#52" title="IPPROTO_TCP" data-ref="_M/IPPROTO_TCP">IPPROTO_TCP</a>])</td></tr>
+<tr><th id="458">458</th><td>    {</td></tr>
+<tr><th id="459">459</th><td>      <a class="local col9 ref" href="#59f" title='f' data-ref="59f">f</a>[<a class="macro" href="../../../include/netinet/in.h.html#52" title="IPPROTO_TCP" data-ref="_M/IPPROTO_TCP">IPPROTO_TCP</a>] = <a class="ref fn" href="#format_tcp4_packet" title='format_tcp4_packet' data-ref="format_tcp4_packet">format_tcp4_packet</a>;</td></tr>
+<tr><th id="460">460</th><td>      <a class="local col9 ref" href="#59f" title='f' data-ref="59f">f</a>[<a class="macro" href="../../../include/netinet/in.h.html#58" title="IPPROTO_UDP" data-ref="_M/IPPROTO_UDP">IPPROTO_UDP</a>] = <a class="ref fn" href="#format_udp4_packet" title='format_udp4_packet' data-ref="format_udp4_packet">format_udp4_packet</a>;</td></tr>
+<tr><th id="461">461</th><td>      <a class="local col9 ref" href="#59f" title='f' data-ref="59f">f</a>[<a class="macro" href="../../../include/netinet/in.h.html#46" title="IPPROTO_ICMP" data-ref="_M/IPPROTO_ICMP">IPPROTO_ICMP</a>] = <a class="ref fn" href="#format_icmp4_packet" title='format_icmp4_packet' data-ref="format_icmp4_packet">format_icmp4_packet</a>;</td></tr>
+<tr><th id="462">462</th><td>    }</td></tr>
+<tr><th id="463">463</th><td></td></tr>
+<tr><th id="464">464</th><td>  <b>if</b> (<a class="local col9 ref" href="#59f" title='f' data-ref="59f">f</a>[<a class="local col8 ref" href="#58ip" title='ip' data-ref="58ip">ip</a>-&gt;<a class="ref field" href="../../../include/netinet/ip.h.html#iphdr::protocol" title='iphdr::protocol' data-ref="iphdr::protocol">protocol</a>])</td></tr>
+<tr><th id="465">465</th><td>    <b>return</b> <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col5 ref" href="#55s" title='s' data-ref="55s">s</a>, <q>"%U"</q>, <a class="local col9 ref" href="#59f" title='f' data-ref="59f">f</a>[<a class="local col8 ref" href="#58ip" title='ip' data-ref="58ip">ip</a>-&gt;<a class="ref field" href="../../../include/netinet/ip.h.html#iphdr::protocol" title='iphdr::protocol' data-ref="iphdr::protocol">protocol</a>], <a class="local col7 ref" href="#57p" title='p' data-ref="57p">p</a>);</td></tr>
+<tr><th id="466">466</th><td></td></tr>
+<tr><th id="467">467</th><td>  <a class="local col5 ref" href="#55s" title='s' data-ref="55s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col5 ref" href="#55s" title='s' data-ref="55s">s</a>, <q>"%U: %U -&gt; %U"</q>,</td></tr>
+<tr><th id="468">468</th><td>	      <a class="ref fn" href="#format_network_protocol" title='format_network_protocol' data-ref="format_network_protocol">format_network_protocol</a>, <a class="macro" href="../../../include/bits/socket.h.html#91" title="2" data-ref="_M/AF_INET">AF_INET</a>, <a class="local col8 ref" href="#58ip" title='ip' data-ref="58ip">ip</a>-&gt;<a class="ref field" href="../../../include/netinet/ip.h.html#iphdr::protocol" title='iphdr::protocol' data-ref="iphdr::protocol">protocol</a>,</td></tr>
+<tr><th id="469">469</th><td>	      <a class="ref fn" href="#format_network_address" title='format_network_address' data-ref="format_network_address">format_network_address</a>, <a class="macro" href="../../../include/bits/socket.h.html#91" title="2" data-ref="_M/AF_INET">AF_INET</a>,  &amp;<a class="local col8 ref" href="#58ip" title='ip' data-ref="58ip">ip</a>-&gt;<a class="ref field" href="../../../include/netinet/ip.h.html#iphdr::saddr" title='iphdr::saddr' data-ref="iphdr::saddr">saddr</a>,</td></tr>
+<tr><th id="470">470</th><td>	      <a class="ref fn" href="#format_network_address" title='format_network_address' data-ref="format_network_address">format_network_address</a>, <a class="macro" href="../../../include/bits/socket.h.html#91" title="2" data-ref="_M/AF_INET">AF_INET</a>,  &amp;<a class="local col8 ref" href="#58ip" title='ip' data-ref="58ip">ip</a>-&gt;<a class="ref field" href="../../../include/netinet/ip.h.html#iphdr::daddr" title='iphdr::daddr' data-ref="iphdr::daddr">daddr</a>);</td></tr>
+<tr><th id="471">471</th><td></td></tr>
+<tr><th id="472">472</th><td>  <b>return</b> <a class="local col5 ref" href="#55s" title='s' data-ref="55s">s</a>;</td></tr>
+<tr><th id="473">473</th><td>}</td></tr>
+<tr><th id="474">474</th><td></td></tr>
+<tr><th id="475">475</th><td><u>#define <dfn class="macro" id="_M/foreach_unix_arphrd_type" data-ref="_M/foreach_unix_arphrd_type">foreach_unix_arphrd_type</dfn>		\</u></td></tr>
+<tr><th id="476">476</th><td><u>  _ (NETROM, 0)					\</u></td></tr>
+<tr><th id="477">477</th><td><u>  _ (ETHER, 1)					\</u></td></tr>
+<tr><th id="478">478</th><td><u>  _ (EETHER, 2)					\</u></td></tr>
+<tr><th id="479">479</th><td><u>  _ (AX25, 3)					\</u></td></tr>
+<tr><th id="480">480</th><td><u>  _ (PRONET, 4)					\</u></td></tr>
+<tr><th id="481">481</th><td><u>  _ (CHAOS, 5)					\</u></td></tr>
+<tr><th id="482">482</th><td><u>  _ (IEEE802, 6)				\</u></td></tr>
+<tr><th id="483">483</th><td><u>  _ (ARCNET, 7)					\</u></td></tr>
+<tr><th id="484">484</th><td><u>  _ (APPLETLK, 8)				\</u></td></tr>
+<tr><th id="485">485</th><td><u>  _ (DLCI, 15)					\</u></td></tr>
+<tr><th id="486">486</th><td><u>  _ (ATM, 19)					\</u></td></tr>
+<tr><th id="487">487</th><td><u>  _ (METRICOM, 23)				\</u></td></tr>
+<tr><th id="488">488</th><td><u>  _ (IEEE1394, 24)				\</u></td></tr>
+<tr><th id="489">489</th><td><u>  _ (EUI64, 27)					\</u></td></tr>
+<tr><th id="490">490</th><td><u>  _ (INFINIBAND, 32)				\</u></td></tr>
+<tr><th id="491">491</th><td><u>  _ (SLIP, 256)					\</u></td></tr>
+<tr><th id="492">492</th><td><u>  _ (CSLIP, 257)				\</u></td></tr>
+<tr><th id="493">493</th><td><u>  _ (SLIP6, 258)				\</u></td></tr>
+<tr><th id="494">494</th><td><u>  _ (CSLIP6, 259)				\</u></td></tr>
+<tr><th id="495">495</th><td><u>  _ (RSRVD, 260)				\</u></td></tr>
+<tr><th id="496">496</th><td><u>  _ (ADAPT, 264)				\</u></td></tr>
+<tr><th id="497">497</th><td><u>  _ (ROSE, 270)					\</u></td></tr>
+<tr><th id="498">498</th><td><u>  _ (X25, 271)					\</u></td></tr>
+<tr><th id="499">499</th><td><u>  _ (HWX25, 272)				\</u></td></tr>
+<tr><th id="500">500</th><td><u>  _ (PPP, 512)					\</u></td></tr>
+<tr><th id="501">501</th><td><u>  _ (HDLC, 513)					\</u></td></tr>
+<tr><th id="502">502</th><td><u>  _ (LAPB, 516)					\</u></td></tr>
+<tr><th id="503">503</th><td><u>  _ (DDCMP, 517)				\</u></td></tr>
+<tr><th id="504">504</th><td><u>  _ (RAWHDLC, 518)				\</u></td></tr>
+<tr><th id="505">505</th><td><u>  _ (TUNNEL, 768)				\</u></td></tr>
+<tr><th id="506">506</th><td><u>  _ (TUNNEL6, 769)				\</u></td></tr>
+<tr><th id="507">507</th><td><u>  _ (FRAD, 770)					\</u></td></tr>
+<tr><th id="508">508</th><td><u>  _ (SKIP, 771)					\</u></td></tr>
+<tr><th id="509">509</th><td><u>  _ (LOOPBACK, 772)				\</u></td></tr>
+<tr><th id="510">510</th><td><u>  _ (LOCALTLK, 773)				\</u></td></tr>
+<tr><th id="511">511</th><td><u>  _ (FDDI, 774)					\</u></td></tr>
+<tr><th id="512">512</th><td><u>  _ (BIF, 775)					\</u></td></tr>
+<tr><th id="513">513</th><td><u>  _ (SIT, 776)					\</u></td></tr>
+<tr><th id="514">514</th><td><u>  _ (IPDDP, 777)				\</u></td></tr>
+<tr><th id="515">515</th><td><u>  _ (IPGRE, 778)				\</u></td></tr>
+<tr><th id="516">516</th><td><u>  _ (PIMREG, 779)				\</u></td></tr>
+<tr><th id="517">517</th><td><u>  _ (HIPPI, 780)				\</u></td></tr>
+<tr><th id="518">518</th><td><u>  _ (ASH, 781)					\</u></td></tr>
+<tr><th id="519">519</th><td><u>  _ (ECONET, 782)				\</u></td></tr>
+<tr><th id="520">520</th><td><u>  _ (IRDA, 783)					\</u></td></tr>
+<tr><th id="521">521</th><td><u>  _ (FCPP, 784)					\</u></td></tr>
+<tr><th id="522">522</th><td><u>  _ (FCAL, 785)					\</u></td></tr>
+<tr><th id="523">523</th><td><u>  _ (FCPL, 786)					\</u></td></tr>
+<tr><th id="524">524</th><td><u>  _ (FCFABRIC, 787)				\</u></td></tr>
+<tr><th id="525">525</th><td><u>  _ (IEEE802_TR, 800)				\</u></td></tr>
+<tr><th id="526">526</th><td><u>  _ (IEEE80211, 801)				\</u></td></tr>
+<tr><th id="527">527</th><td><u>  _ (IEEE80211_PRISM, 802)			\</u></td></tr>
+<tr><th id="528">528</th><td><u>  _ (IEEE80211_RADIOTAP, 803)			\</u></td></tr>
+<tr><th id="529">529</th><td><u>  _ (VOID, 0xFFFF)				\</u></td></tr>
+<tr><th id="530">530</th><td><u>  _ (NONE, 0xFFFE)</u></td></tr>
+<tr><th id="531">531</th><td></td></tr>
+<tr><th id="532">532</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_unix_arphrd" title='format_unix_arphrd' data-ref="format_unix_arphrd">format_unix_arphrd</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col0 decl" id="60s" title='s' data-type='u8 *' data-ref="60s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col1 decl" id="61args" title='args' data-type='va_list *' data-ref="61args">args</dfn>)</td></tr>
+<tr><th id="533">533</th><td>{</td></tr>
+<tr><th id="534">534</th><td><u>#<span data-ppcond="534">ifndef</span> <span class="macro" data-ref="_M/__COVERITY__">__COVERITY__</span> /* doesn't understand this at all... */</u></td></tr>
+<tr><th id="535">535</th><td>  <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col2 decl" id="62x" title='x' data-type='u32' data-ref="62x">x</dfn> = <span class="macro" title="__builtin_va_arg(*args, u32)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col1 ref" href="#61args" title='args' data-ref="61args">args</a>, <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>);</td></tr>
+<tr><th id="536">536</th><td>  <em>char</em> * <dfn class="local col3 decl" id="63t" title='t' data-type='char *' data-ref="63t">t</dfn>;</td></tr>
+<tr><th id="537">537</th><td>  <b>switch</b> (<a class="local col2 ref" href="#62x" title='x' data-ref="62x">x</a>)</td></tr>
+<tr><th id="538">538</th><td>    {</td></tr>
+<tr><th id="539">539</th><td><u>#define <dfn class="macro" id="_M/_" data-ref="_M/_">_</dfn>(f,n) case ARPHRD_##f: <a class="local col3 ref" href="#63t" title='t' data-ref="63t">t</a> = #f; break;</u></td></tr>
+<tr><th id="540">540</th><td>      <a class="macro" href="#475" title="case 0: t = &quot;NETROM&quot;; break; case 1: t = &quot;ETHER&quot;; break; case 2: t = &quot;EETHER&quot;; break; case 3: t = &quot;AX25&quot;; break; case 4: t = &quot;PRONET&quot;; break; case 5: t = &quot;CHAOS&quot;; break; case 6: t = &quot;IEEE802&quot;; break; case 7: t = &quot;ARCNET&quot;; break; case 8: t = &quot;APPLETLK&quot;; break; case 15: t = &quot;DLCI&quot;; break; case 19: t = &quot;ATM&quot;; break; case 23: t = &quot;METRICOM&quot;; break; case 24: t = &quot;IEEE1394&quot;; break; case 27: t = &quot;EUI64&quot;; break; case 32: t = &quot;INFINIBAND&quot;; break; case 256: t = &quot;SLIP&quot;; break; case 257: t = &quot;CSLIP&quot;; break; case 258: t = &quot;SLIP6&quot;; break; case 259: t = &quot;CSLIP6&quot;; break; case 260: t = &quot;RSRVD&quot;; break; case 264: t = &quot;ADAPT&quot;; break; case 270: t = &quot;ROSE&quot;; break; case 271: t = &quot;X25&quot;; break; case 272: t = &quot;HWX25&quot;; break; case 512: t = &quot;PPP&quot;; break; case 513: t = &quot;HDLC&quot;; break; case 516: t = &quot;LAPB&quot;; break; case 517: t = &quot;DDCMP&quot;; break; case 518: t = &quot;RAWHDLC&quot;; break; case 768: t = &quot;TUNNEL&quot;; break; case 769: t = &quot;TUNNEL6&quot;; break; case 770: t = &quot;FRAD&quot;; break; case 771: t = &quot;SKIP&quot;; break; case 772: t = &quot;LOOPBACK&quot;; break; case 773: t = &quot;LOCALTLK&quot;; break; case 774: t = &quot;FDDI&quot;; break; case 775: t = &quot;BIF&quot;; break; case 776: t = &quot;SIT&quot;; break; case 777: t = &quot;IPDDP&quot;; break; case 778: t = &quot;IPGRE&quot;; break; case 779: t = &quot;PIMREG&quot;; break; case 780: t = &quot;HIPPI&quot;; break; case 781: t = &quot;ASH&quot;; break; case 782: t = &quot;ECONET&quot;; break; case 783: t = &quot;IRDA&quot;; break; case 784: t = &quot;FCPP&quot;; break; case 785: t = &quot;FCAL&quot;; break; case 786: t = &quot;FCPL&quot;; break; case 787: t = &quot;FCFABRIC&quot;; break; case 800: t = &quot;IEEE802_TR&quot;; break; case 801: t = &quot;IEEE80211&quot;; break; case 802: t = &quot;IEEE80211_PRISM&quot;; break; case 803: t = &quot;IEEE80211_RADIOTAP&quot;; break; case 0xFFFF: t = &quot;VOID&quot;; break; case 0xFFFE: t = &quot;NONE&quot;; break;" data-ref="_M/foreach_unix_arphrd_type">foreach_unix_arphrd_type</a></td></tr>
+<tr><th id="541">541</th><td><u>#undef <a class="macro" href="#539" data-ref="_M/_">_</a></u></td></tr>
+<tr><th id="542">542</th><td>    <b>default</b>:</td></tr>
+<tr><th id="543">543</th><td>      <a class="local col3 ref" href="#63t" title='t' data-ref="63t">t</a> = <var>0</var>;</td></tr>
+<tr><th id="544">544</th><td>      <b>break</b>;</td></tr>
+<tr><th id="545">545</th><td>    }</td></tr>
+<tr><th id="546">546</th><td></td></tr>
+<tr><th id="547">547</th><td>  <b>if</b> (<a class="local col3 ref" href="#63t" title='t' data-ref="63t">t</a>)</td></tr>
+<tr><th id="548">548</th><td>    <a class="local col0 ref" href="#60s" title='s' data-ref="60s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col0 ref" href="#60s" title='s' data-ref="60s">s</a>, <q>"%s"</q>, <a class="local col3 ref" href="#63t" title='t' data-ref="63t">t</a>);</td></tr>
+<tr><th id="549">549</th><td>  <b>else</b></td></tr>
+<tr><th id="550">550</th><td>    <a class="local col0 ref" href="#60s" title='s' data-ref="60s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col0 ref" href="#60s" title='s' data-ref="60s">s</a>, <q>"unknown 0x%x"</q>, <a class="local col2 ref" href="#62x" title='x' data-ref="62x">x</a>);</td></tr>
+<tr><th id="551">551</th><td><u>#<span data-ppcond="534">endif</span></u></td></tr>
+<tr><th id="552">552</th><td>  <b>return</b> <a class="local col0 ref" href="#60s" title='s' data-ref="60s">s</a>;</td></tr>
+<tr><th id="553">553</th><td>}</td></tr>
+<tr><th id="554">554</th><td></td></tr>
+<tr><th id="555">555</th><td><u>#define <dfn class="macro" id="_M/foreach_unix_interface_flag" data-ref="_M/foreach_unix_interface_flag">foreach_unix_interface_flag</dfn>		\</u></td></tr>
+<tr><th id="556">556</th><td><u>  _ (up)					\</u></td></tr>
+<tr><th id="557">557</th><td><u>  _ (broadcast)					\</u></td></tr>
+<tr><th id="558">558</th><td><u>  _ (debug)					\</u></td></tr>
+<tr><th id="559">559</th><td><u>  _ (loopback)					\</u></td></tr>
+<tr><th id="560">560</th><td><u>  _ (pointopoint)				\</u></td></tr>
+<tr><th id="561">561</th><td><u>  _ (notrailers)				\</u></td></tr>
+<tr><th id="562">562</th><td><u>  _ (running)					\</u></td></tr>
+<tr><th id="563">563</th><td><u>  _ (noarp)					\</u></td></tr>
+<tr><th id="564">564</th><td><u>  _ (promisc)					\</u></td></tr>
+<tr><th id="565">565</th><td><u>  _ (allmulti)					\</u></td></tr>
+<tr><th id="566">566</th><td><u>  _ (master)					\</u></td></tr>
+<tr><th id="567">567</th><td><u>  _ (slave)					\</u></td></tr>
+<tr><th id="568">568</th><td><u>  _ (multicast)					\</u></td></tr>
+<tr><th id="569">569</th><td><u>  _ (portsel)					\</u></td></tr>
+<tr><th id="570">570</th><td><u>  _ (automedia)					\</u></td></tr>
+<tr><th id="571">571</th><td><u>  _ (dynamic)					\</u></td></tr>
+<tr><th id="572">572</th><td><u>  _ (lower_up)					\</u></td></tr>
+<tr><th id="573">573</th><td><u>  _ (dormant)					\</u></td></tr>
+<tr><th id="574">574</th><td><u>  _ (echo)</u></td></tr>
+<tr><th id="575">575</th><td></td></tr>
+<tr><th id="576">576</th><td><em>static</em> <em>char</em> * <dfn class="tu decl def" id="unix_interface_flag_names" title='unix_interface_flag_names' data-type='char *[19]' data-ref="unix_interface_flag_names">unix_interface_flag_names</dfn>[] = {</td></tr>
+<tr><th id="577">577</th><td><u>#define <dfn class="macro" id="_M/_" data-ref="_M/_">_</dfn>(f) #f,</u></td></tr>
+<tr><th id="578">578</th><td>  <a class="macro" href="#555" title="&quot;up&quot;, &quot;broadcast&quot;, &quot;debug&quot;, &quot;loopback&quot;, &quot;pointopoint&quot;, &quot;notrailers&quot;, &quot;running&quot;, &quot;noarp&quot;, &quot;promisc&quot;, &quot;allmulti&quot;, &quot;master&quot;, &quot;slave&quot;, &quot;multicast&quot;, &quot;portsel&quot;, &quot;automedia&quot;, &quot;dynamic&quot;, &quot;lower_up&quot;, &quot;dormant&quot;, &quot;echo&quot;," data-ref="_M/foreach_unix_interface_flag">foreach_unix_interface_flag</a></td></tr>
+<tr><th id="579">579</th><td><u>#undef <a class="macro" href="#577" data-ref="_M/_">_</a></u></td></tr>
+<tr><th id="580">580</th><td>};</td></tr>
+<tr><th id="581">581</th><td></td></tr>
+<tr><th id="582">582</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_unix_interface_flags" title='format_unix_interface_flags' data-ref="format_unix_interface_flags">format_unix_interface_flags</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col4 decl" id="64s" title='s' data-type='u8 *' data-ref="64s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col5 decl" id="65args" title='args' data-type='va_list *' data-ref="65args">args</dfn>)</td></tr>
+<tr><th id="583">583</th><td>{</td></tr>
+<tr><th id="584">584</th><td>  <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col6 decl" id="66x" title='x' data-type='u32' data-ref="66x">x</dfn> = <span class="macro" title="__builtin_va_arg(*args, u32)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col5 ref" href="#65args" title='args' data-ref="65args">args</a>, <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>);</td></tr>
+<tr><th id="585">585</th><td>  <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col7 decl" id="67i" title='i' data-type='u32' data-ref="67i">i</dfn>;</td></tr>
+<tr><th id="586">586</th><td></td></tr>
+<tr><th id="587">587</th><td>  <b>if</b> (<a class="local col6 ref" href="#66x" title='x' data-ref="66x">x</a> == <var>0</var>)</td></tr>
+<tr><th id="588">588</th><td>    <a class="local col4 ref" href="#64s" title='s' data-ref="64s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col4 ref" href="#64s" title='s' data-ref="64s">s</a>, <q>"none"</q>);</td></tr>
+<tr><th id="589">589</th><td>  <b>else</b> <a class="macro" href="bitops.h.html#158" title="do { uword _foreach_set_bit_m_i = (x); uword _foreach_set_bit_f_i; while (_foreach_set_bit_m_i != 0) { _foreach_set_bit_f_i = first_set (_foreach_set_bit_m_i); _foreach_set_bit_m_i ^= _foreach_set_bit_f_i; (i) = min_log2 (_foreach_set_bit_f_i); do { ({ if (i &lt; (sizeof (unix_interface_flag_names)/sizeof (unix_interface_flag_names[0]))) s = format (s, &quot;%s&quot;, unix_interface_flag_names[i]); else s = format (s, &quot;unknown %d&quot;, i); if (x &gt;&gt; (i + 1)) s = format (s, &quot;, &quot;); }); } while (0); } } while (0)" data-ref="_M/foreach_set_bit">foreach_set_bit</a> (<a class="local col7 ref" href="#67i" title='i' data-ref="67i">i</a>, <a class="local col6 ref" href="#66x" title='x' data-ref="66x">x</a>, ({</td></tr>
+<tr><th id="590">590</th><td>    <b>if</b> (<a class="local col7 ref" href="#67i" title='i' data-ref="67i">i</a> &lt; <a class="macro" href="clib.h.html#59" title="(sizeof (unix_interface_flag_names)/sizeof (unix_interface_flag_names[0]))" data-ref="_M/ARRAY_LEN">ARRAY_LEN</a> (<a class="tu ref" href="#unix_interface_flag_names" title='unix_interface_flag_names' data-use='r' data-ref="unix_interface_flag_names">unix_interface_flag_names</a>))</td></tr>
+<tr><th id="591">591</th><td>      <a class="local col4 ref" href="#64s" title='s' data-ref="64s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col4 ref" href="#64s" title='s' data-ref="64s">s</a>, <q>"%s"</q>, <a class="tu ref" href="#unix_interface_flag_names" title='unix_interface_flag_names' data-use='r' data-ref="unix_interface_flag_names">unix_interface_flag_names</a>[<a class="local col7 ref" href="#67i" title='i' data-ref="67i">i</a>]);</td></tr>
+<tr><th id="592">592</th><td>    <b>else</b></td></tr>
+<tr><th id="593">593</th><td>      <a class="local col4 ref" href="#64s" title='s' data-ref="64s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col4 ref" href="#64s" title='s' data-ref="64s">s</a>, <q>"unknown %d"</q>, <a class="local col7 ref" href="#67i" title='i' data-ref="67i">i</a>);</td></tr>
+<tr><th id="594">594</th><td>    <b>if</b> (<a class="local col6 ref" href="#66x" title='x' data-ref="66x">x</a> &gt;&gt; (<a class="local col7 ref" href="#67i" title='i' data-ref="67i">i</a> + <var>1</var>))</td></tr>
+<tr><th id="595">595</th><td>      <a class="local col4 ref" href="#64s" title='s' data-ref="64s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col4 ref" href="#64s" title='s' data-ref="64s">s</a>, <q>", "</q>);</td></tr>
+<tr><th id="596">596</th><td>  }));</td></tr>
+<tr><th id="597">597</th><td>  <b>return</b> <a class="local col4 ref" href="#64s" title='s' data-ref="64s">s</a>;</td></tr>
+<tr><th id="598">598</th><td>}</td></tr>
+<tr><th id="599">599</th><td></td></tr>
+<tr><th id="600">600</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="601">601</th><td>  <a class="typedef" href="types.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> <dfn class="tu decl field" id="(anonymous)::ar_hrd" title='(anonymous struct)::ar_hrd' data-type='u16' data-ref="(anonymous)::ar_hrd">ar_hrd</dfn>;			<i  data-doc="(anonymous)::ar_hrd">/* format of hardware address	*/</i></td></tr>
+<tr><th id="602">602</th><td>  <a class="typedef" href="types.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> <dfn class="tu decl field" id="(anonymous)::ar_pro" title='(anonymous struct)::ar_pro' data-type='u16' data-ref="(anonymous)::ar_pro">ar_pro</dfn>;			<i  data-doc="(anonymous)::ar_pro">/* format of protocol address	*/</i></td></tr>
+<tr><th id="603">603</th><td>  <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>  <dfn class="tu decl field" id="(anonymous)::ar_hln" title='(anonymous struct)::ar_hln' data-type='u8' data-ref="(anonymous)::ar_hln">ar_hln</dfn>;			<i  data-doc="(anonymous)::ar_hln">/* length of hardware address	*/</i></td></tr>
+<tr><th id="604">604</th><td>  <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>  <dfn class="tu decl field" id="(anonymous)::ar_pln" title='(anonymous struct)::ar_pln' data-type='u8' data-ref="(anonymous)::ar_pln">ar_pln</dfn>;			<i  data-doc="(anonymous)::ar_pln">/* length of protocol address	*/</i></td></tr>
+<tr><th id="605">605</th><td>  <a class="typedef" href="types.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> <dfn class="tu decl field" id="(anonymous)::ar_op" title='(anonymous struct)::ar_op' data-type='u16' data-ref="(anonymous)::ar_op">ar_op</dfn>;			<i  data-doc="(anonymous)::ar_op">/* ARP opcode (command)		*/</i></td></tr>
+<tr><th id="606">606</th><td>  <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>  <dfn class="tu decl field" id="(anonymous)::ar_sha" title='(anonymous struct)::ar_sha' data-type='u8 [6]' data-ref="(anonymous)::ar_sha">ar_sha</dfn>[<var>6</var>];		<i  data-doc="(anonymous)::ar_sha">/* sender hardware address	*/</i></td></tr>
+<tr><th id="607">607</th><td>  <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>  <dfn class="tu decl field" id="(anonymous)::ar_spa" title='(anonymous struct)::ar_spa' data-type='u8 [4]' data-ref="(anonymous)::ar_spa">ar_spa</dfn>[<var>4</var>];		<i  data-doc="(anonymous)::ar_spa">/* sender IP address		*/</i></td></tr>
+<tr><th id="608">608</th><td>  <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>  <dfn class="tu decl field" id="(anonymous)::ar_tha" title='(anonymous struct)::ar_tha' data-type='u8 [6]' data-ref="(anonymous)::ar_tha">ar_tha</dfn>[<var>6</var>];		<i  data-doc="(anonymous)::ar_tha">/* target hardware address	*/</i></td></tr>
+<tr><th id="609">609</th><td>  <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>  <dfn class="tu decl field" id="(anonymous)::ar_tpa" title='(anonymous struct)::ar_tpa' data-type='u8 [4]' data-ref="(anonymous)::ar_tpa">ar_tpa</dfn>[<var>4</var>];		<i  data-doc="(anonymous)::ar_tpa">/* target IP address		*/</i></td></tr>
+<tr><th id="610">610</th><td>} <dfn class="typedef" id="arp_ether_ip4_t" title='arp_ether_ip4_t' data-type='struct arp_ether_ip4_t' data-ref="arp_ether_ip4_t">arp_ether_ip4_t</dfn>;</td></tr>
+<tr><th id="611">611</th><td></td></tr>
+<tr><th id="612">612</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_arp_packet" title='format_arp_packet' data-ref="format_arp_packet">format_arp_packet</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col8 decl" id="68s" title='s' data-type='u8 *' data-ref="68s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col9 decl" id="69args" title='args' data-type='va_list *' data-ref="69args">args</dfn>)</td></tr>
+<tr><th id="613">613</th><td>{</td></tr>
+<tr><th id="614">614</th><td>  <a class="typedef" href="#arp_ether_ip4_t" title='arp_ether_ip4_t' data-type='struct arp_ether_ip4_t' data-ref="arp_ether_ip4_t">arp_ether_ip4_t</a> * <dfn class="local col0 decl" id="70a" title='a' data-type='arp_ether_ip4_t *' data-ref="70a">a</dfn> = <span class="macro" title="__builtin_va_arg(*args, arp_ether_ip4_t *)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col9 ref" href="#69args" title='args' data-ref="69args">args</a>, <a class="typedef" href="#arp_ether_ip4_t" title='arp_ether_ip4_t' data-type='struct arp_ether_ip4_t' data-ref="arp_ether_ip4_t">arp_ether_ip4_t</a> *);</td></tr>
+<tr><th id="615">615</th><td>  <em>char</em> * <dfn class="local col1 decl" id="71op" title='op' data-type='char *' data-ref="71op">op</dfn> = <q>"unknown"</q>;</td></tr>
+<tr><th id="616">616</th><td></td></tr>
+<tr><th id="617">617</th><td>  <b>if</b> (<a class="local col0 ref" href="#70a" title='a' data-ref="70a">a</a>-&gt;<a class="tu ref field" href="#(anonymous)::ar_pro" title='(anonymous struct)::ar_pro' data-use='r' data-ref="(anonymous)::ar_pro">ar_pro</a> != <a class="macro" href="../../../include/linux/if_ether.h.html#48" title="0x0800" data-ref="_M/ETH_P_IP">ETH_P_IP</a> ||</td></tr>
+<tr><th id="618">618</th><td>      <a class="local col0 ref" href="#70a" title='a' data-ref="70a">a</a>-&gt;<a class="tu ref field" href="#(anonymous)::ar_hrd" title='(anonymous struct)::ar_hrd' data-use='r' data-ref="(anonymous)::ar_hrd">ar_hrd</a> != <a class="macro" href="../../../include/net/if_arp.h.html#74" title="1" data-ref="_M/ARPHRD_ETHER">ARPHRD_ETHER</a>)</td></tr>
+<tr><th id="619">619</th><td>    <b>return</b> <a class="local col8 ref" href="#68s" title='s' data-ref="68s">s</a>;</td></tr>
+<tr><th id="620">620</th><td></td></tr>
+<tr><th id="621">621</th><td>  <b>switch</b> (<a class="local col0 ref" href="#70a" title='a' data-ref="70a">a</a>-&gt;<a class="tu ref field" href="#(anonymous)::ar_op" title='(anonymous struct)::ar_op' data-use='r' data-ref="(anonymous)::ar_op">ar_op</a>)</td></tr>
+<tr><th id="622">622</th><td>    {</td></tr>
+<tr><th id="623">623</th><td><u>#define <dfn class="macro" id="_M/_" data-ref="_M/_">_</dfn>(f) case ARPOP_##f: <a class="local col1 ref" href="#71op" title='op' data-ref="71op">op</a> = #f; break;</u></td></tr>
+<tr><th id="624">624</th><td>      <a class="macro" href="#623" title="case 1: op = &quot;REQUEST&quot;; break;" data-ref="_M/_">_</a> (REQUEST);</td></tr>
+<tr><th id="625">625</th><td>      <a class="macro" href="#623" title="case 2: op = &quot;REPLY&quot;; break;" data-ref="_M/_">_</a> (REPLY);</td></tr>
+<tr><th id="626">626</th><td>      <a class="macro" href="#623" title="case 3: op = &quot;RREQUEST&quot;; break;" data-ref="_M/_">_</a> (RREQUEST);</td></tr>
+<tr><th id="627">627</th><td>      <a class="macro" href="#623" title="case 4: op = &quot;RREPLY&quot;; break;" data-ref="_M/_">_</a> (RREPLY);</td></tr>
+<tr><th id="628">628</th><td><u>#undef <a class="macro" href="#623" data-ref="_M/_">_</a></u></td></tr>
+<tr><th id="629">629</th><td>    }</td></tr>
+<tr><th id="630">630</th><td></td></tr>
+<tr><th id="631">631</th><td>  <a class="local col8 ref" href="#68s" title='s' data-ref="68s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col8 ref" href="#68s" title='s' data-ref="68s">s</a>, <q>"%s %U %U -&gt; %U %U"</q>,</td></tr>
+<tr><th id="632">632</th><td>	      <a class="local col1 ref" href="#71op" title='op' data-ref="71op">op</a>,</td></tr>
+<tr><th id="633">633</th><td>	      <a class="ref fn" href="#format_network_address" title='format_network_address' data-ref="format_network_address">format_network_address</a>, <a class="macro" href="../../../include/bits/socket.h.html#91" title="2" data-ref="_M/AF_INET">AF_INET</a>,   <a class="local col0 ref" href="#70a" title='a' data-ref="70a">a</a>-&gt;<a class="tu ref field" href="#(anonymous)::ar_spa" title='(anonymous struct)::ar_spa' data-ref="(anonymous)::ar_spa">ar_spa</a>,</td></tr>
+<tr><th id="634">634</th><td>	      <a class="ref fn" href="#format_network_address" title='format_network_address' data-ref="format_network_address">format_network_address</a>, <a class="macro" href="../../../include/bits/socket.h.html#87" title="0" data-ref="_M/AF_UNSPEC">AF_UNSPEC</a>, <a class="local col0 ref" href="#70a" title='a' data-ref="70a">a</a>-&gt;<a class="tu ref field" href="#(anonymous)::ar_sha" title='(anonymous struct)::ar_sha' data-ref="(anonymous)::ar_sha">ar_sha</a>,</td></tr>
+<tr><th id="635">635</th><td>	      <a class="ref fn" href="#format_network_address" title='format_network_address' data-ref="format_network_address">format_network_address</a>, <a class="macro" href="../../../include/bits/socket.h.html#91" title="2" data-ref="_M/AF_INET">AF_INET</a>,   <a class="local col0 ref" href="#70a" title='a' data-ref="70a">a</a>-&gt;<a class="tu ref field" href="#(anonymous)::ar_tpa" title='(anonymous struct)::ar_tpa' data-ref="(anonymous)::ar_tpa">ar_tpa</a>,</td></tr>
+<tr><th id="636">636</th><td>	      <a class="ref fn" href="#format_network_address" title='format_network_address' data-ref="format_network_address">format_network_address</a>, <a class="macro" href="../../../include/bits/socket.h.html#87" title="0" data-ref="_M/AF_UNSPEC">AF_UNSPEC</a>, <a class="local col0 ref" href="#70a" title='a' data-ref="70a">a</a>-&gt;<a class="tu ref field" href="#(anonymous)::ar_tha" title='(anonymous struct)::ar_tha' data-ref="(anonymous)::ar_tha">ar_tha</a>);</td></tr>
+<tr><th id="637">637</th><td>  <b>return</b> <a class="local col8 ref" href="#68s" title='s' data-ref="68s">s</a>;</td></tr>
+<tr><th id="638">638</th><td>}</td></tr>
+<tr><th id="639">639</th><td></td></tr>
+<tr><th id="640">640</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_ethernet_proto" title='format_ethernet_proto' data-ref="format_ethernet_proto">format_ethernet_proto</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col2 decl" id="72s" title='s' data-type='u8 *' data-ref="72s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col3 decl" id="73args" title='args' data-type='va_list *' data-ref="73args">args</dfn>)</td></tr>
+<tr><th id="641">641</th><td>{</td></tr>
+<tr><th id="642">642</th><td>  <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> <dfn class="local col4 decl" id="74type" title='type' data-type='uword' data-ref="74type">type</dfn> = <span class="macro" title="__builtin_va_arg(*args, uword)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col3 ref" href="#73args" title='args' data-ref="73args">args</a>, <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a>);</td></tr>
+<tr><th id="643">643</th><td>  <em>char</em> * <dfn class="local col5 decl" id="75t" title='t' data-type='char *' data-ref="75t">t</dfn> = <var>0</var>;</td></tr>
+<tr><th id="644">644</th><td></td></tr>
+<tr><th id="645">645</th><td>  <b>switch</b> (<a class="local col4 ref" href="#74type" title='type' data-ref="74type">type</a>)</td></tr>
+<tr><th id="646">646</th><td>    {</td></tr>
+<tr><th id="647">647</th><td>    <b>case</b> <var>0</var>: <a class="local col5 ref" href="#75t" title='t' data-ref="75t">t</a> = <q>"BPDU"</q>; <b>break</b>;</td></tr>
+<tr><th id="648">648</th><td><u>#define <dfn class="macro" id="_M/_" data-ref="_M/_">_</dfn>(f) case ETH_P_##f: <a class="local col5 ref" href="#75t" title='t' data-ref="75t">t</a> = #f; break;</u></td></tr>
+<tr><th id="649">649</th><td>      <a class="macro" href="#648" title="case 0x0060: t = &quot;LOOP&quot;; break;" data-ref="_M/_">_</a> (LOOP);</td></tr>
+<tr><th id="650">650</th><td>      <a class="macro" href="#648" title="case 0x0200: t = &quot;PUP&quot;; break;" data-ref="_M/_">_</a> (PUP);</td></tr>
+<tr><th id="651">651</th><td><u>#<span data-ppcond="651">ifdef</span> <a class="macro" href="../../../include/linux/if_ether.h.html#47" data-ref="_M/ETH_P_PUPAT">ETH_P_PUPAT</a></u></td></tr>
+<tr><th id="652">652</th><td>      <a class="macro" href="#648" title="case 0x0201: t = &quot;PUPAT&quot;; break;" data-ref="_M/_">_</a> (PUPAT);</td></tr>
+<tr><th id="653">653</th><td><u>#<span data-ppcond="651">endif</span></u></td></tr>
+<tr><th id="654">654</th><td>      <a class="macro" href="#648" title="case 0x0800: t = &quot;IP&quot;; break;" data-ref="_M/_">_</a> (IP);</td></tr>
+<tr><th id="655">655</th><td>      <a class="macro" href="#648" title="case 0x0805: t = &quot;X25&quot;; break;" data-ref="_M/_">_</a> (X25);</td></tr>
+<tr><th id="656">656</th><td>      <a class="macro" href="#648" title="case 0x0806: t = &quot;ARP&quot;; break;" data-ref="_M/_">_</a> (ARP);</td></tr>
+<tr><th id="657">657</th><td>      <a class="macro" href="#648" title="case 0x08FF: t = &quot;BPQ&quot;; break;" data-ref="_M/_">_</a> (BPQ);</td></tr>
+<tr><th id="658">658</th><td><u>#<span data-ppcond="658">ifdef</span> <a class="macro" href="../../../include/linux/if_ether.h.html#47" data-ref="_M/ETH_P_PUPAT">ETH_P_PUPAT</a></u></td></tr>
+<tr><th id="659">659</th><td>      <a class="macro" href="#648" title="case 0x0a00: t = &quot;IEEEPUP&quot;; break;" data-ref="_M/_">_</a> (IEEEPUP);</td></tr>
+<tr><th id="660">660</th><td>      <a class="macro" href="#648" title="case 0x0a01: t = &quot;IEEEPUPAT&quot;; break;" data-ref="_M/_">_</a> (IEEEPUPAT);</td></tr>
+<tr><th id="661">661</th><td><u>#<span data-ppcond="658">endif</span></u></td></tr>
+<tr><th id="662">662</th><td>      <a class="macro" href="#648" title="case 0x6000: t = &quot;DEC&quot;; break;" data-ref="_M/_">_</a> (DEC);</td></tr>
+<tr><th id="663">663</th><td>      <a class="macro" href="#648" title="case 0x6001: t = &quot;DNA_DL&quot;; break;" data-ref="_M/_">_</a> (DNA_DL);</td></tr>
+<tr><th id="664">664</th><td>      <a class="macro" href="#648" title="case 0x6002: t = &quot;DNA_RC&quot;; break;" data-ref="_M/_">_</a> (DNA_RC);</td></tr>
+<tr><th id="665">665</th><td>      <a class="macro" href="#648" title="case 0x6003: t = &quot;DNA_RT&quot;; break;" data-ref="_M/_">_</a> (DNA_RT);</td></tr>
+<tr><th id="666">666</th><td>      <a class="macro" href="#648" title="case 0x6004: t = &quot;LAT&quot;; break;" data-ref="_M/_">_</a> (LAT);</td></tr>
+<tr><th id="667">667</th><td>      <a class="macro" href="#648" title="case 0x6005: t = &quot;DIAG&quot;; break;" data-ref="_M/_">_</a> (DIAG);</td></tr>
+<tr><th id="668">668</th><td>      <a class="macro" href="#648" title="case 0x6006: t = &quot;CUST&quot;; break;" data-ref="_M/_">_</a> (CUST);</td></tr>
+<tr><th id="669">669</th><td>      <a class="macro" href="#648" title="case 0x6007: t = &quot;SCA&quot;; break;" data-ref="_M/_">_</a> (SCA);</td></tr>
+<tr><th id="670">670</th><td>      <a class="macro" href="#648" title="case 0x8035: t = &quot;RARP&quot;; break;" data-ref="_M/_">_</a> (RARP);</td></tr>
+<tr><th id="671">671</th><td>      <a class="macro" href="#648" title="case 0x809B: t = &quot;ATALK&quot;; break;" data-ref="_M/_">_</a> (ATALK);</td></tr>
+<tr><th id="672">672</th><td>      <a class="macro" href="#648" title="case 0x80F3: t = &quot;AARP&quot;; break;" data-ref="_M/_">_</a> (AARP);</td></tr>
+<tr><th id="673">673</th><td>      <a class="macro" href="#648" title="case 0x8137: t = &quot;IPX&quot;; break;" data-ref="_M/_">_</a> (IPX);</td></tr>
+<tr><th id="674">674</th><td>      <a class="macro" href="#648" title="case 0x86DD: t = &quot;IPV6&quot;; break;" data-ref="_M/_">_</a> (IPV6);</td></tr>
+<tr><th id="675">675</th><td><u>#<span data-ppcond="675">ifdef</span> <a class="macro" href="../../../include/linux/if_ether.h.html#74" data-ref="_M/ETH_P_PPP_DISC">ETH_P_PPP_DISC</a></u></td></tr>
+<tr><th id="676">676</th><td>      <a class="macro" href="#648" title="case 0x8863: t = &quot;PPP_DISC&quot;; break;" data-ref="_M/_">_</a> (PPP_DISC);</td></tr>
+<tr><th id="677">677</th><td>      <a class="macro" href="#648" title="case 0x8864: t = &quot;PPP_SES&quot;; break;" data-ref="_M/_">_</a> (PPP_SES);</td></tr>
+<tr><th id="678">678</th><td><u>#<span data-ppcond="675">endif</span></u></td></tr>
+<tr><th id="679">679</th><td><u>#<span data-ppcond="679">ifdef</span> <a class="macro" href="../../../include/linux/if_ether.h.html#78" data-ref="_M/ETH_P_ATMMPOA">ETH_P_ATMMPOA</a></u></td></tr>
+<tr><th id="680">680</th><td>      <a class="macro" href="#648" title="case 0x884c: t = &quot;ATMMPOA&quot;; break;" data-ref="_M/_">_</a> (ATMMPOA);</td></tr>
+<tr><th id="681">681</th><td>      <a class="macro" href="#648" title="case 0x8884: t = &quot;ATMFATE&quot;; break;" data-ref="_M/_">_</a> (ATMFATE);</td></tr>
+<tr><th id="682">682</th><td><u>#<span data-ppcond="679">endif</span></u></td></tr>
+<tr><th id="683">683</th><td>      <a class="macro" href="#648" title="case 0x0001: t = &quot;802_3&quot;; break;" data-ref="_M/_">_</a> (<var>802_3</var>);</td></tr>
+<tr><th id="684">684</th><td>      <a class="macro" href="#648" title="case 0x0002: t = &quot;AX25&quot;; break;" data-ref="_M/_">_</a> (AX25);</td></tr>
+<tr><th id="685">685</th><td>      <a class="macro" href="#648" title="case 0x0003: t = &quot;ALL&quot;; break;" data-ref="_M/_">_</a> (ALL);</td></tr>
+<tr><th id="686">686</th><td>      <a class="macro" href="#648" title="case 0x0004: t = &quot;802_2&quot;; break;" data-ref="_M/_">_</a> (<var>802_2</var>);</td></tr>
+<tr><th id="687">687</th><td>      <a class="macro" href="#648" title="case 0x0005: t = &quot;SNAP&quot;; break;" data-ref="_M/_">_</a> (SNAP);</td></tr>
+<tr><th id="688">688</th><td>      <a class="macro" href="#648" title="case 0x0006: t = &quot;DDCMP&quot;; break;" data-ref="_M/_">_</a> (DDCMP);</td></tr>
+<tr><th id="689">689</th><td>      <a class="macro" href="#648" title="case 0x0007: t = &quot;WAN_PPP&quot;; break;" data-ref="_M/_">_</a> (WAN_PPP);</td></tr>
+<tr><th id="690">690</th><td>      <a class="macro" href="#648" title="case 0x0008: t = &quot;PPP_MP&quot;; break;" data-ref="_M/_">_</a> (PPP_MP);</td></tr>
+<tr><th id="691">691</th><td>      <a class="macro" href="#648" title="case 0x0009: t = &quot;LOCALTALK&quot;; break;" data-ref="_M/_">_</a> (LOCALTALK);</td></tr>
+<tr><th id="692">692</th><td>      <a class="macro" href="#648" title="case 0x0010: t = &quot;PPPTALK&quot;; break;" data-ref="_M/_">_</a> (PPPTALK);</td></tr>
+<tr><th id="693">693</th><td>      <a class="macro" href="#648" title="case 0x0011: t = &quot;TR_802_2&quot;; break;" data-ref="_M/_">_</a> (TR_802_2);</td></tr>
+<tr><th id="694">694</th><td>      <a class="macro" href="#648" title="case 0x0015: t = &quot;MOBITEX&quot;; break;" data-ref="_M/_">_</a> (MOBITEX);</td></tr>
+<tr><th id="695">695</th><td>      <a class="macro" href="#648" title="case 0x0016: t = &quot;CONTROL&quot;; break;" data-ref="_M/_">_</a> (CONTROL);</td></tr>
+<tr><th id="696">696</th><td>      <a class="macro" href="#648" title="case 0x0017: t = &quot;IRDA&quot;; break;" data-ref="_M/_">_</a> (IRDA);</td></tr>
+<tr><th id="697">697</th><td><u>#<span data-ppcond="697">ifdef</span> <a class="macro" href="../../../include/linux/if_ether.h.html#129" data-ref="_M/ETH_P_ECONET">ETH_P_ECONET</a></u></td></tr>
+<tr><th id="698">698</th><td>      <a class="macro" href="#648" title="case 0x0018: t = &quot;ECONET&quot;; break;" data-ref="_M/_">_</a> (ECONET);</td></tr>
+<tr><th id="699">699</th><td><u>#<span data-ppcond="697">endif</span></u></td></tr>
+<tr><th id="700">700</th><td><u>#undef <a class="macro" href="#648" data-ref="_M/_">_</a></u></td></tr>
+<tr><th id="701">701</th><td>    }</td></tr>
+<tr><th id="702">702</th><td></td></tr>
+<tr><th id="703">703</th><td>  <b>if</b> (<a class="local col5 ref" href="#75t" title='t' data-ref="75t">t</a>)</td></tr>
+<tr><th id="704">704</th><td>    <a class="macro" href="vec.h.html#597" title="do { word _vec_n = (strlen (t)); word _vec_l = ((s) ? (((vec_header_t *) (s) - 1)-&gt;len) : 0); s = _vec_resize ((s), _vec_n, (_vec_l + _vec_n) * sizeof ((s)[0]), (0), (0)); clib_memcpy ((s) + _vec_l, (t), _vec_n * sizeof ((s)[0])); } while (0)" data-ref="_M/vec_add">vec_add</a> (<a class="local col2 ref" href="#72s" title='s' data-ref="72s">s</a>, <a class="local col5 ref" href="#75t" title='t' data-ref="75t">t</a>, <a class="ref fn" href="../../../include/string.h.html#strlen" title='strlen' data-ref="strlen">strlen</a> (<a class="local col5 ref" href="#75t" title='t' data-ref="75t">t</a>));</td></tr>
+<tr><th id="705">705</th><td>  <b>else</b></td></tr>
+<tr><th id="706">706</th><td>    <a class="local col2 ref" href="#72s" title='s' data-ref="72s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col2 ref" href="#72s" title='s' data-ref="72s">s</a>, <q>"ether-type 0x%x"</q>, <a class="local col4 ref" href="#74type" title='type' data-ref="74type">type</a>);</td></tr>
+<tr><th id="707">707</th><td>  <b>return</b> <a class="local col2 ref" href="#72s" title='s' data-ref="72s">s</a>;</td></tr>
+<tr><th id="708">708</th><td>}</td></tr>
+<tr><th id="709">709</th><td></td></tr>
+<tr><th id="710">710</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_ethernet_packet" title='format_ethernet_packet' data-ref="format_ethernet_packet">format_ethernet_packet</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col6 decl" id="76s" title='s' data-type='u8 *' data-ref="76s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col7 decl" id="77args" title='args' data-type='va_list *' data-ref="77args">args</dfn>)</td></tr>
+<tr><th id="711">711</th><td>{</td></tr>
+<tr><th id="712">712</th><td>  <b>struct</b> <a class="type" href="../../../include/linux/if_ether.h.html#ethhdr" title='ethhdr' data-ref="ethhdr">ethhdr</a> * <dfn class="local col8 decl" id="78h" title='h' data-type='struct ethhdr *' data-ref="78h">h</dfn> = <span class="macro" title="__builtin_va_arg(*args, struct ethhdr *)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col7 ref" href="#77args" title='args' data-ref="77args">args</a>, <b>struct</b> <a class="type" href="../../../include/linux/if_ether.h.html#ethhdr" title='ethhdr' data-ref="ethhdr">ethhdr</a> *);</td></tr>
+<tr><th id="713">713</th><td>  <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> <dfn class="local col9 decl" id="79proto" title='proto' data-type='uword' data-ref="79proto">proto</dfn> = <a class="local col8 ref" href="#78h" title='h' data-ref="78h">h</a>-&gt;<a class="ref field" href="../../../include/linux/if_ether.h.html#ethhdr::h_proto" title='ethhdr::h_proto' data-ref="ethhdr::h_proto">h_proto</a>;</td></tr>
+<tr><th id="714">714</th><td>  <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col0 decl" id="80payload" title='payload' data-type='u8 *' data-ref="80payload">payload</dfn> = (<em>void</em> *) (<a class="local col8 ref" href="#78h" title='h' data-ref="78h">h</a> + <var>1</var>);</td></tr>
+<tr><th id="715">715</th><td>  <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col1 decl" id="81indent" title='indent' data-type='u32' data-ref="81indent">indent</dfn>;</td></tr>
+<tr><th id="716">716</th><td></td></tr>
+<tr><th id="717">717</th><td>  <i>/* Check for 802.2/802.3 encapsulation. */</i></td></tr>
+<tr><th id="718">718</th><td>  <b>if</b> (<a class="local col9 ref" href="#79proto" title='proto' data-ref="79proto">proto</a> &lt; <a class="macro" href="../../../include/linux/if_ether.h.html#34" title="1500" data-ref="_M/ETH_DATA_LEN">ETH_DATA_LEN</a>)</td></tr>
+<tr><th id="719">719</th><td>    {</td></tr>
+<tr><th id="720">720</th><td>      <b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="721">721</th><td>	<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="local col2 decl field" id="82dsap" title='dsap' data-type='u8' data-ref="82dsap">dsap</dfn>, <dfn class="local col3 decl field" id="83ssap" title='ssap' data-type='u8' data-ref="83ssap">ssap</dfn>, <dfn class="local col4 decl field" id="84control" title='control' data-type='u8' data-ref="84control">control</dfn>;</td></tr>
+<tr><th id="722">722</th><td>	<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="local col5 decl field" id="85orig_code" title='orig_code' data-type='u8 [3]' data-ref="85orig_code">orig_code</dfn>[<var>3</var>];</td></tr>
+<tr><th id="723">723</th><td>	<a class="typedef" href="types.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> <dfn class="local col6 decl field" id="86proto" title='proto' data-type='u16' data-ref="86proto">proto</dfn>;</td></tr>
+<tr><th id="724">724</th><td>      } <dfn class="local col7 typedef" id="87ethhdr_802_t" title='ethhdr_802_t' data-type='struct ethhdr_802_t' data-ref="87ethhdr_802_t">ethhdr_802_t</dfn>;</td></tr>
+<tr><th id="725">725</th><td>      <a class="local col7 typedef" href="#87ethhdr_802_t" title='ethhdr_802_t' data-type='struct ethhdr_802_t' data-ref="87ethhdr_802_t">ethhdr_802_t</a> * <dfn class="local col8 decl" id="88h1" title='h1' data-type='ethhdr_802_t *' data-ref="88h1">h1</dfn> = (<em>void</em> *) (<a class="local col8 ref" href="#78h" title='h' data-ref="78h">h</a> + <var>1</var>);</td></tr>
+<tr><th id="726">726</th><td>      <a class="local col9 ref" href="#79proto" title='proto' data-ref="79proto">proto</a> = <a class="local col8 ref" href="#88h1" title='h1' data-ref="88h1">h1</a>-&gt;<a class="local col6 ref field" href="#86proto" title='proto' data-ref="86proto">proto</a>;</td></tr>
+<tr><th id="727">727</th><td>      <a class="local col0 ref" href="#80payload" title='payload' data-ref="80payload">payload</a> = (<em>void</em> *) (<a class="local col8 ref" href="#88h1" title='h1' data-ref="88h1">h1</a> + <var>1</var>);</td></tr>
+<tr><th id="728">728</th><td>    }</td></tr>
+<tr><th id="729">729</th><td></td></tr>
+<tr><th id="730">730</th><td>  <a class="local col1 ref" href="#81indent" title='indent' data-ref="81indent">indent</a> = <a class="ref fn" href="format.h.html#format_get_indent" title='format_get_indent' data-ref="format_get_indent">format_get_indent</a> (<a class="local col6 ref" href="#76s" title='s' data-ref="76s">s</a>);</td></tr>
+<tr><th id="731">731</th><td></td></tr>
+<tr><th id="732">732</th><td>  <a class="local col6 ref" href="#76s" title='s' data-ref="76s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col6 ref" href="#76s" title='s' data-ref="76s">s</a>, <q>"%U: %U -&gt; %U"</q>,</td></tr>
+<tr><th id="733">733</th><td>	      <a class="ref fn" href="#format_ethernet_proto" title='format_ethernet_proto' data-ref="format_ethernet_proto">format_ethernet_proto</a>, <a class="local col9 ref" href="#79proto" title='proto' data-ref="79proto">proto</a>,</td></tr>
+<tr><th id="734">734</th><td>	      <a class="ref fn" href="#format_network_address" title='format_network_address' data-ref="format_network_address">format_network_address</a>, <a class="macro" href="../../../include/bits/socket.h.html#87" title="0" data-ref="_M/AF_UNSPEC">AF_UNSPEC</a>, <a class="local col8 ref" href="#78h" title='h' data-ref="78h">h</a>-&gt;<a class="ref field" href="../../../include/linux/if_ether.h.html#ethhdr::h_source" title='ethhdr::h_source' data-ref="ethhdr::h_source">h_source</a>,</td></tr>
+<tr><th id="735">735</th><td>	      <a class="ref fn" href="#format_network_address" title='format_network_address' data-ref="format_network_address">format_network_address</a>, <a class="macro" href="../../../include/bits/socket.h.html#87" title="0" data-ref="_M/AF_UNSPEC">AF_UNSPEC</a>, <a class="local col8 ref" href="#78h" title='h' data-ref="78h">h</a>-&gt;<a class="ref field" href="../../../include/linux/if_ether.h.html#ethhdr::h_dest" title='ethhdr::h_dest' data-ref="ethhdr::h_dest">h_dest</a>);</td></tr>
+<tr><th id="736">736</th><td></td></tr>
+<tr><th id="737">737</th><td>  <b>switch</b> (<a class="local col9 ref" href="#79proto" title='proto' data-ref="79proto">proto</a>)</td></tr>
+<tr><th id="738">738</th><td>    {</td></tr>
+<tr><th id="739">739</th><td>    <b>case</b> <a class="macro" href="../../../include/linux/if_ether.h.html#50" title="0x0806" data-ref="_M/ETH_P_ARP">ETH_P_ARP</a>:</td></tr>
+<tr><th id="740">740</th><td>      <a class="local col6 ref" href="#76s" title='s' data-ref="76s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col6 ref" href="#76s" title='s' data-ref="76s">s</a>, <q>"\n%U%U"</q>,</td></tr>
+<tr><th id="741">741</th><td>		  <a class="ref fn" href="format.h.html#97" title='format_white_space' data-ref="format_white_space">format_white_space</a>, <a class="local col1 ref" href="#81indent" title='indent' data-ref="81indent">indent</a>,</td></tr>
+<tr><th id="742">742</th><td>		  <a class="ref fn" href="#format_arp_packet" title='format_arp_packet' data-ref="format_arp_packet">format_arp_packet</a>, <a class="local col0 ref" href="#80payload" title='payload' data-ref="80payload">payload</a>);</td></tr>
+<tr><th id="743">743</th><td>      <b>break</b>;</td></tr>
+<tr><th id="744">744</th><td>    }</td></tr>
+<tr><th id="745">745</th><td></td></tr>
+<tr><th id="746">746</th><td>  <b>return</b> <a class="local col6 ref" href="#76s" title='s' data-ref="76s">s</a>;</td></tr>
+<tr><th id="747">747</th><td>}</td></tr>
+<tr><th id="748">748</th><td></td></tr>
+<tr><th id="749">749</th><td><u>#<span data-ppcond="749">ifndef</span> <span class="macro" data-ref="_M/__KERNEL__">__KERNEL__</span></u></td></tr>
+<tr><th id="750">750</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_hostname" title='format_hostname' data-ref="format_hostname">format_hostname</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col9 decl" id="89s" title='s' data-type='u8 *' data-ref="89s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col0 decl" id="90args" title='args' data-type='va_list *' data-ref="90args">args</dfn>)</td></tr>
+<tr><th id="751">751</th><td>{</td></tr>
+<tr><th id="752">752</th><td>  <em>char</em> <dfn class="local col1 decl" id="91buffer" title='buffer' data-type='char [1024]' data-ref="91buffer">buffer</dfn>[<var>1024</var>];</td></tr>
+<tr><th id="753">753</th><td>  <em>char</em> * <dfn class="local col2 decl" id="92b" title='b' data-type='char *' data-ref="92b">b</dfn> = <a class="local col1 ref" href="#91buffer" title='buffer' data-ref="91buffer">buffer</a>;</td></tr>
+<tr><th id="754">754</th><td>  <b>if</b> (<a class="ref fn" href="../../../include/unistd.h.html#gethostname" title='gethostname' data-ref="gethostname">gethostname</a> (<a class="local col2 ref" href="#92b" title='b' data-ref="92b">b</a>, <b>sizeof</b> (<a class="local col1 ref" href="#91buffer" title='buffer' data-ref="91buffer">buffer</a>)) &lt; <var>0</var>)</td></tr>
+<tr><th id="755">755</th><td>    <a class="local col2 ref" href="#92b" title='b' data-ref="92b">b</a> = <q>"noname"</q>;</td></tr>
+<tr><th id="756">756</th><td>  <b>return</b> <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col9 ref" href="#89s" title='s' data-ref="89s">s</a>, <q>"%s"</q>, <a class="local col2 ref" href="#92b" title='b' data-ref="92b">b</a>);</td></tr>
+<tr><th id="757">757</th><td>}</td></tr>
+<tr><th id="758">758</th><td><u>#<span data-ppcond="749">endif</span></u></td></tr>
+<tr><th id="759">759</th><td></td></tr>
+<tr><th id="760">760</th><td><u>#<span data-ppcond="760">ifndef</span> <span class="macro" data-ref="_M/__KERNEL__">__KERNEL__</span></u></td></tr>
+<tr><th id="761">761</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_timeval" title='format_timeval' data-ref="format_timeval">format_timeval</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col3 decl" id="93s" title='s' data-type='u8 *' data-ref="93s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col4 decl" id="94args" title='args' data-type='va_list *' data-ref="94args">args</dfn>)</td></tr>
+<tr><th id="762">762</th><td>{</td></tr>
+<tr><th id="763">763</th><td>  <em>char</em> * <dfn class="local col5 decl" id="95fmt" title='fmt' data-type='char *' data-ref="95fmt">fmt</dfn> = <span class="macro" title="__builtin_va_arg(*args, char *)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col4 ref" href="#94args" title='args' data-ref="94args">args</a>, <em>char</em> *);</td></tr>
+<tr><th id="764">764</th><td>  <b>struct</b> <a class="type" href="../../../include/bits/time.h.html#timeval" title='timeval' data-ref="timeval">timeval</a> * <dfn class="local col6 decl" id="96tv" title='tv' data-type='struct timeval *' data-ref="96tv">tv</dfn> = <span class="macro" title="__builtin_va_arg(*args, struct timeval *)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col4 ref" href="#94args" title='args' data-ref="94args">args</a>, <b>struct</b> <a class="type" href="../../../include/bits/time.h.html#timeval" title='timeval' data-ref="timeval">timeval</a> *);</td></tr>
+<tr><th id="765">765</th><td>  <b>struct</b> <a class="type" href="../../../include/time.h.html#tm" title='tm' data-ref="tm">tm</a> * <dfn class="local col7 decl" id="97tm" title='tm' data-type='struct tm *' data-ref="97tm">tm</dfn>;</td></tr>
+<tr><th id="766">766</th><td>  <a class="typedef" href="types.h.html#word" title='word' data-type='i64' data-ref="word">word</a> <dfn class="local col8 decl" id="98msec" title='msec' data-type='word' data-ref="98msec">msec</dfn>;</td></tr>
+<tr><th id="767">767</th><td>  <em>char</em> * <dfn class="local col9 decl" id="99f" title='f' data-type='char *' data-ref="99f">f</dfn>, <dfn class="local col0 decl" id="100c" title='c' data-type='char' data-ref="100c">c</dfn>;</td></tr>
+<tr><th id="768">768</th><td></td></tr>
+<tr><th id="769">769</th><td>  <b>if</b> (! <a class="local col5 ref" href="#95fmt" title='fmt' data-ref="95fmt">fmt</a>)</td></tr>
+<tr><th id="770">770</th><td>    <a class="local col5 ref" href="#95fmt" title='fmt' data-ref="95fmt">fmt</a> = <q>"y/m/d H:M:S:F"</q>;</td></tr>
+<tr><th id="771">771</th><td></td></tr>
+<tr><th id="772">772</th><td>  <b>if</b> (! <a class="local col6 ref" href="#96tv" title='tv' data-ref="96tv">tv</a>)</td></tr>
+<tr><th id="773">773</th><td>    {</td></tr>
+<tr><th id="774">774</th><td>      <em>static</em> <b>struct</b> <a class="type" href="../../../include/bits/time.h.html#timeval" title='timeval' data-ref="timeval">timeval</a> <dfn class="local col1 decl" id="101now" title='now' data-type='struct timeval' data-ref="101now">now</dfn>;</td></tr>
+<tr><th id="775">775</th><td>      <a class="ref fn" href="../../../include/sys/time.h.html#gettimeofday" title='gettimeofday' data-ref="gettimeofday">gettimeofday</a> (&amp;<a class="local col1 ref" href="#101now" title='now' data-ref="101now">now</a>, <var>0</var>);</td></tr>
+<tr><th id="776">776</th><td>      <a class="local col6 ref" href="#96tv" title='tv' data-ref="96tv">tv</a> = &amp;<a class="local col1 ref" href="#101now" title='now' data-ref="101now">now</a>;</td></tr>
+<tr><th id="777">777</th><td>    }</td></tr>
+<tr><th id="778">778</th><td></td></tr>
+<tr><th id="779">779</th><td>  <a class="local col8 ref" href="#98msec" title='msec' data-ref="98msec">msec</a> = <a class="ref fn" href="clib.h.html#flt_round_nearest" title='flt_round_nearest' data-ref="flt_round_nearest">flt_round_nearest</a> (<var>1e-3</var> * <a class="local col6 ref" href="#96tv" title='tv' data-ref="96tv">tv</a>-&gt;<a class="ref field" href="../../../include/bits/time.h.html#timeval::tv_usec" title='timeval::tv_usec' data-ref="timeval::tv_usec">tv_usec</a>);</td></tr>
+<tr><th id="780">780</th><td>  <b>if</b> (<a class="local col8 ref" href="#98msec" title='msec' data-ref="98msec">msec</a> &gt;= <var>1000</var>)</td></tr>
+<tr><th id="781">781</th><td>    { <a class="local col8 ref" href="#98msec" title='msec' data-ref="98msec">msec</a> = <var>0</var>; <a class="local col6 ref" href="#96tv" title='tv' data-ref="96tv">tv</a>-&gt;<a class="ref field" href="../../../include/bits/time.h.html#timeval::tv_sec" title='timeval::tv_sec' data-ref="timeval::tv_sec">tv_sec</a>++; }</td></tr>
+<tr><th id="782">782</th><td></td></tr>
+<tr><th id="783">783</th><td>  {</td></tr>
+<tr><th id="784">784</th><td>    <a class="typedef" href="../../../include/time.h.html#time_t" title='time_t' data-type='__time_t' data-ref="time_t">time_t</a> <dfn class="local col2 decl" id="102t" title='t' data-type='time_t' data-ref="102t">t</dfn> = <a class="local col6 ref" href="#96tv" title='tv' data-ref="96tv">tv</a>-&gt;<a class="ref field" href="../../../include/bits/time.h.html#timeval::tv_sec" title='timeval::tv_sec' data-ref="timeval::tv_sec">tv_sec</a>;</td></tr>
+<tr><th id="785">785</th><td>    <a class="local col7 ref" href="#97tm" title='tm' data-ref="97tm">tm</a> = <a class="ref fn" href="../../../include/time.h.html#localtime" title='localtime' data-ref="localtime">localtime</a> (&amp;<a class="local col2 ref" href="#102t" title='t' data-ref="102t">t</a>);</td></tr>
+<tr><th id="786">786</th><td>  }</td></tr>
+<tr><th id="787">787</th><td></td></tr>
+<tr><th id="788">788</th><td>  <b>for</b> (<a class="local col9 ref" href="#99f" title='f' data-ref="99f">f</a> = <a class="local col5 ref" href="#95fmt" title='fmt' data-ref="95fmt">fmt</a>; *<a class="local col9 ref" href="#99f" title='f' data-ref="99f">f</a>; <a class="local col9 ref" href="#99f" title='f' data-ref="99f">f</a>++)</td></tr>
+<tr><th id="789">789</th><td>    {</td></tr>
+<tr><th id="790">790</th><td>      <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> <dfn class="local col3 decl" id="103what" title='what' data-type='uword' data-ref="103what">what</dfn>;</td></tr>
+<tr><th id="791">791</th><td>      <em>char</em> * <dfn class="local col4 decl" id="104what_fmt" title='what_fmt' data-type='char *' data-ref="104what_fmt">what_fmt</dfn> = <q>"%d"</q>;</td></tr>
+<tr><th id="792">792</th><td></td></tr>
+<tr><th id="793">793</th><td>      <b>switch</b> (<a class="local col0 ref" href="#100c" title='c' data-ref="100c">c</a> = *<a class="local col9 ref" href="#99f" title='f' data-ref="99f">f</a>)</td></tr>
+<tr><th id="794">794</th><td>	{</td></tr>
+<tr><th id="795">795</th><td>	<b>default</b>:</td></tr>
+<tr><th id="796">796</th><td>	  <a class="macro" href="vec.h.html#520" title="do { word _vec_l = ((s) ? (((vec_header_t *) (s) - 1)-&gt;len) : 0); s = _vec_resize ((s), 1, (_vec_l + 1) * sizeof ((s)[0]), (0), (0)); (s)[_vec_l] = (c); } while (0)" data-ref="_M/vec_add1">vec_add1</a> (<a class="local col3 ref" href="#93s" title='s' data-ref="93s">s</a>, <a class="local col0 ref" href="#100c" title='c' data-ref="100c">c</a>);</td></tr>
+<tr><th id="797">797</th><td>	  <b>continue</b>;</td></tr>
+<tr><th id="798">798</th><td></td></tr>
+<tr><th id="799">799</th><td>	<b>case</b> <kbd>'y'</kbd>:</td></tr>
+<tr><th id="800">800</th><td>	  <a class="local col3 ref" href="#103what" title='what' data-ref="103what">what</a> = <var>1900</var> + <a class="local col7 ref" href="#97tm" title='tm' data-ref="97tm">tm</a>-&gt;<a class="ref field" href="../../../include/time.h.html#tm::tm_year" title='tm::tm_year' data-ref="tm::tm_year">tm_year</a>;</td></tr>
+<tr><th id="801">801</th><td>	  <a class="local col4 ref" href="#104what_fmt" title='what_fmt' data-ref="104what_fmt">what_fmt</a> = <q>"%4d"</q>;</td></tr>
+<tr><th id="802">802</th><td>	  <b>break</b>;</td></tr>
+<tr><th id="803">803</th><td>	<b>case</b> <kbd>'m'</kbd>:</td></tr>
+<tr><th id="804">804</th><td>	  <a class="local col3 ref" href="#103what" title='what' data-ref="103what">what</a> = <a class="local col7 ref" href="#97tm" title='tm' data-ref="97tm">tm</a>-&gt;<a class="ref field" href="../../../include/time.h.html#tm::tm_mon" title='tm::tm_mon' data-ref="tm::tm_mon">tm_mon</a> + <var>1</var>;</td></tr>
+<tr><th id="805">805</th><td>	  <a class="local col4 ref" href="#104what_fmt" title='what_fmt' data-ref="104what_fmt">what_fmt</a> = <q>"%2d"</q>;</td></tr>
+<tr><th id="806">806</th><td>	  <b>break</b>;</td></tr>
+<tr><th id="807">807</th><td>	<b>case</b> <kbd>'d'</kbd>:</td></tr>
+<tr><th id="808">808</th><td>	  <a class="local col3 ref" href="#103what" title='what' data-ref="103what">what</a> = <a class="local col7 ref" href="#97tm" title='tm' data-ref="97tm">tm</a>-&gt;<a class="ref field" href="../../../include/time.h.html#tm::tm_mday" title='tm::tm_mday' data-ref="tm::tm_mday">tm_mday</a>;</td></tr>
+<tr><th id="809">809</th><td>	  <a class="local col4 ref" href="#104what_fmt" title='what_fmt' data-ref="104what_fmt">what_fmt</a> = <q>"%2d"</q>;</td></tr>
+<tr><th id="810">810</th><td>	  <b>break</b>;</td></tr>
+<tr><th id="811">811</th><td>	<b>case</b> <kbd>'H'</kbd>:</td></tr>
+<tr><th id="812">812</th><td>	  <a class="local col3 ref" href="#103what" title='what' data-ref="103what">what</a> = <a class="local col7 ref" href="#97tm" title='tm' data-ref="97tm">tm</a>-&gt;<a class="ref field" href="../../../include/time.h.html#tm::tm_hour" title='tm::tm_hour' data-ref="tm::tm_hour">tm_hour</a>;</td></tr>
+<tr><th id="813">813</th><td>	  <a class="local col4 ref" href="#104what_fmt" title='what_fmt' data-ref="104what_fmt">what_fmt</a> = <q>"%02d"</q>;</td></tr>
+<tr><th id="814">814</th><td>	  <b>break</b>;</td></tr>
+<tr><th id="815">815</th><td>	<b>case</b> <kbd>'M'</kbd>:</td></tr>
+<tr><th id="816">816</th><td>	  <a class="local col3 ref" href="#103what" title='what' data-ref="103what">what</a> = <a class="local col7 ref" href="#97tm" title='tm' data-ref="97tm">tm</a>-&gt;<a class="ref field" href="../../../include/time.h.html#tm::tm_min" title='tm::tm_min' data-ref="tm::tm_min">tm_min</a>;</td></tr>
+<tr><th id="817">817</th><td>	  <a class="local col4 ref" href="#104what_fmt" title='what_fmt' data-ref="104what_fmt">what_fmt</a> = <q>"%02d"</q>;</td></tr>
+<tr><th id="818">818</th><td>	  <b>break</b>;</td></tr>
+<tr><th id="819">819</th><td>	<b>case</b> <kbd>'S'</kbd>:</td></tr>
+<tr><th id="820">820</th><td>	  <a class="local col3 ref" href="#103what" title='what' data-ref="103what">what</a> = <a class="local col7 ref" href="#97tm" title='tm' data-ref="97tm">tm</a>-&gt;<a class="ref field" href="../../../include/time.h.html#tm::tm_sec" title='tm::tm_sec' data-ref="tm::tm_sec">tm_sec</a>;</td></tr>
+<tr><th id="821">821</th><td>	  <a class="local col4 ref" href="#104what_fmt" title='what_fmt' data-ref="104what_fmt">what_fmt</a> = <q>"%02d"</q>;</td></tr>
+<tr><th id="822">822</th><td>	  <b>break</b>;</td></tr>
+<tr><th id="823">823</th><td>	<b>case</b> <kbd>'F'</kbd>:</td></tr>
+<tr><th id="824">824</th><td>	  <a class="local col3 ref" href="#103what" title='what' data-ref="103what">what</a> = <a class="local col8 ref" href="#98msec" title='msec' data-ref="98msec">msec</a>;</td></tr>
+<tr><th id="825">825</th><td>	  <a class="local col4 ref" href="#104what_fmt" title='what_fmt' data-ref="104what_fmt">what_fmt</a> = <q>"%03d"</q>;</td></tr>
+<tr><th id="826">826</th><td>	  <b>break</b>;</td></tr>
+<tr><th id="827">827</th><td>	}</td></tr>
+<tr><th id="828">828</th><td></td></tr>
+<tr><th id="829">829</th><td>      <a class="local col3 ref" href="#93s" title='s' data-ref="93s">s</a> = <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col3 ref" href="#93s" title='s' data-ref="93s">s</a>, <a class="local col4 ref" href="#104what_fmt" title='what_fmt' data-ref="104what_fmt">what_fmt</a>, <a class="local col3 ref" href="#103what" title='what' data-ref="103what">what</a>);</td></tr>
+<tr><th id="830">830</th><td>    }</td></tr>
+<tr><th id="831">831</th><td></td></tr>
+<tr><th id="832">832</th><td>  <b>return</b> <a class="local col3 ref" href="#93s" title='s' data-ref="93s">s</a>;</td></tr>
+<tr><th id="833">833</th><td>}</td></tr>
+<tr><th id="834">834</th><td></td></tr>
+<tr><th id="835">835</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_time_float" title='format_time_float' data-ref="format_time_float">format_time_float</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col5 decl" id="105s" title='s' data-type='u8 *' data-ref="105s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col6 decl" id="106args" title='args' data-type='va_list *' data-ref="106args">args</dfn>)</td></tr>
+<tr><th id="836">836</th><td>{</td></tr>
+<tr><th id="837">837</th><td>  <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col7 decl" id="107fmt" title='fmt' data-type='u8 *' data-ref="107fmt">fmt</dfn> = <span class="macro" title="__builtin_va_arg(*args, u8 *)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col6 ref" href="#106args" title='args' data-ref="106args">args</a>, <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *);</td></tr>
+<tr><th id="838">838</th><td>  <a class="typedef" href="types.h.html#f64" title='f64' data-type='double' data-ref="f64">f64</a> <dfn class="local col8 decl" id="108t" title='t' data-type='f64' data-ref="108t">t</dfn> = <span class="macro" title="__builtin_va_arg(*args, f64)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col6 ref" href="#106args" title='args' data-ref="106args">args</a>, <a class="typedef" href="types.h.html#f64" title='f64' data-type='double' data-ref="f64">f64</a>);</td></tr>
+<tr><th id="839">839</th><td>  <b>struct</b> <a class="type" href="../../../include/bits/time.h.html#timeval" title='timeval' data-ref="timeval">timeval</a> <dfn class="local col9 decl" id="109tv" title='tv' data-type='struct timeval' data-ref="109tv">tv</dfn>;</td></tr>
+<tr><th id="840">840</th><td>  <b>if</b> (<a class="local col8 ref" href="#108t" title='t' data-ref="108t">t</a> &lt;= <var>0</var>)</td></tr>
+<tr><th id="841">841</th><td>    <a class="local col8 ref" href="#108t" title='t' data-ref="108t">t</a> = <a class="ref fn" href="time.h.html#unix_time_now" title='unix_time_now' data-ref="unix_time_now">unix_time_now</a> ();</td></tr>
+<tr><th id="842">842</th><td>  <a class="local col9 ref" href="#109tv" title='tv' data-ref="109tv">tv</a>.<a class="ref field" href="../../../include/bits/time.h.html#timeval::tv_sec" title='timeval::tv_sec' data-ref="timeval::tv_sec">tv_sec</a> = <a class="local col8 ref" href="#108t" title='t' data-ref="108t">t</a>;</td></tr>
+<tr><th id="843">843</th><td>  <a class="local col9 ref" href="#109tv" title='tv' data-ref="109tv">tv</a>.<a class="ref field" href="../../../include/bits/time.h.html#timeval::tv_usec" title='timeval::tv_usec' data-ref="timeval::tv_usec">tv_usec</a> = <var>1e6</var>*(<a class="local col8 ref" href="#108t" title='t' data-ref="108t">t</a> - <a class="local col9 ref" href="#109tv" title='tv' data-ref="109tv">tv</a>.<a class="ref field" href="../../../include/bits/time.h.html#timeval::tv_sec" title='timeval::tv_sec' data-ref="timeval::tv_sec">tv_sec</a>);</td></tr>
+<tr><th id="844">844</th><td>  <b>return</b> <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col5 ref" href="#105s" title='s' data-ref="105s">s</a>, <q>"%U"</q>, <a class="ref fn" href="#format_timeval" title='format_timeval' data-ref="format_timeval">format_timeval</a>, <a class="local col7 ref" href="#107fmt" title='fmt' data-ref="107fmt">fmt</a>, &amp;<a class="local col9 ref" href="#109tv" title='tv' data-ref="109tv">tv</a>);</td></tr>
+<tr><th id="845">845</th><td>}</td></tr>
+<tr><th id="846">846</th><td></td></tr>
+<tr><th id="847">847</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_signal" title='format_signal' data-ref="format_signal">format_signal</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col0 decl" id="110s" title='s' data-type='u8 *' data-ref="110s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col1 decl" id="111args" title='args' data-type='va_list *' data-ref="111args">args</dfn>)</td></tr>
+<tr><th id="848">848</th><td>{</td></tr>
+<tr><th id="849">849</th><td>  <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> <dfn class="local col2 decl" id="112signum" title='signum' data-type='uword' data-ref="112signum">signum</dfn> = <span class="macro" title="__builtin_va_arg(*args, uword)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col1 ref" href="#111args" title='args' data-ref="111args">args</a>, <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a>);</td></tr>
+<tr><th id="850">850</th><td>  <em>char</em> * <dfn class="local col3 decl" id="113t" title='t' data-type='char *' data-ref="113t">t</dfn> = <var>0</var>;</td></tr>
+<tr><th id="851">851</th><td>  <b>switch</b> (<a class="local col2 ref" href="#112signum" title='signum' data-ref="112signum">signum</a>)</td></tr>
+<tr><th id="852">852</th><td>    {</td></tr>
+<tr><th id="853">853</th><td><u>#define <dfn class="macro" id="_M/_" data-ref="_M/_">_</dfn>(x) case x: <a class="local col3 ref" href="#113t" title='t' data-ref="113t">t</a> = #x; break;</u></td></tr>
+<tr><th id="854">854</th><td>      <a class="macro" href="#853" title="case 1: t = &quot;SIGHUP&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#32" title="1" data-ref="_M/SIGHUP">SIGHUP</a>);</td></tr>
+<tr><th id="855">855</th><td>      <a class="macro" href="#853" title="case 2: t = &quot;SIGINT&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#33" title="2" data-ref="_M/SIGINT">SIGINT</a>);</td></tr>
+<tr><th id="856">856</th><td>      <a class="macro" href="#853" title="case 3: t = &quot;SIGQUIT&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#34" title="3" data-ref="_M/SIGQUIT">SIGQUIT</a>);</td></tr>
+<tr><th id="857">857</th><td>      <a class="macro" href="#853" title="case 4: t = &quot;SIGILL&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#35" title="4" data-ref="_M/SIGILL">SIGILL</a>);</td></tr>
+<tr><th id="858">858</th><td>      <a class="macro" href="#853" title="case 5: t = &quot;SIGTRAP&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#36" title="5" data-ref="_M/SIGTRAP">SIGTRAP</a>);</td></tr>
+<tr><th id="859">859</th><td>      <a class="macro" href="#853" title="case 6: t = &quot;SIGABRT&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#37" title="6" data-ref="_M/SIGABRT">SIGABRT</a>);</td></tr>
+<tr><th id="860">860</th><td>      <a class="macro" href="#853" title="case 7: t = &quot;SIGBUS&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#39" title="7" data-ref="_M/SIGBUS">SIGBUS</a>);</td></tr>
+<tr><th id="861">861</th><td>      <a class="macro" href="#853" title="case 8: t = &quot;SIGFPE&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#40" title="8" data-ref="_M/SIGFPE">SIGFPE</a>);</td></tr>
+<tr><th id="862">862</th><td>      <a class="macro" href="#853" title="case 9: t = &quot;SIGKILL&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#41" title="9" data-ref="_M/SIGKILL">SIGKILL</a>);</td></tr>
+<tr><th id="863">863</th><td>      <a class="macro" href="#853" title="case 10: t = &quot;SIGUSR1&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#42" title="10" data-ref="_M/SIGUSR1">SIGUSR1</a>);</td></tr>
+<tr><th id="864">864</th><td>      <a class="macro" href="#853" title="case 11: t = &quot;SIGSEGV&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#43" title="11" data-ref="_M/SIGSEGV">SIGSEGV</a>);</td></tr>
+<tr><th id="865">865</th><td>      <a class="macro" href="#853" title="case 12: t = &quot;SIGUSR2&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#44" title="12" data-ref="_M/SIGUSR2">SIGUSR2</a>);</td></tr>
+<tr><th id="866">866</th><td>      <a class="macro" href="#853" title="case 13: t = &quot;SIGPIPE&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#45" title="13" data-ref="_M/SIGPIPE">SIGPIPE</a>);</td></tr>
+<tr><th id="867">867</th><td>      <a class="macro" href="#853" title="case 14: t = &quot;SIGALRM&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#46" title="14" data-ref="_M/SIGALRM">SIGALRM</a>);</td></tr>
+<tr><th id="868">868</th><td>      <a class="macro" href="#853" title="case 15: t = &quot;SIGTERM&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#47" title="15" data-ref="_M/SIGTERM">SIGTERM</a>);</td></tr>
+<tr><th id="869">869</th><td><u>#<span data-ppcond="869">ifdef</span> <a class="macro" href="../../../include/bits/signum.h.html#48" data-ref="_M/SIGSTKFLT">SIGSTKFLT</a></u></td></tr>
+<tr><th id="870">870</th><td>      <a class="macro" href="#853" title="case 16: t = &quot;SIGSTKFLT&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#48" title="16" data-ref="_M/SIGSTKFLT">SIGSTKFLT</a>);</td></tr>
+<tr><th id="871">871</th><td><u>#<span data-ppcond="869">endif</span></u></td></tr>
+<tr><th id="872">872</th><td>      <a class="macro" href="#853" title="case 17: t = &quot;SIGCHLD&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#50" title="17" data-ref="_M/SIGCHLD">SIGCHLD</a>);</td></tr>
+<tr><th id="873">873</th><td>      <a class="macro" href="#853" title="case 18: t = &quot;SIGCONT&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#51" title="18" data-ref="_M/SIGCONT">SIGCONT</a>);</td></tr>
+<tr><th id="874">874</th><td>      <a class="macro" href="#853" title="case 19: t = &quot;SIGSTOP&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#52" title="19" data-ref="_M/SIGSTOP">SIGSTOP</a>);</td></tr>
+<tr><th id="875">875</th><td>      <a class="macro" href="#853" title="case 20: t = &quot;SIGTSTP&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#53" title="20" data-ref="_M/SIGTSTP">SIGTSTP</a>);</td></tr>
+<tr><th id="876">876</th><td>      <a class="macro" href="#853" title="case 21: t = &quot;SIGTTIN&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#54" title="21" data-ref="_M/SIGTTIN">SIGTTIN</a>);</td></tr>
+<tr><th id="877">877</th><td>      <a class="macro" href="#853" title="case 22: t = &quot;SIGTTOU&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#55" title="22" data-ref="_M/SIGTTOU">SIGTTOU</a>);</td></tr>
+<tr><th id="878">878</th><td>      <a class="macro" href="#853" title="case 23: t = &quot;SIGURG&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#56" title="23" data-ref="_M/SIGURG">SIGURG</a>);</td></tr>
+<tr><th id="879">879</th><td>      <a class="macro" href="#853" title="case 24: t = &quot;SIGXCPU&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#57" title="24" data-ref="_M/SIGXCPU">SIGXCPU</a>);</td></tr>
+<tr><th id="880">880</th><td>      <a class="macro" href="#853" title="case 25: t = &quot;SIGXFSZ&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#58" title="25" data-ref="_M/SIGXFSZ">SIGXFSZ</a>);</td></tr>
+<tr><th id="881">881</th><td>      <a class="macro" href="#853" title="case 26: t = &quot;SIGVTALRM&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#59" title="26" data-ref="_M/SIGVTALRM">SIGVTALRM</a>);</td></tr>
+<tr><th id="882">882</th><td>      <a class="macro" href="#853" title="case 27: t = &quot;SIGPROF&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#60" title="27" data-ref="_M/SIGPROF">SIGPROF</a>);</td></tr>
+<tr><th id="883">883</th><td>      <a class="macro" href="#853" title="case 28: t = &quot;SIGWINCH&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#61" title="28" data-ref="_M/SIGWINCH">SIGWINCH</a>);</td></tr>
+<tr><th id="884">884</th><td>      <a class="macro" href="#853" title="case 29: t = &quot;SIGIO&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#63" title="29" data-ref="_M/SIGIO">SIGIO</a>);</td></tr>
+<tr><th id="885">885</th><td>      <a class="macro" href="#853" title="case 30: t = &quot;SIGPWR&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#64" title="30" data-ref="_M/SIGPWR">SIGPWR</a>);</td></tr>
+<tr><th id="886">886</th><td><u>#<span data-ppcond="886">ifdef</span> <a class="macro" href="../../../include/bits/signum.h.html#65" data-ref="_M/SIGSYS">SIGSYS</a></u></td></tr>
+<tr><th id="887">887</th><td>      <a class="macro" href="#853" title="case 31: t = &quot;SIGSYS&quot;; break;" data-ref="_M/_">_</a> (<a class="macro" href="../../../include/bits/signum.h.html#65" title="31" data-ref="_M/SIGSYS">SIGSYS</a>);</td></tr>
+<tr><th id="888">888</th><td><u>#<span data-ppcond="886">endif</span></u></td></tr>
+<tr><th id="889">889</th><td><u>#undef <a class="macro" href="#853" data-ref="_M/_">_</a></u></td></tr>
+<tr><th id="890">890</th><td>    <b>default</b>:</td></tr>
+<tr><th id="891">891</th><td>      <b>return</b> <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col0 ref" href="#110s" title='s' data-ref="110s">s</a>, <q>"unknown %d"</q>, <a class="local col2 ref" href="#112signum" title='signum' data-ref="112signum">signum</a>);</td></tr>
+<tr><th id="892">892</th><td>    }</td></tr>
+<tr><th id="893">893</th><td></td></tr>
+<tr><th id="894">894</th><td>  <a class="macro" href="vec.h.html#597" title="do { word _vec_n = (strlen (t)); word _vec_l = ((s) ? (((vec_header_t *) (s) - 1)-&gt;len) : 0); s = _vec_resize ((s), _vec_n, (_vec_l + _vec_n) * sizeof ((s)[0]), (0), (0)); clib_memcpy ((s) + _vec_l, (t), _vec_n * sizeof ((s)[0])); } while (0)" data-ref="_M/vec_add">vec_add</a> (<a class="local col0 ref" href="#110s" title='s' data-ref="110s">s</a>, <a class="local col3 ref" href="#113t" title='t' data-ref="113t">t</a>, <a class="ref fn" href="../../../include/string.h.html#strlen" title='strlen' data-ref="strlen">strlen</a> (<a class="local col3 ref" href="#113t" title='t' data-ref="113t">t</a>));</td></tr>
+<tr><th id="895">895</th><td>  <b>return</b> <a class="local col0 ref" href="#110s" title='s' data-ref="110s">s</a>;</td></tr>
+<tr><th id="896">896</th><td>}</td></tr>
+<tr><th id="897">897</th><td></td></tr>
+<tr><th id="898">898</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="decl def fn" id="format_ucontext_pc" title='format_ucontext_pc' data-ref="format_ucontext_pc">format_ucontext_pc</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col4 decl" id="114s" title='s' data-type='u8 *' data-ref="114s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col5 decl" id="115args" title='args' data-type='va_list *' data-ref="115args">args</dfn>)</td></tr>
+<tr><th id="899">899</th><td>{</td></tr>
+<tr><th id="900">900</th><td>  <a class="typedef" href="../../../include/sys/ucontext.h.html#ucontext_t" title='ucontext_t' data-type='struct ucontext' data-ref="ucontext_t">ucontext_t</a> * <dfn class="local col6 decl" id="116uc" title='uc' data-type='ucontext_t *' data-ref="116uc">uc</dfn> <b>__attribute__</b>((unused));</td></tr>
+<tr><th id="901">901</th><td>  <em>unsigned</em> <em>long</em> * <dfn class="local col7 decl" id="117regs" title='regs' data-type='unsigned long *' data-ref="117regs">regs</dfn> = <var>0</var>;</td></tr>
+<tr><th id="902">902</th><td>  <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> <dfn class="local col8 decl" id="118reg_no" title='reg_no' data-type='uword' data-ref="118reg_no">reg_no</dfn> = <var>0</var>;</td></tr>
+<tr><th id="903">903</th><td></td></tr>
+<tr><th id="904">904</th><td>  <a class="local col6 ref" href="#116uc" title='uc' data-ref="116uc">uc</a> = <span class="macro" title="__builtin_va_arg(*args, ucontext_t *)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col5 ref" href="#115args" title='args' data-ref="115args">args</a>, <a class="typedef" href="../../../include/sys/ucontext.h.html#ucontext_t" title='ucontext_t' data-type='struct ucontext' data-ref="ucontext_t">ucontext_t</a> *);</td></tr>
+<tr><th id="905">905</th><td></td></tr>
+<tr><th id="906">906</th><td><u>#<span data-ppcond="906">if</span> defined (<span class="macro" data-ref="_M/powerpc">powerpc</span>)</u></td></tr>
+<tr><th id="907">907</th><td>  regs = &amp;uc-&gt;uc_mcontext.uc_regs-&gt;gregs[<var>0</var>];</td></tr>
+<tr><th id="908">908</th><td><u>#<span data-ppcond="906">elif</span> defined (<span class="macro" data-ref="_M/powerpc64">powerpc64</span>)</u></td></tr>
+<tr><th id="909">909</th><td>  regs = &amp;uc-&gt;uc_mcontext.uc_regs-&gt;gp_regs[<var>0</var>];</td></tr>
+<tr><th id="910">910</th><td><u>#<span data-ppcond="906">elif</span> defined (<span class="macro" data-ref="_M/i386">i386</span>) || defined (<span class="macro" data-ref="_M/__x86_64__">__x86_64__</span>)</u></td></tr>
+<tr><th id="911">911</th><td>  <a class="local col7 ref" href="#117regs" title='regs' data-ref="117regs">regs</a> = (<em>void</em> *) &amp;<a class="local col6 ref" href="#116uc" title='uc' data-ref="116uc">uc</a>-&gt;<a class="ref field" href="../../../include/sys/ucontext.h.html#ucontext::uc_mcontext" title='ucontext::uc_mcontext' data-ref="ucontext::uc_mcontext">uc_mcontext</a>.<a class="ref field" href="../../../include/sys/ucontext.h.html#(anonymous)::gregs" title='(anonymous struct)::gregs' data-ref="(anonymous)::gregs">gregs</a>[<var>0</var>];</td></tr>
+<tr><th id="912">912</th><td><u>#<span data-ppcond="906">endif</span></u></td></tr>
+<tr><th id="913">913</th><td></td></tr>
+<tr><th id="914">914</th><td><u>#<span data-ppcond="914">if</span> defined (<span class="macro" data-ref="_M/powerpc">powerpc</span>) || defined (<span class="macro" data-ref="_M/powerpc64">powerpc64</span>)</u></td></tr>
+<tr><th id="915">915</th><td>  reg_no = PT_NIP;</td></tr>
+<tr><th id="916">916</th><td><u>#<span data-ppcond="914">elif</span> defined (<span class="macro" data-ref="_M/i386">i386</span>)</u></td></tr>
+<tr><th id="917">917</th><td>  reg_no = REG_EIP;</td></tr>
+<tr><th id="918">918</th><td><u>#<span data-ppcond="914">elif</span> defined (<span class="macro" data-ref="_M/__x86_64__">__x86_64__</span>)</u></td></tr>
+<tr><th id="919">919</th><td>  <a class="local col8 ref" href="#118reg_no" title='reg_no' data-ref="118reg_no">reg_no</a> = <a class="macro" href="../../../include/sys/ucontext.h.html#76" title="REG_RIP" data-ref="_M/REG_RIP">REG_RIP</a>;</td></tr>
+<tr><th id="920">920</th><td><u>#<span data-ppcond="914">else</span></u></td></tr>
+<tr><th id="921">921</th><td>  reg_no = <var>0</var>;</td></tr>
+<tr><th id="922">922</th><td>  regs = <var>0</var>;</td></tr>
+<tr><th id="923">923</th><td><u>#<span data-ppcond="914">endif</span></u></td></tr>
+<tr><th id="924">924</th><td></td></tr>
+<tr><th id="925">925</th><td>  <b>if</b> (! <a class="local col7 ref" href="#117regs" title='regs' data-ref="117regs">regs</a>)</td></tr>
+<tr><th id="926">926</th><td>    <b>return</b> <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col4 ref" href="#114s" title='s' data-ref="114s">s</a>, <q>"unsupported"</q>);</td></tr>
+<tr><th id="927">927</th><td>  <b>else</b></td></tr>
+<tr><th id="928">928</th><td>    <b>return</b> <a class="ref fn" href="format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col4 ref" href="#114s" title='s' data-ref="114s">s</a>, <q>"%p"</q>, <a class="local col7 ref" href="#117regs" title='regs' data-ref="117regs">regs</a>[<a class="local col8 ref" href="#118reg_no" title='reg_no' data-ref="118reg_no">reg_no</a>]);</td></tr>
+<tr><th id="929">929</th><td>}</td></tr>
+<tr><th id="930">930</th><td></td></tr>
+<tr><th id="931">931</th><td><a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a></td></tr>
+<tr><th id="932">932</th><td><dfn class="decl def fn" id="unformat_unix_gid" title='unformat_unix_gid' data-ref="unformat_unix_gid">unformat_unix_gid</dfn> (<a class="typedef" href="format.h.html#unformat_input_t" title='unformat_input_t' data-type='struct _unformat_input_t' data-ref="unformat_input_t">unformat_input_t</a> * <dfn class="local col9 decl" id="119input" title='input' data-type='unformat_input_t *' data-ref="119input">input</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col0 decl" id="120args" title='args' data-type='va_list *' data-ref="120args">args</dfn>)</td></tr>
+<tr><th id="933">933</th><td>{</td></tr>
+<tr><th id="934">934</th><td>  <a class="typedef" href="../../../include/unistd.h.html#gid_t" title='gid_t' data-type='__gid_t' data-ref="gid_t">gid_t</a> *<dfn class="local col1 decl" id="121gid" title='gid' data-type='gid_t *' data-ref="121gid">gid</dfn> = <span class="macro" title="__builtin_va_arg(*args, gid_t *)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col0 ref" href="#120args" title='args' data-ref="120args">args</a>, <a class="typedef" href="../../../include/unistd.h.html#gid_t" title='gid_t' data-type='__gid_t' data-ref="gid_t">gid_t</a> *);</td></tr>
+<tr><th id="935">935</th><td>  <b>struct</b> <a class="type" href="../../../include/grp.h.html#group" title='group' data-ref="group">group</a> *<dfn class="local col2 decl" id="122grp" title='grp' data-type='struct group *' data-ref="122grp">grp</dfn> = <var>0</var>;</td></tr>
+<tr><th id="936">936</th><td>  <em>int</em> <dfn class="local col3 decl" id="123r" title='r' data-type='int' data-ref="123r">r</dfn>;</td></tr>
+<tr><th id="937">937</th><td>  <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col4 decl" id="124s" title='s' data-type='u8 *' data-ref="124s">s</dfn>;</td></tr>
+<tr><th id="938">938</th><td></td></tr>
+<tr><th id="939">939</th><td>  <b>if</b> (<a class="ref fn" href="format.h.html#unformat" title='unformat' data-ref="unformat">unformat</a> (<a class="local col9 ref" href="#119input" title='input' data-ref="119input">input</a>, <q>"%d"</q>, &amp;<a class="local col3 ref" href="#123r" title='r' data-ref="123r">r</a>))</td></tr>
+<tr><th id="940">940</th><td>    {</td></tr>
+<tr><th id="941">941</th><td>      <a class="local col2 ref" href="#122grp" title='grp' data-ref="122grp">grp</a> = <a class="ref fn" href="../../../include/grp.h.html#getgrgid" title='getgrgid' data-ref="getgrgid">getgrgid</a> (<a class="local col3 ref" href="#123r" title='r' data-ref="123r">r</a>);</td></tr>
+<tr><th id="942">942</th><td>    }</td></tr>
+<tr><th id="943">943</th><td>  <b>else</b> <b>if</b> (<a class="ref fn" href="format.h.html#unformat" title='unformat' data-ref="unformat">unformat</a> (<a class="local col9 ref" href="#119input" title='input' data-ref="119input">input</a>, <q>"%s"</q>, &amp;<a class="local col4 ref" href="#124s" title='s' data-ref="124s">s</a>))</td></tr>
+<tr><th id="944">944</th><td>    {</td></tr>
+<tr><th id="945">945</th><td>      <a class="local col2 ref" href="#122grp" title='grp' data-ref="122grp">grp</a> = <a class="ref fn" href="../../../include/grp.h.html#getgrnam" title='getgrnam' data-ref="getgrnam">getgrnam</a> ((<em>char</em> *) <a class="local col4 ref" href="#124s" title='s' data-ref="124s">s</a>);</td></tr>
+<tr><th id="946">946</th><td>      <a class="macro" href="vec.h.html#336" title="do { if (s) { clib_mem_free (vec_header ((s), (0))); s = 0; } } while (0)" data-ref="_M/vec_free">vec_free</a> (<a class="local col4 ref" href="#124s" title='s' data-ref="124s">s</a>);</td></tr>
+<tr><th id="947">947</th><td>    }</td></tr>
+<tr><th id="948">948</th><td>  <b>if</b> (<a class="local col2 ref" href="#122grp" title='grp' data-ref="122grp">grp</a>)</td></tr>
+<tr><th id="949">949</th><td>    {</td></tr>
+<tr><th id="950">950</th><td>      *<a class="local col1 ref" href="#121gid" title='gid' data-ref="121gid">gid</a> = <a class="local col2 ref" href="#122grp" title='grp' data-ref="122grp">grp</a>-&gt;<a class="ref field" href="../../../include/grp.h.html#group::gr_gid" title='group::gr_gid' data-ref="group::gr_gid">gr_gid</a>;</td></tr>
+<tr><th id="951">951</th><td>      <b>return</b> <var>1</var>;</td></tr>
+<tr><th id="952">952</th><td>    }</td></tr>
+<tr><th id="953">953</th><td>  <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="954">954</th><td>}</td></tr>
+<tr><th id="955">955</th><td></td></tr>
+<tr><th id="956">956</th><td><u>#<span data-ppcond="760">endif</span> /* __KERNEL__ */</u></td></tr>
+<tr><th id="957">957</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-29</em> from project vpp_1804 revision <em>18.04</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

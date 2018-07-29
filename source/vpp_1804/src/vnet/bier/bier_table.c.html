@@ -1,0 +1,868 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>bier_table.c source code [vpp_1804/src/vnet/bier/bier_table.c] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="bier_table_ecmp_walk_ctx_t_ "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'vpp_1804/src/vnet/bier/bier_table.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>vpp_1804</a>/<a href='../..'>src</a>/<a href='..'>vnet</a>/<a href='./'>bier</a>/<a href='bier_table.c.html'>bier_table.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright (c) 2016 Cisco and/or its affiliates.</i></td></tr>
+<tr><th id="3">3</th><td><i> * Licensed under the Apache License, Version 2.0 (the "License");</i></td></tr>
+<tr><th id="4">4</th><td><i> * you may not use this file except in compliance with the License.</i></td></tr>
+<tr><th id="5">5</th><td><i> * You may obtain a copy of the License at:</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> *     <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></i></td></tr>
+<tr><th id="8">8</th><td><i> *</i></td></tr>
+<tr><th id="9">9</th><td><i> * Unless required by applicable law or agreed to in writing, software</i></td></tr>
+<tr><th id="10">10</th><td><i> * distributed under the License is distributed on an "AS IS" BASIS,</i></td></tr>
+<tr><th id="11">11</th><td><i> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</i></td></tr>
+<tr><th id="12">12</th><td><i> * See the License for the specific language governing permissions and</i></td></tr>
+<tr><th id="13">13</th><td><i> * limitations under the License.</i></td></tr>
+<tr><th id="14">14</th><td><i> */</i></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../vppinfra/vec.h.html">&lt;vppinfra/vec.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="bier_table.h.html">&lt;vnet/bier/bier_table.h&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="bier_entry.h.html">&lt;vnet/bier/bier_entry.h&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="bier_update.h.html">&lt;vnet/bier/bier_update.h&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="bier_fmask_db.h.html">&lt;vnet/bier/bier_fmask_db.h&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="bier_fmask.h.html">&lt;vnet/bier/bier_fmask.h&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="bier_bift_table.h.html">&lt;vnet/bier/bier_bift_table.h&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../fib/mpls_fib.h.html">&lt;vnet/fib/mpls_fib.h&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../mpls/mpls.h.html">&lt;vnet/mpls/mpls.h&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../fib/fib_path_list.h.html">&lt;vnet/fib/fib_path_list.h&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="30">30</th><td><i class="doc"> * Memory pool of all the allocated tables</i></td></tr>
+<tr><th id="31">31</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="32">32</th><td><a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="decl def" id="bier_table_pool" title='bier_table_pool' data-ref="bier_table_pool">bier_table_pool</dfn>;</td></tr>
+<tr><th id="33">33</th><td></td></tr>
+<tr><th id="34">34</th><td><i class="doc" data-doc="bier_tables_by_key">/**</i></td></tr>
+<tr><th id="35">35</th><td><i class="doc" data-doc="bier_tables_by_key"> * DB store of all BIER tables index by SD/set/hdr-len</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc" data-doc="bier_tables_by_key"> */</i></td></tr>
+<tr><th id="37">37</th><td><em>static</em> <a class="typedef" href="../../vppinfra/types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> *<dfn class="tu decl def" id="bier_tables_by_key" title='bier_tables_by_key' data-type='uword *' data-ref="bier_tables_by_key">bier_tables_by_key</dfn>;</td></tr>
+<tr><th id="38">38</th><td></td></tr>
+<tr><th id="39">39</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="40">40</th><td><i class="doc"> * The magic number of BIER ECMP tables to create.</i></td></tr>
+<tr><th id="41">41</th><td><i class="doc"> * The load-balance distribution algorithm will use a power of 2</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc"> * for the number of buckets, which constrains the choice.</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="44">44</th><td><u>#define <dfn class="macro" id="_M/BIER_N_ECMP_TABLES" data-ref="_M/BIER_N_ECMP_TABLES">BIER_N_ECMP_TABLES</dfn> 16</u></td></tr>
+<tr><th id="45">45</th><td></td></tr>
+<tr><th id="46">46</th><td><em>static</em> <b>inline</b> <a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a></td></tr>
+<tr><th id="47">47</th><td><dfn class="tu decl def fn" id="bier_table_get_index" title='bier_table_get_index' data-type='index_t bier_table_get_index(const bier_table_t * bt)' data-ref="bier_table_get_index">bier_table_get_index</dfn> (<em>const</em> <a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col2 decl" id="42bt" title='bt' data-type='const bier_table_t *' data-ref="42bt">bt</dfn>)</td></tr>
+<tr><th id="48">48</th><td>{</td></tr>
+<tr><th id="49">49</th><td>    <b>return</b> (<a class="local col2 ref" href="#42bt" title='bt' data-ref="42bt">bt</a> - <a class="ref" href="bier_table.h.html#bier_table_pool" title='bier_table_pool' data-ref="bier_table_pool">bier_table_pool</a>);</td></tr>
+<tr><th id="50">50</th><td>}</td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td><em>int</em></td></tr>
+<tr><th id="53">53</th><td><dfn class="decl def fn" id="bier_table_is_main" title='bier_table_is_main' data-ref="bier_table_is_main">bier_table_is_main</dfn> (<em>const</em> <a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col3 decl" id="43bt" title='bt' data-type='const bier_table_t *' data-ref="43bt">bt</dfn>)</td></tr>
+<tr><th id="54">54</th><td>{</td></tr>
+<tr><th id="55">55</th><td>    <b>return</b> (<a class="macro" href="bier_types.h.html#389" title="0xFFFF" data-ref="_M/BIER_ECMP_TABLE_ID_MAIN">BIER_ECMP_TABLE_ID_MAIN</a> == <a class="local col3 ref" href="#43bt" title='bt' data-ref="43bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_id" title='bier_table_t_::bt_id' data-ref="bier_table_t_::bt_id">bt_id</a>.<a class="ref field" href="bier_types.h.html#bier_table_id_t_::bti_ecmp" title='bier_table_id_t_::bti_ecmp' data-ref="bier_table_id_t_::bti_ecmp">bti_ecmp</a>);</td></tr>
+<tr><th id="56">56</th><td>}</td></tr>
+<tr><th id="57">57</th><td></td></tr>
+<tr><th id="58">58</th><td><i  data-doc="bier_table_mk_key">/*</i></td></tr>
+<tr><th id="59">59</th><td><i  data-doc="bier_table_mk_key"> * Construct the key to use to find a BIER table</i></td></tr>
+<tr><th id="60">60</th><td><i  data-doc="bier_table_mk_key"> * in the global hash map</i></td></tr>
+<tr><th id="61">61</th><td><i  data-doc="bier_table_mk_key"> */</i></td></tr>
+<tr><th id="62">62</th><td><em>static</em> <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a></td></tr>
+<tr><th id="63">63</th><td><dfn class="tu decl def fn" id="bier_table_mk_key" title='bier_table_mk_key' data-type='u32 bier_table_mk_key(const bier_table_id_t * id)' data-ref="bier_table_mk_key">bier_table_mk_key</dfn> (<em>const</em> <a class="typedef" href="bier_types.h.html#bier_table_id_t" title='bier_table_id_t' data-type='struct bier_table_id_t_' data-ref="bier_table_id_t">bier_table_id_t</a> *<dfn class="local col4 decl" id="44id" title='id' data-type='const bier_table_id_t *' data-ref="44id">id</dfn>)</td></tr>
+<tr><th id="64">64</th><td>{</td></tr>
+<tr><th id="65">65</th><td>    <i>/*</i></td></tr>
+<tr><th id="66">66</th><td><i>     * the set and sub-domain Ids are 8 bit values.</i></td></tr>
+<tr><th id="67">67</th><td><i>     * we have space for ECMP table ID and talbe type (SPF/TE)</i></td></tr>
+<tr><th id="68">68</th><td><i>     * for later</i></td></tr>
+<tr><th id="69">69</th><td><i>     */</i></td></tr>
+<tr><th id="70">70</th><td>    <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col5 decl" id="45key" title='key' data-type='u32' data-ref="45key">key</dfn> = ((<a class="local col4 ref" href="#44id" title='id' data-ref="44id">id</a>-&gt;<a class="ref field" href="bier_types.h.html#bier_table_id_t_::bti_sub_domain" title='bier_table_id_t_::bti_sub_domain' data-ref="bier_table_id_t_::bti_sub_domain">bti_sub_domain</a> &lt;&lt; <var>24</var>)  |</td></tr>
+<tr><th id="71">71</th><td>               (<a class="local col4 ref" href="#44id" title='id' data-ref="44id">id</a>-&gt;<a class="ref field" href="bier_types.h.html#bier_table_id_t_::bti_set" title='bier_table_id_t_::bti_set' data-ref="bier_table_id_t_::bti_set">bti_set</a> &lt;&lt; <var>16</var>) |</td></tr>
+<tr><th id="72">72</th><td>               (<a class="local col4 ref" href="#44id" title='id' data-ref="44id">id</a>-&gt;<a class="ref field" href="bier_types.h.html#bier_table_id_t_::bti_ecmp" title='bier_table_id_t_::bti_ecmp' data-ref="bier_table_id_t_::bti_ecmp">bti_ecmp</a> &lt;&lt; <var>8</var>) |</td></tr>
+<tr><th id="73">73</th><td>               (<a class="local col4 ref" href="#44id" title='id' data-ref="44id">id</a>-&gt;<a class="ref field" href="bier_types.h.html#bier_table_id_t_::bti_hdr_len" title='bier_table_id_t_::bti_hdr_len' data-ref="bier_table_id_t_::bti_hdr_len">bti_hdr_len</a> &lt;&lt; <var>4</var>) |</td></tr>
+<tr><th id="74">74</th><td>               (<a class="local col4 ref" href="#44id" title='id' data-ref="44id">id</a>-&gt;<a class="ref field" href="bier_types.h.html#bier_table_id_t_::bti_type" title='bier_table_id_t_::bti_type' data-ref="bier_table_id_t_::bti_type">bti_type</a>));</td></tr>
+<tr><th id="75">75</th><td></td></tr>
+<tr><th id="76">76</th><td>    <b>return</b> (<a class="local col5 ref" href="#45key" title='key' data-ref="45key">key</a>);</td></tr>
+<tr><th id="77">77</th><td>}</td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="80">80</th><td><dfn class="tu decl def fn" id="bier_table_init" title='bier_table_init' data-type='void bier_table_init(bier_table_t * bt, const bier_table_id_t * id, mpls_label_t ll)' data-ref="bier_table_init">bier_table_init</dfn> (<a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col6 decl" id="46bt" title='bt' data-type='bier_table_t *' data-ref="46bt">bt</dfn>,</td></tr>
+<tr><th id="81">81</th><td>                 <em>const</em> <a class="typedef" href="bier_types.h.html#bier_table_id_t" title='bier_table_id_t' data-type='struct bier_table_id_t_' data-ref="bier_table_id_t">bier_table_id_t</a> *<dfn class="local col7 decl" id="47id" title='id' data-type='const bier_table_id_t *' data-ref="47id">id</dfn>,</td></tr>
+<tr><th id="82">82</th><td>                 <a class="typedef" href="../mpls/packet.h.html#mpls_label_t" title='mpls_label_t' data-type='u32' data-ref="mpls_label_t">mpls_label_t</a> <dfn class="local col8 decl" id="48ll" title='ll' data-type='mpls_label_t' data-ref="48ll">ll</dfn>)</td></tr>
+<tr><th id="83">83</th><td>{</td></tr>
+<tr><th id="84">84</th><td>    <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col9 decl" id="49num_entries" title='num_entries' data-type='u32' data-ref="49num_entries">num_entries</dfn>;</td></tr>
+<tr><th id="85">85</th><td></td></tr>
+<tr><th id="86">86</th><td>    <a class="local col6 ref" href="#46bt" title='bt' data-ref="46bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_lfei" title='bier_table_t_::bt_lfei' data-ref="bier_table_t_::bt_lfei">bt_lfei</a> = <a class="macro" href="../fib/fib_types.h.html#31" title="((fib_node_index_t)(~0))" data-ref="_M/FIB_NODE_INDEX_INVALID">FIB_NODE_INDEX_INVALID</a>;</td></tr>
+<tr><th id="87">87</th><td>    <a class="local col6 ref" href="#46bt" title='bt' data-ref="46bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_id" title='bier_table_t_::bt_id' data-ref="bier_table_t_::bt_id">bt_id</a> = *<a class="local col7 ref" href="#47id" title='id' data-ref="47id">id</a>;</td></tr>
+<tr><th id="88">88</th><td>    <a class="local col6 ref" href="#46bt" title='bt' data-ref="46bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_ll" title='bier_table_t_::bt_ll' data-ref="bier_table_t_::bt_ll">bt_ll</a> = <a class="local col8 ref" href="#48ll" title='ll' data-ref="48ll">ll</a>;</td></tr>
+<tr><th id="89">89</th><td>    <a class="local col9 ref" href="#49num_entries" title='num_entries' data-ref="49num_entries">num_entries</a> = <a class="ref fn" href="bier_types.h.html#bier_hdr_len_id_to_num_bits" title='bier_hdr_len_id_to_num_bits' data-ref="bier_hdr_len_id_to_num_bits">bier_hdr_len_id_to_num_bits</a>(<a class="local col6 ref" href="#46bt" title='bt' data-ref="46bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_id" title='bier_table_t_::bt_id' data-ref="bier_table_t_::bt_id">bt_id</a>.<a class="ref field" href="bier_types.h.html#bier_table_id_t_::bti_hdr_len" title='bier_table_id_t_::bti_hdr_len' data-ref="bier_table_id_t_::bti_hdr_len">bti_hdr_len</a>);</td></tr>
+<tr><th id="90">90</th><td></td></tr>
+<tr><th id="91">91</th><td>    <i>/*</i></td></tr>
+<tr><th id="92">92</th><td><i>     * create the lookup table of entries.</i></td></tr>
+<tr><th id="93">93</th><td><i>     */</i></td></tr>
+<tr><th id="94">94</th><td>    <b>if</b> (<a class="ref fn" href="#bier_table_is_main" title='bier_table_is_main' data-ref="bier_table_is_main">bier_table_is_main</a>(<a class="local col6 ref" href="#46bt" title='bt' data-ref="46bt">bt</a>))</td></tr>
+<tr><th id="95">95</th><td>    {</td></tr>
+<tr><th id="96">96</th><td>        <a class="macro" href="../../vppinfra/vec.h.html#496" title="do { word _vec_i = (num_entries); word _vec_l = ((bt-&gt;bt_entries) ? (((vec_header_t *) (bt-&gt;bt_entries) - 1)-&gt;len) : 0); if (_vec_i &gt;= _vec_l) { do { word _vec_n = (1 + (_vec_i - _vec_l)); word _vec_l = (((bt-&gt;bt_entries)) ? (((vec_header_t *) ((bt-&gt;bt_entries)) - 1)-&gt;len) : 0); (bt-&gt;bt_entries) = _vec_resize (((bt-&gt;bt_entries)), _vec_n, (_vec_l + _vec_n) * sizeof (((bt-&gt;bt_entries))[0]), ((0)), (((1 &lt;&lt; 6)))); } while (0); while (_vec_l &lt;= _vec_i) { (bt-&gt;bt_entries)[_vec_l] = (((index_t)(~0))); _vec_l++; } } } while (0)" data-ref="_M/vec_validate_init_empty_aligned">vec_validate_init_empty_aligned</a>(<a class="local col6 ref" href="#46bt" title='bt' data-ref="46bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_entries" title='bier_table_t_::bt_entries' data-ref="bier_table_t_::bt_entries">bt_entries</a>,</td></tr>
+<tr><th id="97">97</th><td>                                        <a class="local col9 ref" href="#49num_entries" title='num_entries' data-ref="49num_entries">num_entries</a>,</td></tr>
+<tr><th id="98">98</th><td>                                        <a class="macro" href="../dpo/dpo.h.html#47" title="((index_t)(~0))" data-ref="_M/INDEX_INVALID">INDEX_INVALID</a>,</td></tr>
+<tr><th id="99">99</th><td>                                        <a class="macro" href="../../vppinfra/cache.h.html#59" title="(1 &lt;&lt; 6)" data-ref="_M/CLIB_CACHE_LINE_BYTES">CLIB_CACHE_LINE_BYTES</a>);</td></tr>
+<tr><th id="100">100</th><td>    }</td></tr>
+<tr><th id="101">101</th><td>    <b>else</b></td></tr>
+<tr><th id="102">102</th><td>    {</td></tr>
+<tr><th id="103">103</th><td>        <a class="macro" href="../../vppinfra/vec.h.html#496" title="do { word _vec_i = (num_entries); word _vec_l = ((bt-&gt;bt_fmasks) ? (((vec_header_t *) (bt-&gt;bt_fmasks) - 1)-&gt;len) : 0); if (_vec_i &gt;= _vec_l) { do { word _vec_n = (1 + (_vec_i - _vec_l)); word _vec_l = (((bt-&gt;bt_fmasks)) ? (((vec_header_t *) ((bt-&gt;bt_fmasks)) - 1)-&gt;len) : 0); (bt-&gt;bt_fmasks) = _vec_resize (((bt-&gt;bt_fmasks)), _vec_n, (_vec_l + _vec_n) * sizeof (((bt-&gt;bt_fmasks))[0]), ((0)), (((1 &lt;&lt; 6)))); } while (0); while (_vec_l &lt;= _vec_i) { (bt-&gt;bt_fmasks)[_vec_l] = (((index_t)(~0))); _vec_l++; } } } while (0)" data-ref="_M/vec_validate_init_empty_aligned">vec_validate_init_empty_aligned</a>(<a class="local col6 ref" href="#46bt" title='bt' data-ref="46bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_fmasks" title='bier_table_t_::bt_fmasks' data-ref="bier_table_t_::bt_fmasks">bt_fmasks</a>,</td></tr>
+<tr><th id="104">104</th><td>                                        <a class="local col9 ref" href="#49num_entries" title='num_entries' data-ref="49num_entries">num_entries</a>,</td></tr>
+<tr><th id="105">105</th><td>                                        <a class="macro" href="../dpo/dpo.h.html#47" title="((index_t)(~0))" data-ref="_M/INDEX_INVALID">INDEX_INVALID</a>,</td></tr>
+<tr><th id="106">106</th><td>                                        <a class="macro" href="../../vppinfra/cache.h.html#59" title="(1 &lt;&lt; 6)" data-ref="_M/CLIB_CACHE_LINE_BYTES">CLIB_CACHE_LINE_BYTES</a>);</td></tr>
+<tr><th id="107">107</th><td>    }</td></tr>
+<tr><th id="108">108</th><td>}</td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="111">111</th><td><dfn class="tu decl def fn" id="bier_table_rm_bift" title='bier_table_rm_bift' data-type='void bier_table_rm_bift(bier_table_t * bt)' data-ref="bier_table_rm_bift">bier_table_rm_bift</dfn> (<a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col0 decl" id="50bt" title='bt' data-type='bier_table_t *' data-ref="50bt">bt</dfn>)</td></tr>
+<tr><th id="112">112</th><td>{</td></tr>
+<tr><th id="113">113</th><td>    <a class="macro" href="../../vppinfra/error_bootstrap.h.html#69" title="do { if ((1 &gt; 0) &amp;&amp; ! ((0xfffff+1) == bt-&gt;bt_ll)) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/vpp/../../../src/vnet/bier/bier_table.c&quot;, (uword) 113, ((char *) __FUNCTION__), &quot;MPLS_LABEL_INVALID == bt-&gt;bt_ll&quot;); } } while (0)" data-ref="_M/ASSERT">ASSERT</a>(<a class="macro" href="../mpls/mpls_types.h.html#48" title="(0xfffff+1)" data-ref="_M/MPLS_LABEL_INVALID">MPLS_LABEL_INVALID</a> == <a class="local col0 ref" href="#50bt" title='bt' data-ref="50bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_ll" title='bier_table_t_::bt_ll' data-ref="bier_table_t_::bt_ll">bt_ll</a>);</td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td>    <a class="ref fn" href="bier_bift_table.h.html#bier_bift_table_entry_remove" title='bier_bift_table_entry_remove' data-ref="bier_bift_table_entry_remove">bier_bift_table_entry_remove</a>(<a class="ref fn" href="bier_types.h.html#bier_bift_id_encode" title='bier_bift_id_encode' data-ref="bier_bift_id_encode">bier_bift_id_encode</a>(<a class="local col0 ref" href="#50bt" title='bt' data-ref="50bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_id" title='bier_table_t_::bt_id' data-ref="bier_table_t_::bt_id">bt_id</a>.<a class="ref field" href="bier_types.h.html#bier_table_id_t_::bti_set" title='bier_table_id_t_::bti_set' data-ref="bier_table_id_t_::bti_set">bti_set</a>,</td></tr>
+<tr><th id="116">116</th><td>                                                     <a class="local col0 ref" href="#50bt" title='bt' data-ref="50bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_id" title='bier_table_t_::bt_id' data-ref="bier_table_t_::bt_id">bt_id</a>.<a class="ref field" href="bier_types.h.html#bier_table_id_t_::bti_sub_domain" title='bier_table_id_t_::bti_sub_domain' data-ref="bier_table_id_t_::bti_sub_domain">bti_sub_domain</a>,</td></tr>
+<tr><th id="117">117</th><td>                                                     <a class="local col0 ref" href="#50bt" title='bt' data-ref="50bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_id" title='bier_table_t_::bt_id' data-ref="bier_table_t_::bt_id">bt_id</a>.<a class="ref field" href="bier_types.h.html#bier_table_id_t_::bti_hdr_len" title='bier_table_id_t_::bti_hdr_len' data-ref="bier_table_id_t_::bti_hdr_len">bti_hdr_len</a>));</td></tr>
+<tr><th id="118">118</th><td>}</td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="121">121</th><td><dfn class="tu decl def fn" id="bier_table_mk_bift" title='bier_table_mk_bift' data-type='void bier_table_mk_bift(bier_table_t * bt)' data-ref="bier_table_mk_bift">bier_table_mk_bift</dfn> (<a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col1 decl" id="51bt" title='bt' data-type='bier_table_t *' data-ref="51bt">bt</dfn>)</td></tr>
+<tr><th id="122">122</th><td>{</td></tr>
+<tr><th id="123">123</th><td>    <a class="typedef" href="../dpo/dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> <dfn class="local col2 decl" id="52dpo" title='dpo' data-type='dpo_id_t' data-ref="52dpo">dpo</dfn> = <a class="macro" href="../dpo/dpo.h.html#195" title="{ .dpoi_type = DPO_FIRST, .dpoi_proto = ((dpo_proto_t)(((dpo_proto_t)(DPO_PROTO_NSH+1))+1)), .dpoi_index = ((index_t)(~0)), .dpoi_next_node = 0, }" data-ref="_M/DPO_INVALID">DPO_INVALID</a>;</td></tr>
+<tr><th id="124">124</th><td></td></tr>
+<tr><th id="125">125</th><td>    <a class="macro" href="../../vppinfra/error_bootstrap.h.html#69" title="do { if ((1 &gt; 0) &amp;&amp; ! ((0xfffff+1) == bt-&gt;bt_ll)) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/vpp/../../../src/vnet/bier/bier_table.c&quot;, (uword) 125, ((char *) __FUNCTION__), &quot;MPLS_LABEL_INVALID == bt-&gt;bt_ll&quot;); } } while (0)" data-ref="_M/ASSERT">ASSERT</a>(<a class="macro" href="../mpls/mpls_types.h.html#48" title="(0xfffff+1)" data-ref="_M/MPLS_LABEL_INVALID">MPLS_LABEL_INVALID</a> == <a class="local col1 ref" href="#51bt" title='bt' data-ref="51bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_ll" title='bier_table_t_::bt_ll' data-ref="bier_table_t_::bt_ll">bt_ll</a>);</td></tr>
+<tr><th id="126">126</th><td></td></tr>
+<tr><th id="127">127</th><td>    <a class="ref fn" href="#bier_table_contribute_forwarding" title='bier_table_contribute_forwarding' data-ref="bier_table_contribute_forwarding">bier_table_contribute_forwarding</a>(<a class="tu ref fn" href="#bier_table_get_index" title='bier_table_get_index' data-use='c' data-ref="bier_table_get_index">bier_table_get_index</a>(<a class="local col1 ref" href="#51bt" title='bt' data-ref="51bt">bt</a>), &amp;<a class="local col2 ref" href="#52dpo" title='dpo' data-ref="52dpo">dpo</a>);</td></tr>
+<tr><th id="128">128</th><td></td></tr>
+<tr><th id="129">129</th><td>    <a class="ref fn" href="bier_bift_table.h.html#bier_bift_table_entry_add" title='bier_bift_table_entry_add' data-ref="bier_bift_table_entry_add">bier_bift_table_entry_add</a>(<a class="ref fn" href="bier_types.h.html#bier_bift_id_encode" title='bier_bift_id_encode' data-ref="bier_bift_id_encode">bier_bift_id_encode</a>(<a class="local col1 ref" href="#51bt" title='bt' data-ref="51bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_id" title='bier_table_t_::bt_id' data-ref="bier_table_t_::bt_id">bt_id</a>.<a class="ref field" href="bier_types.h.html#bier_table_id_t_::bti_set" title='bier_table_id_t_::bti_set' data-ref="bier_table_id_t_::bti_set">bti_set</a>,</td></tr>
+<tr><th id="130">130</th><td>                                                  <a class="local col1 ref" href="#51bt" title='bt' data-ref="51bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_id" title='bier_table_t_::bt_id' data-ref="bier_table_t_::bt_id">bt_id</a>.<a class="ref field" href="bier_types.h.html#bier_table_id_t_::bti_sub_domain" title='bier_table_id_t_::bti_sub_domain' data-ref="bier_table_id_t_::bti_sub_domain">bti_sub_domain</a>,</td></tr>
+<tr><th id="131">131</th><td>                                                  <a class="local col1 ref" href="#51bt" title='bt' data-ref="51bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_id" title='bier_table_t_::bt_id' data-ref="bier_table_t_::bt_id">bt_id</a>.<a class="ref field" href="bier_types.h.html#bier_table_id_t_::bti_hdr_len" title='bier_table_id_t_::bti_hdr_len' data-ref="bier_table_id_t_::bti_hdr_len">bti_hdr_len</a>),</td></tr>
+<tr><th id="132">132</th><td>                               &amp;<a class="local col2 ref" href="#52dpo" title='dpo' data-ref="52dpo">dpo</a>);</td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td>    <a class="ref fn" href="../dpo/dpo.h.html#dpo_reset" title='dpo_reset' data-ref="dpo_reset">dpo_reset</a>(&amp;<a class="local col2 ref" href="#52dpo" title='dpo' data-ref="52dpo">dpo</a>);</td></tr>
+<tr><th id="135">135</th><td>}</td></tr>
+<tr><th id="136">136</th><td></td></tr>
+<tr><th id="137">137</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="138">138</th><td><dfn class="tu decl def fn" id="bier_table_rm_lfib" title='bier_table_rm_lfib' data-type='void bier_table_rm_lfib(bier_table_t * bt)' data-ref="bier_table_rm_lfib">bier_table_rm_lfib</dfn> (<a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col3 decl" id="53bt" title='bt' data-type='bier_table_t *' data-ref="53bt">bt</dfn>)</td></tr>
+<tr><th id="139">139</th><td>{</td></tr>
+<tr><th id="140">140</th><td>    <b>if</b> (<a class="macro" href="../fib/fib_types.h.html#31" title="((fib_node_index_t)(~0))" data-ref="_M/FIB_NODE_INDEX_INVALID">FIB_NODE_INDEX_INVALID</a> != <a class="local col3 ref" href="#53bt" title='bt' data-ref="53bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_lfei" title='bier_table_t_::bt_lfei' data-ref="bier_table_t_::bt_lfei">bt_lfei</a>)</td></tr>
+<tr><th id="141">141</th><td>    {</td></tr>
+<tr><th id="142">142</th><td>        <a class="ref fn" href="../fib/fib_table.h.html#fib_table_entry_delete_index" title='fib_table_entry_delete_index' data-ref="fib_table_entry_delete_index">fib_table_entry_delete_index</a>(<a class="local col3 ref" href="#53bt" title='bt' data-ref="53bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_lfei" title='bier_table_t_::bt_lfei' data-ref="bier_table_t_::bt_lfei">bt_lfei</a>,</td></tr>
+<tr><th id="143">143</th><td>                                     <a class="enum" href="../fib/fib_entry.h.html#FIB_SOURCE_BIER" title='FIB_SOURCE_BIER' data-ref="FIB_SOURCE_BIER">FIB_SOURCE_BIER</a>);</td></tr>
+<tr><th id="144">144</th><td>        <a class="ref fn" href="../fib/fib_table.h.html#fib_table_unlock" title='fib_table_unlock' data-ref="fib_table_unlock">fib_table_unlock</a>(<a class="macro" href="../fib/mpls_fib.h.html#28" title="0" data-ref="_M/MPLS_FIB_DEFAULT_TABLE_ID">MPLS_FIB_DEFAULT_TABLE_ID</a>,</td></tr>
+<tr><th id="145">145</th><td>                         <a class="enum" href="../fib/fib_types.h.html#FIB_PROTOCOL_MPLS" title='FIB_PROTOCOL_MPLS' data-ref="FIB_PROTOCOL_MPLS">FIB_PROTOCOL_MPLS</a>,</td></tr>
+<tr><th id="146">146</th><td>                         <a class="enum" href="../fib/fib_entry.h.html#FIB_SOURCE_BIER" title='FIB_SOURCE_BIER' data-ref="FIB_SOURCE_BIER">FIB_SOURCE_BIER</a>);</td></tr>
+<tr><th id="147">147</th><td>    }</td></tr>
+<tr><th id="148">148</th><td>    <a class="local col3 ref" href="#53bt" title='bt' data-ref="53bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_lfei" title='bier_table_t_::bt_lfei' data-ref="bier_table_t_::bt_lfei">bt_lfei</a> = <a class="macro" href="../fib/fib_types.h.html#31" title="((fib_node_index_t)(~0))" data-ref="_M/FIB_NODE_INDEX_INVALID">FIB_NODE_INDEX_INVALID</a>;</td></tr>
+<tr><th id="149">149</th><td>}</td></tr>
+<tr><th id="150">150</th><td></td></tr>
+<tr><th id="151">151</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="152">152</th><td><dfn class="tu decl def fn" id="bier_table_destroy" title='bier_table_destroy' data-type='void bier_table_destroy(bier_table_t * bt)' data-ref="bier_table_destroy">bier_table_destroy</dfn> (<a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col4 decl" id="54bt" title='bt' data-type='bier_table_t *' data-ref="54bt">bt</dfn>)</td></tr>
+<tr><th id="153">153</th><td>{</td></tr>
+<tr><th id="154">154</th><td>    <b>if</b> (<a class="ref fn" href="#bier_table_is_main" title='bier_table_is_main' data-ref="bier_table_is_main">bier_table_is_main</a>(<a class="local col4 ref" href="#54bt" title='bt' data-ref="54bt">bt</a>))</td></tr>
+<tr><th id="155">155</th><td>    {</td></tr>
+<tr><th id="156">156</th><td>        <a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> *<dfn class="local col5 decl" id="55bei" title='bei' data-type='index_t *' data-ref="55bei">bei</dfn>;</td></tr>
+<tr><th id="157">157</th><td></td></tr>
+<tr><th id="158">158</th><td>        <b>if</b> (<a class="macro" href="../mpls/mpls_types.h.html#48" title="(0xfffff+1)" data-ref="_M/MPLS_LABEL_INVALID">MPLS_LABEL_INVALID</a> != <a class="local col4 ref" href="#54bt" title='bt' data-ref="54bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_ll" title='bier_table_t_::bt_ll' data-ref="bier_table_t_::bt_ll">bt_ll</a>)</td></tr>
+<tr><th id="159">159</th><td>        {</td></tr>
+<tr><th id="160">160</th><td>            <a class="tu ref fn" href="#bier_table_rm_lfib" title='bier_table_rm_lfib' data-use='c' data-ref="bier_table_rm_lfib">bier_table_rm_lfib</a>(<a class="local col4 ref" href="#54bt" title='bt' data-ref="54bt">bt</a>);</td></tr>
+<tr><th id="161">161</th><td>        }</td></tr>
+<tr><th id="162">162</th><td>        <b>else</b></td></tr>
+<tr><th id="163">163</th><td>        {</td></tr>
+<tr><th id="164">164</th><td>            <a class="tu ref fn" href="#bier_table_rm_bift" title='bier_table_rm_bift' data-use='c' data-ref="bier_table_rm_bift">bier_table_rm_bift</a>(<a class="local col4 ref" href="#54bt" title='bt' data-ref="54bt">bt</a>);</td></tr>
+<tr><th id="165">165</th><td>        }</td></tr>
+<tr><th id="166">166</th><td></td></tr>
+<tr><th id="167">167</th><td>        <a class="ref fn" href="../fib/fib_path_list.h.html#fib_path_list_unlock" title='fib_path_list_unlock' data-ref="fib_path_list_unlock">fib_path_list_unlock</a>(<a class="local col4 ref" href="#54bt" title='bt' data-ref="54bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_pl" title='bier_table_t_::bt_pl' data-ref="bier_table_t_::bt_pl">bt_pl</a>);</td></tr>
+<tr><th id="168">168</th><td>        <a class="local col4 ref" href="#54bt" title='bt' data-ref="54bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_pl" title='bier_table_t_::bt_pl' data-ref="bier_table_t_::bt_pl">bt_pl</a> = <a class="macro" href="../fib/fib_types.h.html#31" title="((fib_node_index_t)(~0))" data-ref="_M/FIB_NODE_INDEX_INVALID">FIB_NODE_INDEX_INVALID</a>;</td></tr>
+<tr><th id="169">169</th><td>        <i>/*</i></td></tr>
+<tr><th id="170">170</th><td><i>         * unresolve/remove all entries from the table</i></td></tr>
+<tr><th id="171">171</th><td><i>         */</i></td></tr>
+<tr><th id="172">172</th><td>        <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#184" title="for (bei = (bt-&gt;bt_entries); bei &lt; ((bt-&gt;bt_entries) + ((bt-&gt;bt_entries) ? (((vec_header_t *) (bt-&gt;bt_entries) - 1)-&gt;len) : 0)); bei++)" data-ref="_M/vec_foreach">vec_foreach</a> (<a class="local col5 ref" href="#55bei" title='bei' data-ref="55bei">bei</a>, <a class="local col4 ref" href="#54bt" title='bt' data-ref="54bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_entries" title='bier_table_t_::bt_entries' data-ref="bier_table_t_::bt_entries">bt_entries</a>)</td></tr>
+<tr><th id="173">173</th><td>        {</td></tr>
+<tr><th id="174">174</th><td>            <b>if</b> (<a class="macro" href="../dpo/dpo.h.html#47" title="((index_t)(~0))" data-ref="_M/INDEX_INVALID">INDEX_INVALID</a> != *<a class="local col5 ref" href="#55bei" title='bei' data-ref="55bei">bei</a>)</td></tr>
+<tr><th id="175">175</th><td>            {</td></tr>
+<tr><th id="176">176</th><td>                <a class="ref fn" href="bier_entry.h.html#bier_entry_delete" title='bier_entry_delete' data-ref="bier_entry_delete">bier_entry_delete</a>(*<a class="local col5 ref" href="#55bei" title='bei' data-ref="55bei">bei</a>);</td></tr>
+<tr><th id="177">177</th><td>            }</td></tr>
+<tr><th id="178">178</th><td>        }</td></tr>
+<tr><th id="179">179</th><td>        <a class="macro" href="../../vppinfra/vec.h.html#336" title="do { if (bt-&gt;bt_entries) { clib_mem_free (vec_header ((bt-&gt;bt_entries), (0))); bt-&gt;bt_entries = 0; } } while (0)" data-ref="_M/vec_free">vec_free</a> (<a class="local col4 ref" href="#54bt" title='bt' data-ref="54bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_entries" title='bier_table_t_::bt_entries' data-ref="bier_table_t_::bt_entries">bt_entries</a>);</td></tr>
+<tr><th id="180">180</th><td>    }</td></tr>
+<tr><th id="181">181</th><td>    <b>else</b></td></tr>
+<tr><th id="182">182</th><td>    {</td></tr>
+<tr><th id="183">183</th><td>        <a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> *<dfn class="local col6 decl" id="56bfmi" title='bfmi' data-type='index_t *' data-ref="56bfmi">bfmi</dfn>;</td></tr>
+<tr><th id="184">184</th><td></td></tr>
+<tr><th id="185">185</th><td>        <i>/*</i></td></tr>
+<tr><th id="186">186</th><td><i>         * unlock any fmasks</i></td></tr>
+<tr><th id="187">187</th><td><i>         */</i></td></tr>
+<tr><th id="188">188</th><td>        <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#184" title="for (bfmi = (bt-&gt;bt_fmasks); bfmi &lt; ((bt-&gt;bt_fmasks) + ((bt-&gt;bt_fmasks) ? (((vec_header_t *) (bt-&gt;bt_fmasks) - 1)-&gt;len) : 0)); bfmi++)" data-ref="_M/vec_foreach">vec_foreach</a> (<a class="local col6 ref" href="#56bfmi" title='bfmi' data-ref="56bfmi">bfmi</a>, <a class="local col4 ref" href="#54bt" title='bt' data-ref="54bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_fmasks" title='bier_table_t_::bt_fmasks' data-ref="bier_table_t_::bt_fmasks">bt_fmasks</a>)</td></tr>
+<tr><th id="189">189</th><td>        {</td></tr>
+<tr><th id="190">190</th><td>            <a class="ref fn" href="bier_fmask.h.html#bier_fmask_unlock" title='bier_fmask_unlock' data-ref="bier_fmask_unlock">bier_fmask_unlock</a>(*<a class="local col6 ref" href="#56bfmi" title='bfmi' data-ref="56bfmi">bfmi</a>);</td></tr>
+<tr><th id="191">191</th><td>        }</td></tr>
+<tr><th id="192">192</th><td>        <a class="macro" href="../../vppinfra/vec.h.html#336" title="do { if (bt-&gt;bt_fmasks) { clib_mem_free (vec_header ((bt-&gt;bt_fmasks), (0))); bt-&gt;bt_fmasks = 0; } } while (0)" data-ref="_M/vec_free">vec_free</a>(<a class="local col4 ref" href="#54bt" title='bt' data-ref="54bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_fmasks" title='bier_table_t_::bt_fmasks' data-ref="bier_table_t_::bt_fmasks">bt_fmasks</a>);</td></tr>
+<tr><th id="193">193</th><td>    }</td></tr>
+<tr><th id="194">194</th><td></td></tr>
+<tr><th id="195">195</th><td>    <a class="macro" href="../../vppinfra/hash.h.html#260" title="((bier_tables_by_key) = _hash_unset ((bier_tables_by_key), (uword) (bier_table_mk_key(&amp;bt-&gt;bt_id)),0))" data-ref="_M/hash_unset">hash_unset</a>(<a class="tu ref" href="#bier_tables_by_key" title='bier_tables_by_key' data-use='w' data-ref="bier_tables_by_key"><a class="tu ref" href="#bier_tables_by_key" title='bier_tables_by_key' data-use='r' data-ref="bier_tables_by_key">bier_tables_by_key</a></a>,</td></tr>
+<tr><th id="196">196</th><td>               <a class="tu ref fn" href="#bier_table_mk_key" title='bier_table_mk_key' data-use='c' data-ref="bier_table_mk_key">bier_table_mk_key</a>(&amp;<a class="local col4 ref" href="#54bt" title='bt' data-ref="54bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_id" title='bier_table_t_::bt_id' data-ref="bier_table_t_::bt_id">bt_id</a>));</td></tr>
+<tr><th id="197">197</th><td>    <a class="macro" href="../../vppinfra/pool.h.html#273" title="do { pool_header_t * _pool_p = pool_header (bier_table_pool); uword _pool_l = (bt) - (bier_table_pool); do { if ((1 &gt; 0) &amp;&amp; ! (((bt) &gt;= (bier_table_pool) &amp;&amp; (bt) &lt; ((bier_table_pool) + ((bier_table_pool) ? (((vec_header_t *) (bier_table_pool) - 1)-&gt;len) : 0))))) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/vpp/../../../src/vnet/bier/bier_table.c&quot;, (uword) 197, ((char *) __FUNCTION__), &quot;vec_is_member (bier_table_pool, bt)&quot;); } } while (0); do { if ((1 &gt; 0) &amp;&amp; ! (! ({ pool_header_t * _pool_p = pool_header (bier_table_pool); uword _pool_i = (bt) - (bier_table_pool); (_pool_i &lt; ((bier_table_pool) ? (((vec_header_t *) (bier_table_pool) - 1)-&gt;len) : 0)) ? clib_bitmap_get (_pool_p-&gt;free_bitmap, _pool_i) : 1; }))) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/vpp/../../../src/vnet/bier/bier_table.c&quot;, (uword) 197, ((char *) __FUNCTION__), &quot;! pool_is_free (bier_table_pool, bt)&quot;); } } while (0); _pool_p-&gt;free_bitmap = clib_bitmap_ori (_pool_p-&gt;free_bitmap, _pool_l); if (_pool_p-&gt;max_elts) { do { if ((1 &gt; 0) &amp;&amp; ! (_pool_l &lt; _pool_p-&gt;max_elts)) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/vpp/../../../src/vnet/bier/bier_table.c&quot;, (uword) 197, ((char *) __FUNCTION__), &quot;_pool_var(l) &lt; _pool_var (p)-&gt;max_elts&quot;); } } while (0); _pool_p-&gt;free_indices[(((vec_header_t *) (_pool_p-&gt;free_indices) - 1)-&gt;len)] = _pool_l; (((vec_header_t *) (_pool_p-&gt;free_indices) - 1)-&gt;len) += 1; } else do { word _vec_l = ((_pool_p-&gt;free_indices) ? (((vec_header_t *) (_pool_p-&gt;free_indices) - 1)-&gt;len) : 0); _pool_p-&gt;free_indices = _vec_resize ((_pool_p-&gt;free_indices), 1, (_vec_l + 1) * sizeof ((_pool_p-&gt;free_indices)[0]), (0), (0)); (_pool_p-&gt;free_indices)[_vec_l] = (_pool_l); } while (0); } while (0)" data-ref="_M/pool_put">pool_put</a>(<a class="ref" href="bier_table.h.html#bier_table_pool" title='bier_table_pool' data-ref="bier_table_pool">bier_table_pool</a>, <a class="local col4 ref" href="#54bt" title='bt' data-ref="54bt">bt</a>);</td></tr>
+<tr><th id="198">198</th><td>}</td></tr>
+<tr><th id="199">199</th><td></td></tr>
+<tr><th id="200">200</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="201">201</th><td><dfn class="tu decl def fn" id="bier_table_lock_i" title='bier_table_lock_i' data-type='void bier_table_lock_i(bier_table_t * bt)' data-ref="bier_table_lock_i">bier_table_lock_i</dfn> (<a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col7 decl" id="57bt" title='bt' data-type='bier_table_t *' data-ref="57bt">bt</dfn>)</td></tr>
+<tr><th id="202">202</th><td>{</td></tr>
+<tr><th id="203">203</th><td>    <a class="local col7 ref" href="#57bt" title='bt' data-ref="57bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_locks" title='bier_table_t_::bt_locks' data-ref="bier_table_t_::bt_locks">bt_locks</a>++;</td></tr>
+<tr><th id="204">204</th><td>}</td></tr>
+<tr><th id="205">205</th><td></td></tr>
+<tr><th id="206">206</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="207">207</th><td><dfn class="tu decl def fn" id="bier_table_unlock_i" title='bier_table_unlock_i' data-type='void bier_table_unlock_i(bier_table_t * bt)' data-ref="bier_table_unlock_i">bier_table_unlock_i</dfn> (<a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col8 decl" id="58bt" title='bt' data-type='bier_table_t *' data-ref="58bt">bt</dfn>)</td></tr>
+<tr><th id="208">208</th><td>{</td></tr>
+<tr><th id="209">209</th><td>    <a class="local col8 ref" href="#58bt" title='bt' data-ref="58bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_locks" title='bier_table_t_::bt_locks' data-ref="bier_table_t_::bt_locks">bt_locks</a>--;</td></tr>
+<tr><th id="210">210</th><td></td></tr>
+<tr><th id="211">211</th><td>    <b>if</b> (<var>0</var> == <a class="local col8 ref" href="#58bt" title='bt' data-ref="58bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_locks" title='bier_table_t_::bt_locks' data-ref="bier_table_t_::bt_locks">bt_locks</a>)</td></tr>
+<tr><th id="212">212</th><td>    {</td></tr>
+<tr><th id="213">213</th><td>        <a class="tu ref fn" href="#bier_table_destroy" title='bier_table_destroy' data-use='c' data-ref="bier_table_destroy">bier_table_destroy</a>(<a class="local col8 ref" href="#58bt" title='bt' data-ref="58bt">bt</a>);</td></tr>
+<tr><th id="214">214</th><td>    }</td></tr>
+<tr><th id="215">215</th><td>}</td></tr>
+<tr><th id="216">216</th><td></td></tr>
+<tr><th id="217">217</th><td><em>void</em></td></tr>
+<tr><th id="218">218</th><td><dfn class="decl def fn" id="bier_table_unlock" title='bier_table_unlock' data-ref="bier_table_unlock">bier_table_unlock</dfn> (<em>const</em> <a class="typedef" href="bier_types.h.html#bier_table_id_t" title='bier_table_id_t' data-type='struct bier_table_id_t_' data-ref="bier_table_id_t">bier_table_id_t</a> *<dfn class="local col9 decl" id="59bti" title='bti' data-type='const bier_table_id_t *' data-ref="59bti">bti</dfn>)</td></tr>
+<tr><th id="219">219</th><td>{</td></tr>
+<tr><th id="220">220</th><td>    <a class="typedef" href="../../vppinfra/types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> *<dfn class="local col0 decl" id="60p" title='p' data-type='uword *' data-ref="60p">p</dfn>;</td></tr>
+<tr><th id="221">221</th><td>    <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col1 decl" id="61key" title='key' data-type='u32' data-ref="61key">key</dfn>;</td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td>    <a class="local col1 ref" href="#61key" title='key' data-ref="61key">key</a> = <a class="tu ref fn" href="#bier_table_mk_key" title='bier_table_mk_key' data-use='c' data-ref="bier_table_mk_key">bier_table_mk_key</a>(<a class="local col9 ref" href="#59bti" title='bti' data-ref="59bti">bti</a>);</td></tr>
+<tr><th id="224">224</th><td></td></tr>
+<tr><th id="225">225</th><td>    <a class="local col0 ref" href="#60p" title='p' data-ref="60p">p</a> = <a class="macro" href="../../vppinfra/hash.h.html#248" title="_hash_get ((bier_tables_by_key), (uword) (key))" data-ref="_M/hash_get">hash_get</a> (<a class="tu ref" href="#bier_tables_by_key" title='bier_tables_by_key' data-use='r' data-ref="bier_tables_by_key">bier_tables_by_key</a>, <a class="local col1 ref" href="#61key" title='key' data-ref="61key">key</a>);</td></tr>
+<tr><th id="226">226</th><td></td></tr>
+<tr><th id="227">227</th><td>    <b>if</b> (<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> != <a class="local col0 ref" href="#60p" title='p' data-ref="60p">p</a>) {</td></tr>
+<tr><th id="228">228</th><td>        <a class="tu ref fn" href="#bier_table_unlock_i" title='bier_table_unlock_i' data-use='c' data-ref="bier_table_unlock_i">bier_table_unlock_i</a>(<a class="ref fn" href="bier_table.h.html#bier_table_get" title='bier_table_get' data-ref="bier_table_get">bier_table_get</a>(<a class="local col0 ref" href="#60p" title='p' data-ref="60p">p</a>[<var>0</var>]));</td></tr>
+<tr><th id="229">229</th><td>    }</td></tr>
+<tr><th id="230">230</th><td>}</td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="233">233</th><td><dfn class="tu decl def fn" id="bier_table_mk_lfib" title='bier_table_mk_lfib' data-type='void bier_table_mk_lfib(bier_table_t * bt)' data-ref="bier_table_mk_lfib">bier_table_mk_lfib</dfn> (<a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col2 decl" id="62bt" title='bt' data-type='bier_table_t *' data-ref="62bt">bt</dfn>)</td></tr>
+<tr><th id="234">234</th><td>{</td></tr>
+<tr><th id="235">235</th><td>    <i>/*</i></td></tr>
+<tr><th id="236">236</th><td><i>     * Add a new MPLS lfib entry</i></td></tr>
+<tr><th id="237">237</th><td><i>     */</i></td></tr>
+<tr><th id="238">238</th><td>    <b>if</b> (<a class="macro" href="../mpls/mpls_types.h.html#48" title="(0xfffff+1)" data-ref="_M/MPLS_LABEL_INVALID">MPLS_LABEL_INVALID</a> != <a class="local col2 ref" href="#62bt" title='bt' data-ref="62bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_ll" title='bier_table_t_::bt_ll' data-ref="bier_table_t_::bt_ll">bt_ll</a>) {</td></tr>
+<tr><th id="239">239</th><td>        <a class="typedef" href="../fib/fib_types.h.html#fib_prefix_t" title='fib_prefix_t' data-type='struct fib_prefix_t_' data-ref="fib_prefix_t">fib_prefix_t</a> <dfn class="local col3 decl" id="63pfx" title='pfx' data-type='fib_prefix_t' data-ref="63pfx">pfx</dfn> = {</td></tr>
+<tr><th id="240">240</th><td>            .<a class="ref field" href="../fib/fib_types.h.html#fib_prefix_t_::fp_proto" title='fib_prefix_t_::fp_proto' data-ref="fib_prefix_t_::fp_proto">fp_proto</a> = <a class="enum" href="../fib/fib_types.h.html#FIB_PROTOCOL_MPLS" title='FIB_PROTOCOL_MPLS' data-ref="FIB_PROTOCOL_MPLS">FIB_PROTOCOL_MPLS</a>,</td></tr>
+<tr><th id="241">241</th><td>            .<a class="ref field" href="../fib/fib_types.h.html#fib_prefix_t_::fp_len" title='fib_prefix_t_::fp_len' data-ref="fib_prefix_t_::fp_len">fp_len</a> = <var>21</var>,</td></tr>
+<tr><th id="242">242</th><td>            .<a class="ref field" href="../fib/fib_types.h.html#fib_prefix_t_::(anonymousunion)::(anonymous)::fp_label" title='fib_prefix_t_::(anonymous union)::(anonymous struct)::fp_label' data-ref="fib_prefix_t_::(anonymousunion)::(anonymous)::fp_label">fp_label</a> = <a class="local col2 ref" href="#62bt" title='bt' data-ref="62bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_ll" title='bier_table_t_::bt_ll' data-ref="bier_table_t_::bt_ll">bt_ll</a>,</td></tr>
+<tr><th id="243">243</th><td>            .<a class="ref field" href="../fib/fib_types.h.html#fib_prefix_t_::(anonymousunion)::(anonymous)::fp_eos" title='fib_prefix_t_::(anonymous union)::(anonymous struct)::fp_eos' data-ref="fib_prefix_t_::(anonymousunion)::(anonymous)::fp_eos">fp_eos</a> = <a class="enum" href="../mpls/packet.h.html#MPLS_EOS" title='MPLS_EOS' data-ref="MPLS_EOS">MPLS_EOS</a>,</td></tr>
+<tr><th id="244">244</th><td>            .<a class="ref field" href="../fib/fib_types.h.html#fib_prefix_t_::(anonymousunion)::(anonymous)::fp_payload_proto" title='fib_prefix_t_::(anonymous union)::(anonymous struct)::fp_payload_proto' data-ref="fib_prefix_t_::(anonymousunion)::(anonymous)::fp_payload_proto">fp_payload_proto</a> = <a class="enum" href="../dpo/dpo.h.html#DPO_PROTO_BIER" title='DPO_PROTO_BIER' data-ref="DPO_PROTO_BIER">DPO_PROTO_BIER</a>,</td></tr>
+<tr><th id="245">245</th><td>        };</td></tr>
+<tr><th id="246">246</th><td>        <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col4 decl" id="64mpls_fib_index" title='mpls_fib_index' data-type='u32' data-ref="64mpls_fib_index">mpls_fib_index</dfn>;</td></tr>
+<tr><th id="247">247</th><td>        <a class="typedef" href="../dpo/dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> <dfn class="local col5 decl" id="65dpo" title='dpo' data-type='dpo_id_t' data-ref="65dpo">dpo</dfn> = <a class="macro" href="../dpo/dpo.h.html#195" title="{ .dpoi_type = DPO_FIRST, .dpoi_proto = ((dpo_proto_t)(((dpo_proto_t)(DPO_PROTO_NSH+1))+1)), .dpoi_index = ((index_t)(~0)), .dpoi_next_node = 0, }" data-ref="_M/DPO_INVALID">DPO_INVALID</a>;</td></tr>
+<tr><th id="248">248</th><td></td></tr>
+<tr><th id="249">249</th><td>        <a class="ref fn" href="../fib/fib_table.h.html#fib_table_find_or_create_and_lock" title='fib_table_find_or_create_and_lock' data-ref="fib_table_find_or_create_and_lock">fib_table_find_or_create_and_lock</a>(<a class="enum" href="../fib/fib_types.h.html#FIB_PROTOCOL_MPLS" title='FIB_PROTOCOL_MPLS' data-ref="FIB_PROTOCOL_MPLS">FIB_PROTOCOL_MPLS</a>,</td></tr>
+<tr><th id="250">250</th><td>                                          <a class="macro" href="../fib/mpls_fib.h.html#28" title="0" data-ref="_M/MPLS_FIB_DEFAULT_TABLE_ID">MPLS_FIB_DEFAULT_TABLE_ID</a>,</td></tr>
+<tr><th id="251">251</th><td>                                          <a class="enum" href="../fib/fib_entry.h.html#FIB_SOURCE_BIER" title='FIB_SOURCE_BIER' data-ref="FIB_SOURCE_BIER">FIB_SOURCE_BIER</a>);</td></tr>
+<tr><th id="252">252</th><td></td></tr>
+<tr><th id="253">253</th><td>        <i>/*</i></td></tr>
+<tr><th id="254">254</th><td><i>         * stack the entry on the forwarding chain prodcued by the</i></td></tr>
+<tr><th id="255">255</th><td><i>         * path-list via the ECMP tables.</i></td></tr>
+<tr><th id="256">256</th><td><i>         */</i></td></tr>
+<tr><th id="257">257</th><td>        <a class="ref fn" href="../fib/fib_path_list.h.html#fib_path_list_contribute_forwarding" title='fib_path_list_contribute_forwarding' data-ref="fib_path_list_contribute_forwarding">fib_path_list_contribute_forwarding</a>(<a class="local col2 ref" href="#62bt" title='bt' data-ref="62bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_pl" title='bier_table_t_::bt_pl' data-ref="bier_table_t_::bt_pl">bt_pl</a>,</td></tr>
+<tr><th id="258">258</th><td>                                            <a class="enum" href="../fib/fib_types.h.html#FIB_FORW_CHAIN_TYPE_BIER" title='FIB_FORW_CHAIN_TYPE_BIER' data-ref="FIB_FORW_CHAIN_TYPE_BIER">FIB_FORW_CHAIN_TYPE_BIER</a>,</td></tr>
+<tr><th id="259">259</th><td>                                            <a class="enum" href="../fib/fib_path_list.h.html#FIB_PATH_LIST_FWD_FLAG_COLLAPSE" title='FIB_PATH_LIST_FWD_FLAG_COLLAPSE' data-ref="FIB_PATH_LIST_FWD_FLAG_COLLAPSE">FIB_PATH_LIST_FWD_FLAG_COLLAPSE</a>,</td></tr>
+<tr><th id="260">260</th><td>                                            &amp;<a class="local col5 ref" href="#65dpo" title='dpo' data-ref="65dpo">dpo</a>);</td></tr>
+<tr><th id="261">261</th><td></td></tr>
+<tr><th id="262">262</th><td>        <a class="local col4 ref" href="#64mpls_fib_index" title='mpls_fib_index' data-ref="64mpls_fib_index">mpls_fib_index</a> = <a class="ref fn" href="../fib/fib_table.h.html#fib_table_find" title='fib_table_find' data-ref="fib_table_find">fib_table_find</a>(<a class="enum" href="../fib/fib_types.h.html#FIB_PROTOCOL_MPLS" title='FIB_PROTOCOL_MPLS' data-ref="FIB_PROTOCOL_MPLS">FIB_PROTOCOL_MPLS</a>,</td></tr>
+<tr><th id="263">263</th><td>                                        <a class="macro" href="../fib/mpls_fib.h.html#28" title="0" data-ref="_M/MPLS_FIB_DEFAULT_TABLE_ID">MPLS_FIB_DEFAULT_TABLE_ID</a>);</td></tr>
+<tr><th id="264">264</th><td>        <a class="local col2 ref" href="#62bt" title='bt' data-ref="62bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_lfei" title='bier_table_t_::bt_lfei' data-ref="bier_table_t_::bt_lfei">bt_lfei</a> = <a class="ref fn" href="../fib/fib_table.h.html#fib_table_entry_special_dpo_add" title='fib_table_entry_special_dpo_add' data-ref="fib_table_entry_special_dpo_add">fib_table_entry_special_dpo_add</a>(<a class="local col4 ref" href="#64mpls_fib_index" title='mpls_fib_index' data-ref="64mpls_fib_index">mpls_fib_index</a>,</td></tr>
+<tr><th id="265">265</th><td>                                                      &amp;<a class="local col3 ref" href="#63pfx" title='pfx' data-ref="63pfx">pfx</a>,</td></tr>
+<tr><th id="266">266</th><td>                                                      <a class="enum" href="../fib/fib_entry.h.html#FIB_SOURCE_BIER" title='FIB_SOURCE_BIER' data-ref="FIB_SOURCE_BIER">FIB_SOURCE_BIER</a>,</td></tr>
+<tr><th id="267">267</th><td>                                                      <a class="enum" href="../fib/fib_entry.h.html#FIB_ENTRY_FLAG_EXCLUSIVE" title='FIB_ENTRY_FLAG_EXCLUSIVE' data-ref="FIB_ENTRY_FLAG_EXCLUSIVE">FIB_ENTRY_FLAG_EXCLUSIVE</a>,</td></tr>
+<tr><th id="268">268</th><td>                                                      &amp;<a class="local col5 ref" href="#65dpo" title='dpo' data-ref="65dpo">dpo</a>);</td></tr>
+<tr><th id="269">269</th><td>        <a class="ref fn" href="../dpo/dpo.h.html#dpo_reset" title='dpo_reset' data-ref="dpo_reset">dpo_reset</a>(&amp;<a class="local col5 ref" href="#65dpo" title='dpo' data-ref="65dpo">dpo</a>);</td></tr>
+<tr><th id="270">270</th><td>    }</td></tr>
+<tr><th id="271">271</th><td>}</td></tr>
+<tr><th id="272">272</th><td></td></tr>
+<tr><th id="273">273</th><td><em>static</em> <a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *</td></tr>
+<tr><th id="274">274</th><td><dfn class="tu decl def fn" id="bier_table_find" title='bier_table_find' data-type='bier_table_t * bier_table_find(const bier_table_id_t * bti)' data-ref="bier_table_find">bier_table_find</dfn> (<em>const</em> <a class="typedef" href="bier_types.h.html#bier_table_id_t" title='bier_table_id_t' data-type='struct bier_table_id_t_' data-ref="bier_table_id_t">bier_table_id_t</a> *<dfn class="local col6 decl" id="66bti" title='bti' data-type='const bier_table_id_t *' data-ref="66bti">bti</dfn>)</td></tr>
+<tr><th id="275">275</th><td>{</td></tr>
+<tr><th id="276">276</th><td>    <a class="typedef" href="../../vppinfra/types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> *<dfn class="local col7 decl" id="67p" title='p' data-type='uword *' data-ref="67p">p</dfn>;</td></tr>
+<tr><th id="277">277</th><td>    <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col8 decl" id="68key" title='key' data-type='u32' data-ref="68key">key</dfn>;</td></tr>
+<tr><th id="278">278</th><td></td></tr>
+<tr><th id="279">279</th><td>    <a class="local col8 ref" href="#68key" title='key' data-ref="68key">key</a> = <a class="tu ref fn" href="#bier_table_mk_key" title='bier_table_mk_key' data-use='c' data-ref="bier_table_mk_key">bier_table_mk_key</a>(<a class="local col6 ref" href="#66bti" title='bti' data-ref="66bti">bti</a>);</td></tr>
+<tr><th id="280">280</th><td></td></tr>
+<tr><th id="281">281</th><td>    <a class="local col7 ref" href="#67p" title='p' data-ref="67p">p</a> = <a class="macro" href="../../vppinfra/hash.h.html#248" title="_hash_get ((bier_tables_by_key), (uword) (key))" data-ref="_M/hash_get">hash_get</a>(<a class="tu ref" href="#bier_tables_by_key" title='bier_tables_by_key' data-use='r' data-ref="bier_tables_by_key">bier_tables_by_key</a>, <a class="local col8 ref" href="#68key" title='key' data-ref="68key">key</a>);</td></tr>
+<tr><th id="282">282</th><td></td></tr>
+<tr><th id="283">283</th><td>    <b>if</b> (<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> != <a class="local col7 ref" href="#67p" title='p' data-ref="67p">p</a>)</td></tr>
+<tr><th id="284">284</th><td>    {</td></tr>
+<tr><th id="285">285</th><td>        <b>return</b> (<a class="ref fn" href="bier_table.h.html#bier_table_get" title='bier_table_get' data-ref="bier_table_get">bier_table_get</a>(<a class="local col7 ref" href="#67p" title='p' data-ref="67p">p</a>[<var>0</var>]));</td></tr>
+<tr><th id="286">286</th><td>    }</td></tr>
+<tr><th id="287">287</th><td></td></tr>
+<tr><th id="288">288</th><td>    <b>return</b> (<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>);</td></tr>
+<tr><th id="289">289</th><td>}</td></tr>
+<tr><th id="290">290</th><td></td></tr>
+<tr><th id="291">291</th><td><em>static</em> <a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *</td></tr>
+<tr><th id="292">292</th><td><dfn class="tu decl def fn" id="bier_table_mk_ecmp" title='bier_table_mk_ecmp' data-type='bier_table_t * bier_table_mk_ecmp(index_t bti)' data-ref="bier_table_mk_ecmp">bier_table_mk_ecmp</dfn> (<a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> <dfn class="local col9 decl" id="69bti" title='bti' data-type='index_t' data-ref="69bti">bti</dfn>)</td></tr>
+<tr><th id="293">293</th><td>{</td></tr>
+<tr><th id="294">294</th><td>    <a class="typedef" href="../fib/fib_types.h.html#fib_route_path_t" title='fib_route_path_t' data-type='struct fib_route_path_t_' data-ref="fib_route_path_t">fib_route_path_t</a> *<dfn class="local col0 decl" id="70rpaths" title='rpaths' data-type='fib_route_path_t *' data-ref="70rpaths">rpaths</dfn>;</td></tr>
+<tr><th id="295">295</th><td>    <a class="typedef" href="../fib/fib_types.h.html#fib_node_index_t" title='fib_node_index_t' data-type='u32' data-ref="fib_node_index_t">fib_node_index_t</a> <dfn class="local col1 decl" id="71pli" title='pli' data-type='fib_node_index_t' data-ref="71pli">pli</dfn>;</td></tr>
+<tr><th id="296">296</th><td>    <a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col2 decl" id="72bt" title='bt' data-type='bier_table_t *' data-ref="72bt">bt</dfn>;</td></tr>
+<tr><th id="297">297</th><td>    <em>int</em> <dfn class="local col3 decl" id="73ii" title='ii' data-type='int' data-ref="73ii">ii</dfn>;</td></tr>
+<tr><th id="298">298</th><td></td></tr>
+<tr><th id="299">299</th><td>    <a class="local col0 ref" href="#70rpaths" title='rpaths' data-ref="70rpaths">rpaths</a> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="300">300</th><td>    <a class="local col2 ref" href="#72bt" title='bt' data-ref="72bt">bt</a> = <a class="ref fn" href="bier_table.h.html#bier_table_get" title='bier_table_get' data-ref="bier_table_get">bier_table_get</a>(<a class="local col9 ref" href="#69bti" title='bti' data-ref="69bti">bti</a>);</td></tr>
+<tr><th id="301">301</th><td></td></tr>
+<tr><th id="302">302</th><td>    <a class="macro" href="../../vppinfra/vec.h.html#434" title="do { ; word _vec_i = (16-1); word _vec_l = ((rpaths) ? (((vec_header_t *) (rpaths) - 1)-&gt;len) : 0); if (_vec_i &gt;= _vec_l) { do { word _vec_n = (1 + (_vec_i - _vec_l)); word _vec_l = (((rpaths)) ? (((vec_header_t *) ((rpaths)) - 1)-&gt;len) : 0); (rpaths) = _vec_resize (((rpaths)), _vec_n, (_vec_l + _vec_n) * sizeof (((rpaths))[0]), ((0)), ((0))); } while (0); memset ((rpaths) + _vec_l, 0, (1 + (_vec_i - _vec_l)) * sizeof ((rpaths)[0])); } } while (0)" data-ref="_M/vec_validate">vec_validate</a>(<a class="local col0 ref" href="#70rpaths" title='rpaths' data-ref="70rpaths">rpaths</a>, <a class="macro" href="#44" title="16" data-ref="_M/BIER_N_ECMP_TABLES">BIER_N_ECMP_TABLES</a>-<var>1</var>);</td></tr>
+<tr><th id="303">303</th><td></td></tr>
+<tr><th id="304">304</th><td>    <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#191" title="for ((ii) = 0; (ii) &lt; ((rpaths) ? (((vec_header_t *) (rpaths) - 1)-&gt;len) : 0); (ii)++)" data-ref="_M/vec_foreach_index">vec_foreach_index</a>(<a class="local col3 ref" href="#73ii" title='ii' data-ref="73ii">ii</a>, <a class="local col0 ref" href="#70rpaths" title='rpaths' data-ref="70rpaths">rpaths</a>)</td></tr>
+<tr><th id="305">305</th><td>    {</td></tr>
+<tr><th id="306">306</th><td>        <a class="local col0 ref" href="#70rpaths" title='rpaths' data-ref="70rpaths">rpaths</a>[<a class="local col3 ref" href="#73ii" title='ii' data-ref="73ii">ii</a>].<a class="ref field" href="../fib/fib_types.h.html#fib_route_path_t_::(anonymous)::frp_bier_tbl" title='fib_route_path_t_::(anonymous union)::frp_bier_tbl' data-ref="fib_route_path_t_::(anonymous)::frp_bier_tbl">frp_bier_tbl</a> = <a class="local col2 ref" href="#72bt" title='bt' data-ref="72bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_id" title='bier_table_t_::bt_id' data-ref="bier_table_t_::bt_id">bt_id</a>;</td></tr>
+<tr><th id="307">307</th><td>        <a class="local col0 ref" href="#70rpaths" title='rpaths' data-ref="70rpaths">rpaths</a>[<a class="local col3 ref" href="#73ii" title='ii' data-ref="73ii">ii</a>].<a class="ref field" href="../fib/fib_types.h.html#fib_route_path_t_::(anonymous)::frp_bier_tbl" title='fib_route_path_t_::(anonymous union)::frp_bier_tbl' data-ref="fib_route_path_t_::(anonymous)::frp_bier_tbl">frp_bier_tbl</a>.<a class="ref field" href="bier_types.h.html#bier_table_id_t_::bti_ecmp" title='bier_table_id_t_::bti_ecmp' data-ref="bier_table_id_t_::bti_ecmp">bti_ecmp</a> = <a class="local col3 ref" href="#73ii" title='ii' data-ref="73ii">ii</a>;</td></tr>
+<tr><th id="308">308</th><td>        <a class="local col0 ref" href="#70rpaths" title='rpaths' data-ref="70rpaths">rpaths</a>[<a class="local col3 ref" href="#73ii" title='ii' data-ref="73ii">ii</a>].<a class="ref field" href="../fib/fib_types.h.html#fib_route_path_t_::frp_flags" title='fib_route_path_t_::frp_flags' data-ref="fib_route_path_t_::frp_flags">frp_flags</a> = <a class="enum" href="../fib/fib_types.h.html#FIB_ROUTE_PATH_BIER_TABLE" title='FIB_ROUTE_PATH_BIER_TABLE' data-ref="FIB_ROUTE_PATH_BIER_TABLE">FIB_ROUTE_PATH_BIER_TABLE</a>;</td></tr>
+<tr><th id="309">309</th><td>    }</td></tr>
+<tr><th id="310">310</th><td></td></tr>
+<tr><th id="311">311</th><td>    <i>/*</i></td></tr>
+<tr><th id="312">312</th><td><i>     * no oppotunity to share, this the resolving ECMP tables are unique</i></td></tr>
+<tr><th id="313">313</th><td><i>     * to this table.</i></td></tr>
+<tr><th id="314">314</th><td><i>     * no need to be a child of the path list, we can do nothing with any</i></td></tr>
+<tr><th id="315">315</th><td><i>     * notifications it would generate [not that it will].</i></td></tr>
+<tr><th id="316">316</th><td><i>     */</i></td></tr>
+<tr><th id="317">317</th><td>    <a class="local col1 ref" href="#71pli" title='pli' data-ref="71pli">pli</a> = <a class="ref fn" href="../fib/fib_path_list.h.html#fib_path_list_create" title='fib_path_list_create' data-ref="fib_path_list_create">fib_path_list_create</a>(<a class="enum" href="../fib/fib_path_list.h.html#FIB_PATH_LIST_FLAG_NO_URPF" title='FIB_PATH_LIST_FLAG_NO_URPF' data-ref="FIB_PATH_LIST_FLAG_NO_URPF">FIB_PATH_LIST_FLAG_NO_URPF</a>, <a class="local col0 ref" href="#70rpaths" title='rpaths' data-ref="70rpaths">rpaths</a>);</td></tr>
+<tr><th id="318">318</th><td>    <a class="ref fn" href="../fib/fib_path_list.h.html#fib_path_list_lock" title='fib_path_list_lock' data-ref="fib_path_list_lock">fib_path_list_lock</a>(<a class="local col1 ref" href="#71pli" title='pli' data-ref="71pli">pli</a>);</td></tr>
+<tr><th id="319">319</th><td></td></tr>
+<tr><th id="320">320</th><td>    <i>/*</i></td></tr>
+<tr><th id="321">321</th><td><i>     * constructing the path-list will have created many more BIER tables,</i></td></tr>
+<tr><th id="322">322</th><td><i>     * so this main table will no doubt have re-alloc.</i></td></tr>
+<tr><th id="323">323</th><td><i>     */</i></td></tr>
+<tr><th id="324">324</th><td>    <a class="local col2 ref" href="#72bt" title='bt' data-ref="72bt">bt</a> = <a class="ref fn" href="bier_table.h.html#bier_table_get" title='bier_table_get' data-ref="bier_table_get">bier_table_get</a>(<a class="local col9 ref" href="#69bti" title='bti' data-ref="69bti">bti</a>);</td></tr>
+<tr><th id="325">325</th><td>    <a class="local col2 ref" href="#72bt" title='bt' data-ref="72bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_pl" title='bier_table_t_::bt_pl' data-ref="bier_table_t_::bt_pl">bt_pl</a> = <a class="local col1 ref" href="#71pli" title='pli' data-ref="71pli">pli</a>;</td></tr>
+<tr><th id="326">326</th><td></td></tr>
+<tr><th id="327">327</th><td>    <a class="macro" href="../../vppinfra/vec.h.html#336" title="do { if (rpaths) { clib_mem_free (vec_header ((rpaths), (0))); rpaths = 0; } } while (0)" data-ref="_M/vec_free">vec_free</a>(<a class="local col0 ref" href="#70rpaths" title='rpaths' data-ref="70rpaths">rpaths</a>);</td></tr>
+<tr><th id="328">328</th><td></td></tr>
+<tr><th id="329">329</th><td>    <b>return</b> (<a class="local col2 ref" href="#72bt" title='bt' data-ref="72bt">bt</a>);</td></tr>
+<tr><th id="330">330</th><td>}</td></tr>
+<tr><th id="331">331</th><td></td></tr>
+<tr><th id="332">332</th><td><a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a></td></tr>
+<tr><th id="333">333</th><td><dfn class="decl def fn" id="bier_table_add_or_lock" title='bier_table_add_or_lock' data-ref="bier_table_add_or_lock">bier_table_add_or_lock</dfn> (<em>const</em> <a class="typedef" href="bier_types.h.html#bier_table_id_t" title='bier_table_id_t' data-type='struct bier_table_id_t_' data-ref="bier_table_id_t">bier_table_id_t</a> *<dfn class="local col4 decl" id="74btid" title='btid' data-type='const bier_table_id_t *' data-ref="74btid">btid</dfn>,</td></tr>
+<tr><th id="334">334</th><td>                        <a class="typedef" href="../mpls/packet.h.html#mpls_label_t" title='mpls_label_t' data-type='u32' data-ref="mpls_label_t">mpls_label_t</a> <dfn class="local col5 decl" id="75local_label" title='local_label' data-type='mpls_label_t' data-ref="75local_label">local_label</dfn>)</td></tr>
+<tr><th id="335">335</th><td>{</td></tr>
+<tr><th id="336">336</th><td>    <a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col6 decl" id="76bt" title='bt' data-type='bier_table_t *' data-ref="76bt">bt</dfn>;</td></tr>
+<tr><th id="337">337</th><td>    <a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> <dfn class="local col7 decl" id="77bti" title='bti' data-type='index_t' data-ref="77bti">bti</dfn>;</td></tr>
+<tr><th id="338">338</th><td></td></tr>
+<tr><th id="339">339</th><td>    <a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a> = <a class="tu ref fn" href="#bier_table_find" title='bier_table_find' data-use='c' data-ref="bier_table_find">bier_table_find</a>(<a class="local col4 ref" href="#74btid" title='btid' data-ref="74btid">btid</a>);</td></tr>
+<tr><th id="340">340</th><td></td></tr>
+<tr><th id="341">341</th><td>    <b>if</b> (<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> != <a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>) {</td></tr>
+<tr><th id="342">342</th><td>        <i>/*</i></td></tr>
+<tr><th id="343">343</th><td><i>         * modify an existing table.</i></td></tr>
+<tr><th id="344">344</th><td><i>         * change the lfib entry to the new local label</i></td></tr>
+<tr><th id="345">345</th><td><i>         */</i></td></tr>
+<tr><th id="346">346</th><td>        <b>if</b> (<a class="ref fn" href="#bier_table_is_main" title='bier_table_is_main' data-ref="bier_table_is_main">bier_table_is_main</a>(<a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>))</td></tr>
+<tr><th id="347">347</th><td>        {</td></tr>
+<tr><th id="348">348</th><td>            <i>/*</i></td></tr>
+<tr><th id="349">349</th><td><i>             * remove the mpls-fib or bift entry</i></td></tr>
+<tr><th id="350">350</th><td><i>             */</i></td></tr>
+<tr><th id="351">351</th><td>            <b>if</b> (<a class="macro" href="../mpls/mpls_types.h.html#48" title="(0xfffff+1)" data-ref="_M/MPLS_LABEL_INVALID">MPLS_LABEL_INVALID</a> != <a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_ll" title='bier_table_t_::bt_ll' data-ref="bier_table_t_::bt_ll">bt_ll</a>)</td></tr>
+<tr><th id="352">352</th><td>            {</td></tr>
+<tr><th id="353">353</th><td>                <a class="tu ref fn" href="#bier_table_rm_lfib" title='bier_table_rm_lfib' data-use='c' data-ref="bier_table_rm_lfib">bier_table_rm_lfib</a>(<a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>);</td></tr>
+<tr><th id="354">354</th><td>            }</td></tr>
+<tr><th id="355">355</th><td>            <b>else</b></td></tr>
+<tr><th id="356">356</th><td>            {</td></tr>
+<tr><th id="357">357</th><td>                <a class="tu ref fn" href="#bier_table_rm_bift" title='bier_table_rm_bift' data-use='c' data-ref="bier_table_rm_bift">bier_table_rm_bift</a>(<a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>);</td></tr>
+<tr><th id="358">358</th><td>            }</td></tr>
+<tr><th id="359">359</th><td></td></tr>
+<tr><th id="360">360</th><td>            <i>/*</i></td></tr>
+<tr><th id="361">361</th><td><i>             * reset</i></td></tr>
+<tr><th id="362">362</th><td><i>             */</i></td></tr>
+<tr><th id="363">363</th><td>            <a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_ll" title='bier_table_t_::bt_ll' data-ref="bier_table_t_::bt_ll">bt_ll</a> = <a class="macro" href="../mpls/mpls_types.h.html#48" title="(0xfffff+1)" data-ref="_M/MPLS_LABEL_INVALID">MPLS_LABEL_INVALID</a>;</td></tr>
+<tr><th id="364">364</th><td></td></tr>
+<tr><th id="365">365</th><td>            <i>/*</i></td></tr>
+<tr><th id="366">366</th><td><i>             * add whichever mpls-fib or bift we need</i></td></tr>
+<tr><th id="367">367</th><td><i>             */</i></td></tr>
+<tr><th id="368">368</th><td>            <b>if</b> (<a class="local col5 ref" href="#75local_label" title='local_label' data-ref="75local_label">local_label</a> != <a class="macro" href="../mpls/mpls_types.h.html#48" title="(0xfffff+1)" data-ref="_M/MPLS_LABEL_INVALID">MPLS_LABEL_INVALID</a>)</td></tr>
+<tr><th id="369">369</th><td>            {</td></tr>
+<tr><th id="370">370</th><td>                <a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_ll" title='bier_table_t_::bt_ll' data-ref="bier_table_t_::bt_ll">bt_ll</a> = <a class="local col5 ref" href="#75local_label" title='local_label' data-ref="75local_label">local_label</a>;</td></tr>
+<tr><th id="371">371</th><td>                <a class="tu ref fn" href="#bier_table_mk_lfib" title='bier_table_mk_lfib' data-use='c' data-ref="bier_table_mk_lfib">bier_table_mk_lfib</a>(<a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>);</td></tr>
+<tr><th id="372">372</th><td>            }</td></tr>
+<tr><th id="373">373</th><td>            <b>else</b></td></tr>
+<tr><th id="374">374</th><td>            {</td></tr>
+<tr><th id="375">375</th><td>                <a class="tu ref fn" href="#bier_table_mk_bift" title='bier_table_mk_bift' data-use='c' data-ref="bier_table_mk_bift">bier_table_mk_bift</a>(<a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>);</td></tr>
+<tr><th id="376">376</th><td>            }</td></tr>
+<tr><th id="377">377</th><td>        }</td></tr>
+<tr><th id="378">378</th><td>        <a class="local col7 ref" href="#77bti" title='bti' data-ref="77bti">bti</a> = <a class="tu ref fn" href="#bier_table_get_index" title='bier_table_get_index' data-use='c' data-ref="bier_table_get_index">bier_table_get_index</a>(<a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>);</td></tr>
+<tr><th id="379">379</th><td>    }</td></tr>
+<tr><th id="380">380</th><td>    <b>else</b></td></tr>
+<tr><th id="381">381</th><td>    {</td></tr>
+<tr><th id="382">382</th><td>        <i>/*</i></td></tr>
+<tr><th id="383">383</th><td><i>         * add a new table</i></td></tr>
+<tr><th id="384">384</th><td><i>         */</i></td></tr>
+<tr><th id="385">385</th><td>        <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col8 decl" id="78key" title='key' data-type='u32' data-ref="78key">key</dfn>;</td></tr>
+<tr><th id="386">386</th><td></td></tr>
+<tr><th id="387">387</th><td>        <a class="local col8 ref" href="#78key" title='key' data-ref="78key">key</a> = <a class="tu ref fn" href="#bier_table_mk_key" title='bier_table_mk_key' data-use='c' data-ref="bier_table_mk_key">bier_table_mk_key</a>(<a class="local col4 ref" href="#74btid" title='btid' data-ref="74btid">btid</a>);</td></tr>
+<tr><th id="388">388</th><td></td></tr>
+<tr><th id="389">389</th><td>        <a class="macro" href="../../vppinfra/pool.h.html#188" title="do { pool_header_t * _pool_p = pool_header (bier_table_pool); uword _pool_l; ; _pool_l = 0; if (bier_table_pool) _pool_l = ((_pool_p-&gt;free_indices) ? (((vec_header_t *) (_pool_p-&gt;free_indices) - 1)-&gt;len) : 0); if (_pool_l &gt; 0) { uword _pool_i = _pool_p-&gt;free_indices[_pool_l - 1]; (bt) = (bier_table_pool) + _pool_i; _pool_p-&gt;free_bitmap = clib_bitmap_andnoti (_pool_p-&gt;free_bitmap, _pool_i); (((vec_header_t *) (_pool_p-&gt;free_indices) - 1)-&gt;len) = _pool_l - 1; } else { if ((bier_table_pool) &amp;&amp; _pool_p-&gt;max_elts) { _clib_error (CLIB_ERROR_WARNING, ((char *) __FUNCTION__), 389, &quot;can&apos;t expand fixed-size pool&quot;); os_out_of_memory(); } bier_table_pool = _vec_resize (bier_table_pool, 1, (((bier_table_pool) ? (((vec_header_t *) (bier_table_pool) - 1)-&gt;len) : 0) + 1) * sizeof (bier_table_pool[0]), vec_aligned_header_bytes (sizeof (pool_header_t), sizeof (void *)), ((1 &lt;&lt; 6))); bt = ((bier_table_pool) + ((bier_table_pool) ? (((vec_header_t *) (bier_table_pool) - 1)-&gt;len) : 0)) - 1; } } while (0)" data-ref="_M/pool_get_aligned">pool_get_aligned</a>(<a class="ref" href="bier_table.h.html#bier_table_pool" title='bier_table_pool' data-ref="bier_table_pool">bier_table_pool</a>, <a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>, <a class="macro" href="../../vppinfra/cache.h.html#59" title="(1 &lt;&lt; 6)" data-ref="_M/CLIB_CACHE_LINE_BYTES">CLIB_CACHE_LINE_BYTES</a>);</td></tr>
+<tr><th id="390">390</th><td>        <a class="tu ref fn" href="#bier_table_init" title='bier_table_init' data-use='c' data-ref="bier_table_init">bier_table_init</a>(<a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>, <a class="local col4 ref" href="#74btid" title='btid' data-ref="74btid">btid</a>, <a class="local col5 ref" href="#75local_label" title='local_label' data-ref="75local_label">local_label</a>);</td></tr>
+<tr><th id="391">391</th><td></td></tr>
+<tr><th id="392">392</th><td>        <a class="macro" href="../../vppinfra/hash.h.html#254" title="({ uword _v = (uword) (bier_table_get_index(bt)); (bier_tables_by_key) = _hash_set3 ((bier_tables_by_key), (uword) (key), (void *) &amp;_v, (0)); })" data-ref="_M/hash_set">hash_set</a>(<a class="tu ref" href="#bier_tables_by_key" title='bier_tables_by_key' data-use='w' data-ref="bier_tables_by_key"><a class="tu ref" href="#bier_tables_by_key" title='bier_tables_by_key' data-use='r' data-ref="bier_tables_by_key">bier_tables_by_key</a></a>, <a class="local col8 ref" href="#78key" title='key' data-ref="78key">key</a>, <a class="tu ref fn" href="#bier_table_get_index" title='bier_table_get_index' data-use='c' data-ref="bier_table_get_index">bier_table_get_index</a>(<a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>));</td></tr>
+<tr><th id="393">393</th><td>        <a class="local col7 ref" href="#77bti" title='bti' data-ref="77bti">bti</a> = <a class="tu ref fn" href="#bier_table_get_index" title='bier_table_get_index' data-use='c' data-ref="bier_table_get_index">bier_table_get_index</a>(<a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>);</td></tr>
+<tr><th id="394">394</th><td></td></tr>
+<tr><th id="395">395</th><td>        <b>if</b> (<a class="ref fn" href="#bier_table_is_main" title='bier_table_is_main' data-ref="bier_table_is_main">bier_table_is_main</a>(<a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>))</td></tr>
+<tr><th id="396">396</th><td>        {</td></tr>
+<tr><th id="397">397</th><td>            <a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a> = <a class="tu ref fn" href="#bier_table_mk_ecmp" title='bier_table_mk_ecmp' data-use='c' data-ref="bier_table_mk_ecmp">bier_table_mk_ecmp</a>(<a class="local col7 ref" href="#77bti" title='bti' data-ref="77bti">bti</a>);</td></tr>
+<tr><th id="398">398</th><td></td></tr>
+<tr><th id="399">399</th><td>            <i>/*</i></td></tr>
+<tr><th id="400">400</th><td><i>             * add whichever mpls-fib or bift we need</i></td></tr>
+<tr><th id="401">401</th><td><i>             */</i></td></tr>
+<tr><th id="402">402</th><td>            <b>if</b> (<a class="local col5 ref" href="#75local_label" title='local_label' data-ref="75local_label">local_label</a> != <a class="macro" href="../mpls/mpls_types.h.html#48" title="(0xfffff+1)" data-ref="_M/MPLS_LABEL_INVALID">MPLS_LABEL_INVALID</a>)</td></tr>
+<tr><th id="403">403</th><td>            {</td></tr>
+<tr><th id="404">404</th><td>                <a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_ll" title='bier_table_t_::bt_ll' data-ref="bier_table_t_::bt_ll">bt_ll</a> = <a class="local col5 ref" href="#75local_label" title='local_label' data-ref="75local_label">local_label</a>;</td></tr>
+<tr><th id="405">405</th><td>                <a class="tu ref fn" href="#bier_table_mk_lfib" title='bier_table_mk_lfib' data-use='c' data-ref="bier_table_mk_lfib">bier_table_mk_lfib</a>(<a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>);</td></tr>
+<tr><th id="406">406</th><td>            }</td></tr>
+<tr><th id="407">407</th><td>            <b>else</b></td></tr>
+<tr><th id="408">408</th><td>            {</td></tr>
+<tr><th id="409">409</th><td>                <a class="tu ref fn" href="#bier_table_mk_bift" title='bier_table_mk_bift' data-use='c' data-ref="bier_table_mk_bift">bier_table_mk_bift</a>(<a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>);</td></tr>
+<tr><th id="410">410</th><td>            }</td></tr>
+<tr><th id="411">411</th><td>        }</td></tr>
+<tr><th id="412">412</th><td>    }</td></tr>
+<tr><th id="413">413</th><td></td></tr>
+<tr><th id="414">414</th><td>    <a class="tu ref fn" href="#bier_table_lock_i" title='bier_table_lock_i' data-use='c' data-ref="bier_table_lock_i">bier_table_lock_i</a>(<a class="local col6 ref" href="#76bt" title='bt' data-ref="76bt">bt</a>);</td></tr>
+<tr><th id="415">415</th><td></td></tr>
+<tr><th id="416">416</th><td>    <b>return</b> (<a class="local col7 ref" href="#77bti" title='bti' data-ref="77bti">bti</a>);</td></tr>
+<tr><th id="417">417</th><td>}</td></tr>
+<tr><th id="418">418</th><td></td></tr>
+<tr><th id="419">419</th><td><a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a></td></tr>
+<tr><th id="420">420</th><td><dfn class="decl def fn" id="bier_table_ecmp_create_and_lock" title='bier_table_ecmp_create_and_lock' data-ref="bier_table_ecmp_create_and_lock">bier_table_ecmp_create_and_lock</dfn> (<em>const</em> <a class="typedef" href="bier_types.h.html#bier_table_id_t" title='bier_table_id_t' data-type='struct bier_table_id_t_' data-ref="bier_table_id_t">bier_table_id_t</a> *<dfn class="local col9 decl" id="79btid" title='btid' data-type='const bier_table_id_t *' data-ref="79btid">btid</dfn>)</td></tr>
+<tr><th id="421">421</th><td>{</td></tr>
+<tr><th id="422">422</th><td>    <b>return</b> (<a class="ref fn" href="#bier_table_add_or_lock" title='bier_table_add_or_lock' data-ref="bier_table_add_or_lock">bier_table_add_or_lock</a>(<a class="local col9 ref" href="#79btid" title='btid' data-ref="79btid">btid</a>, <a class="macro" href="../mpls/mpls_types.h.html#48" title="(0xfffff+1)" data-ref="_M/MPLS_LABEL_INVALID">MPLS_LABEL_INVALID</a>));</td></tr>
+<tr><th id="423">423</th><td>}</td></tr>
+<tr><th id="424">424</th><td></td></tr>
+<tr><th id="425">425</th><td><em>void</em></td></tr>
+<tr><th id="426">426</th><td><dfn class="decl def fn" id="bier_table_ecmp_unlock" title='bier_table_ecmp_unlock' data-ref="bier_table_ecmp_unlock">bier_table_ecmp_unlock</dfn> (<a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> <dfn class="local col0 decl" id="80bti" title='bti' data-type='index_t' data-ref="80bti">bti</dfn>)</td></tr>
+<tr><th id="427">427</th><td>{</td></tr>
+<tr><th id="428">428</th><td>    <a class="tu ref fn" href="#bier_table_unlock_i" title='bier_table_unlock_i' data-use='c' data-ref="bier_table_unlock_i">bier_table_unlock_i</a>(<a class="ref fn" href="bier_table.h.html#bier_table_get" title='bier_table_get' data-ref="bier_table_get">bier_table_get</a>(<a class="local col0 ref" href="#80bti" title='bti' data-ref="80bti">bti</a>));</td></tr>
+<tr><th id="429">429</th><td>}</td></tr>
+<tr><th id="430">430</th><td></td></tr>
+<tr><th id="431">431</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="432">432</th><td><dfn class="tu decl def fn" id="bier_table_dpo_lock" title='bier_table_dpo_lock' data-type='void bier_table_dpo_lock(dpo_id_t * dpo)' data-ref="bier_table_dpo_lock">bier_table_dpo_lock</dfn> (<a class="typedef" href="../dpo/dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col1 decl" id="81dpo" title='dpo' data-type='dpo_id_t *' data-ref="81dpo">dpo</dfn>)</td></tr>
+<tr><th id="433">433</th><td>{</td></tr>
+<tr><th id="434">434</th><td>}</td></tr>
+<tr><th id="435">435</th><td></td></tr>
+<tr><th id="436">436</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="437">437</th><td><dfn class="tu decl def fn" id="bier_table_dpo_unlock" title='bier_table_dpo_unlock' data-type='void bier_table_dpo_unlock(dpo_id_t * dpo)' data-ref="bier_table_dpo_unlock">bier_table_dpo_unlock</dfn> (<a class="typedef" href="../dpo/dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col2 decl" id="82dpo" title='dpo' data-type='dpo_id_t *' data-ref="82dpo">dpo</dfn>)</td></tr>
+<tr><th id="438">438</th><td>{</td></tr>
+<tr><th id="439">439</th><td>}</td></tr>
+<tr><th id="440">440</th><td></td></tr>
+<tr><th id="441">441</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="442">442</th><td><dfn class="tu decl def fn" id="bier_table_dpo_mem_show" title='bier_table_dpo_mem_show' data-type='void bier_table_dpo_mem_show()' data-ref="bier_table_dpo_mem_show">bier_table_dpo_mem_show</dfn> (<em>void</em>)</td></tr>
+<tr><th id="443">443</th><td>{</td></tr>
+<tr><th id="444">444</th><td>    <a class="ref fn" href="../fib/fib_node.h.html#fib_show_memory_usage" title='fib_show_memory_usage' data-ref="fib_show_memory_usage">fib_show_memory_usage</a>(<q>"BIER-table"</q>,</td></tr>
+<tr><th id="445">445</th><td>                          <a class="ref fn" href="../../vppinfra/pool.h.html#pool_elts" title='pool_elts' data-ref="pool_elts">pool_elts</a>(<a class="ref" href="bier_table.h.html#bier_table_pool" title='bier_table_pool' data-ref="bier_table_pool">bier_table_pool</a>),</td></tr>
+<tr><th id="446">446</th><td>                          <a class="macro" href="../../vppinfra/pool.h.html#140" title="((bier_table_pool) ? (((vec_header_t *) (bier_table_pool) - 1)-&gt;len) : 0)" data-ref="_M/pool_len">pool_len</a>(<a class="ref" href="bier_table.h.html#bier_table_pool" title='bier_table_pool' data-ref="bier_table_pool">bier_table_pool</a>),</td></tr>
+<tr><th id="447">447</th><td>                          <b>sizeof</b>(<a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a>));</td></tr>
+<tr><th id="448">448</th><td>}</td></tr>
+<tr><th id="449">449</th><td><em>static</em> <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *</td></tr>
+<tr><th id="450">450</th><td><dfn class="tu decl def fn" id="format_bier_table_dpo" title='format_bier_table_dpo' data-type='u8 * format_bier_table_dpo(u8 * s, va_list * ap)' data-ref="format_bier_table_dpo">format_bier_table_dpo</dfn> (<a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col3 decl" id="83s" title='s' data-type='u8 *' data-ref="83s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> *<dfn class="local col4 decl" id="84ap" title='ap' data-type='va_list *' data-ref="84ap">ap</dfn>)</td></tr>
+<tr><th id="451">451</th><td>{</td></tr>
+<tr><th id="452">452</th><td>    <a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> <dfn class="local col5 decl" id="85bti" title='bti' data-type='index_t' data-ref="85bti">bti</dfn> = <span class="macro" title="__builtin_va_arg(*ap, index_t)" data-ref="_M/va_arg">va_arg</span>(*<a class="local col4 ref" href="#84ap" title='ap' data-ref="84ap">ap</a>, <a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a>);</td></tr>
+<tr><th id="453">453</th><td>    <a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col6 decl" id="86bt" title='bt' data-type='bier_table_t *' data-ref="86bt">bt</dfn>;</td></tr>
+<tr><th id="454">454</th><td></td></tr>
+<tr><th id="455">455</th><td>    <a class="local col6 ref" href="#86bt" title='bt' data-ref="86bt">bt</a> = <a class="ref fn" href="bier_table.h.html#bier_table_get" title='bier_table_get' data-ref="bier_table_get">bier_table_get</a>(<a class="local col5 ref" href="#85bti" title='bti' data-ref="85bti">bti</a>);</td></tr>
+<tr><th id="456">456</th><td></td></tr>
+<tr><th id="457">457</th><td>    <b>return</b> (<a class="ref fn" href="../../vppinfra/format.h.html#format" title='format' data-ref="format">format</a>(<a class="local col3 ref" href="#83s" title='s' data-ref="83s">s</a>, <q>"[%U]"</q>, <a class="ref fn" href="bier_types.h.html#format_bier_table_id" title='format_bier_table_id' data-ref="format_bier_table_id">format_bier_table_id</a>, &amp;<a class="local col6 ref" href="#86bt" title='bt' data-ref="86bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_id" title='bier_table_t_::bt_id' data-ref="bier_table_t_::bt_id">bt_id</a>));</td></tr>
+<tr><th id="458">458</th><td>}</td></tr>
+<tr><th id="459">459</th><td></td></tr>
+<tr><th id="460">460</th><td><em>const</em> <em>static</em> <a class="typedef" href="../dpo/dpo.h.html#dpo_vft_t" title='dpo_vft_t' data-type='struct dpo_vft_t_' data-ref="dpo_vft_t">dpo_vft_t</a> <dfn class="tu decl def" id="bier_table_dpo_vft" title='bier_table_dpo_vft' data-type='const dpo_vft_t' data-ref="bier_table_dpo_vft">bier_table_dpo_vft</dfn> = {</td></tr>
+<tr><th id="461">461</th><td>    .<a class="ref field" href="../dpo/dpo.h.html#dpo_vft_t_::dv_lock" title='dpo_vft_t_::dv_lock' data-ref="dpo_vft_t_::dv_lock">dv_lock</a> = <a class="tu ref fn" href="#bier_table_dpo_lock" title='bier_table_dpo_lock' data-ref="bier_table_dpo_lock">bier_table_dpo_lock</a>,</td></tr>
+<tr><th id="462">462</th><td>    .<a class="ref field" href="../dpo/dpo.h.html#dpo_vft_t_::dv_unlock" title='dpo_vft_t_::dv_unlock' data-ref="dpo_vft_t_::dv_unlock">dv_unlock</a> = <a class="tu ref fn" href="#bier_table_dpo_unlock" title='bier_table_dpo_unlock' data-ref="bier_table_dpo_unlock">bier_table_dpo_unlock</a>,</td></tr>
+<tr><th id="463">463</th><td>    .<a class="ref field" href="../dpo/dpo.h.html#dpo_vft_t_::dv_format" title='dpo_vft_t_::dv_format' data-ref="dpo_vft_t_::dv_format">dv_format</a> = <a class="tu ref fn" href="#format_bier_table_dpo" title='format_bier_table_dpo' data-ref="format_bier_table_dpo">format_bier_table_dpo</a>,</td></tr>
+<tr><th id="464">464</th><td>    .<a class="ref field" href="../dpo/dpo.h.html#dpo_vft_t_::dv_mem_show" title='dpo_vft_t_::dv_mem_show' data-ref="dpo_vft_t_::dv_mem_show">dv_mem_show</a> = <a class="tu ref fn" href="#bier_table_dpo_mem_show" title='bier_table_dpo_mem_show' data-ref="bier_table_dpo_mem_show">bier_table_dpo_mem_show</a>,</td></tr>
+<tr><th id="465">465</th><td>};</td></tr>
+<tr><th id="466">466</th><td></td></tr>
+<tr><th id="467">467</th><td><em>const</em> <em>static</em> <em>char</em> *<em>const</em> <dfn class="tu decl def" id="bier_table_mpls_nodes" title='bier_table_mpls_nodes' data-type='const char *const [2]' data-ref="bier_table_mpls_nodes">bier_table_mpls_nodes</dfn>[] =</td></tr>
+<tr><th id="468">468</th><td>{</td></tr>
+<tr><th id="469">469</th><td>    <q>"bier-input"</q>,</td></tr>
+<tr><th id="470">470</th><td>    <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span></td></tr>
+<tr><th id="471">471</th><td>};</td></tr>
+<tr><th id="472">472</th><td><em>const</em> <em>static</em> <em>char</em> * <em>const</em> * <em>const</em> <dfn class="tu decl def" id="bier_table_nodes" title='bier_table_nodes' data-type='const char *const *const [6]' data-ref="bier_table_nodes">bier_table_nodes</dfn>[<a class="macro" href="../dpo/dpo.h.html#70" title="((dpo_proto_t)(DPO_PROTO_NSH+1))" data-ref="_M/DPO_PROTO_NUM">DPO_PROTO_NUM</a>] =</td></tr>
+<tr><th id="473">473</th><td>{</td></tr>
+<tr><th id="474">474</th><td>    [<a class="enum" href="../dpo/dpo.h.html#DPO_PROTO_BIER" title='DPO_PROTO_BIER' data-ref="DPO_PROTO_BIER">DPO_PROTO_BIER</a>] = <a class="tu ref" href="#bier_table_mpls_nodes" title='bier_table_mpls_nodes' data-ref="bier_table_mpls_nodes">bier_table_mpls_nodes</a>,</td></tr>
+<tr><th id="475">475</th><td>};</td></tr>
+<tr><th id="476">476</th><td></td></tr>
+<tr><th id="477">477</th><td><em>static</em> <a class="typedef" href="../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *</td></tr>
+<tr><th id="478">478</th><td><dfn class="tu decl def fn" id="bier_table_module_init" title='bier_table_module_init' data-type='clib_error_t * bier_table_module_init(vlib_main_t * vm)' data-ref="bier_table_module_init">bier_table_module_init</dfn> (<a class="typedef" href="../../vlib/main.h.html#vlib_main_t" title='vlib_main_t' data-type='struct vlib_main_t' data-ref="vlib_main_t">vlib_main_t</a> *<dfn class="local col7 decl" id="87vm" title='vm' data-type='vlib_main_t *' data-ref="87vm">vm</dfn>)</td></tr>
+<tr><th id="479">479</th><td>{</td></tr>
+<tr><th id="480">480</th><td>    <a class="ref fn" href="../dpo/dpo.h.html#dpo_register" title='dpo_register' data-ref="dpo_register">dpo_register</a>(<a class="enum" href="../dpo/dpo.h.html#DPO_BIER_TABLE" title='DPO_BIER_TABLE' data-ref="DPO_BIER_TABLE">DPO_BIER_TABLE</a>, &amp;<a class="tu ref" href="#bier_table_dpo_vft" title='bier_table_dpo_vft' data-use='a' data-ref="bier_table_dpo_vft">bier_table_dpo_vft</a>, <a class="tu ref" href="#bier_table_nodes" title='bier_table_nodes' data-use='r' data-ref="bier_table_nodes">bier_table_nodes</a>);</td></tr>
+<tr><th id="481">481</th><td></td></tr>
+<tr><th id="482">482</th><td>    <b>return</b> (<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>);</td></tr>
+<tr><th id="483">483</th><td>}</td></tr>
+<tr><th id="484">484</th><td></td></tr>
+<tr><th id="485">485</th><td><a class="macro" href="../../vlib/init.h.html#111" title="vlib_init_function_t * _vlib_init_function_bier_table_module_init = bier_table_module_init; static void __vlib_add_init_function_bier_table_module_init (void) __attribute__((__constructor__)) ; static void __vlib_add_init_function_bier_table_module_init (void) { vlib_main_t * vm = vlib_get_main(); static _vlib_init_function_list_elt_t _vlib_init_function; _vlib_init_function.next_init_function = vm-&gt;init_function_registrations; vm-&gt;init_function_registrations = &amp;_vlib_init_function; _vlib_init_function.f = &amp;bier_table_module_init; }" data-ref="_M/VLIB_INIT_FUNCTION">VLIB_INIT_FUNCTION</a> (<a class="tu ref fn" href="#bier_table_module_init" title='bier_table_module_init' data-ref="bier_table_module_init"><a class="tu ref fn" href="#bier_table_module_init" title='bier_table_module_init' data-use='a' data-ref="bier_table_module_init">bier_table_module_init</a></a>);</td></tr>
+<tr><th id="486">486</th><td></td></tr>
+<tr><th id="487">487</th><td><em>const</em> <a class="typedef" href="bier_types.h.html#bier_table_id_t" title='bier_table_id_t' data-type='struct bier_table_id_t_' data-ref="bier_table_id_t">bier_table_id_t</a> *</td></tr>
+<tr><th id="488">488</th><td><dfn class="decl def fn" id="bier_table_get_id" title='bier_table_get_id' data-ref="bier_table_get_id">bier_table_get_id</dfn> (<a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> <dfn class="local col8 decl" id="88bti" title='bti' data-type='index_t' data-ref="88bti">bti</dfn>)</td></tr>
+<tr><th id="489">489</th><td>{</td></tr>
+<tr><th id="490">490</th><td>    <a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col9 decl" id="89bt" title='bt' data-type='bier_table_t *' data-ref="89bt">bt</dfn>;</td></tr>
+<tr><th id="491">491</th><td></td></tr>
+<tr><th id="492">492</th><td>    <a class="local col9 ref" href="#89bt" title='bt' data-ref="89bt">bt</a> = <a class="ref fn" href="bier_table.h.html#bier_table_get" title='bier_table_get' data-ref="bier_table_get">bier_table_get</a>(<a class="local col8 ref" href="#88bti" title='bti' data-ref="88bti">bti</a>);</td></tr>
+<tr><th id="493">493</th><td></td></tr>
+<tr><th id="494">494</th><td>    <b>return</b> (&amp;<a class="local col9 ref" href="#89bt" title='bt' data-ref="89bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_id" title='bier_table_t_::bt_id' data-ref="bier_table_t_::bt_id">bt_id</a>);</td></tr>
+<tr><th id="495">495</th><td>}</td></tr>
+<tr><th id="496">496</th><td></td></tr>
+<tr><th id="497">497</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="498">498</th><td><dfn class="tu decl def fn" id="bier_table_insert" title='bier_table_insert' data-type='void bier_table_insert(bier_table_t * bt, bier_bp_t bp, index_t bei)' data-ref="bier_table_insert">bier_table_insert</dfn> (<a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col0 decl" id="90bt" title='bt' data-type='bier_table_t *' data-ref="90bt">bt</dfn>,</td></tr>
+<tr><th id="499">499</th><td>                   <a class="typedef" href="bier_types.h.html#bier_bp_t" title='bier_bp_t' data-type='u32' data-ref="bier_bp_t">bier_bp_t</a> <dfn class="local col1 decl" id="91bp" title='bp' data-type='bier_bp_t' data-ref="91bp">bp</dfn>,</td></tr>
+<tr><th id="500">500</th><td>                   <a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> <dfn class="local col2 decl" id="92bei" title='bei' data-type='index_t' data-ref="92bei">bei</dfn>)</td></tr>
+<tr><th id="501">501</th><td>{</td></tr>
+<tr><th id="502">502</th><td>    <a class="local col0 ref" href="#90bt" title='bt' data-ref="90bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_entries" title='bier_table_t_::bt_entries' data-ref="bier_table_t_::bt_entries">bt_entries</a>[<a class="macro" href="bier_types.h.html#296" title="(bp - 1)" data-ref="_M/BIER_BP_TO_INDEX">BIER_BP_TO_INDEX</a>(<a class="local col1 ref" href="#91bp" title='bp' data-ref="91bp">bp</a>)] = <a class="local col2 ref" href="#92bei" title='bei' data-ref="92bei">bei</a>;</td></tr>
+<tr><th id="503">503</th><td>}</td></tr>
+<tr><th id="504">504</th><td></td></tr>
+<tr><th id="505">505</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="506">506</th><td><dfn class="tu decl def fn" id="bier_table_remove" title='bier_table_remove' data-type='void bier_table_remove(bier_table_t * bt, bier_bp_t bp)' data-ref="bier_table_remove">bier_table_remove</dfn> (<a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col3 decl" id="93bt" title='bt' data-type='bier_table_t *' data-ref="93bt">bt</dfn>,</td></tr>
+<tr><th id="507">507</th><td>                   <a class="typedef" href="bier_types.h.html#bier_bp_t" title='bier_bp_t' data-type='u32' data-ref="bier_bp_t">bier_bp_t</a> <dfn class="local col4 decl" id="94bp" title='bp' data-type='bier_bp_t' data-ref="94bp">bp</dfn>)</td></tr>
+<tr><th id="508">508</th><td>{</td></tr>
+<tr><th id="509">509</th><td>    <a class="local col3 ref" href="#93bt" title='bt' data-ref="93bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_entries" title='bier_table_t_::bt_entries' data-ref="bier_table_t_::bt_entries">bt_entries</a>[<a class="macro" href="bier_types.h.html#296" title="(bp - 1)" data-ref="_M/BIER_BP_TO_INDEX">BIER_BP_TO_INDEX</a>(<a class="local col4 ref" href="#94bp" title='bp' data-ref="94bp">bp</a>)] = <a class="macro" href="../dpo/dpo.h.html#47" title="((index_t)(~0))" data-ref="_M/INDEX_INVALID">INDEX_INVALID</a>;</td></tr>
+<tr><th id="510">510</th><td>}</td></tr>
+<tr><th id="511">511</th><td></td></tr>
+<tr><th id="512">512</th><td><em>void</em></td></tr>
+<tr><th id="513">513</th><td><dfn class="decl def fn" id="bier_table_route_add" title='bier_table_route_add' data-ref="bier_table_route_add">bier_table_route_add</dfn> (<em>const</em> <a class="typedef" href="bier_types.h.html#bier_table_id_t" title='bier_table_id_t' data-type='struct bier_table_id_t_' data-ref="bier_table_id_t">bier_table_id_t</a> *<dfn class="local col5 decl" id="95btid" title='btid' data-type='const bier_table_id_t *' data-ref="95btid">btid</dfn>,</td></tr>
+<tr><th id="514">514</th><td>                      <a class="typedef" href="bier_types.h.html#bier_bp_t" title='bier_bp_t' data-type='u32' data-ref="bier_bp_t">bier_bp_t</a> <dfn class="local col6 decl" id="96bp" title='bp' data-type='bier_bp_t' data-ref="96bp">bp</dfn>,</td></tr>
+<tr><th id="515">515</th><td>                      <a class="typedef" href="../fib/fib_types.h.html#fib_route_path_t" title='fib_route_path_t' data-type='struct fib_route_path_t_' data-ref="fib_route_path_t">fib_route_path_t</a> *<dfn class="local col7 decl" id="97brps" title='brps' data-type='fib_route_path_t *' data-ref="97brps">brps</dfn>)</td></tr>
+<tr><th id="516">516</th><td>{</td></tr>
+<tr><th id="517">517</th><td>    <a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> <dfn class="local col8 decl" id="98bfmi" title='bfmi' data-type='index_t' data-ref="98bfmi">bfmi</dfn>, <dfn class="local col9 decl" id="99bti" title='bti' data-type='index_t' data-ref="99bti">bti</dfn>, <dfn class="local col0 decl" id="100bei" title='bei' data-type='index_t' data-ref="100bei">bei</dfn>, *<dfn class="local col1 decl" id="101bfmip" title='bfmip' data-type='index_t *' data-ref="101bfmip">bfmip</dfn>, *<dfn class="local col2 decl" id="102bfmis" title='bfmis' data-type='index_t *' data-ref="102bfmis">bfmis</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="518">518</th><td>    <a class="typedef" href="../fib/fib_types.h.html#fib_route_path_t" title='fib_route_path_t' data-type='struct fib_route_path_t_' data-ref="fib_route_path_t">fib_route_path_t</a> *<dfn class="local col3 decl" id="103brp" title='brp' data-type='fib_route_path_t *' data-ref="103brp">brp</dfn>;</td></tr>
+<tr><th id="519">519</th><td>    <a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col4 decl" id="104bt" title='bt' data-type='bier_table_t *' data-ref="104bt">bt</dfn>;</td></tr>
+<tr><th id="520">520</th><td></td></tr>
+<tr><th id="521">521</th><td>    <a class="local col4 ref" href="#104bt" title='bt' data-ref="104bt">bt</a> = <a class="tu ref fn" href="#bier_table_find" title='bier_table_find' data-use='c' data-ref="bier_table_find">bier_table_find</a>(<a class="local col5 ref" href="#95btid" title='btid' data-ref="95btid">btid</a>);</td></tr>
+<tr><th id="522">522</th><td></td></tr>
+<tr><th id="523">523</th><td>    <b>if</b> (<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> == <a class="local col4 ref" href="#104bt" title='bt' data-ref="104bt">bt</a>) {</td></tr>
+<tr><th id="524">524</th><td>        <b>return</b>;</td></tr>
+<tr><th id="525">525</th><td>    }</td></tr>
+<tr><th id="526">526</th><td></td></tr>
+<tr><th id="527">527</th><td>    <a class="local col9 ref" href="#99bti" title='bti' data-ref="99bti">bti</a> = <a class="tu ref fn" href="#bier_table_get_index" title='bier_table_get_index' data-use='c' data-ref="bier_table_get_index">bier_table_get_index</a>(<a class="local col4 ref" href="#104bt" title='bt' data-ref="104bt">bt</a>);</td></tr>
+<tr><th id="528">528</th><td>    <a class="local col0 ref" href="#100bei" title='bei' data-ref="100bei">bei</a> = <a class="ref fn" href="bier_table.h.html#bier_table_lookup" title='bier_table_lookup' data-ref="bier_table_lookup">bier_table_lookup</a>(<a class="local col4 ref" href="#104bt" title='bt' data-ref="104bt">bt</a>, <a class="local col6 ref" href="#96bp" title='bp' data-ref="96bp">bp</a>);</td></tr>
+<tr><th id="529">529</th><td></td></tr>
+<tr><th id="530">530</th><td>    <i>/*</i></td></tr>
+<tr><th id="531">531</th><td><i>     * set the FIB index in the path to the BIER table index</i></td></tr>
+<tr><th id="532">532</th><td><i>     */</i></td></tr>
+<tr><th id="533">533</th><td>    <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#184" title="for (brp = (brps); brp &lt; ((brps) + ((brps) ? (((vec_header_t *) (brps) - 1)-&gt;len) : 0)); brp++)" data-ref="_M/vec_foreach">vec_foreach</a>(<a class="local col3 ref" href="#103brp" title='brp' data-ref="103brp">brp</a>, <a class="local col7 ref" href="#97brps" title='brps' data-ref="97brps">brps</a>)</td></tr>
+<tr><th id="534">534</th><td>    {</td></tr>
+<tr><th id="535">535</th><td>        <i>/*</i></td></tr>
+<tr><th id="536">536</th><td><i>         * First use the path to find or construct an FMask object</i></td></tr>
+<tr><th id="537">537</th><td><i>         * via the next-hop</i></td></tr>
+<tr><th id="538">538</th><td><i>         */</i></td></tr>
+<tr><th id="539">539</th><td>        <a class="local col8 ref" href="#98bfmi" title='bfmi' data-ref="98bfmi">bfmi</a> = <a class="ref fn" href="bier_fmask_db.h.html#bier_fmask_db_find_or_create_and_lock" title='bier_fmask_db_find_or_create_and_lock' data-ref="bier_fmask_db_find_or_create_and_lock">bier_fmask_db_find_or_create_and_lock</a>(<a class="local col9 ref" href="#99bti" title='bti' data-ref="99bti">bti</a>, <a class="local col3 ref" href="#103brp" title='brp' data-ref="103brp">brp</a>);</td></tr>
+<tr><th id="540">540</th><td>        <a class="macro" href="../../vppinfra/vec.h.html#520" title="do { word _vec_l = ((bfmis) ? (((vec_header_t *) (bfmis) - 1)-&gt;len) : 0); bfmis = _vec_resize ((bfmis), 1, (_vec_l + 1) * sizeof ((bfmis)[0]), (0), (0)); (bfmis)[_vec_l] = (bfmi); } while (0)" data-ref="_M/vec_add1">vec_add1</a>(<a class="local col2 ref" href="#102bfmis" title='bfmis' data-ref="102bfmis">bfmis</a>, <a class="local col8 ref" href="#98bfmi" title='bfmi' data-ref="98bfmi">bfmi</a>);</td></tr>
+<tr><th id="541">541</th><td></td></tr>
+<tr><th id="542">542</th><td>        <i>/*</i></td></tr>
+<tr><th id="543">543</th><td><i>         * then modify the path to resolve via this fmask object</i></td></tr>
+<tr><th id="544">544</th><td><i>         * and use it to resolve the BIER entry.</i></td></tr>
+<tr><th id="545">545</th><td><i>         */</i></td></tr>
+<tr><th id="546">546</th><td>        <a class="local col3 ref" href="#103brp" title='brp' data-ref="103brp">brp</a>-&gt;<a class="ref field" href="../fib/fib_types.h.html#fib_route_path_t_::frp_flags" title='fib_route_path_t_::frp_flags' data-ref="fib_route_path_t_::frp_flags">frp_flags</a> = <a class="enum" href="../fib/fib_types.h.html#FIB_ROUTE_PATH_BIER_FMASK" title='FIB_ROUTE_PATH_BIER_FMASK' data-ref="FIB_ROUTE_PATH_BIER_FMASK">FIB_ROUTE_PATH_BIER_FMASK</a>;</td></tr>
+<tr><th id="547">547</th><td>        <a class="local col3 ref" href="#103brp" title='brp' data-ref="103brp">brp</a>-&gt;<a class="ref field" href="../fib/fib_types.h.html#fib_route_path_t_::(anonymous)::frp_bier_fmask" title='fib_route_path_t_::(anonymous union)::frp_bier_fmask' data-ref="fib_route_path_t_::(anonymous)::frp_bier_fmask">frp_bier_fmask</a> = <a class="local col8 ref" href="#98bfmi" title='bfmi' data-ref="98bfmi">bfmi</a>;</td></tr>
+<tr><th id="548">548</th><td>    }</td></tr>
+<tr><th id="549">549</th><td></td></tr>
+<tr><th id="550">550</th><td>    <b>if</b> (<a class="macro" href="../dpo/dpo.h.html#47" title="((index_t)(~0))" data-ref="_M/INDEX_INVALID">INDEX_INVALID</a> == <a class="local col0 ref" href="#100bei" title='bei' data-ref="100bei">bei</a>)</td></tr>
+<tr><th id="551">551</th><td>    {</td></tr>
+<tr><th id="552">552</th><td>        <a class="local col0 ref" href="#100bei" title='bei' data-ref="100bei">bei</a> = <a class="ref fn" href="bier_entry.h.html#bier_entry_create" title='bier_entry_create' data-ref="bier_entry_create">bier_entry_create</a>(<a class="local col9 ref" href="#99bti" title='bti' data-ref="99bti">bti</a>, <a class="local col6 ref" href="#96bp" title='bp' data-ref="96bp">bp</a>);</td></tr>
+<tr><th id="553">553</th><td>        <a class="tu ref fn" href="#bier_table_insert" title='bier_table_insert' data-use='c' data-ref="bier_table_insert">bier_table_insert</a>(<a class="local col4 ref" href="#104bt" title='bt' data-ref="104bt">bt</a>, <a class="local col6 ref" href="#96bp" title='bp' data-ref="96bp">bp</a>, <a class="local col0 ref" href="#100bei" title='bei' data-ref="100bei">bei</a>);</td></tr>
+<tr><th id="554">554</th><td>    }</td></tr>
+<tr><th id="555">555</th><td>    <a class="ref fn" href="bier_entry.h.html#bier_entry_path_add" title='bier_entry_path_add' data-ref="bier_entry_path_add">bier_entry_path_add</a>(<a class="local col0 ref" href="#100bei" title='bei' data-ref="100bei">bei</a>, <a class="local col7 ref" href="#97brps" title='brps' data-ref="97brps">brps</a>);</td></tr>
+<tr><th id="556">556</th><td></td></tr>
+<tr><th id="557">557</th><td>    <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#184" title="for (bfmip = (bfmis); bfmip &lt; ((bfmis) + ((bfmis) ? (((vec_header_t *) (bfmis) - 1)-&gt;len) : 0)); bfmip++)" data-ref="_M/vec_foreach">vec_foreach</a>(<a class="local col1 ref" href="#101bfmip" title='bfmip' data-ref="101bfmip">bfmip</a>, <a class="local col2 ref" href="#102bfmis" title='bfmis' data-ref="102bfmis">bfmis</a>)</td></tr>
+<tr><th id="558">558</th><td>    {</td></tr>
+<tr><th id="559">559</th><td>        <a class="ref fn" href="bier_fmask.h.html#bier_fmask_unlock" title='bier_fmask_unlock' data-ref="bier_fmask_unlock">bier_fmask_unlock</a>(*<a class="local col1 ref" href="#101bfmip" title='bfmip' data-ref="101bfmip">bfmip</a>);</td></tr>
+<tr><th id="560">560</th><td>    }</td></tr>
+<tr><th id="561">561</th><td>    <a class="macro" href="../../vppinfra/vec.h.html#336" title="do { if (bfmis) { clib_mem_free (vec_header ((bfmis), (0))); bfmis = 0; } } while (0)" data-ref="_M/vec_free">vec_free</a>(<a class="local col2 ref" href="#102bfmis" title='bfmis' data-ref="102bfmis">bfmis</a>);</td></tr>
+<tr><th id="562">562</th><td>}</td></tr>
+<tr><th id="563">563</th><td></td></tr>
+<tr><th id="564">564</th><td><em>void</em></td></tr>
+<tr><th id="565">565</th><td><dfn class="decl def fn" id="bier_table_route_remove" title='bier_table_route_remove' data-ref="bier_table_route_remove">bier_table_route_remove</dfn> (<em>const</em> <a class="typedef" href="bier_types.h.html#bier_table_id_t" title='bier_table_id_t' data-type='struct bier_table_id_t_' data-ref="bier_table_id_t">bier_table_id_t</a> *<dfn class="local col5 decl" id="105btid" title='btid' data-type='const bier_table_id_t *' data-ref="105btid">btid</dfn>,</td></tr>
+<tr><th id="566">566</th><td>                         <a class="typedef" href="bier_types.h.html#bier_bp_t" title='bier_bp_t' data-type='u32' data-ref="bier_bp_t">bier_bp_t</a> <dfn class="local col6 decl" id="106bp" title='bp' data-type='bier_bp_t' data-ref="106bp">bp</dfn>,</td></tr>
+<tr><th id="567">567</th><td>                         <a class="typedef" href="../fib/fib_types.h.html#fib_route_path_t" title='fib_route_path_t' data-type='struct fib_route_path_t_' data-ref="fib_route_path_t">fib_route_path_t</a> *<dfn class="local col7 decl" id="107brps" title='brps' data-type='fib_route_path_t *' data-ref="107brps">brps</dfn>)</td></tr>
+<tr><th id="568">568</th><td>{</td></tr>
+<tr><th id="569">569</th><td>    <a class="typedef" href="../fib/fib_types.h.html#fib_route_path_t" title='fib_route_path_t' data-type='struct fib_route_path_t_' data-ref="fib_route_path_t">fib_route_path_t</a> *<dfn class="local col8 decl" id="108brp" title='brp' data-type='fib_route_path_t *' data-ref="108brp">brp</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="570">570</th><td>    <a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> <dfn class="local col9 decl" id="109bfmi" title='bfmi' data-type='index_t' data-ref="109bfmi">bfmi</dfn>, <dfn class="local col0 decl" id="110bti" title='bti' data-type='index_t' data-ref="110bti">bti</dfn>, <dfn class="local col1 decl" id="111bei" title='bei' data-type='index_t' data-ref="111bei">bei</dfn>;</td></tr>
+<tr><th id="571">571</th><td>    <a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col2 decl" id="112bt" title='bt' data-type='bier_table_t *' data-ref="112bt">bt</dfn>;</td></tr>
+<tr><th id="572">572</th><td>    <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col3 decl" id="113ii" title='ii' data-type='u32' data-ref="113ii">ii</dfn>;</td></tr>
+<tr><th id="573">573</th><td></td></tr>
+<tr><th id="574">574</th><td>    <a class="local col2 ref" href="#112bt" title='bt' data-ref="112bt">bt</a> = <a class="tu ref fn" href="#bier_table_find" title='bier_table_find' data-use='c' data-ref="bier_table_find">bier_table_find</a>(<a class="local col5 ref" href="#105btid" title='btid' data-ref="105btid">btid</a>);</td></tr>
+<tr><th id="575">575</th><td></td></tr>
+<tr><th id="576">576</th><td>    <b>if</b> (<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> == <a class="local col2 ref" href="#112bt" title='bt' data-ref="112bt">bt</a>) {</td></tr>
+<tr><th id="577">577</th><td>        <b>return</b>;</td></tr>
+<tr><th id="578">578</th><td>    }</td></tr>
+<tr><th id="579">579</th><td></td></tr>
+<tr><th id="580">580</th><td>    <a class="local col0 ref" href="#110bti" title='bti' data-ref="110bti">bti</a> = <a class="tu ref fn" href="#bier_table_get_index" title='bier_table_get_index' data-use='c' data-ref="bier_table_get_index">bier_table_get_index</a>(<a class="local col2 ref" href="#112bt" title='bt' data-ref="112bt">bt</a>);</td></tr>
+<tr><th id="581">581</th><td>    <a class="local col1 ref" href="#111bei" title='bei' data-ref="111bei">bei</a> = <a class="ref fn" href="bier_table.h.html#bier_table_lookup" title='bier_table_lookup' data-ref="bier_table_lookup">bier_table_lookup</a>(<a class="local col2 ref" href="#112bt" title='bt' data-ref="112bt">bt</a>, <a class="local col6 ref" href="#106bp" title='bp' data-ref="106bp">bp</a>);</td></tr>
+<tr><th id="582">582</th><td></td></tr>
+<tr><th id="583">583</th><td>    <b>if</b> (<a class="macro" href="../dpo/dpo.h.html#47" title="((index_t)(~0))" data-ref="_M/INDEX_INVALID">INDEX_INVALID</a> == <a class="local col1 ref" href="#111bei" title='bei' data-ref="111bei">bei</a>)</td></tr>
+<tr><th id="584">584</th><td>    {</td></tr>
+<tr><th id="585">585</th><td>        <i>/* no such entry */</i></td></tr>
+<tr><th id="586">586</th><td>        <b>return</b>;</td></tr>
+<tr><th id="587">587</th><td>    }</td></tr>
+<tr><th id="588">588</th><td></td></tr>
+<tr><th id="589">589</th><td>    <i>/*</i></td></tr>
+<tr><th id="590">590</th><td><i>     * set the FIB index in the path to the BIER table index</i></td></tr>
+<tr><th id="591">591</th><td><i>     */</i></td></tr>
+<tr><th id="592">592</th><td>    <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#191" title="for ((ii) = 0; (ii) &lt; ((brps) ? (((vec_header_t *) (brps) - 1)-&gt;len) : 0); (ii)++)" data-ref="_M/vec_foreach_index">vec_foreach_index</a>(<a class="local col3 ref" href="#113ii" title='ii' data-ref="113ii">ii</a>, <a class="local col7 ref" href="#107brps" title='brps' data-ref="107brps">brps</a>)</td></tr>
+<tr><th id="593">593</th><td>    {</td></tr>
+<tr><th id="594">594</th><td>        <a class="local col8 ref" href="#108brp" title='brp' data-ref="108brp">brp</a> = &amp;<a class="local col7 ref" href="#107brps" title='brps' data-ref="107brps">brps</a>[<a class="local col3 ref" href="#113ii" title='ii' data-ref="113ii">ii</a>];</td></tr>
+<tr><th id="595">595</th><td>        <a class="local col9 ref" href="#109bfmi" title='bfmi' data-ref="109bfmi">bfmi</a> = <a class="ref fn" href="bier_fmask_db.h.html#bier_fmask_db_find" title='bier_fmask_db_find' data-ref="bier_fmask_db_find">bier_fmask_db_find</a>(<a class="local col0 ref" href="#110bti" title='bti' data-ref="110bti">bti</a>, <a class="local col8 ref" href="#108brp" title='brp' data-ref="108brp">brp</a>);</td></tr>
+<tr><th id="596">596</th><td></td></tr>
+<tr><th id="597">597</th><td>        <b>if</b> (<a class="macro" href="../dpo/dpo.h.html#47" title="((index_t)(~0))" data-ref="_M/INDEX_INVALID">INDEX_INVALID</a> == <a class="local col9 ref" href="#109bfmi" title='bfmi' data-ref="109bfmi">bfmi</a>)</td></tr>
+<tr><th id="598">598</th><td>        {</td></tr>
+<tr><th id="599">599</th><td>            <i>/*</i></td></tr>
+<tr><th id="600">600</th><td><i>             * no matching fmask, not a path we can remove</i></td></tr>
+<tr><th id="601">601</th><td><i>             */</i></td></tr>
+<tr><th id="602">602</th><td>            <a class="macro" href="../../vppinfra/vec.h.html#803" title="do { uword _vec_del_l = (((vec_header_t *) (brps) - 1)-&gt;len) - 1; uword _vec_del_i = (ii); if (_vec_del_i &lt; _vec_del_l) (brps)[_vec_del_i] = (brps)[_vec_del_l]; (((vec_header_t *) (brps) - 1)-&gt;len) = _vec_del_l; } while (0)" data-ref="_M/vec_del1">vec_del1</a>(<a class="local col7 ref" href="#107brps" title='brps' data-ref="107brps">brps</a>, <a class="local col3 ref" href="#113ii" title='ii' data-ref="113ii">ii</a>);</td></tr>
+<tr><th id="603">603</th><td>            <b>continue</b>;</td></tr>
+<tr><th id="604">604</th><td>        }</td></tr>
+<tr><th id="605">605</th><td></td></tr>
+<tr><th id="606">606</th><td>        <i>/*</i></td></tr>
+<tr><th id="607">607</th><td><i>         * then modify the path to resolve via this fmask object</i></td></tr>
+<tr><th id="608">608</th><td><i>         * and use it to resolve the BIER entry.</i></td></tr>
+<tr><th id="609">609</th><td><i>         */</i></td></tr>
+<tr><th id="610">610</th><td>        <a class="local col8 ref" href="#108brp" title='brp' data-ref="108brp">brp</a>-&gt;<a class="ref field" href="../fib/fib_types.h.html#fib_route_path_t_::frp_flags" title='fib_route_path_t_::frp_flags' data-ref="fib_route_path_t_::frp_flags">frp_flags</a> = <a class="enum" href="../fib/fib_types.h.html#FIB_ROUTE_PATH_BIER_FMASK" title='FIB_ROUTE_PATH_BIER_FMASK' data-ref="FIB_ROUTE_PATH_BIER_FMASK">FIB_ROUTE_PATH_BIER_FMASK</a>;</td></tr>
+<tr><th id="611">611</th><td>        <a class="local col8 ref" href="#108brp" title='brp' data-ref="108brp">brp</a>-&gt;<a class="ref field" href="../fib/fib_types.h.html#fib_route_path_t_::(anonymous)::frp_bier_fmask" title='fib_route_path_t_::(anonymous union)::frp_bier_fmask' data-ref="fib_route_path_t_::(anonymous)::frp_bier_fmask">frp_bier_fmask</a> = <a class="local col9 ref" href="#109bfmi" title='bfmi' data-ref="109bfmi">bfmi</a>;</td></tr>
+<tr><th id="612">612</th><td>    }</td></tr>
+<tr><th id="613">613</th><td></td></tr>
+<tr><th id="614">614</th><td>    <b>if</b> (<var>0</var> == <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#142" title="((brps) ? (((vec_header_t *) (brps) - 1)-&gt;len) : 0)" data-ref="_M/vec_len">vec_len</a>(<a class="local col7 ref" href="#107brps" title='brps' data-ref="107brps">brps</a>))</td></tr>
+<tr><th id="615">615</th><td>    {</td></tr>
+<tr><th id="616">616</th><td>        <b>return</b>;</td></tr>
+<tr><th id="617">617</th><td>    }</td></tr>
+<tr><th id="618">618</th><td></td></tr>
+<tr><th id="619">619</th><td>    <b>if</b> (<var>0</var> == <a class="ref fn" href="bier_entry.h.html#bier_entry_path_remove" title='bier_entry_path_remove' data-ref="bier_entry_path_remove">bier_entry_path_remove</a>(<a class="local col1 ref" href="#111bei" title='bei' data-ref="111bei">bei</a>, <a class="local col7 ref" href="#107brps" title='brps' data-ref="107brps">brps</a>))</td></tr>
+<tr><th id="620">620</th><td>    {</td></tr>
+<tr><th id="621">621</th><td>        <i>/* 0 remaining paths */</i></td></tr>
+<tr><th id="622">622</th><td>        <a class="tu ref fn" href="#bier_table_remove" title='bier_table_remove' data-use='c' data-ref="bier_table_remove">bier_table_remove</a>(<a class="local col2 ref" href="#112bt" title='bt' data-ref="112bt">bt</a>, <a class="local col6 ref" href="#106bp" title='bp' data-ref="106bp">bp</a>);</td></tr>
+<tr><th id="623">623</th><td>        <a class="ref fn" href="bier_entry.h.html#bier_entry_delete" title='bier_entry_delete' data-ref="bier_entry_delete">bier_entry_delete</a>(<a class="local col1 ref" href="#111bei" title='bei' data-ref="111bei">bei</a>);</td></tr>
+<tr><th id="624">624</th><td>    }</td></tr>
+<tr><th id="625">625</th><td>}</td></tr>
+<tr><th id="626">626</th><td></td></tr>
+<tr><th id="627">627</th><td><em>void</em></td></tr>
+<tr><th id="628">628</th><td><dfn class="decl def fn" id="bier_table_contribute_forwarding" title='bier_table_contribute_forwarding' data-ref="bier_table_contribute_forwarding">bier_table_contribute_forwarding</dfn> (<a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> <dfn class="local col4 decl" id="114bti" title='bti' data-type='index_t' data-ref="114bti">bti</dfn>,</td></tr>
+<tr><th id="629">629</th><td>                                  <a class="typedef" href="../dpo/dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> *<dfn class="local col5 decl" id="115dpo" title='dpo' data-type='dpo_id_t *' data-ref="115dpo">dpo</dfn>)</td></tr>
+<tr><th id="630">630</th><td>{</td></tr>
+<tr><th id="631">631</th><td>    <a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col6 decl" id="116bt" title='bt' data-type='bier_table_t *' data-ref="116bt">bt</dfn>;</td></tr>
+<tr><th id="632">632</th><td></td></tr>
+<tr><th id="633">633</th><td>    <a class="local col6 ref" href="#116bt" title='bt' data-ref="116bt">bt</a> = <a class="ref fn" href="bier_table.h.html#bier_table_get" title='bier_table_get' data-ref="bier_table_get">bier_table_get</a>(<a class="local col4 ref" href="#114bti" title='bti' data-ref="114bti">bti</a>);</td></tr>
+<tr><th id="634">634</th><td></td></tr>
+<tr><th id="635">635</th><td>    <b>if</b> (<a class="macro" href="bier_types.h.html#389" title="0xFFFF" data-ref="_M/BIER_ECMP_TABLE_ID_MAIN">BIER_ECMP_TABLE_ID_MAIN</a> == <a class="local col6 ref" href="#116bt" title='bt' data-ref="116bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_id" title='bier_table_t_::bt_id' data-ref="bier_table_t_::bt_id">bt_id</a>.<a class="ref field" href="bier_types.h.html#bier_table_id_t_::bti_ecmp" title='bier_table_id_t_::bti_ecmp' data-ref="bier_table_id_t_::bti_ecmp">bti_ecmp</a>)</td></tr>
+<tr><th id="636">636</th><td>    {</td></tr>
+<tr><th id="637">637</th><td>        <i>/*</i></td></tr>
+<tr><th id="638">638</th><td><i>         * return the load-balance for the ECMP tables</i></td></tr>
+<tr><th id="639">639</th><td><i>         */</i></td></tr>
+<tr><th id="640">640</th><td>        <a class="ref fn" href="../fib/fib_path_list.h.html#fib_path_list_contribute_forwarding" title='fib_path_list_contribute_forwarding' data-ref="fib_path_list_contribute_forwarding">fib_path_list_contribute_forwarding</a>(<a class="local col6 ref" href="#116bt" title='bt' data-ref="116bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_pl" title='bier_table_t_::bt_pl' data-ref="bier_table_t_::bt_pl">bt_pl</a>,</td></tr>
+<tr><th id="641">641</th><td>                                            <a class="enum" href="../fib/fib_types.h.html#FIB_FORW_CHAIN_TYPE_BIER" title='FIB_FORW_CHAIN_TYPE_BIER' data-ref="FIB_FORW_CHAIN_TYPE_BIER">FIB_FORW_CHAIN_TYPE_BIER</a>,</td></tr>
+<tr><th id="642">642</th><td>                                            <a class="enum" href="../fib/fib_path_list.h.html#FIB_PATH_LIST_FWD_FLAG_COLLAPSE" title='FIB_PATH_LIST_FWD_FLAG_COLLAPSE' data-ref="FIB_PATH_LIST_FWD_FLAG_COLLAPSE">FIB_PATH_LIST_FWD_FLAG_COLLAPSE</a>,</td></tr>
+<tr><th id="643">643</th><td>                                            <a class="local col5 ref" href="#115dpo" title='dpo' data-ref="115dpo">dpo</a>);</td></tr>
+<tr><th id="644">644</th><td>    }</td></tr>
+<tr><th id="645">645</th><td>    <b>else</b></td></tr>
+<tr><th id="646">646</th><td>    {</td></tr>
+<tr><th id="647">647</th><td>        <a class="ref fn" href="../dpo/dpo.h.html#dpo_set" title='dpo_set' data-ref="dpo_set">dpo_set</a>(<a class="local col5 ref" href="#115dpo" title='dpo' data-ref="115dpo">dpo</a>, <a class="enum" href="../dpo/dpo.h.html#DPO_BIER_TABLE" title='DPO_BIER_TABLE' data-ref="DPO_BIER_TABLE">DPO_BIER_TABLE</a>, <a class="enum" href="../dpo/dpo.h.html#DPO_PROTO_BIER" title='DPO_PROTO_BIER' data-ref="DPO_PROTO_BIER">DPO_PROTO_BIER</a>, <a class="local col4 ref" href="#114bti" title='bti' data-ref="114bti">bti</a>);</td></tr>
+<tr><th id="648">648</th><td>    }</td></tr>
+<tr><th id="649">649</th><td>}</td></tr>
+<tr><th id="650">650</th><td></td></tr>
+<tr><th id="651">651</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="bier_table_ecmp_walk_ctx_t_" title='bier_table_ecmp_walk_ctx_t_' data-ref="bier_table_ecmp_walk_ctx_t_"><a class="type" href="#bier_table_ecmp_walk_ctx_t_" title='bier_table_ecmp_walk_ctx_t_' data-ref="bier_table_ecmp_walk_ctx_t_">bier_table_ecmp_walk_ctx_t_</a></dfn></td></tr>
+<tr><th id="652">652</th><td>{</td></tr>
+<tr><th id="653">653</th><td>    <a class="typedef" href="bier_table.h.html#bier_table_ecmp_walk_fn_t" title='bier_table_ecmp_walk_fn_t' data-type='void (*)(index_t, void *)' data-ref="bier_table_ecmp_walk_fn_t">bier_table_ecmp_walk_fn_t</a> <dfn class="tu decl field" id="bier_table_ecmp_walk_ctx_t_::fn" title='bier_table_ecmp_walk_ctx_t_::fn' data-type='bier_table_ecmp_walk_fn_t' data-ref="bier_table_ecmp_walk_ctx_t_::fn">fn</dfn>;</td></tr>
+<tr><th id="654">654</th><td>    <em>void</em> *<dfn class="tu decl field" id="bier_table_ecmp_walk_ctx_t_::ctx" title='bier_table_ecmp_walk_ctx_t_::ctx' data-type='void *' data-ref="bier_table_ecmp_walk_ctx_t_::ctx">ctx</dfn>;</td></tr>
+<tr><th id="655">655</th><td>} <dfn class="typedef" id="bier_table_ecmp_walk_ctx_t" title='bier_table_ecmp_walk_ctx_t' data-type='struct bier_table_ecmp_walk_ctx_t_' data-ref="bier_table_ecmp_walk_ctx_t">bier_table_ecmp_walk_ctx_t</dfn>;</td></tr>
+<tr><th id="656">656</th><td></td></tr>
+<tr><th id="657">657</th><td><em>static</em> <a class="typedef" href="../fib/fib_types.h.html#fib_path_list_walk_rc_t" title='fib_path_list_walk_rc_t' data-type='enum fib_path_list_walk_rc_t_' data-ref="fib_path_list_walk_rc_t">fib_path_list_walk_rc_t</a></td></tr>
+<tr><th id="658">658</th><td><dfn class="tu decl def fn" id="bier_table_ecmp_walk_path_list" title='bier_table_ecmp_walk_path_list' data-type='fib_path_list_walk_rc_t bier_table_ecmp_walk_path_list(fib_node_index_t pl_index, fib_node_index_t path_index, void * arg)' data-ref="bier_table_ecmp_walk_path_list">bier_table_ecmp_walk_path_list</dfn> (<a class="typedef" href="../fib/fib_types.h.html#fib_node_index_t" title='fib_node_index_t' data-type='u32' data-ref="fib_node_index_t">fib_node_index_t</a> <dfn class="local col7 decl" id="117pl_index" title='pl_index' data-type='fib_node_index_t' data-ref="117pl_index">pl_index</dfn>,</td></tr>
+<tr><th id="659">659</th><td>                                <a class="typedef" href="../fib/fib_types.h.html#fib_node_index_t" title='fib_node_index_t' data-type='u32' data-ref="fib_node_index_t">fib_node_index_t</a> <dfn class="local col8 decl" id="118path_index" title='path_index' data-type='fib_node_index_t' data-ref="118path_index">path_index</dfn>,</td></tr>
+<tr><th id="660">660</th><td>                                <em>void</em> *<dfn class="local col9 decl" id="119arg" title='arg' data-type='void *' data-ref="119arg">arg</dfn>)</td></tr>
+<tr><th id="661">661</th><td>{</td></tr>
+<tr><th id="662">662</th><td>    <a class="typedef" href="#bier_table_ecmp_walk_ctx_t" title='bier_table_ecmp_walk_ctx_t' data-type='struct bier_table_ecmp_walk_ctx_t_' data-ref="bier_table_ecmp_walk_ctx_t">bier_table_ecmp_walk_ctx_t</a> *<dfn class="local col0 decl" id="120ctx" title='ctx' data-type='bier_table_ecmp_walk_ctx_t *' data-ref="120ctx">ctx</dfn> = <a class="local col9 ref" href="#119arg" title='arg' data-ref="119arg">arg</a>;</td></tr>
+<tr><th id="663">663</th><td></td></tr>
+<tr><th id="664">664</th><td>    <a class="local col0 ref" href="#120ctx" title='ctx' data-ref="120ctx">ctx</a>-&gt;<a class="tu ref field" href="#bier_table_ecmp_walk_ctx_t_::fn" title='bier_table_ecmp_walk_ctx_t_::fn' data-use='r' data-ref="bier_table_ecmp_walk_ctx_t_::fn">fn</a>(<a class="ref fn" href="../fib/fib_path.h.html#fib_path_get_resolving_index" title='fib_path_get_resolving_index' data-ref="fib_path_get_resolving_index">fib_path_get_resolving_index</a>(<a class="local col8 ref" href="#118path_index" title='path_index' data-ref="118path_index">path_index</a>), <a class="local col0 ref" href="#120ctx" title='ctx' data-ref="120ctx">ctx</a>-&gt;<a class="tu ref field" href="#bier_table_ecmp_walk_ctx_t_::ctx" title='bier_table_ecmp_walk_ctx_t_::ctx' data-use='r' data-ref="bier_table_ecmp_walk_ctx_t_::ctx">ctx</a>);</td></tr>
+<tr><th id="665">665</th><td>    <i>/* continue */</i></td></tr>
+<tr><th id="666">666</th><td>    <b>return</b> (<a class="enum" href="../fib/fib_types.h.html#FIB_PATH_LIST_WALK_CONTINUE" title='FIB_PATH_LIST_WALK_CONTINUE' data-ref="FIB_PATH_LIST_WALK_CONTINUE">FIB_PATH_LIST_WALK_CONTINUE</a>);</td></tr>
+<tr><th id="667">667</th><td>}</td></tr>
+<tr><th id="668">668</th><td></td></tr>
+<tr><th id="669">669</th><td><em>void</em></td></tr>
+<tr><th id="670">670</th><td><dfn class="decl def fn" id="bier_table_ecmp_walk" title='bier_table_ecmp_walk' data-ref="bier_table_ecmp_walk">bier_table_ecmp_walk</dfn> (<a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> <dfn class="local col1 decl" id="121bti" title='bti' data-type='index_t' data-ref="121bti">bti</dfn>,</td></tr>
+<tr><th id="671">671</th><td>                      <a class="typedef" href="bier_table.h.html#bier_table_ecmp_walk_fn_t" title='bier_table_ecmp_walk_fn_t' data-type='void (*)(index_t, void *)' data-ref="bier_table_ecmp_walk_fn_t">bier_table_ecmp_walk_fn_t</a> <dfn class="local col2 decl" id="122fn" title='fn' data-type='bier_table_ecmp_walk_fn_t' data-ref="122fn">fn</dfn>,</td></tr>
+<tr><th id="672">672</th><td>                      <em>void</em> *<dfn class="local col3 decl" id="123ctx" title='ctx' data-type='void *' data-ref="123ctx">ctx</dfn>)</td></tr>
+<tr><th id="673">673</th><td>{</td></tr>
+<tr><th id="674">674</th><td>    <a class="typedef" href="#bier_table_ecmp_walk_ctx_t" title='bier_table_ecmp_walk_ctx_t' data-type='struct bier_table_ecmp_walk_ctx_t_' data-ref="bier_table_ecmp_walk_ctx_t">bier_table_ecmp_walk_ctx_t</a> <dfn class="local col4 decl" id="124ewc" title='ewc' data-type='bier_table_ecmp_walk_ctx_t' data-ref="124ewc">ewc</dfn> = {</td></tr>
+<tr><th id="675">675</th><td>        .<a class="tu ref field" href="#bier_table_ecmp_walk_ctx_t_::fn" title='bier_table_ecmp_walk_ctx_t_::fn' data-use='w' data-ref="bier_table_ecmp_walk_ctx_t_::fn">fn</a> = <a class="local col2 ref" href="#122fn" title='fn' data-ref="122fn">fn</a>,</td></tr>
+<tr><th id="676">676</th><td>        .<a class="tu ref field" href="#bier_table_ecmp_walk_ctx_t_::ctx" title='bier_table_ecmp_walk_ctx_t_::ctx' data-use='w' data-ref="bier_table_ecmp_walk_ctx_t_::ctx">ctx</a> = <a class="local col3 ref" href="#123ctx" title='ctx' data-ref="123ctx">ctx</a>,</td></tr>
+<tr><th id="677">677</th><td>    };</td></tr>
+<tr><th id="678">678</th><td>    <a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col5 decl" id="125bt" title='bt' data-type='bier_table_t *' data-ref="125bt">bt</dfn>;</td></tr>
+<tr><th id="679">679</th><td></td></tr>
+<tr><th id="680">680</th><td>    <a class="local col5 ref" href="#125bt" title='bt' data-ref="125bt">bt</a> = <a class="ref fn" href="bier_table.h.html#bier_table_get" title='bier_table_get' data-ref="bier_table_get">bier_table_get</a>(<a class="local col1 ref" href="#121bti" title='bti' data-ref="121bti">bti</a>);</td></tr>
+<tr><th id="681">681</th><td></td></tr>
+<tr><th id="682">682</th><td>    <a class="ref fn" href="../fib/fib_path_list.h.html#fib_path_list_walk" title='fib_path_list_walk' data-ref="fib_path_list_walk">fib_path_list_walk</a>(<a class="local col5 ref" href="#125bt" title='bt' data-ref="125bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_pl" title='bier_table_t_::bt_pl' data-ref="bier_table_t_::bt_pl">bt_pl</a>,</td></tr>
+<tr><th id="683">683</th><td>                       <a class="tu ref fn" href="#bier_table_ecmp_walk_path_list" title='bier_table_ecmp_walk_path_list' data-use='r' data-ref="bier_table_ecmp_walk_path_list">bier_table_ecmp_walk_path_list</a>,</td></tr>
+<tr><th id="684">684</th><td>                       &amp;<a class="local col4 ref" href="#124ewc" title='ewc' data-ref="124ewc">ewc</a>);</td></tr>
+<tr><th id="685">685</th><td>}</td></tr>
+<tr><th id="686">686</th><td></td></tr>
+<tr><th id="687">687</th><td><em>void</em></td></tr>
+<tr><th id="688">688</th><td><dfn class="decl def fn" id="bier_table_ecmp_set_fmask" title='bier_table_ecmp_set_fmask' data-ref="bier_table_ecmp_set_fmask">bier_table_ecmp_set_fmask</dfn> (<a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> <dfn class="local col6 decl" id="126bti" title='bti' data-type='index_t' data-ref="126bti">bti</dfn>,</td></tr>
+<tr><th id="689">689</th><td>                           <a class="typedef" href="bier_types.h.html#bier_bp_t" title='bier_bp_t' data-type='u32' data-ref="bier_bp_t">bier_bp_t</a> <dfn class="local col7 decl" id="127bp" title='bp' data-type='bier_bp_t' data-ref="127bp">bp</dfn>,</td></tr>
+<tr><th id="690">690</th><td>                           <a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> <dfn class="local col8 decl" id="128bfmi" title='bfmi' data-type='index_t' data-ref="128bfmi">bfmi</dfn>)</td></tr>
+<tr><th id="691">691</th><td>{</td></tr>
+<tr><th id="692">692</th><td>    <a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col9 decl" id="129bt" title='bt' data-type='bier_table_t *' data-ref="129bt">bt</dfn>;</td></tr>
+<tr><th id="693">693</th><td></td></tr>
+<tr><th id="694">694</th><td>    <a class="local col9 ref" href="#129bt" title='bt' data-ref="129bt">bt</a> = <a class="ref fn" href="bier_table.h.html#bier_table_get" title='bier_table_get' data-ref="bier_table_get">bier_table_get</a>(<a class="local col6 ref" href="#126bti" title='bti' data-ref="126bti">bti</a>);</td></tr>
+<tr><th id="695">695</th><td></td></tr>
+<tr><th id="696">696</th><td>    <i>/*</i></td></tr>
+<tr><th id="697">697</th><td><i>     * we hold a lock for fmasks in the table</i></td></tr>
+<tr><th id="698">698</th><td><i>     */</i></td></tr>
+<tr><th id="699">699</th><td>    <a class="ref fn" href="bier_fmask.h.html#bier_fmask_lock" title='bier_fmask_lock' data-ref="bier_fmask_lock">bier_fmask_lock</a>(<a class="local col8 ref" href="#128bfmi" title='bfmi' data-ref="128bfmi">bfmi</a>);</td></tr>
+<tr><th id="700">700</th><td>    <a class="ref fn" href="bier_fmask.h.html#bier_fmask_unlock" title='bier_fmask_unlock' data-ref="bier_fmask_unlock">bier_fmask_unlock</a>(<a class="local col9 ref" href="#129bt" title='bt' data-ref="129bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_fmasks" title='bier_table_t_::bt_fmasks' data-ref="bier_table_t_::bt_fmasks">bt_fmasks</a>[<a class="macro" href="bier_types.h.html#296" title="(bp - 1)" data-ref="_M/BIER_BP_TO_INDEX">BIER_BP_TO_INDEX</a>(<a class="local col7 ref" href="#127bp" title='bp' data-ref="127bp">bp</a>)]);</td></tr>
+<tr><th id="701">701</th><td></td></tr>
+<tr><th id="702">702</th><td>    <a class="local col9 ref" href="#129bt" title='bt' data-ref="129bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_fmasks" title='bier_table_t_::bt_fmasks' data-ref="bier_table_t_::bt_fmasks">bt_fmasks</a>[<a class="macro" href="bier_types.h.html#296" title="(bp - 1)" data-ref="_M/BIER_BP_TO_INDEX">BIER_BP_TO_INDEX</a>(<a class="local col7 ref" href="#127bp" title='bp' data-ref="127bp">bp</a>)] = <a class="local col8 ref" href="#128bfmi" title='bfmi' data-ref="128bfmi">bfmi</a>;</td></tr>
+<tr><th id="703">703</th><td>}</td></tr>
+<tr><th id="704">704</th><td></td></tr>
+<tr><th id="705">705</th><td><a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *</td></tr>
+<tr><th id="706">706</th><td><dfn class="decl def fn" id="format_bier_table_entry" title='format_bier_table_entry' data-ref="format_bier_table_entry">format_bier_table_entry</dfn> (<a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col0 decl" id="130s" title='s' data-type='u8 *' data-ref="130s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> *<dfn class="local col1 decl" id="131ap" title='ap' data-type='va_list *' data-ref="131ap">ap</dfn>)</td></tr>
+<tr><th id="707">707</th><td>{</td></tr>
+<tr><th id="708">708</th><td>    <a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> <dfn class="local col2 decl" id="132bti" title='bti' data-type='index_t' data-ref="132bti">bti</dfn> = <span class="macro" title="__builtin_va_arg(*ap, index_t)" data-ref="_M/va_arg">va_arg</span>(*<a class="local col1 ref" href="#131ap" title='ap' data-ref="131ap">ap</a>, <a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a>);</td></tr>
+<tr><th id="709">709</th><td>    <a class="typedef" href="bier_types.h.html#bier_bp_t" title='bier_bp_t' data-type='u32' data-ref="bier_bp_t">bier_bp_t</a> <dfn class="local col3 decl" id="133bp" title='bp' data-type='bier_bp_t' data-ref="133bp">bp</dfn> = <span class="macro" title="__builtin_va_arg(*ap, bier_bp_t)" data-ref="_M/va_arg">va_arg</span>(*<a class="local col1 ref" href="#131ap" title='ap' data-ref="131ap">ap</a>, <a class="typedef" href="bier_types.h.html#bier_bp_t" title='bier_bp_t' data-type='u32' data-ref="bier_bp_t">bier_bp_t</a>);</td></tr>
+<tr><th id="710">710</th><td>    <a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col4 decl" id="134bt" title='bt' data-type='bier_table_t *' data-ref="134bt">bt</dfn>;</td></tr>
+<tr><th id="711">711</th><td>    <a class="local col4 ref" href="#134bt" title='bt' data-ref="134bt">bt</a> = <a class="ref fn" href="bier_table.h.html#bier_table_get" title='bier_table_get' data-ref="bier_table_get">bier_table_get</a>(<a class="local col2 ref" href="#132bti" title='bti' data-ref="132bti">bti</a>);</td></tr>
+<tr><th id="712">712</th><td></td></tr>
+<tr><th id="713">713</th><td>    <b>if</b> (<a class="ref fn" href="#bier_table_is_main" title='bier_table_is_main' data-ref="bier_table_is_main">bier_table_is_main</a>(<a class="local col4 ref" href="#134bt" title='bt' data-ref="134bt">bt</a>))</td></tr>
+<tr><th id="714">714</th><td>    {</td></tr>
+<tr><th id="715">715</th><td>        <a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> <dfn class="local col5 decl" id="135bei" title='bei' data-type='index_t' data-ref="135bei">bei</dfn>;</td></tr>
+<tr><th id="716">716</th><td></td></tr>
+<tr><th id="717">717</th><td>        <a class="local col5 ref" href="#135bei" title='bei' data-ref="135bei">bei</a> = <a class="ref fn" href="bier_table.h.html#bier_table_lookup" title='bier_table_lookup' data-ref="bier_table_lookup">bier_table_lookup</a>(<a class="ref fn" href="bier_table.h.html#bier_table_get" title='bier_table_get' data-ref="bier_table_get">bier_table_get</a>(<a class="local col2 ref" href="#132bti" title='bti' data-ref="132bti">bti</a>), <a class="local col3 ref" href="#133bp" title='bp' data-ref="133bp">bp</a>);</td></tr>
+<tr><th id="718">718</th><td></td></tr>
+<tr><th id="719">719</th><td>        <b>if</b> (<a class="macro" href="../dpo/dpo.h.html#47" title="((index_t)(~0))" data-ref="_M/INDEX_INVALID">INDEX_INVALID</a> != <a class="local col5 ref" href="#135bei" title='bei' data-ref="135bei">bei</a>)</td></tr>
+<tr><th id="720">720</th><td>        {</td></tr>
+<tr><th id="721">721</th><td>            <a class="local col0 ref" href="#130s" title='s' data-ref="130s">s</a> = <a class="ref fn" href="../../vppinfra/format.h.html#format" title='format' data-ref="format">format</a>(<a class="local col0 ref" href="#130s" title='s' data-ref="130s">s</a>, <q>"%U"</q>, <a class="ref fn" href="bier_entry.h.html#format_bier_entry" title='format_bier_entry' data-ref="format_bier_entry">format_bier_entry</a>, <a class="local col5 ref" href="#135bei" title='bei' data-ref="135bei">bei</a>,</td></tr>
+<tr><th id="722">722</th><td>                       <a class="enum" href="bier_types.h.html#BIER_SHOW_DETAIL" title='BIER_SHOW_DETAIL' data-ref="BIER_SHOW_DETAIL">BIER_SHOW_DETAIL</a>);</td></tr>
+<tr><th id="723">723</th><td>        }</td></tr>
+<tr><th id="724">724</th><td>    }</td></tr>
+<tr><th id="725">725</th><td>    <b>else</b></td></tr>
+<tr><th id="726">726</th><td>    {</td></tr>
+<tr><th id="727">727</th><td>        <a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> <dfn class="local col6 decl" id="136bfmi" title='bfmi' data-type='index_t' data-ref="136bfmi">bfmi</dfn>;</td></tr>
+<tr><th id="728">728</th><td></td></tr>
+<tr><th id="729">729</th><td>        <a class="local col6 ref" href="#136bfmi" title='bfmi' data-ref="136bfmi">bfmi</a> = <a class="ref fn" href="bier_table.h.html#bier_table_fwd_lookup" title='bier_table_fwd_lookup' data-ref="bier_table_fwd_lookup">bier_table_fwd_lookup</a>(<a class="ref fn" href="bier_table.h.html#bier_table_get" title='bier_table_get' data-ref="bier_table_get">bier_table_get</a>(<a class="local col2 ref" href="#132bti" title='bti' data-ref="132bti">bti</a>), <a class="local col3 ref" href="#133bp" title='bp' data-ref="133bp">bp</a>);</td></tr>
+<tr><th id="730">730</th><td></td></tr>
+<tr><th id="731">731</th><td>        <b>if</b> (<a class="macro" href="../dpo/dpo.h.html#47" title="((index_t)(~0))" data-ref="_M/INDEX_INVALID">INDEX_INVALID</a> != <a class="local col6 ref" href="#136bfmi" title='bfmi' data-ref="136bfmi">bfmi</a>)</td></tr>
+<tr><th id="732">732</th><td>        {</td></tr>
+<tr><th id="733">733</th><td>            <a class="local col0 ref" href="#130s" title='s' data-ref="130s">s</a> = <a class="ref fn" href="../../vppinfra/format.h.html#format" title='format' data-ref="format">format</a>(<a class="local col0 ref" href="#130s" title='s' data-ref="130s">s</a>, <q>"%U"</q>, <a class="ref fn" href="bier_fmask.h.html#format_bier_fmask" title='format_bier_fmask' data-ref="format_bier_fmask">format_bier_fmask</a>, <a class="local col6 ref" href="#136bfmi" title='bfmi' data-ref="136bfmi">bfmi</a>,</td></tr>
+<tr><th id="734">734</th><td>                       <a class="enum" href="bier_types.h.html#BIER_SHOW_DETAIL" title='BIER_SHOW_DETAIL' data-ref="BIER_SHOW_DETAIL">BIER_SHOW_DETAIL</a>);</td></tr>
+<tr><th id="735">735</th><td>        }</td></tr>
+<tr><th id="736">736</th><td>    }</td></tr>
+<tr><th id="737">737</th><td>    <b>return</b> (<a class="local col0 ref" href="#130s" title='s' data-ref="130s">s</a>);</td></tr>
+<tr><th id="738">738</th><td>}</td></tr>
+<tr><th id="739">739</th><td></td></tr>
+<tr><th id="740">740</th><td><a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *</td></tr>
+<tr><th id="741">741</th><td><dfn class="decl def fn" id="format_bier_table" title='format_bier_table' data-ref="format_bier_table">format_bier_table</dfn> (<a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col7 decl" id="137s" title='s' data-type='u8 *' data-ref="137s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> *<dfn class="local col8 decl" id="138ap" title='ap' data-type='va_list *' data-ref="138ap">ap</dfn>)</td></tr>
+<tr><th id="742">742</th><td>{</td></tr>
+<tr><th id="743">743</th><td>    <a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> <dfn class="local col9 decl" id="139bti" title='bti' data-type='index_t' data-ref="139bti">bti</dfn> = <span class="macro" title="__builtin_va_arg(*ap, index_t)" data-ref="_M/va_arg">va_arg</span>(*<a class="local col8 ref" href="#138ap" title='ap' data-ref="138ap">ap</a>, <a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a>);</td></tr>
+<tr><th id="744">744</th><td>    <a class="typedef" href="bier_types.h.html#bier_show_flags_t" title='bier_show_flags_t' data-type='enum bier_show_flags_t_' data-ref="bier_show_flags_t">bier_show_flags_t</a> <dfn class="local col0 decl" id="140flags" title='flags' data-type='bier_show_flags_t' data-ref="140flags">flags</dfn> = <span class="macro" title="__builtin_va_arg(*ap, bier_show_flags_t)" data-ref="_M/va_arg">va_arg</span>(*<a class="local col8 ref" href="#138ap" title='ap' data-ref="138ap">ap</a>, <a class="typedef" href="bier_types.h.html#bier_show_flags_t" title='bier_show_flags_t' data-type='enum bier_show_flags_t_' data-ref="bier_show_flags_t">bier_show_flags_t</a>);</td></tr>
+<tr><th id="745">745</th><td>    <a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col1 decl" id="141bt" title='bt' data-type='bier_table_t *' data-ref="141bt">bt</dfn>;</td></tr>
+<tr><th id="746">746</th><td></td></tr>
+<tr><th id="747">747</th><td>    <b>if</b> (<a class="macro" href="../../vppinfra/pool.h.html#270" title="({ pool_header_t * _pool_p = pool_header ((bier_table_pool)); uword _pool_i = ((bier_table_pool)+(bti)) - ((bier_table_pool)); (_pool_i &lt; (((bier_table_pool)) ? (((vec_header_t *) ((bier_table_pool)) - 1)-&gt;len) : 0)) ? clib_bitmap_get (_pool_p-&gt;free_bitmap, _pool_i) : 1; })" data-ref="_M/pool_is_free_index">pool_is_free_index</a>(<a class="ref" href="bier_table.h.html#bier_table_pool" title='bier_table_pool' data-ref="bier_table_pool">bier_table_pool</a>, <a class="local col9 ref" href="#139bti" title='bti' data-ref="139bti">bti</a>))</td></tr>
+<tr><th id="748">748</th><td>    {</td></tr>
+<tr><th id="749">749</th><td>        <b>return</b> (<a class="ref fn" href="../../vppinfra/format.h.html#format" title='format' data-ref="format">format</a>(<a class="local col7 ref" href="#137s" title='s' data-ref="137s">s</a>, <q>"No BIER table %d"</q>, <a class="local col9 ref" href="#139bti" title='bti' data-ref="139bti">bti</a>));</td></tr>
+<tr><th id="750">750</th><td>    }</td></tr>
+<tr><th id="751">751</th><td></td></tr>
+<tr><th id="752">752</th><td>    <a class="local col1 ref" href="#141bt" title='bt' data-ref="141bt">bt</a> = <a class="ref fn" href="bier_table.h.html#bier_table_get" title='bier_table_get' data-ref="bier_table_get">bier_table_get</a>(<a class="local col9 ref" href="#139bti" title='bti' data-ref="139bti">bti</a>);</td></tr>
+<tr><th id="753">753</th><td></td></tr>
+<tr><th id="754">754</th><td>    <a class="local col7 ref" href="#137s" title='s' data-ref="137s">s</a> = <a class="ref fn" href="../../vppinfra/format.h.html#format" title='format' data-ref="format">format</a>(<a class="local col7 ref" href="#137s" title='s' data-ref="137s">s</a>, <q>"[@%d] bier-table:[%U local-label:%U"</q>,</td></tr>
+<tr><th id="755">755</th><td>               <a class="local col9 ref" href="#139bti" title='bti' data-ref="139bti">bti</a>,</td></tr>
+<tr><th id="756">756</th><td>               <a class="ref fn" href="bier_types.h.html#format_bier_table_id" title='format_bier_table_id' data-ref="format_bier_table_id">format_bier_table_id</a>, &amp;<a class="local col1 ref" href="#141bt" title='bt' data-ref="141bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_id" title='bier_table_t_::bt_id' data-ref="bier_table_t_::bt_id">bt_id</a>,</td></tr>
+<tr><th id="757">757</th><td>               <a class="ref fn" href="../mpls/mpls.h.html#format_mpls_unicast_label" title='format_mpls_unicast_label' data-ref="format_mpls_unicast_label">format_mpls_unicast_label</a>, <a class="local col1 ref" href="#141bt" title='bt' data-ref="141bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_ll" title='bier_table_t_::bt_ll' data-ref="bier_table_t_::bt_ll">bt_ll</a>);</td></tr>
+<tr><th id="758">758</th><td></td></tr>
+<tr><th id="759">759</th><td>    <b>if</b> (<a class="local col0 ref" href="#140flags" title='flags' data-ref="140flags">flags</a> &amp; <a class="enum" href="bier_types.h.html#BIER_SHOW_DETAIL" title='BIER_SHOW_DETAIL' data-ref="BIER_SHOW_DETAIL">BIER_SHOW_DETAIL</a>)</td></tr>
+<tr><th id="760">760</th><td>    {</td></tr>
+<tr><th id="761">761</th><td>        <a class="local col7 ref" href="#137s" title='s' data-ref="137s">s</a> = <a class="ref fn" href="../../vppinfra/format.h.html#format" title='format' data-ref="format">format</a>(<a class="local col7 ref" href="#137s" title='s' data-ref="137s">s</a>, <q>" locks:%d"</q>, <a class="local col1 ref" href="#141bt" title='bt' data-ref="141bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_locks" title='bier_table_t_::bt_locks' data-ref="bier_table_t_::bt_locks">bt_locks</a>);</td></tr>
+<tr><th id="762">762</th><td>    }</td></tr>
+<tr><th id="763">763</th><td>    <a class="local col7 ref" href="#137s" title='s' data-ref="137s">s</a> = <a class="ref fn" href="../../vppinfra/format.h.html#format" title='format' data-ref="format">format</a>(<a class="local col7 ref" href="#137s" title='s' data-ref="137s">s</a>, <q>"]"</q>);</td></tr>
+<tr><th id="764">764</th><td></td></tr>
+<tr><th id="765">765</th><td>    <b>if</b> (<a class="local col0 ref" href="#140flags" title='flags' data-ref="140flags">flags</a> &amp; <a class="enum" href="bier_types.h.html#BIER_SHOW_DETAIL" title='BIER_SHOW_DETAIL' data-ref="BIER_SHOW_DETAIL">BIER_SHOW_DETAIL</a>)</td></tr>
+<tr><th id="766">766</th><td>    {</td></tr>
+<tr><th id="767">767</th><td>        <b>if</b> (<a class="ref fn" href="#bier_table_is_main" title='bier_table_is_main' data-ref="bier_table_is_main">bier_table_is_main</a>(<a class="local col1 ref" href="#141bt" title='bt' data-ref="141bt">bt</a>))</td></tr>
+<tr><th id="768">768</th><td>        {</td></tr>
+<tr><th id="769">769</th><td>            <a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> *<dfn class="local col2 decl" id="142bei" title='bei' data-type='index_t *' data-ref="142bei">bei</dfn>;</td></tr>
+<tr><th id="770">770</th><td></td></tr>
+<tr><th id="771">771</th><td>            <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#184" title="for (bei = (bt-&gt;bt_entries); bei &lt; ((bt-&gt;bt_entries) + ((bt-&gt;bt_entries) ? (((vec_header_t *) (bt-&gt;bt_entries) - 1)-&gt;len) : 0)); bei++)" data-ref="_M/vec_foreach">vec_foreach</a> (<a class="local col2 ref" href="#142bei" title='bei' data-ref="142bei">bei</a>, <a class="local col1 ref" href="#141bt" title='bt' data-ref="141bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_entries" title='bier_table_t_::bt_entries' data-ref="bier_table_t_::bt_entries">bt_entries</a>)</td></tr>
+<tr><th id="772">772</th><td>            {</td></tr>
+<tr><th id="773">773</th><td>                <b>if</b> (<a class="macro" href="../dpo/dpo.h.html#47" title="((index_t)(~0))" data-ref="_M/INDEX_INVALID">INDEX_INVALID</a> != *<a class="local col2 ref" href="#142bei" title='bei' data-ref="142bei">bei</a>)</td></tr>
+<tr><th id="774">774</th><td>                {</td></tr>
+<tr><th id="775">775</th><td>                    <a class="local col7 ref" href="#137s" title='s' data-ref="137s">s</a> = <a class="ref fn" href="../../vppinfra/format.h.html#format" title='format' data-ref="format">format</a>(<a class="local col7 ref" href="#137s" title='s' data-ref="137s">s</a>, <q>"\n%U"</q>, <a class="ref fn" href="bier_entry.h.html#format_bier_entry" title='format_bier_entry' data-ref="format_bier_entry">format_bier_entry</a>, *<a class="local col2 ref" href="#142bei" title='bei' data-ref="142bei">bei</a>, <var>2</var>);</td></tr>
+<tr><th id="776">776</th><td>                }</td></tr>
+<tr><th id="777">777</th><td>            }</td></tr>
+<tr><th id="778">778</th><td>        }</td></tr>
+<tr><th id="779">779</th><td>        <b>else</b></td></tr>
+<tr><th id="780">780</th><td>        {</td></tr>
+<tr><th id="781">781</th><td>            <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col3 decl" id="143ii" title='ii' data-type='u32' data-ref="143ii">ii</dfn>;</td></tr>
+<tr><th id="782">782</th><td></td></tr>
+<tr><th id="783">783</th><td>            <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#191" title="for ((ii) = 0; (ii) &lt; ((bt-&gt;bt_fmasks) ? (((vec_header_t *) (bt-&gt;bt_fmasks) - 1)-&gt;len) : 0); (ii)++)" data-ref="_M/vec_foreach_index">vec_foreach_index</a> (<a class="local col3 ref" href="#143ii" title='ii' data-ref="143ii">ii</a>, <a class="local col1 ref" href="#141bt" title='bt' data-ref="141bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_fmasks" title='bier_table_t_::bt_fmasks' data-ref="bier_table_t_::bt_fmasks">bt_fmasks</a>)</td></tr>
+<tr><th id="784">784</th><td>            {</td></tr>
+<tr><th id="785">785</th><td>                <b>if</b> (<a class="macro" href="../dpo/dpo.h.html#47" title="((index_t)(~0))" data-ref="_M/INDEX_INVALID">INDEX_INVALID</a> != <a class="local col1 ref" href="#141bt" title='bt' data-ref="141bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_fmasks" title='bier_table_t_::bt_fmasks' data-ref="bier_table_t_::bt_fmasks">bt_fmasks</a>[<a class="local col3 ref" href="#143ii" title='ii' data-ref="143ii">ii</a>])</td></tr>
+<tr><th id="786">786</th><td>                {</td></tr>
+<tr><th id="787">787</th><td>                    <a class="local col7 ref" href="#137s" title='s' data-ref="137s">s</a> = <a class="ref fn" href="../../vppinfra/format.h.html#format" title='format' data-ref="format">format</a>(<a class="local col7 ref" href="#137s" title='s' data-ref="137s">s</a>, <q>"\n bp:%d\n %U"</q>, <a class="local col3 ref" href="#143ii" title='ii' data-ref="143ii">ii</a>,</td></tr>
+<tr><th id="788">788</th><td>                               <a class="ref fn" href="bier_fmask.h.html#format_bier_fmask" title='format_bier_fmask' data-ref="format_bier_fmask">format_bier_fmask</a>, <a class="local col1 ref" href="#141bt" title='bt' data-ref="141bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_fmasks" title='bier_table_t_::bt_fmasks' data-ref="bier_table_t_::bt_fmasks">bt_fmasks</a>[<a class="local col3 ref" href="#143ii" title='ii' data-ref="143ii">ii</a>], <var>2</var>);</td></tr>
+<tr><th id="789">789</th><td>                }</td></tr>
+<tr><th id="790">790</th><td>            }</td></tr>
+<tr><th id="791">791</th><td>        }</td></tr>
+<tr><th id="792">792</th><td>    }</td></tr>
+<tr><th id="793">793</th><td></td></tr>
+<tr><th id="794">794</th><td>    <b>return</b> (<a class="local col7 ref" href="#137s" title='s' data-ref="137s">s</a>);</td></tr>
+<tr><th id="795">795</th><td>}</td></tr>
+<tr><th id="796">796</th><td></td></tr>
+<tr><th id="797">797</th><td><em>void</em></td></tr>
+<tr><th id="798">798</th><td><dfn class="decl def fn" id="bier_table_show_all" title='bier_table_show_all' data-ref="bier_table_show_all">bier_table_show_all</dfn> (<a class="typedef" href="../../vlib/main.h.html#vlib_main_t" title='vlib_main_t' data-type='struct vlib_main_t' data-ref="vlib_main_t">vlib_main_t</a> * <dfn class="local col4 decl" id="144vm" title='vm' data-type='vlib_main_t *' data-ref="144vm">vm</dfn>,</td></tr>
+<tr><th id="799">799</th><td>                     <a class="typedef" href="bier_types.h.html#bier_show_flags_t" title='bier_show_flags_t' data-type='enum bier_show_flags_t_' data-ref="bier_show_flags_t">bier_show_flags_t</a> <dfn class="local col5 decl" id="145flags" title='flags' data-type='bier_show_flags_t' data-ref="145flags">flags</dfn>)</td></tr>
+<tr><th id="800">800</th><td>{</td></tr>
+<tr><th id="801">801</th><td>    <b>if</b> (!<a class="ref fn" href="../../vppinfra/pool.h.html#pool_elts" title='pool_elts' data-ref="pool_elts">pool_elts</a>(<a class="ref" href="bier_table.h.html#bier_table_pool" title='bier_table_pool' data-ref="bier_table_pool">bier_table_pool</a>))</td></tr>
+<tr><th id="802">802</th><td>    {</td></tr>
+<tr><th id="803">803</th><td>        <a class="ref fn" href="../../vlib/cli.h.html#vlib_cli_output" title='vlib_cli_output' data-ref="vlib_cli_output">vlib_cli_output</a> (<a class="local col4 ref" href="#144vm" title='vm' data-ref="144vm">vm</a>, <q>"No BIER tables"</q>);</td></tr>
+<tr><th id="804">804</th><td>    }</td></tr>
+<tr><th id="805">805</th><td>    <b>else</b></td></tr>
+<tr><th id="806">806</th><td>    {</td></tr>
+<tr><th id="807">807</th><td>        <em>int</em> <dfn class="local col6 decl" id="146ii" title='ii' data-type='int' data-ref="146ii">ii</dfn>;</td></tr>
+<tr><th id="808">808</th><td></td></tr>
+<tr><th id="809">809</th><td>        <a class="macro" href="../../vppinfra/pool.h.html#482" title="for ((ii) = 0; (ii) &lt; ((bier_table_pool) ? (((vec_header_t *) (bier_table_pool) - 1)-&gt;len) : 0); (ii)++) { if (! ({ pool_header_t * _pool_p = pool_header (((bier_table_pool))); uword _pool_i = (((bier_table_pool))+((ii))) - (((bier_table_pool))); (_pool_i &lt; ((((bier_table_pool))) ? (((vec_header_t *) (((bier_table_pool))) - 1)-&gt;len) : 0)) ? clib_bitmap_get (_pool_p-&gt;free_bitmap, _pool_i) : 1; })) do { ({ vlib_cli_output (vm, &quot;%U&quot;, format_bier_table, ii, flags); }); } while (0); }" data-ref="_M/pool_foreach_index">pool_foreach_index</a>(<a class="local col6 ref" href="#146ii" title='ii' data-ref="146ii">ii</a>, <a class="ref" href="bier_table.h.html#bier_table_pool" title='bier_table_pool' data-ref="bier_table_pool">bier_table_pool</a>,</td></tr>
+<tr><th id="810">810</th><td>        ({</td></tr>
+<tr><th id="811">811</th><td>            <a class="ref fn" href="../../vlib/cli.h.html#vlib_cli_output" title='vlib_cli_output' data-ref="vlib_cli_output">vlib_cli_output</a> (<a class="local col4 ref" href="#144vm" title='vm' data-ref="144vm">vm</a>, <q>"%U"</q>, <a class="ref fn" href="#format_bier_table" title='format_bier_table' data-ref="format_bier_table">format_bier_table</a>, <a class="local col6 ref" href="#146ii" title='ii' data-ref="146ii">ii</a>, <a class="local col5 ref" href="#145flags" title='flags' data-ref="145flags">flags</a>);</td></tr>
+<tr><th id="812">812</th><td>        }));</td></tr>
+<tr><th id="813">813</th><td>    }</td></tr>
+<tr><th id="814">814</th><td>}</td></tr>
+<tr><th id="815">815</th><td></td></tr>
+<tr><th id="816">816</th><td><em>void</em></td></tr>
+<tr><th id="817">817</th><td><dfn class="decl def fn" id="bier_tables_walk" title='bier_tables_walk' data-ref="bier_tables_walk">bier_tables_walk</dfn> (<a class="typedef" href="bier_table.h.html#bier_tables_walk_fn_t" title='bier_tables_walk_fn_t' data-type='void (*)(const bier_table_t *, void *)' data-ref="bier_tables_walk_fn_t">bier_tables_walk_fn_t</a> <dfn class="local col7 decl" id="147fn" title='fn' data-type='bier_tables_walk_fn_t' data-ref="147fn">fn</dfn>,</td></tr>
+<tr><th id="818">818</th><td>                  <em>void</em> *<dfn class="local col8 decl" id="148ctx" title='ctx' data-type='void *' data-ref="148ctx">ctx</dfn>)</td></tr>
+<tr><th id="819">819</th><td>{</td></tr>
+<tr><th id="820">820</th><td>    <a class="macro" href="../../vppinfra/error_bootstrap.h.html#69" title="do { if ((1 &gt; 0) &amp;&amp; ! (0)) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/vpp/../../../src/vnet/bier/bier_table.c&quot;, (uword) 820, ((char *) __FUNCTION__), &quot;0&quot;); } } while (0)" data-ref="_M/ASSERT">ASSERT</a>(<var>0</var>);</td></tr>
+<tr><th id="821">821</th><td>}</td></tr>
+<tr><th id="822">822</th><td></td></tr>
+<tr><th id="823">823</th><td></td></tr>
+<tr><th id="824">824</th><td><em>void</em></td></tr>
+<tr><th id="825">825</th><td><dfn class="decl def fn" id="bier_table_walk" title='bier_table_walk' data-ref="bier_table_walk">bier_table_walk</dfn> (<em>const</em> <a class="typedef" href="bier_types.h.html#bier_table_id_t" title='bier_table_id_t' data-type='struct bier_table_id_t_' data-ref="bier_table_id_t">bier_table_id_t</a> *<dfn class="local col9 decl" id="149bti" title='bti' data-type='const bier_table_id_t *' data-ref="149bti">bti</dfn>,</td></tr>
+<tr><th id="826">826</th><td>                 <a class="typedef" href="bier_table.h.html#bier_table_walk_fn_t" title='bier_table_walk_fn_t' data-type='void (*)(const bier_table_t *, const bier_entry_t *, void *)' data-ref="bier_table_walk_fn_t">bier_table_walk_fn_t</a> <dfn class="local col0 decl" id="150fn" title='fn' data-type='bier_table_walk_fn_t' data-ref="150fn">fn</dfn>,</td></tr>
+<tr><th id="827">827</th><td>                 <em>void</em> *<dfn class="local col1 decl" id="151ctx" title='ctx' data-type='void *' data-ref="151ctx">ctx</dfn>)</td></tr>
+<tr><th id="828">828</th><td>{</td></tr>
+<tr><th id="829">829</th><td>    <a class="typedef" href="bier_table.h.html#bier_table_t" title='bier_table_t' data-type='struct bier_table_t_' data-ref="bier_table_t">bier_table_t</a> *<dfn class="local col2 decl" id="152bt" title='bt' data-type='bier_table_t *' data-ref="152bt">bt</dfn>;</td></tr>
+<tr><th id="830">830</th><td>    <a class="typedef" href="bier_entry.h.html#bier_entry_t" title='bier_entry_t' data-type='struct bier_entry_t_' data-ref="bier_entry_t">bier_entry_t</a> *<dfn class="local col3 decl" id="153be" title='be' data-type='bier_entry_t *' data-ref="153be">be</dfn>;</td></tr>
+<tr><th id="831">831</th><td>    <a class="typedef" href="../dpo/dpo.h.html#index_t" title='index_t' data-type='u32' data-ref="index_t">index_t</a> *<dfn class="local col4 decl" id="154bei" title='bei' data-type='index_t *' data-ref="154bei">bei</dfn>;</td></tr>
+<tr><th id="832">832</th><td></td></tr>
+<tr><th id="833">833</th><td>    <a class="local col2 ref" href="#152bt" title='bt' data-ref="152bt">bt</a> = <a class="tu ref fn" href="#bier_table_find" title='bier_table_find' data-use='c' data-ref="bier_table_find">bier_table_find</a>(<a class="local col9 ref" href="#149bti" title='bti' data-ref="149bti">bti</a>);</td></tr>
+<tr><th id="834">834</th><td></td></tr>
+<tr><th id="835">835</th><td>    <b>if</b> (<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> == <a class="local col2 ref" href="#152bt" title='bt' data-ref="152bt">bt</a>)</td></tr>
+<tr><th id="836">836</th><td>    {</td></tr>
+<tr><th id="837">837</th><td>        <b>return</b>;</td></tr>
+<tr><th id="838">838</th><td>    }</td></tr>
+<tr><th id="839">839</th><td></td></tr>
+<tr><th id="840">840</th><td>    <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#184" title="for (bei = (bt-&gt;bt_entries); bei &lt; ((bt-&gt;bt_entries) + ((bt-&gt;bt_entries) ? (((vec_header_t *) (bt-&gt;bt_entries) - 1)-&gt;len) : 0)); bei++)" data-ref="_M/vec_foreach">vec_foreach</a> (<a class="local col4 ref" href="#154bei" title='bei' data-ref="154bei">bei</a>, <a class="local col2 ref" href="#152bt" title='bt' data-ref="152bt">bt</a>-&gt;<a class="ref field" href="bier_table.h.html#bier_table_t_::bt_entries" title='bier_table_t_::bt_entries' data-ref="bier_table_t_::bt_entries">bt_entries</a>)</td></tr>
+<tr><th id="841">841</th><td>    {</td></tr>
+<tr><th id="842">842</th><td>        <b>if</b> (<a class="macro" href="../dpo/dpo.h.html#47" title="((index_t)(~0))" data-ref="_M/INDEX_INVALID">INDEX_INVALID</a> != *<a class="local col4 ref" href="#154bei" title='bei' data-ref="154bei">bei</a>)</td></tr>
+<tr><th id="843">843</th><td>        {</td></tr>
+<tr><th id="844">844</th><td>            <a class="local col3 ref" href="#153be" title='be' data-ref="153be">be</a> = <a class="ref fn" href="bier_entry.h.html#bier_entry_get" title='bier_entry_get' data-ref="bier_entry_get">bier_entry_get</a>(*<a class="local col4 ref" href="#154bei" title='bei' data-ref="154bei">bei</a>);</td></tr>
+<tr><th id="845">845</th><td></td></tr>
+<tr><th id="846">846</th><td>            <a class="local col0 ref" href="#150fn" title='fn' data-ref="150fn">fn</a>(<a class="local col2 ref" href="#152bt" title='bt' data-ref="152bt">bt</a>, <a class="local col3 ref" href="#153be" title='be' data-ref="153be">be</a>, <a class="local col1 ref" href="#151ctx" title='ctx' data-ref="151ctx">ctx</a>);</td></tr>
+<tr><th id="847">847</th><td>        }</td></tr>
+<tr><th id="848">848</th><td>    }</td></tr>
+<tr><th id="849">849</th><td>}</td></tr>
+<tr><th id="850">850</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-29</em> from project vpp_1804 revision <em>18.04</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

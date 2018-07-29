@@ -1,0 +1,1022 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>sock_test_server.c source code [vpp_1804/src/vcl/sock_test_server.c] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="main "/>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'vpp_1804/src/vcl/sock_test_server.c'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>vpp_1804</a>/<a href='..'>src</a>/<a href='./'>vcl</a>/<a href='sock_test_server.c.html'>sock_test_server.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright (c) 2017 Cisco and/or its affiliates.</i></td></tr>
+<tr><th id="3">3</th><td><i> * Licensed under the Apache License, Version 2.0 (the "License");</i></td></tr>
+<tr><th id="4">4</th><td><i> * you may not use this file except in compliance with the License.</i></td></tr>
+<tr><th id="5">5</th><td><i> * You may obtain a copy of the License at:</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> *     <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></i></td></tr>
+<tr><th id="8">8</th><td><i> *</i></td></tr>
+<tr><th id="9">9</th><td><i> * Unless required by applicable law or agreed to in writing, software</i></td></tr>
+<tr><th id="10">10</th><td><i> * distributed under the License is distributed on an "AS IS" BASIS,</i></td></tr>
+<tr><th id="11">11</th><td><i> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</i></td></tr>
+<tr><th id="12">12</th><td><i> * See the License for the specific language governing permissions and</i></td></tr>
+<tr><th id="13">13</th><td><i> * limitations under the License.</i></td></tr>
+<tr><th id="14">14</th><td><i> */</i></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../include/unistd.h.html">&lt;unistd.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../include/errno.h.html">&lt;errno.h&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../include/sys/types.h.html">&lt;sys/types.h&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../include/sys/socket.h.html">&lt;sys/socket.h&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../include/stdio.h.html">&lt;stdio.h&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../include/string.h.html">&lt;string.h&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../include/time.h.html">&lt;time.h&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../../include/ctype.h.html">&lt;ctype.h&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="sock_test.h.html">&lt;vcl/sock_test.h&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../../include/sys/stat.h.html">&lt;sys/stat.h&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../../../include/fcntl.h.html">&lt;fcntl.h&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td><u>#define <dfn class="macro" id="_M/SOCK_SERVER_USE_EPOLL" data-ref="_M/SOCK_SERVER_USE_EPOLL">SOCK_SERVER_USE_EPOLL</dfn> 1</u></td></tr>
+<tr><th id="29">29</th><td><u>#define <dfn class="macro" id="_M/VPPCOM_SESSION_ATTR_UNIT_TEST" data-ref="_M/VPPCOM_SESSION_ATTR_UNIT_TEST">VPPCOM_SESSION_ATTR_UNIT_TEST</dfn> 0</u></td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><u>#<span data-ppcond="31">if</span> <a class="macro" href="#28" title="1" data-ref="_M/SOCK_SERVER_USE_EPOLL">SOCK_SERVER_USE_EPOLL</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="../../../include/sys/epoll.h.html">&lt;sys/epoll.h&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#<span data-ppcond="33">if</span> !defined(<span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span>)</u></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="../../../include/sys/un.h.html">&lt;sys/un.h&gt;</a></u></td></tr>
+<tr><th id="35">35</th><td><u>#<span data-ppcond="33">endif</span></u></td></tr>
+<tr><th id="36">36</th><td><u>#<span data-ppcond="31">endif</span></u></td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><u>#<span data-ppcond="38">ifdef</span> <span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span></u></td></tr>
+<tr><th id="39">39</th><td><u>#if VPPCOM_SESSION_ATTR_UNIT_TEST</u></td></tr>
+<tr><th id="40">40</th><td><u>#define BUFLEN  sizeof (uint64_t) * 16</u></td></tr>
+<tr><th id="41">41</th><td>uint64_t buffer[<var>16</var>];</td></tr>
+<tr><th id="42">42</th><td>uint32_t buflen = BUFLEN;</td></tr>
+<tr><th id="43">43</th><td>uint32_t *flags = (uint32_t *) buffer;</td></tr>
+<tr><th id="44">44</th><td><u>#endif</u></td></tr>
+<tr><th id="45">45</th><td><u>#<span data-ppcond="38">endif</span></u></td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td><b>typedef</b> <b>struct</b></td></tr>
+<tr><th id="48">48</th><td>{</td></tr>
+<tr><th id="49">49</th><td>  <a class="typedef" href="../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="tu decl field" id="(anonymous)::is_alloc" title='(anonymous struct)::is_alloc' data-type='uint8_t' data-ref="(anonymous)::is_alloc">is_alloc</dfn>;</td></tr>
+<tr><th id="50">50</th><td>  <em>int</em> <dfn class="tu decl field" id="(anonymous)::fd" title='(anonymous struct)::fd' data-type='int' data-ref="(anonymous)::fd">fd</dfn>;</td></tr>
+<tr><th id="51">51</th><td>  <a class="typedef" href="../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> *<dfn class="tu decl field" id="(anonymous)::buf" title='(anonymous struct)::buf' data-type='uint8_t *' data-ref="(anonymous)::buf">buf</dfn>;</td></tr>
+<tr><th id="52">52</th><td>  <a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="tu decl field" id="(anonymous)::buf_size" title='(anonymous struct)::buf_size' data-type='uint32_t' data-ref="(anonymous)::buf_size">buf_size</dfn>;</td></tr>
+<tr><th id="53">53</th><td>  <a class="typedef" href="sock_test.h.html#sock_test_cfg_t" title='sock_test_cfg_t' data-type='struct sock_test_cfg_t' data-ref="sock_test_cfg_t">sock_test_cfg_t</a> <dfn class="tu decl field" id="(anonymous)::cfg" title='(anonymous struct)::cfg' data-type='sock_test_cfg_t' data-ref="(anonymous)::cfg">cfg</dfn>;</td></tr>
+<tr><th id="54">54</th><td>  <a class="typedef" href="sock_test.h.html#sock_test_stats_t" title='sock_test_stats_t' data-type='struct sock_test_stats_t' data-ref="sock_test_stats_t">sock_test_stats_t</a> <dfn class="tu decl field" id="(anonymous)::stats" title='(anonymous struct)::stats' data-type='sock_test_stats_t' data-ref="(anonymous)::stats">stats</dfn>;</td></tr>
+<tr><th id="55">55</th><td><u>#<span data-ppcond="55">ifdef</span> <span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span></u></td></tr>
+<tr><th id="56">56</th><td>  vppcom_endpt_t endpt;</td></tr>
+<tr><th id="57">57</th><td>  uint8_t ip[<var>16</var>];</td></tr>
+<tr><th id="58">58</th><td><u>#<span data-ppcond="55">endif</span></u></td></tr>
+<tr><th id="59">59</th><td>} <dfn class="typedef" id="sock_server_conn_t" title='sock_server_conn_t' data-type='struct sock_server_conn_t' data-ref="sock_server_conn_t">sock_server_conn_t</dfn>;</td></tr>
+<tr><th id="60">60</th><td></td></tr>
+<tr><th id="61">61</th><td><b>typedef</b> <b>struct</b></td></tr>
+<tr><th id="62">62</th><td>{</td></tr>
+<tr><th id="63">63</th><td>  <a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="tu decl field" id="(anonymous)::port" title='(anonymous struct)::port' data-type='uint32_t' data-ref="(anonymous)::port">port</dfn>;</td></tr>
+<tr><th id="64">64</th><td>  <a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="tu decl field" id="(anonymous)::address_ip6" title='(anonymous struct)::address_ip6' data-type='uint32_t' data-ref="(anonymous)::address_ip6">address_ip6</dfn>;</td></tr>
+<tr><th id="65">65</th><td>  <a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="tu decl field" id="(anonymous)::transport_udp" title='(anonymous struct)::transport_udp' data-type='uint32_t' data-ref="(anonymous)::transport_udp">transport_udp</dfn>;</td></tr>
+<tr><th id="66">66</th><td>} <dfn class="typedef" id="sock_server_cfg_t" title='sock_server_cfg_t' data-type='struct sock_server_cfg_t' data-ref="sock_server_cfg_t">sock_server_cfg_t</dfn>;</td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td><u>#define <dfn class="macro" id="_M/SOCK_SERVER_MAX_TEST_CONN" data-ref="_M/SOCK_SERVER_MAX_TEST_CONN">SOCK_SERVER_MAX_TEST_CONN</dfn>  10</u></td></tr>
+<tr><th id="69">69</th><td><u>#define <dfn class="macro" id="_M/SOCK_SERVER_MAX_EPOLL_EVENTS" data-ref="_M/SOCK_SERVER_MAX_EPOLL_EVENTS">SOCK_SERVER_MAX_EPOLL_EVENTS</dfn> 10</u></td></tr>
+<tr><th id="70">70</th><td><b>typedef</b> <b>struct</b></td></tr>
+<tr><th id="71">71</th><td>{</td></tr>
+<tr><th id="72">72</th><td>  <em>int</em> <dfn class="tu decl field" id="(anonymous)::listen_fd" title='(anonymous struct)::listen_fd' data-type='int' data-ref="(anonymous)::listen_fd">listen_fd</dfn>;</td></tr>
+<tr><th id="73">73</th><td>  <a class="typedef" href="#sock_server_cfg_t" title='sock_server_cfg_t' data-type='struct sock_server_cfg_t' data-ref="sock_server_cfg_t">sock_server_cfg_t</a> <dfn class="tu decl field" id="(anonymous)::cfg" title='(anonymous struct)::cfg' data-type='sock_server_cfg_t' data-ref="(anonymous)::cfg">cfg</dfn>;</td></tr>
+<tr><th id="74">74</th><td><u>#<span data-ppcond="74">if</span> <a class="macro" href="#28" title="1" data-ref="_M/SOCK_SERVER_USE_EPOLL">SOCK_SERVER_USE_EPOLL</a></u></td></tr>
+<tr><th id="75">75</th><td>  <em>int</em> <dfn class="tu decl field" id="(anonymous)::epfd" title='(anonymous struct)::epfd' data-type='int' data-ref="(anonymous)::epfd">epfd</dfn>;</td></tr>
+<tr><th id="76">76</th><td>  <b>struct</b> <a class="type" href="../../../include/sys/epoll.h.html#epoll_event" title='epoll_event' data-ref="epoll_event">epoll_event</a> <dfn class="tu decl field" id="(anonymous)::listen_ev" title='(anonymous struct)::listen_ev' data-type='struct epoll_event' data-ref="(anonymous)::listen_ev">listen_ev</dfn>;</td></tr>
+<tr><th id="77">77</th><td>  <b>struct</b> <a class="type" href="../../../include/sys/epoll.h.html#epoll_event" title='epoll_event' data-ref="epoll_event">epoll_event</a> <dfn class="tu decl field" id="(anonymous)::wait_events" title='(anonymous struct)::wait_events' data-type='struct epoll_event [10]' data-ref="(anonymous)::wait_events">wait_events</dfn>[<a class="macro" href="#69" title="10" data-ref="_M/SOCK_SERVER_MAX_EPOLL_EVENTS">SOCK_SERVER_MAX_EPOLL_EVENTS</a>];</td></tr>
+<tr><th id="78">78</th><td><u>#<span data-ppcond="78">if</span> !defined (<span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span>)</u></td></tr>
+<tr><th id="79">79</th><td>  <em>int</em> <dfn class="tu decl field" id="(anonymous)::af_unix_listen_fd" title='(anonymous struct)::af_unix_listen_fd' data-type='int' data-ref="(anonymous)::af_unix_listen_fd">af_unix_listen_fd</dfn>;</td></tr>
+<tr><th id="80">80</th><td>  <em>int</em> <dfn class="tu decl field" id="(anonymous)::af_unix_fd" title='(anonymous struct)::af_unix_fd' data-type='int' data-ref="(anonymous)::af_unix_fd">af_unix_fd</dfn>;</td></tr>
+<tr><th id="81">81</th><td>  <b>struct</b> <a class="type" href="../../../include/sys/epoll.h.html#epoll_event" title='epoll_event' data-ref="epoll_event">epoll_event</a> <dfn class="tu decl field" id="(anonymous)::af_unix_listen_ev" title='(anonymous struct)::af_unix_listen_ev' data-type='struct epoll_event' data-ref="(anonymous)::af_unix_listen_ev">af_unix_listen_ev</dfn>;</td></tr>
+<tr><th id="82">82</th><td>  <b>struct</b> <a class="type" href="../../../include/sys/un.h.html#sockaddr_un" title='sockaddr_un' data-ref="sockaddr_un">sockaddr_un</a> <dfn class="tu decl field" id="(anonymous)::serveraddr" title='(anonymous struct)::serveraddr' data-type='struct sockaddr_un' data-ref="(anonymous)::serveraddr">serveraddr</dfn>;</td></tr>
+<tr><th id="83">83</th><td>  <a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="tu decl field" id="(anonymous)::af_unix_xacts" title='(anonymous struct)::af_unix_xacts' data-type='uint32_t' data-ref="(anonymous)::af_unix_xacts">af_unix_xacts</dfn>;</td></tr>
+<tr><th id="84">84</th><td><u>#<span data-ppcond="78">endif</span></u></td></tr>
+<tr><th id="85">85</th><td><u>#<span data-ppcond="74">endif</span></u></td></tr>
+<tr><th id="86">86</th><td>  <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="tu decl field" id="(anonymous)::num_conn" title='(anonymous struct)::num_conn' data-type='size_t' data-ref="(anonymous)::num_conn">num_conn</dfn>;</td></tr>
+<tr><th id="87">87</th><td>  <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="tu decl field" id="(anonymous)::conn_pool_size" title='(anonymous struct)::conn_pool_size' data-type='size_t' data-ref="(anonymous)::conn_pool_size">conn_pool_size</dfn>;</td></tr>
+<tr><th id="88">88</th><td>  <a class="typedef" href="#sock_server_conn_t" title='sock_server_conn_t' data-type='struct sock_server_conn_t' data-ref="sock_server_conn_t">sock_server_conn_t</a> *<dfn class="tu decl field" id="(anonymous)::conn_pool" title='(anonymous struct)::conn_pool' data-type='sock_server_conn_t *' data-ref="(anonymous)::conn_pool">conn_pool</dfn>;</td></tr>
+<tr><th id="89">89</th><td>  <em>int</em> <dfn class="tu decl field" id="(anonymous)::nfds" title='(anonymous struct)::nfds' data-type='int' data-ref="(anonymous)::nfds">nfds</dfn>;</td></tr>
+<tr><th id="90">90</th><td>  <a class="typedef" href="../../../include/sys/select.h.html#fd_set" title='fd_set' data-type='struct fd_set' data-ref="fd_set">fd_set</a> <dfn class="tu decl field" id="(anonymous)::rd_fdset" title='(anonymous struct)::rd_fdset' data-type='fd_set' data-ref="(anonymous)::rd_fdset">rd_fdset</dfn>;</td></tr>
+<tr><th id="91">91</th><td>  <a class="typedef" href="../../../include/sys/select.h.html#fd_set" title='fd_set' data-type='struct fd_set' data-ref="fd_set">fd_set</a> <dfn class="tu decl field" id="(anonymous)::wr_fdset" title='(anonymous struct)::wr_fdset' data-type='fd_set' data-ref="(anonymous)::wr_fdset">wr_fdset</dfn>;</td></tr>
+<tr><th id="92">92</th><td>  <b>struct</b> <a class="type" href="../../../include/bits/time.h.html#timeval" title='timeval' data-ref="timeval">timeval</a> <dfn class="tu decl field" id="(anonymous)::timeout" title='(anonymous struct)::timeout' data-type='struct timeval' data-ref="(anonymous)::timeout">timeout</dfn>;</td></tr>
+<tr><th id="93">93</th><td>} <dfn class="typedef" id="sock_server_main_t" title='sock_server_main_t' data-type='struct sock_server_main_t' data-ref="sock_server_main_t">sock_server_main_t</dfn>;</td></tr>
+<tr><th id="94">94</th><td></td></tr>
+<tr><th id="95">95</th><td><a class="typedef" href="#sock_server_main_t" title='sock_server_main_t' data-type='struct sock_server_main_t' data-ref="sock_server_main_t">sock_server_main_t</a> <dfn class="decl def" id="sock_server_main" title='sock_server_main' data-ref="sock_server_main">sock_server_main</dfn>;</td></tr>
+<tr><th id="96">96</th><td></td></tr>
+<tr><th id="97">97</th><td><u>#<span data-ppcond="97">if</span> ! <a class="macro" href="#28" title="1" data-ref="_M/SOCK_SERVER_USE_EPOLL">SOCK_SERVER_USE_EPOLL</a></u></td></tr>
+<tr><th id="98">98</th><td><em>static</em> <b>inline</b> <em>int</em></td></tr>
+<tr><th id="99">99</th><td>get_nfds (<em>void</em>)</td></tr>
+<tr><th id="100">100</th><td>{</td></tr>
+<tr><th id="101">101</th><td>  sock_server_main_t *ssm = &amp;sock_server_main;</td></tr>
+<tr><th id="102">102</th><td>  <em>int</em> i, nfds;</td></tr>
+<tr><th id="103">103</th><td></td></tr>
+<tr><th id="104">104</th><td>  <b>for</b> (nfds = i = <var>0</var>; i &lt; FD_SETSIZE; i++)</td></tr>
+<tr><th id="105">105</th><td>    {</td></tr>
+<tr><th id="106">106</th><td>      <b>if</b> (FD_ISSET (i, &amp;ssm-&gt;rd_fdset) || FD_ISSET (i, &amp;ssm-&gt;wr_fdset))</td></tr>
+<tr><th id="107">107</th><td>	nfds = i + <var>1</var>;</td></tr>
+<tr><th id="108">108</th><td>    }</td></tr>
+<tr><th id="109">109</th><td>  <b>return</b> nfds;</td></tr>
+<tr><th id="110">110</th><td>}</td></tr>
+<tr><th id="111">111</th><td></td></tr>
+<tr><th id="112">112</th><td><em>static</em> <b>inline</b> <em>void</em></td></tr>
+<tr><th id="113">113</th><td>conn_fdset_set (sock_server_conn_t * conn, fd_set * fdset)</td></tr>
+<tr><th id="114">114</th><td>{</td></tr>
+<tr><th id="115">115</th><td>  sock_server_main_t *ssm = &amp;sock_server_main;</td></tr>
+<tr><th id="116">116</th><td></td></tr>
+<tr><th id="117">117</th><td>  FD_SET (conn-&gt;fd, fdset);</td></tr>
+<tr><th id="118">118</th><td>  ssm-&gt;nfds = get_nfds ();</td></tr>
+<tr><th id="119">119</th><td>}</td></tr>
+<tr><th id="120">120</th><td></td></tr>
+<tr><th id="121">121</th><td><em>static</em> <b>inline</b> <em>void</em></td></tr>
+<tr><th id="122">122</th><td>conn_fdset_clr (sock_server_conn_t * conn, fd_set * fdset)</td></tr>
+<tr><th id="123">123</th><td>{</td></tr>
+<tr><th id="124">124</th><td>  sock_server_main_t *ssm = &amp;sock_server_main;</td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td>  FD_CLR (conn-&gt;fd, fdset);</td></tr>
+<tr><th id="127">127</th><td>  ssm-&gt;nfds = get_nfds ();</td></tr>
+<tr><th id="128">128</th><td>}</td></tr>
+<tr><th id="129">129</th><td><u>#<span data-ppcond="97">endif</span></u></td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td><em>static</em> <b>inline</b> <em>void</em></td></tr>
+<tr><th id="132">132</th><td><dfn class="tu decl def fn" id="conn_pool_expand" title='conn_pool_expand' data-type='void conn_pool_expand(size_t expand_size)' data-ref="conn_pool_expand">conn_pool_expand</dfn> (<span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col1 decl" id="1expand_size" title='expand_size' data-type='size_t' data-ref="1expand_size">expand_size</dfn>)</td></tr>
+<tr><th id="133">133</th><td>{</td></tr>
+<tr><th id="134">134</th><td>  <a class="typedef" href="#sock_server_main_t" title='sock_server_main_t' data-type='struct sock_server_main_t' data-ref="sock_server_main_t">sock_server_main_t</a> *<dfn class="local col2 decl" id="2ssm" title='ssm' data-type='sock_server_main_t *' data-ref="2ssm">ssm</dfn> = &amp;<a class="ref" href="#sock_server_main" title='sock_server_main' data-ref="sock_server_main">sock_server_main</a>;</td></tr>
+<tr><th id="135">135</th><td>  <a class="typedef" href="#sock_server_conn_t" title='sock_server_conn_t' data-type='struct sock_server_conn_t' data-ref="sock_server_conn_t">sock_server_conn_t</a> *<dfn class="local col3 decl" id="3conn_pool" title='conn_pool' data-type='sock_server_conn_t *' data-ref="3conn_pool">conn_pool</dfn>;</td></tr>
+<tr><th id="136">136</th><td>  <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col4 decl" id="4new_size" title='new_size' data-type='size_t' data-ref="4new_size">new_size</dfn> = <a class="local col2 ref" href="#2ssm" title='ssm' data-ref="2ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::conn_pool_size" title='(anonymous struct)::conn_pool_size' data-use='r' data-ref="(anonymous)::conn_pool_size">conn_pool_size</a> + <a class="local col1 ref" href="#1expand_size" title='expand_size' data-ref="1expand_size">expand_size</a>;</td></tr>
+<tr><th id="137">137</th><td>  <em>int</em> <dfn class="local col5 decl" id="5i" title='i' data-type='int' data-ref="5i">i</dfn>;</td></tr>
+<tr><th id="138">138</th><td></td></tr>
+<tr><th id="139">139</th><td>  <a class="local col3 ref" href="#3conn_pool" title='conn_pool' data-ref="3conn_pool">conn_pool</a> = <a class="ref fn" href="../../../include/stdlib.h.html#realloc" title='realloc' data-ref="realloc">realloc</a> (<a class="local col2 ref" href="#2ssm" title='ssm' data-ref="2ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::conn_pool" title='(anonymous struct)::conn_pool' data-use='r' data-ref="(anonymous)::conn_pool">conn_pool</a>, <a class="local col4 ref" href="#4new_size" title='new_size' data-ref="4new_size">new_size</a> * <b>sizeof</b> (*<a class="local col2 ref" href="#2ssm" title='ssm' data-ref="2ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::conn_pool" title='(anonymous struct)::conn_pool' data-use='r' data-ref="(anonymous)::conn_pool">conn_pool</a>));</td></tr>
+<tr><th id="140">140</th><td>  <b>if</b> (<a class="local col3 ref" href="#3conn_pool" title='conn_pool' data-ref="3conn_pool">conn_pool</a>)</td></tr>
+<tr><th id="141">141</th><td>    {</td></tr>
+<tr><th id="142">142</th><td>      <b>for</b> (<a class="local col5 ref" href="#5i" title='i' data-ref="5i">i</a> = <a class="local col2 ref" href="#2ssm" title='ssm' data-ref="2ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::conn_pool_size" title='(anonymous struct)::conn_pool_size' data-use='r' data-ref="(anonymous)::conn_pool_size">conn_pool_size</a>; <a class="local col5 ref" href="#5i" title='i' data-ref="5i">i</a> &lt; <a class="local col4 ref" href="#4new_size" title='new_size' data-ref="4new_size">new_size</a>; <a class="local col5 ref" href="#5i" title='i' data-ref="5i">i</a>++)</td></tr>
+<tr><th id="143">143</th><td>	{</td></tr>
+<tr><th id="144">144</th><td>	  <a class="typedef" href="#sock_server_conn_t" title='sock_server_conn_t' data-type='struct sock_server_conn_t' data-ref="sock_server_conn_t">sock_server_conn_t</a> *<dfn class="local col6 decl" id="6conn" title='conn' data-type='sock_server_conn_t *' data-ref="6conn">conn</dfn> = &amp;<a class="local col3 ref" href="#3conn_pool" title='conn_pool' data-ref="3conn_pool">conn_pool</a>[<a class="local col5 ref" href="#5i" title='i' data-ref="5i">i</a>];</td></tr>
+<tr><th id="145">145</th><td>	  <a class="ref fn" href="../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a> (<a class="local col6 ref" href="#6conn" title='conn' data-ref="6conn">conn</a>, <var>0</var>, <b>sizeof</b> (*<a class="local col6 ref" href="#6conn" title='conn' data-ref="6conn">conn</a>));</td></tr>
+<tr><th id="146">146</th><td>	  <a class="ref fn" href="sock_test.h.html#sock_test_cfg_init" title='sock_test_cfg_init' data-ref="sock_test_cfg_init">sock_test_cfg_init</a> (&amp;<a class="local col6 ref" href="#6conn" title='conn' data-ref="6conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='a' data-ref="(anonymous)::cfg">cfg</a>);</td></tr>
+<tr><th id="147">147</th><td>	  <a class="ref fn" href="sock_test.h.html#sock_test_buf_alloc" title='sock_test_buf_alloc' data-ref="sock_test_buf_alloc">sock_test_buf_alloc</a> (&amp;<a class="local col6 ref" href="#6conn" title='conn' data-ref="6conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='a' data-ref="(anonymous)::cfg">cfg</a>, <var>1</var> <i>/* is_rxbuf */</i> ,</td></tr>
+<tr><th id="148">148</th><td>			       &amp;<a class="local col6 ref" href="#6conn" title='conn' data-ref="6conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf" title='(anonymous struct)::buf' data-use='a' data-ref="(anonymous)::buf">buf</a>, &amp;<a class="local col6 ref" href="#6conn" title='conn' data-ref="6conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf_size" title='(anonymous struct)::buf_size' data-use='a' data-ref="(anonymous)::buf_size">buf_size</a>);</td></tr>
+<tr><th id="149">149</th><td>	  <a class="local col6 ref" href="#6conn" title='conn' data-ref="6conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::txbuf_size" title='(anonymous struct)::txbuf_size' data-ref="(anonymous)::txbuf_size">txbuf_size</a> = <a class="local col6 ref" href="#6conn" title='conn' data-ref="6conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::rxbuf_size" title='(anonymous struct)::rxbuf_size' data-ref="(anonymous)::rxbuf_size">rxbuf_size</a>;</td></tr>
+<tr><th id="150">150</th><td>	}</td></tr>
+<tr><th id="151">151</th><td></td></tr>
+<tr><th id="152">152</th><td>      <a class="local col2 ref" href="#2ssm" title='ssm' data-ref="2ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::conn_pool" title='(anonymous struct)::conn_pool' data-use='w' data-ref="(anonymous)::conn_pool">conn_pool</a> = <a class="local col3 ref" href="#3conn_pool" title='conn_pool' data-ref="3conn_pool">conn_pool</a>;</td></tr>
+<tr><th id="153">153</th><td>      <a class="local col2 ref" href="#2ssm" title='ssm' data-ref="2ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::conn_pool_size" title='(anonymous struct)::conn_pool_size' data-use='w' data-ref="(anonymous)::conn_pool_size">conn_pool_size</a> = <a class="local col4 ref" href="#4new_size" title='new_size' data-ref="4new_size">new_size</a>;</td></tr>
+<tr><th id="154">154</th><td>    }</td></tr>
+<tr><th id="155">155</th><td>  <b>else</b></td></tr>
+<tr><th id="156">156</th><td>    {</td></tr>
+<tr><th id="157">157</th><td>      <em>int</em> <dfn class="local col7 decl" id="7errno_val" title='errno_val' data-type='int' data-ref="7errno_val">errno_val</dfn> = <a class="macro" href="../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>;</td></tr>
+<tr><th id="158">158</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#perror" title='perror' data-ref="perror">perror</a> (<q>"ERROR in conn_pool_expand()"</q>);</td></tr>
+<tr><th id="159">159</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"SERVER: ERROR: Memory allocation "</q></td></tr>
+<tr><th id="160">160</th><td>	       <q>"failed (errno = %d)!\n"</q>, <a class="local col7 ref" href="#7errno_val" title='errno_val' data-ref="7errno_val">errno_val</a>);</td></tr>
+<tr><th id="161">161</th><td>    }</td></tr>
+<tr><th id="162">162</th><td>}</td></tr>
+<tr><th id="163">163</th><td></td></tr>
+<tr><th id="164">164</th><td><em>static</em> <b>inline</b> <a class="typedef" href="#sock_server_conn_t" title='sock_server_conn_t' data-type='struct sock_server_conn_t' data-ref="sock_server_conn_t">sock_server_conn_t</a> *</td></tr>
+<tr><th id="165">165</th><td><dfn class="tu decl def fn" id="conn_pool_alloc" title='conn_pool_alloc' data-type='sock_server_conn_t * conn_pool_alloc()' data-ref="conn_pool_alloc">conn_pool_alloc</dfn> (<em>void</em>)</td></tr>
+<tr><th id="166">166</th><td>{</td></tr>
+<tr><th id="167">167</th><td>  <a class="typedef" href="#sock_server_main_t" title='sock_server_main_t' data-type='struct sock_server_main_t' data-ref="sock_server_main_t">sock_server_main_t</a> *<dfn class="local col8 decl" id="8ssm" title='ssm' data-type='sock_server_main_t *' data-ref="8ssm">ssm</dfn> = &amp;<a class="ref" href="#sock_server_main" title='sock_server_main' data-ref="sock_server_main">sock_server_main</a>;</td></tr>
+<tr><th id="168">168</th><td>  <em>int</em> <dfn class="local col9 decl" id="9i" title='i' data-type='int' data-ref="9i">i</dfn>;</td></tr>
+<tr><th id="169">169</th><td></td></tr>
+<tr><th id="170">170</th><td>  <b>for</b> (<a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a> = <var>0</var>; <a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a> &lt; <a class="local col8 ref" href="#8ssm" title='ssm' data-ref="8ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::conn_pool_size" title='(anonymous struct)::conn_pool_size' data-use='r' data-ref="(anonymous)::conn_pool_size">conn_pool_size</a>; <a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a>++)</td></tr>
+<tr><th id="171">171</th><td>    {</td></tr>
+<tr><th id="172">172</th><td>      <b>if</b> (!<a class="local col8 ref" href="#8ssm" title='ssm' data-ref="8ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::conn_pool" title='(anonymous struct)::conn_pool' data-use='r' data-ref="(anonymous)::conn_pool">conn_pool</a>[<a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a>].<a class="tu ref field" href="#(anonymous)::is_alloc" title='(anonymous struct)::is_alloc' data-use='r' data-ref="(anonymous)::is_alloc">is_alloc</a>)</td></tr>
+<tr><th id="173">173</th><td>	{</td></tr>
+<tr><th id="174">174</th><td><u>#<span data-ppcond="174">ifdef</span> <span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span></u></td></tr>
+<tr><th id="175">175</th><td>	  ssm-&gt;conn_pool[i].endpt.ip = ssm-&gt;conn_pool[i].ip;</td></tr>
+<tr><th id="176">176</th><td><u>#<span data-ppcond="174">endif</span></u></td></tr>
+<tr><th id="177">177</th><td>	  <a class="local col8 ref" href="#8ssm" title='ssm' data-ref="8ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::conn_pool" title='(anonymous struct)::conn_pool' data-use='r' data-ref="(anonymous)::conn_pool">conn_pool</a>[<a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a>].<a class="tu ref field" href="#(anonymous)::is_alloc" title='(anonymous struct)::is_alloc' data-use='w' data-ref="(anonymous)::is_alloc">is_alloc</a> = <var>1</var>;</td></tr>
+<tr><th id="178">178</th><td>	  <b>return</b> (&amp;<a class="local col8 ref" href="#8ssm" title='ssm' data-ref="8ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::conn_pool" title='(anonymous struct)::conn_pool' data-use='r' data-ref="(anonymous)::conn_pool">conn_pool</a>[<a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a>]);</td></tr>
+<tr><th id="179">179</th><td>	}</td></tr>
+<tr><th id="180">180</th><td>    }</td></tr>
+<tr><th id="181">181</th><td></td></tr>
+<tr><th id="182">182</th><td>  <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="183">183</th><td>}</td></tr>
+<tr><th id="184">184</th><td></td></tr>
+<tr><th id="185">185</th><td><em>static</em> <b>inline</b> <em>void</em></td></tr>
+<tr><th id="186">186</th><td><dfn class="tu decl def fn" id="conn_pool_free" title='conn_pool_free' data-type='void conn_pool_free(sock_server_conn_t * conn)' data-ref="conn_pool_free">conn_pool_free</dfn> (<a class="typedef" href="#sock_server_conn_t" title='sock_server_conn_t' data-type='struct sock_server_conn_t' data-ref="sock_server_conn_t">sock_server_conn_t</a> * <dfn class="local col0 decl" id="10conn" title='conn' data-type='sock_server_conn_t *' data-ref="10conn">conn</dfn>)</td></tr>
+<tr><th id="187">187</th><td>{</td></tr>
+<tr><th id="188">188</th><td><u>#<span data-ppcond="188">if</span> ! <a class="macro" href="#28" title="1" data-ref="_M/SOCK_SERVER_USE_EPOLL">SOCK_SERVER_USE_EPOLL</a></u></td></tr>
+<tr><th id="189">189</th><td>  sock_server_main_t *ssm = &amp;sock_server_main;</td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td>  conn_fdset_clr (conn, &amp;ssm-&gt;rd_fdset);</td></tr>
+<tr><th id="192">192</th><td>  conn_fdset_clr (conn, &amp;ssm-&gt;wr_fdset);</td></tr>
+<tr><th id="193">193</th><td><u>#<span data-ppcond="188">endif</span></u></td></tr>
+<tr><th id="194">194</th><td>  <a class="local col0 ref" href="#10conn" title='conn' data-ref="10conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::fd" title='(anonymous struct)::fd' data-use='w' data-ref="(anonymous)::fd">fd</a> = <var>0</var>;</td></tr>
+<tr><th id="195">195</th><td>  <a class="local col0 ref" href="#10conn" title='conn' data-ref="10conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::is_alloc" title='(anonymous struct)::is_alloc' data-use='w' data-ref="(anonymous)::is_alloc">is_alloc</a> = <var>0</var>;</td></tr>
+<tr><th id="196">196</th><td>}</td></tr>
+<tr><th id="197">197</th><td></td></tr>
+<tr><th id="198">198</th><td><em>static</em> <b>inline</b> <em>void</em></td></tr>
+<tr><th id="199">199</th><td><dfn class="tu decl def fn" id="sync_config_and_reply" title='sync_config_and_reply' data-type='void sync_config_and_reply(sock_server_conn_t * conn, sock_test_cfg_t * rx_cfg)' data-ref="sync_config_and_reply">sync_config_and_reply</dfn> (<a class="typedef" href="#sock_server_conn_t" title='sock_server_conn_t' data-type='struct sock_server_conn_t' data-ref="sock_server_conn_t">sock_server_conn_t</a> * <dfn class="local col1 decl" id="11conn" title='conn' data-type='sock_server_conn_t *' data-ref="11conn">conn</dfn>, <a class="typedef" href="sock_test.h.html#sock_test_cfg_t" title='sock_test_cfg_t' data-type='struct sock_test_cfg_t' data-ref="sock_test_cfg_t">sock_test_cfg_t</a> * <dfn class="local col2 decl" id="12rx_cfg" title='rx_cfg' data-type='sock_test_cfg_t *' data-ref="12rx_cfg">rx_cfg</dfn>)</td></tr>
+<tr><th id="200">200</th><td>{</td></tr>
+<tr><th id="201">201</th><td>  <a class="local col1 ref" href="#11conn" title='conn' data-ref="11conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='w' data-ref="(anonymous)::cfg">cfg</a> = *<a class="local col2 ref" href="#12rx_cfg" title='rx_cfg' data-ref="12rx_cfg">rx_cfg</a>;</td></tr>
+<tr><th id="202">202</th><td>  <a class="ref fn" href="sock_test.h.html#sock_test_buf_alloc" title='sock_test_buf_alloc' data-ref="sock_test_buf_alloc">sock_test_buf_alloc</a> (&amp;<a class="local col1 ref" href="#11conn" title='conn' data-ref="11conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='a' data-ref="(anonymous)::cfg">cfg</a>, <var>1</var> <i>/* is_rxbuf */</i> ,</td></tr>
+<tr><th id="203">203</th><td>		       &amp;<a class="local col1 ref" href="#11conn" title='conn' data-ref="11conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf" title='(anonymous struct)::buf' data-use='a' data-ref="(anonymous)::buf">buf</a>, &amp;<a class="local col1 ref" href="#11conn" title='conn' data-ref="11conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf_size" title='(anonymous struct)::buf_size' data-use='a' data-ref="(anonymous)::buf_size">buf_size</a>);</td></tr>
+<tr><th id="204">204</th><td>  <a class="local col1 ref" href="#11conn" title='conn' data-ref="11conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::txbuf_size" title='(anonymous struct)::txbuf_size' data-ref="(anonymous)::txbuf_size">txbuf_size</a> = <a class="local col1 ref" href="#11conn" title='conn' data-ref="11conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::rxbuf_size" title='(anonymous struct)::rxbuf_size' data-ref="(anonymous)::rxbuf_size">rxbuf_size</a>;</td></tr>
+<tr><th id="205">205</th><td></td></tr>
+<tr><th id="206">206</th><td>  <b>if</b> (<a class="local col1 ref" href="#11conn" title='conn' data-ref="11conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::verbose" title='(anonymous struct)::verbose' data-ref="(anonymous)::verbose">verbose</a>)</td></tr>
+<tr><th id="207">207</th><td>    {</td></tr>
+<tr><th id="208">208</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"\nSERVER (fd %d): Replying to cfg message!\n"</q>, <a class="local col1 ref" href="#11conn" title='conn' data-ref="11conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::fd" title='(anonymous struct)::fd' data-use='r' data-ref="(anonymous)::fd">fd</a>);</td></tr>
+<tr><th id="209">209</th><td>      <a class="ref fn" href="sock_test.h.html#sock_test_cfg_dump" title='sock_test_cfg_dump' data-ref="sock_test_cfg_dump">sock_test_cfg_dump</a> (&amp;<a class="local col1 ref" href="#11conn" title='conn' data-ref="11conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='a' data-ref="(anonymous)::cfg">cfg</a>, <var>0</var> <i>/* is_client */</i> );</td></tr>
+<tr><th id="210">210</th><td>    }</td></tr>
+<tr><th id="211">211</th><td>  (<em>void</em>) <a class="ref fn" href="sock_test.h.html#sock_test_write" title='sock_test_write' data-ref="sock_test_write">sock_test_write</a> (<a class="local col1 ref" href="#11conn" title='conn' data-ref="11conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::fd" title='(anonymous struct)::fd' data-use='r' data-ref="(anonymous)::fd">fd</a>, (<a class="typedef" href="../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> *) &amp; <a class="local col1 ref" href="#11conn" title='conn' data-ref="11conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='a' data-ref="(anonymous)::cfg">cfg</a>,</td></tr>
+<tr><th id="212">212</th><td>			  <b>sizeof</b> (<a class="local col1 ref" href="#11conn" title='conn' data-ref="11conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='r' data-ref="(anonymous)::cfg">cfg</a>), <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>, <a class="local col1 ref" href="#11conn" title='conn' data-ref="11conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::verbose" title='(anonymous struct)::verbose' data-ref="(anonymous)::verbose">verbose</a>);</td></tr>
+<tr><th id="213">213</th><td>}</td></tr>
+<tr><th id="214">214</th><td></td></tr>
+<tr><th id="215">215</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="216">216</th><td><dfn class="tu decl def fn" id="stream_test_server_start_stop" title='stream_test_server_start_stop' data-type='void stream_test_server_start_stop(sock_server_conn_t * conn, sock_test_cfg_t * rx_cfg)' data-ref="stream_test_server_start_stop">stream_test_server_start_stop</dfn> (<a class="typedef" href="#sock_server_conn_t" title='sock_server_conn_t' data-type='struct sock_server_conn_t' data-ref="sock_server_conn_t">sock_server_conn_t</a> * <dfn class="local col3 decl" id="13conn" title='conn' data-type='sock_server_conn_t *' data-ref="13conn">conn</dfn>,</td></tr>
+<tr><th id="217">217</th><td>			       <a class="typedef" href="sock_test.h.html#sock_test_cfg_t" title='sock_test_cfg_t' data-type='struct sock_test_cfg_t' data-ref="sock_test_cfg_t">sock_test_cfg_t</a> * <dfn class="local col4 decl" id="14rx_cfg" title='rx_cfg' data-type='sock_test_cfg_t *' data-ref="14rx_cfg">rx_cfg</dfn>)</td></tr>
+<tr><th id="218">218</th><td>{</td></tr>
+<tr><th id="219">219</th><td>  <a class="typedef" href="#sock_server_main_t" title='sock_server_main_t' data-type='struct sock_server_main_t' data-ref="sock_server_main_t">sock_server_main_t</a> *<dfn class="local col5 decl" id="15ssm" title='ssm' data-type='sock_server_main_t *' data-ref="15ssm">ssm</dfn> = &amp;<a class="ref" href="#sock_server_main" title='sock_server_main' data-ref="sock_server_main">sock_server_main</a>;</td></tr>
+<tr><th id="220">220</th><td>  <em>int</em> <dfn class="local col6 decl" id="16client_fd" title='client_fd' data-type='int' data-ref="16client_fd">client_fd</dfn> = <a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::fd" title='(anonymous struct)::fd' data-use='r' data-ref="(anonymous)::fd">fd</a>;</td></tr>
+<tr><th id="221">221</th><td>  <a class="typedef" href="sock_test.h.html#sock_test_t" title='sock_test_t' data-type='enum sock_test_t' data-ref="sock_test_t">sock_test_t</a> <dfn class="local col7 decl" id="17test" title='test' data-type='sock_test_t' data-ref="17test">test</dfn> = <a class="local col4 ref" href="#14rx_cfg" title='rx_cfg' data-ref="14rx_cfg">rx_cfg</a>-&gt;<a class="ref field" href="sock_test.h.html#(anonymous)::test" title='(anonymous struct)::test' data-ref="(anonymous)::test">test</a>;</td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td>  <b>if</b> (<a class="local col4 ref" href="#14rx_cfg" title='rx_cfg' data-ref="14rx_cfg">rx_cfg</a>-&gt;<a class="ref field" href="sock_test.h.html#(anonymous)::ctrl_handle" title='(anonymous struct)::ctrl_handle' data-ref="(anonymous)::ctrl_handle">ctrl_handle</a> == <a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::fd" title='(anonymous struct)::fd' data-use='r' data-ref="(anonymous)::fd">fd</a>)</td></tr>
+<tr><th id="224">224</th><td>    {</td></tr>
+<tr><th id="225">225</th><td>      <em>int</em> <dfn class="local col8 decl" id="18i" title='i' data-type='int' data-ref="18i">i</dfn>;</td></tr>
+<tr><th id="226">226</th><td>      <a class="ref fn" href="../../../include/time.h.html#clock_gettime" title='clock_gettime' data-ref="clock_gettime">clock_gettime</a> (<a class="macro" href="../../../include/bits/time.h.html#61" title="0" data-ref="_M/CLOCK_REALTIME">CLOCK_REALTIME</a>, &amp;<a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::stats" title='(anonymous struct)::stats' data-use='m' data-ref="(anonymous)::stats">stats</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::stop" title='(anonymous struct)::stop' data-ref="(anonymous)::stop">stop</a>);</td></tr>
+<tr><th id="227">227</th><td></td></tr>
+<tr><th id="228">228</th><td>      <b>for</b> (<a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a> = <var>0</var>; <a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a> &lt; <a class="local col5 ref" href="#15ssm" title='ssm' data-ref="15ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::conn_pool_size" title='(anonymous struct)::conn_pool_size' data-use='r' data-ref="(anonymous)::conn_pool_size">conn_pool_size</a>; <a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>++)</td></tr>
+<tr><th id="229">229</th><td>	{</td></tr>
+<tr><th id="230">230</th><td>	  <a class="typedef" href="#sock_server_conn_t" title='sock_server_conn_t' data-type='struct sock_server_conn_t' data-ref="sock_server_conn_t">sock_server_conn_t</a> *<dfn class="local col9 decl" id="19tc" title='tc' data-type='sock_server_conn_t *' data-ref="19tc">tc</dfn> = &amp;<a class="local col5 ref" href="#15ssm" title='ssm' data-ref="15ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::conn_pool" title='(anonymous struct)::conn_pool' data-use='r' data-ref="(anonymous)::conn_pool">conn_pool</a>[<a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>];</td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td>	  <b>if</b> (<a class="local col9 ref" href="#19tc" title='tc' data-ref="19tc">tc</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::ctrl_handle" title='(anonymous struct)::ctrl_handle' data-ref="(anonymous)::ctrl_handle">ctrl_handle</a> == <a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::fd" title='(anonymous struct)::fd' data-use='r' data-ref="(anonymous)::fd">fd</a>)</td></tr>
+<tr><th id="233">233</th><td>	    {</td></tr>
+<tr><th id="234">234</th><td>	      <a class="ref fn" href="sock_test.h.html#sock_test_stats_accumulate" title='sock_test_stats_accumulate' data-ref="sock_test_stats_accumulate">sock_test_stats_accumulate</a> (&amp;<a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::stats" title='(anonymous struct)::stats' data-use='a' data-ref="(anonymous)::stats">stats</a>, &amp;<a class="local col9 ref" href="#19tc" title='tc' data-ref="19tc">tc</a>-&gt;<a class="tu ref field" href="#(anonymous)::stats" title='(anonymous struct)::stats' data-use='a' data-ref="(anonymous)::stats">stats</a>);</td></tr>
+<tr><th id="235">235</th><td></td></tr>
+<tr><th id="236">236</th><td>	      <b>if</b> (<a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::verbose" title='(anonymous struct)::verbose' data-ref="(anonymous)::verbose">verbose</a>)</td></tr>
+<tr><th id="237">237</th><td>		{</td></tr>
+<tr><th id="238">238</th><td>		  <em>static</em> <em>char</em> <dfn class="local col0 decl" id="20buf" title='buf' data-type='char [64]' data-ref="20buf">buf</dfn>[<var>64</var>];</td></tr>
+<tr><th id="239">239</th><td></td></tr>
+<tr><th id="240">240</th><td>		  <a class="ref fn" href="../../../include/stdio.h.html#sprintf" title='sprintf' data-ref="sprintf">sprintf</a> (<a class="local col0 ref" href="#20buf" title='buf' data-ref="20buf">buf</a>, <q>"SERVER (fd %d) RESULTS"</q>, <a class="local col9 ref" href="#19tc" title='tc' data-ref="19tc">tc</a>-&gt;<a class="tu ref field" href="#(anonymous)::fd" title='(anonymous struct)::fd' data-use='r' data-ref="(anonymous)::fd">fd</a>);</td></tr>
+<tr><th id="241">241</th><td>		  <a class="ref fn" href="sock_test.h.html#sock_test_stats_dump" title='sock_test_stats_dump' data-ref="sock_test_stats_dump">sock_test_stats_dump</a> (<a class="local col0 ref" href="#20buf" title='buf' data-ref="20buf">buf</a>, &amp;<a class="local col9 ref" href="#19tc" title='tc' data-ref="19tc">tc</a>-&gt;<a class="tu ref field" href="#(anonymous)::stats" title='(anonymous struct)::stats' data-use='a' data-ref="(anonymous)::stats">stats</a>, <var>1</var> <i>/* show_rx */</i> ,</td></tr>
+<tr><th id="242">242</th><td>					<a class="local col7 ref" href="#17test" title='test' data-ref="17test">test</a> == <a class="enum" href="sock_test.h.html#SOCK_TEST_TYPE_BI" title='SOCK_TEST_TYPE_BI' data-ref="SOCK_TEST_TYPE_BI">SOCK_TEST_TYPE_BI</a></td></tr>
+<tr><th id="243">243</th><td>					<i>/* show tx */</i> ,</td></tr>
+<tr><th id="244">244</th><td>					<a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::verbose" title='(anonymous struct)::verbose' data-ref="(anonymous)::verbose">verbose</a>);</td></tr>
+<tr><th id="245">245</th><td>		}</td></tr>
+<tr><th id="246">246</th><td>	    }</td></tr>
+<tr><th id="247">247</th><td>	}</td></tr>
+<tr><th id="248">248</th><td></td></tr>
+<tr><th id="249">249</th><td>      <a class="ref fn" href="sock_test.h.html#sock_test_stats_dump" title='sock_test_stats_dump' data-ref="sock_test_stats_dump">sock_test_stats_dump</a> (<q>"SERVER RESULTS"</q>, &amp;<a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::stats" title='(anonymous struct)::stats' data-use='a' data-ref="(anonymous)::stats">stats</a>, <var>1</var> <i>/* show_rx */</i> ,</td></tr>
+<tr><th id="250">250</th><td>			    (<a class="local col7 ref" href="#17test" title='test' data-ref="17test">test</a> == <a class="enum" href="sock_test.h.html#SOCK_TEST_TYPE_BI" title='SOCK_TEST_TYPE_BI' data-ref="SOCK_TEST_TYPE_BI">SOCK_TEST_TYPE_BI</a>) <i>/* show_tx */</i> ,</td></tr>
+<tr><th id="251">251</th><td>			    <a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::verbose" title='(anonymous struct)::verbose' data-ref="(anonymous)::verbose">verbose</a>);</td></tr>
+<tr><th id="252">252</th><td>      <a class="ref fn" href="sock_test.h.html#sock_test_cfg_dump" title='sock_test_cfg_dump' data-ref="sock_test_cfg_dump">sock_test_cfg_dump</a> (&amp;<a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='a' data-ref="(anonymous)::cfg">cfg</a>, <var>0</var> <i>/* is_client */</i> );</td></tr>
+<tr><th id="253">253</th><td>      <b>if</b> (<a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::verbose" title='(anonymous struct)::verbose' data-ref="(anonymous)::verbose">verbose</a>)</td></tr>
+<tr><th id="254">254</th><td>	{</td></tr>
+<tr><th id="255">255</th><td>	  <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"  sock server main\n"</q></td></tr>
+<tr><th id="256">256</th><td>		  <a class="macro" href="sock_test.h.html#37" title="&quot;  -----------------------------\n&quot;" data-ref="_M/SOCK_TEST_SEPARATOR_STRING">SOCK_TEST_SEPARATOR_STRING</a></td></tr>
+<tr><th id="257">257</th><td>		  <q>"       buf:  %p\n"</q></td></tr>
+<tr><th id="258">258</th><td>		  <q>"  buf size:  %u (0x%08x)\n"</q></td></tr>
+<tr><th id="259">259</th><td>		  <a class="macro" href="sock_test.h.html#37" title="&quot;  -----------------------------\n&quot;" data-ref="_M/SOCK_TEST_SEPARATOR_STRING">SOCK_TEST_SEPARATOR_STRING</a>,</td></tr>
+<tr><th id="260">260</th><td>		  <a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf" title='(anonymous struct)::buf' data-use='r' data-ref="(anonymous)::buf">buf</a>, <a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf_size" title='(anonymous struct)::buf_size' data-use='r' data-ref="(anonymous)::buf_size">buf_size</a>, <a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf_size" title='(anonymous struct)::buf_size' data-use='r' data-ref="(anonymous)::buf_size">buf_size</a>);</td></tr>
+<tr><th id="261">261</th><td>	}</td></tr>
+<tr><th id="262">262</th><td></td></tr>
+<tr><th id="263">263</th><td>      <a class="tu ref fn" href="#sync_config_and_reply" title='sync_config_and_reply' data-use='c' data-ref="sync_config_and_reply">sync_config_and_reply</a> (<a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>, <a class="local col4 ref" href="#14rx_cfg" title='rx_cfg' data-ref="14rx_cfg">rx_cfg</a>);</td></tr>
+<tr><th id="264">264</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"\nSERVER (fd %d): %s-directional Stream Test Complete!\n"</q></td></tr>
+<tr><th id="265">265</th><td>	      <a class="macro" href="sock_test.h.html#35" title="&quot;============================================\n&quot;" data-ref="_M/SOCK_TEST_BANNER_STRING">SOCK_TEST_BANNER_STRING</a> <q>"\n"</q>, <a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::fd" title='(anonymous struct)::fd' data-use='r' data-ref="(anonymous)::fd">fd</a>,</td></tr>
+<tr><th id="266">266</th><td>	      <a class="local col7 ref" href="#17test" title='test' data-ref="17test">test</a> == <a class="enum" href="sock_test.h.html#SOCK_TEST_TYPE_BI" title='SOCK_TEST_TYPE_BI' data-ref="SOCK_TEST_TYPE_BI">SOCK_TEST_TYPE_BI</a> ? <q>"Bi"</q> : <q>"Uni"</q>);</td></tr>
+<tr><th id="267">267</th><td>    }</td></tr>
+<tr><th id="268">268</th><td>  <b>else</b></td></tr>
+<tr><th id="269">269</th><td>    {</td></tr>
+<tr><th id="270">270</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"\n"</q> <a class="macro" href="sock_test.h.html#35" title="&quot;============================================\n&quot;" data-ref="_M/SOCK_TEST_BANNER_STRING">SOCK_TEST_BANNER_STRING</a></td></tr>
+<tr><th id="271">271</th><td>	      <q>"SERVER (fd %d): %s-directional Stream Test!\n"</q></td></tr>
+<tr><th id="272">272</th><td>	      <q>"  Sending client the test cfg to start streaming data...\n"</q>,</td></tr>
+<tr><th id="273">273</th><td>	      <a class="local col6 ref" href="#16client_fd" title='client_fd' data-ref="16client_fd">client_fd</a>, <a class="local col7 ref" href="#17test" title='test' data-ref="17test">test</a> == <a class="enum" href="sock_test.h.html#SOCK_TEST_TYPE_BI" title='SOCK_TEST_TYPE_BI' data-ref="SOCK_TEST_TYPE_BI">SOCK_TEST_TYPE_BI</a> ? <q>"Bi"</q> : <q>"Uni"</q>);</td></tr>
+<tr><th id="274">274</th><td></td></tr>
+<tr><th id="275">275</th><td>      <a class="local col4 ref" href="#14rx_cfg" title='rx_cfg' data-ref="14rx_cfg">rx_cfg</a>-&gt;<a class="ref field" href="sock_test.h.html#(anonymous)::ctrl_handle" title='(anonymous struct)::ctrl_handle' data-ref="(anonymous)::ctrl_handle">ctrl_handle</a> = (<a class="local col4 ref" href="#14rx_cfg" title='rx_cfg' data-ref="14rx_cfg">rx_cfg</a>-&gt;<a class="ref field" href="sock_test.h.html#(anonymous)::ctrl_handle" title='(anonymous struct)::ctrl_handle' data-ref="(anonymous)::ctrl_handle">ctrl_handle</a> == ~<var>0</var>) ? <a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::fd" title='(anonymous struct)::fd' data-use='r' data-ref="(anonymous)::fd">fd</a> :</td></tr>
+<tr><th id="276">276</th><td>	<a class="local col4 ref" href="#14rx_cfg" title='rx_cfg' data-ref="14rx_cfg">rx_cfg</a>-&gt;<a class="ref field" href="sock_test.h.html#(anonymous)::ctrl_handle" title='(anonymous struct)::ctrl_handle' data-ref="(anonymous)::ctrl_handle">ctrl_handle</a>;</td></tr>
+<tr><th id="277">277</th><td></td></tr>
+<tr><th id="278">278</th><td>      <a class="tu ref fn" href="#sync_config_and_reply" title='sync_config_and_reply' data-use='c' data-ref="sync_config_and_reply">sync_config_and_reply</a> (<a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>, <a class="local col4 ref" href="#14rx_cfg" title='rx_cfg' data-ref="14rx_cfg">rx_cfg</a>);</td></tr>
+<tr><th id="279">279</th><td></td></tr>
+<tr><th id="280">280</th><td>      <i>/* read the 1st chunk, record start time */</i></td></tr>
+<tr><th id="281">281</th><td>      <a class="ref fn" href="../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a> (&amp;<a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::stats" title='(anonymous struct)::stats' data-use='a' data-ref="(anonymous)::stats">stats</a>, <var>0</var>, <b>sizeof</b> (<a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::stats" title='(anonymous struct)::stats' data-use='r' data-ref="(anonymous)::stats">stats</a>));</td></tr>
+<tr><th id="282">282</th><td>      <a class="ref fn" href="../../../include/time.h.html#clock_gettime" title='clock_gettime' data-ref="clock_gettime">clock_gettime</a> (<a class="macro" href="../../../include/bits/time.h.html#61" title="0" data-ref="_M/CLOCK_REALTIME">CLOCK_REALTIME</a>, &amp;<a class="local col3 ref" href="#13conn" title='conn' data-ref="13conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::stats" title='(anonymous struct)::stats' data-use='m' data-ref="(anonymous)::stats">stats</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::start" title='(anonymous struct)::start' data-ref="(anonymous)::start">start</a>);</td></tr>
+<tr><th id="283">283</th><td>    }</td></tr>
+<tr><th id="284">284</th><td>}</td></tr>
+<tr><th id="285">285</th><td></td></tr>
+<tr><th id="286">286</th><td></td></tr>
+<tr><th id="287">287</th><td><em>static</em> <b>inline</b> <em>void</em></td></tr>
+<tr><th id="288">288</th><td><dfn class="tu decl def fn" id="stream_test_server" title='stream_test_server' data-type='void stream_test_server(sock_server_conn_t * conn, int rx_bytes)' data-ref="stream_test_server">stream_test_server</dfn> (<a class="typedef" href="#sock_server_conn_t" title='sock_server_conn_t' data-type='struct sock_server_conn_t' data-ref="sock_server_conn_t">sock_server_conn_t</a> * <dfn class="local col1 decl" id="21conn" title='conn' data-type='sock_server_conn_t *' data-ref="21conn">conn</dfn>, <em>int</em> <dfn class="local col2 decl" id="22rx_bytes" title='rx_bytes' data-type='int' data-ref="22rx_bytes">rx_bytes</dfn>)</td></tr>
+<tr><th id="289">289</th><td>{</td></tr>
+<tr><th id="290">290</th><td>  <em>int</em> <dfn class="local col3 decl" id="23client_fd" title='client_fd' data-type='int' data-ref="23client_fd">client_fd</dfn> = <a class="local col1 ref" href="#21conn" title='conn' data-ref="21conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::fd" title='(anonymous struct)::fd' data-use='r' data-ref="(anonymous)::fd">fd</a>;</td></tr>
+<tr><th id="291">291</th><td>  <a class="typedef" href="sock_test.h.html#sock_test_t" title='sock_test_t' data-type='enum sock_test_t' data-ref="sock_test_t">sock_test_t</a> <dfn class="local col4 decl" id="24test" title='test' data-type='sock_test_t' data-ref="24test">test</dfn> = <a class="local col1 ref" href="#21conn" title='conn' data-ref="21conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::test" title='(anonymous struct)::test' data-ref="(anonymous)::test">test</a>;</td></tr>
+<tr><th id="292">292</th><td></td></tr>
+<tr><th id="293">293</th><td>  <b>if</b> (<a class="local col4 ref" href="#24test" title='test' data-ref="24test">test</a> == <a class="enum" href="sock_test.h.html#SOCK_TEST_TYPE_BI" title='SOCK_TEST_TYPE_BI' data-ref="SOCK_TEST_TYPE_BI">SOCK_TEST_TYPE_BI</a>)</td></tr>
+<tr><th id="294">294</th><td>    (<em>void</em>) <a class="ref fn" href="sock_test.h.html#sock_test_write" title='sock_test_write' data-ref="sock_test_write">sock_test_write</a> (<a class="local col3 ref" href="#23client_fd" title='client_fd' data-ref="23client_fd">client_fd</a>, <a class="local col1 ref" href="#21conn" title='conn' data-ref="21conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf" title='(anonymous struct)::buf' data-use='r' data-ref="(anonymous)::buf">buf</a>, <a class="local col2 ref" href="#22rx_bytes" title='rx_bytes' data-ref="22rx_bytes">rx_bytes</a>, &amp;<a class="local col1 ref" href="#21conn" title='conn' data-ref="21conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::stats" title='(anonymous struct)::stats' data-use='a' data-ref="(anonymous)::stats">stats</a>,</td></tr>
+<tr><th id="295">295</th><td>			    <a class="local col1 ref" href="#21conn" title='conn' data-ref="21conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::verbose" title='(anonymous struct)::verbose' data-ref="(anonymous)::verbose">verbose</a>);</td></tr>
+<tr><th id="296">296</th><td></td></tr>
+<tr><th id="297">297</th><td>  <b>if</b> (<a class="local col1 ref" href="#21conn" title='conn' data-ref="21conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::stats" title='(anonymous struct)::stats' data-use='m' data-ref="(anonymous)::stats">stats</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::rx_bytes" title='(anonymous struct)::rx_bytes' data-ref="(anonymous)::rx_bytes">rx_bytes</a> &gt;= <a class="local col1 ref" href="#21conn" title='conn' data-ref="21conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::total_bytes" title='(anonymous struct)::total_bytes' data-ref="(anonymous)::total_bytes">total_bytes</a>)</td></tr>
+<tr><th id="298">298</th><td>    {</td></tr>
+<tr><th id="299">299</th><td>      <a class="ref fn" href="../../../include/time.h.html#clock_gettime" title='clock_gettime' data-ref="clock_gettime">clock_gettime</a> (<a class="macro" href="../../../include/bits/time.h.html#61" title="0" data-ref="_M/CLOCK_REALTIME">CLOCK_REALTIME</a>, &amp;<a class="local col1 ref" href="#21conn" title='conn' data-ref="21conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::stats" title='(anonymous struct)::stats' data-use='m' data-ref="(anonymous)::stats">stats</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::stop" title='(anonymous struct)::stop' data-ref="(anonymous)::stop">stop</a>);</td></tr>
+<tr><th id="300">300</th><td>    }</td></tr>
+<tr><th id="301">301</th><td>}</td></tr>
+<tr><th id="302">302</th><td></td></tr>
+<tr><th id="303">303</th><td><u>#<span data-ppcond="303">if</span> <a class="macro" href="#28" title="1" data-ref="_M/SOCK_SERVER_USE_EPOLL">SOCK_SERVER_USE_EPOLL</a> &amp;&amp; !defined (<span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span>)</u></td></tr>
+<tr><th id="304">304</th><td><em>static</em> <b>inline</b> <em>void</em></td></tr>
+<tr><th id="305">305</th><td><dfn class="tu decl def fn" id="af_unix_echo" title='af_unix_echo' data-type='void af_unix_echo()' data-ref="af_unix_echo">af_unix_echo</dfn> (<em>void</em>)</td></tr>
+<tr><th id="306">306</th><td>{</td></tr>
+<tr><th id="307">307</th><td>  <a class="typedef" href="#sock_server_main_t" title='sock_server_main_t' data-type='struct sock_server_main_t' data-ref="sock_server_main_t">sock_server_main_t</a> *<dfn class="local col5 decl" id="25ssm" title='ssm' data-type='sock_server_main_t *' data-ref="25ssm">ssm</dfn> = &amp;<a class="ref" href="#sock_server_main" title='sock_server_main' data-ref="sock_server_main">sock_server_main</a>;</td></tr>
+<tr><th id="308">308</th><td>  <em>int</em> <dfn class="local col6 decl" id="26af_unix_client_fd" title='af_unix_client_fd' data-type='int' data-ref="26af_unix_client_fd">af_unix_client_fd</dfn>;</td></tr>
+<tr><th id="309">309</th><td>  <em>int</em> <dfn class="local col7 decl" id="27rv" title='rv' data-type='int' data-ref="27rv">rv</dfn>;</td></tr>
+<tr><th id="310">310</th><td>  <em>int</em> <dfn class="local col8 decl" id="28errno_val" title='errno_val' data-type='int' data-ref="28errno_val">errno_val</dfn>;</td></tr>
+<tr><th id="311">311</th><td>  <a class="typedef" href="../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="local col9 decl" id="29buffer" title='buffer' data-type='uint8_t [256]' data-ref="29buffer">buffer</dfn>[<var>256</var>];</td></tr>
+<tr><th id="312">312</th><td>  <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col0 decl" id="30nbytes" title='nbytes' data-type='size_t' data-ref="30nbytes">nbytes</dfn> = <a class="ref fn" href="../../../include/string.h.html#strlen" title='strlen' data-ref="strlen">strlen</a> (<a class="macro" href="sock_test.h.html#52" title="&quot;Hello, world! (over an AF_UNIX socket)&quot;" data-ref="_M/SOCK_TEST_MIXED_EPOLL_DATA">SOCK_TEST_MIXED_EPOLL_DATA</a>) + <var>1</var>;</td></tr>
+<tr><th id="313">313</th><td></td></tr>
+<tr><th id="314">314</th><td><u>#<span data-ppcond="314">if</span> HAVE_ACCEPT4</u></td></tr>
+<tr><th id="315">315</th><td>  af_unix_client_fd = accept4 (ssm-&gt;af_unix_listen_fd,</td></tr>
+<tr><th id="316">316</th><td>			       (<b>struct</b> sockaddr *) NULL, NULL, NULL);</td></tr>
+<tr><th id="317">317</th><td><u>#<span data-ppcond="314">else</span></u></td></tr>
+<tr><th id="318">318</th><td>  <a class="local col6 ref" href="#26af_unix_client_fd" title='af_unix_client_fd' data-ref="26af_unix_client_fd">af_unix_client_fd</a> = <a class="ref fn" href="../../../include/sys/socket.h.html#accept" title='accept' data-ref="accept">accept</a> (<a class="local col5 ref" href="#25ssm" title='ssm' data-ref="25ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_listen_fd" title='(anonymous struct)::af_unix_listen_fd' data-use='r' data-ref="(anonymous)::af_unix_listen_fd">af_unix_listen_fd</a>,</td></tr>
+<tr><th id="319">319</th><td>			      (<b>struct</b> <a class="type" href="../../../include/bits/socket.h.html#sockaddr" title='sockaddr' data-ref="sockaddr">sockaddr</a> *) <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>, <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>);</td></tr>
+<tr><th id="320">320</th><td><u>#<span data-ppcond="314">endif</span></u></td></tr>
+<tr><th id="321">321</th><td>  <b>if</b> (<a class="local col6 ref" href="#26af_unix_client_fd" title='af_unix_client_fd' data-ref="26af_unix_client_fd">af_unix_client_fd</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="322">322</th><td>    {</td></tr>
+<tr><th id="323">323</th><td>      <a class="local col8 ref" href="#28errno_val" title='errno_val' data-ref="28errno_val">errno_val</a> = <a class="macro" href="../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>;</td></tr>
+<tr><th id="324">324</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#perror" title='perror' data-ref="perror">perror</a> (<q>"ERROR in af_unix_accept()"</q>);</td></tr>
+<tr><th id="325">325</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"SERVER: ERROR: accept failed "</q></td></tr>
+<tr><th id="326">326</th><td>	       <q>"(errno = %d)!\n"</q>, <a class="local col8 ref" href="#28errno_val" title='errno_val' data-ref="28errno_val">errno_val</a>);</td></tr>
+<tr><th id="327">327</th><td>      <b>return</b>;</td></tr>
+<tr><th id="328">328</th><td>    }</td></tr>
+<tr><th id="329">329</th><td></td></tr>
+<tr><th id="330">330</th><td>  <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"SERVER: Got an AF_UNIX connection -- fd = %d (0x%08x)!\n"</q>,</td></tr>
+<tr><th id="331">331</th><td>	  <a class="local col6 ref" href="#26af_unix_client_fd" title='af_unix_client_fd' data-ref="26af_unix_client_fd">af_unix_client_fd</a>, <a class="local col6 ref" href="#26af_unix_client_fd" title='af_unix_client_fd' data-ref="26af_unix_client_fd">af_unix_client_fd</a>);</td></tr>
+<tr><th id="332">332</th><td></td></tr>
+<tr><th id="333">333</th><td>  <a class="ref fn" href="../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a> (<a class="local col9 ref" href="#29buffer" title='buffer' data-ref="29buffer">buffer</a>, <var>0</var>, <b>sizeof</b> (<a class="local col9 ref" href="#29buffer" title='buffer' data-ref="29buffer">buffer</a>));</td></tr>
+<tr><th id="334">334</th><td></td></tr>
+<tr><th id="335">335</th><td>  <a class="local col7 ref" href="#27rv" title='rv' data-ref="27rv">rv</a> = <a class="ref fn" href="../../../include/unistd.h.html#read" title='read' data-ref="read">read</a> (<a class="local col6 ref" href="#26af_unix_client_fd" title='af_unix_client_fd' data-ref="26af_unix_client_fd">af_unix_client_fd</a>, <a class="local col9 ref" href="#29buffer" title='buffer' data-ref="29buffer">buffer</a>, <a class="local col0 ref" href="#30nbytes" title='nbytes' data-ref="30nbytes">nbytes</a>);</td></tr>
+<tr><th id="336">336</th><td>  <b>if</b> (<a class="local col7 ref" href="#27rv" title='rv' data-ref="27rv">rv</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="337">337</th><td>    {</td></tr>
+<tr><th id="338">338</th><td>      <a class="local col8 ref" href="#28errno_val" title='errno_val' data-ref="28errno_val">errno_val</a> = <a class="macro" href="../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>;</td></tr>
+<tr><th id="339">339</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#perror" title='perror' data-ref="perror">perror</a> (<q>"ERROR in af_unix_echo(): read() failed"</q>);</td></tr>
+<tr><th id="340">340</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"SERVER: ERROR: read(af_unix_client_fd %d (0x%x), "</q></td></tr>
+<tr><th id="341">341</th><td>	       <q>"\"%s\", nbytes %lu) failed (errno = %d)!\n"</q>,</td></tr>
+<tr><th id="342">342</th><td>	       <a class="local col6 ref" href="#26af_unix_client_fd" title='af_unix_client_fd' data-ref="26af_unix_client_fd">af_unix_client_fd</a>, <a class="local col6 ref" href="#26af_unix_client_fd" title='af_unix_client_fd' data-ref="26af_unix_client_fd">af_unix_client_fd</a>, <a class="local col9 ref" href="#29buffer" title='buffer' data-ref="29buffer">buffer</a>, <a class="local col0 ref" href="#30nbytes" title='nbytes' data-ref="30nbytes">nbytes</a>,</td></tr>
+<tr><th id="343">343</th><td>	       <a class="local col8 ref" href="#28errno_val" title='errno_val' data-ref="28errno_val">errno_val</a>);</td></tr>
+<tr><th id="344">344</th><td>      <b>goto</b> <a class="lbl" href="#31done" data-ref="31done">done</a>;</td></tr>
+<tr><th id="345">345</th><td>    }</td></tr>
+<tr><th id="346">346</th><td></td></tr>
+<tr><th id="347">347</th><td>  <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"SERVER (AF_UNIX): RX (%d bytes) - '%s'\n"</q>, <a class="local col7 ref" href="#27rv" title='rv' data-ref="27rv">rv</a>, <a class="local col9 ref" href="#29buffer" title='buffer' data-ref="29buffer">buffer</a>);</td></tr>
+<tr><th id="348">348</th><td></td></tr>
+<tr><th id="349">349</th><td>  <b>if</b> (!<a class="ref fn" href="../../../include/string.h.html#strncmp" title='strncmp' data-ref="strncmp">strncmp</a> (<a class="macro" href="sock_test.h.html#52" title="&quot;Hello, world! (over an AF_UNIX socket)&quot;" data-ref="_M/SOCK_TEST_MIXED_EPOLL_DATA">SOCK_TEST_MIXED_EPOLL_DATA</a>, (<em>const</em> <em>char</em> *) <a class="local col9 ref" href="#29buffer" title='buffer' data-ref="29buffer">buffer</a>, <a class="local col0 ref" href="#30nbytes" title='nbytes' data-ref="30nbytes">nbytes</a>))</td></tr>
+<tr><th id="350">350</th><td>    {</td></tr>
+<tr><th id="351">351</th><td>      <a class="local col7 ref" href="#27rv" title='rv' data-ref="27rv">rv</a> = <a class="ref fn" href="../../../include/unistd.h.html#write" title='write' data-ref="write">write</a> (<a class="local col6 ref" href="#26af_unix_client_fd" title='af_unix_client_fd' data-ref="26af_unix_client_fd">af_unix_client_fd</a>, <a class="local col9 ref" href="#29buffer" title='buffer' data-ref="29buffer">buffer</a>, <a class="local col0 ref" href="#30nbytes" title='nbytes' data-ref="30nbytes">nbytes</a>);</td></tr>
+<tr><th id="352">352</th><td>      <b>if</b> (<a class="local col7 ref" href="#27rv" title='rv' data-ref="27rv">rv</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="353">353</th><td>	{</td></tr>
+<tr><th id="354">354</th><td>	  <a class="local col8 ref" href="#28errno_val" title='errno_val' data-ref="28errno_val">errno_val</a> = <a class="macro" href="../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>;</td></tr>
+<tr><th id="355">355</th><td>	  <a class="ref fn" href="../../../include/stdio.h.html#perror" title='perror' data-ref="perror">perror</a> (<q>"ERROR in af_unix_echo(): write() failed"</q>);</td></tr>
+<tr><th id="356">356</th><td>	  <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>,</td></tr>
+<tr><th id="357">357</th><td>		   <q>"SERVER: ERROR: write(af_unix_client_fd %d (0x%x), "</q></td></tr>
+<tr><th id="358">358</th><td>		   <q>"\"%s\", nbytes %ld) failed (errno = %d)!\n"</q>,</td></tr>
+<tr><th id="359">359</th><td>		   <a class="local col6 ref" href="#26af_unix_client_fd" title='af_unix_client_fd' data-ref="26af_unix_client_fd">af_unix_client_fd</a>, <a class="local col6 ref" href="#26af_unix_client_fd" title='af_unix_client_fd' data-ref="26af_unix_client_fd">af_unix_client_fd</a>, <a class="local col9 ref" href="#29buffer" title='buffer' data-ref="29buffer">buffer</a>, <a class="local col0 ref" href="#30nbytes" title='nbytes' data-ref="30nbytes">nbytes</a>,</td></tr>
+<tr><th id="360">360</th><td>		   <a class="local col8 ref" href="#28errno_val" title='errno_val' data-ref="28errno_val">errno_val</a>);</td></tr>
+<tr><th id="361">361</th><td>	  <b>goto</b> <a class="lbl" href="#31done" data-ref="31done">done</a>;</td></tr>
+<tr><th id="362">362</th><td>	}</td></tr>
+<tr><th id="363">363</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"SERVER (AF_UNIX): TX (%d bytes) - '%s'\n"</q>, <a class="local col7 ref" href="#27rv" title='rv' data-ref="27rv">rv</a>, <a class="local col9 ref" href="#29buffer" title='buffer' data-ref="29buffer">buffer</a>);</td></tr>
+<tr><th id="364">364</th><td>      <a class="local col5 ref" href="#25ssm" title='ssm' data-ref="25ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_xacts" title='(anonymous struct)::af_unix_xacts' data-use='w' data-ref="(anonymous)::af_unix_xacts">af_unix_xacts</a>++;</td></tr>
+<tr><th id="365">365</th><td>    }</td></tr>
+<tr><th id="366">366</th><td><dfn class="lbl" id="31done" data-ref="31done">done</dfn>:</td></tr>
+<tr><th id="367">367</th><td>  <a class="ref fn" href="../../../include/unistd.h.html#close" title='close' data-ref="close">close</a> (<a class="local col6 ref" href="#26af_unix_client_fd" title='af_unix_client_fd' data-ref="26af_unix_client_fd">af_unix_client_fd</a>);</td></tr>
+<tr><th id="368">368</th><td>}</td></tr>
+<tr><th id="369">369</th><td></td></tr>
+<tr><th id="370">370</th><td><u>#<span data-ppcond="303">endif</span></u></td></tr>
+<tr><th id="371">371</th><td></td></tr>
+<tr><th id="372">372</th><td><em>static</em> <b>inline</b> <em>void</em></td></tr>
+<tr><th id="373">373</th><td><dfn class="tu decl def fn" id="new_client" title='new_client' data-type='void new_client()' data-ref="new_client">new_client</dfn> (<em>void</em>)</td></tr>
+<tr><th id="374">374</th><td>{</td></tr>
+<tr><th id="375">375</th><td>  <a class="typedef" href="#sock_server_main_t" title='sock_server_main_t' data-type='struct sock_server_main_t' data-ref="sock_server_main_t">sock_server_main_t</a> *<dfn class="local col2 decl" id="32ssm" title='ssm' data-type='sock_server_main_t *' data-ref="32ssm">ssm</dfn> = &amp;<a class="ref" href="#sock_server_main" title='sock_server_main' data-ref="sock_server_main">sock_server_main</a>;</td></tr>
+<tr><th id="376">376</th><td>  <em>int</em> <dfn class="local col3 decl" id="33client_fd" title='client_fd' data-type='int' data-ref="33client_fd">client_fd</dfn>;</td></tr>
+<tr><th id="377">377</th><td>  <a class="typedef" href="#sock_server_conn_t" title='sock_server_conn_t' data-type='struct sock_server_conn_t' data-ref="sock_server_conn_t">sock_server_conn_t</a> *<dfn class="local col4 decl" id="34conn" title='conn' data-type='sock_server_conn_t *' data-ref="34conn">conn</dfn>;</td></tr>
+<tr><th id="378">378</th><td></td></tr>
+<tr><th id="379">379</th><td>  <b>if</b> (<a class="local col2 ref" href="#32ssm" title='ssm' data-ref="32ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::conn_pool_size" title='(anonymous struct)::conn_pool_size' data-use='r' data-ref="(anonymous)::conn_pool_size">conn_pool_size</a> &lt; (<a class="local col2 ref" href="#32ssm" title='ssm' data-ref="32ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::num_conn" title='(anonymous struct)::num_conn' data-use='r' data-ref="(anonymous)::num_conn">num_conn</a> + <a class="macro" href="#68" title="10" data-ref="_M/SOCK_SERVER_MAX_TEST_CONN">SOCK_SERVER_MAX_TEST_CONN</a> + <var>1</var>))</td></tr>
+<tr><th id="380">380</th><td>    <a class="tu ref fn" href="#conn_pool_expand" title='conn_pool_expand' data-use='c' data-ref="conn_pool_expand">conn_pool_expand</a> (<a class="macro" href="#68" title="10" data-ref="_M/SOCK_SERVER_MAX_TEST_CONN">SOCK_SERVER_MAX_TEST_CONN</a> + <var>1</var>);</td></tr>
+<tr><th id="381">381</th><td></td></tr>
+<tr><th id="382">382</th><td>  <a class="local col4 ref" href="#34conn" title='conn' data-ref="34conn">conn</a> = <a class="tu ref fn" href="#conn_pool_alloc" title='conn_pool_alloc' data-use='c' data-ref="conn_pool_alloc">conn_pool_alloc</a> ();</td></tr>
+<tr><th id="383">383</th><td>  <b>if</b> (!<a class="local col4 ref" href="#34conn" title='conn' data-ref="34conn">conn</a>)</td></tr>
+<tr><th id="384">384</th><td>    {</td></tr>
+<tr><th id="385">385</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"\nSERVER: ERROR: No free connections!\n"</q>);</td></tr>
+<tr><th id="386">386</th><td>      <b>return</b>;</td></tr>
+<tr><th id="387">387</th><td>    }</td></tr>
+<tr><th id="388">388</th><td></td></tr>
+<tr><th id="389">389</th><td><u>#<span data-ppcond="389">ifdef</span> <span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span></u></td></tr>
+<tr><th id="390">390</th><td>  client_fd = vppcom_session_accept (ssm-&gt;listen_fd, &amp;conn-&gt;endpt, <var>0</var>);</td></tr>
+<tr><th id="391">391</th><td>  <b>if</b> (client_fd &lt; <var>0</var>)</td></tr>
+<tr><th id="392">392</th><td>    errno = -client_fd;</td></tr>
+<tr><th id="393">393</th><td><u>#<span data-ppcond="389">elif</span> HAVE_ACCEPT4</u></td></tr>
+<tr><th id="394">394</th><td>  client_fd = accept4 (ssm-&gt;listen_fd, (<b>struct</b> sockaddr *) NULL, NULL, NULL);</td></tr>
+<tr><th id="395">395</th><td><u>#<span data-ppcond="389">else</span></u></td></tr>
+<tr><th id="396">396</th><td>  <a class="local col3 ref" href="#33client_fd" title='client_fd' data-ref="33client_fd">client_fd</a> = <a class="ref fn" href="../../../include/sys/socket.h.html#accept" title='accept' data-ref="accept">accept</a> (<a class="local col2 ref" href="#32ssm" title='ssm' data-ref="32ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::listen_fd" title='(anonymous struct)::listen_fd' data-use='r' data-ref="(anonymous)::listen_fd">listen_fd</a>, (<b>struct</b> <a class="type" href="../../../include/bits/socket.h.html#sockaddr" title='sockaddr' data-ref="sockaddr">sockaddr</a> *) <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>, <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>);</td></tr>
+<tr><th id="397">397</th><td><u>#<span data-ppcond="389">endif</span></u></td></tr>
+<tr><th id="398">398</th><td>  <b>if</b> (<a class="local col3 ref" href="#33client_fd" title='client_fd' data-ref="33client_fd">client_fd</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="399">399</th><td>    {</td></tr>
+<tr><th id="400">400</th><td>      <em>int</em> <dfn class="local col5 decl" id="35errno_val" title='errno_val' data-type='int' data-ref="35errno_val">errno_val</dfn>;</td></tr>
+<tr><th id="401">401</th><td>      <a class="local col5 ref" href="#35errno_val" title='errno_val' data-ref="35errno_val">errno_val</a> = <a class="macro" href="../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>;</td></tr>
+<tr><th id="402">402</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#perror" title='perror' data-ref="perror">perror</a> (<q>"ERROR in new_client()"</q>);</td></tr>
+<tr><th id="403">403</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"SERVER: ERROR: accept failed "</q></td></tr>
+<tr><th id="404">404</th><td>	       <q>"(errno = %d)!\n"</q>, <a class="local col5 ref" href="#35errno_val" title='errno_val' data-ref="35errno_val">errno_val</a>);</td></tr>
+<tr><th id="405">405</th><td>      <b>return</b>;</td></tr>
+<tr><th id="406">406</th><td>    }</td></tr>
+<tr><th id="407">407</th><td></td></tr>
+<tr><th id="408">408</th><td>  <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"SERVER: Got a connection -- fd = %d (0x%08x)!\n"</q>,</td></tr>
+<tr><th id="409">409</th><td>	  <a class="local col3 ref" href="#33client_fd" title='client_fd' data-ref="33client_fd">client_fd</a>, <a class="local col3 ref" href="#33client_fd" title='client_fd' data-ref="33client_fd">client_fd</a>);</td></tr>
+<tr><th id="410">410</th><td></td></tr>
+<tr><th id="411">411</th><td>  <a class="local col4 ref" href="#34conn" title='conn' data-ref="34conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::fd" title='(anonymous struct)::fd' data-use='w' data-ref="(anonymous)::fd">fd</a> = <a class="local col3 ref" href="#33client_fd" title='client_fd' data-ref="33client_fd">client_fd</a>;</td></tr>
+<tr><th id="412">412</th><td></td></tr>
+<tr><th id="413">413</th><td><u>#<span data-ppcond="413">if</span> ! <a class="macro" href="#28" title="1" data-ref="_M/SOCK_SERVER_USE_EPOLL">SOCK_SERVER_USE_EPOLL</a></u></td></tr>
+<tr><th id="414">414</th><td>  conn_fdset_set (conn, &amp;ssm-&gt;rd_fdset);</td></tr>
+<tr><th id="415">415</th><td>  ssm-&gt;nfds++;</td></tr>
+<tr><th id="416">416</th><td><u>#<span data-ppcond="413">else</span></u></td></tr>
+<tr><th id="417">417</th><td>  {</td></tr>
+<tr><th id="418">418</th><td>    <b>struct</b> <a class="type" href="../../../include/sys/epoll.h.html#epoll_event" title='epoll_event' data-ref="epoll_event">epoll_event</a> <dfn class="local col6 decl" id="36ev" title='ev' data-type='struct epoll_event' data-ref="36ev">ev</dfn>;</td></tr>
+<tr><th id="419">419</th><td>    <em>int</em> <dfn class="local col7 decl" id="37rv" title='rv' data-type='int' data-ref="37rv">rv</dfn>;</td></tr>
+<tr><th id="420">420</th><td></td></tr>
+<tr><th id="421">421</th><td>    <a class="local col6 ref" href="#36ev" title='ev' data-ref="36ev">ev</a>.<a class="ref field" href="../../../include/sys/epoll.h.html#epoll_event::events" title='epoll_event::events' data-ref="epoll_event::events">events</a> = <a class="macro" href="../../../include/sys/epoll.h.html#43" title="EPOLLIN" data-ref="_M/EPOLLIN">EPOLLIN</a>;</td></tr>
+<tr><th id="422">422</th><td>    <a class="local col6 ref" href="#36ev" title='ev' data-ref="36ev">ev</a>.<a class="ref field" href="../../../include/sys/epoll.h.html#epoll_event::data" title='epoll_event::data' data-ref="epoll_event::data">data</a>.<a class="ref field" href="../../../include/sys/epoll.h.html#epoll_data::u64" title='epoll_data::u64' data-ref="epoll_data::u64">u64</a> = <a class="local col4 ref" href="#34conn" title='conn' data-ref="34conn">conn</a> - <a class="local col2 ref" href="#32ssm" title='ssm' data-ref="32ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::conn_pool" title='(anonymous struct)::conn_pool' data-use='r' data-ref="(anonymous)::conn_pool">conn_pool</a>;</td></tr>
+<tr><th id="423">423</th><td><u>#<span data-ppcond="423">ifdef</span> <span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span></u></td></tr>
+<tr><th id="424">424</th><td>    rv = vppcom_epoll_ctl (ssm-&gt;epfd, EPOLL_CTL_ADD, client_fd, &amp;ev);</td></tr>
+<tr><th id="425">425</th><td>    <b>if</b> (rv)</td></tr>
+<tr><th id="426">426</th><td>      errno = -rv;</td></tr>
+<tr><th id="427">427</th><td><u>#<span data-ppcond="423">else</span></u></td></tr>
+<tr><th id="428">428</th><td>    <a class="local col7 ref" href="#37rv" title='rv' data-ref="37rv">rv</a> = <a class="ref fn" href="../../../include/sys/epoll.h.html#epoll_ctl" title='epoll_ctl' data-ref="epoll_ctl">epoll_ctl</a> (<a class="local col2 ref" href="#32ssm" title='ssm' data-ref="32ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::epfd" title='(anonymous struct)::epfd' data-use='r' data-ref="(anonymous)::epfd">epfd</a>, <a class="macro" href="../../../include/sys/epoll.h.html#74" title="1" data-ref="_M/EPOLL_CTL_ADD">EPOLL_CTL_ADD</a>, <a class="local col3 ref" href="#33client_fd" title='client_fd' data-ref="33client_fd">client_fd</a>, &amp;<a class="local col6 ref" href="#36ev" title='ev' data-ref="36ev">ev</a>);</td></tr>
+<tr><th id="429">429</th><td><u>#<span data-ppcond="423">endif</span></u></td></tr>
+<tr><th id="430">430</th><td>    <b>if</b> (<a class="local col7 ref" href="#37rv" title='rv' data-ref="37rv">rv</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="431">431</th><td>      {</td></tr>
+<tr><th id="432">432</th><td>	<em>int</em> <dfn class="local col8 decl" id="38errno_val" title='errno_val' data-type='int' data-ref="38errno_val">errno_val</dfn>;</td></tr>
+<tr><th id="433">433</th><td>	<a class="local col8 ref" href="#38errno_val" title='errno_val' data-ref="38errno_val">errno_val</a> = <a class="macro" href="../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>;</td></tr>
+<tr><th id="434">434</th><td>	<a class="ref fn" href="../../../include/stdio.h.html#perror" title='perror' data-ref="perror">perror</a> (<q>"ERROR in new_client()"</q>);</td></tr>
+<tr><th id="435">435</th><td>	<a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"SERVER: ERROR: epoll_ctl failed (errno = %d)!\n"</q>,</td></tr>
+<tr><th id="436">436</th><td>		 <a class="local col8 ref" href="#38errno_val" title='errno_val' data-ref="38errno_val">errno_val</a>);</td></tr>
+<tr><th id="437">437</th><td>      }</td></tr>
+<tr><th id="438">438</th><td>    <b>else</b></td></tr>
+<tr><th id="439">439</th><td>      <a class="local col2 ref" href="#32ssm" title='ssm' data-ref="32ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::nfds" title='(anonymous struct)::nfds' data-use='w' data-ref="(anonymous)::nfds">nfds</a>++;</td></tr>
+<tr><th id="440">440</th><td>  }</td></tr>
+<tr><th id="441">441</th><td><u>#<span data-ppcond="413">endif</span></u></td></tr>
+<tr><th id="442">442</th><td>}</td></tr>
+<tr><th id="443">443</th><td></td></tr>
+<tr><th id="444">444</th><td><em>void</em></td></tr>
+<tr><th id="445">445</th><td><dfn class="decl def fn" id="print_usage_and_exit" title='print_usage_and_exit' data-ref="print_usage_and_exit">print_usage_and_exit</dfn> (<em>void</em>)</td></tr>
+<tr><th id="446">446</th><td>{</td></tr>
+<tr><th id="447">447</th><td>  <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>,</td></tr>
+<tr><th id="448">448</th><td>	   <q>"sock_test_server [OPTIONS] &lt;port&gt;\n"</q></td></tr>
+<tr><th id="449">449</th><td>	   <q>"  OPTIONS\n"</q></td></tr>
+<tr><th id="450">450</th><td>	   <q>"  -h               Print this message and exit.\n"</q></td></tr>
+<tr><th id="451">451</th><td>	   <q>"  -6               Use IPv6\n"</q></td></tr>
+<tr><th id="452">452</th><td>	   <q>"  -u               Use UDP transport layer\n"</q>);</td></tr>
+<tr><th id="453">453</th><td>  <a class="ref fn" href="../../../include/stdlib.h.html#exit" title='exit' data-ref="exit">exit</a> (<var>1</var>);</td></tr>
+<tr><th id="454">454</th><td>}</td></tr>
+<tr><th id="455">455</th><td></td></tr>
+<tr><th id="456">456</th><td><em>int</em></td></tr>
+<tr><th id="457">457</th><td><dfn class="decl def fn" id="main" title='main' data-ref="main">main</dfn> (<em>int</em> <dfn class="local col9 decl" id="39argc" title='argc' data-type='int' data-ref="39argc">argc</dfn>, <em>char</em> **<dfn class="local col0 decl" id="40argv" title='argv' data-type='char **' data-ref="40argv">argv</dfn>)</td></tr>
+<tr><th id="458">458</th><td>{</td></tr>
+<tr><th id="459">459</th><td>  <a class="typedef" href="#sock_server_main_t" title='sock_server_main_t' data-type='struct sock_server_main_t' data-ref="sock_server_main_t">sock_server_main_t</a> *<dfn class="local col1 decl" id="41ssm" title='ssm' data-type='sock_server_main_t *' data-ref="41ssm">ssm</dfn> = &amp;<a class="ref" href="#sock_server_main" title='sock_server_main' data-ref="sock_server_main">sock_server_main</a>;</td></tr>
+<tr><th id="460">460</th><td>  <em>int</em> <dfn class="local col2 decl" id="42client_fd" title='client_fd' data-type='int' data-ref="42client_fd">client_fd</dfn>, <dfn class="local col3 decl" id="43rv" title='rv' data-type='int' data-ref="43rv">rv</dfn>, <dfn class="local col4 decl" id="44main_rv" title='main_rv' data-type='int' data-ref="44main_rv">main_rv</dfn> = <var>0</var>;</td></tr>
+<tr><th id="461">461</th><td>  <em>int</em> <dfn class="local col5 decl" id="45tx_bytes" title='tx_bytes' data-type='int' data-ref="45tx_bytes">tx_bytes</dfn>, <dfn class="local col6 decl" id="46rx_bytes" title='rx_bytes' data-type='int' data-ref="46rx_bytes">rx_bytes</dfn>, <dfn class="local col7 decl" id="47nbytes" title='nbytes' data-type='int' data-ref="47nbytes">nbytes</dfn>;</td></tr>
+<tr><th id="462">462</th><td>  <a class="typedef" href="#sock_server_conn_t" title='sock_server_conn_t' data-type='struct sock_server_conn_t' data-ref="sock_server_conn_t">sock_server_conn_t</a> *<dfn class="local col8 decl" id="48conn" title='conn' data-type='sock_server_conn_t *' data-ref="48conn">conn</dfn>;</td></tr>
+<tr><th id="463">463</th><td>  <a class="typedef" href="sock_test.h.html#sock_test_cfg_t" title='sock_test_cfg_t' data-type='struct sock_test_cfg_t' data-ref="sock_test_cfg_t">sock_test_cfg_t</a> *<dfn class="local col9 decl" id="49rx_cfg" title='rx_cfg' data-type='sock_test_cfg_t *' data-ref="49rx_cfg">rx_cfg</dfn>;</td></tr>
+<tr><th id="464">464</th><td>  <a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="local col0 decl" id="50xtra" title='xtra' data-type='uint32_t' data-ref="50xtra">xtra</dfn> = <var>0</var>;</td></tr>
+<tr><th id="465">465</th><td>  <a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="local col1 decl" id="51xtra_bytes" title='xtra_bytes' data-type='uint64_t' data-ref="51xtra_bytes">xtra_bytes</dfn> = <var>0</var>;</td></tr>
+<tr><th id="466">466</th><td>  <b>struct</b> <a class="type" href="../../../include/bits/socket.h.html#sockaddr_storage" title='sockaddr_storage' data-ref="sockaddr_storage">sockaddr_storage</a> <dfn class="local col2 decl" id="52servaddr" title='servaddr' data-type='struct sockaddr_storage' data-ref="52servaddr">servaddr</dfn>;</td></tr>
+<tr><th id="467">467</th><td>  <em>int</em> <dfn class="local col3 decl" id="53errno_val" title='errno_val' data-type='int' data-ref="53errno_val">errno_val</dfn>;</td></tr>
+<tr><th id="468">468</th><td>  <em>int</em> <dfn class="local col4 decl" id="54c" title='c' data-type='int' data-ref="54c">c</dfn>, <dfn class="local col5 decl" id="55v" title='v' data-type='int' data-ref="55v">v</dfn>, <dfn class="local col6 decl" id="56i" title='i' data-type='int' data-ref="56i">i</dfn>;</td></tr>
+<tr><th id="469">469</th><td>  <a class="typedef" href="../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="local col7 decl" id="57port" title='port' data-type='uint16_t' data-ref="57port">port</dfn> = <a class="macro" href="sock_test.h.html#41" title="22000" data-ref="_M/SOCK_TEST_SERVER_PORT">SOCK_TEST_SERVER_PORT</a>;</td></tr>
+<tr><th id="470">470</th><td><u>#<span data-ppcond="470">if</span> ! <a class="macro" href="#28" title="1" data-ref="_M/SOCK_SERVER_USE_EPOLL">SOCK_SERVER_USE_EPOLL</a></u></td></tr>
+<tr><th id="471">471</th><td>  fd_set _rfdset, *rfdset = &amp;_rfdset;</td></tr>
+<tr><th id="472">472</th><td><u>#<span data-ppcond="470">endif</span></u></td></tr>
+<tr><th id="473">473</th><td><u>#<span data-ppcond="473">ifdef</span> <span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span></u></td></tr>
+<tr><th id="474">474</th><td>  vppcom_endpt_t endpt;</td></tr>
+<tr><th id="475">475</th><td><u>#<span data-ppcond="473">else</span></u></td></tr>
+<tr><th id="476">476</th><td>  <a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="local col8 decl" id="58servaddr_size" title='servaddr_size' data-type='uint32_t' data-ref="58servaddr_size">servaddr_size</dfn>;</td></tr>
+<tr><th id="477">477</th><td><u>#<span data-ppcond="477">if</span> ! <a class="macro" href="#28" title="1" data-ref="_M/SOCK_SERVER_USE_EPOLL">SOCK_SERVER_USE_EPOLL</a></u></td></tr>
+<tr><th id="478">478</th><td>  fd_set _wfdset, *wfdset = &amp;_wfdset;</td></tr>
+<tr><th id="479">479</th><td><u>#<span data-ppcond="477">endif</span></u></td></tr>
+<tr><th id="480">480</th><td><u>#<span data-ppcond="473">endif</span></u></td></tr>
+<tr><th id="481">481</th><td></td></tr>
+<tr><th id="482">482</th><td>  <a class="ref" href="../../../include/getopt.h.html#opterr" title='opterr' data-ref="opterr">opterr</a> = <var>0</var>;</td></tr>
+<tr><th id="483">483</th><td>  <b>while</b> ((<a class="local col4 ref" href="#54c" title='c' data-ref="54c">c</a> = <a class="ref fn" href="../../../include/getopt.h.html#getopt" title='getopt' data-ref="getopt">getopt</a> (<a class="local col9 ref" href="#39argc" title='argc' data-ref="39argc">argc</a>, <a class="local col0 ref" href="#40argv" title='argv' data-ref="40argv">argv</a>, <q>"6D"</q>)) != -<var>1</var>)</td></tr>
+<tr><th id="484">484</th><td>    <b>switch</b> (<a class="local col4 ref" href="#54c" title='c' data-ref="54c">c</a>)</td></tr>
+<tr><th id="485">485</th><td>      {</td></tr>
+<tr><th id="486">486</th><td>      <b>case</b> <kbd>'6'</kbd>:</td></tr>
+<tr><th id="487">487</th><td>	<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="tu ref field" href="#(anonymous)::address_ip6" title='(anonymous struct)::address_ip6' data-use='w' data-ref="(anonymous)::address_ip6">address_ip6</a> = <var>1</var>;</td></tr>
+<tr><th id="488">488</th><td>	<b>break</b>;</td></tr>
+<tr><th id="489">489</th><td></td></tr>
+<tr><th id="490">490</th><td>      <b>case</b> <kbd>'D'</kbd>:</td></tr>
+<tr><th id="491">491</th><td>	<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="tu ref field" href="#(anonymous)::transport_udp" title='(anonymous struct)::transport_udp' data-use='w' data-ref="(anonymous)::transport_udp">transport_udp</a> = <var>1</var>;</td></tr>
+<tr><th id="492">492</th><td>	<b>break</b>;</td></tr>
+<tr><th id="493">493</th><td></td></tr>
+<tr><th id="494">494</th><td>      <b>case</b> <kbd>'?'</kbd>:</td></tr>
+<tr><th id="495">495</th><td>	<b>switch</b> (<a class="ref" href="../../../include/getopt.h.html#optopt" title='optopt' data-ref="optopt">optopt</a>)</td></tr>
+<tr><th id="496">496</th><td>	  {</td></tr>
+<tr><th id="497">497</th><td>	  <b>default</b>:</td></tr>
+<tr><th id="498">498</th><td>	    <b>if</b> (<a class="macro" href="../../../include/ctype.h.html#204" title="((*__ctype_b_loc ())[(int) ((optopt))] &amp; (unsigned short int) _ISprint)" data-ref="_M/isprint">isprint</a> (<a class="ref" href="../../../include/getopt.h.html#optopt" title='optopt' data-ref="optopt">optopt</a>))</td></tr>
+<tr><th id="499">499</th><td>	      <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"SERVER: ERROR: Unknown "</q></td></tr>
+<tr><th id="500">500</th><td>		       <q>"option `-%c'.\n"</q>, <a class="ref" href="../../../include/getopt.h.html#optopt" title='optopt' data-ref="optopt">optopt</a>);</td></tr>
+<tr><th id="501">501</th><td>	    <b>else</b></td></tr>
+<tr><th id="502">502</th><td>	      <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"SERVER: ERROR: Unknown "</q></td></tr>
+<tr><th id="503">503</th><td>		       <q>"option character `\\x%x'.\n"</q>, <a class="ref" href="../../../include/getopt.h.html#optopt" title='optopt' data-ref="optopt">optopt</a>);</td></tr>
+<tr><th id="504">504</th><td>	  }</td></tr>
+<tr><th id="505">505</th><td>	<i>/* fall thru */</i></td></tr>
+<tr><th id="506">506</th><td>      <b>case</b> <kbd>'h'</kbd>:</td></tr>
+<tr><th id="507">507</th><td>      <b>default</b>:</td></tr>
+<tr><th id="508">508</th><td>	<a class="ref fn" href="#print_usage_and_exit" title='print_usage_and_exit' data-ref="print_usage_and_exit">print_usage_and_exit</a> ();</td></tr>
+<tr><th id="509">509</th><td>      }</td></tr>
+<tr><th id="510">510</th><td></td></tr>
+<tr><th id="511">511</th><td>  <b>if</b> (<a class="local col9 ref" href="#39argc" title='argc' data-ref="39argc">argc</a> &lt; (<a class="ref" href="../../../include/getopt.h.html#optind" title='optind' data-ref="optind">optind</a> + <var>1</var>))</td></tr>
+<tr><th id="512">512</th><td>    {</td></tr>
+<tr><th id="513">513</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"SERVER: ERROR: Insufficient number of arguments!\n"</q>);</td></tr>
+<tr><th id="514">514</th><td>      <a class="ref fn" href="#print_usage_and_exit" title='print_usage_and_exit' data-ref="print_usage_and_exit">print_usage_and_exit</a> ();</td></tr>
+<tr><th id="515">515</th><td>    }</td></tr>
+<tr><th id="516">516</th><td></td></tr>
+<tr><th id="517">517</th><td>  <b>if</b> (<a class="ref fn" href="../../../include/stdio.h.html#__isoc99_sscanf" title='sscanf' data-ref="__isoc99_sscanf">sscanf</a> (<a class="local col0 ref" href="#40argv" title='argv' data-ref="40argv">argv</a>[<a class="ref" href="../../../include/getopt.h.html#optind" title='optind' data-ref="optind">optind</a>], <q>"%d"</q>, &amp;<a class="local col5 ref" href="#55v" title='v' data-ref="55v">v</a>) == <var>1</var>)</td></tr>
+<tr><th id="518">518</th><td>    <a class="local col7 ref" href="#57port" title='port' data-ref="57port">port</a> = (<a class="typedef" href="../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a>) <a class="local col5 ref" href="#55v" title='v' data-ref="55v">v</a>;</td></tr>
+<tr><th id="519">519</th><td>  <b>else</b></td></tr>
+<tr><th id="520">520</th><td>    {</td></tr>
+<tr><th id="521">521</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"SERVER: ERROR: Invalid port (%s)!\n"</q>, <a class="local col0 ref" href="#40argv" title='argv' data-ref="40argv">argv</a>[<a class="ref" href="../../../include/getopt.h.html#optind" title='optind' data-ref="optind">optind</a>]);</td></tr>
+<tr><th id="522">522</th><td>      <a class="ref fn" href="#print_usage_and_exit" title='print_usage_and_exit' data-ref="print_usage_and_exit">print_usage_and_exit</a> ();</td></tr>
+<tr><th id="523">523</th><td>    }</td></tr>
+<tr><th id="524">524</th><td></td></tr>
+<tr><th id="525">525</th><td>  <a class="tu ref fn" href="#conn_pool_expand" title='conn_pool_expand' data-use='c' data-ref="conn_pool_expand">conn_pool_expand</a> (<a class="macro" href="#68" title="10" data-ref="_M/SOCK_SERVER_MAX_TEST_CONN">SOCK_SERVER_MAX_TEST_CONN</a> + <var>1</var>);</td></tr>
+<tr><th id="526">526</th><td></td></tr>
+<tr><th id="527">527</th><td><u>#<span data-ppcond="527">ifdef</span> <span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span></u></td></tr>
+<tr><th id="528">528</th><td>  rv = vppcom_app_create (<q>"vcl_test_server"</q>);</td></tr>
+<tr><th id="529">529</th><td>  <b>if</b> (rv)</td></tr>
+<tr><th id="530">530</th><td>    {</td></tr>
+<tr><th id="531">531</th><td>      errno = -rv;</td></tr>
+<tr><th id="532">532</th><td>      ssm-&gt;listen_fd = -<var>1</var>;</td></tr>
+<tr><th id="533">533</th><td>    }</td></tr>
+<tr><th id="534">534</th><td>  <b>else</b></td></tr>
+<tr><th id="535">535</th><td>    {</td></tr>
+<tr><th id="536">536</th><td>      ssm-&gt;listen_fd = vppcom_session_create (ssm-&gt;cfg.transport_udp ?</td></tr>
+<tr><th id="537">537</th><td>					      VPPCOM_PROTO_UDP :</td></tr>
+<tr><th id="538">538</th><td>					      VPPCOM_PROTO_TCP,</td></tr>
+<tr><th id="539">539</th><td>					      <var>0</var> <i>/* is_nonblocking */</i> );</td></tr>
+<tr><th id="540">540</th><td>    }</td></tr>
+<tr><th id="541">541</th><td><u>#<span data-ppcond="527">else</span></u></td></tr>
+<tr><th id="542">542</th><td>  <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::listen_fd" title='(anonymous struct)::listen_fd' data-use='w' data-ref="(anonymous)::listen_fd">listen_fd</a> = <a class="ref fn" href="../../../include/sys/socket.h.html#socket" title='socket' data-ref="socket">socket</a> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="tu ref field" href="#(anonymous)::address_ip6" title='(anonymous struct)::address_ip6' data-use='r' data-ref="(anonymous)::address_ip6">address_ip6</a> ? <a class="macro" href="../../../include/bits/socket.h.html#99" title="10" data-ref="_M/AF_INET6">AF_INET6</a> : <a class="macro" href="../../../include/bits/socket.h.html#91" title="2" data-ref="_M/AF_INET">AF_INET</a>,</td></tr>
+<tr><th id="543">543</th><td>			   <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="tu ref field" href="#(anonymous)::transport_udp" title='(anonymous struct)::transport_udp' data-use='r' data-ref="(anonymous)::transport_udp">transport_udp</a> ? <a class="macro" href="../../../include/bits/socket_type.h.html#31" title="SOCK_DGRAM" data-ref="_M/SOCK_DGRAM">SOCK_DGRAM</a> : <a class="macro" href="../../../include/bits/socket_type.h.html#28" title="SOCK_STREAM" data-ref="_M/SOCK_STREAM">SOCK_STREAM</a>,</td></tr>
+<tr><th id="544">544</th><td>			   <var>0</var>);</td></tr>
+<tr><th id="545">545</th><td><u>#<span data-ppcond="545">if</span> <a class="macro" href="#28" title="1" data-ref="_M/SOCK_SERVER_USE_EPOLL">SOCK_SERVER_USE_EPOLL</a> &amp;&amp; !defined (<span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span>)</u></td></tr>
+<tr><th id="546">546</th><td>  <a class="ref fn" href="../../../include/unistd.h.html#unlink" title='unlink' data-ref="unlink">unlink</a> ((<em>const</em> <em>char</em> *) <a class="macro" href="sock_test.h.html#51" title="&quot;/tmp/ldp_server_af_unix_socket&quot;" data-ref="_M/SOCK_TEST_AF_UNIX_FILENAME">SOCK_TEST_AF_UNIX_FILENAME</a>);</td></tr>
+<tr><th id="547">547</th><td>  <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_listen_fd" title='(anonymous struct)::af_unix_listen_fd' data-use='w' data-ref="(anonymous)::af_unix_listen_fd">af_unix_listen_fd</a> = <a class="ref fn" href="../../../include/sys/socket.h.html#socket" title='socket' data-ref="socket">socket</a> (<a class="macro" href="../../../include/bits/socket.h.html#89" title="1" data-ref="_M/AF_UNIX">AF_UNIX</a>, <a class="macro" href="../../../include/bits/socket_type.h.html#28" title="SOCK_STREAM" data-ref="_M/SOCK_STREAM">SOCK_STREAM</a>, <var>0</var>);</td></tr>
+<tr><th id="548">548</th><td>  <b>if</b> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_listen_fd" title='(anonymous struct)::af_unix_listen_fd' data-use='r' data-ref="(anonymous)::af_unix_listen_fd">af_unix_listen_fd</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="549">549</th><td>    {</td></tr>
+<tr><th id="550">550</th><td>      <a class="local col3 ref" href="#53errno_val" title='errno_val' data-ref="53errno_val">errno_val</a> = <a class="macro" href="../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>;</td></tr>
+<tr><th id="551">551</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#perror" title='perror' data-ref="perror">perror</a> (<q>"ERROR in main(): socket(AF_UNIX) failed"</q>);</td></tr>
+<tr><th id="552">552</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>,</td></tr>
+<tr><th id="553">553</th><td>	       <q>"SERVER: ERROR: socket(AF_UNIX, SOCK_STREAM, 0) failed "</q></td></tr>
+<tr><th id="554">554</th><td>	       <q>"(errno = %d)!\n"</q>, <a class="local col3 ref" href="#53errno_val" title='errno_val' data-ref="53errno_val">errno_val</a>);</td></tr>
+<tr><th id="555">555</th><td>      <b>return</b> <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_listen_fd" title='(anonymous struct)::af_unix_listen_fd' data-use='r' data-ref="(anonymous)::af_unix_listen_fd">af_unix_listen_fd</a>;</td></tr>
+<tr><th id="556">556</th><td>    }</td></tr>
+<tr><th id="557">557</th><td></td></tr>
+<tr><th id="558">558</th><td>  <a class="ref fn" href="../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a> (&amp;<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::serveraddr" title='(anonymous struct)::serveraddr' data-use='a' data-ref="(anonymous)::serveraddr">serveraddr</a>, <var>0</var>, <b>sizeof</b> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::serveraddr" title='(anonymous struct)::serveraddr' data-use='r' data-ref="(anonymous)::serveraddr">serveraddr</a>));</td></tr>
+<tr><th id="559">559</th><td>  <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::serveraddr" title='(anonymous struct)::serveraddr' data-use='m' data-ref="(anonymous)::serveraddr">serveraddr</a>.<a class="ref field" href="../../../include/sys/un.h.html#31" title='sockaddr_un::sun_family' data-ref="sockaddr_un::sun_family">sun_family</a> = <a class="macro" href="../../../include/bits/socket.h.html#89" title="1" data-ref="_M/AF_UNIX">AF_UNIX</a>;</td></tr>
+<tr><th id="560">560</th><td>  <a class="ref fn" href="../../../include/string.h.html#strcpy" title='strcpy' data-ref="strcpy">strcpy</a> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::serveraddr" title='(anonymous struct)::serveraddr' data-use='m' data-ref="(anonymous)::serveraddr">serveraddr</a>.<a class="ref field" href="../../../include/sys/un.h.html#sockaddr_un::sun_path" title='sockaddr_un::sun_path' data-ref="sockaddr_un::sun_path">sun_path</a>, <a class="macro" href="sock_test.h.html#51" title="&quot;/tmp/ldp_server_af_unix_socket&quot;" data-ref="_M/SOCK_TEST_AF_UNIX_FILENAME">SOCK_TEST_AF_UNIX_FILENAME</a>);</td></tr>
+<tr><th id="561">561</th><td></td></tr>
+<tr><th id="562">562</th><td>  <a class="local col3 ref" href="#43rv" title='rv' data-ref="43rv">rv</a> = <a class="ref fn" href="../../../include/sys/socket.h.html#bind" title='bind' data-ref="bind">bind</a> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_listen_fd" title='(anonymous struct)::af_unix_listen_fd' data-use='r' data-ref="(anonymous)::af_unix_listen_fd">af_unix_listen_fd</a>, (<b>struct</b> <a class="type" href="../../../include/bits/socket.h.html#sockaddr" title='sockaddr' data-ref="sockaddr">sockaddr</a> *) &amp;<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::serveraddr" title='(anonymous struct)::serveraddr' data-use='a' data-ref="(anonymous)::serveraddr">serveraddr</a>,</td></tr>
+<tr><th id="563">563</th><td>	     <a class="macro" href="../../../include/sys/un.h.html#40" title="((size_t) (((struct sockaddr_un *) 0)-&gt;sun_path) + strlen ((&amp;ssm-&gt;serveraddr)-&gt;sun_path))" data-ref="_M/SUN_LEN">SUN_LEN</a> (&amp;<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::serveraddr" title='(anonymous struct)::serveraddr' data-use='a' data-ref="(anonymous)::serveraddr">serveraddr</a>));</td></tr>
+<tr><th id="564">564</th><td>  <b>if</b> (<a class="local col3 ref" href="#43rv" title='rv' data-ref="43rv">rv</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="565">565</th><td>    {</td></tr>
+<tr><th id="566">566</th><td>      <a class="local col3 ref" href="#53errno_val" title='errno_val' data-ref="53errno_val">errno_val</a> = <a class="macro" href="../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>;</td></tr>
+<tr><th id="567">567</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#perror" title='perror' data-ref="perror">perror</a> (<q>"ERROR in main(): bind(SOCK_TEST_AF_UNIX_FILENAME) failed"</q>);</td></tr>
+<tr><th id="568">568</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"SERVER: ERROR: bind() fd %d, \"%s\": "</q></td></tr>
+<tr><th id="569">569</th><td>	       <q>"failed (errno = %d)!\n"</q>, <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_listen_fd" title='(anonymous struct)::af_unix_listen_fd' data-use='r' data-ref="(anonymous)::af_unix_listen_fd">af_unix_listen_fd</a>,</td></tr>
+<tr><th id="570">570</th><td>	       <a class="macro" href="sock_test.h.html#51" title="&quot;/tmp/ldp_server_af_unix_socket&quot;" data-ref="_M/SOCK_TEST_AF_UNIX_FILENAME">SOCK_TEST_AF_UNIX_FILENAME</a>, <a class="local col3 ref" href="#53errno_val" title='errno_val' data-ref="53errno_val">errno_val</a>);</td></tr>
+<tr><th id="571">571</th><td>      <a class="ref fn" href="../../../include/unistd.h.html#close" title='close' data-ref="close">close</a> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_listen_fd" title='(anonymous struct)::af_unix_listen_fd' data-use='r' data-ref="(anonymous)::af_unix_listen_fd">af_unix_listen_fd</a>);</td></tr>
+<tr><th id="572">572</th><td>      <a class="ref fn" href="../../../include/unistd.h.html#unlink" title='unlink' data-ref="unlink">unlink</a> ((<em>const</em> <em>char</em> *) <a class="macro" href="sock_test.h.html#51" title="&quot;/tmp/ldp_server_af_unix_socket&quot;" data-ref="_M/SOCK_TEST_AF_UNIX_FILENAME">SOCK_TEST_AF_UNIX_FILENAME</a>);</td></tr>
+<tr><th id="573">573</th><td>      <b>return</b> <a class="local col3 ref" href="#43rv" title='rv' data-ref="43rv">rv</a>;</td></tr>
+<tr><th id="574">574</th><td>    }</td></tr>
+<tr><th id="575">575</th><td></td></tr>
+<tr><th id="576">576</th><td>  <a class="local col3 ref" href="#43rv" title='rv' data-ref="43rv">rv</a> = <a class="ref fn" href="../../../include/sys/socket.h.html#listen" title='listen' data-ref="listen">listen</a> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_listen_fd" title='(anonymous struct)::af_unix_listen_fd' data-use='r' data-ref="(anonymous)::af_unix_listen_fd">af_unix_listen_fd</a>, <var>10</var>);</td></tr>
+<tr><th id="577">577</th><td>  <b>if</b> (<a class="local col3 ref" href="#43rv" title='rv' data-ref="43rv">rv</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="578">578</th><td>    {</td></tr>
+<tr><th id="579">579</th><td>      <a class="local col3 ref" href="#53errno_val" title='errno_val' data-ref="53errno_val">errno_val</a> = <a class="macro" href="../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>;</td></tr>
+<tr><th id="580">580</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#perror" title='perror' data-ref="perror">perror</a> (<q>"ERROR in main(): listen(AF_UNIX) failed"</q>);</td></tr>
+<tr><th id="581">581</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"SERVER: ERROR: listen() fd %d, \"%s\": "</q></td></tr>
+<tr><th id="582">582</th><td>	       <q>"failed (errno = %d)!\n"</q>, <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_listen_fd" title='(anonymous struct)::af_unix_listen_fd' data-use='r' data-ref="(anonymous)::af_unix_listen_fd">af_unix_listen_fd</a>,</td></tr>
+<tr><th id="583">583</th><td>	       <a class="macro" href="sock_test.h.html#51" title="&quot;/tmp/ldp_server_af_unix_socket&quot;" data-ref="_M/SOCK_TEST_AF_UNIX_FILENAME">SOCK_TEST_AF_UNIX_FILENAME</a>, <a class="local col3 ref" href="#53errno_val" title='errno_val' data-ref="53errno_val">errno_val</a>);</td></tr>
+<tr><th id="584">584</th><td>      <a class="ref fn" href="../../../include/unistd.h.html#close" title='close' data-ref="close">close</a> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_listen_fd" title='(anonymous struct)::af_unix_listen_fd' data-use='r' data-ref="(anonymous)::af_unix_listen_fd">af_unix_listen_fd</a>);</td></tr>
+<tr><th id="585">585</th><td>      <a class="ref fn" href="../../../include/unistd.h.html#unlink" title='unlink' data-ref="unlink">unlink</a> ((<em>const</em> <em>char</em> *) <a class="macro" href="sock_test.h.html#51" title="&quot;/tmp/ldp_server_af_unix_socket&quot;" data-ref="_M/SOCK_TEST_AF_UNIX_FILENAME">SOCK_TEST_AF_UNIX_FILENAME</a>);</td></tr>
+<tr><th id="586">586</th><td>      <b>return</b> <a class="local col3 ref" href="#43rv" title='rv' data-ref="43rv">rv</a>;</td></tr>
+<tr><th id="587">587</th><td>    }</td></tr>
+<tr><th id="588">588</th><td><u>#<span data-ppcond="545">endif</span> /* SOCK_SERVER_USE_EPOLL */</u></td></tr>
+<tr><th id="589">589</th><td><u>#<span data-ppcond="527">endif</span></u></td></tr>
+<tr><th id="590">590</th><td>  <b>if</b> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::listen_fd" title='(anonymous struct)::listen_fd' data-use='r' data-ref="(anonymous)::listen_fd">listen_fd</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="591">591</th><td>    {</td></tr>
+<tr><th id="592">592</th><td>      <a class="local col3 ref" href="#53errno_val" title='errno_val' data-ref="53errno_val">errno_val</a> = <a class="macro" href="../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>;</td></tr>
+<tr><th id="593">593</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#perror" title='perror' data-ref="perror">perror</a> (<q>"ERROR in main()"</q>);</td></tr>
+<tr><th id="594">594</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"SERVER: ERROR: socket() failed "</q></td></tr>
+<tr><th id="595">595</th><td>	       <q>"(errno = %d)!\n"</q>, <a class="local col3 ref" href="#53errno_val" title='errno_val' data-ref="53errno_val">errno_val</a>);</td></tr>
+<tr><th id="596">596</th><td>      <b>return</b> <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::listen_fd" title='(anonymous struct)::listen_fd' data-use='r' data-ref="(anonymous)::listen_fd">listen_fd</a>;</td></tr>
+<tr><th id="597">597</th><td>    }</td></tr>
+<tr><th id="598">598</th><td></td></tr>
+<tr><th id="599">599</th><td>  <a class="ref fn" href="../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a> (&amp;<a class="local col2 ref" href="#52servaddr" title='servaddr' data-ref="52servaddr">servaddr</a>, <var>0</var>, <b>sizeof</b> (<a class="local col2 ref" href="#52servaddr" title='servaddr' data-ref="52servaddr">servaddr</a>));</td></tr>
+<tr><th id="600">600</th><td></td></tr>
+<tr><th id="601">601</th><td>  <b>if</b> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="tu ref field" href="#(anonymous)::address_ip6" title='(anonymous struct)::address_ip6' data-use='r' data-ref="(anonymous)::address_ip6">address_ip6</a>)</td></tr>
+<tr><th id="602">602</th><td>    {</td></tr>
+<tr><th id="603">603</th><td>      <b>struct</b> <a class="type" href="../../../include/netinet/in.h.html#sockaddr_in6" title='sockaddr_in6' data-ref="sockaddr_in6">sockaddr_in6</a> *<dfn class="local col9 decl" id="59server_addr" title='server_addr' data-type='struct sockaddr_in6 *' data-ref="59server_addr">server_addr</dfn> = (<b>struct</b> <a class="type" href="../../../include/netinet/in.h.html#sockaddr_in6" title='sockaddr_in6' data-ref="sockaddr_in6">sockaddr_in6</a> *) &amp;<a class="local col2 ref" href="#52servaddr" title='servaddr' data-ref="52servaddr">servaddr</a>;</td></tr>
+<tr><th id="604">604</th><td><u>#<span data-ppcond="604">ifndef</span> <span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span></u></td></tr>
+<tr><th id="605">605</th><td>      <a class="local col8 ref" href="#58servaddr_size" title='servaddr_size' data-ref="58servaddr_size">servaddr_size</a> = <b>sizeof</b> (*<a class="local col9 ref" href="#59server_addr" title='server_addr' data-ref="59server_addr">server_addr</a>);</td></tr>
+<tr><th id="606">606</th><td><u>#<span data-ppcond="604">endif</span></u></td></tr>
+<tr><th id="607">607</th><td>      <a class="local col9 ref" href="#59server_addr" title='server_addr' data-ref="59server_addr">server_addr</a>-&gt;<a class="ref field" href="../../../include/netinet/in.h.html#255" title='sockaddr_in6::sin6_family' data-ref="sockaddr_in6::sin6_family">sin6_family</a> = <a class="macro" href="../../../include/bits/socket.h.html#99" title="10" data-ref="_M/AF_INET6">AF_INET6</a>;</td></tr>
+<tr><th id="608">608</th><td>      <a class="local col9 ref" href="#59server_addr" title='server_addr' data-ref="59server_addr">server_addr</a>-&gt;<a class="ref field" href="../../../include/netinet/in.h.html#sockaddr_in6::sin6_addr" title='sockaddr_in6::sin6_addr' data-ref="sockaddr_in6::sin6_addr">sin6_addr</a> = <a class="ref" href="../../../include/netinet/in.h.html#in6addr_any" title='in6addr_any' data-ref="in6addr_any">in6addr_any</a>;</td></tr>
+<tr><th id="609">609</th><td>      <a class="local col9 ref" href="#59server_addr" title='server_addr' data-ref="59server_addr">server_addr</a>-&gt;<a class="ref field" href="../../../include/netinet/in.h.html#sockaddr_in6::sin6_port" title='sockaddr_in6::sin6_port' data-ref="sockaddr_in6::sin6_port">sin6_port</a> = <a class="ref fn" href="../../../include/netinet/in.h.html#htons" title='htons' data-ref="htons">htons</a> (<a class="local col7 ref" href="#57port" title='port' data-ref="57port">port</a>);</td></tr>
+<tr><th id="610">610</th><td>    }</td></tr>
+<tr><th id="611">611</th><td>  <b>else</b></td></tr>
+<tr><th id="612">612</th><td>    {</td></tr>
+<tr><th id="613">613</th><td>      <b>struct</b> <a class="type" href="../../../include/netinet/in.h.html#sockaddr_in" title='sockaddr_in' data-ref="sockaddr_in">sockaddr_in</a> *<dfn class="local col0 decl" id="60server_addr" title='server_addr' data-type='struct sockaddr_in *' data-ref="60server_addr">server_addr</dfn> = (<b>struct</b> <a class="type" href="../../../include/netinet/in.h.html#sockaddr_in" title='sockaddr_in' data-ref="sockaddr_in">sockaddr_in</a> *) &amp;<a class="local col2 ref" href="#52servaddr" title='servaddr' data-ref="52servaddr">servaddr</a>;</td></tr>
+<tr><th id="614">614</th><td><u>#<span data-ppcond="614">ifndef</span> <span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span></u></td></tr>
+<tr><th id="615">615</th><td>      <a class="local col8 ref" href="#58servaddr_size" title='servaddr_size' data-ref="58servaddr_size">servaddr_size</a> = <b>sizeof</b> (*<a class="local col0 ref" href="#60server_addr" title='server_addr' data-ref="60server_addr">server_addr</a>);</td></tr>
+<tr><th id="616">616</th><td><u>#<span data-ppcond="614">endif</span></u></td></tr>
+<tr><th id="617">617</th><td>      <a class="local col0 ref" href="#60server_addr" title='server_addr' data-ref="60server_addr">server_addr</a>-&gt;<a class="ref field" href="../../../include/netinet/in.h.html#240" title='sockaddr_in::sin_family' data-ref="sockaddr_in::sin_family">sin_family</a> = <a class="macro" href="../../../include/bits/socket.h.html#91" title="2" data-ref="_M/AF_INET">AF_INET</a>;</td></tr>
+<tr><th id="618">618</th><td>      <a class="local col0 ref" href="#60server_addr" title='server_addr' data-ref="60server_addr">server_addr</a>-&gt;<a class="ref field" href="../../../include/netinet/in.h.html#sockaddr_in::sin_addr" title='sockaddr_in::sin_addr' data-ref="sockaddr_in::sin_addr">sin_addr</a>.<a class="ref field" href="../../../include/netinet/in.h.html#in_addr::s_addr" title='in_addr::s_addr' data-ref="in_addr::s_addr">s_addr</a> = <a class="ref fn" href="../../../include/netinet/in.h.html#htonl" title='htonl' data-ref="htonl">htonl</a> (<a class="macro" href="../../../include/netinet/in.h.html#189" title="((in_addr_t) 0x00000000)" data-ref="_M/INADDR_ANY">INADDR_ANY</a>);</td></tr>
+<tr><th id="619">619</th><td>      <a class="local col0 ref" href="#60server_addr" title='server_addr' data-ref="60server_addr">server_addr</a>-&gt;<a class="ref field" href="../../../include/netinet/in.h.html#sockaddr_in::sin_port" title='sockaddr_in::sin_port' data-ref="sockaddr_in::sin_port">sin_port</a> = <a class="ref fn" href="../../../include/netinet/in.h.html#htons" title='htons' data-ref="htons">htons</a> (<a class="local col7 ref" href="#57port" title='port' data-ref="57port">port</a>);</td></tr>
+<tr><th id="620">620</th><td>    }</td></tr>
+<tr><th id="621">621</th><td></td></tr>
+<tr><th id="622">622</th><td><u>#<span data-ppcond="622">ifdef</span> <span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span></u></td></tr>
+<tr><th id="623">623</th><td>  <b>if</b> (ssm-&gt;cfg.address_ip6)</td></tr>
+<tr><th id="624">624</th><td>    {</td></tr>
+<tr><th id="625">625</th><td>      <b>struct</b> sockaddr_in6 *server_addr = (<b>struct</b> sockaddr_in6 *) &amp;servaddr;</td></tr>
+<tr><th id="626">626</th><td>      endpt.is_ip4 = <var>0</var>;</td></tr>
+<tr><th id="627">627</th><td>      endpt.ip = (uint8_t *) &amp; server_addr-&gt;sin6_addr;</td></tr>
+<tr><th id="628">628</th><td>      endpt.port = (uint16_t) server_addr-&gt;sin6_port;</td></tr>
+<tr><th id="629">629</th><td>    }</td></tr>
+<tr><th id="630">630</th><td>  <b>else</b></td></tr>
+<tr><th id="631">631</th><td>    {</td></tr>
+<tr><th id="632">632</th><td>      <b>struct</b> sockaddr_in *server_addr = (<b>struct</b> sockaddr_in *) &amp;servaddr;</td></tr>
+<tr><th id="633">633</th><td>      endpt.is_ip4 = <var>1</var>;</td></tr>
+<tr><th id="634">634</th><td>      endpt.ip = (uint8_t *) &amp; server_addr-&gt;sin_addr;</td></tr>
+<tr><th id="635">635</th><td>      endpt.port = (uint16_t) server_addr-&gt;sin_port;</td></tr>
+<tr><th id="636">636</th><td>    }</td></tr>
+<tr><th id="637">637</th><td></td></tr>
+<tr><th id="638">638</th><td>  rv = vppcom_session_bind (ssm-&gt;listen_fd, &amp;endpt);</td></tr>
+<tr><th id="639">639</th><td>  <b>if</b> (rv)</td></tr>
+<tr><th id="640">640</th><td>    {</td></tr>
+<tr><th id="641">641</th><td>      errno = -rv;</td></tr>
+<tr><th id="642">642</th><td>      rv = -<var>1</var>;</td></tr>
+<tr><th id="643">643</th><td>    }</td></tr>
+<tr><th id="644">644</th><td><u>#<span data-ppcond="622">else</span></u></td></tr>
+<tr><th id="645">645</th><td>  <a class="local col3 ref" href="#43rv" title='rv' data-ref="43rv">rv</a> = <a class="ref fn" href="../../../include/sys/socket.h.html#bind" title='bind' data-ref="bind">bind</a> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::listen_fd" title='(anonymous struct)::listen_fd' data-use='r' data-ref="(anonymous)::listen_fd">listen_fd</a>, (<b>struct</b> <a class="type" href="../../../include/bits/socket.h.html#sockaddr" title='sockaddr' data-ref="sockaddr">sockaddr</a> *) &amp;<a class="local col2 ref" href="#52servaddr" title='servaddr' data-ref="52servaddr">servaddr</a>, <a class="local col8 ref" href="#58servaddr_size" title='servaddr_size' data-ref="58servaddr_size">servaddr_size</a>);</td></tr>
+<tr><th id="646">646</th><td><u>#<span data-ppcond="622">endif</span></u></td></tr>
+<tr><th id="647">647</th><td>  <b>if</b> (<a class="local col3 ref" href="#43rv" title='rv' data-ref="43rv">rv</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="648">648</th><td>    {</td></tr>
+<tr><th id="649">649</th><td>      <a class="local col3 ref" href="#53errno_val" title='errno_val' data-ref="53errno_val">errno_val</a> = <a class="macro" href="../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>;</td></tr>
+<tr><th id="650">650</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#perror" title='perror' data-ref="perror">perror</a> (<q>"ERROR in main()"</q>);</td></tr>
+<tr><th id="651">651</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"SERVER: ERROR: bind failed (errno = %d)!\n"</q>,</td></tr>
+<tr><th id="652">652</th><td>	       <a class="local col3 ref" href="#53errno_val" title='errno_val' data-ref="53errno_val">errno_val</a>);</td></tr>
+<tr><th id="653">653</th><td>      <b>return</b> <a class="local col3 ref" href="#43rv" title='rv' data-ref="43rv">rv</a>;</td></tr>
+<tr><th id="654">654</th><td>    }</td></tr>
+<tr><th id="655">655</th><td></td></tr>
+<tr><th id="656">656</th><td><u>#<span data-ppcond="656">ifdef</span> <span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span></u></td></tr>
+<tr><th id="657">657</th><td>  rv = vppcom_session_listen (ssm-&gt;listen_fd, <var>10</var>);</td></tr>
+<tr><th id="658">658</th><td>  <b>if</b> (rv)</td></tr>
+<tr><th id="659">659</th><td>    {</td></tr>
+<tr><th id="660">660</th><td>      errno = -rv;</td></tr>
+<tr><th id="661">661</th><td>      rv = -<var>1</var>;</td></tr>
+<tr><th id="662">662</th><td>    }</td></tr>
+<tr><th id="663">663</th><td><u>#<span data-ppcond="656">else</span></u></td></tr>
+<tr><th id="664">664</th><td>  <a class="local col3 ref" href="#43rv" title='rv' data-ref="43rv">rv</a> = <a class="ref fn" href="../../../include/sys/socket.h.html#listen" title='listen' data-ref="listen">listen</a> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::listen_fd" title='(anonymous struct)::listen_fd' data-use='r' data-ref="(anonymous)::listen_fd">listen_fd</a>, <var>10</var>);</td></tr>
+<tr><th id="665">665</th><td><u>#<span data-ppcond="656">endif</span></u></td></tr>
+<tr><th id="666">666</th><td>  <b>if</b> (<a class="local col3 ref" href="#43rv" title='rv' data-ref="43rv">rv</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="667">667</th><td>    {</td></tr>
+<tr><th id="668">668</th><td>      <a class="local col3 ref" href="#53errno_val" title='errno_val' data-ref="53errno_val">errno_val</a> = <a class="macro" href="../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>;</td></tr>
+<tr><th id="669">669</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#perror" title='perror' data-ref="perror">perror</a> (<q>"ERROR in main()"</q>);</td></tr>
+<tr><th id="670">670</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"SERVER: ERROR: listen failed "</q></td></tr>
+<tr><th id="671">671</th><td>	       <q>"(errno = %d)!\n"</q>, <a class="local col3 ref" href="#53errno_val" title='errno_val' data-ref="53errno_val">errno_val</a>);</td></tr>
+<tr><th id="672">672</th><td>      <b>return</b> <a class="local col3 ref" href="#43rv" title='rv' data-ref="43rv">rv</a>;</td></tr>
+<tr><th id="673">673</th><td>    }</td></tr>
+<tr><th id="674">674</th><td></td></tr>
+<tr><th id="675">675</th><td><u>#<span data-ppcond="675">if</span> ! <a class="macro" href="#28" title="1" data-ref="_M/SOCK_SERVER_USE_EPOLL">SOCK_SERVER_USE_EPOLL</a></u></td></tr>
+<tr><th id="676">676</th><td></td></tr>
+<tr><th id="677">677</th><td>  FD_ZERO (&amp;ssm-&gt;wr_fdset);</td></tr>
+<tr><th id="678">678</th><td>  FD_ZERO (&amp;ssm-&gt;rd_fdset);</td></tr>
+<tr><th id="679">679</th><td></td></tr>
+<tr><th id="680">680</th><td>  FD_SET (ssm-&gt;listen_fd, &amp;ssm-&gt;rd_fdset);</td></tr>
+<tr><th id="681">681</th><td>  ssm-&gt;nfds = ssm-&gt;listen_fd + <var>1</var>;</td></tr>
+<tr><th id="682">682</th><td></td></tr>
+<tr><th id="683">683</th><td><u>#<span data-ppcond="675">else</span></u></td></tr>
+<tr><th id="684">684</th><td><u>#<span data-ppcond="684">ifdef</span> <span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span></u></td></tr>
+<tr><th id="685">685</th><td>  ssm-&gt;epfd = vppcom_epoll_create ();</td></tr>
+<tr><th id="686">686</th><td>  <b>if</b> (ssm-&gt;epfd &lt; <var>0</var>)</td></tr>
+<tr><th id="687">687</th><td>    errno = -ssm-&gt;epfd;</td></tr>
+<tr><th id="688">688</th><td><u>#<span data-ppcond="684">else</span></u></td></tr>
+<tr><th id="689">689</th><td>  <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::epfd" title='(anonymous struct)::epfd' data-use='w' data-ref="(anonymous)::epfd">epfd</a> = <a class="ref fn" href="../../../include/sys/epoll.h.html#epoll_create" title='epoll_create' data-ref="epoll_create">epoll_create</a> (<var>1</var>);</td></tr>
+<tr><th id="690">690</th><td><u>#<span data-ppcond="684">endif</span></u></td></tr>
+<tr><th id="691">691</th><td>  <b>if</b> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::epfd" title='(anonymous struct)::epfd' data-use='r' data-ref="(anonymous)::epfd">epfd</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="692">692</th><td>    {</td></tr>
+<tr><th id="693">693</th><td>      <a class="local col3 ref" href="#53errno_val" title='errno_val' data-ref="53errno_val">errno_val</a> = <a class="macro" href="../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>;</td></tr>
+<tr><th id="694">694</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#perror" title='perror' data-ref="perror">perror</a> (<q>"ERROR in main()"</q>);</td></tr>
+<tr><th id="695">695</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"SERVER: ERROR: epoll_create failed (errno = %d)!\n"</q>,</td></tr>
+<tr><th id="696">696</th><td>	       <a class="local col3 ref" href="#53errno_val" title='errno_val' data-ref="53errno_val">errno_val</a>);</td></tr>
+<tr><th id="697">697</th><td>      <b>return</b> <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::epfd" title='(anonymous struct)::epfd' data-use='r' data-ref="(anonymous)::epfd">epfd</a>;</td></tr>
+<tr><th id="698">698</th><td>    }</td></tr>
+<tr><th id="699">699</th><td></td></tr>
+<tr><th id="700">700</th><td>  <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::listen_ev" title='(anonymous struct)::listen_ev' data-use='m' data-ref="(anonymous)::listen_ev">listen_ev</a>.<a class="ref field" href="../../../include/sys/epoll.h.html#epoll_event::events" title='epoll_event::events' data-ref="epoll_event::events">events</a> = <a class="macro" href="../../../include/sys/epoll.h.html#43" title="EPOLLIN" data-ref="_M/EPOLLIN">EPOLLIN</a>;</td></tr>
+<tr><th id="701">701</th><td>  <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::listen_ev" title='(anonymous struct)::listen_ev' data-use='m' data-ref="(anonymous)::listen_ev">listen_ev</a>.<a class="ref field" href="../../../include/sys/epoll.h.html#epoll_event::data" title='epoll_event::data' data-ref="epoll_event::data">data</a>.<a class="ref field" href="../../../include/sys/epoll.h.html#epoll_data::u32" title='epoll_data::u32' data-ref="epoll_data::u32">u32</a> = ~<var>0</var>;</td></tr>
+<tr><th id="702">702</th><td><u>#<span data-ppcond="702">ifdef</span> <span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span></u></td></tr>
+<tr><th id="703">703</th><td>  rv = vppcom_epoll_ctl (ssm-&gt;epfd, EPOLL_CTL_ADD, ssm-&gt;listen_fd,</td></tr>
+<tr><th id="704">704</th><td>			 &amp;ssm-&gt;listen_ev);</td></tr>
+<tr><th id="705">705</th><td>  <b>if</b> (rv &lt; <var>0</var>)</td></tr>
+<tr><th id="706">706</th><td>    errno = -rv;</td></tr>
+<tr><th id="707">707</th><td><u>#<span data-ppcond="702">else</span></u></td></tr>
+<tr><th id="708">708</th><td>  <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_listen_ev" title='(anonymous struct)::af_unix_listen_ev' data-use='m' data-ref="(anonymous)::af_unix_listen_ev">af_unix_listen_ev</a>.<a class="ref field" href="../../../include/sys/epoll.h.html#epoll_event::events" title='epoll_event::events' data-ref="epoll_event::events">events</a> = <a class="macro" href="../../../include/sys/epoll.h.html#43" title="EPOLLIN" data-ref="_M/EPOLLIN">EPOLLIN</a>;</td></tr>
+<tr><th id="709">709</th><td>  <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_listen_ev" title='(anonymous struct)::af_unix_listen_ev' data-use='m' data-ref="(anonymous)::af_unix_listen_ev">af_unix_listen_ev</a>.<a class="ref field" href="../../../include/sys/epoll.h.html#epoll_event::data" title='epoll_event::data' data-ref="epoll_event::data">data</a>.<a class="ref field" href="../../../include/sys/epoll.h.html#epoll_data::u32" title='epoll_data::u32' data-ref="epoll_data::u32">u32</a> = <a class="macro" href="sock_test.h.html#53" title="0xaf0000af" data-ref="_M/SOCK_TEST_AF_UNIX_ACCEPT_DATA">SOCK_TEST_AF_UNIX_ACCEPT_DATA</a>;</td></tr>
+<tr><th id="710">710</th><td>  <a class="local col3 ref" href="#43rv" title='rv' data-ref="43rv">rv</a> = <a class="ref fn" href="../../../include/sys/epoll.h.html#epoll_ctl" title='epoll_ctl' data-ref="epoll_ctl">epoll_ctl</a> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::epfd" title='(anonymous struct)::epfd' data-use='r' data-ref="(anonymous)::epfd">epfd</a>, <a class="macro" href="../../../include/sys/epoll.h.html#74" title="1" data-ref="_M/EPOLL_CTL_ADD">EPOLL_CTL_ADD</a>, <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_listen_fd" title='(anonymous struct)::af_unix_listen_fd' data-use='r' data-ref="(anonymous)::af_unix_listen_fd">af_unix_listen_fd</a>,</td></tr>
+<tr><th id="711">711</th><td>		  &amp;<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_listen_ev" title='(anonymous struct)::af_unix_listen_ev' data-use='a' data-ref="(anonymous)::af_unix_listen_ev">af_unix_listen_ev</a>);</td></tr>
+<tr><th id="712">712</th><td>  <b>if</b> (<a class="local col3 ref" href="#43rv" title='rv' data-ref="43rv">rv</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="713">713</th><td>    {</td></tr>
+<tr><th id="714">714</th><td>      <a class="local col3 ref" href="#53errno_val" title='errno_val' data-ref="53errno_val">errno_val</a> = <a class="macro" href="../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>;</td></tr>
+<tr><th id="715">715</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#perror" title='perror' data-ref="perror">perror</a> (<q>"ERROR in main(): mixed epoll_ctl(EPOLL_CTL_ADD)"</q>);</td></tr>
+<tr><th id="716">716</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"SERVER: ERROR: mixed epoll_ctl(epfd %d (0x%x), "</q></td></tr>
+<tr><th id="717">717</th><td>	       <q>"EPOLL_CTL_ADD, af_unix_listen_fd %d (0x%x), EPOLLIN) failed "</q></td></tr>
+<tr><th id="718">718</th><td>	       <q>"(errno = %d)!\n"</q>, <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::epfd" title='(anonymous struct)::epfd' data-use='r' data-ref="(anonymous)::epfd">epfd</a>, <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::epfd" title='(anonymous struct)::epfd' data-use='r' data-ref="(anonymous)::epfd">epfd</a>,</td></tr>
+<tr><th id="719">719</th><td>	       <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_listen_fd" title='(anonymous struct)::af_unix_listen_fd' data-use='r' data-ref="(anonymous)::af_unix_listen_fd">af_unix_listen_fd</a>, <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_listen_fd" title='(anonymous struct)::af_unix_listen_fd' data-use='r' data-ref="(anonymous)::af_unix_listen_fd">af_unix_listen_fd</a>, <a class="local col3 ref" href="#53errno_val" title='errno_val' data-ref="53errno_val">errno_val</a>);</td></tr>
+<tr><th id="720">720</th><td>      <a class="ref fn" href="../../../include/unistd.h.html#close" title='close' data-ref="close">close</a> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_listen_fd" title='(anonymous struct)::af_unix_listen_fd' data-use='r' data-ref="(anonymous)::af_unix_listen_fd">af_unix_listen_fd</a>);</td></tr>
+<tr><th id="721">721</th><td>      <a class="ref fn" href="../../../include/unistd.h.html#unlink" title='unlink' data-ref="unlink">unlink</a> ((<em>const</em> <em>char</em> *) <a class="macro" href="sock_test.h.html#51" title="&quot;/tmp/ldp_server_af_unix_socket&quot;" data-ref="_M/SOCK_TEST_AF_UNIX_FILENAME">SOCK_TEST_AF_UNIX_FILENAME</a>);</td></tr>
+<tr><th id="722">722</th><td>      <b>return</b> <a class="local col3 ref" href="#43rv" title='rv' data-ref="43rv">rv</a>;</td></tr>
+<tr><th id="723">723</th><td>    }</td></tr>
+<tr><th id="724">724</th><td></td></tr>
+<tr><th id="725">725</th><td>  <a class="local col3 ref" href="#43rv" title='rv' data-ref="43rv">rv</a> = <a class="ref fn" href="../../../include/sys/epoll.h.html#epoll_ctl" title='epoll_ctl' data-ref="epoll_ctl">epoll_ctl</a> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::epfd" title='(anonymous struct)::epfd' data-use='r' data-ref="(anonymous)::epfd">epfd</a>, <a class="macro" href="../../../include/sys/epoll.h.html#74" title="1" data-ref="_M/EPOLL_CTL_ADD">EPOLL_CTL_ADD</a>, <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::listen_fd" title='(anonymous struct)::listen_fd' data-use='r' data-ref="(anonymous)::listen_fd">listen_fd</a>, &amp;<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::listen_ev" title='(anonymous struct)::listen_ev' data-use='a' data-ref="(anonymous)::listen_ev">listen_ev</a>);</td></tr>
+<tr><th id="726">726</th><td><u>#<span data-ppcond="702">endif</span></u></td></tr>
+<tr><th id="727">727</th><td>  <b>if</b> (<a class="local col3 ref" href="#43rv" title='rv' data-ref="43rv">rv</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="728">728</th><td>    {</td></tr>
+<tr><th id="729">729</th><td>      <a class="local col3 ref" href="#53errno_val" title='errno_val' data-ref="53errno_val">errno_val</a> = <a class="macro" href="../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>;</td></tr>
+<tr><th id="730">730</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#perror" title='perror' data-ref="perror">perror</a> (<q>"ERROR in main()"</q>);</td></tr>
+<tr><th id="731">731</th><td>      <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"SERVER: ERROR: epoll_ctl failed "</q></td></tr>
+<tr><th id="732">732</th><td>	       <q>"(errno = %d)!\n"</q>, <a class="local col3 ref" href="#53errno_val" title='errno_val' data-ref="53errno_val">errno_val</a>);</td></tr>
+<tr><th id="733">733</th><td>      <b>return</b> <a class="local col3 ref" href="#43rv" title='rv' data-ref="43rv">rv</a>;</td></tr>
+<tr><th id="734">734</th><td>    }</td></tr>
+<tr><th id="735">735</th><td><u>#<span data-ppcond="675">endif</span></u></td></tr>
+<tr><th id="736">736</th><td></td></tr>
+<tr><th id="737">737</th><td>  <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"\nSERVER: Waiting for a client to connect on port %d...\n"</q>, <a class="local col7 ref" href="#57port" title='port' data-ref="57port">port</a>);</td></tr>
+<tr><th id="738">738</th><td></td></tr>
+<tr><th id="739">739</th><td>  <b>while</b> (<var>1</var>)</td></tr>
+<tr><th id="740">740</th><td>    {</td></tr>
+<tr><th id="741">741</th><td><u>#<span data-ppcond="741">if</span> ! <a class="macro" href="#28" title="1" data-ref="_M/SOCK_SERVER_USE_EPOLL">SOCK_SERVER_USE_EPOLL</a></u></td></tr>
+<tr><th id="742">742</th><td>      _rfdset = ssm-&gt;rd_fdset;</td></tr>
+<tr><th id="743">743</th><td></td></tr>
+<tr><th id="744">744</th><td><u>#ifdef VCL_TEST</u></td></tr>
+<tr><th id="745">745</th><td>      rv = vppcom_select (ssm-&gt;nfds, (uint64_t *) rfdset, NULL, NULL, <var>0</var>);</td></tr>
+<tr><th id="746">746</th><td><u>#else</u></td></tr>
+<tr><th id="747">747</th><td>      {</td></tr>
+<tr><th id="748">748</th><td>	<b>struct</b> timeval timeout;</td></tr>
+<tr><th id="749">749</th><td>	timeout = ssm-&gt;timeout;</td></tr>
+<tr><th id="750">750</th><td>	_wfdset = ssm-&gt;wr_fdset;</td></tr>
+<tr><th id="751">751</th><td>	rv = select (ssm-&gt;nfds, rfdset, wfdset, NULL, &amp;timeout);</td></tr>
+<tr><th id="752">752</th><td>      }</td></tr>
+<tr><th id="753">753</th><td><u>#endif</u></td></tr>
+<tr><th id="754">754</th><td>      <b>if</b> (rv &lt; <var>0</var>)</td></tr>
+<tr><th id="755">755</th><td>	{</td></tr>
+<tr><th id="756">756</th><td>	  perror (<q>"select()"</q>);</td></tr>
+<tr><th id="757">757</th><td>	  fprintf (stderr, <q>"\nSERVER: ERROR: select() failed -- aborting!\n"</q>);</td></tr>
+<tr><th id="758">758</th><td>	  main_rv = -<var>1</var>;</td></tr>
+<tr><th id="759">759</th><td>	  <b>goto</b> done;</td></tr>
+<tr><th id="760">760</th><td>	}</td></tr>
+<tr><th id="761">761</th><td>      <b>else</b> <b>if</b> (rv == <var>0</var>)</td></tr>
+<tr><th id="762">762</th><td>	<b>continue</b>;</td></tr>
+<tr><th id="763">763</th><td></td></tr>
+<tr><th id="764">764</th><td>      <b>if</b> (FD_ISSET (ssm-&gt;listen_fd, rfdset))</td></tr>
+<tr><th id="765">765</th><td>	new_client ();</td></tr>
+<tr><th id="766">766</th><td></td></tr>
+<tr><th id="767">767</th><td>      <b>for</b> (i = <var>0</var>; i &lt; ssm-&gt;conn_pool_size; i++)</td></tr>
+<tr><th id="768">768</th><td>	{</td></tr>
+<tr><th id="769">769</th><td>	  <b>if</b> (!ssm-&gt;conn_pool[i].is_alloc)</td></tr>
+<tr><th id="770">770</th><td>	    <b>continue</b>;</td></tr>
+<tr><th id="771">771</th><td></td></tr>
+<tr><th id="772">772</th><td>	  conn = &amp;ssm-&gt;conn_pool[i];</td></tr>
+<tr><th id="773">773</th><td><u>#<span data-ppcond="741">else</span></u></td></tr>
+<tr><th id="774">774</th><td>      <em>int</em> <dfn class="local col1 decl" id="61num_ev" title='num_ev' data-type='int' data-ref="61num_ev">num_ev</dfn>;</td></tr>
+<tr><th id="775">775</th><td><u>#<span data-ppcond="775">ifdef</span> <span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span></u></td></tr>
+<tr><th id="776">776</th><td>      num_ev = vppcom_epoll_wait (ssm-&gt;epfd, ssm-&gt;wait_events,</td></tr>
+<tr><th id="777">777</th><td>				  SOCK_SERVER_MAX_EPOLL_EVENTS, <var>60.0</var>);</td></tr>
+<tr><th id="778">778</th><td>      <b>if</b> (num_ev &lt; <var>0</var>)</td></tr>
+<tr><th id="779">779</th><td>	errno = -num_ev;</td></tr>
+<tr><th id="780">780</th><td><u>#<span data-ppcond="775">else</span></u></td></tr>
+<tr><th id="781">781</th><td>      <a class="local col1 ref" href="#61num_ev" title='num_ev' data-ref="61num_ev">num_ev</a> = <a class="ref fn" href="../../../include/sys/epoll.h.html#epoll_wait" title='epoll_wait' data-ref="epoll_wait">epoll_wait</a> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::epfd" title='(anonymous struct)::epfd' data-use='r' data-ref="(anonymous)::epfd">epfd</a>, <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::wait_events" title='(anonymous struct)::wait_events' data-use='r' data-ref="(anonymous)::wait_events">wait_events</a>,</td></tr>
+<tr><th id="782">782</th><td>			   <a class="macro" href="#69" title="10" data-ref="_M/SOCK_SERVER_MAX_EPOLL_EVENTS">SOCK_SERVER_MAX_EPOLL_EVENTS</a>, <var>60000</var>);</td></tr>
+<tr><th id="783">783</th><td><u>#<span data-ppcond="775">endif</span></u></td></tr>
+<tr><th id="784">784</th><td>      <b>if</b> (<a class="local col1 ref" href="#61num_ev" title='num_ev' data-ref="61num_ev">num_ev</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="785">785</th><td>	{</td></tr>
+<tr><th id="786">786</th><td>	  <a class="ref fn" href="../../../include/stdio.h.html#perror" title='perror' data-ref="perror">perror</a> (<q>"epoll_wait()"</q>);</td></tr>
+<tr><th id="787">787</th><td>	  <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"\nSERVER: ERROR: epoll_wait() "</q></td></tr>
+<tr><th id="788">788</th><td>		   <q>"failed -- aborting!\n"</q>);</td></tr>
+<tr><th id="789">789</th><td>	  <a class="local col4 ref" href="#44main_rv" title='main_rv' data-ref="44main_rv">main_rv</a> = -<var>1</var>;</td></tr>
+<tr><th id="790">790</th><td>	  <b>goto</b> <a class="lbl" href="#62done" data-ref="62done">done</a>;</td></tr>
+<tr><th id="791">791</th><td>	}</td></tr>
+<tr><th id="792">792</th><td>      <b>if</b> (<a class="local col1 ref" href="#61num_ev" title='num_ev' data-ref="61num_ev">num_ev</a> == <var>0</var>)</td></tr>
+<tr><th id="793">793</th><td>	{</td></tr>
+<tr><th id="794">794</th><td>	  <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"\nSERVER: epoll_wait() timeout!\n"</q>);</td></tr>
+<tr><th id="795">795</th><td>	  <b>continue</b>;</td></tr>
+<tr><th id="796">796</th><td>	}</td></tr>
+<tr><th id="797">797</th><td>      <b>for</b> (<a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a> = <var>0</var>; <a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a> &lt; <a class="local col1 ref" href="#61num_ev" title='num_ev' data-ref="61num_ev">num_ev</a>; <a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>++)</td></tr>
+<tr><th id="798">798</th><td>	{</td></tr>
+<tr><th id="799">799</th><td>	  <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a> = &amp;<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::conn_pool" title='(anonymous struct)::conn_pool' data-use='r' data-ref="(anonymous)::conn_pool">conn_pool</a>[<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::wait_events" title='(anonymous struct)::wait_events' data-use='m' data-ref="(anonymous)::wait_events">wait_events</a>[<a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>].<a class="ref field" href="../../../include/sys/epoll.h.html#epoll_event::data" title='epoll_event::data' data-ref="epoll_event::data">data</a>.<a class="ref field" href="../../../include/sys/epoll.h.html#epoll_data::u32" title='epoll_data::u32' data-ref="epoll_data::u32">u32</a>];</td></tr>
+<tr><th id="800">800</th><td>	  <b>if</b> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::wait_events" title='(anonymous struct)::wait_events' data-use='m' data-ref="(anonymous)::wait_events">wait_events</a>[<a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>].<a class="ref field" href="../../../include/sys/epoll.h.html#epoll_event::events" title='epoll_event::events' data-ref="epoll_event::events">events</a> &amp; (<a class="macro" href="../../../include/sys/epoll.h.html#61" title="EPOLLHUP" data-ref="_M/EPOLLHUP">EPOLLHUP</a> | <a class="macro" href="../../../include/sys/epoll.h.html#63" title="EPOLLRDHUP" data-ref="_M/EPOLLRDHUP">EPOLLRDHUP</a>))</td></tr>
+<tr><th id="801">801</th><td>	    {</td></tr>
+<tr><th id="802">802</th><td><u>#<span data-ppcond="802">ifdef</span> <span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span></u></td></tr>
+<tr><th id="803">803</th><td>	      vppcom_session_close (conn-&gt;fd);</td></tr>
+<tr><th id="804">804</th><td><u>#<span data-ppcond="802">else</span></u></td></tr>
+<tr><th id="805">805</th><td>	      <a class="ref fn" href="../../../include/unistd.h.html#close" title='close' data-ref="close">close</a> (<a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::fd" title='(anonymous struct)::fd' data-use='r' data-ref="(anonymous)::fd">fd</a>);</td></tr>
+<tr><th id="806">806</th><td><u>#<span data-ppcond="802">endif</span></u></td></tr>
+<tr><th id="807">807</th><td>	      <b>continue</b>;</td></tr>
+<tr><th id="808">808</th><td>	    }</td></tr>
+<tr><th id="809">809</th><td>	  <b>if</b> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::wait_events" title='(anonymous struct)::wait_events' data-use='m' data-ref="(anonymous)::wait_events">wait_events</a>[<a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>].<a class="ref field" href="../../../include/sys/epoll.h.html#epoll_event::data" title='epoll_event::data' data-ref="epoll_event::data">data</a>.<a class="ref field" href="../../../include/sys/epoll.h.html#epoll_data::u32" title='epoll_data::u32' data-ref="epoll_data::u32">u32</a> == ~<var>0</var>)</td></tr>
+<tr><th id="810">810</th><td>	    {</td></tr>
+<tr><th id="811">811</th><td>	      <a class="tu ref fn" href="#new_client" title='new_client' data-use='c' data-ref="new_client">new_client</a> ();</td></tr>
+<tr><th id="812">812</th><td>	      <b>continue</b>;</td></tr>
+<tr><th id="813">813</th><td>	    }</td></tr>
+<tr><th id="814">814</th><td><u>#<span data-ppcond="814">if</span> !defined (<span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span>)</u></td></tr>
+<tr><th id="815">815</th><td>	  <b>else</b> <b>if</b> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::wait_events" title='(anonymous struct)::wait_events' data-use='m' data-ref="(anonymous)::wait_events">wait_events</a>[<a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>].<a class="ref field" href="../../../include/sys/epoll.h.html#epoll_event::data" title='epoll_event::data' data-ref="epoll_event::data">data</a>.<a class="ref field" href="../../../include/sys/epoll.h.html#epoll_data::u32" title='epoll_data::u32' data-ref="epoll_data::u32">u32</a> ==</td></tr>
+<tr><th id="816">816</th><td>		   <a class="macro" href="sock_test.h.html#53" title="0xaf0000af" data-ref="_M/SOCK_TEST_AF_UNIX_ACCEPT_DATA">SOCK_TEST_AF_UNIX_ACCEPT_DATA</a>)</td></tr>
+<tr><th id="817">817</th><td>	    {</td></tr>
+<tr><th id="818">818</th><td>	      <a class="tu ref fn" href="#af_unix_echo" title='af_unix_echo' data-use='c' data-ref="af_unix_echo">af_unix_echo</a> ();</td></tr>
+<tr><th id="819">819</th><td>	      <b>continue</b>;</td></tr>
+<tr><th id="820">820</th><td>	    }</td></tr>
+<tr><th id="821">821</th><td><u>#<span data-ppcond="814">endif</span></u></td></tr>
+<tr><th id="822">822</th><td><u>#<span data-ppcond="741">endif</span></u></td></tr>
+<tr><th id="823">823</th><td>	  <a class="local col2 ref" href="#42client_fd" title='client_fd' data-ref="42client_fd">client_fd</a> = <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::fd" title='(anonymous struct)::fd' data-use='r' data-ref="(anonymous)::fd">fd</a>;</td></tr>
+<tr><th id="824">824</th><td></td></tr>
+<tr><th id="825">825</th><td><u>#<span data-ppcond="825">if</span> ! <a class="macro" href="#28" title="1" data-ref="_M/SOCK_SERVER_USE_EPOLL">SOCK_SERVER_USE_EPOLL</a></u></td></tr>
+<tr><th id="826">826</th><td>	  <b>if</b> (FD_ISSET (client_fd, rfdset))</td></tr>
+<tr><th id="827">827</th><td><u>#<span data-ppcond="825">else</span></u></td></tr>
+<tr><th id="828">828</th><td>	  <b>if</b> (<a class="macro" href="../../../include/sys/epoll.h.html#43" title="EPOLLIN" data-ref="_M/EPOLLIN">EPOLLIN</a> &amp; <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::wait_events" title='(anonymous struct)::wait_events' data-use='m' data-ref="(anonymous)::wait_events">wait_events</a>[<a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>].<a class="ref field" href="../../../include/sys/epoll.h.html#epoll_event::events" title='epoll_event::events' data-ref="epoll_event::events">events</a>)</td></tr>
+<tr><th id="829">829</th><td><u>#<span data-ppcond="825">endif</span></u></td></tr>
+<tr><th id="830">830</th><td>	    {</td></tr>
+<tr><th id="831">831</th><td>	      <a class="local col6 ref" href="#46rx_bytes" title='rx_bytes' data-ref="46rx_bytes">rx_bytes</a> = <a class="ref fn" href="sock_test.h.html#sock_test_read" title='sock_test_read' data-ref="sock_test_read">sock_test_read</a> (<a class="local col2 ref" href="#42client_fd" title='client_fd' data-ref="42client_fd">client_fd</a>, <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf" title='(anonymous struct)::buf' data-use='r' data-ref="(anonymous)::buf">buf</a>,</td></tr>
+<tr><th id="832">832</th><td>					 <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf_size" title='(anonymous struct)::buf_size' data-use='r' data-ref="(anonymous)::buf_size">buf_size</a>, &amp;<a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::stats" title='(anonymous struct)::stats' data-use='a' data-ref="(anonymous)::stats">stats</a>);</td></tr>
+<tr><th id="833">833</th><td>	      <b>if</b> (<a class="local col6 ref" href="#46rx_bytes" title='rx_bytes' data-ref="46rx_bytes">rx_bytes</a> &gt; <var>0</var>)</td></tr>
+<tr><th id="834">834</th><td>		{</td></tr>
+<tr><th id="835">835</th><td>		  <a class="local col9 ref" href="#49rx_cfg" title='rx_cfg' data-ref="49rx_cfg">rx_cfg</a> = (<a class="typedef" href="sock_test.h.html#sock_test_cfg_t" title='sock_test_cfg_t' data-type='struct sock_test_cfg_t' data-ref="sock_test_cfg_t">sock_test_cfg_t</a> *) <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf" title='(anonymous struct)::buf' data-use='r' data-ref="(anonymous)::buf">buf</a>;</td></tr>
+<tr><th id="836">836</th><td>		  <b>if</b> (<a class="local col9 ref" href="#49rx_cfg" title='rx_cfg' data-ref="49rx_cfg">rx_cfg</a>-&gt;<a class="ref field" href="sock_test.h.html#(anonymous)::magic" title='(anonymous struct)::magic' data-ref="(anonymous)::magic">magic</a> == <a class="macro" href="sock_test.h.html#44" title="0xfeedface" data-ref="_M/SOCK_TEST_CFG_CTRL_MAGIC">SOCK_TEST_CFG_CTRL_MAGIC</a>)</td></tr>
+<tr><th id="837">837</th><td>		    {</td></tr>
+<tr><th id="838">838</th><td>		      <b>if</b> (<a class="local col9 ref" href="#49rx_cfg" title='rx_cfg' data-ref="49rx_cfg">rx_cfg</a>-&gt;<a class="ref field" href="sock_test.h.html#(anonymous)::verbose" title='(anonymous struct)::verbose' data-ref="(anonymous)::verbose">verbose</a>)</td></tr>
+<tr><th id="839">839</th><td>			{</td></tr>
+<tr><th id="840">840</th><td>			  <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"SERVER (fd %d): Received a cfg message!\n"</q>,</td></tr>
+<tr><th id="841">841</th><td>				  <a class="local col2 ref" href="#42client_fd" title='client_fd' data-ref="42client_fd">client_fd</a>);</td></tr>
+<tr><th id="842">842</th><td>			  <a class="ref fn" href="sock_test.h.html#sock_test_cfg_dump" title='sock_test_cfg_dump' data-ref="sock_test_cfg_dump">sock_test_cfg_dump</a> (<a class="local col9 ref" href="#49rx_cfg" title='rx_cfg' data-ref="49rx_cfg">rx_cfg</a>, <var>0</var> <i>/* is_client */</i> );</td></tr>
+<tr><th id="843">843</th><td>			}</td></tr>
+<tr><th id="844">844</th><td></td></tr>
+<tr><th id="845">845</th><td>		      <b>if</b> (<a class="local col6 ref" href="#46rx_bytes" title='rx_bytes' data-ref="46rx_bytes">rx_bytes</a> != <b>sizeof</b> (*<a class="local col9 ref" href="#49rx_cfg" title='rx_cfg' data-ref="49rx_cfg">rx_cfg</a>))</td></tr>
+<tr><th id="846">846</th><td>			{</td></tr>
+<tr><th id="847">847</th><td>			  <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"SERVER (fd %d): Invalid cfg message "</q></td></tr>
+<tr><th id="848">848</th><td>				  <q>"size (%d)!\n  Should be %lu bytes.\n"</q>,</td></tr>
+<tr><th id="849">849</th><td>				  <a class="local col2 ref" href="#42client_fd" title='client_fd' data-ref="42client_fd">client_fd</a>, <a class="local col6 ref" href="#46rx_bytes" title='rx_bytes' data-ref="46rx_bytes">rx_bytes</a>, <b>sizeof</b> (*<a class="local col9 ref" href="#49rx_cfg" title='rx_cfg' data-ref="49rx_cfg">rx_cfg</a>));</td></tr>
+<tr><th id="850">850</th><td>			  <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::rxbuf_size" title='(anonymous struct)::rxbuf_size' data-ref="(anonymous)::rxbuf_size">rxbuf_size</a> = <var>0</var>;</td></tr>
+<tr><th id="851">851</th><td>			  <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::num_writes" title='(anonymous struct)::num_writes' data-ref="(anonymous)::num_writes">num_writes</a> = <var>0</var>;</td></tr>
+<tr><th id="852">852</th><td>			  <b>if</b> (<a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::verbose" title='(anonymous struct)::verbose' data-ref="(anonymous)::verbose">verbose</a>)</td></tr>
+<tr><th id="853">853</th><td>			    {</td></tr>
+<tr><th id="854">854</th><td>			      <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"SERVER (fd %d): Replying to "</q></td></tr>
+<tr><th id="855">855</th><td>				      <q>"cfg message!\n"</q>, <a class="local col2 ref" href="#42client_fd" title='client_fd' data-ref="42client_fd">client_fd</a>);</td></tr>
+<tr><th id="856">856</th><td>			      <a class="ref fn" href="sock_test.h.html#sock_test_cfg_dump" title='sock_test_cfg_dump' data-ref="sock_test_cfg_dump">sock_test_cfg_dump</a> (<a class="local col9 ref" href="#49rx_cfg" title='rx_cfg' data-ref="49rx_cfg">rx_cfg</a>, <var>0</var> <i>/* is_client */</i> );</td></tr>
+<tr><th id="857">857</th><td>			    }</td></tr>
+<tr><th id="858">858</th><td>			  <a class="ref fn" href="sock_test.h.html#sock_test_write" title='sock_test_write' data-ref="sock_test_write">sock_test_write</a> (<a class="local col2 ref" href="#42client_fd" title='client_fd' data-ref="42client_fd">client_fd</a>, (<a class="typedef" href="../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> *) &amp; <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='a' data-ref="(anonymous)::cfg">cfg</a>,</td></tr>
+<tr><th id="859">859</th><td>					   <b>sizeof</b> (<a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='r' data-ref="(anonymous)::cfg">cfg</a>), <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>,</td></tr>
+<tr><th id="860">860</th><td>					   <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::verbose" title='(anonymous struct)::verbose' data-ref="(anonymous)::verbose">verbose</a>);</td></tr>
+<tr><th id="861">861</th><td>			  <b>continue</b>;</td></tr>
+<tr><th id="862">862</th><td>			}</td></tr>
+<tr><th id="863">863</th><td></td></tr>
+<tr><th id="864">864</th><td>		      <b>switch</b> (<a class="local col9 ref" href="#49rx_cfg" title='rx_cfg' data-ref="49rx_cfg">rx_cfg</a>-&gt;<a class="ref field" href="sock_test.h.html#(anonymous)::test" title='(anonymous struct)::test' data-ref="(anonymous)::test">test</a>)</td></tr>
+<tr><th id="865">865</th><td>			{</td></tr>
+<tr><th id="866">866</th><td>			<b>case</b> <a class="enum" href="sock_test.h.html#SOCK_TEST_TYPE_NONE" title='SOCK_TEST_TYPE_NONE' data-ref="SOCK_TEST_TYPE_NONE">SOCK_TEST_TYPE_NONE</a>:</td></tr>
+<tr><th id="867">867</th><td>			<b>case</b> <a class="enum" href="sock_test.h.html#SOCK_TEST_TYPE_ECHO" title='SOCK_TEST_TYPE_ECHO' data-ref="SOCK_TEST_TYPE_ECHO">SOCK_TEST_TYPE_ECHO</a>:</td></tr>
+<tr><th id="868">868</th><td>			  <a class="tu ref fn" href="#sync_config_and_reply" title='sync_config_and_reply' data-use='c' data-ref="sync_config_and_reply">sync_config_and_reply</a> (<a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>, <a class="local col9 ref" href="#49rx_cfg" title='rx_cfg' data-ref="49rx_cfg">rx_cfg</a>);</td></tr>
+<tr><th id="869">869</th><td>			  <b>break</b>;</td></tr>
+<tr><th id="870">870</th><td></td></tr>
+<tr><th id="871">871</th><td>			<b>case</b> <a class="enum" href="sock_test.h.html#SOCK_TEST_TYPE_BI" title='SOCK_TEST_TYPE_BI' data-ref="SOCK_TEST_TYPE_BI">SOCK_TEST_TYPE_BI</a>:</td></tr>
+<tr><th id="872">872</th><td>			<b>case</b> <a class="enum" href="sock_test.h.html#SOCK_TEST_TYPE_UNI" title='SOCK_TEST_TYPE_UNI' data-ref="SOCK_TEST_TYPE_UNI">SOCK_TEST_TYPE_UNI</a>:</td></tr>
+<tr><th id="873">873</th><td>			  <a class="tu ref fn" href="#stream_test_server_start_stop" title='stream_test_server_start_stop' data-use='c' data-ref="stream_test_server_start_stop">stream_test_server_start_stop</a> (<a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>, <a class="local col9 ref" href="#49rx_cfg" title='rx_cfg' data-ref="49rx_cfg">rx_cfg</a>);</td></tr>
+<tr><th id="874">874</th><td>			  <b>break</b>;</td></tr>
+<tr><th id="875">875</th><td></td></tr>
+<tr><th id="876">876</th><td>			<b>case</b> <a class="enum" href="sock_test.h.html#SOCK_TEST_TYPE_EXIT" title='SOCK_TEST_TYPE_EXIT' data-ref="SOCK_TEST_TYPE_EXIT">SOCK_TEST_TYPE_EXIT</a>:</td></tr>
+<tr><th id="877">877</th><td>			  <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"SERVER: Have a great day, "</q></td></tr>
+<tr><th id="878">878</th><td>				  <q>"connection %d!\n"</q>, <a class="local col2 ref" href="#42client_fd" title='client_fd' data-ref="42client_fd">client_fd</a>);</td></tr>
+<tr><th id="879">879</th><td><u>#<span data-ppcond="879">ifdef</span> <span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span></u></td></tr>
+<tr><th id="880">880</th><td>			  vppcom_session_close (client_fd);</td></tr>
+<tr><th id="881">881</th><td><u>#<span data-ppcond="879">else</span></u></td></tr>
+<tr><th id="882">882</th><td>			  <a class="ref fn" href="../../../include/unistd.h.html#close" title='close' data-ref="close">close</a> (<a class="local col2 ref" href="#42client_fd" title='client_fd' data-ref="42client_fd">client_fd</a>);</td></tr>
+<tr><th id="883">883</th><td><u>#<span data-ppcond="879">endif</span></u></td></tr>
+<tr><th id="884">884</th><td>			  <a class="tu ref fn" href="#conn_pool_free" title='conn_pool_free' data-use='c' data-ref="conn_pool_free">conn_pool_free</a> (<a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>);</td></tr>
+<tr><th id="885">885</th><td>			  <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"SERVER: Closed client fd %d\n"</q>, <a class="local col2 ref" href="#42client_fd" title='client_fd' data-ref="42client_fd">client_fd</a>);</td></tr>
+<tr><th id="886">886</th><td><u>#<span data-ppcond="886">if</span> ! <a class="macro" href="#28" title="1" data-ref="_M/SOCK_SERVER_USE_EPOLL">SOCK_SERVER_USE_EPOLL</a></u></td></tr>
+<tr><th id="887">887</th><td>			  <b>if</b> (ssm-&gt;nfds == (ssm-&gt;listen_fd + <var>1</var>))</td></tr>
+<tr><th id="888">888</th><td><u>#<span data-ppcond="886">else</span></u></td></tr>
+<tr><th id="889">889</th><td>			  <a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::nfds" title='(anonymous struct)::nfds' data-use='w' data-ref="(anonymous)::nfds">nfds</a>--;</td></tr>
+<tr><th id="890">890</th><td>			  <b>if</b> (!<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::nfds" title='(anonymous struct)::nfds' data-use='r' data-ref="(anonymous)::nfds">nfds</a>)</td></tr>
+<tr><th id="891">891</th><td><u>#<span data-ppcond="886">endif</span></u></td></tr>
+<tr><th id="892">892</th><td>			    {</td></tr>
+<tr><th id="893">893</th><td>			      <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"SERVER: All client connections "</q></td></tr>
+<tr><th id="894">894</th><td>				      <q>"closed.\n\nSERVER: "</q></td></tr>
+<tr><th id="895">895</th><td>				      <q>"May the force be with you!\n\n"</q>);</td></tr>
+<tr><th id="896">896</th><td>			      <b>goto</b> <a class="lbl" href="#62done" data-ref="62done">done</a>;</td></tr>
+<tr><th id="897">897</th><td>			    }</td></tr>
+<tr><th id="898">898</th><td>			  <b>break</b>;</td></tr>
+<tr><th id="899">899</th><td></td></tr>
+<tr><th id="900">900</th><td>			<b>default</b>:</td></tr>
+<tr><th id="901">901</th><td>			  <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>,</td></tr>
+<tr><th id="902">902</th><td>				   <q>"SERVER: ERROR: Unknown test type!\n"</q>);</td></tr>
+<tr><th id="903">903</th><td>			  <a class="ref fn" href="sock_test.h.html#sock_test_cfg_dump" title='sock_test_cfg_dump' data-ref="sock_test_cfg_dump">sock_test_cfg_dump</a> (<a class="local col9 ref" href="#49rx_cfg" title='rx_cfg' data-ref="49rx_cfg">rx_cfg</a>, <var>0</var> <i>/* is_client */</i> );</td></tr>
+<tr><th id="904">904</th><td>			  <b>break</b>;</td></tr>
+<tr><th id="905">905</th><td>			}</td></tr>
+<tr><th id="906">906</th><td>		      <b>continue</b>;</td></tr>
+<tr><th id="907">907</th><td>		    }</td></tr>
+<tr><th id="908">908</th><td></td></tr>
+<tr><th id="909">909</th><td>		  <b>else</b> <b>if</b> ((<a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::test" title='(anonymous struct)::test' data-ref="(anonymous)::test">test</a> == <a class="enum" href="sock_test.h.html#SOCK_TEST_TYPE_UNI" title='SOCK_TEST_TYPE_UNI' data-ref="SOCK_TEST_TYPE_UNI">SOCK_TEST_TYPE_UNI</a>) ||</td></tr>
+<tr><th id="910">910</th><td>			   (<a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::test" title='(anonymous struct)::test' data-ref="(anonymous)::test">test</a> == <a class="enum" href="sock_test.h.html#SOCK_TEST_TYPE_BI" title='SOCK_TEST_TYPE_BI' data-ref="SOCK_TEST_TYPE_BI">SOCK_TEST_TYPE_BI</a>))</td></tr>
+<tr><th id="911">911</th><td>		    {</td></tr>
+<tr><th id="912">912</th><td>		      <a class="tu ref fn" href="#stream_test_server" title='stream_test_server' data-use='c' data-ref="stream_test_server">stream_test_server</a> (<a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>, <a class="local col6 ref" href="#46rx_bytes" title='rx_bytes' data-ref="46rx_bytes">rx_bytes</a>);</td></tr>
+<tr><th id="913">913</th><td>		      <b>continue</b>;</td></tr>
+<tr><th id="914">914</th><td>		    }</td></tr>
+<tr><th id="915">915</th><td></td></tr>
+<tr><th id="916">916</th><td>		  <b>else</b> <b>if</b> (<a class="macro" href="../../../include/ctype.h.html#234" title="(((conn-&gt;buf[0]) &amp; ~0x7f) == 0)" data-ref="_M/isascii">isascii</a> (<a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf" title='(anonymous struct)::buf' data-use='r' data-ref="(anonymous)::buf">buf</a>[<var>0</var>]))</td></tr>
+<tr><th id="917">917</th><td>		    {</td></tr>
+<tr><th id="918">918</th><td>		      <i>// If it looks vaguely like a string, make sure it's terminated</i></td></tr>
+<tr><th id="919">919</th><td>		      ((<em>char</em> *) <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf" title='(anonymous struct)::buf' data-use='r' data-ref="(anonymous)::buf">buf</a>)[<a class="local col6 ref" href="#46rx_bytes" title='rx_bytes' data-ref="46rx_bytes">rx_bytes</a> &lt;</td></tr>
+<tr><th id="920">920</th><td>					   <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf_size" title='(anonymous struct)::buf_size' data-use='r' data-ref="(anonymous)::buf_size">buf_size</a> ? <a class="local col6 ref" href="#46rx_bytes" title='rx_bytes' data-ref="46rx_bytes">rx_bytes</a> :</td></tr>
+<tr><th id="921">921</th><td>					   <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf_size" title='(anonymous struct)::buf_size' data-use='r' data-ref="(anonymous)::buf_size">buf_size</a> - <var>1</var>] = <var>0</var>;</td></tr>
+<tr><th id="922">922</th><td>		      <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"SERVER (fd %d): RX (%d bytes) - '%s'\n"</q>,</td></tr>
+<tr><th id="923">923</th><td>			      <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::fd" title='(anonymous struct)::fd' data-use='r' data-ref="(anonymous)::fd">fd</a>, <a class="local col6 ref" href="#46rx_bytes" title='rx_bytes' data-ref="46rx_bytes">rx_bytes</a>, <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf" title='(anonymous struct)::buf' data-use='r' data-ref="(anonymous)::buf">buf</a>);</td></tr>
+<tr><th id="924">924</th><td>		    }</td></tr>
+<tr><th id="925">925</th><td>		}</td></tr>
+<tr><th id="926">926</th><td>	      <b>else</b>		<i>// rx_bytes &lt; 0</i></td></tr>
+<tr><th id="927">927</th><td>		{</td></tr>
+<tr><th id="928">928</th><td>		  <b>if</b> (<a class="macro" href="../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a> == <a class="macro" href="../../../include/asm-generic/errno.h.html#77" title="104" data-ref="_M/ECONNRESET">ECONNRESET</a>)</td></tr>
+<tr><th id="929">929</th><td>		    {</td></tr>
+<tr><th id="930">930</th><td>		      <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"\nSERVER: Connection reset by remote peer.\n"</q></td></tr>
+<tr><th id="931">931</th><td>			      <q>"  Y'all have a great day now!\n\n"</q>);</td></tr>
+<tr><th id="932">932</th><td>		      <b>break</b>;</td></tr>
+<tr><th id="933">933</th><td>		    }</td></tr>
+<tr><th id="934">934</th><td>		  <b>else</b></td></tr>
+<tr><th id="935">935</th><td>		    <b>continue</b>;</td></tr>
+<tr><th id="936">936</th><td>		}</td></tr>
+<tr><th id="937">937</th><td></td></tr>
+<tr><th id="938">938</th><td>	      <b>if</b> (<a class="macro" href="../../../include/ctype.h.html#234" title="(((conn-&gt;buf[0]) &amp; ~0x7f) == 0)" data-ref="_M/isascii">isascii</a> (<a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf" title='(anonymous struct)::buf' data-use='r' data-ref="(anonymous)::buf">buf</a>[<var>0</var>]))</td></tr>
+<tr><th id="939">939</th><td>		{</td></tr>
+<tr><th id="940">940</th><td>		  <i>/* If it looks vaguely like a string,</i></td></tr>
+<tr><th id="941">941</th><td><i>		   * make sure it's terminated</i></td></tr>
+<tr><th id="942">942</th><td><i>		   */</i></td></tr>
+<tr><th id="943">943</th><td>		  ((<em>char</em> *) <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf" title='(anonymous struct)::buf' data-use='r' data-ref="(anonymous)::buf">buf</a>)[<a class="local col6 ref" href="#46rx_bytes" title='rx_bytes' data-ref="46rx_bytes">rx_bytes</a> &lt;</td></tr>
+<tr><th id="944">944</th><td>				       <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf_size" title='(anonymous struct)::buf_size' data-use='r' data-ref="(anonymous)::buf_size">buf_size</a> ? <a class="local col6 ref" href="#46rx_bytes" title='rx_bytes' data-ref="46rx_bytes">rx_bytes</a> :</td></tr>
+<tr><th id="945">945</th><td>				       <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf_size" title='(anonymous struct)::buf_size' data-use='r' data-ref="(anonymous)::buf_size">buf_size</a> - <var>1</var>] = <var>0</var>;</td></tr>
+<tr><th id="946">946</th><td>		  <b>if</b> (<a class="local col0 ref" href="#50xtra" title='xtra' data-ref="50xtra">xtra</a>)</td></tr>
+<tr><th id="947">947</th><td>		    <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (<a class="macro" href="../../../include/stdio.h.html#174" title="stderr" data-ref="_M/stderr">stderr</a>, <q>"SERVER: ERROR: "</q></td></tr>
+<tr><th id="948">948</th><td>			     <q>"FIFO not drained in previous test!\n"</q></td></tr>
+<tr><th id="949">949</th><td>			     <q>"       extra chunks %u (0x%x)\n"</q></td></tr>
+<tr><th id="950">950</th><td>			     <q>"        extra bytes %lu (0x%lx)\n"</q>,</td></tr>
+<tr><th id="951">951</th><td>			     <a class="local col0 ref" href="#50xtra" title='xtra' data-ref="50xtra">xtra</a>, <a class="local col0 ref" href="#50xtra" title='xtra' data-ref="50xtra">xtra</a>, <a class="local col1 ref" href="#51xtra_bytes" title='xtra_bytes' data-ref="51xtra_bytes">xtra_bytes</a>, <a class="local col1 ref" href="#51xtra_bytes" title='xtra_bytes' data-ref="51xtra_bytes">xtra_bytes</a>);</td></tr>
+<tr><th id="952">952</th><td></td></tr>
+<tr><th id="953">953</th><td>		  <a class="local col0 ref" href="#50xtra" title='xtra' data-ref="50xtra">xtra</a> = <var>0</var>;</td></tr>
+<tr><th id="954">954</th><td>		  <a class="local col1 ref" href="#51xtra_bytes" title='xtra_bytes' data-ref="51xtra_bytes">xtra_bytes</a> = <var>0</var>;</td></tr>
+<tr><th id="955">955</th><td></td></tr>
+<tr><th id="956">956</th><td>		  <b>if</b> (<a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::verbose" title='(anonymous struct)::verbose' data-ref="(anonymous)::verbose">verbose</a>)</td></tr>
+<tr><th id="957">957</th><td>		    <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"SERVER (fd %d): Echoing back\n"</q>, <a class="local col2 ref" href="#42client_fd" title='client_fd' data-ref="42client_fd">client_fd</a>);</td></tr>
+<tr><th id="958">958</th><td></td></tr>
+<tr><th id="959">959</th><td>		  <a class="local col7 ref" href="#47nbytes" title='nbytes' data-ref="47nbytes">nbytes</a> = <a class="ref fn" href="../../../include/string.h.html#strlen" title='strlen' data-ref="strlen">strlen</a> ((<em>const</em> <em>char</em> *) <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf" title='(anonymous struct)::buf' data-use='r' data-ref="(anonymous)::buf">buf</a>) + <var>1</var>;</td></tr>
+<tr><th id="960">960</th><td></td></tr>
+<tr><th id="961">961</th><td>		  <a class="local col5 ref" href="#45tx_bytes" title='tx_bytes' data-ref="45tx_bytes">tx_bytes</a> = <a class="ref fn" href="sock_test.h.html#sock_test_write" title='sock_test_write' data-ref="sock_test_write">sock_test_write</a> (<a class="local col2 ref" href="#42client_fd" title='client_fd' data-ref="42client_fd">client_fd</a>, <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf" title='(anonymous struct)::buf' data-use='r' data-ref="(anonymous)::buf">buf</a>,</td></tr>
+<tr><th id="962">962</th><td>					      <a class="local col7 ref" href="#47nbytes" title='nbytes' data-ref="47nbytes">nbytes</a>, &amp;<a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::stats" title='(anonymous struct)::stats' data-use='a' data-ref="(anonymous)::stats">stats</a>,</td></tr>
+<tr><th id="963">963</th><td>					      <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::cfg" title='(anonymous struct)::cfg' data-use='m' data-ref="(anonymous)::cfg">cfg</a>.<a class="ref field" href="sock_test.h.html#(anonymous)::verbose" title='(anonymous struct)::verbose' data-ref="(anonymous)::verbose">verbose</a>);</td></tr>
+<tr><th id="964">964</th><td>		  <b>if</b> (<a class="local col5 ref" href="#45tx_bytes" title='tx_bytes' data-ref="45tx_bytes">tx_bytes</a> &gt;= <var>0</var>)</td></tr>
+<tr><th id="965">965</th><td>		    <a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"SERVER (fd %d): TX (%d bytes) - '%s'\n"</q>,</td></tr>
+<tr><th id="966">966</th><td>			    <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::fd" title='(anonymous struct)::fd' data-use='r' data-ref="(anonymous)::fd">fd</a>, <a class="local col5 ref" href="#45tx_bytes" title='tx_bytes' data-ref="45tx_bytes">tx_bytes</a>, <a class="local col8 ref" href="#48conn" title='conn' data-ref="48conn">conn</a>-&gt;<a class="tu ref field" href="#(anonymous)::buf" title='(anonymous struct)::buf' data-use='r' data-ref="(anonymous)::buf">buf</a>);</td></tr>
+<tr><th id="967">967</th><td>		}</td></tr>
+<tr><th id="968">968</th><td></td></tr>
+<tr><th id="969">969</th><td>	      <b>else</b>		<i>// Extraneous read data from non-echo tests???</i></td></tr>
+<tr><th id="970">970</th><td>		{</td></tr>
+<tr><th id="971">971</th><td>		  <a class="local col0 ref" href="#50xtra" title='xtra' data-ref="50xtra">xtra</a>++;</td></tr>
+<tr><th id="972">972</th><td>		  <a class="local col1 ref" href="#51xtra_bytes" title='xtra_bytes' data-ref="51xtra_bytes">xtra_bytes</a> += <a class="local col6 ref" href="#46rx_bytes" title='rx_bytes' data-ref="46rx_bytes">rx_bytes</a>;</td></tr>
+<tr><th id="973">973</th><td>		}</td></tr>
+<tr><th id="974">974</th><td>	    }</td></tr>
+<tr><th id="975">975</th><td>	}</td></tr>
+<tr><th id="976">976</th><td>    }</td></tr>
+<tr><th id="977">977</th><td></td></tr>
+<tr><th id="978">978</th><td><dfn class="lbl" id="62done" data-ref="62done">done</dfn>:</td></tr>
+<tr><th id="979">979</th><td><u>#<span data-ppcond="979">ifdef</span> <span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span></u></td></tr>
+<tr><th id="980">980</th><td>  vppcom_session_close (ssm-&gt;listen_fd);</td></tr>
+<tr><th id="981">981</th><td>  vppcom_app_destroy ();</td></tr>
+<tr><th id="982">982</th><td><u>#<span data-ppcond="979">else</span></u></td></tr>
+<tr><th id="983">983</th><td>  <a class="ref fn" href="../../../include/unistd.h.html#close" title='close' data-ref="close">close</a> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::listen_fd" title='(anonymous struct)::listen_fd' data-use='r' data-ref="(anonymous)::listen_fd">listen_fd</a>);</td></tr>
+<tr><th id="984">984</th><td></td></tr>
+<tr><th id="985">985</th><td><u>#<span data-ppcond="985">if</span> <a class="macro" href="#28" title="1" data-ref="_M/SOCK_SERVER_USE_EPOLL">SOCK_SERVER_USE_EPOLL</a> &amp;&amp; !defined (<span class="macro" data-ref="_M/VCL_TEST">VCL_TEST</span>)</u></td></tr>
+<tr><th id="986">986</th><td>  <a class="ref fn" href="../../../include/unistd.h.html#close" title='close' data-ref="close">close</a> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::af_unix_listen_fd" title='(anonymous struct)::af_unix_listen_fd' data-use='r' data-ref="(anonymous)::af_unix_listen_fd">af_unix_listen_fd</a>);</td></tr>
+<tr><th id="987">987</th><td>  <a class="ref fn" href="../../../include/unistd.h.html#unlink" title='unlink' data-ref="unlink">unlink</a> ((<em>const</em> <em>char</em> *) <a class="macro" href="sock_test.h.html#51" title="&quot;/tmp/ldp_server_af_unix_socket&quot;" data-ref="_M/SOCK_TEST_AF_UNIX_FILENAME">SOCK_TEST_AF_UNIX_FILENAME</a>);</td></tr>
+<tr><th id="988">988</th><td><u>#<span data-ppcond="985">endif</span> /* SOCK_SERVER_USE_EPOLL */</u></td></tr>
+<tr><th id="989">989</th><td></td></tr>
+<tr><th id="990">990</th><td><u>#<span data-ppcond="979">endif</span></u></td></tr>
+<tr><th id="991">991</th><td>  <b>if</b> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::conn_pool" title='(anonymous struct)::conn_pool' data-use='r' data-ref="(anonymous)::conn_pool">conn_pool</a>)</td></tr>
+<tr><th id="992">992</th><td>    <a class="ref fn" href="../../../include/stdlib.h.html#free" title='free' data-ref="free">free</a> (<a class="local col1 ref" href="#41ssm" title='ssm' data-ref="41ssm">ssm</a>-&gt;<a class="tu ref field" href="#(anonymous)::conn_pool" title='(anonymous struct)::conn_pool' data-use='r' data-ref="(anonymous)::conn_pool">conn_pool</a>);</td></tr>
+<tr><th id="993">993</th><td></td></tr>
+<tr><th id="994">994</th><td>  <b>return</b> <a class="local col4 ref" href="#44main_rv" title='main_rv' data-ref="44main_rv">main_rv</a>;</td></tr>
+<tr><th id="995">995</th><td>}</td></tr>
+<tr><th id="996">996</th><td></td></tr>
+<tr><th id="997">997</th><td><i>/*</i></td></tr>
+<tr><th id="998">998</th><td><i> * fd.io coding-style-patch-verification: ON</i></td></tr>
+<tr><th id="999">999</th><td><i> *</i></td></tr>
+<tr><th id="1000">1000</th><td><i> * Local Variables:</i></td></tr>
+<tr><th id="1001">1001</th><td><i> * eval: (c-set-style "gnu")</i></td></tr>
+<tr><th id="1002">1002</th><td><i> * End:</i></td></tr>
+<tr><th id="1003">1003</th><td><i> */</i></td></tr>
+<tr><th id="1004">1004</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-29</em> from project vpp_1804 revision <em>18.04</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

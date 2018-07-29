@@ -1,0 +1,409 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>adj.h source code [vpp_1804/src/vnet/adj/adj.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="ip_adjacency_flags_t_,ip_adjacency_t_ "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'vpp_1804/src/vnet/adj/adj.h'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>vpp_1804</a>/<a href='../..'>src</a>/<a href='..'>vnet</a>/<a href='./'>adj</a>/<a href='adj.h.html'>adj.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright (c) 2016 Cisco and/or its affiliates.</i></td></tr>
+<tr><th id="3">3</th><td><i> * Licensed under the Apache License, Version 2.0 (the "License");</i></td></tr>
+<tr><th id="4">4</th><td><i> * you may not use this file except in compliance with the License.</i></td></tr>
+<tr><th id="5">5</th><td><i> * You may obtain a copy of the License at:</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> *     <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></i></td></tr>
+<tr><th id="8">8</th><td><i> *</i></td></tr>
+<tr><th id="9">9</th><td><i> * Unless required by applicable law or agreed to in writing, software</i></td></tr>
+<tr><th id="10">10</th><td><i> * distributed under the License is distributed on an "AS IS" BASIS,</i></td></tr>
+<tr><th id="11">11</th><td><i> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</i></td></tr>
+<tr><th id="12">12</th><td><i> * See the License for the specific language governing permissions and</i></td></tr>
+<tr><th id="13">13</th><td><i> * limitations under the License.</i></td></tr>
+<tr><th id="14">14</th><td><i> */</i></td></tr>
+<tr><th id="15">15</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="16">16</th><td><i class="doc"> * An adjacency is a representation of an attached L3 peer.</i></td></tr>
+<tr><th id="17">17</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="18">18</th><td><i class="doc"> * Adjacency Sub-types:</i></td></tr>
+<tr><th id="19">19</th><td><i class="doc"> *   - neighbour: a representation of an attached L3 peer.</i></td></tr>
+<tr><th id="20">20</th><td><i class="doc"> *                Key:{addr,interface,link/ether-type}</i></td></tr>
+<tr><th id="21">21</th><td><i class="doc"> *           SHARED</i></td></tr>
+<tr><th id="22">22</th><td><i class="doc"> *   - glean: used to drive ARP/ND for packets destined to a local sub-net.</i></td></tr>
+<tr><th id="23">23</th><td><i class="doc"> *            'glean' mean use the packet's destination address as the target</i></td></tr>
+<tr><th id="24">24</th><td><i class="doc"> *            address in the ARP packet.</i></td></tr>
+<tr><th id="25">25</th><td><i class="doc"> *          UNSHARED. Only one per-interface.</i></td></tr>
+<tr><th id="26">26</th><td><i class="doc"> *   - midchain: a nighbour adj on a virtual/tunnel interface.</i></td></tr>
+<tr><th id="27">27</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="28">28</th><td><i class="doc"> * The API to create and update the adjacency is very sub-type specific. This</i></td></tr>
+<tr><th id="29">29</th><td><i class="doc"> * is intentional as it encourages the user to carefully consider which adjacency</i></td></tr>
+<tr><th id="30">30</th><td><i class="doc"> * sub-type they are really using, and hence assign it data in the appropriate</i></td></tr>
+<tr><th id="31">31</th><td><i class="doc"> * sub-type space in the union of sub-types. This prevents the adj becoming a</i></td></tr>
+<tr><th id="32">32</th><td><i class="doc"> * disorganised dumping group for 'my features needs a u16 somewhere' data. It</i></td></tr>
+<tr><th id="33">33</th><td><i class="doc"> * is important to enforce this approach as space in the adjacency is a premium,</i></td></tr>
+<tr><th id="34">34</th><td><i class="doc"> * as we need it to fit in 1 cache line.</i></td></tr>
+<tr><th id="35">35</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc"> * the API is also based around an index to an ajdacency not a raw pointer. This</i></td></tr>
+<tr><th id="37">37</th><td><i class="doc"> * is so the user doesn't suffer the same limp inducing firearm injuries that</i></td></tr>
+<tr><th id="38">38</th><td><i class="doc"> * the author suffered as the adjacenices can realloc.</i></td></tr>
+<tr><th id="39">39</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td><u>#<span data-ppcond="41">ifndef</span> <span class="macro" data-ref="_M/__ADJ_H__">__ADJ_H__</span></u></td></tr>
+<tr><th id="42">42</th><td><u>#define <dfn class="macro" id="_M/__ADJ_H__" data-ref="_M/__ADJ_H__">__ADJ_H__</dfn></u></td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td><u>#include <a href="adj_types.h.html">&lt;vnet/adj/adj_types.h&gt;</a></u></td></tr>
+<tr><th id="45">45</th><td><u>#include <a href="adj_nbr.h.html">&lt;vnet/adj/adj_nbr.h&gt;</a></u></td></tr>
+<tr><th id="46">46</th><td><u>#include <a href="adj_glean.h.html">&lt;vnet/adj/adj_glean.h&gt;</a></u></td></tr>
+<tr><th id="47">47</th><td><u>#include <a href="rewrite.h.html">&lt;vnet/adj/rewrite.h&gt;</a></u></td></tr>
+<tr><th id="48">48</th><td></td></tr>
+<tr><th id="49">49</th><td><i class="doc">/** <span class="command">@brief</span> Common (IP4/IP6) next index stored in adjacency. */</i></td></tr>
+<tr><th id="50">50</th><td><b>typedef</b> <b>enum</b></td></tr>
+<tr><th id="51">51</th><td>{</td></tr>
+<tr><th id="52">52</th><td>  <i class="doc">/** Adjacency to drop this packet. */</i></td></tr>
+<tr><th id="53">53</th><td>  <dfn class="enum" id="IP_LOOKUP_NEXT_DROP" title='IP_LOOKUP_NEXT_DROP' data-ref="IP_LOOKUP_NEXT_DROP">IP_LOOKUP_NEXT_DROP</dfn>,</td></tr>
+<tr><th id="54">54</th><td>  <i class="doc">/** Adjacency to punt this packet. */</i></td></tr>
+<tr><th id="55">55</th><td>  <dfn class="enum" id="IP_LOOKUP_NEXT_PUNT" title='IP_LOOKUP_NEXT_PUNT' data-ref="IP_LOOKUP_NEXT_PUNT">IP_LOOKUP_NEXT_PUNT</dfn>,</td></tr>
+<tr><th id="56">56</th><td></td></tr>
+<tr><th id="57">57</th><td>  <i class="doc">/** This packet is for one of our own IP addresses. */</i></td></tr>
+<tr><th id="58">58</th><td>  <dfn class="enum" id="IP_LOOKUP_NEXT_LOCAL" title='IP_LOOKUP_NEXT_LOCAL' data-ref="IP_LOOKUP_NEXT_LOCAL">IP_LOOKUP_NEXT_LOCAL</dfn>,</td></tr>
+<tr><th id="59">59</th><td></td></tr>
+<tr><th id="60">60</th><td>  <i class="doc">/** This packet matches an "incomplete adjacency" and packets</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc">     need to be passed to ARP to find rewrite string for</i></td></tr>
+<tr><th id="62">62</th><td><i class="doc">     this destination. */</i></td></tr>
+<tr><th id="63">63</th><td>  <dfn class="enum" id="IP_LOOKUP_NEXT_ARP" title='IP_LOOKUP_NEXT_ARP' data-ref="IP_LOOKUP_NEXT_ARP">IP_LOOKUP_NEXT_ARP</dfn>,</td></tr>
+<tr><th id="64">64</th><td></td></tr>
+<tr><th id="65">65</th><td>  <i class="doc">/** This packet matches an "interface route" and packets</i></td></tr>
+<tr><th id="66">66</th><td><i class="doc">     need to be passed to ARP to find rewrite string for</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc">     this destination. */</i></td></tr>
+<tr><th id="68">68</th><td>  <dfn class="enum" id="IP_LOOKUP_NEXT_GLEAN" title='IP_LOOKUP_NEXT_GLEAN' data-ref="IP_LOOKUP_NEXT_GLEAN">IP_LOOKUP_NEXT_GLEAN</dfn>,</td></tr>
+<tr><th id="69">69</th><td></td></tr>
+<tr><th id="70">70</th><td>  <i class="doc">/** This packet is to be rewritten and forwarded to the next</i></td></tr>
+<tr><th id="71">71</th><td><i class="doc">     processing node.  This is typically the output interface but</i></td></tr>
+<tr><th id="72">72</th><td><i class="doc">     might be another node for further output processing. */</i></td></tr>
+<tr><th id="73">73</th><td>  <dfn class="enum" id="IP_LOOKUP_NEXT_REWRITE" title='IP_LOOKUP_NEXT_REWRITE' data-ref="IP_LOOKUP_NEXT_REWRITE">IP_LOOKUP_NEXT_REWRITE</dfn>,</td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td>  <i class="doc">/** This packets follow a mid-chain adjacency */</i></td></tr>
+<tr><th id="76">76</th><td>  <dfn class="enum" id="IP_LOOKUP_NEXT_MIDCHAIN" title='IP_LOOKUP_NEXT_MIDCHAIN' data-ref="IP_LOOKUP_NEXT_MIDCHAIN">IP_LOOKUP_NEXT_MIDCHAIN</dfn>,</td></tr>
+<tr><th id="77">77</th><td></td></tr>
+<tr><th id="78">78</th><td>  <i class="doc">/** This packets needs to go to ICMP error */</i></td></tr>
+<tr><th id="79">79</th><td>  <dfn class="enum" id="IP_LOOKUP_NEXT_ICMP_ERROR" title='IP_LOOKUP_NEXT_ICMP_ERROR' data-ref="IP_LOOKUP_NEXT_ICMP_ERROR">IP_LOOKUP_NEXT_ICMP_ERROR</dfn>,</td></tr>
+<tr><th id="80">80</th><td></td></tr>
+<tr><th id="81">81</th><td>  <i class="doc">/** Multicast Adjacency. */</i></td></tr>
+<tr><th id="82">82</th><td>  <dfn class="enum" id="IP_LOOKUP_NEXT_MCAST" title='IP_LOOKUP_NEXT_MCAST' data-ref="IP_LOOKUP_NEXT_MCAST">IP_LOOKUP_NEXT_MCAST</dfn>,</td></tr>
+<tr><th id="83">83</th><td></td></tr>
+<tr><th id="84">84</th><td>  <i class="doc">/** Multicast Midchain Adjacency. An Adjacency for sending macst packets</i></td></tr>
+<tr><th id="85">85</th><td><i class="doc">   *  on a tunnel/virtual interface */</i></td></tr>
+<tr><th id="86">86</th><td>  <dfn class="enum" id="IP_LOOKUP_NEXT_MCAST_MIDCHAIN" title='IP_LOOKUP_NEXT_MCAST_MIDCHAIN' data-ref="IP_LOOKUP_NEXT_MCAST_MIDCHAIN">IP_LOOKUP_NEXT_MCAST_MIDCHAIN</dfn>,</td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td>  <dfn class="enum" id="IP_LOOKUP_N_NEXT" title='IP_LOOKUP_N_NEXT' data-ref="IP_LOOKUP_N_NEXT">IP_LOOKUP_N_NEXT</dfn>,</td></tr>
+<tr><th id="89">89</th><td>} <b>__attribute__</b> ((packed)) <dfn class="typedef" id="ip_lookup_next_t" title='ip_lookup_next_t' data-type='enum ip_lookup_next_t' data-ref="ip_lookup_next_t">ip_lookup_next_t</dfn>;</td></tr>
+<tr><th id="90">90</th><td></td></tr>
+<tr><th id="91">91</th><td><b>typedef</b> <b>enum</b></td></tr>
+<tr><th id="92">92</th><td>{</td></tr>
+<tr><th id="93">93</th><td>  <dfn class="enum" id="IP4_LOOKUP_N_NEXT" title='IP4_LOOKUP_N_NEXT' data-ref="IP4_LOOKUP_N_NEXT">IP4_LOOKUP_N_NEXT</dfn> = <a class="enum" href="#IP_LOOKUP_N_NEXT" title='IP_LOOKUP_N_NEXT' data-ref="IP_LOOKUP_N_NEXT">IP_LOOKUP_N_NEXT</a>,</td></tr>
+<tr><th id="94">94</th><td>} <dfn class="typedef" id="ip4_lookup_next_t" title='ip4_lookup_next_t' data-type='enum ip4_lookup_next_t' data-ref="ip4_lookup_next_t">ip4_lookup_next_t</dfn>;</td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td><b>typedef</b> <b>enum</b></td></tr>
+<tr><th id="97">97</th><td>{</td></tr>
+<tr><th id="98">98</th><td>  <i>/* Hop-by-hop header handling */</i></td></tr>
+<tr><th id="99">99</th><td>  <dfn class="enum" id="IP6_LOOKUP_NEXT_HOP_BY_HOP" title='IP6_LOOKUP_NEXT_HOP_BY_HOP' data-ref="IP6_LOOKUP_NEXT_HOP_BY_HOP">IP6_LOOKUP_NEXT_HOP_BY_HOP</dfn> = <a class="enum" href="#IP_LOOKUP_N_NEXT" title='IP_LOOKUP_N_NEXT' data-ref="IP_LOOKUP_N_NEXT">IP_LOOKUP_N_NEXT</a>,</td></tr>
+<tr><th id="100">100</th><td>  <dfn class="enum" id="IP6_LOOKUP_NEXT_ADD_HOP_BY_HOP" title='IP6_LOOKUP_NEXT_ADD_HOP_BY_HOP' data-ref="IP6_LOOKUP_NEXT_ADD_HOP_BY_HOP">IP6_LOOKUP_NEXT_ADD_HOP_BY_HOP</dfn>,</td></tr>
+<tr><th id="101">101</th><td>  <dfn class="enum" id="IP6_LOOKUP_NEXT_POP_HOP_BY_HOP" title='IP6_LOOKUP_NEXT_POP_HOP_BY_HOP' data-ref="IP6_LOOKUP_NEXT_POP_HOP_BY_HOP">IP6_LOOKUP_NEXT_POP_HOP_BY_HOP</dfn>,</td></tr>
+<tr><th id="102">102</th><td>  <dfn class="enum" id="IP6_LOOKUP_N_NEXT" title='IP6_LOOKUP_N_NEXT' data-ref="IP6_LOOKUP_N_NEXT">IP6_LOOKUP_N_NEXT</dfn>,</td></tr>
+<tr><th id="103">103</th><td>} <dfn class="typedef" id="ip6_lookup_next_t" title='ip6_lookup_next_t' data-type='enum ip6_lookup_next_t' data-ref="ip6_lookup_next_t">ip6_lookup_next_t</dfn>;</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td><u>#define <dfn class="macro" id="_M/IP4_LOOKUP_NEXT_NODES" data-ref="_M/IP4_LOOKUP_NEXT_NODES">IP4_LOOKUP_NEXT_NODES</dfn> {					\</u></td></tr>
+<tr><th id="106">106</th><td><u>    [IP_LOOKUP_NEXT_DROP] = "ip4-drop",				\</u></td></tr>
+<tr><th id="107">107</th><td><u>    [IP_LOOKUP_NEXT_PUNT] = "ip4-punt",				\</u></td></tr>
+<tr><th id="108">108</th><td><u>    [IP_LOOKUP_NEXT_LOCAL] = "ip4-local",			\</u></td></tr>
+<tr><th id="109">109</th><td><u>    [IP_LOOKUP_NEXT_ARP] = "ip4-arp",				\</u></td></tr>
+<tr><th id="110">110</th><td><u>    [IP_LOOKUP_NEXT_GLEAN] = "ip4-glean",			\</u></td></tr>
+<tr><th id="111">111</th><td><u>    [IP_LOOKUP_NEXT_REWRITE] = "ip4-rewrite",    		\</u></td></tr>
+<tr><th id="112">112</th><td><u>    [IP_LOOKUP_NEXT_MCAST] = "ip4-rewrite-mcast",	        \</u></td></tr>
+<tr><th id="113">113</th><td><u>    [IP_LOOKUP_NEXT_MIDCHAIN] = "ip4-midchain",		        \</u></td></tr>
+<tr><th id="114">114</th><td><u>    [IP_LOOKUP_NEXT_MCAST_MIDCHAIN] = "ip4-mcast-midchain",     \</u></td></tr>
+<tr><th id="115">115</th><td><u>    [IP_LOOKUP_NEXT_ICMP_ERROR] = "ip4-icmp-error",		\</u></td></tr>
+<tr><th id="116">116</th><td><u>}</u></td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td><u>#define <dfn class="macro" id="_M/IP6_LOOKUP_NEXT_NODES" data-ref="_M/IP6_LOOKUP_NEXT_NODES">IP6_LOOKUP_NEXT_NODES</dfn> {					\</u></td></tr>
+<tr><th id="119">119</th><td><u>    [IP_LOOKUP_NEXT_DROP] = "ip6-drop",				\</u></td></tr>
+<tr><th id="120">120</th><td><u>    [IP_LOOKUP_NEXT_PUNT] = "ip6-punt",				\</u></td></tr>
+<tr><th id="121">121</th><td><u>    [IP_LOOKUP_NEXT_LOCAL] = "ip6-local",			\</u></td></tr>
+<tr><th id="122">122</th><td><u>    [IP_LOOKUP_NEXT_ARP] = "ip6-discover-neighbor",		\</u></td></tr>
+<tr><th id="123">123</th><td><u>    [IP_LOOKUP_NEXT_GLEAN] = "ip6-glean",			\</u></td></tr>
+<tr><th id="124">124</th><td><u>    [IP_LOOKUP_NEXT_REWRITE] = "ip6-rewrite",			\</u></td></tr>
+<tr><th id="125">125</th><td><u>    [IP_LOOKUP_NEXT_MCAST] = "ip6-rewrite-mcast",		\</u></td></tr>
+<tr><th id="126">126</th><td><u>    [IP_LOOKUP_NEXT_MIDCHAIN] = "ip6-midchain",			\</u></td></tr>
+<tr><th id="127">127</th><td><u>    [IP_LOOKUP_NEXT_MCAST_MIDCHAIN] = "ip6-mcast-midchain",     \</u></td></tr>
+<tr><th id="128">128</th><td><u>    [IP_LOOKUP_NEXT_ICMP_ERROR] = "ip6-icmp-error",		\</u></td></tr>
+<tr><th id="129">129</th><td><u>    [IP6_LOOKUP_NEXT_HOP_BY_HOP] = "ip6-hop-by-hop",		\</u></td></tr>
+<tr><th id="130">130</th><td><u>    [IP6_LOOKUP_NEXT_ADD_HOP_BY_HOP] = "ip6-add-hop-by-hop",	\</u></td></tr>
+<tr><th id="131">131</th><td><u>    [IP6_LOOKUP_NEXT_POP_HOP_BY_HOP] = "ip6-pop-hop-by-hop",	\</u></td></tr>
+<tr><th id="132">132</th><td><u>}</u></td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="135">135</th><td><i class="doc"> * Forward delcartion</i></td></tr>
+<tr><th id="136">136</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="137">137</th><td><b>struct</b> <a class="type" href="#ip_adjacency_t_" title='ip_adjacency_t_' data-ref="ip_adjacency_t_">ip_adjacency_t_</a>;</td></tr>
+<tr><th id="138">138</th><td></td></tr>
+<tr><th id="139">139</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="140">140</th><td><i class="doc"> * <span class="command">@brief</span> A function type for post-rewrite fixups on midchain adjacency</i></td></tr>
+<tr><th id="141">141</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="142">142</th><td><b>typedef</b> <em>void</em> (*<dfn class="typedef" id="adj_midchain_fixup_t" title='adj_midchain_fixup_t' data-type='void (*)(vlib_main_t *, struct ip_adjacency_t_ *, vlib_buffer_t *, const void *)' data-ref="adj_midchain_fixup_t">adj_midchain_fixup_t</dfn>) (<a class="typedef" href="../../vlib/main.h.html#vlib_main_t" title='vlib_main_t' data-type='struct vlib_main_t' data-ref="vlib_main_t">vlib_main_t</a> * <dfn class="local col7 decl" id="657vm" title='vm' data-type='vlib_main_t *' data-ref="657vm">vm</dfn>,</td></tr>
+<tr><th id="143">143</th><td>				      <b>struct</b> <a class="type" href="#ip_adjacency_t_" title='ip_adjacency_t_' data-ref="ip_adjacency_t_">ip_adjacency_t_</a> * <dfn class="local col8 decl" id="658adj" title='adj' data-type='struct ip_adjacency_t_ *' data-ref="658adj">adj</dfn>,</td></tr>
+<tr><th id="144">144</th><td>				      <a class="typedef" href="../../vlib/buffer.h.html#vlib_buffer_t" title='vlib_buffer_t' data-type='struct vlib_buffer_t' data-ref="vlib_buffer_t">vlib_buffer_t</a> * <dfn class="local col9 decl" id="659b0" title='b0' data-type='vlib_buffer_t *' data-ref="659b0">b0</dfn>,</td></tr>
+<tr><th id="145">145</th><td>                                      <em>const</em> <em>void</em> *<dfn class="local col0 decl" id="660data" title='data' data-type='const void *' data-ref="660data">data</dfn>);</td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="148">148</th><td><i class="doc"> * <span class="command">@brief</span> Flags on an IP adjacency</i></td></tr>
+<tr><th id="149">149</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="150">150</th><td><b>typedef</b> <b>enum</b> <dfn class="type def" id="ip_adjacency_flags_t_" title='ip_adjacency_flags_t_' data-ref="ip_adjacency_flags_t_"><a class="type" href="#ip_adjacency_flags_t_" title='ip_adjacency_flags_t_' data-ref="ip_adjacency_flags_t_">ip_adjacency_flags_t_</a></dfn></td></tr>
+<tr><th id="151">151</th><td>{</td></tr>
+<tr><th id="152">152</th><td>    <dfn class="enum" id="ADJ_FLAG_NONE" title='ADJ_FLAG_NONE' data-ref="ADJ_FLAG_NONE">ADJ_FLAG_NONE</dfn> = <var>0</var>,</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="155">155</th><td><i class="doc">     * Currently a sync walk is active. Used to prevent re-entrant walking</i></td></tr>
+<tr><th id="156">156</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="157">157</th><td>    <dfn class="enum" id="ADJ_FLAG_SYNC_WALK_ACTIVE" title='ADJ_FLAG_SYNC_WALK_ACTIVE' data-ref="ADJ_FLAG_SYNC_WALK_ACTIVE">ADJ_FLAG_SYNC_WALK_ACTIVE</dfn> = (<var>1</var> &lt;&lt; <var>0</var>),</td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="160">160</th><td><i class="doc">     * Packets TX through the midchain do not increment the interface</i></td></tr>
+<tr><th id="161">161</th><td><i class="doc">     * counters. This should be used when the adj is associated with an L2</i></td></tr>
+<tr><th id="162">162</th><td><i class="doc">     * interface and that L2 interface is in a bridege domain. In that case</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc">     * the packet will have traversed the interface's TX node, and hence have</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc">     * been counted, before it traverses ths midchain</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="166">166</th><td>    <dfn class="enum" id="ADJ_FLAG_MIDCHAIN_NO_COUNT" title='ADJ_FLAG_MIDCHAIN_NO_COUNT' data-ref="ADJ_FLAG_MIDCHAIN_NO_COUNT">ADJ_FLAG_MIDCHAIN_NO_COUNT</dfn> = (<var>1</var> &lt;&lt; <var>1</var>),</td></tr>
+<tr><th id="167">167</th><td>}  <b>__attribute__</b> ((packed)) <dfn class="typedef" id="adj_flags_t" title='adj_flags_t' data-type='enum ip_adjacency_flags_t_' data-ref="adj_flags_t">adj_flags_t</dfn>;</td></tr>
+<tr><th id="168">168</th><td></td></tr>
+<tr><th id="169">169</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="170">170</th><td><i class="doc"> * <span class="command">@brief</span> IP unicast adjacency.</i></td></tr>
+<tr><th id="171">171</th><td><i class="doc"> *  <span class="command">@note</span> cache aligned.</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc"> * An adjacency is a represenation of a peer on a particular link.</i></td></tr>
+<tr><th id="174">174</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="175">175</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="ip_adjacency_t_" title='ip_adjacency_t_' data-ref="ip_adjacency_t_"><a class="type" href="#ip_adjacency_t_" title='ip_adjacency_t_' data-ref="ip_adjacency_t_">ip_adjacency_t_</a></dfn></td></tr>
+<tr><th id="176">176</th><td>{</td></tr>
+<tr><th id="177">177</th><td>  <a class="macro" href="../../vppinfra/cache.h.html#60" title="u8 cacheline0[0] __attribute__((aligned((1 &lt;&lt; 6))))" data-ref="_M/CLIB_CACHE_LINE_ALIGN_MARK">CLIB_CACHE_LINE_ALIGN_MARK</a> (<dfn class="decl field" id="ip_adjacency_t_::cacheline0" title='ip_adjacency_t_::cacheline0' data-ref="ip_adjacency_t_::cacheline0">cacheline0</dfn>);</td></tr>
+<tr><th id="178">178</th><td></td></tr>
+<tr><th id="179">179</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc">   * Linkage into the FIB node grpah. First member since this type</i></td></tr>
+<tr><th id="181">181</th><td><i class="doc">   * has 8 byte alignment requirements.</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="183">183</th><td>  <a class="typedef" href="../fib/fib_node.h.html#fib_node_t" title='fib_node_t' data-type='struct fib_node_t_' data-ref="fib_node_t">fib_node_t</a> <dfn class="decl field" id="ip_adjacency_t_::ia_node" title='ip_adjacency_t_::ia_node' data-ref="ip_adjacency_t_::ia_node">ia_node</dfn>;</td></tr>
+<tr><th id="184">184</th><td></td></tr>
+<tr><th id="185">185</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc">   * Next hop after ip4-lookup.</i></td></tr>
+<tr><th id="187">187</th><td><i class="doc">   *  This is not accessed in the rewrite nodes.</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc">   * 1-bytes</i></td></tr>
+<tr><th id="189">189</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="190">190</th><td>  <a class="typedef" href="#ip_lookup_next_t" title='ip_lookup_next_t' data-type='enum ip_lookup_next_t' data-ref="ip_lookup_next_t">ip_lookup_next_t</a> <dfn class="decl field" id="ip_adjacency_t_::lookup_next_index" title='ip_adjacency_t_::lookup_next_index' data-ref="ip_adjacency_t_::lookup_next_index">lookup_next_index</dfn>;</td></tr>
+<tr><th id="191">191</th><td></td></tr>
+<tr><th id="192">192</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="193">193</th><td><i class="doc">   * link/ether-type</i></td></tr>
+<tr><th id="194">194</th><td><i class="doc">   * 1 bytes</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="196">196</th><td>  <a class="typedef" href="../interface.h.html#vnet_link_t" title='vnet_link_t' data-type='enum vnet_link_t_' data-ref="vnet_link_t">vnet_link_t</a> <dfn class="decl field" id="ip_adjacency_t_::ia_link" title='ip_adjacency_t_::ia_link' data-ref="ip_adjacency_t_::ia_link">ia_link</dfn>;</td></tr>
+<tr><th id="197">197</th><td></td></tr>
+<tr><th id="198">198</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">   * The protocol of the neighbor/peer. i.e. the protocol with</i></td></tr>
+<tr><th id="200">200</th><td><i class="doc">   * which to interpret the 'next-hop' attirbutes of the sub-types.</i></td></tr>
+<tr><th id="201">201</th><td><i class="doc">   * 1-btyes</i></td></tr>
+<tr><th id="202">202</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="203">203</th><td>  <a class="typedef" href="../fib/fib_types.h.html#fib_protocol_t" title='fib_protocol_t' data-type='enum fib_protocol_t_' data-ref="fib_protocol_t">fib_protocol_t</a> <dfn class="decl field" id="ip_adjacency_t_::ia_nh_proto" title='ip_adjacency_t_::ia_nh_proto' data-ref="ip_adjacency_t_::ia_nh_proto">ia_nh_proto</dfn>;</td></tr>
+<tr><th id="204">204</th><td></td></tr>
+<tr><th id="205">205</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc">   * Flags on the adjacency</i></td></tr>
+<tr><th id="207">207</th><td><i class="doc">   * 1-bytes</i></td></tr>
+<tr><th id="208">208</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="209">209</th><td>  <a class="typedef" href="#adj_flags_t" title='adj_flags_t' data-type='enum ip_adjacency_flags_t_' data-ref="adj_flags_t">adj_flags_t</a> <dfn class="decl field" id="ip_adjacency_t_::ia_flags" title='ip_adjacency_t_::ia_flags' data-ref="ip_adjacency_t_::ia_flags">ia_flags</dfn>;</td></tr>
+<tr><th id="210">210</th><td></td></tr>
+<tr><th id="211">211</th><td>  <b>union</b></td></tr>
+<tr><th id="212">212</th><td>  {</td></tr>
+<tr><th id="213">213</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc">     * IP_LOOKUP_NEXT_ARP/IP_LOOKUP_NEXT_REWRITE</i></td></tr>
+<tr><th id="215">215</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="216">216</th><td><i class="doc">     * neighbour adjacency sub-type;</i></td></tr>
+<tr><th id="217">217</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="218">218</th><td>    <b>struct</b></td></tr>
+<tr><th id="219">219</th><td>    {</td></tr>
+<tr><th id="220">220</th><td>      <a class="typedef" href="../ip/ip6_packet.h.html#ip46_address_t" title='ip46_address_t' data-type='union ip46_address_t' data-ref="ip46_address_t">ip46_address_t</a> <dfn class="decl field" id="ip_adjacency_t_::(anonymousunion)::(anonymous)::next_hop" title='ip_adjacency_t_::(anonymous union)::(anonymous struct)::next_hop' data-ref="ip_adjacency_t_::(anonymousunion)::(anonymous)::next_hop">next_hop</dfn>;</td></tr>
+<tr><th id="221">221</th><td>    } <dfn class="decl field" id="ip_adjacency_t_::(anonymous)::nbr" title='ip_adjacency_t_::(anonymous union)::nbr' data-ref="ip_adjacency_t_::(anonymous)::nbr">nbr</dfn>;</td></tr>
+<tr><th id="222">222</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="223">223</th><td><i class="doc">       * IP_LOOKUP_NEXT_MIDCHAIN</i></td></tr>
+<tr><th id="224">224</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="225">225</th><td><i class="doc">       * A nbr adj that is also recursive. Think tunnels.</i></td></tr>
+<tr><th id="226">226</th><td><i class="doc">       * A nbr adj can transition to be of type MDICHAIN</i></td></tr>
+<tr><th id="227">227</th><td><i class="doc">       * so be sure to leave the two structs with the next_hop</i></td></tr>
+<tr><th id="228">228</th><td><i class="doc">       * fields aligned.</i></td></tr>
+<tr><th id="229">229</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="230">230</th><td>    <b>struct</b></td></tr>
+<tr><th id="231">231</th><td>    {</td></tr>
+<tr><th id="232">232</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="233">233</th><td><i class="doc">       * The recursive next-hop.</i></td></tr>
+<tr><th id="234">234</th><td><i class="doc">       *  This field MUST be at the same memory location as</i></td></tr>
+<tr><th id="235">235</th><td><i class="doc">       *   sub_type.nbr.next_hop</i></td></tr>
+<tr><th id="236">236</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="237">237</th><td>      <a class="typedef" href="../ip/ip6_packet.h.html#ip46_address_t" title='ip46_address_t' data-type='union ip46_address_t' data-ref="ip46_address_t">ip46_address_t</a> <dfn class="decl field" id="ip_adjacency_t_::(anonymousunion)::(anonymous)::next_hop" title='ip_adjacency_t_::(anonymous union)::(anonymous struct)::next_hop' data-ref="ip_adjacency_t_::(anonymousunion)::(anonymous)::next_hop">next_hop</dfn>;</td></tr>
+<tr><th id="238">238</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="239">239</th><td><i class="doc">       * The next DPO to use</i></td></tr>
+<tr><th id="240">240</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="241">241</th><td>      <a class="typedef" href="../dpo/dpo.h.html#dpo_id_t" title='dpo_id_t' data-type='struct dpo_id_t_' data-ref="dpo_id_t">dpo_id_t</a> <dfn class="decl field" id="ip_adjacency_t_::(anonymousunion)::(anonymous)::next_dpo" title='ip_adjacency_t_::(anonymous union)::(anonymous struct)::next_dpo' data-ref="ip_adjacency_t_::(anonymousunion)::(anonymous)::next_dpo">next_dpo</dfn>;</td></tr>
+<tr><th id="242">242</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="243">243</th><td><i class="doc">       * A function to perform the post-rewrite fixup</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="245">245</th><td>      <a class="typedef" href="#adj_midchain_fixup_t" title='adj_midchain_fixup_t' data-type='void (*)(vlib_main_t *, struct ip_adjacency_t_ *, vlib_buffer_t *, const void *)' data-ref="adj_midchain_fixup_t">adj_midchain_fixup_t</a> <dfn class="decl field" id="ip_adjacency_t_::(anonymousunion)::(anonymous)::fixup_func" title='ip_adjacency_t_::(anonymous union)::(anonymous struct)::fixup_func' data-ref="ip_adjacency_t_::(anonymousunion)::(anonymous)::fixup_func">fixup_func</dfn>;</td></tr>
+<tr><th id="246">246</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="247">247</th><td><i class="doc">       * Fixup data passed back to the client in the fixup function</i></td></tr>
+<tr><th id="248">248</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="249">249</th><td>      <em>const</em> <em>void</em> *<dfn class="decl field" id="ip_adjacency_t_::(anonymousunion)::(anonymous)::fixup_data" title='ip_adjacency_t_::(anonymous union)::(anonymous struct)::fixup_data' data-ref="ip_adjacency_t_::(anonymousunion)::(anonymous)::fixup_data">fixup_data</dfn>;</td></tr>
+<tr><th id="250">250</th><td>    } <dfn class="decl field" id="ip_adjacency_t_::(anonymous)::midchain" title='ip_adjacency_t_::(anonymous union)::midchain' data-ref="ip_adjacency_t_::(anonymous)::midchain">midchain</dfn>;</td></tr>
+<tr><th id="251">251</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="252">252</th><td><i class="doc">     * IP_LOOKUP_NEXT_GLEAN</i></td></tr>
+<tr><th id="253">253</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="254">254</th><td><i class="doc">     * Glean the address to ARP for from the packet's destination.</i></td></tr>
+<tr><th id="255">255</th><td><i class="doc">     * Technically these aren't adjacencies, i.e. they are not a</i></td></tr>
+<tr><th id="256">256</th><td><i class="doc">     * representation of a peer. One day we might untangle this coupling</i></td></tr>
+<tr><th id="257">257</th><td><i class="doc">     * and use a new Glean DPO.</i></td></tr>
+<tr><th id="258">258</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="259">259</th><td>    <b>struct</b></td></tr>
+<tr><th id="260">260</th><td>    {</td></tr>
+<tr><th id="261">261</th><td>      <a class="typedef" href="../ip/ip6_packet.h.html#ip46_address_t" title='ip46_address_t' data-type='union ip46_address_t' data-ref="ip46_address_t">ip46_address_t</a> <dfn class="decl field" id="ip_adjacency_t_::(anonymousunion)::(anonymous)::receive_addr" title='ip_adjacency_t_::(anonymous union)::(anonymous struct)::receive_addr' data-ref="ip_adjacency_t_::(anonymousunion)::(anonymous)::receive_addr">receive_addr</dfn>;</td></tr>
+<tr><th id="262">262</th><td>    } <dfn class="decl field" id="ip_adjacency_t_::(anonymous)::glean" title='ip_adjacency_t_::(anonymous union)::glean' data-ref="ip_adjacency_t_::(anonymous)::glean">glean</dfn>;</td></tr>
+<tr><th id="263">263</th><td>  } <dfn class="decl field" id="ip_adjacency_t_::sub_type" title='ip_adjacency_t_::sub_type' data-ref="ip_adjacency_t_::sub_type">sub_type</dfn>;</td></tr>
+<tr><th id="264">264</th><td></td></tr>
+<tr><th id="265">265</th><td>  <a class="macro" href="../../vppinfra/cache.h.html#60" title="u8 cacheline1[0] __attribute__((aligned((1 &lt;&lt; 6))))" data-ref="_M/CLIB_CACHE_LINE_ALIGN_MARK">CLIB_CACHE_LINE_ALIGN_MARK</a> (<dfn class="decl field" id="ip_adjacency_t_::cacheline1" title='ip_adjacency_t_::cacheline1' data-ref="ip_adjacency_t_::cacheline1">cacheline1</dfn>);</td></tr>
+<tr><th id="266">266</th><td></td></tr>
+<tr><th id="267">267</th><td>  <i>/* Rewrite in second/third cache lines */</i></td></tr>
+<tr><th id="268">268</th><td>  <a class="macro" href="rewrite.h.html#112" title="struct { vnet_rewrite_header_t rewrite_header; u8 rewrite_data[(128) - sizeof (vnet_rewrite_header_t)]; }" data-ref="_M/vnet_declare_rewrite">vnet_declare_rewrite</a> (<a class="macro" href="../../vlib/buffer.h.html#52" title="128" data-ref="_M/VLIB_BUFFER_PRE_DATA_SIZE">VLIB_BUFFER_PRE_DATA_SIZE</a>);</td></tr>
+<tr><th id="269">269</th><td></td></tr>
+<tr><th id="270">270</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="271">271</th><td><i class="doc">   * more control plane members that do not fit on the first cacheline</i></td></tr>
+<tr><th id="272">272</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="273">273</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="274">274</th><td><i class="doc">   * A sorted vector of delegates</i></td></tr>
+<tr><th id="275">275</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="276">276</th><td>  <b>struct</b> <dfn class="type" id="adj_delegate_t_" title='adj_delegate_t_' data-ref="adj_delegate_t_"><a class="type" href="#adj_delegate_t_" title='adj_delegate_t_' data-ref="adj_delegate_t_">adj_delegate_t_</a></dfn> *<dfn class="decl field" id="ip_adjacency_t_::ia_delegates" title='ip_adjacency_t_::ia_delegates' data-ref="ip_adjacency_t_::ia_delegates">ia_delegates</dfn>;</td></tr>
+<tr><th id="277">277</th><td></td></tr>
+<tr><th id="278">278</th><td>} <dfn class="typedef" id="ip_adjacency_t" title='ip_adjacency_t' data-type='struct ip_adjacency_t_' data-ref="ip_adjacency_t">ip_adjacency_t</dfn>;</td></tr>
+<tr><th id="279">279</th><td></td></tr>
+<tr><th id="280">280</th><td><a class="macro" href="../../vppinfra/error_bootstrap.h.html#83" title="" data-ref="_M/STATIC_ASSERT">STATIC_ASSERT</a> ((STRUCT_OFFSET_OF (ip_adjacency_t, cacheline0) == <var>0</var>),</td></tr>
+<tr><th id="281">281</th><td>	       <q>"IP adjacency cachline 0 is not offset"</q>);</td></tr>
+<tr><th id="282">282</th><td><a class="macro" href="../../vppinfra/error_bootstrap.h.html#83" title="" data-ref="_M/STATIC_ASSERT">STATIC_ASSERT</a> ((STRUCT_OFFSET_OF (ip_adjacency_t, cacheline1) ==</td></tr>
+<tr><th id="283">283</th><td>		CLIB_CACHE_LINE_BYTES),</td></tr>
+<tr><th id="284">284</th><td>	       <q>"IP adjacency cachline 1 is more than one cachline size offset"</q>);</td></tr>
+<tr><th id="285">285</th><td></td></tr>
+<tr><th id="286">286</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="287">287</th><td><i class="doc"> * <span class="command">@brief</span></i></td></tr>
+<tr><th id="288">288</th><td><i class="doc"> *   Take a reference counting lock on the adjacency</i></td></tr>
+<tr><th id="289">289</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="290">290</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="adj_lock" title='adj_lock' data-ref="adj_lock">adj_lock</dfn>(<a class="typedef" href="adj_types.h.html#adj_index_t" title='adj_index_t' data-type='u32' data-ref="adj_index_t">adj_index_t</a> <dfn class="local col1 decl" id="661adj_index" title='adj_index' data-type='adj_index_t' data-ref="661adj_index">adj_index</dfn>);</td></tr>
+<tr><th id="291">291</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="292">292</th><td><i class="doc"> * <span class="command">@brief</span></i></td></tr>
+<tr><th id="293">293</th><td><i class="doc"> *   Release a reference counting lock on the adjacency</i></td></tr>
+<tr><th id="294">294</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="295">295</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="adj_unlock" title='adj_unlock' data-ref="adj_unlock">adj_unlock</dfn>(<a class="typedef" href="adj_types.h.html#adj_index_t" title='adj_index_t' data-type='u32' data-ref="adj_index_t">adj_index_t</a> <dfn class="local col2 decl" id="662adj_index" title='adj_index' data-type='adj_index_t' data-ref="662adj_index">adj_index</dfn>);</td></tr>
+<tr><th id="296">296</th><td></td></tr>
+<tr><th id="297">297</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="298">298</th><td><i class="doc"> * <span class="command">@brief</span></i></td></tr>
+<tr><th id="299">299</th><td><i class="doc"> *  Add a child dependent to an adjacency. The child will</i></td></tr>
+<tr><th id="300">300</th><td><i class="doc"> *  thus be informed via its registerd back-walk function</i></td></tr>
+<tr><th id="301">301</th><td><i class="doc"> *  when the adjacency state changes.</i></td></tr>
+<tr><th id="302">302</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="303">303</th><td><b>extern</b> <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl fn" id="adj_child_add" title='adj_child_add' data-ref="adj_child_add">adj_child_add</dfn>(<a class="typedef" href="adj_types.h.html#adj_index_t" title='adj_index_t' data-type='u32' data-ref="adj_index_t">adj_index_t</a> <dfn class="local col3 decl" id="663adj_index" title='adj_index' data-type='adj_index_t' data-ref="663adj_index">adj_index</dfn>,</td></tr>
+<tr><th id="304">304</th><td>			 <a class="typedef" href="../fib/fib_node.h.html#fib_node_type_t" title='fib_node_type_t' data-type='enum fib_node_type_t_' data-ref="fib_node_type_t">fib_node_type_t</a> <dfn class="local col4 decl" id="664type" title='type' data-type='fib_node_type_t' data-ref="664type">type</dfn>,</td></tr>
+<tr><th id="305">305</th><td>			 <a class="typedef" href="../fib/fib_types.h.html#fib_node_index_t" title='fib_node_index_t' data-type='u32' data-ref="fib_node_index_t">fib_node_index_t</a> <dfn class="local col5 decl" id="665child_index" title='child_index' data-type='fib_node_index_t' data-ref="665child_index">child_index</dfn>);</td></tr>
+<tr><th id="306">306</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="307">307</th><td><i class="doc"> * <span class="command">@brief</span></i></td></tr>
+<tr><th id="308">308</th><td><i class="doc"> *  Remove a child dependent</i></td></tr>
+<tr><th id="309">309</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="310">310</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="adj_child_remove" title='adj_child_remove' data-ref="adj_child_remove">adj_child_remove</dfn>(<a class="typedef" href="adj_types.h.html#adj_index_t" title='adj_index_t' data-type='u32' data-ref="adj_index_t">adj_index_t</a> <dfn class="local col6 decl" id="666adj_index" title='adj_index' data-type='adj_index_t' data-ref="666adj_index">adj_index</dfn>,</td></tr>
+<tr><th id="311">311</th><td>			     <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col7 decl" id="667sibling_index" title='sibling_index' data-type='u32' data-ref="667sibling_index">sibling_index</dfn>);</td></tr>
+<tr><th id="312">312</th><td></td></tr>
+<tr><th id="313">313</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="314">314</th><td><i class="doc"> * <span class="command">@brief</span> Walk the Adjacencies on a given interface</i></td></tr>
+<tr><th id="315">315</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="316">316</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="adj_walk" title='adj_walk' data-ref="adj_walk">adj_walk</dfn> (<a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col8 decl" id="668sw_if_index" title='sw_if_index' data-type='u32' data-ref="668sw_if_index">sw_if_index</dfn>,</td></tr>
+<tr><th id="317">317</th><td>		      <a class="typedef" href="adj_types.h.html#adj_walk_cb_t" title='adj_walk_cb_t' data-type='adj_walk_rc_t (*)(adj_index_t, void *)' data-ref="adj_walk_cb_t">adj_walk_cb_t</a> <dfn class="local col9 decl" id="669cb" title='cb' data-type='adj_walk_cb_t' data-ref="669cb">cb</dfn>,</td></tr>
+<tr><th id="318">318</th><td>		      <em>void</em> *<dfn class="local col0 decl" id="670ctx" title='ctx' data-type='void *' data-ref="670ctx">ctx</dfn>);</td></tr>
+<tr><th id="319">319</th><td></td></tr>
+<tr><th id="320">320</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="321">321</th><td><i class="doc"> * <span class="command">@brief</span> Return the link type of the adjacency</i></td></tr>
+<tr><th id="322">322</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="323">323</th><td><b>extern</b> <a class="typedef" href="../interface.h.html#vnet_link_t" title='vnet_link_t' data-type='enum vnet_link_t_' data-ref="vnet_link_t">vnet_link_t</a> <dfn class="decl fn" id="adj_get_link_type" title='adj_get_link_type' data-ref="adj_get_link_type">adj_get_link_type</dfn> (<a class="typedef" href="adj_types.h.html#adj_index_t" title='adj_index_t' data-type='u32' data-ref="adj_index_t">adj_index_t</a> <dfn class="local col1 decl" id="671ai" title='ai' data-type='adj_index_t' data-ref="671ai">ai</dfn>);</td></tr>
+<tr><th id="324">324</th><td></td></tr>
+<tr><th id="325">325</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="326">326</th><td><i class="doc"> * <span class="command">@brief</span> Return the sw interface index of the adjacency.</i></td></tr>
+<tr><th id="327">327</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="328">328</th><td><b>extern</b> <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl fn" id="adj_get_sw_if_index" title='adj_get_sw_if_index' data-ref="adj_get_sw_if_index">adj_get_sw_if_index</dfn> (<a class="typedef" href="adj_types.h.html#adj_index_t" title='adj_index_t' data-type='u32' data-ref="adj_index_t">adj_index_t</a> <dfn class="local col2 decl" id="672ai" title='ai' data-type='adj_index_t' data-ref="672ai">ai</dfn>);</td></tr>
+<tr><th id="329">329</th><td></td></tr>
+<tr><th id="330">330</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="331">331</th><td><i class="doc"> * <span class="command">@brief</span> Return true if the adjacency is 'UP', i.e. can be used for forwarding.</i></td></tr>
+<tr><th id="332">332</th><td><i class="doc"> * 0 is down, !0 is up.</i></td></tr>
+<tr><th id="333">333</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="334">334</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="adj_is_up" title='adj_is_up' data-ref="adj_is_up">adj_is_up</dfn> (<a class="typedef" href="adj_types.h.html#adj_index_t" title='adj_index_t' data-type='u32' data-ref="adj_index_t">adj_index_t</a> <dfn class="local col3 decl" id="673ai" title='ai' data-type='adj_index_t' data-ref="673ai">ai</dfn>);</td></tr>
+<tr><th id="335">335</th><td></td></tr>
+<tr><th id="336">336</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="337">337</th><td><i class="doc"> * <span class="command">@brief</span> Return the link type of the adjacency</i></td></tr>
+<tr><th id="338">338</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="339">339</th><td><b>extern</b> <em>const</em> <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>* <dfn class="decl fn" id="adj_get_rewrite" title='adj_get_rewrite' data-ref="adj_get_rewrite">adj_get_rewrite</dfn> (<a class="typedef" href="adj_types.h.html#adj_index_t" title='adj_index_t' data-type='u32' data-ref="adj_index_t">adj_index_t</a> <dfn class="local col4 decl" id="674ai" title='ai' data-type='adj_index_t' data-ref="674ai">ai</dfn>);</td></tr>
+<tr><th id="340">340</th><td></td></tr>
+<tr><th id="341">341</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="342">342</th><td><i class="doc"> * <span class="command">@brief</span> Notify the adjacency subsystem that the features settings for</i></td></tr>
+<tr><th id="343">343</th><td><i class="doc"> * an interface have changed</i></td></tr>
+<tr><th id="344">344</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="345">345</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="adj_feature_update" title='adj_feature_update' data-ref="adj_feature_update">adj_feature_update</dfn> (<a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col5 decl" id="675sw_if_index" title='sw_if_index' data-type='u32' data-ref="675sw_if_index">sw_if_index</dfn>, <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="local col6 decl" id="676arc_index" title='arc_index' data-type='u8' data-ref="676arc_index">arc_index</dfn>, <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="local col7 decl" id="677is_enable" title='is_enable' data-type='u8' data-ref="677is_enable">is_enable</dfn>);</td></tr>
+<tr><th id="346">346</th><td></td></tr>
+<tr><th id="347">347</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="348">348</th><td><i class="doc"> * <span class="command">@brief</span> Notify the adjacency subsystem that the MTU settings for</i></td></tr>
+<tr><th id="349">349</th><td><i class="doc"> * an HW interface have changed</i></td></tr>
+<tr><th id="350">350</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="351">351</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="adj_mtu_update" title='adj_mtu_update' data-ref="adj_mtu_update">adj_mtu_update</dfn> (<a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col8 decl" id="678hw_if_index" title='hw_if_index' data-type='u32' data-ref="678hw_if_index">hw_if_index</dfn>);</td></tr>
+<tr><th id="352">352</th><td></td></tr>
+<tr><th id="353">353</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="354">354</th><td><i class="doc"> * <span class="command">@brief</span></i></td></tr>
+<tr><th id="355">355</th><td><i class="doc"> * The global adjacnecy pool. Exposed for fast/inline data-plane access</i></td></tr>
+<tr><th id="356">356</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="357">357</th><td><b>extern</b> <a class="typedef" href="#ip_adjacency_t" title='ip_adjacency_t' data-type='struct ip_adjacency_t_' data-ref="ip_adjacency_t">ip_adjacency_t</a> *<dfn class="decl" id="adj_pool" title='adj_pool' data-ref="adj_pool">adj_pool</dfn>;</td></tr>
+<tr><th id="358">358</th><td></td></tr>
+<tr><th id="359">359</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="360">360</th><td><i class="doc"> * <span class="command">@brief</span> </i></td></tr>
+<tr><th id="361">361</th><td><i class="doc"> * Adjacency packet counters</i></td></tr>
+<tr><th id="362">362</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="363">363</th><td><b>extern</b> <a class="typedef" href="../../vlib/counter.h.html#vlib_combined_counter_main_t" title='vlib_combined_counter_main_t' data-type='struct vlib_combined_counter_main_t' data-ref="vlib_combined_counter_main_t">vlib_combined_counter_main_t</a> <dfn class="decl" id="adjacency_counters" title='adjacency_counters' data-ref="adjacency_counters">adjacency_counters</dfn>;</td></tr>
+<tr><th id="364">364</th><td></td></tr>
+<tr><th id="365">365</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="366">366</th><td><i class="doc"> * <span class="command">@brief</span> Global Config for enabling per-adjacency counters</i></td></tr>
+<tr><th id="367">367</th><td><i class="doc"> * This is configurable because it comes with  a non-negligible</i></td></tr>
+<tr><th id="368">368</th><td><i class="doc"> * performance cost. */</i></td></tr>
+<tr><th id="369">369</th><td><b>extern</b> <em>int</em> <dfn class="decl" id="adj_per_adj_counters" title='adj_per_adj_counters' data-ref="adj_per_adj_counters">adj_per_adj_counters</dfn>;</td></tr>
+<tr><th id="370">370</th><td></td></tr>
+<tr><th id="371">371</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="372">372</th><td><i class="doc"> * <span class="command">@brief</span></i></td></tr>
+<tr><th id="373">373</th><td><i class="doc"> * Get a pointer to an adjacency object from its index</i></td></tr>
+<tr><th id="374">374</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="375">375</th><td><em>static</em> <b>inline</b> <a class="typedef" href="#ip_adjacency_t" title='ip_adjacency_t' data-type='struct ip_adjacency_t_' data-ref="ip_adjacency_t">ip_adjacency_t</a> *</td></tr>
+<tr><th id="376">376</th><td><dfn class="decl def fn" id="adj_get" title='adj_get' data-ref="adj_get">adj_get</dfn> (<a class="typedef" href="adj_types.h.html#adj_index_t" title='adj_index_t' data-type='u32' data-ref="adj_index_t">adj_index_t</a> <dfn class="local col9 decl" id="679adj_index" title='adj_index' data-type='adj_index_t' data-ref="679adj_index">adj_index</dfn>)</td></tr>
+<tr><th id="377">377</th><td>{</td></tr>
+<tr><th id="378">378</th><td>    <b>return</b> (<a class="macro" href="../../vppinfra/vec_bootstrap.h.html#174" title="({ do { if ((1 &gt; 0) &amp;&amp; ! ((adj_index) &lt; ((adj_pool) ? (((vec_header_t *) (adj_pool) - 1)-&gt;len) : 0))) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-data/../src/vnet/adj/adj.h&quot;, (uword) 378, ((char *) __FUNCTION__), &quot;(adj_index) &lt; vec_len (adj_pool)&quot;); } } while (0); (adj_pool) + (adj_index); })" data-ref="_M/vec_elt_at_index">vec_elt_at_index</a>(<a class="ref" href="#adj_pool" title='adj_pool' data-ref="adj_pool">adj_pool</a>, <a class="local col9 ref" href="#679adj_index" title='adj_index' data-ref="679adj_index">adj_index</a>));</td></tr>
+<tr><th id="379">379</th><td>}</td></tr>
+<tr><th id="380">380</th><td></td></tr>
+<tr><th id="381">381</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="382">382</th><td><i class="doc"> * <span class="command">@brief</span> Get the global configuration option for enabling per-adj counters</i></td></tr>
+<tr><th id="383">383</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="384">384</th><td><em>static</em> <b>inline</b> <em>int</em> </td></tr>
+<tr><th id="385">385</th><td><dfn class="decl def fn" id="adj_are_counters_enabled" title='adj_are_counters_enabled' data-ref="adj_are_counters_enabled">adj_are_counters_enabled</dfn> (<em>void</em>)</td></tr>
+<tr><th id="386">386</th><td>{</td></tr>
+<tr><th id="387">387</th><td>    <b>return</b> (<a class="ref" href="#adj_per_adj_counters" title='adj_per_adj_counters' data-ref="adj_per_adj_counters">adj_per_adj_counters</a>);</td></tr>
+<tr><th id="388">388</th><td>}</td></tr>
+<tr><th id="389">389</th><td></td></tr>
+<tr><th id="390">390</th><td><u>#<span data-ppcond="41">endif</span></u></td></tr>
+<tr><th id="391">391</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../tests/vnet/session/tcp_echo.c.html'>vpp_1804/src/tests/vnet/session/tcp_echo.c</a><br/>Generated on <em>2018-Jul-29</em> from project vpp_1804 revision <em>18.04</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

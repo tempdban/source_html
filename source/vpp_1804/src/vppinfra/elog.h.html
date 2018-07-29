@@ -1,0 +1,585 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>elog.h source code [vpp_1804/src/vppinfra/elog.h] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'vpp_1804/src/vppinfra/elog.h'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>vpp_1804</a>/<a href='..'>src</a>/<a href='./'>vppinfra</a>/<a href='elog.h.html'>elog.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright (c) 2015 Cisco and/or its affiliates.</i></td></tr>
+<tr><th id="3">3</th><td><i> * Licensed under the Apache License, Version 2.0 (the "License");</i></td></tr>
+<tr><th id="4">4</th><td><i> * you may not use this file except in compliance with the License.</i></td></tr>
+<tr><th id="5">5</th><td><i> * You may obtain a copy of the License at:</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> *     <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></i></td></tr>
+<tr><th id="8">8</th><td><i> *</i></td></tr>
+<tr><th id="9">9</th><td><i> * Unless required by applicable law or agreed to in writing, software</i></td></tr>
+<tr><th id="10">10</th><td><i> * distributed under the License is distributed on an "AS IS" BASIS,</i></td></tr>
+<tr><th id="11">11</th><td><i> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</i></td></tr>
+<tr><th id="12">12</th><td><i> * See the License for the specific language governing permissions and</i></td></tr>
+<tr><th id="13">13</th><td><i> * limitations under the License.</i></td></tr>
+<tr><th id="14">14</th><td><i> */</i></td></tr>
+<tr><th id="15">15</th><td><i>/*</i></td></tr>
+<tr><th id="16">16</th><td><i>  Copyright (c) 2005,2009 Eliot Dresselhaus</i></td></tr>
+<tr><th id="17">17</th><td><i></i></td></tr>
+<tr><th id="18">18</th><td><i>  Permission is hereby granted, free of charge, to any person obtaining</i></td></tr>
+<tr><th id="19">19</th><td><i>  a copy of this software and associated documentation files (the</i></td></tr>
+<tr><th id="20">20</th><td><i>  "Software"), to deal in the Software without restriction, including</i></td></tr>
+<tr><th id="21">21</th><td><i>  without limitation the rights to use, copy, modify, merge, publish,</i></td></tr>
+<tr><th id="22">22</th><td><i>  distribute, sublicense, and/or sell copies of the Software, and to</i></td></tr>
+<tr><th id="23">23</th><td><i>  permit persons to whom the Software is furnished to do so, subject to</i></td></tr>
+<tr><th id="24">24</th><td><i>  the following conditions:</i></td></tr>
+<tr><th id="25">25</th><td><i></i></td></tr>
+<tr><th id="26">26</th><td><i>  The above copyright notice and this permission notice shall be</i></td></tr>
+<tr><th id="27">27</th><td><i>  included in all copies or substantial portions of the Software.</i></td></tr>
+<tr><th id="28">28</th><td><i></i></td></tr>
+<tr><th id="29">29</th><td><i>  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,</i></td></tr>
+<tr><th id="30">30</th><td><i>  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF</i></td></tr>
+<tr><th id="31">31</th><td><i>  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND</i></td></tr>
+<tr><th id="32">32</th><td><i>  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE</i></td></tr>
+<tr><th id="33">33</th><td><i>  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION</i></td></tr>
+<tr><th id="34">34</th><td><i>  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION</i></td></tr>
+<tr><th id="35">35</th><td><i>  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</i></td></tr>
+<tr><th id="36">36</th><td><i>*/</i></td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><i>/* High speed event logger */</i></td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><i class="doc">/**<span class="command"> \file</span></i></td></tr>
+<tr><th id="41">41</th><td><i class="doc">    The fine-grained event logger allows lightweight, thread-safe</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc">    event logging at minimum cost. In typical operation, logging</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc">    a single event costs around 80ns on x86_64. It's appropriate</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc">    for at-least per-frame event-logging in vector packet processing.</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc"></i></td></tr>
+<tr><th id="46">46</th><td><i class="doc">    See <a href="https://wiki.fd.io/view/VPP/elog">https://wiki.fd.io/view/VPP/elog</a> for more information.</i></td></tr>
+<tr><th id="47">47</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="48">48</th><td></td></tr>
+<tr><th id="49">49</th><td><u>#<span data-ppcond="49">ifndef</span> <span class="macro" data-ref="_M/included_clib_elog_h">included_clib_elog_h</span></u></td></tr>
+<tr><th id="50">50</th><td><u>#define <dfn class="macro" id="_M/included_clib_elog_h" data-ref="_M/included_clib_elog_h">included_clib_elog_h</dfn></u></td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td><u>#include <a href="cache.h.html">&lt;vppinfra/cache.h&gt;</a></u></td></tr>
+<tr><th id="53">53</th><td><u>#include <a href="error.h.html">&lt;vppinfra/error.h&gt;</a>	/* for ASSERT */</u></td></tr>
+<tr><th id="54">54</th><td><u>#include <a href="serialize.h.html">&lt;vppinfra/serialize.h&gt;</a></u></td></tr>
+<tr><th id="55">55</th><td><u>#include <a href="time.h.html">&lt;vppinfra/time.h&gt;</a>	/* for clib_cpu_time_now */</u></td></tr>
+<tr><th id="56">56</th><td><u>#include <a href="mhash.h.html">&lt;vppinfra/mhash.h&gt;</a></u></td></tr>
+<tr><th id="57">57</th><td></td></tr>
+<tr><th id="58">58</th><td><b>typedef</b> <b>struct</b></td></tr>
+<tr><th id="59">59</th><td>{</td></tr>
+<tr><th id="60">60</th><td>  <b>union</b></td></tr>
+<tr><th id="61">61</th><td>  {</td></tr>
+<tr><th id="62">62</th><td>    <i class="doc">/** Absolute time stamp in CPU clock cycles. */</i></td></tr>
+<tr><th id="63">63</th><td>    <a class="typedef" href="types.h.html#u64" title='u64' data-type='unsigned long' data-ref="u64">u64</a> <dfn class="decl field" id="(anonymousstruct)::(anonymous)::time_cycles" title='(anonymous struct)::(anonymous union)::time_cycles' data-ref="(anonymousstruct)::(anonymous)::time_cycles">time_cycles</dfn>;</td></tr>
+<tr><th id="64">64</th><td></td></tr>
+<tr><th id="65">65</th><td>    <i class="doc">/** Absolute time as floating point number in seconds. */</i></td></tr>
+<tr><th id="66">66</th><td>    <a class="typedef" href="types.h.html#f64" title='f64' data-type='double' data-ref="f64">f64</a> <dfn class="decl field" id="(anonymousstruct)::(anonymous)::time" title='(anonymous struct)::(anonymous union)::time' data-ref="(anonymousstruct)::(anonymous)::time">time</dfn>;</td></tr>
+<tr><th id="67">67</th><td>  };</td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td>  <i class="doc">/** Event type index. */</i></td></tr>
+<tr><th id="70">70</th><td>  <a class="typedef" href="types.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> <dfn class="decl field" id="(anonymous)::type" title='(anonymous struct)::type' data-ref="(anonymous)::type">type</dfn>;</td></tr>
+<tr><th id="71">71</th><td></td></tr>
+<tr><th id="72">72</th><td>  <i class="doc">/** Track for this event.  Tracks allow events to be sorted and</i></td></tr>
+<tr><th id="73">73</th><td><i class="doc">     displayed by track.  Think of 2 dimensional display with time and</i></td></tr>
+<tr><th id="74">74</th><td><i class="doc">     track being the x and y axes. */</i></td></tr>
+<tr><th id="75">75</th><td>  <a class="typedef" href="types.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> <dfn class="decl field" id="(anonymous)::track" title='(anonymous struct)::track' data-ref="(anonymous)::track">track</dfn>;</td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td>  <i class="doc">/** 20-bytes of data follows, pads to 32 bytes. */</i></td></tr>
+<tr><th id="78">78</th><td>  <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::data" title='(anonymous struct)::data' data-ref="(anonymous)::data">data</dfn>[<var>20</var>];</td></tr>
+<tr><th id="79">79</th><td>} <dfn class="typedef" id="elog_event_t" title='elog_event_t' data-type='struct elog_event_t' data-ref="elog_event_t">elog_event_t</dfn>;</td></tr>
+<tr><th id="80">80</th><td></td></tr>
+<tr><th id="81">81</th><td><b>typedef</b> <b>struct</b></td></tr>
+<tr><th id="82">82</th><td>{</td></tr>
+<tr><th id="83">83</th><td>  <i class="doc">/** Type index plus one assigned to this type.</i></td></tr>
+<tr><th id="84">84</th><td><i class="doc">     This is used to mark type as seen. */</i></td></tr>
+<tr><th id="85">85</th><td>  <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::type_index_plus_one" title='(anonymous struct)::type_index_plus_one' data-ref="(anonymous)::type_index_plus_one">type_index_plus_one</dfn>;</td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td>  <i class="doc">/** String table as a vector constructed when type is registered. */</i></td></tr>
+<tr><th id="88">88</th><td>  <em>char</em> **<dfn class="decl field" id="(anonymous)::enum_strings_vector" title='(anonymous struct)::enum_strings_vector' data-ref="(anonymous)::enum_strings_vector">enum_strings_vector</dfn>;</td></tr>
+<tr><th id="89">89</th><td></td></tr>
+<tr><th id="90">90</th><td>  <i class="doc">/** Format string. (example: "my-event (%d,%d)"). */</i></td></tr>
+<tr><th id="91">91</th><td>  <em>char</em> *<dfn class="decl field" id="(anonymous)::format" title='(anonymous struct)::format' data-ref="(anonymous)::format">format</dfn>;</td></tr>
+<tr><th id="92">92</th><td></td></tr>
+<tr><th id="93">93</th><td>  <i class="doc">/** Specifies how arguments to format are parsed from event data.</i></td></tr>
+<tr><th id="94">94</th><td><i class="doc">     String of characters '0' '1' or '2' '3' to specify log2 size of data</i></td></tr>
+<tr><th id="95">95</th><td><i class="doc">     (e.g. for u8, u16, u32 or u64),</i></td></tr>
+<tr><th id="96">96</th><td><i class="doc">     's' means a null-terminated C string</i></td></tr>
+<tr><th id="97">97</th><td><i class="doc">     't' means argument is an index into enum string table for this type.</i></td></tr>
+<tr><th id="98">98</th><td><i class="doc">     'e' is a float,</i></td></tr>
+<tr><th id="99">99</th><td><i class="doc">     'f' is a double. */</i></td></tr>
+<tr><th id="100">100</th><td>  <em>char</em> *<dfn class="decl field" id="(anonymous)::format_args" title='(anonymous struct)::format_args' data-ref="(anonymous)::format_args">format_args</dfn>;</td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td>  <i class="doc">/** Function name generating event. */</i></td></tr>
+<tr><th id="103">103</th><td>  <em>char</em> *<dfn class="decl field" id="(anonymous)::function" title='(anonymous struct)::function' data-ref="(anonymous)::function">function</dfn>;</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td>  <i class="doc">/** Number of elements in string enum table. */</i></td></tr>
+<tr><th id="106">106</th><td>  <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::n_enum_strings" title='(anonymous struct)::n_enum_strings' data-ref="(anonymous)::n_enum_strings">n_enum_strings</dfn>;</td></tr>
+<tr><th id="107">107</th><td></td></tr>
+<tr><th id="108">108</th><td>  <i class="doc">/** String table for enum/number to string formatting. */</i></td></tr>
+<tr><th id="109">109</th><td>  <em>char</em> *<dfn class="decl field" id="(anonymous)::enum_strings" title='(anonymous struct)::enum_strings' data-ref="(anonymous)::enum_strings">enum_strings</dfn>[];</td></tr>
+<tr><th id="110">110</th><td>} <dfn class="typedef" id="elog_event_type_t" title='elog_event_type_t' data-type='struct elog_event_type_t' data-ref="elog_event_type_t">elog_event_type_t</dfn>;</td></tr>
+<tr><th id="111">111</th><td></td></tr>
+<tr><th id="112">112</th><td><b>typedef</b> <b>struct</b></td></tr>
+<tr><th id="113">113</th><td>{</td></tr>
+<tr><th id="114">114</th><td>  <i class="doc">/** Track name vector. */</i></td></tr>
+<tr><th id="115">115</th><td>  <em>char</em> *<dfn class="decl field" id="(anonymous)::name" title='(anonymous struct)::name' data-ref="(anonymous)::name">name</dfn>;</td></tr>
+<tr><th id="116">116</th><td></td></tr>
+<tr><th id="117">117</th><td>  <i class="doc">/** Set to one when track has been added to</i></td></tr>
+<tr><th id="118">118</th><td><i class="doc">     main structure. */</i></td></tr>
+<tr><th id="119">119</th><td>  <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::track_index_plus_one" title='(anonymous struct)::track_index_plus_one' data-ref="(anonymous)::track_index_plus_one">track_index_plus_one</dfn>;</td></tr>
+<tr><th id="120">120</th><td>} <dfn class="typedef" id="elog_track_t" title='elog_track_t' data-type='struct elog_track_t' data-ref="elog_track_t">elog_track_t</dfn>;</td></tr>
+<tr><th id="121">121</th><td></td></tr>
+<tr><th id="122">122</th><td><b>typedef</b> <b>struct</b></td></tr>
+<tr><th id="123">123</th><td>{</td></tr>
+<tr><th id="124">124</th><td>  <i class="doc">/** CPU cycle counter. */</i></td></tr>
+<tr><th id="125">125</th><td>  <a class="typedef" href="types.h.html#u64" title='u64' data-type='unsigned long' data-ref="u64">u64</a> <dfn class="decl field" id="(anonymous)::cpu" title='(anonymous struct)::cpu' data-ref="(anonymous)::cpu">cpu</dfn>;</td></tr>
+<tr><th id="126">126</th><td></td></tr>
+<tr><th id="127">127</th><td>  <i class="doc">/** OS timer in nano secs since epoch 3/30/2017, see elog_time_now() */</i></td></tr>
+<tr><th id="128">128</th><td>  <a class="typedef" href="types.h.html#u64" title='u64' data-type='unsigned long' data-ref="u64">u64</a> <dfn class="decl field" id="(anonymous)::os_nsec" title='(anonymous struct)::os_nsec' data-ref="(anonymous)::os_nsec">os_nsec</dfn>;</td></tr>
+<tr><th id="129">129</th><td>} <dfn class="typedef" id="elog_time_stamp_t" title='elog_time_stamp_t' data-type='struct elog_time_stamp_t' data-ref="elog_time_stamp_t">elog_time_stamp_t</dfn>;</td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td><b>typedef</b> <b>struct</b></td></tr>
+<tr><th id="132">132</th><td>{</td></tr>
+<tr><th id="133">133</th><td>  <i class="doc">/** Total number of events in buffer. */</i></td></tr>
+<tr><th id="134">134</th><td>  <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::n_total_events" title='(anonymous struct)::n_total_events' data-ref="(anonymous)::n_total_events">n_total_events</dfn>;</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td>  <i class="doc">/** When count reaches limit logging is disabled.  This is</i></td></tr>
+<tr><th id="137">137</th><td><i class="doc">     used for event triggers. */</i></td></tr>
+<tr><th id="138">138</th><td>  <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::n_total_events_disable_limit" title='(anonymous struct)::n_total_events_disable_limit' data-ref="(anonymous)::n_total_events_disable_limit">n_total_events_disable_limit</dfn>;</td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td>  <i class="doc">/** Dummy event to use when logger is disabled. */</i></td></tr>
+<tr><th id="141">141</th><td>  <a class="typedef" href="#elog_event_t" title='elog_event_t' data-type='struct elog_event_t' data-ref="elog_event_t">elog_event_t</a> <dfn class="decl field" id="(anonymous)::dummy_event" title='(anonymous struct)::dummy_event' data-ref="(anonymous)::dummy_event">dummy_event</dfn>;</td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td>  <i class="doc">/** Power of 2 number of elements in ring. */</i></td></tr>
+<tr><th id="144">144</th><td>  <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> <dfn class="decl field" id="(anonymous)::event_ring_size" title='(anonymous struct)::event_ring_size' data-ref="(anonymous)::event_ring_size">event_ring_size</dfn>;</td></tr>
+<tr><th id="145">145</th><td></td></tr>
+<tr><th id="146">146</th><td>  <i class="doc">/** Vector of events (circular buffer).  Power of 2 size.</i></td></tr>
+<tr><th id="147">147</th><td><i class="doc">      Used when events are being collected. */</i></td></tr>
+<tr><th id="148">148</th><td>  <a class="typedef" href="#elog_event_t" title='elog_event_t' data-type='struct elog_event_t' data-ref="elog_event_t">elog_event_t</a> *<dfn class="decl field" id="(anonymous)::event_ring" title='(anonymous struct)::event_ring' data-ref="(anonymous)::event_ring">event_ring</dfn>;</td></tr>
+<tr><th id="149">149</th><td></td></tr>
+<tr><th id="150">150</th><td>  <i class="doc">/** Vector of event types. */</i></td></tr>
+<tr><th id="151">151</th><td>  <a class="typedef" href="#elog_event_type_t" title='elog_event_type_t' data-type='struct elog_event_type_t' data-ref="elog_event_type_t">elog_event_type_t</a> *<dfn class="decl field" id="(anonymous)::event_types" title='(anonymous struct)::event_types' data-ref="(anonymous)::event_types">event_types</dfn>;</td></tr>
+<tr><th id="152">152</th><td></td></tr>
+<tr><th id="153">153</th><td>  <i class="doc">/** Hash table mapping type format to type index. */</i></td></tr>
+<tr><th id="154">154</th><td>  <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> *<dfn class="decl field" id="(anonymous)::event_type_by_format" title='(anonymous struct)::event_type_by_format' data-ref="(anonymous)::event_type_by_format">event_type_by_format</dfn>;</td></tr>
+<tr><th id="155">155</th><td></td></tr>
+<tr><th id="156">156</th><td>  <i class="doc">/** Events may refer to strings in string table. */</i></td></tr>
+<tr><th id="157">157</th><td>  <em>char</em> *<dfn class="decl field" id="(anonymous)::string_table" title='(anonymous struct)::string_table' data-ref="(anonymous)::string_table">string_table</dfn>;</td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td>  <i class="doc">/** Vector of tracks. */</i></td></tr>
+<tr><th id="160">160</th><td>  <a class="typedef" href="#elog_track_t" title='elog_track_t' data-type='struct elog_track_t' data-ref="elog_track_t">elog_track_t</a> *<dfn class="decl field" id="(anonymous)::tracks" title='(anonymous struct)::tracks' data-ref="(anonymous)::tracks">tracks</dfn>;</td></tr>
+<tr><th id="161">161</th><td></td></tr>
+<tr><th id="162">162</th><td>  <i class="doc">/** Default track. */</i></td></tr>
+<tr><th id="163">163</th><td>  <a class="typedef" href="#elog_track_t" title='elog_track_t' data-type='struct elog_track_t' data-ref="elog_track_t">elog_track_t</a> <dfn class="decl field" id="(anonymous)::default_track" title='(anonymous struct)::default_track' data-ref="(anonymous)::default_track">default_track</dfn>;</td></tr>
+<tr><th id="164">164</th><td></td></tr>
+<tr><th id="165">165</th><td>  <i class="doc">/** Place holder for CPU clock frequency. */</i></td></tr>
+<tr><th id="166">166</th><td>  <a class="typedef" href="time.h.html#clib_time_t" title='clib_time_t' data-type='struct clib_time_t' data-ref="clib_time_t">clib_time_t</a> <dfn class="decl field" id="(anonymous)::cpu_timer" title='(anonymous struct)::cpu_timer' data-ref="(anonymous)::cpu_timer">cpu_timer</dfn>;</td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td>  <i class="doc">/** Timestamps */</i></td></tr>
+<tr><th id="169">169</th><td>  <a class="typedef" href="#elog_time_stamp_t" title='elog_time_stamp_t' data-type='struct elog_time_stamp_t' data-ref="elog_time_stamp_t">elog_time_stamp_t</a> <dfn class="decl field" id="(anonymous)::init_time" title='(anonymous struct)::init_time' data-ref="(anonymous)::init_time">init_time</dfn>, <dfn class="decl field" id="(anonymous)::serialize_time" title='(anonymous struct)::serialize_time' data-ref="(anonymous)::serialize_time">serialize_time</dfn>;</td></tr>
+<tr><th id="170">170</th><td></td></tr>
+<tr><th id="171">171</th><td>  <i class="doc">/** SMP lock, non-zero means locking required */</i></td></tr>
+<tr><th id="172">172</th><td>  <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> *<dfn class="decl field" id="(anonymous)::lock" title='(anonymous struct)::lock' data-ref="(anonymous)::lock">lock</dfn>;</td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td>  <i class="doc">/** Use serialize_time and init_time to give estimate for</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc">      cpu clock frequency. */</i></td></tr>
+<tr><th id="176">176</th><td>  <a class="typedef" href="types.h.html#f64" title='f64' data-type='double' data-ref="f64">f64</a> <dfn class="decl field" id="(anonymous)::nsec_per_cpu_clock" title='(anonymous struct)::nsec_per_cpu_clock' data-ref="(anonymous)::nsec_per_cpu_clock">nsec_per_cpu_clock</dfn>;</td></tr>
+<tr><th id="177">177</th><td></td></tr>
+<tr><th id="178">178</th><td>  <i class="doc">/** Vector of events converted to generic form after collection. */</i></td></tr>
+<tr><th id="179">179</th><td>  <a class="typedef" href="#elog_event_t" title='elog_event_t' data-type='struct elog_event_t' data-ref="elog_event_t">elog_event_t</a> *<dfn class="decl field" id="(anonymous)::events" title='(anonymous struct)::events' data-ref="(anonymous)::events">events</dfn>;</td></tr>
+<tr><th id="180">180</th><td>} <dfn class="typedef" id="elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</dfn>;</td></tr>
+<tr><th id="181">181</th><td></td></tr>
+<tr><th id="182">182</th><td><i class="doc">/** <span class="command">@brief</span> Return number of events in the event-log buffer</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">em</span> elog_main_t *</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc">    <span class="command">@return</span> number of events in the buffer</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="186">186</th><td></td></tr>
+<tr><th id="187">187</th><td><a class="macro" href="clib.h.html#92" title="static inline" data-ref="_M/always_inline">always_inline</a> <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a></td></tr>
+<tr><th id="188">188</th><td><dfn class="decl def fn" id="elog_n_events_in_buffer" title='elog_n_events_in_buffer' data-ref="elog_n_events_in_buffer">elog_n_events_in_buffer</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col6 decl" id="1716em" title='em' data-type='elog_main_t *' data-ref="1716em">em</dfn>)</td></tr>
+<tr><th id="189">189</th><td>{</td></tr>
+<tr><th id="190">190</th><td>  <b>return</b> <a class="macro" href="clib.h.html#340" title="({ __typeof__ (em-&gt;n_total_events) _x = (em-&gt;n_total_events); __typeof__ (em-&gt;event_ring_size) _y = (em-&gt;event_ring_size); _x &lt; _y ? _x : _y; })" data-ref="_M/clib_min">clib_min</a> (<a class="local col6 ref" href="#1716em" title='em' data-ref="1716em">em</a>-&gt;<a class="ref field" href="#(anonymous)::n_total_events" title='(anonymous struct)::n_total_events' data-ref="(anonymous)::n_total_events">n_total_events</a>, <a class="local col6 ref" href="#1716em" title='em' data-ref="1716em">em</a>-&gt;<a class="ref field" href="#(anonymous)::event_ring_size" title='(anonymous struct)::event_ring_size' data-ref="(anonymous)::event_ring_size">event_ring_size</a>);</td></tr>
+<tr><th id="191">191</th><td>}</td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td><i class="doc">/** <span class="command">@brief</span> Return number of events which can fit in the event buffer</i></td></tr>
+<tr><th id="194">194</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">em</span> elog_main_t *</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc">    <span class="command">@return</span> number of events which can fit in the buffer</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="197">197</th><td><a class="macro" href="clib.h.html#92" title="static inline" data-ref="_M/always_inline">always_inline</a> <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a></td></tr>
+<tr><th id="198">198</th><td><dfn class="decl def fn" id="elog_buffer_capacity" title='elog_buffer_capacity' data-ref="elog_buffer_capacity">elog_buffer_capacity</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col7 decl" id="1717em" title='em' data-type='elog_main_t *' data-ref="1717em">em</dfn>)</td></tr>
+<tr><th id="199">199</th><td>{</td></tr>
+<tr><th id="200">200</th><td>  <b>return</b> <a class="local col7 ref" href="#1717em" title='em' data-ref="1717em">em</a>-&gt;<a class="ref field" href="#(anonymous)::event_ring_size" title='(anonymous struct)::event_ring_size' data-ref="(anonymous)::event_ring_size">event_ring_size</a>;</td></tr>
+<tr><th id="201">201</th><td>}</td></tr>
+<tr><th id="202">202</th><td></td></tr>
+<tr><th id="203">203</th><td><i class="doc">/** <span class="command">@brief</span> Reset the event buffer</i></td></tr>
+<tr><th id="204">204</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">em</span> elog_main_t *</i></td></tr>
+<tr><th id="205">205</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="206">206</th><td><a class="macro" href="clib.h.html#92" title="static inline" data-ref="_M/always_inline">always_inline</a> <em>void</em></td></tr>
+<tr><th id="207">207</th><td><dfn class="decl def fn" id="elog_reset_buffer" title='elog_reset_buffer' data-ref="elog_reset_buffer">elog_reset_buffer</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col8 decl" id="1718em" title='em' data-type='elog_main_t *' data-ref="1718em">em</dfn>)</td></tr>
+<tr><th id="208">208</th><td>{</td></tr>
+<tr><th id="209">209</th><td>  <a class="local col8 ref" href="#1718em" title='em' data-ref="1718em">em</a>-&gt;<a class="ref field" href="#(anonymous)::n_total_events" title='(anonymous struct)::n_total_events' data-ref="(anonymous)::n_total_events">n_total_events</a> = <var>0</var>;</td></tr>
+<tr><th id="210">210</th><td>  <a class="local col8 ref" href="#1718em" title='em' data-ref="1718em">em</a>-&gt;<a class="ref field" href="#(anonymous)::n_total_events_disable_limit" title='(anonymous struct)::n_total_events_disable_limit' data-ref="(anonymous)::n_total_events_disable_limit">n_total_events_disable_limit</a> = ~<var>0</var>;</td></tr>
+<tr><th id="211">211</th><td>}</td></tr>
+<tr><th id="212">212</th><td></td></tr>
+<tr><th id="213">213</th><td><i class="doc">/** <span class="command">@brief</span> Enable or disable event logging</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">em</span> elog_main_t *</i></td></tr>
+<tr><th id="215">215</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="216">216</th><td><a class="macro" href="clib.h.html#92" title="static inline" data-ref="_M/always_inline">always_inline</a> <em>void</em></td></tr>
+<tr><th id="217">217</th><td><dfn class="decl def fn" id="elog_enable_disable" title='elog_enable_disable' data-ref="elog_enable_disable">elog_enable_disable</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col9 decl" id="1719em" title='em' data-type='elog_main_t *' data-ref="1719em">em</dfn>, <em>int</em> <dfn class="local col0 decl" id="1720is_enabled" title='is_enabled' data-type='int' data-ref="1720is_enabled">is_enabled</dfn>)</td></tr>
+<tr><th id="218">218</th><td>{</td></tr>
+<tr><th id="219">219</th><td>  <a class="local col9 ref" href="#1719em" title='em' data-ref="1719em">em</a>-&gt;<a class="ref field" href="#(anonymous)::n_total_events" title='(anonymous struct)::n_total_events' data-ref="(anonymous)::n_total_events">n_total_events</a> = <var>0</var>;</td></tr>
+<tr><th id="220">220</th><td>  <a class="local col9 ref" href="#1719em" title='em' data-ref="1719em">em</a>-&gt;<a class="ref field" href="#(anonymous)::n_total_events_disable_limit" title='(anonymous struct)::n_total_events_disable_limit' data-ref="(anonymous)::n_total_events_disable_limit">n_total_events_disable_limit</a> = <a class="local col0 ref" href="#1720is_enabled" title='is_enabled' data-ref="1720is_enabled">is_enabled</a> ? ~<var>0</var> : <var>0</var>;</td></tr>
+<tr><th id="221">221</th><td>}</td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td><i class="doc">/** <span class="command">@brief</span> disable logging after specified number of ievents have been logged.</i></td></tr>
+<tr><th id="224">224</th><td><i class="doc"></i></td></tr>
+<tr><th id="225">225</th><td><i class="doc">   This is used as a "debug trigger" when a certain event has occurred.</i></td></tr>
+<tr><th id="226">226</th><td><i class="doc">   Events will be logged both before and after the "event" but the</i></td></tr>
+<tr><th id="227">227</th><td><i class="doc">   event will not be lost as long as N &lt; RING_SIZE.</i></td></tr>
+<tr><th id="228">228</th><td><i class="doc"></i></td></tr>
+<tr><th id="229">229</th><td><i class="doc">   <span class="command">@param</span> <span class="arg">em</span> elog_main_t *</i></td></tr>
+<tr><th id="230">230</th><td><i class="doc">   <span class="command">@param</span> <span class="arg">n</span> uword number of events before disabling event logging</i></td></tr>
+<tr><th id="231">231</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="232">232</th><td><a class="macro" href="clib.h.html#92" title="static inline" data-ref="_M/always_inline">always_inline</a> <em>void</em></td></tr>
+<tr><th id="233">233</th><td><dfn class="decl def fn" id="elog_disable_after_events" title='elog_disable_after_events' data-ref="elog_disable_after_events">elog_disable_after_events</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col1 decl" id="1721em" title='em' data-type='elog_main_t *' data-ref="1721em">em</dfn>, <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> <dfn class="local col2 decl" id="1722n" title='n' data-type='uword' data-ref="1722n">n</dfn>)</td></tr>
+<tr><th id="234">234</th><td>{</td></tr>
+<tr><th id="235">235</th><td>  <a class="local col1 ref" href="#1721em" title='em' data-ref="1721em">em</a>-&gt;<a class="ref field" href="#(anonymous)::n_total_events_disable_limit" title='(anonymous struct)::n_total_events_disable_limit' data-ref="(anonymous)::n_total_events_disable_limit">n_total_events_disable_limit</a> = <a class="local col1 ref" href="#1721em" title='em' data-ref="1721em">em</a>-&gt;<a class="ref field" href="#(anonymous)::n_total_events" title='(anonymous struct)::n_total_events' data-ref="(anonymous)::n_total_events">n_total_events</a> + <a class="local col2 ref" href="#1722n" title='n' data-ref="1722n">n</a>;</td></tr>
+<tr><th id="236">236</th><td>}</td></tr>
+<tr><th id="237">237</th><td></td></tr>
+<tr><th id="238">238</th><td><i>/* @brief mid-buffer logic-analyzer trigger</i></td></tr>
+<tr><th id="239">239</th><td><i></i></td></tr>
+<tr><th id="240">240</th><td><i>   Currently, only midpoint triggering is supported, but it's pretty obvious</i></td></tr>
+<tr><th id="241">241</th><td><i>   how to generalize the scheme.</i></td></tr>
+<tr><th id="242">242</th><td><i>   @param em elog_main_t *</i></td></tr>
+<tr><th id="243">243</th><td><i>*/</i></td></tr>
+<tr><th id="244">244</th><td><a class="macro" href="clib.h.html#92" title="static inline" data-ref="_M/always_inline">always_inline</a> <em>void</em></td></tr>
+<tr><th id="245">245</th><td><dfn class="decl def fn" id="elog_disable_trigger" title='elog_disable_trigger' data-ref="elog_disable_trigger">elog_disable_trigger</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col3 decl" id="1723em" title='em' data-type='elog_main_t *' data-ref="1723em">em</dfn>)</td></tr>
+<tr><th id="246">246</th><td>{</td></tr>
+<tr><th id="247">247</th><td>  <a class="local col3 ref" href="#1723em" title='em' data-ref="1723em">em</a>-&gt;<a class="ref field" href="#(anonymous)::n_total_events_disable_limit" title='(anonymous struct)::n_total_events_disable_limit' data-ref="(anonymous)::n_total_events_disable_limit">n_total_events_disable_limit</a> =</td></tr>
+<tr><th id="248">248</th><td>    <a class="local col3 ref" href="#1723em" title='em' data-ref="1723em">em</a>-&gt;<a class="ref field" href="#(anonymous)::n_total_events" title='(anonymous struct)::n_total_events' data-ref="(anonymous)::n_total_events">n_total_events</a> + <a class="macro" href="vec_bootstrap.h.html#142" title="((em-&gt;event_ring) ? (((vec_header_t *) (em-&gt;event_ring) - 1)-&gt;len) : 0)" data-ref="_M/vec_len">vec_len</a> (<a class="local col3 ref" href="#1723em" title='em' data-ref="1723em">em</a>-&gt;<a class="ref field" href="#(anonymous)::event_ring" title='(anonymous struct)::event_ring' data-ref="(anonymous)::event_ring">event_ring</a>) / <var>2</var>;</td></tr>
+<tr><th id="249">249</th><td>}</td></tr>
+<tr><th id="250">250</th><td></td></tr>
+<tr><th id="251">251</th><td><i class="doc">/** <span class="command">@brief</span> register an event type</i></td></tr>
+<tr><th id="252">252</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">em</span> elog_main_t *</i></td></tr>
+<tr><th id="253">253</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">t</span> elog_event_type_t * event to register</i></td></tr>
+<tr><th id="254">254</th><td><i class="doc">    <span class="command">@return</span> type index</i></td></tr>
+<tr><th id="255">255</th><td><i class="doc">    <span class="command">@warning</span> Typically not called directly</i></td></tr>
+<tr><th id="256">256</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="257">257</th><td></td></tr>
+<tr><th id="258">258</th><td><a class="typedef" href="types.h.html#word" title='word' data-type='i64' data-ref="word">word</a> <dfn class="decl fn" id="elog_event_type_register" title='elog_event_type_register' data-ref="elog_event_type_register">elog_event_type_register</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col4 decl" id="1724em" title='em' data-type='elog_main_t *' data-ref="1724em">em</dfn>, <a class="typedef" href="#elog_event_type_t" title='elog_event_type_t' data-type='struct elog_event_type_t' data-ref="elog_event_type_t">elog_event_type_t</a> * <dfn class="local col5 decl" id="1725t" title='t' data-type='elog_event_type_t *' data-ref="1725t">t</dfn>);</td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td><i class="doc">/** <span class="command">@brief</span> register an event track</i></td></tr>
+<tr><th id="261">261</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">em</span> elog_main_t *</i></td></tr>
+<tr><th id="262">262</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">t</span> elog_track_t * track to register</i></td></tr>
+<tr><th id="263">263</th><td><i class="doc">    <span class="command">@return</span> track index</i></td></tr>
+<tr><th id="264">264</th><td><i class="doc">    <span class="command">@note</span> this function is often called directly</i></td></tr>
+<tr><th id="265">265</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="266">266</th><td><a class="typedef" href="types.h.html#word" title='word' data-type='i64' data-ref="word">word</a> <dfn class="decl fn" id="elog_track_register" title='elog_track_register' data-ref="elog_track_register">elog_track_register</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col6 decl" id="1726em" title='em' data-type='elog_main_t *' data-ref="1726em">em</dfn>, <a class="typedef" href="#elog_track_t" title='elog_track_t' data-type='struct elog_track_t' data-ref="elog_track_t">elog_track_t</a> * <dfn class="local col7 decl" id="1727t" title='t' data-type='elog_track_t *' data-ref="1727t">t</dfn>);</td></tr>
+<tr><th id="267">267</th><td></td></tr>
+<tr><th id="268">268</th><td><i class="doc">/** <span class="command">@brief</span> event logging enabled predicate</i></td></tr>
+<tr><th id="269">269</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">em</span> elog_main_t *</i></td></tr>
+<tr><th id="270">270</th><td><i class="doc">    <span class="command">@return</span> 1 if enabled, 0 if not enabled</i></td></tr>
+<tr><th id="271">271</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="272">272</th><td><a class="macro" href="clib.h.html#92" title="static inline" data-ref="_M/always_inline">always_inline</a> <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a></td></tr>
+<tr><th id="273">273</th><td><dfn class="decl def fn" id="elog_is_enabled" title='elog_is_enabled' data-ref="elog_is_enabled">elog_is_enabled</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col8 decl" id="1728em" title='em' data-type='elog_main_t *' data-ref="1728em">em</dfn>)</td></tr>
+<tr><th id="274">274</th><td>{</td></tr>
+<tr><th id="275">275</th><td>  <b>return</b> <a class="local col8 ref" href="#1728em" title='em' data-ref="1728em">em</a>-&gt;<a class="ref field" href="#(anonymous)::n_total_events" title='(anonymous struct)::n_total_events' data-ref="(anonymous)::n_total_events">n_total_events</a> &lt; <a class="local col8 ref" href="#1728em" title='em' data-ref="1728em">em</a>-&gt;<a class="ref field" href="#(anonymous)::n_total_events_disable_limit" title='(anonymous struct)::n_total_events_disable_limit' data-ref="(anonymous)::n_total_events_disable_limit">n_total_events_disable_limit</a>;</td></tr>
+<tr><th id="276">276</th><td>}</td></tr>
+<tr><th id="277">277</th><td></td></tr>
+<tr><th id="278">278</th><td><i class="doc">/** <span class="command">@brief</span> Allocate an event to be filled in by the caller</i></td></tr>
+<tr><th id="279">279</th><td><i class="doc"></i></td></tr>
+<tr><th id="280">280</th><td><i class="doc">    Not normally called directly; this function underlies the</i></td></tr>
+<tr><th id="281">281</th><td><i class="doc">    ELOG_DATA and ELOG_TRACK_DATA macros</i></td></tr>
+<tr><th id="282">282</th><td><i class="doc"></i></td></tr>
+<tr><th id="283">283</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">em</span> elog_main_t *</i></td></tr>
+<tr><th id="284">284</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">type</span> elog_event_type_t * type</i></td></tr>
+<tr><th id="285">285</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">track</span> elog_track_t * track</i></td></tr>
+<tr><th id="286">286</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">cpu_time</span> u64 current cpu tick value</i></td></tr>
+<tr><th id="287">287</th><td><i class="doc">    <span class="command">@returns</span> event to be filled in</i></td></tr>
+<tr><th id="288">288</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="289">289</th><td><a class="macro" href="clib.h.html#92" title="static inline" data-ref="_M/always_inline">always_inline</a> <em>void</em> *</td></tr>
+<tr><th id="290">290</th><td><dfn class="decl def fn" id="elog_event_data_inline" title='elog_event_data_inline' data-ref="elog_event_data_inline">elog_event_data_inline</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col9 decl" id="1729em" title='em' data-type='elog_main_t *' data-ref="1729em">em</dfn>,</td></tr>
+<tr><th id="291">291</th><td>			<a class="typedef" href="#elog_event_type_t" title='elog_event_type_t' data-type='struct elog_event_type_t' data-ref="elog_event_type_t">elog_event_type_t</a> * <dfn class="local col0 decl" id="1730type" title='type' data-type='elog_event_type_t *' data-ref="1730type">type</dfn>,</td></tr>
+<tr><th id="292">292</th><td>			<a class="typedef" href="#elog_track_t" title='elog_track_t' data-type='struct elog_track_t' data-ref="elog_track_t">elog_track_t</a> * <dfn class="local col1 decl" id="1731track" title='track' data-type='elog_track_t *' data-ref="1731track">track</dfn>, <a class="typedef" href="types.h.html#u64" title='u64' data-type='unsigned long' data-ref="u64">u64</a> <dfn class="local col2 decl" id="1732cpu_time" title='cpu_time' data-type='u64' data-ref="1732cpu_time">cpu_time</dfn>)</td></tr>
+<tr><th id="293">293</th><td>{</td></tr>
+<tr><th id="294">294</th><td>  <a class="typedef" href="#elog_event_t" title='elog_event_t' data-type='struct elog_event_t' data-ref="elog_event_t">elog_event_t</a> *<dfn class="local col3 decl" id="1733e" title='e' data-type='elog_event_t *' data-ref="1733e">e</dfn>;</td></tr>
+<tr><th id="295">295</th><td>  <a class="typedef" href="types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a> <dfn class="local col4 decl" id="1734ei" title='ei' data-type='uword' data-ref="1734ei">ei</dfn>;</td></tr>
+<tr><th id="296">296</th><td>  <a class="typedef" href="types.h.html#word" title='word' data-type='i64' data-ref="word">word</a> <dfn class="local col5 decl" id="1735type_index" title='type_index' data-type='word' data-ref="1735type_index">type_index</dfn>, <dfn class="local col6 decl" id="1736track_index" title='track_index' data-type='word' data-ref="1736track_index">track_index</dfn>;</td></tr>
+<tr><th id="297">297</th><td></td></tr>
+<tr><th id="298">298</th><td>  <i>/* Return the user dummy memory to scribble data into. */</i></td></tr>
+<tr><th id="299">299</th><td>  <b>if</b> (<a class="macro" href="clib.h.html#105" title="__builtin_expect((!elog_is_enabled (em)),0)" data-ref="_M/PREDICT_FALSE">PREDICT_FALSE</a> (!<a class="ref fn" href="#elog_is_enabled" title='elog_is_enabled' data-ref="elog_is_enabled">elog_is_enabled</a> (<a class="local col9 ref" href="#1729em" title='em' data-ref="1729em">em</a>)))</td></tr>
+<tr><th id="300">300</th><td>    <b>return</b> <a class="local col9 ref" href="#1729em" title='em' data-ref="1729em">em</a>-&gt;<a class="ref field" href="#(anonymous)::dummy_event" title='(anonymous struct)::dummy_event' data-ref="(anonymous)::dummy_event">dummy_event</a>.<a class="ref field" href="#(anonymous)::data" title='(anonymous struct)::data' data-ref="(anonymous)::data">data</a>;</td></tr>
+<tr><th id="301">301</th><td></td></tr>
+<tr><th id="302">302</th><td>  <a class="local col5 ref" href="#1735type_index" title='type_index' data-ref="1735type_index">type_index</a> = (<a class="typedef" href="types.h.html#word" title='word' data-type='i64' data-ref="word">word</a>) <a class="local col0 ref" href="#1730type" title='type' data-ref="1730type">type</a>-&gt;<a class="ref field" href="#(anonymous)::type_index_plus_one" title='(anonymous struct)::type_index_plus_one' data-ref="(anonymous)::type_index_plus_one">type_index_plus_one</a> - <var>1</var>;</td></tr>
+<tr><th id="303">303</th><td>  <a class="local col6 ref" href="#1736track_index" title='track_index' data-ref="1736track_index">track_index</a> = (<a class="typedef" href="types.h.html#word" title='word' data-type='i64' data-ref="word">word</a>) <a class="local col1 ref" href="#1731track" title='track' data-ref="1731track">track</a>-&gt;<a class="ref field" href="#(anonymous)::track_index_plus_one" title='(anonymous struct)::track_index_plus_one' data-ref="(anonymous)::track_index_plus_one">track_index_plus_one</a> - <var>1</var>;</td></tr>
+<tr><th id="304">304</th><td>  <b>if</b> (<a class="macro" href="clib.h.html#105" title="__builtin_expect(((type_index | track_index) &lt; 0),0)" data-ref="_M/PREDICT_FALSE">PREDICT_FALSE</a> ((<a class="local col5 ref" href="#1735type_index" title='type_index' data-ref="1735type_index">type_index</a> | <a class="local col6 ref" href="#1736track_index" title='track_index' data-ref="1736track_index">track_index</a>) &lt; <var>0</var>))</td></tr>
+<tr><th id="305">305</th><td>    {</td></tr>
+<tr><th id="306">306</th><td>      <b>if</b> (<a class="local col5 ref" href="#1735type_index" title='type_index' data-ref="1735type_index">type_index</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="307">307</th><td>	<a class="local col5 ref" href="#1735type_index" title='type_index' data-ref="1735type_index">type_index</a> = <a class="ref fn" href="#elog_event_type_register" title='elog_event_type_register' data-ref="elog_event_type_register">elog_event_type_register</a> (<a class="local col9 ref" href="#1729em" title='em' data-ref="1729em">em</a>, <a class="local col0 ref" href="#1730type" title='type' data-ref="1730type">type</a>);</td></tr>
+<tr><th id="308">308</th><td>      <b>if</b> (<a class="local col6 ref" href="#1736track_index" title='track_index' data-ref="1736track_index">track_index</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="309">309</th><td>	<a class="local col6 ref" href="#1736track_index" title='track_index' data-ref="1736track_index">track_index</a> = <a class="ref fn" href="#elog_track_register" title='elog_track_register' data-ref="elog_track_register">elog_track_register</a> (<a class="local col9 ref" href="#1729em" title='em' data-ref="1729em">em</a>, <a class="local col1 ref" href="#1731track" title='track' data-ref="1731track">track</a>);</td></tr>
+<tr><th id="310">310</th><td>    }</td></tr>
+<tr><th id="311">311</th><td></td></tr>
+<tr><th id="312">312</th><td>  <a class="macro" href="error_bootstrap.h.html#69" title="do { if ((1 &gt; 0) &amp;&amp; ! (track_index &lt; ((em-&gt;tracks) ? (((vec_header_t *) (em-&gt;tracks) - 1)-&gt;len) : 0))) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-data/../src/vppinfra/elog.h&quot;, (uword) 312, ((char *) __FUNCTION__), &quot;track_index &lt; vec_len (em-&gt;tracks)&quot;); } } while (0)" data-ref="_M/ASSERT">ASSERT</a> (<a class="local col6 ref" href="#1736track_index" title='track_index' data-ref="1736track_index">track_index</a> &lt; <a class="macro" href="vec_bootstrap.h.html#142" title="((em-&gt;tracks) ? (((vec_header_t *) (em-&gt;tracks) - 1)-&gt;len) : 0)" data-ref="_M/vec_len">vec_len</a> (<a class="local col9 ref" href="#1729em" title='em' data-ref="1729em">em</a>-&gt;<a class="ref field" href="#(anonymous)::tracks" title='(anonymous struct)::tracks' data-ref="(anonymous)::tracks">tracks</a>));</td></tr>
+<tr><th id="313">313</th><td>  <a class="macro" href="error_bootstrap.h.html#69" title="do { if ((1 &gt; 0) &amp;&amp; ! (is_pow2 (((em-&gt;event_ring) ? (((vec_header_t *) (em-&gt;event_ring) - 1)-&gt;len) : 0)))) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-data/../src/vppinfra/elog.h&quot;, (uword) 313, ((char *) __FUNCTION__), &quot;is_pow2 (vec_len (em-&gt;event_ring))&quot;); } } while (0)" data-ref="_M/ASSERT">ASSERT</a> (<a class="ref fn" href="clib.h.html#is_pow2" title='is_pow2' data-ref="is_pow2">is_pow2</a> (<a class="macro" href="vec_bootstrap.h.html#142" title="((em-&gt;event_ring) ? (((vec_header_t *) (em-&gt;event_ring) - 1)-&gt;len) : 0)" data-ref="_M/vec_len">vec_len</a> (<a class="local col9 ref" href="#1729em" title='em' data-ref="1729em">em</a>-&gt;<a class="ref field" href="#(anonymous)::event_ring" title='(anonymous struct)::event_ring' data-ref="(anonymous)::event_ring">event_ring</a>)));</td></tr>
+<tr><th id="314">314</th><td></td></tr>
+<tr><th id="315">315</th><td>  <b>if</b> (<a class="local col9 ref" href="#1729em" title='em' data-ref="1729em">em</a>-&gt;<a class="ref field" href="#(anonymous)::lock" title='(anonymous struct)::lock' data-ref="(anonymous)::lock">lock</a>)</td></tr>
+<tr><th id="316">316</th><td>    <a class="local col4 ref" href="#1734ei" title='ei' data-ref="1734ei">ei</a> = <a class="macro" href="smp.h.html#46" title="__sync_fetch_and_add(&amp;em-&gt;n_total_events,1)" data-ref="_M/clib_smp_atomic_add">clib_smp_atomic_add</a> (&amp;<a class="local col9 ref" href="#1729em" title='em' data-ref="1729em">em</a>-&gt;<a class="ref field" href="#(anonymous)::n_total_events" title='(anonymous struct)::n_total_events' data-ref="(anonymous)::n_total_events">n_total_events</a>, <var>1</var>);</td></tr>
+<tr><th id="317">317</th><td>  <b>else</b></td></tr>
+<tr><th id="318">318</th><td>    <a class="local col4 ref" href="#1734ei" title='ei' data-ref="1734ei">ei</a> = <a class="local col9 ref" href="#1729em" title='em' data-ref="1729em">em</a>-&gt;<a class="ref field" href="#(anonymous)::n_total_events" title='(anonymous struct)::n_total_events' data-ref="(anonymous)::n_total_events">n_total_events</a>++;</td></tr>
+<tr><th id="319">319</th><td></td></tr>
+<tr><th id="320">320</th><td>  <a class="local col4 ref" href="#1734ei" title='ei' data-ref="1734ei">ei</a> &amp;= <a class="local col9 ref" href="#1729em" title='em' data-ref="1729em">em</a>-&gt;<a class="ref field" href="#(anonymous)::event_ring_size" title='(anonymous struct)::event_ring_size' data-ref="(anonymous)::event_ring_size">event_ring_size</a> - <var>1</var>;</td></tr>
+<tr><th id="321">321</th><td>  <a class="local col3 ref" href="#1733e" title='e' data-ref="1733e">e</a> = <a class="macro" href="vec_bootstrap.h.html#174" title="({ do { if ((1 &gt; 0) &amp;&amp; ! ((ei) &lt; ((em-&gt;event_ring) ? (((vec_header_t *) (em-&gt;event_ring) - 1)-&gt;len) : 0))) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-data/../src/vppinfra/elog.h&quot;, (uword) 321, ((char *) __FUNCTION__), &quot;(ei) &lt; vec_len (em-&gt;event_ring)&quot;); } } while (0); (em-&gt;event_ring) + (ei); })" data-ref="_M/vec_elt_at_index">vec_elt_at_index</a> (<a class="local col9 ref" href="#1729em" title='em' data-ref="1729em">em</a>-&gt;<a class="ref field" href="#(anonymous)::event_ring" title='(anonymous struct)::event_ring' data-ref="(anonymous)::event_ring">event_ring</a>, <a class="local col4 ref" href="#1734ei" title='ei' data-ref="1734ei">ei</a>);</td></tr>
+<tr><th id="322">322</th><td></td></tr>
+<tr><th id="323">323</th><td>  <a class="local col3 ref" href="#1733e" title='e' data-ref="1733e">e</a>-&gt;<a class="ref field" href="#(anonymousstruct)::(anonymous)::time_cycles" title='(anonymous struct)::(anonymous union)::time_cycles' data-ref="(anonymousstruct)::(anonymous)::time_cycles">time_cycles</a> = <a class="local col2 ref" href="#1732cpu_time" title='cpu_time' data-ref="1732cpu_time">cpu_time</a>;</td></tr>
+<tr><th id="324">324</th><td>  <a class="local col3 ref" href="#1733e" title='e' data-ref="1733e">e</a>-&gt;<a class="ref field" href="#(anonymous)::type" title='(anonymous struct)::type' data-ref="(anonymous)::type">type</a> = <a class="local col5 ref" href="#1735type_index" title='type_index' data-ref="1735type_index">type_index</a>;</td></tr>
+<tr><th id="325">325</th><td>  <a class="local col3 ref" href="#1733e" title='e' data-ref="1733e">e</a>-&gt;<a class="ref field" href="#(anonymous)::track" title='(anonymous struct)::track' data-ref="(anonymous)::track">track</a> = <a class="local col6 ref" href="#1736track_index" title='track_index' data-ref="1736track_index">track_index</a>;</td></tr>
+<tr><th id="326">326</th><td></td></tr>
+<tr><th id="327">327</th><td>  <i>/* Return user data for caller to fill in. */</i></td></tr>
+<tr><th id="328">328</th><td>  <b>return</b> <a class="local col3 ref" href="#1733e" title='e' data-ref="1733e">e</a>-&gt;<a class="ref field" href="#(anonymous)::data" title='(anonymous struct)::data' data-ref="(anonymous)::data">data</a>;</td></tr>
+<tr><th id="329">329</th><td>}</td></tr>
+<tr><th id="330">330</th><td></td></tr>
+<tr><th id="331">331</th><td><i>/* External version of inline. */</i></td></tr>
+<tr><th id="332">332</th><td><em>void</em> *<dfn class="decl fn" id="elog_event_data" title='elog_event_data' data-ref="elog_event_data">elog_event_data</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col7 decl" id="1737em" title='em' data-type='elog_main_t *' data-ref="1737em">em</dfn>,</td></tr>
+<tr><th id="333">333</th><td>		       <a class="typedef" href="#elog_event_type_t" title='elog_event_type_t' data-type='struct elog_event_type_t' data-ref="elog_event_type_t">elog_event_type_t</a> * <dfn class="local col8 decl" id="1738type" title='type' data-type='elog_event_type_t *' data-ref="1738type">type</dfn>,</td></tr>
+<tr><th id="334">334</th><td>		       <a class="typedef" href="#elog_track_t" title='elog_track_t' data-type='struct elog_track_t' data-ref="elog_track_t">elog_track_t</a> * <dfn class="local col9 decl" id="1739track" title='track' data-type='elog_track_t *' data-ref="1739track">track</dfn>, <a class="typedef" href="types.h.html#u64" title='u64' data-type='unsigned long' data-ref="u64">u64</a> <dfn class="local col0 decl" id="1740cpu_time" title='cpu_time' data-type='u64' data-ref="1740cpu_time">cpu_time</dfn>);</td></tr>
+<tr><th id="335">335</th><td></td></tr>
+<tr><th id="336">336</th><td><i class="doc">/** <span class="command">@brief</span> Allocate an event to be filled in by the caller, non-inline</i></td></tr>
+<tr><th id="337">337</th><td><i class="doc"></i></td></tr>
+<tr><th id="338">338</th><td><i class="doc">    Not normally called directly; this function underlies the</i></td></tr>
+<tr><th id="339">339</th><td><i class="doc">    ELOG_DATA and ELOG_TRACK_DATA macros</i></td></tr>
+<tr><th id="340">340</th><td><i class="doc"></i></td></tr>
+<tr><th id="341">341</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">em</span> elog_main_t *</i></td></tr>
+<tr><th id="342">342</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">type</span> elog_event_type_t * type</i></td></tr>
+<tr><th id="343">343</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">track</span> elog_track_t * track</i></td></tr>
+<tr><th id="344">344</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">cpu_time</span> u64 current cpu tick value</i></td></tr>
+<tr><th id="345">345</th><td><i class="doc">    <span class="command">@returns</span> event to be filled in</i></td></tr>
+<tr><th id="346">346</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="347">347</th><td><a class="macro" href="clib.h.html#92" title="static inline" data-ref="_M/always_inline">always_inline</a> <em>void</em> *</td></tr>
+<tr><th id="348">348</th><td><dfn class="decl def fn" id="elog_event_data_not_inline" title='elog_event_data_not_inline' data-ref="elog_event_data_not_inline">elog_event_data_not_inline</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col1 decl" id="1741em" title='em' data-type='elog_main_t *' data-ref="1741em">em</dfn>,</td></tr>
+<tr><th id="349">349</th><td>			    <a class="typedef" href="#elog_event_type_t" title='elog_event_type_t' data-type='struct elog_event_type_t' data-ref="elog_event_type_t">elog_event_type_t</a> * <dfn class="local col2 decl" id="1742type" title='type' data-type='elog_event_type_t *' data-ref="1742type">type</dfn>,</td></tr>
+<tr><th id="350">350</th><td>			    <a class="typedef" href="#elog_track_t" title='elog_track_t' data-type='struct elog_track_t' data-ref="elog_track_t">elog_track_t</a> * <dfn class="local col3 decl" id="1743track" title='track' data-type='elog_track_t *' data-ref="1743track">track</dfn>, <a class="typedef" href="types.h.html#u64" title='u64' data-type='unsigned long' data-ref="u64">u64</a> <dfn class="local col4 decl" id="1744cpu_time" title='cpu_time' data-type='u64' data-ref="1744cpu_time">cpu_time</dfn>)</td></tr>
+<tr><th id="351">351</th><td>{</td></tr>
+<tr><th id="352">352</th><td>  <i>/* Return the user dummy memory to scribble data into. */</i></td></tr>
+<tr><th id="353">353</th><td>  <b>if</b> (<a class="macro" href="clib.h.html#105" title="__builtin_expect((!elog_is_enabled (em)),0)" data-ref="_M/PREDICT_FALSE">PREDICT_FALSE</a> (!<a class="ref fn" href="#elog_is_enabled" title='elog_is_enabled' data-ref="elog_is_enabled">elog_is_enabled</a> (<a class="local col1 ref" href="#1741em" title='em' data-ref="1741em">em</a>)))</td></tr>
+<tr><th id="354">354</th><td>    <b>return</b> <a class="local col1 ref" href="#1741em" title='em' data-ref="1741em">em</a>-&gt;<a class="ref field" href="#(anonymous)::dummy_event" title='(anonymous struct)::dummy_event' data-ref="(anonymous)::dummy_event">dummy_event</a>.<a class="ref field" href="#(anonymous)::data" title='(anonymous struct)::data' data-ref="(anonymous)::data">data</a>;</td></tr>
+<tr><th id="355">355</th><td>  <b>return</b> <a class="ref fn" href="#elog_event_data" title='elog_event_data' data-ref="elog_event_data">elog_event_data</a> (<a class="local col1 ref" href="#1741em" title='em' data-ref="1741em">em</a>, <a class="local col2 ref" href="#1742type" title='type' data-ref="1742type">type</a>, <a class="local col3 ref" href="#1743track" title='track' data-ref="1743track">track</a>, <a class="local col4 ref" href="#1744cpu_time" title='cpu_time' data-ref="1744cpu_time">cpu_time</a>);</td></tr>
+<tr><th id="356">356</th><td>}</td></tr>
+<tr><th id="357">357</th><td></td></tr>
+<tr><th id="358">358</th><td><i class="doc">/** <span class="command">@brief</span> Log a single-datum event</i></td></tr>
+<tr><th id="359">359</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">em</span> elog_main_t *</i></td></tr>
+<tr><th id="360">360</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">type</span> elog_event_type_t * type</i></td></tr>
+<tr><th id="361">361</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">data</span> u32 single datum to capture</i></td></tr>
+<tr><th id="362">362</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="363">363</th><td><a class="macro" href="clib.h.html#92" title="static inline" data-ref="_M/always_inline">always_inline</a> <em>void</em></td></tr>
+<tr><th id="364">364</th><td><dfn class="decl def fn" id="elog" title='elog' data-ref="elog">elog</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col5 decl" id="1745em" title='em' data-type='elog_main_t *' data-ref="1745em">em</dfn>, <a class="typedef" href="#elog_event_type_t" title='elog_event_type_t' data-type='struct elog_event_type_t' data-ref="elog_event_type_t">elog_event_type_t</a> * <dfn class="local col6 decl" id="1746type" title='type' data-type='elog_event_type_t *' data-ref="1746type">type</dfn>, <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col7 decl" id="1747data" title='data' data-type='u32' data-ref="1747data">data</dfn>)</td></tr>
+<tr><th id="365">365</th><td>{</td></tr>
+<tr><th id="366">366</th><td>  <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> *<dfn class="local col8 decl" id="1748d" title='d' data-type='u32 *' data-ref="1748d">d</dfn> = <a class="ref fn" href="#elog_event_data_not_inline" title='elog_event_data_not_inline' data-ref="elog_event_data_not_inline">elog_event_data_not_inline</a> (<a class="local col5 ref" href="#1745em" title='em' data-ref="1745em">em</a>,</td></tr>
+<tr><th id="367">367</th><td>				       <a class="local col6 ref" href="#1746type" title='type' data-ref="1746type">type</a>,</td></tr>
+<tr><th id="368">368</th><td>				       &amp;<a class="local col5 ref" href="#1745em" title='em' data-ref="1745em">em</a>-&gt;<a class="ref field" href="#(anonymous)::default_track" title='(anonymous struct)::default_track' data-ref="(anonymous)::default_track">default_track</a>,</td></tr>
+<tr><th id="369">369</th><td>				       <a class="ref fn" href="time.h.html#clib_cpu_time_now" title='clib_cpu_time_now' data-ref="clib_cpu_time_now">clib_cpu_time_now</a> ());</td></tr>
+<tr><th id="370">370</th><td>  <a class="local col8 ref" href="#1748d" title='d' data-ref="1748d">d</a>[<var>0</var>] = <a class="local col7 ref" href="#1747data" title='data' data-ref="1747data">data</a>;</td></tr>
+<tr><th id="371">371</th><td>}</td></tr>
+<tr><th id="372">372</th><td></td></tr>
+<tr><th id="373">373</th><td><i class="doc">/** <span class="command">@brief</span> Log a single-datum event, inline version</i></td></tr>
+<tr><th id="374">374</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">em</span> elog_main_t *</i></td></tr>
+<tr><th id="375">375</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">type</span> elog_event_type_t * type</i></td></tr>
+<tr><th id="376">376</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">data</span> u32 single datum to capture</i></td></tr>
+<tr><th id="377">377</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="378">378</th><td><a class="macro" href="clib.h.html#92" title="static inline" data-ref="_M/always_inline">always_inline</a> <em>void</em></td></tr>
+<tr><th id="379">379</th><td><dfn class="decl def fn" id="elog_inline" title='elog_inline' data-ref="elog_inline">elog_inline</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col9 decl" id="1749em" title='em' data-type='elog_main_t *' data-ref="1749em">em</dfn>, <a class="typedef" href="#elog_event_type_t" title='elog_event_type_t' data-type='struct elog_event_type_t' data-ref="elog_event_type_t">elog_event_type_t</a> * <dfn class="local col0 decl" id="1750type" title='type' data-type='elog_event_type_t *' data-ref="1750type">type</dfn>, <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col1 decl" id="1751data" title='data' data-type='u32' data-ref="1751data">data</dfn>)</td></tr>
+<tr><th id="380">380</th><td>{</td></tr>
+<tr><th id="381">381</th><td>  <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> *<dfn class="local col2 decl" id="1752d" title='d' data-type='u32 *' data-ref="1752d">d</dfn> = <a class="ref fn" href="#elog_event_data_inline" title='elog_event_data_inline' data-ref="elog_event_data_inline">elog_event_data_inline</a> (<a class="local col9 ref" href="#1749em" title='em' data-ref="1749em">em</a>,</td></tr>
+<tr><th id="382">382</th><td>				   <a class="local col0 ref" href="#1750type" title='type' data-ref="1750type">type</a>,</td></tr>
+<tr><th id="383">383</th><td>				   &amp;<a class="local col9 ref" href="#1749em" title='em' data-ref="1749em">em</a>-&gt;<a class="ref field" href="#(anonymous)::default_track" title='(anonymous struct)::default_track' data-ref="(anonymous)::default_track">default_track</a>,</td></tr>
+<tr><th id="384">384</th><td>				   <a class="ref fn" href="time.h.html#clib_cpu_time_now" title='clib_cpu_time_now' data-ref="clib_cpu_time_now">clib_cpu_time_now</a> ());</td></tr>
+<tr><th id="385">385</th><td>  <a class="local col2 ref" href="#1752d" title='d' data-ref="1752d">d</a>[<var>0</var>] = <a class="local col1 ref" href="#1751data" title='data' data-ref="1751data">data</a>;</td></tr>
+<tr><th id="386">386</th><td>}</td></tr>
+<tr><th id="387">387</th><td></td></tr>
+<tr><th id="388">388</th><td><i class="doc">/** <span class="command">@brief</span> Log a single-datum event to a specific track, non-inline version</i></td></tr>
+<tr><th id="389">389</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">em</span> elog_main_t *</i></td></tr>
+<tr><th id="390">390</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">type</span> elog_event_type_t * type</i></td></tr>
+<tr><th id="391">391</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">type</span> elog_event_track_t * track</i></td></tr>
+<tr><th id="392">392</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">data</span> u32 single datum to capture</i></td></tr>
+<tr><th id="393">393</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="394">394</th><td><a class="macro" href="clib.h.html#92" title="static inline" data-ref="_M/always_inline">always_inline</a> <em>void</em></td></tr>
+<tr><th id="395">395</th><td><dfn class="decl def fn" id="elog_track" title='elog_track' data-ref="elog_track">elog_track</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col3 decl" id="1753em" title='em' data-type='elog_main_t *' data-ref="1753em">em</dfn>, <a class="typedef" href="#elog_event_type_t" title='elog_event_type_t' data-type='struct elog_event_type_t' data-ref="elog_event_type_t">elog_event_type_t</a> * <dfn class="local col4 decl" id="1754type" title='type' data-type='elog_event_type_t *' data-ref="1754type">type</dfn>, <a class="typedef" href="#elog_track_t" title='elog_track_t' data-type='struct elog_track_t' data-ref="elog_track_t">elog_track_t</a> * <dfn class="local col5 decl" id="1755track" title='track' data-type='elog_track_t *' data-ref="1755track">track</dfn>,</td></tr>
+<tr><th id="396">396</th><td>	    <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col6 decl" id="1756data" title='data' data-type='u32' data-ref="1756data">data</dfn>)</td></tr>
+<tr><th id="397">397</th><td>{</td></tr>
+<tr><th id="398">398</th><td>  <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> *<dfn class="local col7 decl" id="1757d" title='d' data-type='u32 *' data-ref="1757d">d</dfn> = <a class="ref fn" href="#elog_event_data_not_inline" title='elog_event_data_not_inline' data-ref="elog_event_data_not_inline">elog_event_data_not_inline</a> (<a class="local col3 ref" href="#1753em" title='em' data-ref="1753em">em</a>,</td></tr>
+<tr><th id="399">399</th><td>				       <a class="local col4 ref" href="#1754type" title='type' data-ref="1754type">type</a>,</td></tr>
+<tr><th id="400">400</th><td>				       <a class="local col5 ref" href="#1755track" title='track' data-ref="1755track">track</a>,</td></tr>
+<tr><th id="401">401</th><td>				       <a class="ref fn" href="time.h.html#clib_cpu_time_now" title='clib_cpu_time_now' data-ref="clib_cpu_time_now">clib_cpu_time_now</a> ());</td></tr>
+<tr><th id="402">402</th><td>  <a class="local col7 ref" href="#1757d" title='d' data-ref="1757d">d</a>[<var>0</var>] = <a class="local col6 ref" href="#1756data" title='data' data-ref="1756data">data</a>;</td></tr>
+<tr><th id="403">403</th><td>}</td></tr>
+<tr><th id="404">404</th><td></td></tr>
+<tr><th id="405">405</th><td><i class="doc">/** <span class="command">@brief</span> Log a single-datum event to a specific track</i></td></tr>
+<tr><th id="406">406</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">em</span> elog_main_t *</i></td></tr>
+<tr><th id="407">407</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">type</span> elog_event_type_t * type</i></td></tr>
+<tr><th id="408">408</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">type</span> elog_event_track_t * track</i></td></tr>
+<tr><th id="409">409</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">data</span> u32 single datum to capture</i></td></tr>
+<tr><th id="410">410</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="411">411</th><td><a class="macro" href="clib.h.html#92" title="static inline" data-ref="_M/always_inline">always_inline</a> <em>void</em></td></tr>
+<tr><th id="412">412</th><td><dfn class="decl def fn" id="elog_track_inline" title='elog_track_inline' data-ref="elog_track_inline">elog_track_inline</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col8 decl" id="1758em" title='em' data-type='elog_main_t *' data-ref="1758em">em</dfn>, <a class="typedef" href="#elog_event_type_t" title='elog_event_type_t' data-type='struct elog_event_type_t' data-ref="elog_event_type_t">elog_event_type_t</a> * <dfn class="local col9 decl" id="1759type" title='type' data-type='elog_event_type_t *' data-ref="1759type">type</dfn>,</td></tr>
+<tr><th id="413">413</th><td>		   <a class="typedef" href="#elog_track_t" title='elog_track_t' data-type='struct elog_track_t' data-ref="elog_track_t">elog_track_t</a> * <dfn class="local col0 decl" id="1760track" title='track' data-type='elog_track_t *' data-ref="1760track">track</dfn>, <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col1 decl" id="1761data" title='data' data-type='u32' data-ref="1761data">data</dfn>)</td></tr>
+<tr><th id="414">414</th><td>{</td></tr>
+<tr><th id="415">415</th><td>  <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> *<dfn class="local col2 decl" id="1762d" title='d' data-type='u32 *' data-ref="1762d">d</dfn> = <a class="ref fn" href="#elog_event_data_inline" title='elog_event_data_inline' data-ref="elog_event_data_inline">elog_event_data_inline</a> (<a class="local col8 ref" href="#1758em" title='em' data-ref="1758em">em</a>,</td></tr>
+<tr><th id="416">416</th><td>				   <a class="local col9 ref" href="#1759type" title='type' data-ref="1759type">type</a>,</td></tr>
+<tr><th id="417">417</th><td>				   <a class="local col0 ref" href="#1760track" title='track' data-ref="1760track">track</a>,</td></tr>
+<tr><th id="418">418</th><td>				   <a class="ref fn" href="time.h.html#clib_cpu_time_now" title='clib_cpu_time_now' data-ref="clib_cpu_time_now">clib_cpu_time_now</a> ());</td></tr>
+<tr><th id="419">419</th><td>  <a class="local col2 ref" href="#1762d" title='d' data-ref="1762d">d</a>[<var>0</var>] = <a class="local col1 ref" href="#1761data" title='data' data-ref="1761data">data</a>;</td></tr>
+<tr><th id="420">420</th><td>}</td></tr>
+<tr><th id="421">421</th><td></td></tr>
+<tr><th id="422">422</th><td><a class="macro" href="clib.h.html#92" title="static inline" data-ref="_M/always_inline">always_inline</a> <em>void</em> *</td></tr>
+<tr><th id="423">423</th><td><dfn class="decl def fn" id="elog_data" title='elog_data' data-ref="elog_data">elog_data</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col3 decl" id="1763em" title='em' data-type='elog_main_t *' data-ref="1763em">em</dfn>, <a class="typedef" href="#elog_event_type_t" title='elog_event_type_t' data-type='struct elog_event_type_t' data-ref="elog_event_type_t">elog_event_type_t</a> * <dfn class="local col4 decl" id="1764type" title='type' data-type='elog_event_type_t *' data-ref="1764type">type</dfn>, <a class="typedef" href="#elog_track_t" title='elog_track_t' data-type='struct elog_track_t' data-ref="elog_track_t">elog_track_t</a> * <dfn class="local col5 decl" id="1765track" title='track' data-type='elog_track_t *' data-ref="1765track">track</dfn>)</td></tr>
+<tr><th id="424">424</th><td>{</td></tr>
+<tr><th id="425">425</th><td>  <b>return</b> <a class="ref fn" href="#elog_event_data_not_inline" title='elog_event_data_not_inline' data-ref="elog_event_data_not_inline">elog_event_data_not_inline</a> (<a class="local col3 ref" href="#1763em" title='em' data-ref="1763em">em</a>, <a class="local col4 ref" href="#1764type" title='type' data-ref="1764type">type</a>, <a class="local col5 ref" href="#1765track" title='track' data-ref="1765track">track</a>, <a class="ref fn" href="time.h.html#clib_cpu_time_now" title='clib_cpu_time_now' data-ref="clib_cpu_time_now">clib_cpu_time_now</a> ());</td></tr>
+<tr><th id="426">426</th><td>}</td></tr>
+<tr><th id="427">427</th><td></td></tr>
+<tr><th id="428">428</th><td><a class="macro" href="clib.h.html#92" title="static inline" data-ref="_M/always_inline">always_inline</a> <em>void</em> *</td></tr>
+<tr><th id="429">429</th><td><dfn class="decl def fn" id="elog_data_inline" title='elog_data_inline' data-ref="elog_data_inline">elog_data_inline</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col6 decl" id="1766em" title='em' data-type='elog_main_t *' data-ref="1766em">em</dfn>, <a class="typedef" href="#elog_event_type_t" title='elog_event_type_t' data-type='struct elog_event_type_t' data-ref="elog_event_type_t">elog_event_type_t</a> * <dfn class="local col7 decl" id="1767type" title='type' data-type='elog_event_type_t *' data-ref="1767type">type</dfn>,</td></tr>
+<tr><th id="430">430</th><td>		  <a class="typedef" href="#elog_track_t" title='elog_track_t' data-type='struct elog_track_t' data-ref="elog_track_t">elog_track_t</a> * <dfn class="local col8 decl" id="1768track" title='track' data-type='elog_track_t *' data-ref="1768track">track</dfn>)</td></tr>
+<tr><th id="431">431</th><td>{</td></tr>
+<tr><th id="432">432</th><td>  <b>return</b> <a class="ref fn" href="#elog_event_data_inline" title='elog_event_data_inline' data-ref="elog_event_data_inline">elog_event_data_inline</a> (<a class="local col6 ref" href="#1766em" title='em' data-ref="1766em">em</a>, <a class="local col7 ref" href="#1767type" title='type' data-ref="1767type">type</a>, <a class="local col8 ref" href="#1768track" title='track' data-ref="1768track">track</a>, <a class="ref fn" href="time.h.html#clib_cpu_time_now" title='clib_cpu_time_now' data-ref="clib_cpu_time_now">clib_cpu_time_now</a> ());</td></tr>
+<tr><th id="433">433</th><td>}</td></tr>
+<tr><th id="434">434</th><td></td></tr>
+<tr><th id="435">435</th><td><i>/* Macro shorthands for generating/declaring events. */</i></td></tr>
+<tr><th id="436">436</th><td><u>#define <dfn class="macro" id="_M/__ELOG_TYPE_VAR" data-ref="_M/__ELOG_TYPE_VAR">__ELOG_TYPE_VAR</dfn>(f) f</u></td></tr>
+<tr><th id="437">437</th><td><u>#define <dfn class="macro" id="_M/__ELOG_TRACK_VAR" data-ref="_M/__ELOG_TRACK_VAR">__ELOG_TRACK_VAR</dfn>(f) f</u></td></tr>
+<tr><th id="438">438</th><td></td></tr>
+<tr><th id="439">439</th><td><u>#define <dfn class="macro" id="_M/ELOG_TYPE_DECLARE" data-ref="_M/ELOG_TYPE_DECLARE">ELOG_TYPE_DECLARE</dfn>(f) static elog_event_type_t __ELOG_TYPE_VAR(f)</u></td></tr>
+<tr><th id="440">440</th><td></td></tr>
+<tr><th id="441">441</th><td><u>#define <dfn class="macro" id="_M/ELOG_TYPE_INIT_FORMAT_AND_FUNCTION" data-ref="_M/ELOG_TYPE_INIT_FORMAT_AND_FUNCTION">ELOG_TYPE_INIT_FORMAT_AND_FUNCTION</dfn>(fmt,func) \</u></td></tr>
+<tr><th id="442">442</th><td><u>  { .format = fmt, .function = func, }</u></td></tr>
+<tr><th id="443">443</th><td></td></tr>
+<tr><th id="444">444</th><td><u>#define <dfn class="macro" id="_M/ELOG_TYPE_INIT" data-ref="_M/ELOG_TYPE_INIT">ELOG_TYPE_INIT</dfn>(fmt) \</u></td></tr>
+<tr><th id="445">445</th><td><u>  ELOG_TYPE_INIT_FORMAT_AND_FUNCTION(fmt,(char *) __FUNCTION__)</u></td></tr>
+<tr><th id="446">446</th><td></td></tr>
+<tr><th id="447">447</th><td><u>#define <dfn class="macro" id="_M/ELOG_TYPE_DECLARE_HELPER" data-ref="_M/ELOG_TYPE_DECLARE_HELPER">ELOG_TYPE_DECLARE_HELPER</dfn>(f,fmt,func)		\</u></td></tr>
+<tr><th id="448">448</th><td><u>  static elog_event_type_t __ELOG_TYPE_VAR(f) =		\</u></td></tr>
+<tr><th id="449">449</th><td><u>    ELOG_TYPE_INIT_FORMAT_AND_FUNCTION (fmt, func)</u></td></tr>
+<tr><th id="450">450</th><td></td></tr>
+<tr><th id="451">451</th><td><u>#define <dfn class="macro" id="_M/ELOG_TYPE_DECLARE_FORMAT_AND_FUNCTION" data-ref="_M/ELOG_TYPE_DECLARE_FORMAT_AND_FUNCTION">ELOG_TYPE_DECLARE_FORMAT_AND_FUNCTION</dfn>(f,fmt)		\</u></td></tr>
+<tr><th id="452">452</th><td><u>  ELOG_TYPE_DECLARE_HELPER (f, fmt, (char *) __FUNCTION__)</u></td></tr>
+<tr><th id="453">453</th><td></td></tr>
+<tr><th id="454">454</th><td><u>#define <dfn class="macro" id="_M/ELOG_TYPE_DECLARE_FORMAT" data-ref="_M/ELOG_TYPE_DECLARE_FORMAT">ELOG_TYPE_DECLARE_FORMAT</dfn>(f,fmt)		\</u></td></tr>
+<tr><th id="455">455</th><td><u>  ELOG_TYPE_DECLARE_HELPER (f, fmt, 0)</u></td></tr>
+<tr><th id="456">456</th><td></td></tr>
+<tr><th id="457">457</th><td><i>/* Shorthands with and without __FUNCTION__.</i></td></tr>
+<tr><th id="458">458</th><td><i>   D for decimal; X for hex.  F for __FUNCTION__. */</i></td></tr>
+<tr><th id="459">459</th><td><u>#define <dfn class="macro" id="_M/ELOG_TYPE" data-ref="_M/ELOG_TYPE">ELOG_TYPE</dfn>(f,fmt) ELOG_TYPE_DECLARE_FORMAT_AND_FUNCTION(f,fmt)</u></td></tr>
+<tr><th id="460">460</th><td><u>#define <dfn class="macro" id="_M/ELOG_TYPE_D" data-ref="_M/ELOG_TYPE_D">ELOG_TYPE_D</dfn>(f)  ELOG_TYPE_DECLARE_FORMAT (f, #f " %d")</u></td></tr>
+<tr><th id="461">461</th><td><u>#define <dfn class="macro" id="_M/ELOG_TYPE_X" data-ref="_M/ELOG_TYPE_X">ELOG_TYPE_X</dfn>(f)  ELOG_TYPE_DECLARE_FORMAT (f, #f " 0x%x")</u></td></tr>
+<tr><th id="462">462</th><td><u>#define <dfn class="macro" id="_M/ELOG_TYPE_DF" data-ref="_M/ELOG_TYPE_DF">ELOG_TYPE_DF</dfn>(f) ELOG_TYPE_DECLARE_FORMAT_AND_FUNCTION (f, #f " %d")</u></td></tr>
+<tr><th id="463">463</th><td><u>#define <dfn class="macro" id="_M/ELOG_TYPE_XF" data-ref="_M/ELOG_TYPE_XF">ELOG_TYPE_XF</dfn>(f) ELOG_TYPE_DECLARE_FORMAT_AND_FUNCTION (f, #f " 0x%x")</u></td></tr>
+<tr><th id="464">464</th><td><u>#define <dfn class="macro" id="_M/ELOG_TYPE_FD" data-ref="_M/ELOG_TYPE_FD">ELOG_TYPE_FD</dfn>(f) ELOG_TYPE_DECLARE_FORMAT_AND_FUNCTION (f, #f " %d")</u></td></tr>
+<tr><th id="465">465</th><td><u>#define <dfn class="macro" id="_M/ELOG_TYPE_FX" data-ref="_M/ELOG_TYPE_FX">ELOG_TYPE_FX</dfn>(f) ELOG_TYPE_DECLARE_FORMAT_AND_FUNCTION (f, #f " 0x%x")</u></td></tr>
+<tr><th id="466">466</th><td></td></tr>
+<tr><th id="467">467</th><td><u>#define <dfn class="macro" id="_M/ELOG_TRACK_DECLARE" data-ref="_M/ELOG_TRACK_DECLARE">ELOG_TRACK_DECLARE</dfn>(f) static elog_track_t __ELOG_TRACK_VAR(f)</u></td></tr>
+<tr><th id="468">468</th><td><u>#define <dfn class="macro" id="_M/ELOG_TRACK" data-ref="_M/ELOG_TRACK">ELOG_TRACK</dfn>(f) ELOG_TRACK_DECLARE(f) = { .name = #f, }</u></td></tr>
+<tr><th id="469">469</th><td></td></tr>
+<tr><th id="470">470</th><td><i>/* Log 32 bits of data. */</i></td></tr>
+<tr><th id="471">471</th><td><u>#define <dfn class="macro" id="_M/ELOG" data-ref="_M/ELOG">ELOG</dfn>(em,f,data) elog ((em), &amp;__ELOG_TYPE_VAR(f), data)</u></td></tr>
+<tr><th id="472">472</th><td><u>#define <dfn class="macro" id="_M/ELOG_INLINE" data-ref="_M/ELOG_INLINE">ELOG_INLINE</dfn>(em,f,data) elog_inline ((em), &amp;__ELOG_TYPE_VAR(f), data)</u></td></tr>
+<tr><th id="473">473</th><td></td></tr>
+<tr><th id="474">474</th><td><i>/* Return data pointer to fill in. */</i></td></tr>
+<tr><th id="475">475</th><td><u>#define <dfn class="macro" id="_M/ELOG_TRACK_DATA" data-ref="_M/ELOG_TRACK_DATA">ELOG_TRACK_DATA</dfn>(em,f,track) \</u></td></tr>
+<tr><th id="476">476</th><td><u>  elog_data ((em), &amp;__ELOG_TYPE_VAR(f), &amp;__ELOG_TRACK_VAR(track))</u></td></tr>
+<tr><th id="477">477</th><td><u>#define <dfn class="macro" id="_M/ELOG_TRACK_DATA_INLINE" data-ref="_M/ELOG_TRACK_DATA_INLINE">ELOG_TRACK_DATA_INLINE</dfn>(em,f,track) \</u></td></tr>
+<tr><th id="478">478</th><td><u>  elog_data_inline ((em), &amp;__ELOG_TYPE_VAR(f), &amp;__ELOG_TRACK_VAR(track))</u></td></tr>
+<tr><th id="479">479</th><td></td></tr>
+<tr><th id="480">480</th><td><i>/* Shorthand with default track. */</i></td></tr>
+<tr><th id="481">481</th><td><u>#define <dfn class="macro" id="_M/ELOG_DATA" data-ref="_M/ELOG_DATA">ELOG_DATA</dfn>(em,f) elog_data ((em), &amp;__ELOG_TYPE_VAR (f), &amp;(em)-&gt;default_track)</u></td></tr>
+<tr><th id="482">482</th><td><u>#define <dfn class="macro" id="_M/ELOG_DATA_INLINE" data-ref="_M/ELOG_DATA_INLINE">ELOG_DATA_INLINE</dfn>(em,f) elog_data_inline ((em), &amp;__ELOG_TYPE_VAR (f), &amp;(em)-&gt;default_track)</u></td></tr>
+<tr><th id="483">483</th><td></td></tr>
+<tr><th id="484">484</th><td><i class="doc">/** <span class="command">@brief</span> add a string to the event-log string table</i></td></tr>
+<tr><th id="485">485</th><td><i class="doc"></i></td></tr>
+<tr><th id="486">486</th><td><i class="doc">    Often combined with hashing and the T4 elog format specifier to</i></td></tr>
+<tr><th id="487">487</th><td><i class="doc">    display complex strings in offline tooling</i></td></tr>
+<tr><th id="488">488</th><td><i class="doc"></i></td></tr>
+<tr><th id="489">489</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">em</span> elog_main_t *</i></td></tr>
+<tr><th id="490">490</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">format</span> char *</i></td></tr>
+<tr><th id="491">491</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">VARARGS</span></i></td></tr>
+<tr><th id="492">492</th><td><i class="doc">    <span class="command">@return</span> u32 index to add to event log</i></td></tr>
+<tr><th id="493">493</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="494">494</th><td><a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl fn" id="elog_string" title='elog_string' data-ref="elog_string">elog_string</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col9 decl" id="1769em" title='em' data-type='elog_main_t *' data-ref="1769em">em</dfn>, <em>char</em> *<dfn class="local col0 decl" id="1770format" title='format' data-type='char *' data-ref="1770format">format</dfn>, ...);</td></tr>
+<tr><th id="495">495</th><td></td></tr>
+<tr><th id="496">496</th><td><em>void</em> <dfn class="decl fn" id="elog_time_now" title='elog_time_now' data-ref="elog_time_now">elog_time_now</dfn> (<a class="typedef" href="#elog_time_stamp_t" title='elog_time_stamp_t' data-type='struct elog_time_stamp_t' data-ref="elog_time_stamp_t">elog_time_stamp_t</a> * <dfn class="local col1 decl" id="1771et" title='et' data-type='elog_time_stamp_t *' data-ref="1771et">et</dfn>);</td></tr>
+<tr><th id="497">497</th><td></td></tr>
+<tr><th id="498">498</th><td><i class="doc">/** <span class="command">@brief</span> convert event ring events to events, and return them as a vector.</i></td></tr>
+<tr><th id="499">499</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">em</span> elog_main_t *</i></td></tr>
+<tr><th id="500">500</th><td><i class="doc">    <span class="command">@return</span> event vector with timestamps in f64 seconds</i></td></tr>
+<tr><th id="501">501</th><td><i class="doc">    <span class="command">@note</span> sets em-&gt;events to resulting vector.</i></td></tr>
+<tr><th id="502">502</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="503">503</th><td><a class="typedef" href="#elog_event_t" title='elog_event_t' data-type='struct elog_event_t' data-ref="elog_event_t">elog_event_t</a> *<dfn class="decl fn" id="elog_get_events" title='elog_get_events' data-ref="elog_get_events">elog_get_events</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col2 decl" id="1772em" title='em' data-type='elog_main_t *' data-ref="1772em">em</dfn>);</td></tr>
+<tr><th id="504">504</th><td></td></tr>
+<tr><th id="505">505</th><td><i class="doc">/** <span class="command">@brief</span> convert event ring events to events, and return them as a vector.</i></td></tr>
+<tr><th id="506">506</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">em</span> elog_main_t *</i></td></tr>
+<tr><th id="507">507</th><td><i class="doc">    <span class="command">@return</span> event vector with timestamps in f64 seconds</i></td></tr>
+<tr><th id="508">508</th><td><i class="doc">    <span class="command">@note</span> no side effects</i></td></tr>
+<tr><th id="509">509</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="510">510</th><td><a class="typedef" href="#elog_event_t" title='elog_event_t' data-type='struct elog_event_t' data-ref="elog_event_t">elog_event_t</a> *<dfn class="decl fn" id="elog_peek_events" title='elog_peek_events' data-ref="elog_peek_events">elog_peek_events</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col3 decl" id="1773em" title='em' data-type='elog_main_t *' data-ref="1773em">em</dfn>);</td></tr>
+<tr><th id="511">511</th><td></td></tr>
+<tr><th id="512">512</th><td><i>/* Merge two logs, add supplied track tags. */</i></td></tr>
+<tr><th id="513">513</th><td><em>void</em> <dfn class="decl fn" id="elog_merge" title='elog_merge' data-ref="elog_merge">elog_merge</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col4 decl" id="1774dst" title='dst' data-type='elog_main_t *' data-ref="1774dst">dst</dfn>, <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col5 decl" id="1775dst_tag" title='dst_tag' data-type='u8 *' data-ref="1775dst_tag">dst_tag</dfn>,</td></tr>
+<tr><th id="514">514</th><td>		 <a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col6 decl" id="1776src" title='src' data-type='elog_main_t *' data-ref="1776src">src</dfn>, <a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col7 decl" id="1777src_tag" title='src_tag' data-type='u8 *' data-ref="1777src_tag">src_tag</dfn>, <a class="typedef" href="types.h.html#f64" title='f64' data-type='double' data-ref="f64">f64</a> <dfn class="local col8 decl" id="1778align_tweak" title='align_tweak' data-type='f64' data-ref="1778align_tweak">align_tweak</dfn>);</td></tr>
+<tr><th id="515">515</th><td></td></tr>
+<tr><th id="516">516</th><td><i>/* 2 arguments elog_main_t and elog_event_t to format event or track name. */</i></td></tr>
+<tr><th id="517">517</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="decl fn" id="format_elog_event" title='format_elog_event' data-ref="format_elog_event">format_elog_event</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col9 decl" id="1779s" title='s' data-type='u8 *' data-ref="1779s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col0 decl" id="1780va" title='va' data-type='va_list *' data-ref="1780va">va</dfn>);</td></tr>
+<tr><th id="518">518</th><td><a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="decl fn" id="format_elog_track" title='format_elog_track' data-ref="format_elog_track">format_elog_track</dfn> (<a class="typedef" href="types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col1 decl" id="1781s" title='s' data-type='u8 *' data-ref="1781s">s</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col2 decl" id="1782va" title='va' data-type='va_list *' data-ref="1782va">va</dfn>);</td></tr>
+<tr><th id="519">519</th><td></td></tr>
+<tr><th id="520">520</th><td><em>void</em> <dfn class="decl fn" id="serialize_elog_main" title='serialize_elog_main' data-ref="serialize_elog_main">serialize_elog_main</dfn> (<a class="typedef" href="serialize.h.html#serialize_main_t" title='serialize_main_t' data-type='struct serialize_main_t' data-ref="serialize_main_t">serialize_main_t</a> * <dfn class="local col3 decl" id="1783m" title='m' data-type='serialize_main_t *' data-ref="1783m">m</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col4 decl" id="1784va" title='va' data-type='va_list *' data-ref="1784va">va</dfn>);</td></tr>
+<tr><th id="521">521</th><td><em>void</em> <dfn class="decl fn" id="unserialize_elog_main" title='unserialize_elog_main' data-ref="unserialize_elog_main">unserialize_elog_main</dfn> (<a class="typedef" href="serialize.h.html#serialize_main_t" title='serialize_main_t' data-type='struct serialize_main_t' data-ref="serialize_main_t">serialize_main_t</a> * <dfn class="local col5 decl" id="1785m" title='m' data-type='serialize_main_t *' data-ref="1785m">m</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col6 decl" id="1786va" title='va' data-type='va_list *' data-ref="1786va">va</dfn>);</td></tr>
+<tr><th id="522">522</th><td></td></tr>
+<tr><th id="523">523</th><td><em>void</em> <dfn class="decl fn" id="elog_init" title='elog_init' data-ref="elog_init">elog_init</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col7 decl" id="1787em" title='em' data-type='elog_main_t *' data-ref="1787em">em</dfn>, <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col8 decl" id="1788n_events" title='n_events' data-type='u32' data-ref="1788n_events">n_events</dfn>);</td></tr>
+<tr><th id="524">524</th><td><em>void</em> <dfn class="decl fn" id="elog_alloc" title='elog_alloc' data-ref="elog_alloc">elog_alloc</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col9 decl" id="1789em" title='em' data-type='elog_main_t *' data-ref="1789em">em</dfn>, <a class="typedef" href="types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col0 decl" id="1790n_events" title='n_events' data-type='u32' data-ref="1790n_events">n_events</dfn>);</td></tr>
+<tr><th id="525">525</th><td></td></tr>
+<tr><th id="526">526</th><td><u>#<span data-ppcond="526">ifdef</span> <a class="macro" href="clib.h.html#43" data-ref="_M/CLIB_UNIX">CLIB_UNIX</a></u></td></tr>
+<tr><th id="527">527</th><td><a class="macro" href="clib.h.html#92" title="static inline" data-ref="_M/always_inline">always_inline</a> <a class="typedef" href="clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *</td></tr>
+<tr><th id="528">528</th><td><dfn class="decl def fn" id="elog_write_file" title='elog_write_file' data-ref="elog_write_file">elog_write_file</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col1 decl" id="1791em" title='em' data-type='elog_main_t *' data-ref="1791em">em</dfn>, <em>char</em> *<dfn class="local col2 decl" id="1792clib_file" title='clib_file' data-type='char *' data-ref="1792clib_file">clib_file</dfn>, <em>int</em> <dfn class="local col3 decl" id="1793flush_ring" title='flush_ring' data-type='int' data-ref="1793flush_ring">flush_ring</dfn>)</td></tr>
+<tr><th id="529">529</th><td>{</td></tr>
+<tr><th id="530">530</th><td>  <a class="typedef" href="serialize.h.html#serialize_main_t" title='serialize_main_t' data-type='struct serialize_main_t' data-ref="serialize_main_t">serialize_main_t</a> <dfn class="local col4 decl" id="1794m" title='m' data-type='serialize_main_t' data-ref="1794m">m</dfn>;</td></tr>
+<tr><th id="531">531</th><td>  <a class="typedef" href="clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *<dfn class="local col5 decl" id="1795error" title='error' data-type='clib_error_t *' data-ref="1795error">error</dfn>;</td></tr>
+<tr><th id="532">532</th><td></td></tr>
+<tr><th id="533">533</th><td>  <a class="local col5 ref" href="#1795error" title='error' data-ref="1795error">error</a> = <a class="ref fn" href="serialize.h.html#serialize_open_clib_file" title='serialize_open_clib_file' data-ref="serialize_open_clib_file">serialize_open_clib_file</a> (&amp;<a class="local col4 ref" href="#1794m" title='m' data-ref="1794m">m</a>, <a class="local col2 ref" href="#1792clib_file" title='clib_file' data-ref="1792clib_file">clib_file</a>);</td></tr>
+<tr><th id="534">534</th><td>  <b>if</b> (<a class="local col5 ref" href="#1795error" title='error' data-ref="1795error">error</a>)</td></tr>
+<tr><th id="535">535</th><td>    <b>return</b> <a class="local col5 ref" href="#1795error" title='error' data-ref="1795error">error</a>;</td></tr>
+<tr><th id="536">536</th><td>  <a class="local col5 ref" href="#1795error" title='error' data-ref="1795error">error</a> = <a class="ref fn" href="serialize.h.html#serialize" title='serialize' data-ref="serialize">serialize</a> (&amp;<a class="local col4 ref" href="#1794m" title='m' data-ref="1794m">m</a>, <a class="ref fn" href="#serialize_elog_main" title='serialize_elog_main' data-ref="serialize_elog_main">serialize_elog_main</a>, <a class="local col1 ref" href="#1791em" title='em' data-ref="1791em">em</a>, <a class="local col3 ref" href="#1793flush_ring" title='flush_ring' data-ref="1793flush_ring">flush_ring</a>);</td></tr>
+<tr><th id="537">537</th><td>  <b>if</b> (!<a class="local col5 ref" href="#1795error" title='error' data-ref="1795error">error</a>)</td></tr>
+<tr><th id="538">538</th><td>    <a class="ref fn" href="serialize.h.html#serialize_close" title='serialize_close' data-ref="serialize_close">serialize_close</a> (&amp;<a class="local col4 ref" href="#1794m" title='m' data-ref="1794m">m</a>);</td></tr>
+<tr><th id="539">539</th><td>  <b>return</b> <a class="local col5 ref" href="#1795error" title='error' data-ref="1795error">error</a>;</td></tr>
+<tr><th id="540">540</th><td>}</td></tr>
+<tr><th id="541">541</th><td></td></tr>
+<tr><th id="542">542</th><td><a class="macro" href="clib.h.html#92" title="static inline" data-ref="_M/always_inline">always_inline</a> <a class="typedef" href="clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *</td></tr>
+<tr><th id="543">543</th><td><dfn class="decl def fn" id="elog_read_file" title='elog_read_file' data-ref="elog_read_file">elog_read_file</dfn> (<a class="typedef" href="#elog_main_t" title='elog_main_t' data-type='struct elog_main_t' data-ref="elog_main_t">elog_main_t</a> * <dfn class="local col6 decl" id="1796em" title='em' data-type='elog_main_t *' data-ref="1796em">em</dfn>, <em>char</em> *<dfn class="local col7 decl" id="1797clib_file" title='clib_file' data-type='char *' data-ref="1797clib_file">clib_file</dfn>)</td></tr>
+<tr><th id="544">544</th><td>{</td></tr>
+<tr><th id="545">545</th><td>  <a class="typedef" href="serialize.h.html#serialize_main_t" title='serialize_main_t' data-type='struct serialize_main_t' data-ref="serialize_main_t">serialize_main_t</a> <dfn class="local col8 decl" id="1798m" title='m' data-type='serialize_main_t' data-ref="1798m">m</dfn>;</td></tr>
+<tr><th id="546">546</th><td>  <a class="typedef" href="clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *<dfn class="local col9 decl" id="1799error" title='error' data-type='clib_error_t *' data-ref="1799error">error</dfn>;</td></tr>
+<tr><th id="547">547</th><td></td></tr>
+<tr><th id="548">548</th><td>  <a class="local col9 ref" href="#1799error" title='error' data-ref="1799error">error</a> = <a class="ref fn" href="serialize.h.html#unserialize_open_clib_file" title='unserialize_open_clib_file' data-ref="unserialize_open_clib_file">unserialize_open_clib_file</a> (&amp;<a class="local col8 ref" href="#1798m" title='m' data-ref="1798m">m</a>, <a class="local col7 ref" href="#1797clib_file" title='clib_file' data-ref="1797clib_file">clib_file</a>);</td></tr>
+<tr><th id="549">549</th><td>  <b>if</b> (<a class="local col9 ref" href="#1799error" title='error' data-ref="1799error">error</a>)</td></tr>
+<tr><th id="550">550</th><td>    <b>return</b> <a class="local col9 ref" href="#1799error" title='error' data-ref="1799error">error</a>;</td></tr>
+<tr><th id="551">551</th><td>  <a class="local col9 ref" href="#1799error" title='error' data-ref="1799error">error</a> = <a class="ref fn" href="serialize.h.html#unserialize" title='unserialize' data-ref="unserialize">unserialize</a> (&amp;<a class="local col8 ref" href="#1798m" title='m' data-ref="1798m">m</a>, <a class="ref fn" href="#unserialize_elog_main" title='unserialize_elog_main' data-ref="unserialize_elog_main">unserialize_elog_main</a>, <a class="local col6 ref" href="#1796em" title='em' data-ref="1796em">em</a>);</td></tr>
+<tr><th id="552">552</th><td>  <b>if</b> (!<a class="local col9 ref" href="#1799error" title='error' data-ref="1799error">error</a>)</td></tr>
+<tr><th id="553">553</th><td>    <a class="ref fn" href="serialize.h.html#unserialize_close" title='unserialize_close' data-ref="unserialize_close">unserialize_close</a> (&amp;<a class="local col8 ref" href="#1798m" title='m' data-ref="1798m">m</a>);</td></tr>
+<tr><th id="554">554</th><td>  <b>return</b> <a class="local col9 ref" href="#1799error" title='error' data-ref="1799error">error</a>;</td></tr>
+<tr><th id="555">555</th><td>}</td></tr>
+<tr><th id="556">556</th><td></td></tr>
+<tr><th id="557">557</th><td><u>#<span data-ppcond="526">endif</span> /* CLIB_UNIX */</u></td></tr>
+<tr><th id="558">558</th><td></td></tr>
+<tr><th id="559">559</th><td><u>#<span data-ppcond="49">endif</span> /* included_clib_elog_h */</u></td></tr>
+<tr><th id="560">560</th><td></td></tr>
+<tr><th id="561">561</th><td><i>/*</i></td></tr>
+<tr><th id="562">562</th><td><i> * fd.io coding-style-patch-verification: ON</i></td></tr>
+<tr><th id="563">563</th><td><i> *</i></td></tr>
+<tr><th id="564">564</th><td><i> * Local Variables:</i></td></tr>
+<tr><th id="565">565</th><td><i> * eval: (c-set-style "gnu")</i></td></tr>
+<tr><th id="566">566</th><td><i> * End:</i></td></tr>
+<tr><th id="567">567</th><td><i> */</i></td></tr>
+<tr><th id="568">568</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../examples/vlib/main_stub.c.html'>vpp_1804/src/examples/vlib/main_stub.c</a><br/>Generated on <em>2018-Jul-29</em> from project vpp_1804 revision <em>18.04</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>
