@@ -1,0 +1,215 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>rte_cuckoo_hash.h source code [dpdk_1805/lib/librte_hash/rte_cuckoo_hash.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="add_key_case,cmp_jump_table_case,lcore_cache,queue_node,rte_hash,rte_hash_bucket,rte_hash_key,rte_hash_sig_compare_function "/>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'dpdk_1805/lib/librte_hash/rte_cuckoo_hash.h'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>dpdk_1805</a>/<a href='..'>lib</a>/<a href='./'>librte_hash</a>/<a href='rte_cuckoo_hash.h.html'>rte_cuckoo_hash.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright(c) 2016 Intel Corporation</i></td></tr>
+<tr><th id="3">3</th><td><i> */</i></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><i>/* rte_cuckoo_hash.h</i></td></tr>
+<tr><th id="6">6</th><td><i> * This file hold Cuckoo Hash private data structures to allows include from</i></td></tr>
+<tr><th id="7">7</th><td><i> * platform specific files like rte_cuckoo_hash_x86.h</i></td></tr>
+<tr><th id="8">8</th><td><i> */</i></td></tr>
+<tr><th id="9">9</th><td></td></tr>
+<tr><th id="10">10</th><td><u>#<span data-ppcond="10">ifndef</span> <span class="macro" data-ref="_M/_RTE_CUCKOO_HASH_H_">_RTE_CUCKOO_HASH_H_</span></u></td></tr>
+<tr><th id="11">11</th><td><u>#define <dfn class="macro" id="_M/_RTE_CUCKOO_HASH_H_" data-ref="_M/_RTE_CUCKOO_HASH_H_">_RTE_CUCKOO_HASH_H_</dfn></u></td></tr>
+<tr><th id="12">12</th><td></td></tr>
+<tr><th id="13">13</th><td><u>#<span data-ppcond="13">if</span> defined(<a class="macro" href="../../build/include/rte_config.h.html#489" data-ref="_M/RTE_ARCH_X86">RTE_ARCH_X86</a>)</u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="rte_cmp_x86.h.html">"rte_cmp_x86.h"</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#<span data-ppcond="13">endif</span></u></td></tr>
+<tr><th id="16">16</th><td></td></tr>
+<tr><th id="17">17</th><td><u>#<span data-ppcond="17">if</span> defined(<span class="macro" data-ref="_M/RTE_ARCH_ARM64">RTE_ARCH_ARM64</span>)</u></td></tr>
+<tr><th id="18">18</th><td><u>#include "rte_cmp_arm64.h"</u></td></tr>
+<tr><th id="19">19</th><td><u>#<span data-ppcond="17">endif</span></u></td></tr>
+<tr><th id="20">20</th><td></td></tr>
+<tr><th id="21">21</th><td><i>/* Macro to enable/disable run-time checking of function parameters */</i></td></tr>
+<tr><th id="22">22</th><td><u>#<span data-ppcond="22">if</span> defined(<span class="macro" data-ref="_M/RTE_LIBRTE_HASH_DEBUG">RTE_LIBRTE_HASH_DEBUG</span>)</u></td></tr>
+<tr><th id="23">23</th><td><u>#define RETURN_IF_TRUE(cond, retval) do { \</u></td></tr>
+<tr><th id="24">24</th><td><u>	if (cond) \</u></td></tr>
+<tr><th id="25">25</th><td><u>		return retval; \</u></td></tr>
+<tr><th id="26">26</th><td><u>} while (0)</u></td></tr>
+<tr><th id="27">27</th><td><u>#<span data-ppcond="22">else</span></u></td></tr>
+<tr><th id="28">28</th><td><u>#define <dfn class="macro" id="_M/RETURN_IF_TRUE" data-ref="_M/RETURN_IF_TRUE">RETURN_IF_TRUE</dfn>(cond, retval)</u></td></tr>
+<tr><th id="29">29</th><td><u>#<span data-ppcond="22">endif</span></u></td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="rte_hash_crc.h.html">&lt;rte_hash_crc.h&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="rte_jhash.h.html">&lt;rte_jhash.h&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td></td></tr>
+<tr><th id="34">34</th><td><u>#<span data-ppcond="34">if</span> defined(<a class="macro" href="../../build/include/rte_config.h.html#489" data-ref="_M/RTE_ARCH_X86">RTE_ARCH_X86</a>) || defined(<span class="macro" data-ref="_M/RTE_ARCH_ARM64">RTE_ARCH_ARM64</span>)</u></td></tr>
+<tr><th id="35">35</th><td><i>/*</i></td></tr>
+<tr><th id="36">36</th><td><i> * All different options to select a key compare function,</i></td></tr>
+<tr><th id="37">37</th><td><i> * based on the key size and custom function.</i></td></tr>
+<tr><th id="38">38</th><td><i> */</i></td></tr>
+<tr><th id="39">39</th><td><b>enum</b> <dfn class="type def" id="cmp_jump_table_case" title='cmp_jump_table_case' data-ref="cmp_jump_table_case">cmp_jump_table_case</dfn> {</td></tr>
+<tr><th id="40">40</th><td>	<dfn class="enum" id="KEY_CUSTOM" title='KEY_CUSTOM' data-ref="KEY_CUSTOM">KEY_CUSTOM</dfn> = <var>0</var>,</td></tr>
+<tr><th id="41">41</th><td>	<dfn class="enum" id="KEY_16_BYTES" title='KEY_16_BYTES' data-ref="KEY_16_BYTES">KEY_16_BYTES</dfn>,</td></tr>
+<tr><th id="42">42</th><td>	<dfn class="enum" id="KEY_32_BYTES" title='KEY_32_BYTES' data-ref="KEY_32_BYTES">KEY_32_BYTES</dfn>,</td></tr>
+<tr><th id="43">43</th><td>	<dfn class="enum" id="KEY_48_BYTES" title='KEY_48_BYTES' data-ref="KEY_48_BYTES">KEY_48_BYTES</dfn>,</td></tr>
+<tr><th id="44">44</th><td>	<dfn class="enum" id="KEY_64_BYTES" title='KEY_64_BYTES' data-ref="KEY_64_BYTES">KEY_64_BYTES</dfn>,</td></tr>
+<tr><th id="45">45</th><td>	<dfn class="enum" id="KEY_80_BYTES" title='KEY_80_BYTES' data-ref="KEY_80_BYTES">KEY_80_BYTES</dfn>,</td></tr>
+<tr><th id="46">46</th><td>	<dfn class="enum" id="KEY_96_BYTES" title='KEY_96_BYTES' data-ref="KEY_96_BYTES">KEY_96_BYTES</dfn>,</td></tr>
+<tr><th id="47">47</th><td>	<dfn class="enum" id="KEY_112_BYTES" title='KEY_112_BYTES' data-ref="KEY_112_BYTES">KEY_112_BYTES</dfn>,</td></tr>
+<tr><th id="48">48</th><td>	<dfn class="enum" id="KEY_128_BYTES" title='KEY_128_BYTES' data-ref="KEY_128_BYTES">KEY_128_BYTES</dfn>,</td></tr>
+<tr><th id="49">49</th><td>	<dfn class="enum" id="KEY_OTHER_BYTES" title='KEY_OTHER_BYTES' data-ref="KEY_OTHER_BYTES">KEY_OTHER_BYTES</dfn>,</td></tr>
+<tr><th id="50">50</th><td>	<dfn class="enum" id="NUM_KEY_CMP_CASES" title='NUM_KEY_CMP_CASES' data-ref="NUM_KEY_CMP_CASES">NUM_KEY_CMP_CASES</dfn>,</td></tr>
+<tr><th id="51">51</th><td>};</td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td><i>/*</i></td></tr>
+<tr><th id="54">54</th><td><i> * Table storing all different key compare functions</i></td></tr>
+<tr><th id="55">55</th><td><i> * (multi-process supported)</i></td></tr>
+<tr><th id="56">56</th><td><i> */</i></td></tr>
+<tr><th id="57">57</th><td><em>const</em> <a class="typedef" href="rte_hash.h.html#rte_hash_cmp_eq_t" title='rte_hash_cmp_eq_t' data-type='int (*)(const void *, const void *, size_t)' data-ref="rte_hash_cmp_eq_t">rte_hash_cmp_eq_t</a> <dfn class="decl def" id="cmp_jump_table" title='cmp_jump_table' data-ref="cmp_jump_table">cmp_jump_table</dfn>[<a class="enum" href="#NUM_KEY_CMP_CASES" title='NUM_KEY_CMP_CASES' data-ref="NUM_KEY_CMP_CASES">NUM_KEY_CMP_CASES</a>] = {</td></tr>
+<tr><th id="58">58</th><td>	<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>,</td></tr>
+<tr><th id="59">59</th><td>	<a class="ref fn" href="rte_cmp_x86.h.html#rte_hash_k16_cmp_eq" title='rte_hash_k16_cmp_eq' data-ref="rte_hash_k16_cmp_eq">rte_hash_k16_cmp_eq</a>,</td></tr>
+<tr><th id="60">60</th><td>	<a class="ref fn" href="rte_cmp_x86.h.html#rte_hash_k32_cmp_eq" title='rte_hash_k32_cmp_eq' data-ref="rte_hash_k32_cmp_eq">rte_hash_k32_cmp_eq</a>,</td></tr>
+<tr><th id="61">61</th><td>	<a class="ref fn" href="rte_cmp_x86.h.html#rte_hash_k48_cmp_eq" title='rte_hash_k48_cmp_eq' data-ref="rte_hash_k48_cmp_eq">rte_hash_k48_cmp_eq</a>,</td></tr>
+<tr><th id="62">62</th><td>	<a class="ref fn" href="rte_cmp_x86.h.html#rte_hash_k64_cmp_eq" title='rte_hash_k64_cmp_eq' data-ref="rte_hash_k64_cmp_eq">rte_hash_k64_cmp_eq</a>,</td></tr>
+<tr><th id="63">63</th><td>	<a class="ref fn" href="rte_cmp_x86.h.html#rte_hash_k80_cmp_eq" title='rte_hash_k80_cmp_eq' data-ref="rte_hash_k80_cmp_eq">rte_hash_k80_cmp_eq</a>,</td></tr>
+<tr><th id="64">64</th><td>	<a class="ref fn" href="rte_cmp_x86.h.html#rte_hash_k96_cmp_eq" title='rte_hash_k96_cmp_eq' data-ref="rte_hash_k96_cmp_eq">rte_hash_k96_cmp_eq</a>,</td></tr>
+<tr><th id="65">65</th><td>	<a class="ref fn" href="rte_cmp_x86.h.html#rte_hash_k112_cmp_eq" title='rte_hash_k112_cmp_eq' data-ref="rte_hash_k112_cmp_eq">rte_hash_k112_cmp_eq</a>,</td></tr>
+<tr><th id="66">66</th><td>	<a class="ref fn" href="rte_cmp_x86.h.html#rte_hash_k128_cmp_eq" title='rte_hash_k128_cmp_eq' data-ref="rte_hash_k128_cmp_eq">rte_hash_k128_cmp_eq</a>,</td></tr>
+<tr><th id="67">67</th><td>	<a class="ref fn" href="../../../include/string.h.html#memcmp" title='memcmp' data-ref="memcmp">memcmp</a></td></tr>
+<tr><th id="68">68</th><td>};</td></tr>
+<tr><th id="69">69</th><td><u>#<span data-ppcond="34">else</span></u></td></tr>
+<tr><th id="70">70</th><td><i>/*</i></td></tr>
+<tr><th id="71">71</th><td><i> * All different options to select a key compare function,</i></td></tr>
+<tr><th id="72">72</th><td><i> * based on the key size and custom function.</i></td></tr>
+<tr><th id="73">73</th><td><i> */</i></td></tr>
+<tr><th id="74">74</th><td><b>enum</b> cmp_jump_table_case {</td></tr>
+<tr><th id="75">75</th><td>	KEY_CUSTOM = <var>0</var>,</td></tr>
+<tr><th id="76">76</th><td>	KEY_OTHER_BYTES,</td></tr>
+<tr><th id="77">77</th><td>	NUM_KEY_CMP_CASES,</td></tr>
+<tr><th id="78">78</th><td>};</td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td><i>/*</i></td></tr>
+<tr><th id="81">81</th><td><i> * Table storing all different key compare functions</i></td></tr>
+<tr><th id="82">82</th><td><i> * (multi-process supported)</i></td></tr>
+<tr><th id="83">83</th><td><i> */</i></td></tr>
+<tr><th id="84">84</th><td><em>const</em> rte_hash_cmp_eq_t cmp_jump_table[NUM_KEY_CMP_CASES] = {</td></tr>
+<tr><th id="85">85</th><td>	NULL,</td></tr>
+<tr><th id="86">86</th><td>	memcmp</td></tr>
+<tr><th id="87">87</th><td>};</td></tr>
+<tr><th id="88">88</th><td></td></tr>
+<tr><th id="89">89</th><td><u>#<span data-ppcond="34">endif</span></u></td></tr>
+<tr><th id="90">90</th><td></td></tr>
+<tr><th id="91">91</th><td><b>enum</b> <dfn class="type def" id="add_key_case" title='add_key_case' data-ref="add_key_case">add_key_case</dfn> {</td></tr>
+<tr><th id="92">92</th><td>	<dfn class="enum" id="ADD_KEY_SINGLEWRITER" title='ADD_KEY_SINGLEWRITER' data-ref="ADD_KEY_SINGLEWRITER">ADD_KEY_SINGLEWRITER</dfn> = <var>0</var>,</td></tr>
+<tr><th id="93">93</th><td>	<dfn class="enum" id="ADD_KEY_MULTIWRITER" title='ADD_KEY_MULTIWRITER' data-ref="ADD_KEY_MULTIWRITER">ADD_KEY_MULTIWRITER</dfn>,</td></tr>
+<tr><th id="94">94</th><td>	<dfn class="enum" id="ADD_KEY_MULTIWRITER_TM" title='ADD_KEY_MULTIWRITER_TM' data-ref="ADD_KEY_MULTIWRITER_TM">ADD_KEY_MULTIWRITER_TM</dfn>,</td></tr>
+<tr><th id="95">95</th><td>};</td></tr>
+<tr><th id="96">96</th><td></td></tr>
+<tr><th id="97">97</th><td><i class="doc">/** Number of items per bucket. */</i></td></tr>
+<tr><th id="98">98</th><td><u>#define <dfn class="macro" id="_M/RTE_HASH_BUCKET_ENTRIES" data-ref="_M/RTE_HASH_BUCKET_ENTRIES">RTE_HASH_BUCKET_ENTRIES</dfn>		8</u></td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td><u>#define <dfn class="macro" id="_M/NULL_SIGNATURE" data-ref="_M/NULL_SIGNATURE">NULL_SIGNATURE</dfn>			0</u></td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td><u>#define <dfn class="macro" id="_M/EMPTY_SLOT" data-ref="_M/EMPTY_SLOT">EMPTY_SLOT</dfn>			0</u></td></tr>
+<tr><th id="103">103</th><td></td></tr>
+<tr><th id="104">104</th><td><u>#define <dfn class="macro" id="_M/KEY_ALIGNMENT" data-ref="_M/KEY_ALIGNMENT">KEY_ALIGNMENT</dfn>			16</u></td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td><u>#define <dfn class="macro" id="_M/LCORE_CACHE_SIZE" data-ref="_M/LCORE_CACHE_SIZE">LCORE_CACHE_SIZE</dfn>		64</u></td></tr>
+<tr><th id="107">107</th><td></td></tr>
+<tr><th id="108">108</th><td><u>#define <dfn class="macro" id="_M/RTE_HASH_MAX_PUSHES" data-ref="_M/RTE_HASH_MAX_PUSHES">RTE_HASH_MAX_PUSHES</dfn>             100</u></td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td><u>#define <dfn class="macro" id="_M/RTE_HASH_BFS_QUEUE_MAX_LEN" data-ref="_M/RTE_HASH_BFS_QUEUE_MAX_LEN">RTE_HASH_BFS_QUEUE_MAX_LEN</dfn>       1000</u></td></tr>
+<tr><th id="111">111</th><td></td></tr>
+<tr><th id="112">112</th><td><u>#define <dfn class="macro" id="_M/RTE_XABORT_CUCKOO_PATH_INVALIDED" data-ref="_M/RTE_XABORT_CUCKOO_PATH_INVALIDED">RTE_XABORT_CUCKOO_PATH_INVALIDED</dfn> 0x4</u></td></tr>
+<tr><th id="113">113</th><td></td></tr>
+<tr><th id="114">114</th><td><u>#define <dfn class="macro" id="_M/RTE_HASH_TSX_MAX_RETRY" data-ref="_M/RTE_HASH_TSX_MAX_RETRY">RTE_HASH_TSX_MAX_RETRY</dfn>  10</u></td></tr>
+<tr><th id="115">115</th><td></td></tr>
+<tr><th id="116">116</th><td><b>struct</b> <dfn class="type def" id="lcore_cache" title='lcore_cache' data-ref="lcore_cache">lcore_cache</dfn> {</td></tr>
+<tr><th id="117">117</th><td>	<em>unsigned</em> <dfn class="decl field" id="lcore_cache::len" title='lcore_cache::len' data-ref="lcore_cache::len">len</dfn>; <i class="doc">/**&lt; Cache len */</i></td></tr>
+<tr><th id="118">118</th><td>	<em>void</em> *<dfn class="decl field" id="lcore_cache::objs" title='lcore_cache::objs' data-ref="lcore_cache::objs">objs</dfn>[<a class="macro" href="#106" title="64" data-ref="_M/LCORE_CACHE_SIZE">LCORE_CACHE_SIZE</a>]; <i class="doc">/**&lt; Cache objects */</i></td></tr>
+<tr><th id="119">119</th><td>} <a class="macro" href="../librte_eal/common/include/rte_memory.h.html#64" title="__attribute__((__aligned__(64)))" data-ref="_M/__rte_cache_aligned">__rte_cache_aligned</a>;</td></tr>
+<tr><th id="120">120</th><td></td></tr>
+<tr><th id="121">121</th><td><i>/* Structure that stores key-value pair */</i></td></tr>
+<tr><th id="122">122</th><td><b>struct</b> <dfn class="type def" id="rte_hash_key" title='rte_hash_key' data-ref="rte_hash_key">rte_hash_key</dfn> {</td></tr>
+<tr><th id="123">123</th><td>	<b>union</b> {</td></tr>
+<tr><th id="124">124</th><td>		<a class="typedef" href="../../../include/stdint.h.html#uintptr_t" title='uintptr_t' data-type='unsigned long' data-ref="uintptr_t">uintptr_t</a> <dfn class="decl field" id="rte_hash_key::(anonymous)::idata" title='rte_hash_key::(anonymous union)::idata' data-ref="rte_hash_key::(anonymous)::idata">idata</dfn>;</td></tr>
+<tr><th id="125">125</th><td>		<em>void</em> *<dfn class="decl field" id="rte_hash_key::(anonymous)::pdata" title='rte_hash_key::(anonymous union)::pdata' data-ref="rte_hash_key::(anonymous)::pdata">pdata</dfn>;</td></tr>
+<tr><th id="126">126</th><td>	};</td></tr>
+<tr><th id="127">127</th><td>	<i>/* Variable key size */</i></td></tr>
+<tr><th id="128">128</th><td>	<em>char</em> <dfn class="decl field" id="rte_hash_key::key" title='rte_hash_key::key' data-ref="rte_hash_key::key">key</dfn>[<var>0</var>];</td></tr>
+<tr><th id="129">129</th><td>} <b>__attribute__</b>((aligned(<a class="macro" href="#104" title="16" data-ref="_M/KEY_ALIGNMENT">KEY_ALIGNMENT</a>)));</td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td><i>/* All different signature compare functions */</i></td></tr>
+<tr><th id="132">132</th><td><b>enum</b> <dfn class="type def" id="rte_hash_sig_compare_function" title='rte_hash_sig_compare_function' data-ref="rte_hash_sig_compare_function">rte_hash_sig_compare_function</dfn> {</td></tr>
+<tr><th id="133">133</th><td>	<dfn class="enum" id="RTE_HASH_COMPARE_SCALAR" title='RTE_HASH_COMPARE_SCALAR' data-ref="RTE_HASH_COMPARE_SCALAR">RTE_HASH_COMPARE_SCALAR</dfn> = <var>0</var>,</td></tr>
+<tr><th id="134">134</th><td>	<dfn class="enum" id="RTE_HASH_COMPARE_SSE" title='RTE_HASH_COMPARE_SSE' data-ref="RTE_HASH_COMPARE_SSE">RTE_HASH_COMPARE_SSE</dfn>,</td></tr>
+<tr><th id="135">135</th><td>	<dfn class="enum" id="RTE_HASH_COMPARE_AVX2" title='RTE_HASH_COMPARE_AVX2' data-ref="RTE_HASH_COMPARE_AVX2">RTE_HASH_COMPARE_AVX2</dfn>,</td></tr>
+<tr><th id="136">136</th><td>	<dfn class="enum" id="RTE_HASH_COMPARE_NUM" title='RTE_HASH_COMPARE_NUM' data-ref="RTE_HASH_COMPARE_NUM">RTE_HASH_COMPARE_NUM</dfn></td></tr>
+<tr><th id="137">137</th><td>};</td></tr>
+<tr><th id="138">138</th><td></td></tr>
+<tr><th id="139">139</th><td><i class="doc">/** Bucket structure */</i></td></tr>
+<tr><th id="140">140</th><td><b>struct</b> <dfn class="type def" id="rte_hash_bucket" title='rte_hash_bucket' data-ref="rte_hash_bucket">rte_hash_bucket</dfn> {</td></tr>
+<tr><th id="141">141</th><td>	<a class="typedef" href="rte_hash.h.html#hash_sig_t" title='hash_sig_t' data-type='uint32_t' data-ref="hash_sig_t">hash_sig_t</a> <dfn class="decl field" id="rte_hash_bucket::sig_current" title='rte_hash_bucket::sig_current' data-ref="rte_hash_bucket::sig_current">sig_current</dfn>[<a class="macro" href="#98" title="8" data-ref="_M/RTE_HASH_BUCKET_ENTRIES">RTE_HASH_BUCKET_ENTRIES</a>];</td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_hash_bucket::key_idx" title='rte_hash_bucket::key_idx' data-ref="rte_hash_bucket::key_idx">key_idx</dfn>[<a class="macro" href="#98" title="8" data-ref="_M/RTE_HASH_BUCKET_ENTRIES">RTE_HASH_BUCKET_ENTRIES</a>];</td></tr>
+<tr><th id="144">144</th><td></td></tr>
+<tr><th id="145">145</th><td>	<a class="typedef" href="rte_hash.h.html#hash_sig_t" title='hash_sig_t' data-type='uint32_t' data-ref="hash_sig_t">hash_sig_t</a> <dfn class="decl field" id="rte_hash_bucket::sig_alt" title='rte_hash_bucket::sig_alt' data-ref="rte_hash_bucket::sig_alt">sig_alt</dfn>[<a class="macro" href="#98" title="8" data-ref="_M/RTE_HASH_BUCKET_ENTRIES">RTE_HASH_BUCKET_ENTRIES</a>];</td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="rte_hash_bucket::flag" title='rte_hash_bucket::flag' data-ref="rte_hash_bucket::flag">flag</dfn>[<a class="macro" href="#98" title="8" data-ref="_M/RTE_HASH_BUCKET_ENTRIES">RTE_HASH_BUCKET_ENTRIES</a>];</td></tr>
+<tr><th id="148">148</th><td>} <a class="macro" href="../librte_eal/common/include/rte_memory.h.html#64" title="__attribute__((__aligned__(64)))" data-ref="_M/__rte_cache_aligned">__rte_cache_aligned</a>;</td></tr>
+<tr><th id="149">149</th><td></td></tr>
+<tr><th id="150">150</th><td><i class="doc">/** A hash table structure. */</i></td></tr>
+<tr><th id="151">151</th><td><b>struct</b> <dfn class="type def" id="rte_hash" title='rte_hash' data-ref="rte_hash">rte_hash</dfn> {</td></tr>
+<tr><th id="152">152</th><td>	<em>char</em> <dfn class="decl field" id="rte_hash::name" title='rte_hash::name' data-ref="rte_hash::name">name</dfn>[<a class="macro" href="rte_hash.h.html#25" title="32" data-ref="_M/RTE_HASH_NAMESIZE">RTE_HASH_NAMESIZE</a>];   <i class="doc">/**&lt; Name of the hash. */</i></td></tr>
+<tr><th id="153">153</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_hash::entries" title='rte_hash::entries' data-ref="rte_hash::entries">entries</dfn>;               <i class="doc">/**&lt; Total table entries. */</i></td></tr>
+<tr><th id="154">154</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_hash::num_buckets" title='rte_hash::num_buckets' data-ref="rte_hash::num_buckets">num_buckets</dfn>;           <i class="doc">/**&lt; Number of buckets in table. */</i></td></tr>
+<tr><th id="155">155</th><td></td></tr>
+<tr><th id="156">156</th><td>	<b>struct</b> <a class="type" href="../librte_ring/rte_ring.h.html#rte_ring" title='rte_ring' data-ref="rte_ring">rte_ring</a> *<dfn class="decl field" id="rte_hash::free_slots" title='rte_hash::free_slots' data-ref="rte_hash::free_slots">free_slots</dfn>;</td></tr>
+<tr><th id="157">157</th><td>	<i class="doc">/**&lt; Ring that stores all indexes of the free slots in the key table */</i></td></tr>
+<tr><th id="158">158</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="rte_hash::hw_trans_mem_support" title='rte_hash::hw_trans_mem_support' data-ref="rte_hash::hw_trans_mem_support">hw_trans_mem_support</dfn>;</td></tr>
+<tr><th id="159">159</th><td>	<i class="doc">/**&lt; Hardware transactional memory support */</i></td></tr>
+<tr><th id="160">160</th><td>	<b>struct</b> <a class="type" href="#lcore_cache" title='lcore_cache' data-ref="lcore_cache">lcore_cache</a> *<dfn class="decl field" id="rte_hash::local_free_slots" title='rte_hash::local_free_slots' data-ref="rte_hash::local_free_slots">local_free_slots</dfn>;</td></tr>
+<tr><th id="161">161</th><td>	<i class="doc">/**&lt; Local cache per lcore, storing some indexes of the free slots */</i></td></tr>
+<tr><th id="162">162</th><td>	<b>enum</b> <a class="type" href="#add_key_case" title='add_key_case' data-ref="add_key_case">add_key_case</a> <dfn class="decl field" id="rte_hash::add_key" title='rte_hash::add_key' data-ref="rte_hash::add_key">add_key</dfn>; <i class="doc">/**&lt; Multi-writer hash add behavior */</i></td></tr>
+<tr><th id="163">163</th><td></td></tr>
+<tr><th id="164">164</th><td>	<a class="typedef" href="../librte_eal/common/include/generic/rte_spinlock.h.html#rte_spinlock_t" title='rte_spinlock_t' data-type='struct rte_spinlock_t' data-ref="rte_spinlock_t">rte_spinlock_t</a> *<dfn class="decl field" id="rte_hash::multiwriter_lock" title='rte_hash::multiwriter_lock' data-ref="rte_hash::multiwriter_lock">multiwriter_lock</dfn>; <i class="doc">/**&lt; Multi-writer spinlock for w/o TM */</i></td></tr>
+<tr><th id="165">165</th><td></td></tr>
+<tr><th id="166">166</th><td>	<i>/* Fields used in lookup */</i></td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_hash::key_len" title='rte_hash::key_len' data-ref="rte_hash::key_len">key_len</dfn> <a class="macro" href="../librte_eal/common/include/rte_memory.h.html#64" title="__attribute__((__aligned__(64)))" data-ref="_M/__rte_cache_aligned">__rte_cache_aligned</a>;</td></tr>
+<tr><th id="169">169</th><td>	<i class="doc">/**&lt; Length of hash key. */</i></td></tr>
+<tr><th id="170">170</th><td>	<a class="typedef" href="rte_hash.h.html#rte_hash_function" title='rte_hash_function' data-type='uint32_t (*)(const void *, uint32_t, uint32_t)' data-ref="rte_hash_function">rte_hash_function</a> <dfn class="decl field" id="rte_hash::hash_func" title='rte_hash::hash_func' data-ref="rte_hash::hash_func">hash_func</dfn>;    <i class="doc">/**&lt; Function used to calculate hash. */</i></td></tr>
+<tr><th id="171">171</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_hash::hash_func_init_val" title='rte_hash::hash_func_init_val' data-ref="rte_hash::hash_func_init_val">hash_func_init_val</dfn>;    <i class="doc">/**&lt; Init value used by hash_func. */</i></td></tr>
+<tr><th id="172">172</th><td>	<a class="typedef" href="rte_hash.h.html#rte_hash_cmp_eq_t" title='rte_hash_cmp_eq_t' data-type='int (*)(const void *, const void *, size_t)' data-ref="rte_hash_cmp_eq_t">rte_hash_cmp_eq_t</a> <dfn class="decl field" id="rte_hash::rte_hash_custom_cmp_eq" title='rte_hash::rte_hash_custom_cmp_eq' data-ref="rte_hash::rte_hash_custom_cmp_eq">rte_hash_custom_cmp_eq</dfn>;</td></tr>
+<tr><th id="173">173</th><td>	<i class="doc">/**&lt; Custom function used to compare keys. */</i></td></tr>
+<tr><th id="174">174</th><td>	<b>enum</b> <a class="type" href="#cmp_jump_table_case" title='cmp_jump_table_case' data-ref="cmp_jump_table_case">cmp_jump_table_case</a> <dfn class="decl field" id="rte_hash::cmp_jump_table_idx" title='rte_hash::cmp_jump_table_idx' data-ref="rte_hash::cmp_jump_table_idx">cmp_jump_table_idx</dfn>;</td></tr>
+<tr><th id="175">175</th><td>	<i class="doc">/**&lt; Indicates which compare function to use. */</i></td></tr>
+<tr><th id="176">176</th><td>	<b>enum</b> <a class="type" href="#rte_hash_sig_compare_function" title='rte_hash_sig_compare_function' data-ref="rte_hash_sig_compare_function">rte_hash_sig_compare_function</a> <dfn class="decl field" id="rte_hash::sig_cmp_fn" title='rte_hash::sig_cmp_fn' data-ref="rte_hash::sig_cmp_fn">sig_cmp_fn</dfn>;</td></tr>
+<tr><th id="177">177</th><td>	<i class="doc">/**&lt; Indicates which signature compare function to use. */</i></td></tr>
+<tr><th id="178">178</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_hash::bucket_bitmask" title='rte_hash::bucket_bitmask' data-ref="rte_hash::bucket_bitmask">bucket_bitmask</dfn>;</td></tr>
+<tr><th id="179">179</th><td>	<i class="doc">/**&lt; Bitmask for getting bucket index from hash signature. */</i></td></tr>
+<tr><th id="180">180</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_hash::key_entry_size" title='rte_hash::key_entry_size' data-ref="rte_hash::key_entry_size">key_entry_size</dfn>;         <i class="doc">/**&lt; Size of each key entry. */</i></td></tr>
+<tr><th id="181">181</th><td></td></tr>
+<tr><th id="182">182</th><td>	<em>void</em> *<dfn class="decl field" id="rte_hash::key_store" title='rte_hash::key_store' data-ref="rte_hash::key_store">key_store</dfn>;                <i class="doc">/**&lt; Table storing all keys and data */</i></td></tr>
+<tr><th id="183">183</th><td>	<b>struct</b> <a class="type" href="#rte_hash_bucket" title='rte_hash_bucket' data-ref="rte_hash_bucket">rte_hash_bucket</a> *<dfn class="decl field" id="rte_hash::buckets" title='rte_hash::buckets' data-ref="rte_hash::buckets">buckets</dfn>;</td></tr>
+<tr><th id="184">184</th><td>	<i class="doc">/**&lt; Table with buckets storing all the	hash values and key indexes</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc">	 * to the key table.</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="187">187</th><td>} <a class="macro" href="../librte_eal/common/include/rte_memory.h.html#64" title="__attribute__((__aligned__(64)))" data-ref="_M/__rte_cache_aligned">__rte_cache_aligned</a>;</td></tr>
+<tr><th id="188">188</th><td></td></tr>
+<tr><th id="189">189</th><td><b>struct</b> <dfn class="type def" id="queue_node" title='queue_node' data-ref="queue_node">queue_node</dfn> {</td></tr>
+<tr><th id="190">190</th><td>	<b>struct</b> <a class="type" href="#rte_hash_bucket" title='rte_hash_bucket' data-ref="rte_hash_bucket">rte_hash_bucket</a> *<dfn class="decl field" id="queue_node::bkt" title='queue_node::bkt' data-ref="queue_node::bkt">bkt</dfn>; <i>/* Current bucket on the bfs search */</i></td></tr>
+<tr><th id="191">191</th><td></td></tr>
+<tr><th id="192">192</th><td>	<b>struct</b> <a class="type" href="#queue_node" title='queue_node' data-ref="queue_node">queue_node</a> *<dfn class="decl field" id="queue_node::prev" title='queue_node::prev' data-ref="queue_node::prev">prev</dfn>;     <i>/* Parent(bucket) in search path */</i></td></tr>
+<tr><th id="193">193</th><td>	<em>int</em> <dfn class="decl field" id="queue_node::prev_slot" title='queue_node::prev_slot' data-ref="queue_node::prev_slot">prev_slot</dfn>;               <i>/* Parent(slot) in search path */</i></td></tr>
+<tr><th id="194">194</th><td>};</td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td><u>#<span data-ppcond="10">endif</span></u></td></tr>
+<tr><th id="197">197</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='rte_cuckoo_hash.c.html'>dpdk_1805/lib/librte_hash/rte_cuckoo_hash.c</a><br/>Generated on <em>2018-Jul-30</em> from project dpdk_1805 revision <em>18.05</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

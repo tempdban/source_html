@@ -1,0 +1,141 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>rte_power.c source code [dpdk_1805/lib/librte_power/rte_power.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'dpdk_1805/lib/librte_power/rte_power.c'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>dpdk_1805</a>/<a href='..'>lib</a>/<a href='./'>librte_power</a>/<a href='rte_power.c.html'>rte_power.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright(c) 2010-2014 Intel Corporation</i></td></tr>
+<tr><th id="3">3</th><td><i> */</i></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><u>#include <a href="../librte_eal/common/include/arch/x86/rte_atomic.h.html">&lt;rte_atomic.h&gt;</a></u></td></tr>
+<tr><th id="6">6</th><td></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="rte_power.h.html">"rte_power.h"</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="power_acpi_cpufreq.h.html">"power_acpi_cpufreq.h"</a></u></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="power_kvm_vm.h.html">"power_kvm_vm.h"</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="power_common.h.html">"power_common.h"</a></u></td></tr>
+<tr><th id="11">11</th><td></td></tr>
+<tr><th id="12">12</th><td><b>enum</b> <a class="type" href="rte_power.h.html#power_management_env" title='power_management_env' data-ref="power_management_env">power_management_env</a> <dfn class="decl def" id="global_default_env" title='global_default_env' data-ref="global_default_env">global_default_env</dfn> = <a class="enum" href="rte_power.h.html#PM_ENV_NOT_SET" title='PM_ENV_NOT_SET' data-ref="PM_ENV_NOT_SET">PM_ENV_NOT_SET</a>;</td></tr>
+<tr><th id="13">13</th><td></td></tr>
+<tr><th id="14">14</th><td><em>volatile</em> <a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl def" id="global_env_cfg_status" title='global_env_cfg_status' data-ref="global_env_cfg_status">global_env_cfg_status</dfn> = <var>0</var>;</td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><i>/* function pointers */</i></td></tr>
+<tr><th id="17">17</th><td><a class="typedef" href="rte_power.h.html#rte_power_freqs_t" title='rte_power_freqs_t' data-type='uint32_t (*)(unsigned int, uint32_t *, uint32_t)' data-ref="rte_power_freqs_t">rte_power_freqs_t</a> <dfn class="decl def" id="rte_power_freqs" title='rte_power_freqs' data-ref="rte_power_freqs">rte_power_freqs</dfn>  = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="18">18</th><td><a class="typedef" href="rte_power.h.html#rte_power_get_freq_t" title='rte_power_get_freq_t' data-type='uint32_t (*)(unsigned int)' data-ref="rte_power_get_freq_t">rte_power_get_freq_t</a> <dfn class="decl def" id="rte_power_get_freq" title='rte_power_get_freq' data-ref="rte_power_get_freq">rte_power_get_freq</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="19">19</th><td><a class="typedef" href="rte_power.h.html#rte_power_set_freq_t" title='rte_power_set_freq_t' data-type='int (*)(unsigned int, uint32_t)' data-ref="rte_power_set_freq_t">rte_power_set_freq_t</a> <dfn class="decl def" id="rte_power_set_freq" title='rte_power_set_freq' data-ref="rte_power_set_freq">rte_power_set_freq</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="20">20</th><td><a class="typedef" href="rte_power.h.html#rte_power_freq_change_t" title='rte_power_freq_change_t' data-type='int (*)(unsigned int)' data-ref="rte_power_freq_change_t">rte_power_freq_change_t</a> <dfn class="decl def" id="rte_power_freq_up" title='rte_power_freq_up' data-ref="rte_power_freq_up">rte_power_freq_up</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="21">21</th><td><a class="typedef" href="rte_power.h.html#rte_power_freq_change_t" title='rte_power_freq_change_t' data-type='int (*)(unsigned int)' data-ref="rte_power_freq_change_t">rte_power_freq_change_t</a> <dfn class="decl def" id="rte_power_freq_down" title='rte_power_freq_down' data-ref="rte_power_freq_down">rte_power_freq_down</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="22">22</th><td><a class="typedef" href="rte_power.h.html#rte_power_freq_change_t" title='rte_power_freq_change_t' data-type='int (*)(unsigned int)' data-ref="rte_power_freq_change_t">rte_power_freq_change_t</a> <dfn class="decl def" id="rte_power_freq_max" title='rte_power_freq_max' data-ref="rte_power_freq_max">rte_power_freq_max</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="23">23</th><td><a class="typedef" href="rte_power.h.html#rte_power_freq_change_t" title='rte_power_freq_change_t' data-type='int (*)(unsigned int)' data-ref="rte_power_freq_change_t">rte_power_freq_change_t</a> <dfn class="decl def" id="rte_power_freq_min" title='rte_power_freq_min' data-ref="rte_power_freq_min">rte_power_freq_min</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="24">24</th><td><a class="typedef" href="rte_power.h.html#rte_power_freq_change_t" title='rte_power_freq_change_t' data-type='int (*)(unsigned int)' data-ref="rte_power_freq_change_t">rte_power_freq_change_t</a> <dfn class="decl def" id="rte_power_turbo_status" title='rte_power_turbo_status' data-ref="rte_power_turbo_status">rte_power_turbo_status</dfn>;</td></tr>
+<tr><th id="25">25</th><td><a class="typedef" href="rte_power.h.html#rte_power_freq_change_t" title='rte_power_freq_change_t' data-type='int (*)(unsigned int)' data-ref="rte_power_freq_change_t">rte_power_freq_change_t</a> <dfn class="decl def" id="rte_power_freq_enable_turbo" title='rte_power_freq_enable_turbo' data-ref="rte_power_freq_enable_turbo">rte_power_freq_enable_turbo</dfn>;</td></tr>
+<tr><th id="26">26</th><td><a class="typedef" href="rte_power.h.html#rte_power_freq_change_t" title='rte_power_freq_change_t' data-type='int (*)(unsigned int)' data-ref="rte_power_freq_change_t">rte_power_freq_change_t</a> <dfn class="decl def" id="rte_power_freq_disable_turbo" title='rte_power_freq_disable_turbo' data-ref="rte_power_freq_disable_turbo">rte_power_freq_disable_turbo</dfn>;</td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td><em>int</em></td></tr>
+<tr><th id="29">29</th><td><dfn class="decl def fn" id="rte_power_set_env" title='rte_power_set_env' data-ref="rte_power_set_env">rte_power_set_env</dfn>(<b>enum</b> <a class="type" href="rte_power.h.html#power_management_env" title='power_management_env' data-ref="power_management_env">power_management_env</a> <dfn class="local col1 decl" id="11env" title='env' data-type='enum power_management_env' data-ref="11env">env</dfn>)</td></tr>
+<tr><th id="30">30</th><td>{</td></tr>
+<tr><th id="31">31</th><td>	<b>if</b> (<a class="ref fn" href="../librte_eal/common/include/generic/rte_atomic.h.html#rte_atomic32_cmpset" title='rte_atomic32_cmpset' data-ref="rte_atomic32_cmpset">rte_atomic32_cmpset</a>(&amp;<a class="ref" href="#global_env_cfg_status" title='global_env_cfg_status' data-ref="global_env_cfg_status">global_env_cfg_status</a>, <var>0</var>, <var>1</var>) == <var>0</var>) {</td></tr>
+<tr><th id="32">32</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="33">33</th><td>	}</td></tr>
+<tr><th id="34">34</th><td>	<b>if</b> (<a class="local col1 ref" href="#11env" title='env' data-ref="11env">env</a> == <a class="enum" href="rte_power.h.html#PM_ENV_ACPI_CPUFREQ" title='PM_ENV_ACPI_CPUFREQ' data-ref="PM_ENV_ACPI_CPUFREQ">PM_ENV_ACPI_CPUFREQ</a>) {</td></tr>
+<tr><th id="35">35</th><td>		<a class="ref" href="rte_power.h.html#rte_power_freqs" title='rte_power_freqs' data-ref="rte_power_freqs">rte_power_freqs</a> = <a class="ref fn" href="power_acpi_cpufreq.h.html#power_acpi_cpufreq_freqs" title='power_acpi_cpufreq_freqs' data-ref="power_acpi_cpufreq_freqs">power_acpi_cpufreq_freqs</a>;</td></tr>
+<tr><th id="36">36</th><td>		<a class="ref" href="rte_power.h.html#rte_power_get_freq" title='rte_power_get_freq' data-ref="rte_power_get_freq">rte_power_get_freq</a> = <a class="ref fn" href="power_acpi_cpufreq.h.html#power_acpi_cpufreq_get_freq" title='power_acpi_cpufreq_get_freq' data-ref="power_acpi_cpufreq_get_freq">power_acpi_cpufreq_get_freq</a>;</td></tr>
+<tr><th id="37">37</th><td>		<a class="ref" href="rte_power.h.html#rte_power_set_freq" title='rte_power_set_freq' data-ref="rte_power_set_freq">rte_power_set_freq</a> = <a class="ref fn" href="power_acpi_cpufreq.h.html#power_acpi_cpufreq_set_freq" title='power_acpi_cpufreq_set_freq' data-ref="power_acpi_cpufreq_set_freq">power_acpi_cpufreq_set_freq</a>;</td></tr>
+<tr><th id="38">38</th><td>		<a class="ref" href="rte_power.h.html#rte_power_freq_up" title='rte_power_freq_up' data-ref="rte_power_freq_up">rte_power_freq_up</a> = <a class="ref fn" href="power_acpi_cpufreq.h.html#power_acpi_cpufreq_freq_up" title='power_acpi_cpufreq_freq_up' data-ref="power_acpi_cpufreq_freq_up">power_acpi_cpufreq_freq_up</a>;</td></tr>
+<tr><th id="39">39</th><td>		<a class="ref" href="rte_power.h.html#rte_power_freq_down" title='rte_power_freq_down' data-ref="rte_power_freq_down">rte_power_freq_down</a> = <a class="ref fn" href="power_acpi_cpufreq.h.html#power_acpi_cpufreq_freq_down" title='power_acpi_cpufreq_freq_down' data-ref="power_acpi_cpufreq_freq_down">power_acpi_cpufreq_freq_down</a>;</td></tr>
+<tr><th id="40">40</th><td>		<a class="ref" href="rte_power.h.html#rte_power_freq_min" title='rte_power_freq_min' data-ref="rte_power_freq_min">rte_power_freq_min</a> = <a class="ref fn" href="power_acpi_cpufreq.h.html#power_acpi_cpufreq_freq_min" title='power_acpi_cpufreq_freq_min' data-ref="power_acpi_cpufreq_freq_min">power_acpi_cpufreq_freq_min</a>;</td></tr>
+<tr><th id="41">41</th><td>		<a class="ref" href="rte_power.h.html#rte_power_freq_max" title='rte_power_freq_max' data-ref="rte_power_freq_max">rte_power_freq_max</a> = <a class="ref fn" href="power_acpi_cpufreq.h.html#power_acpi_cpufreq_freq_max" title='power_acpi_cpufreq_freq_max' data-ref="power_acpi_cpufreq_freq_max">power_acpi_cpufreq_freq_max</a>;</td></tr>
+<tr><th id="42">42</th><td>		<a class="ref" href="rte_power.h.html#rte_power_turbo_status" title='rte_power_turbo_status' data-ref="rte_power_turbo_status">rte_power_turbo_status</a> = <a class="ref fn" href="power_acpi_cpufreq.h.html#power_acpi_turbo_status" title='power_acpi_turbo_status' data-ref="power_acpi_turbo_status">power_acpi_turbo_status</a>;</td></tr>
+<tr><th id="43">43</th><td>		<a class="ref" href="rte_power.h.html#rte_power_freq_enable_turbo" title='rte_power_freq_enable_turbo' data-ref="rte_power_freq_enable_turbo">rte_power_freq_enable_turbo</a> = <a class="ref fn" href="power_acpi_cpufreq.h.html#power_acpi_enable_turbo" title='power_acpi_enable_turbo' data-ref="power_acpi_enable_turbo">power_acpi_enable_turbo</a>;</td></tr>
+<tr><th id="44">44</th><td>		<a class="ref" href="rte_power.h.html#rte_power_freq_disable_turbo" title='rte_power_freq_disable_turbo' data-ref="rte_power_freq_disable_turbo">rte_power_freq_disable_turbo</a> = <a class="ref fn" href="power_acpi_cpufreq.h.html#power_acpi_disable_turbo" title='power_acpi_disable_turbo' data-ref="power_acpi_disable_turbo">power_acpi_disable_turbo</a>;</td></tr>
+<tr><th id="45">45</th><td>	} <b>else</b> <b>if</b> (<a class="local col1 ref" href="#11env" title='env' data-ref="11env">env</a> == <a class="enum" href="rte_power.h.html#PM_ENV_KVM_VM" title='PM_ENV_KVM_VM' data-ref="PM_ENV_KVM_VM">PM_ENV_KVM_VM</a>) {</td></tr>
+<tr><th id="46">46</th><td>		<a class="ref" href="rte_power.h.html#rte_power_freqs" title='rte_power_freqs' data-ref="rte_power_freqs">rte_power_freqs</a> = <a class="ref fn" href="power_kvm_vm.h.html#power_kvm_vm_freqs" title='power_kvm_vm_freqs' data-ref="power_kvm_vm_freqs">power_kvm_vm_freqs</a>;</td></tr>
+<tr><th id="47">47</th><td>		<a class="ref" href="rte_power.h.html#rte_power_get_freq" title='rte_power_get_freq' data-ref="rte_power_get_freq">rte_power_get_freq</a> = <a class="ref fn" href="power_kvm_vm.h.html#power_kvm_vm_get_freq" title='power_kvm_vm_get_freq' data-ref="power_kvm_vm_get_freq">power_kvm_vm_get_freq</a>;</td></tr>
+<tr><th id="48">48</th><td>		<a class="ref" href="rte_power.h.html#rte_power_set_freq" title='rte_power_set_freq' data-ref="rte_power_set_freq">rte_power_set_freq</a> = <a class="ref fn" href="power_kvm_vm.h.html#power_kvm_vm_set_freq" title='power_kvm_vm_set_freq' data-ref="power_kvm_vm_set_freq">power_kvm_vm_set_freq</a>;</td></tr>
+<tr><th id="49">49</th><td>		<a class="ref" href="rte_power.h.html#rte_power_freq_up" title='rte_power_freq_up' data-ref="rte_power_freq_up">rte_power_freq_up</a> = <a class="ref fn" href="power_kvm_vm.h.html#power_kvm_vm_freq_up" title='power_kvm_vm_freq_up' data-ref="power_kvm_vm_freq_up">power_kvm_vm_freq_up</a>;</td></tr>
+<tr><th id="50">50</th><td>		<a class="ref" href="rte_power.h.html#rte_power_freq_down" title='rte_power_freq_down' data-ref="rte_power_freq_down">rte_power_freq_down</a> = <a class="ref fn" href="power_kvm_vm.h.html#power_kvm_vm_freq_down" title='power_kvm_vm_freq_down' data-ref="power_kvm_vm_freq_down">power_kvm_vm_freq_down</a>;</td></tr>
+<tr><th id="51">51</th><td>		<a class="ref" href="rte_power.h.html#rte_power_freq_min" title='rte_power_freq_min' data-ref="rte_power_freq_min">rte_power_freq_min</a> = <a class="ref fn" href="power_kvm_vm.h.html#power_kvm_vm_freq_min" title='power_kvm_vm_freq_min' data-ref="power_kvm_vm_freq_min">power_kvm_vm_freq_min</a>;</td></tr>
+<tr><th id="52">52</th><td>		<a class="ref" href="rte_power.h.html#rte_power_freq_max" title='rte_power_freq_max' data-ref="rte_power_freq_max">rte_power_freq_max</a> = <a class="ref fn" href="power_kvm_vm.h.html#power_kvm_vm_freq_max" title='power_kvm_vm_freq_max' data-ref="power_kvm_vm_freq_max">power_kvm_vm_freq_max</a>;</td></tr>
+<tr><th id="53">53</th><td>		<a class="ref" href="rte_power.h.html#rte_power_turbo_status" title='rte_power_turbo_status' data-ref="rte_power_turbo_status">rte_power_turbo_status</a> = <a class="ref fn" href="power_kvm_vm.h.html#power_kvm_vm_turbo_status" title='power_kvm_vm_turbo_status' data-ref="power_kvm_vm_turbo_status">power_kvm_vm_turbo_status</a>;</td></tr>
+<tr><th id="54">54</th><td>		<a class="ref" href="rte_power.h.html#rte_power_freq_enable_turbo" title='rte_power_freq_enable_turbo' data-ref="rte_power_freq_enable_turbo">rte_power_freq_enable_turbo</a> = <a class="ref fn" href="power_kvm_vm.h.html#power_kvm_vm_enable_turbo" title='power_kvm_vm_enable_turbo' data-ref="power_kvm_vm_enable_turbo">power_kvm_vm_enable_turbo</a>;</td></tr>
+<tr><th id="55">55</th><td>		<a class="ref" href="rte_power.h.html#rte_power_freq_disable_turbo" title='rte_power_freq_disable_turbo' data-ref="rte_power_freq_disable_turbo">rte_power_freq_disable_turbo</a> = <a class="ref fn" href="power_kvm_vm.h.html#power_kvm_vm_disable_turbo" title='power_kvm_vm_disable_turbo' data-ref="power_kvm_vm_disable_turbo">power_kvm_vm_disable_turbo</a>;</td></tr>
+<tr><th id="56">56</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="57">57</th><td>		<a class="macro" href="../librte_eal/common/include/rte_log.h.html#320" title="rte_log(4U, 10, &quot;POWER&quot; &quot;: &quot; &quot;Invalid Power Management Environment(%d) set\n&quot;, env)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, POWER, <q>"Invalid Power Management Environment(%d) set\n"</q>,</td></tr>
+<tr><th id="58">58</th><td>				<a class="local col1 ref" href="#11env" title='env' data-ref="11env">env</a>);</td></tr>
+<tr><th id="59">59</th><td>		<a class="ref fn" href="#rte_power_unset_env" title='rte_power_unset_env' data-ref="rte_power_unset_env">rte_power_unset_env</a>();</td></tr>
+<tr><th id="60">60</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="61">61</th><td>	}</td></tr>
+<tr><th id="62">62</th><td>	<a class="ref" href="#global_default_env" title='global_default_env' data-ref="global_default_env">global_default_env</a> = <a class="local col1 ref" href="#11env" title='env' data-ref="11env">env</a>;</td></tr>
+<tr><th id="63">63</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="64">64</th><td></td></tr>
+<tr><th id="65">65</th><td>}</td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td><em>void</em></td></tr>
+<tr><th id="68">68</th><td><dfn class="decl def fn" id="rte_power_unset_env" title='rte_power_unset_env' data-ref="rte_power_unset_env">rte_power_unset_env</dfn>(<em>void</em>)</td></tr>
+<tr><th id="69">69</th><td>{</td></tr>
+<tr><th id="70">70</th><td>	<b>if</b> (<a class="ref fn" href="../librte_eal/common/include/generic/rte_atomic.h.html#rte_atomic32_cmpset" title='rte_atomic32_cmpset' data-ref="rte_atomic32_cmpset">rte_atomic32_cmpset</a>(&amp;<a class="ref" href="#global_env_cfg_status" title='global_env_cfg_status' data-ref="global_env_cfg_status">global_env_cfg_status</a>, <var>1</var>, <var>0</var>) != <var>0</var>)</td></tr>
+<tr><th id="71">71</th><td>		<a class="ref" href="#global_default_env" title='global_default_env' data-ref="global_default_env">global_default_env</a> = <a class="enum" href="rte_power.h.html#PM_ENV_NOT_SET" title='PM_ENV_NOT_SET' data-ref="PM_ENV_NOT_SET">PM_ENV_NOT_SET</a>;</td></tr>
+<tr><th id="72">72</th><td>}</td></tr>
+<tr><th id="73">73</th><td></td></tr>
+<tr><th id="74">74</th><td><b>enum</b> <a class="type" href="rte_power.h.html#power_management_env" title='power_management_env' data-ref="power_management_env">power_management_env</a></td></tr>
+<tr><th id="75">75</th><td><dfn class="decl def fn" id="rte_power_get_env" title='rte_power_get_env' data-ref="rte_power_get_env">rte_power_get_env</dfn>(<em>void</em>) {</td></tr>
+<tr><th id="76">76</th><td>	<b>return</b> <a class="ref" href="#global_default_env" title='global_default_env' data-ref="global_default_env">global_default_env</a>;</td></tr>
+<tr><th id="77">77</th><td>}</td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td><em>int</em></td></tr>
+<tr><th id="80">80</th><td><dfn class="decl def fn" id="rte_power_init" title='rte_power_init' data-ref="rte_power_init">rte_power_init</dfn>(<em>unsigned</em> <em>int</em> <dfn class="local col2 decl" id="12lcore_id" title='lcore_id' data-type='unsigned int' data-ref="12lcore_id">lcore_id</dfn>)</td></tr>
+<tr><th id="81">81</th><td>{</td></tr>
+<tr><th id="82">82</th><td>	<em>int</em> <dfn class="local col3 decl" id="13ret" title='ret' data-type='int' data-ref="13ret">ret</dfn> = -<var>1</var>;</td></tr>
+<tr><th id="83">83</th><td></td></tr>
+<tr><th id="84">84</th><td>	<b>if</b> (<a class="ref" href="#global_default_env" title='global_default_env' data-ref="global_default_env">global_default_env</a> == <a class="enum" href="rte_power.h.html#PM_ENV_ACPI_CPUFREQ" title='PM_ENV_ACPI_CPUFREQ' data-ref="PM_ENV_ACPI_CPUFREQ">PM_ENV_ACPI_CPUFREQ</a>) {</td></tr>
+<tr><th id="85">85</th><td>		<b>return</b> <a class="ref fn" href="power_acpi_cpufreq.h.html#power_acpi_cpufreq_init" title='power_acpi_cpufreq_init' data-ref="power_acpi_cpufreq_init">power_acpi_cpufreq_init</a>(<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>);</td></tr>
+<tr><th id="86">86</th><td>	}</td></tr>
+<tr><th id="87">87</th><td>	<b>if</b> (<a class="ref" href="#global_default_env" title='global_default_env' data-ref="global_default_env">global_default_env</a> == <a class="enum" href="rte_power.h.html#PM_ENV_KVM_VM" title='PM_ENV_KVM_VM' data-ref="PM_ENV_KVM_VM">PM_ENV_KVM_VM</a>) {</td></tr>
+<tr><th id="88">88</th><td>		<b>return</b> <a class="ref fn" href="power_kvm_vm.h.html#power_kvm_vm_init" title='power_kvm_vm_init' data-ref="power_kvm_vm_init">power_kvm_vm_init</a>(<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>);</td></tr>
+<tr><th id="89">89</th><td>	}</td></tr>
+<tr><th id="90">90</th><td>	<i>/* Auto detect Environment */</i></td></tr>
+<tr><th id="91">91</th><td>	<a class="macro" href="../librte_eal/common/include/rte_log.h.html#320" title="rte_log(7U, 10, &quot;POWER&quot; &quot;: &quot; &quot;Attempting to initialise ACPI cpufreq power &quot; &quot;management...\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(INFO, POWER, <q>"Attempting to initialise ACPI cpufreq power "</q></td></tr>
+<tr><th id="92">92</th><td>			<q>"management...\n"</q>);</td></tr>
+<tr><th id="93">93</th><td>	<a class="local col3 ref" href="#13ret" title='ret' data-ref="13ret">ret</a> = <a class="ref fn" href="power_acpi_cpufreq.h.html#power_acpi_cpufreq_init" title='power_acpi_cpufreq_init' data-ref="power_acpi_cpufreq_init">power_acpi_cpufreq_init</a>(<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>);</td></tr>
+<tr><th id="94">94</th><td>	<b>if</b> (<a class="local col3 ref" href="#13ret" title='ret' data-ref="13ret">ret</a> == <var>0</var>) {</td></tr>
+<tr><th id="95">95</th><td>		<a class="ref fn" href="#rte_power_set_env" title='rte_power_set_env' data-ref="rte_power_set_env">rte_power_set_env</a>(<a class="enum" href="rte_power.h.html#PM_ENV_ACPI_CPUFREQ" title='PM_ENV_ACPI_CPUFREQ' data-ref="PM_ENV_ACPI_CPUFREQ">PM_ENV_ACPI_CPUFREQ</a>);</td></tr>
+<tr><th id="96">96</th><td>		<b>goto</b> <a class="lbl" href="#14out" data-ref="14out">out</a>;</td></tr>
+<tr><th id="97">97</th><td>	}</td></tr>
+<tr><th id="98">98</th><td></td></tr>
+<tr><th id="99">99</th><td>	<a class="macro" href="../librte_eal/common/include/rte_log.h.html#320" title="rte_log(7U, 10, &quot;POWER&quot; &quot;: &quot; &quot;Attempting to initialise VM power management...\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(INFO, POWER, <q>"Attempting to initialise VM power management...\n"</q>);</td></tr>
+<tr><th id="100">100</th><td>	<a class="local col3 ref" href="#13ret" title='ret' data-ref="13ret">ret</a> = <a class="ref fn" href="power_kvm_vm.h.html#power_kvm_vm_init" title='power_kvm_vm_init' data-ref="power_kvm_vm_init">power_kvm_vm_init</a>(<a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>);</td></tr>
+<tr><th id="101">101</th><td>	<b>if</b> (<a class="local col3 ref" href="#13ret" title='ret' data-ref="13ret">ret</a> == <var>0</var>) {</td></tr>
+<tr><th id="102">102</th><td>		<a class="ref fn" href="#rte_power_set_env" title='rte_power_set_env' data-ref="rte_power_set_env">rte_power_set_env</a>(<a class="enum" href="rte_power.h.html#PM_ENV_KVM_VM" title='PM_ENV_KVM_VM' data-ref="PM_ENV_KVM_VM">PM_ENV_KVM_VM</a>);</td></tr>
+<tr><th id="103">103</th><td>		<b>goto</b> <a class="lbl" href="#14out" data-ref="14out">out</a>;</td></tr>
+<tr><th id="104">104</th><td>	}</td></tr>
+<tr><th id="105">105</th><td>	<a class="macro" href="../librte_eal/common/include/rte_log.h.html#320" title="rte_log(4U, 10, &quot;POWER&quot; &quot;: &quot; &quot;Unable to set Power Management Environment for lcore &quot; &quot;%u\n&quot;, lcore_id)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, POWER, <q>"Unable to set Power Management Environment for lcore "</q></td></tr>
+<tr><th id="106">106</th><td>			<q>"%u\n"</q>, <a class="local col2 ref" href="#12lcore_id" title='lcore_id' data-ref="12lcore_id">lcore_id</a>);</td></tr>
+<tr><th id="107">107</th><td><dfn class="lbl" id="14out" data-ref="14out">out</dfn>:</td></tr>
+<tr><th id="108">108</th><td>	<b>return</b> <a class="local col3 ref" href="#13ret" title='ret' data-ref="13ret">ret</a>;</td></tr>
+<tr><th id="109">109</th><td>}</td></tr>
+<tr><th id="110">110</th><td></td></tr>
+<tr><th id="111">111</th><td><em>int</em></td></tr>
+<tr><th id="112">112</th><td><dfn class="decl def fn" id="rte_power_exit" title='rte_power_exit' data-ref="rte_power_exit">rte_power_exit</dfn>(<em>unsigned</em> <em>int</em> <dfn class="local col5 decl" id="15lcore_id" title='lcore_id' data-type='unsigned int' data-ref="15lcore_id">lcore_id</dfn>)</td></tr>
+<tr><th id="113">113</th><td>{</td></tr>
+<tr><th id="114">114</th><td>	<b>if</b> (<a class="ref" href="#global_default_env" title='global_default_env' data-ref="global_default_env">global_default_env</a> == <a class="enum" href="rte_power.h.html#PM_ENV_ACPI_CPUFREQ" title='PM_ENV_ACPI_CPUFREQ' data-ref="PM_ENV_ACPI_CPUFREQ">PM_ENV_ACPI_CPUFREQ</a>)</td></tr>
+<tr><th id="115">115</th><td>		<b>return</b> <a class="ref fn" href="power_acpi_cpufreq.h.html#power_acpi_cpufreq_exit" title='power_acpi_cpufreq_exit' data-ref="power_acpi_cpufreq_exit">power_acpi_cpufreq_exit</a>(<a class="local col5 ref" href="#15lcore_id" title='lcore_id' data-ref="15lcore_id">lcore_id</a>);</td></tr>
+<tr><th id="116">116</th><td>	<b>if</b> (<a class="ref" href="#global_default_env" title='global_default_env' data-ref="global_default_env">global_default_env</a> == <a class="enum" href="rte_power.h.html#PM_ENV_KVM_VM" title='PM_ENV_KVM_VM' data-ref="PM_ENV_KVM_VM">PM_ENV_KVM_VM</a>)</td></tr>
+<tr><th id="117">117</th><td>		<b>return</b> <a class="ref fn" href="power_kvm_vm.h.html#power_kvm_vm_exit" title='power_kvm_vm_exit' data-ref="power_kvm_vm_exit">power_kvm_vm_exit</a>(<a class="local col5 ref" href="#15lcore_id" title='lcore_id' data-ref="15lcore_id">lcore_id</a>);</td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td>	<a class="macro" href="../librte_eal/common/include/rte_log.h.html#320" title="rte_log(4U, 10, &quot;POWER&quot; &quot;: &quot; &quot;Environment has not been set, unable to exit &quot; &quot;gracefully\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, POWER, <q>"Environment has not been set, unable to exit "</q></td></tr>
+<tr><th id="120">120</th><td>				<q>"gracefully\n"</q>);</td></tr>
+<tr><th id="121">121</th><td>	<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td>}</td></tr>
+<tr><th id="124">124</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-30</em> from project dpdk_1805 revision <em>18.05</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

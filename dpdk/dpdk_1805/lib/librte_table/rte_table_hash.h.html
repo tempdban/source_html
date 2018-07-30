@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>rte_table_hash.h source code [dpdk_1805/lib/librte_table/rte_table_hash.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="rte_table_hash_params "/>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'dpdk_1805/lib/librte_table/rte_table_hash.h'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>dpdk_1805</a>/<a href='..'>lib</a>/<a href='./'>librte_table</a>/<a href='rte_table_hash.h.html'>rte_table_hash.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright(c) 2010-2017 Intel Corporation</i></td></tr>
+<tr><th id="3">3</th><td><i> */</i></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><u>#<span data-ppcond="5">ifndef</span> <span class="macro" data-ref="_M/__INCLUDE_RTE_TABLE_HASH_H__">__INCLUDE_RTE_TABLE_HASH_H__</span></u></td></tr>
+<tr><th id="6">6</th><td><u>#define <dfn class="macro" id="_M/__INCLUDE_RTE_TABLE_HASH_H__" data-ref="_M/__INCLUDE_RTE_TABLE_HASH_H__">__INCLUDE_RTE_TABLE_HASH_H__</dfn></u></td></tr>
+<tr><th id="7">7</th><td></td></tr>
+<tr><th id="8">8</th><td><u>#<span data-ppcond="8">ifdef</span> <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="9">9</th><td><b>extern</b> <q>"C"</q> {</td></tr>
+<tr><th id="10">10</th><td><u>#<span data-ppcond="8">endif</span></u></td></tr>
+<tr><th id="11">11</th><td></td></tr>
+<tr><th id="12">12</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="13">13</th><td><i class="doc"> *<span class="command"> @file</span></i></td></tr>
+<tr><th id="14">14</th><td><i class="doc"> * RTE Table Hash</i></td></tr>
+<tr><th id="15">15</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="16">16</th><td><i class="doc"> * These tables use the exact match criterion to uniquely associate data to</i></td></tr>
+<tr><th id="17">17</th><td><i class="doc"> * lookup keys.</i></td></tr>
+<tr><th id="18">18</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="19">19</th><td><i class="doc"> * Hash table types:</i></td></tr>
+<tr><th id="20">20</th><td><i class="doc"> * 1. Entry add strategy on bucket full:</i></td></tr>
+<tr><th id="21">21</th><td><i class="doc"> *     a. Least Recently Used (LRU): One of the existing keys in the bucket is</i></td></tr>
+<tr><th id="22">22</th><td><i class="doc"> *        deleted and the new key is added in its place. The number of keys in</i></td></tr>
+<tr><th id="23">23</th><td><i class="doc"> *        each bucket never grows bigger than 4. The logic to pick the key to</i></td></tr>
+<tr><th id="24">24</th><td><i class="doc"> *        be dropped from the bucket is LRU. The hash table lookup operation</i></td></tr>
+<tr><th id="25">25</th><td><i class="doc"> *        maintains the order in which the keys in the same bucket are hit, so</i></td></tr>
+<tr><th id="26">26</th><td><i class="doc"> *        every time a key is hit, it becomes the new Most Recently Used (MRU)</i></td></tr>
+<tr><th id="27">27</th><td><i class="doc"> *        key, i.e. the most unlikely candidate for drop. When a key is added</i></td></tr>
+<tr><th id="28">28</th><td><i class="doc"> *        to the bucket, it also becomes the new MRU key. When a key needs to</i></td></tr>
+<tr><th id="29">29</th><td><i class="doc"> *        be picked and dropped, the most likely candidate for drop, i.e. the</i></td></tr>
+<tr><th id="30">30</th><td><i class="doc"> *        current LRU key, is always picked. The LRU logic requires maintaining</i></td></tr>
+<tr><th id="31">31</th><td><i class="doc"> *        specific data structures per each bucket. Use-cases: flow cache, etc.</i></td></tr>
+<tr><th id="32">32</th><td><i class="doc"> *     b. Extendible bucket (ext): The bucket is extended with space for 4 more</i></td></tr>
+<tr><th id="33">33</th><td><i class="doc"> *        keys. This is done by allocating additional memory at table init time,</i></td></tr>
+<tr><th id="34">34</th><td><i class="doc"> *        which is used to create a pool of free keys (the size of this pool is</i></td></tr>
+<tr><th id="35">35</th><td><i class="doc"> *        configurable and always a multiple of 4). On key add operation, the</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc"> *        allocation of a group of 4 keys only happens successfully within the</i></td></tr>
+<tr><th id="37">37</th><td><i class="doc"> *        limit of free keys, otherwise the key add operation fails. On key</i></td></tr>
+<tr><th id="38">38</th><td><i class="doc"> *        delete operation, a group of 4 keys is freed back to the pool of free</i></td></tr>
+<tr><th id="39">39</th><td><i class="doc"> *        keys when the key to be deleted is the only key that was used within</i></td></tr>
+<tr><th id="40">40</th><td><i class="doc"> *        its group of 4 keys at that time. On key lookup operation, if the</i></td></tr>
+<tr><th id="41">41</th><td><i class="doc"> *        current bucket is in extended state and a match is not found in the</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc"> *        first group of 4 keys, the search continues beyond the first group of</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc"> *        4 keys, potentially until all keys in this bucket are examined. The</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc"> *        extendible bucket logic requires maintaining specific data structures</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc"> *        per table and per each bucket. Use-cases: flow table, etc.</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc"> * 2. Key size:</i></td></tr>
+<tr><th id="47">47</th><td><i class="doc"> *     a. Configurable key size</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc"> *     b. Single key size (8-byte, 16-byte or 32-byte key size)</i></td></tr>
+<tr><th id="49">49</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="50">50</th><td><i class="doc"> ***/</i></td></tr>
+<tr><th id="51">51</th><td><u>#include &lt;stdint.h&gt;</u></td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td><u>#include <a href="rte_table.h.html">"rte_table.h"</a></u></td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td><i class="doc">/** Hash function */</i></td></tr>
+<tr><th id="56">56</th><td><b>typedef</b> <a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> (*<dfn class="typedef" id="rte_table_hash_op_hash" title='rte_table_hash_op_hash' data-type='uint64_t (*)(void *, void *, uint32_t, uint64_t)' data-ref="rte_table_hash_op_hash">rte_table_hash_op_hash</dfn>)(</td></tr>
+<tr><th id="57">57</th><td>	<em>void</em> *<dfn class="local col1 decl" id="1key" title='key' data-type='void *' data-ref="1key">key</dfn>,</td></tr>
+<tr><th id="58">58</th><td>	<em>void</em> *<dfn class="local col2 decl" id="2key_mask" title='key_mask' data-type='void *' data-ref="2key_mask">key_mask</dfn>,</td></tr>
+<tr><th id="59">59</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="local col3 decl" id="3key_size" title='key_size' data-type='uint32_t' data-ref="3key_size">key_size</dfn>,</td></tr>
+<tr><th id="60">60</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="local col4 decl" id="4seed" title='seed' data-type='uint64_t' data-ref="4seed">seed</dfn>);</td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td><i class="doc">/** Hash table parameters */</i></td></tr>
+<tr><th id="63">63</th><td><b>struct</b> <dfn class="type def" id="rte_table_hash_params" title='rte_table_hash_params' data-ref="rte_table_hash_params">rte_table_hash_params</dfn> {</td></tr>
+<tr><th id="64">64</th><td>	<i class="doc">/** Name */</i></td></tr>
+<tr><th id="65">65</th><td>	<em>const</em> <em>char</em> *<dfn class="decl field" id="rte_table_hash_params::name" title='rte_table_hash_params::name' data-ref="rte_table_hash_params::name">name</dfn>;</td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td>	<i class="doc">/** Key size (number of bytes) */</i></td></tr>
+<tr><th id="68">68</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_hash_params::key_size" title='rte_table_hash_params::key_size' data-ref="rte_table_hash_params::key_size">key_size</dfn>;</td></tr>
+<tr><th id="69">69</th><td></td></tr>
+<tr><th id="70">70</th><td>	<i class="doc">/** Byte offset within packet meta-data where the key is located */</i></td></tr>
+<tr><th id="71">71</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_hash_params::key_offset" title='rte_table_hash_params::key_offset' data-ref="rte_table_hash_params::key_offset">key_offset</dfn>;</td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td>	<i class="doc">/** Key mask */</i></td></tr>
+<tr><th id="74">74</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> *<dfn class="decl field" id="rte_table_hash_params::key_mask" title='rte_table_hash_params::key_mask' data-ref="rte_table_hash_params::key_mask">key_mask</dfn>;</td></tr>
+<tr><th id="75">75</th><td></td></tr>
+<tr><th id="76">76</th><td>	<i class="doc">/** Number of keys */</i></td></tr>
+<tr><th id="77">77</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_hash_params::n_keys" title='rte_table_hash_params::n_keys' data-ref="rte_table_hash_params::n_keys">n_keys</dfn>;</td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td>	<i class="doc">/** Number of buckets */</i></td></tr>
+<tr><th id="80">80</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_hash_params::n_buckets" title='rte_table_hash_params::n_buckets' data-ref="rte_table_hash_params::n_buckets">n_buckets</dfn>;</td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td>	<i class="doc">/** Hash function */</i></td></tr>
+<tr><th id="83">83</th><td>	<a class="typedef" href="#rte_table_hash_op_hash" title='rte_table_hash_op_hash' data-type='uint64_t (*)(void *, void *, uint32_t, uint64_t)' data-ref="rte_table_hash_op_hash">rte_table_hash_op_hash</a> <dfn class="decl field" id="rte_table_hash_params::f_hash" title='rte_table_hash_params::f_hash' data-ref="rte_table_hash_params::f_hash">f_hash</dfn>;</td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td>	<i class="doc">/** Seed value for the hash function */</i></td></tr>
+<tr><th id="86">86</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="rte_table_hash_params::seed" title='rte_table_hash_params::seed' data-ref="rte_table_hash_params::seed">seed</dfn>;</td></tr>
+<tr><th id="87">87</th><td>};</td></tr>
+<tr><th id="88">88</th><td></td></tr>
+<tr><th id="89">89</th><td><i class="doc">/** Extendible bucket hash table operations */</i></td></tr>
+<tr><th id="90">90</th><td><b>extern</b> <b>struct</b> <a class="type" href="rte_table.h.html#rte_table_ops" title='rte_table_ops' data-ref="rte_table_ops">rte_table_ops</a> <dfn class="decl" id="rte_table_hash_ext_ops" title='rte_table_hash_ext_ops' data-ref="rte_table_hash_ext_ops">rte_table_hash_ext_ops</dfn>;</td></tr>
+<tr><th id="91">91</th><td><b>extern</b> <b>struct</b> <a class="type" href="rte_table.h.html#rte_table_ops" title='rte_table_ops' data-ref="rte_table_ops">rte_table_ops</a> <dfn class="decl" id="rte_table_hash_key8_ext_ops" title='rte_table_hash_key8_ext_ops' data-ref="rte_table_hash_key8_ext_ops">rte_table_hash_key8_ext_ops</dfn>;</td></tr>
+<tr><th id="92">92</th><td><b>extern</b> <b>struct</b> <a class="type" href="rte_table.h.html#rte_table_ops" title='rte_table_ops' data-ref="rte_table_ops">rte_table_ops</a> <dfn class="decl" id="rte_table_hash_key16_ext_ops" title='rte_table_hash_key16_ext_ops' data-ref="rte_table_hash_key16_ext_ops">rte_table_hash_key16_ext_ops</dfn>;</td></tr>
+<tr><th id="93">93</th><td><b>extern</b> <b>struct</b> <a class="type" href="rte_table.h.html#rte_table_ops" title='rte_table_ops' data-ref="rte_table_ops">rte_table_ops</a> <dfn class="decl" id="rte_table_hash_key32_ext_ops" title='rte_table_hash_key32_ext_ops' data-ref="rte_table_hash_key32_ext_ops">rte_table_hash_key32_ext_ops</dfn>;</td></tr>
+<tr><th id="94">94</th><td></td></tr>
+<tr><th id="95">95</th><td><i class="doc">/** LRU hash table operations */</i></td></tr>
+<tr><th id="96">96</th><td><b>extern</b> <b>struct</b> <a class="type" href="rte_table.h.html#rte_table_ops" title='rte_table_ops' data-ref="rte_table_ops">rte_table_ops</a> <dfn class="decl" id="rte_table_hash_lru_ops" title='rte_table_hash_lru_ops' data-ref="rte_table_hash_lru_ops">rte_table_hash_lru_ops</dfn>;</td></tr>
+<tr><th id="97">97</th><td></td></tr>
+<tr><th id="98">98</th><td><b>extern</b> <b>struct</b> <a class="type" href="rte_table.h.html#rte_table_ops" title='rte_table_ops' data-ref="rte_table_ops">rte_table_ops</a> <dfn class="decl" id="rte_table_hash_key8_lru_ops" title='rte_table_hash_key8_lru_ops' data-ref="rte_table_hash_key8_lru_ops">rte_table_hash_key8_lru_ops</dfn>;</td></tr>
+<tr><th id="99">99</th><td><b>extern</b> <b>struct</b> <a class="type" href="rte_table.h.html#rte_table_ops" title='rte_table_ops' data-ref="rte_table_ops">rte_table_ops</a> <dfn class="decl" id="rte_table_hash_key16_lru_ops" title='rte_table_hash_key16_lru_ops' data-ref="rte_table_hash_key16_lru_ops">rte_table_hash_key16_lru_ops</dfn>;</td></tr>
+<tr><th id="100">100</th><td><b>extern</b> <b>struct</b> <a class="type" href="rte_table.h.html#rte_table_ops" title='rte_table_ops' data-ref="rte_table_ops">rte_table_ops</a> <dfn class="decl" id="rte_table_hash_key32_lru_ops" title='rte_table_hash_key32_lru_ops' data-ref="rte_table_hash_key32_lru_ops">rte_table_hash_key32_lru_ops</dfn>;</td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td><u>#<span data-ppcond="102">ifdef</span> <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="103">103</th><td>}</td></tr>
+<tr><th id="104">104</th><td><u>#<span data-ppcond="102">endif</span></u></td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td><u>#<span data-ppcond="5">endif</span></u></td></tr>
+<tr><th id="107">107</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../librte_pipeline/rte_port_in_action.c.html'>dpdk_1805/lib/librte_pipeline/rte_port_in_action.c</a><br/>Generated on <em>2018-Jul-30</em> from project dpdk_1805 revision <em>18.05</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,924 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>rte_table_action.h source code [dpdk_1805/lib/librte_pipeline/rte_table_action.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="rte_table_action_common_config,rte_table_action_dscp_table,rte_table_action_dscp_table_entry,rte_table_action_encap_config,rte_table_action_encap_ether_params,rte_table_action_encap_mpls_params,rte_table_action_encap_params,rte_table_action_encap_pppoe_params,rte_table_action_encap_qinq_params,rte_table_action_encap_type,rte_table_action_encap_vlan_params,rte_table_action_ether_hdr,rte_table_action_fwd_params,rte_table_action_lb_config,rte_table_action_lb_params,rte_table_action_meter_algorithm,rte_table_action_meter_profile,rte_table_action_mpls_hdr,rte_table_action_mtr_config,rte_table_action_mtr_counters,rte_table_action_mtr_counters_tc,rte_table_action_mtr_params,rte_table_action_mtr_tc_params,rte_table_action_nat_config,rte_table_action_nat_params,rte_table_action_policer,rte_table_action_pppoe_hdr,rte_table_action_stats_config,rte_table_action_stats_counters,rte_table_action_stats_params,rte_table_action_time_params,rte_table_action_tm_config,rte_table_action_tm_params,rte_table_action_ttl_config,rte_table_action_ttl_counters,rte_table_action_ttl_params,rte_table_action_type,rte_table_action_vlan_hdr "/>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'dpdk_1805/lib/librte_pipeline/rte_table_action.h'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>dpdk_1805</a>/<a href='..'>lib</a>/<a href='./'>librte_pipeline</a>/<a href='rte_table_action.h.html'>rte_table_action.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright(c) 2018 Intel Corporation</i></td></tr>
+<tr><th id="3">3</th><td><i> */</i></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><u>#<span data-ppcond="5">ifndef</span> <span class="macro" data-ref="_M/__INCLUDE_RTE_TABLE_ACTION_H__">__INCLUDE_RTE_TABLE_ACTION_H__</span></u></td></tr>
+<tr><th id="6">6</th><td><u>#define <dfn class="macro" id="_M/__INCLUDE_RTE_TABLE_ACTION_H__" data-ref="_M/__INCLUDE_RTE_TABLE_ACTION_H__">__INCLUDE_RTE_TABLE_ACTION_H__</dfn></u></td></tr>
+<tr><th id="7">7</th><td></td></tr>
+<tr><th id="8">8</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="9">9</th><td><i class="doc"> *<span class="command"> @file</span></i></td></tr>
+<tr><th id="10">10</th><td><i class="doc"> * RTE Pipeline Table Actions</i></td></tr>
+<tr><th id="11">11</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="12">12</th><td><i class="doc"> * This API provides a common set of actions for pipeline tables to speed up</i></td></tr>
+<tr><th id="13">13</th><td><i class="doc"> * application development.</i></td></tr>
+<tr><th id="14">14</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="15">15</th><td><i class="doc"> * Each match-action rule added to a pipeline table has associated data that</i></td></tr>
+<tr><th id="16">16</th><td><i class="doc"> * stores the action context. This data is input to the table action handler</i></td></tr>
+<tr><th id="17">17</th><td><i class="doc"> * called for every input packet that hits the rule as part of the table lookup</i></td></tr>
+<tr><th id="18">18</th><td><i class="doc"> * during the pipeline execution. The pipeline library allows the user to define</i></td></tr>
+<tr><th id="19">19</th><td><i class="doc"> * his own table actions by providing customized table action handlers (table</i></td></tr>
+<tr><th id="20">20</th><td><i class="doc"> * lookup) and complete freedom of setting the rules and their data (table rule</i></td></tr>
+<tr><th id="21">21</th><td><i class="doc"> * add/delete). While the user can still follow this process, this API is</i></td></tr>
+<tr><th id="22">22</th><td><i class="doc"> * intended to provide a quicker development alternative for a set of predefined</i></td></tr>
+<tr><th id="23">23</th><td><i class="doc"> * actions.</i></td></tr>
+<tr><th id="24">24</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="25">25</th><td><i class="doc"> * The typical steps to use this API are:</i></td></tr>
+<tr><th id="26">26</th><td><i class="doc"> *  - Define a table action profile. This is a configuration template that can</i></td></tr>
+<tr><th id="27">27</th><td><i class="doc"> *    potentially be shared by multiple tables from the same or different</i></td></tr>
+<tr><th id="28">28</th><td><i class="doc"> *    pipelines, with different tables from the same pipeline likely to use</i></td></tr>
+<tr><th id="29">29</th><td><i class="doc"> *    different action profiles. For every table using a given action profile,</i></td></tr>
+<tr><th id="30">30</th><td><i class="doc"> *    the profile defines the set of actions and the action configuration to be</i></td></tr>
+<tr><th id="31">31</th><td><i class="doc"> *    implemented for all the table rules. API functions:</i></td></tr>
+<tr><th id="32">32</th><td><i class="doc"> *    rte_table_action_profile_create(),</i></td></tr>
+<tr><th id="33">33</th><td><i class="doc"> *    rte_table_action_profile_action_register(),</i></td></tr>
+<tr><th id="34">34</th><td><i class="doc"> *    rte_table_action_profile_freeze().</i></td></tr>
+<tr><th id="35">35</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc"> *  - Instantiate the table action profile to create table action objects. Each</i></td></tr>
+<tr><th id="37">37</th><td><i class="doc"> *    pipeline table has its own table action object. API functions:</i></td></tr>
+<tr><th id="38">38</th><td><i class="doc"> *    rte_table_action_create().</i></td></tr>
+<tr><th id="39">39</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="40">40</th><td><i class="doc"> *  - Use the table action object to generate the pipeline table action handlers</i></td></tr>
+<tr><th id="41">41</th><td><i class="doc"> *    (invoked by the pipeline table lookup operation). API functions:</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc"> *    rte_table_action_table_params_get().</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc"> *  - Use the table action object to generate the rule data (for the pipeline</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc"> *    table rule add operation) based on given action parameters. API functions:</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc"> *    rte_table_action_apply().</i></td></tr>
+<tr><th id="47">47</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc"> *  - Use the table action object to read action data (e.g. stats counters) for</i></td></tr>
+<tr><th id="49">49</th><td><i class="doc"> *    any given rule. API functions: rte_table_action_XYZ_read().</i></td></tr>
+<tr><th id="50">50</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="51">51</th><td><i class="doc"> * <span class="command">@warning</span></i></td></tr>
+<tr><th id="52">52</th><td><i class="doc"> *<span class="command"> @b</span> <span class="arg">EXPERIMENTAL:</span> this API may change without prior notice</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td><u>#<span data-ppcond="55">ifdef</span> <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="56">56</th><td><b>extern</b> <q>"C"</q> {</td></tr>
+<tr><th id="57">57</th><td><u>#<span data-ppcond="55">endif</span></u></td></tr>
+<tr><th id="58">58</th><td></td></tr>
+<tr><th id="59">59</th><td><u>#include &lt;stdint.h&gt;</u></td></tr>
+<tr><th id="60">60</th><td></td></tr>
+<tr><th id="61">61</th><td><u>#include <a href="../librte_compat/rte_compat.h.html">&lt;rte_compat.h&gt;</a></u></td></tr>
+<tr><th id="62">62</th><td><u>#include <a href="../librte_net/rte_ether.h.html">&lt;rte_ether.h&gt;</a></u></td></tr>
+<tr><th id="63">63</th><td><u>#include <a href="../librte_meter/rte_meter.h.html">&lt;rte_meter.h&gt;</a></u></td></tr>
+<tr><th id="64">64</th><td><u>#include <a href="../librte_table/rte_table_hash.h.html">&lt;rte_table_hash.h&gt;</a></u></td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td><u>#include <a href="rte_pipeline.h.html">"rte_pipeline.h"</a></u></td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td><i class="doc">/** Table actions. */</i></td></tr>
+<tr><th id="69">69</th><td><b>enum</b> <dfn class="type def" id="rte_table_action_type" title='rte_table_action_type' data-ref="rte_table_action_type">rte_table_action_type</dfn> {</td></tr>
+<tr><th id="70">70</th><td>	<i class="doc">/** Forward to next pipeline table, output port or drop. */</i></td></tr>
+<tr><th id="71">71</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_FWD" title='RTE_TABLE_ACTION_FWD' data-ref="RTE_TABLE_ACTION_FWD">RTE_TABLE_ACTION_FWD</dfn> = <var>0</var>,</td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td>	<i class="doc">/**  Load balance. */</i></td></tr>
+<tr><th id="74">74</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_LB" title='RTE_TABLE_ACTION_LB' data-ref="RTE_TABLE_ACTION_LB">RTE_TABLE_ACTION_LB</dfn>,</td></tr>
+<tr><th id="75">75</th><td></td></tr>
+<tr><th id="76">76</th><td>	<i class="doc">/**  Traffic Metering and Policing. */</i></td></tr>
+<tr><th id="77">77</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_MTR" title='RTE_TABLE_ACTION_MTR' data-ref="RTE_TABLE_ACTION_MTR">RTE_TABLE_ACTION_MTR</dfn>,</td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td>	<i class="doc">/**  Traffic Management. */</i></td></tr>
+<tr><th id="80">80</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_TM" title='RTE_TABLE_ACTION_TM' data-ref="RTE_TABLE_ACTION_TM">RTE_TABLE_ACTION_TM</dfn>,</td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td>	<i class="doc">/** Packet encapsulations. */</i></td></tr>
+<tr><th id="83">83</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_ENCAP" title='RTE_TABLE_ACTION_ENCAP' data-ref="RTE_TABLE_ACTION_ENCAP">RTE_TABLE_ACTION_ENCAP</dfn>,</td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td>	<i class="doc">/** Network Address Translation (NAT). */</i></td></tr>
+<tr><th id="86">86</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_NAT" title='RTE_TABLE_ACTION_NAT' data-ref="RTE_TABLE_ACTION_NAT">RTE_TABLE_ACTION_NAT</dfn>,</td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td>	<i class="doc">/** Time to Live (TTL) update. */</i></td></tr>
+<tr><th id="89">89</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_TTL" title='RTE_TABLE_ACTION_TTL' data-ref="RTE_TABLE_ACTION_TTL">RTE_TABLE_ACTION_TTL</dfn>,</td></tr>
+<tr><th id="90">90</th><td></td></tr>
+<tr><th id="91">91</th><td>	<i class="doc">/** Statistics. */</i></td></tr>
+<tr><th id="92">92</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_STATS" title='RTE_TABLE_ACTION_STATS' data-ref="RTE_TABLE_ACTION_STATS">RTE_TABLE_ACTION_STATS</dfn>,</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td>	<i class="doc">/** Timestamp. */</i></td></tr>
+<tr><th id="95">95</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_TIME" title='RTE_TABLE_ACTION_TIME' data-ref="RTE_TABLE_ACTION_TIME">RTE_TABLE_ACTION_TIME</dfn>,</td></tr>
+<tr><th id="96">96</th><td>};</td></tr>
+<tr><th id="97">97</th><td></td></tr>
+<tr><th id="98">98</th><td><i class="doc">/** Common action configuration (per table action profile). */</i></td></tr>
+<tr><th id="99">99</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_common_config" title='rte_table_action_common_config' data-ref="rte_table_action_common_config">rte_table_action_common_config</dfn> {</td></tr>
+<tr><th id="100">100</th><td>	<i class="doc">/** Input packet Internet Protocol (IP) version. Non-zero for IPv4, zero</i></td></tr>
+<tr><th id="101">101</th><td><i class="doc">	 * for IPv6.</i></td></tr>
+<tr><th id="102">102</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="103">103</th><td>	<em>int</em> <dfn class="decl field" id="rte_table_action_common_config::ip_version" title='rte_table_action_common_config::ip_version' data-ref="rte_table_action_common_config::ip_version">ip_version</dfn>;</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td>	<i class="doc">/** IP header offset within the input packet buffer. Offset 0 points to</i></td></tr>
+<tr><th id="106">106</th><td><i class="doc">	 * the first byte of the MBUF structure.</i></td></tr>
+<tr><th id="107">107</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="108">108</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_common_config::ip_offset" title='rte_table_action_common_config::ip_offset' data-ref="rte_table_action_common_config::ip_offset">ip_offset</dfn>;</td></tr>
+<tr><th id="109">109</th><td>};</td></tr>
+<tr><th id="110">110</th><td></td></tr>
+<tr><th id="111">111</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc"> * RTE_TABLE_ACTION_FWD</i></td></tr>
+<tr><th id="113">113</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="114">114</th><td><i class="doc">/** Forward action parameters (per table rule). */</i></td></tr>
+<tr><th id="115">115</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_fwd_params" title='rte_table_action_fwd_params' data-ref="rte_table_action_fwd_params">rte_table_action_fwd_params</dfn> {</td></tr>
+<tr><th id="116">116</th><td>	<i class="doc">/** Forward action. */</i></td></tr>
+<tr><th id="117">117</th><td>	<b>enum</b> <a class="type" href="rte_pipeline.h.html#rte_pipeline_action" title='rte_pipeline_action' data-ref="rte_pipeline_action">rte_pipeline_action</a> <dfn class="decl field" id="rte_table_action_fwd_params::action" title='rte_table_action_fwd_params::action' data-ref="rte_table_action_fwd_params::action">action</dfn>;</td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td>	<i class="doc">/** Pipeline table ID or output port ID. */</i></td></tr>
+<tr><th id="120">120</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_fwd_params::id" title='rte_table_action_fwd_params::id' data-ref="rte_table_action_fwd_params::id">id</dfn>;</td></tr>
+<tr><th id="121">121</th><td>};</td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="124">124</th><td><i class="doc"> * RTE_TABLE_ACTION_LB</i></td></tr>
+<tr><th id="125">125</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="126">126</th><td><i class="doc">/** Load balance key size min (number of bytes). */</i></td></tr>
+<tr><th id="127">127</th><td><u>#define <dfn class="macro" id="_M/RTE_TABLE_ACTION_LB_KEY_SIZE_MIN" data-ref="_M/RTE_TABLE_ACTION_LB_KEY_SIZE_MIN">RTE_TABLE_ACTION_LB_KEY_SIZE_MIN</dfn>                    8</u></td></tr>
+<tr><th id="128">128</th><td></td></tr>
+<tr><th id="129">129</th><td><i class="doc">/** Load balance key size max (number of bytes). */</i></td></tr>
+<tr><th id="130">130</th><td><u>#define <dfn class="macro" id="_M/RTE_TABLE_ACTION_LB_KEY_SIZE_MAX" data-ref="_M/RTE_TABLE_ACTION_LB_KEY_SIZE_MAX">RTE_TABLE_ACTION_LB_KEY_SIZE_MAX</dfn>                    64</u></td></tr>
+<tr><th id="131">131</th><td></td></tr>
+<tr><th id="132">132</th><td><i class="doc">/** Load balance table size. */</i></td></tr>
+<tr><th id="133">133</th><td><u>#define <dfn class="macro" id="_M/RTE_TABLE_ACTION_LB_TABLE_SIZE" data-ref="_M/RTE_TABLE_ACTION_LB_TABLE_SIZE">RTE_TABLE_ACTION_LB_TABLE_SIZE</dfn>                      8</u></td></tr>
+<tr><th id="134">134</th><td></td></tr>
+<tr><th id="135">135</th><td><i class="doc">/** Load balance action configuration (per table action profile). */</i></td></tr>
+<tr><th id="136">136</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_lb_config" title='rte_table_action_lb_config' data-ref="rte_table_action_lb_config">rte_table_action_lb_config</dfn> {</td></tr>
+<tr><th id="137">137</th><td>	<i class="doc">/** Key size (number of bytes). */</i></td></tr>
+<tr><th id="138">138</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_lb_config::key_size" title='rte_table_action_lb_config::key_size' data-ref="rte_table_action_lb_config::key_size">key_size</dfn>;</td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td>	<i class="doc">/** Key offset within the input packet buffer. Offset 0 points to the</i></td></tr>
+<tr><th id="141">141</th><td><i class="doc">	 * first byte of the MBUF structure.</i></td></tr>
+<tr><th id="142">142</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="143">143</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_lb_config::key_offset" title='rte_table_action_lb_config::key_offset' data-ref="rte_table_action_lb_config::key_offset">key_offset</dfn>;</td></tr>
+<tr><th id="144">144</th><td></td></tr>
+<tr><th id="145">145</th><td>	<i class="doc">/** Key mask (*key_size* bytes are valid). */</i></td></tr>
+<tr><th id="146">146</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="rte_table_action_lb_config::key_mask" title='rte_table_action_lb_config::key_mask' data-ref="rte_table_action_lb_config::key_mask">key_mask</dfn>[<a class="macro" href="#130" title="64" data-ref="_M/RTE_TABLE_ACTION_LB_KEY_SIZE_MAX">RTE_TABLE_ACTION_LB_KEY_SIZE_MAX</a>];</td></tr>
+<tr><th id="147">147</th><td></td></tr>
+<tr><th id="148">148</th><td>	<i class="doc">/** Hash function. */</i></td></tr>
+<tr><th id="149">149</th><td>	<a class="typedef" href="../librte_table/rte_table_hash.h.html#rte_table_hash_op_hash" title='rte_table_hash_op_hash' data-type='uint64_t (*)(void *, void *, uint32_t, uint64_t)' data-ref="rte_table_hash_op_hash">rte_table_hash_op_hash</a> <dfn class="decl field" id="rte_table_action_lb_config::f_hash" title='rte_table_action_lb_config::f_hash' data-ref="rte_table_action_lb_config::f_hash">f_hash</dfn>;</td></tr>
+<tr><th id="150">150</th><td></td></tr>
+<tr><th id="151">151</th><td>	<i class="doc">/** Seed value for *f_hash*. */</i></td></tr>
+<tr><th id="152">152</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="rte_table_action_lb_config::seed" title='rte_table_action_lb_config::seed' data-ref="rte_table_action_lb_config::seed">seed</dfn>;</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td>	<i class="doc">/** Output value offset within the input packet buffer. Offset 0 points</i></td></tr>
+<tr><th id="155">155</th><td><i class="doc">	 * to the first byte of the MBUF structure.</i></td></tr>
+<tr><th id="156">156</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="157">157</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_lb_config::out_offset" title='rte_table_action_lb_config::out_offset' data-ref="rte_table_action_lb_config::out_offset">out_offset</dfn>;</td></tr>
+<tr><th id="158">158</th><td>};</td></tr>
+<tr><th id="159">159</th><td></td></tr>
+<tr><th id="160">160</th><td><i class="doc">/** Load balance action parameters (per table rule). */</i></td></tr>
+<tr><th id="161">161</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_lb_params" title='rte_table_action_lb_params' data-ref="rte_table_action_lb_params">rte_table_action_lb_params</dfn> {</td></tr>
+<tr><th id="162">162</th><td>	<i class="doc">/** Table defining the output values and their weights. The weights are</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc">	 * set in 1/RTE_TABLE_ACTION_LB_TABLE_SIZE increments. To assign a</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc">	 * weight of N/RTE_TABLE_ACTION_LB_TABLE_SIZE to a given output value</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc">	 * (0 &lt;= N &lt;= RTE_TABLE_ACTION_LB_TABLE_SIZE), the same output value</i></td></tr>
+<tr><th id="166">166</th><td><i class="doc">	 * needs to show up exactly N times in this table.</i></td></tr>
+<tr><th id="167">167</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="168">168</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_lb_params::out" title='rte_table_action_lb_params::out' data-ref="rte_table_action_lb_params::out">out</dfn>[<a class="macro" href="#133" title="8" data-ref="_M/RTE_TABLE_ACTION_LB_TABLE_SIZE">RTE_TABLE_ACTION_LB_TABLE_SIZE</a>];</td></tr>
+<tr><th id="169">169</th><td>};</td></tr>
+<tr><th id="170">170</th><td></td></tr>
+<tr><th id="171">171</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc"> * RTE_TABLE_ACTION_MTR</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="174">174</th><td><i class="doc">/** Max number of traffic classes (TCs). */</i></td></tr>
+<tr><th id="175">175</th><td><u>#define <dfn class="macro" id="_M/RTE_TABLE_ACTION_TC_MAX" data-ref="_M/RTE_TABLE_ACTION_TC_MAX">RTE_TABLE_ACTION_TC_MAX</dfn>                                  4</u></td></tr>
+<tr><th id="176">176</th><td></td></tr>
+<tr><th id="177">177</th><td><i class="doc">/** Max number of queues per traffic class. */</i></td></tr>
+<tr><th id="178">178</th><td><u>#define <dfn class="macro" id="_M/RTE_TABLE_ACTION_TC_QUEUE_MAX" data-ref="_M/RTE_TABLE_ACTION_TC_QUEUE_MAX">RTE_TABLE_ACTION_TC_QUEUE_MAX</dfn>                            4</u></td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td><i class="doc">/** Differentiated Services Code Point (DSCP) translation table entry. */</i></td></tr>
+<tr><th id="181">181</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_dscp_table_entry" title='rte_table_action_dscp_table_entry' data-ref="rte_table_action_dscp_table_entry">rte_table_action_dscp_table_entry</dfn> {</td></tr>
+<tr><th id="182">182</th><td>	<i class="doc">/** Traffic class. Used by the meter or the traffic management actions.</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc">	 * Has to be strictly smaller than *RTE_TABLE_ACTION_TC_MAX*. Traffic</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc">	 * class 0 is the highest priority.</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="186">186</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_dscp_table_entry::tc_id" title='rte_table_action_dscp_table_entry::tc_id' data-ref="rte_table_action_dscp_table_entry::tc_id">tc_id</dfn>;</td></tr>
+<tr><th id="187">187</th><td></td></tr>
+<tr><th id="188">188</th><td>	<i class="doc">/** Traffic class queue. Used by the traffic management action. Has to</i></td></tr>
+<tr><th id="189">189</th><td><i class="doc">	 * be strictly smaller than *RTE_TABLE_ACTION_TC_QUEUE_MAX*.</i></td></tr>
+<tr><th id="190">190</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="191">191</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_dscp_table_entry::tc_queue_id" title='rte_table_action_dscp_table_entry::tc_queue_id' data-ref="rte_table_action_dscp_table_entry::tc_queue_id">tc_queue_id</dfn>;</td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td>	<i class="doc">/** Packet color. Used by the meter action as the packet input color</i></td></tr>
+<tr><th id="194">194</th><td><i class="doc">	 * for the color aware mode of the traffic metering algorithm.</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="196">196</th><td>	<b>enum</b> <a class="type" href="../librte_meter/rte_meter.h.html#rte_meter_color" title='rte_meter_color' data-ref="rte_meter_color">rte_meter_color</a> <dfn class="decl field" id="rte_table_action_dscp_table_entry::color" title='rte_table_action_dscp_table_entry::color' data-ref="rte_table_action_dscp_table_entry::color">color</dfn>;</td></tr>
+<tr><th id="197">197</th><td>};</td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td><i class="doc">/** DSCP translation table. */</i></td></tr>
+<tr><th id="200">200</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_dscp_table" title='rte_table_action_dscp_table' data-ref="rte_table_action_dscp_table">rte_table_action_dscp_table</dfn> {</td></tr>
+<tr><th id="201">201</th><td>	<i class="doc">/** Array of DSCP table entries */</i></td></tr>
+<tr><th id="202">202</th><td>	<b>struct</b> <a class="type" href="#rte_table_action_dscp_table_entry" title='rte_table_action_dscp_table_entry' data-ref="rte_table_action_dscp_table_entry">rte_table_action_dscp_table_entry</a> <dfn class="decl field" id="rte_table_action_dscp_table::entry" title='rte_table_action_dscp_table::entry' data-ref="rte_table_action_dscp_table::entry">entry</dfn>[<var>64</var>];</td></tr>
+<tr><th id="203">203</th><td>};</td></tr>
+<tr><th id="204">204</th><td></td></tr>
+<tr><th id="205">205</th><td><i class="doc">/** Supported traffic metering algorithms. */</i></td></tr>
+<tr><th id="206">206</th><td><b>enum</b> <dfn class="type def" id="rte_table_action_meter_algorithm" title='rte_table_action_meter_algorithm' data-ref="rte_table_action_meter_algorithm">rte_table_action_meter_algorithm</dfn> {</td></tr>
+<tr><th id="207">207</th><td>	<i class="doc">/** Single Rate Three Color Marker (srTCM) - IETF RFC 2697. */</i></td></tr>
+<tr><th id="208">208</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_METER_SRTCM" title='RTE_TABLE_ACTION_METER_SRTCM' data-ref="RTE_TABLE_ACTION_METER_SRTCM">RTE_TABLE_ACTION_METER_SRTCM</dfn>,</td></tr>
+<tr><th id="209">209</th><td></td></tr>
+<tr><th id="210">210</th><td>	<i class="doc">/** Two Rate Three Color Marker (trTCM) - IETF RFC 2698. */</i></td></tr>
+<tr><th id="211">211</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_METER_TRTCM" title='RTE_TABLE_ACTION_METER_TRTCM' data-ref="RTE_TABLE_ACTION_METER_TRTCM">RTE_TABLE_ACTION_METER_TRTCM</dfn>,</td></tr>
+<tr><th id="212">212</th><td>};</td></tr>
+<tr><th id="213">213</th><td></td></tr>
+<tr><th id="214">214</th><td><i class="doc">/** Traffic metering profile (configuration template). */</i></td></tr>
+<tr><th id="215">215</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_meter_profile" title='rte_table_action_meter_profile' data-ref="rte_table_action_meter_profile">rte_table_action_meter_profile</dfn> {</td></tr>
+<tr><th id="216">216</th><td>	<i class="doc">/** Traffic metering algorithm. */</i></td></tr>
+<tr><th id="217">217</th><td>	<b>enum</b> <a class="type" href="#rte_table_action_meter_algorithm" title='rte_table_action_meter_algorithm' data-ref="rte_table_action_meter_algorithm">rte_table_action_meter_algorithm</a> <dfn class="decl field" id="rte_table_action_meter_profile::alg" title='rte_table_action_meter_profile::alg' data-ref="rte_table_action_meter_profile::alg">alg</dfn>;</td></tr>
+<tr><th id="218">218</th><td></td></tr>
+<tr><th id="219">219</th><td>	<a class="macro" href="../librte_eal/common/include/rte_common.h.html#39" title="" data-ref="_M/RTE_STD_C11">RTE_STD_C11</a></td></tr>
+<tr><th id="220">220</th><td>	<b>union</b> {</td></tr>
+<tr><th id="221">221</th><td>		<i class="doc">/** Only valid when *alg* is set to srTCM - IETF RFC 2697. */</i></td></tr>
+<tr><th id="222">222</th><td>		<b>struct</b> <a class="type" href="../librte_meter/rte_meter.h.html#rte_meter_srtcm_params" title='rte_meter_srtcm_params' data-ref="rte_meter_srtcm_params">rte_meter_srtcm_params</a> <dfn class="decl field" id="rte_table_action_meter_profile::(anonymous)::srtcm" title='rte_table_action_meter_profile::(anonymous union)::srtcm' data-ref="rte_table_action_meter_profile::(anonymous)::srtcm">srtcm</dfn>;</td></tr>
+<tr><th id="223">223</th><td></td></tr>
+<tr><th id="224">224</th><td>		<i class="doc">/** Only valid when *alg* is set to trTCM - IETF RFC 2698. */</i></td></tr>
+<tr><th id="225">225</th><td>		<b>struct</b> <a class="type" href="../librte_meter/rte_meter.h.html#rte_meter_trtcm_params" title='rte_meter_trtcm_params' data-ref="rte_meter_trtcm_params">rte_meter_trtcm_params</a> <dfn class="decl field" id="rte_table_action_meter_profile::(anonymous)::trtcm" title='rte_table_action_meter_profile::(anonymous union)::trtcm' data-ref="rte_table_action_meter_profile::(anonymous)::trtcm">trtcm</dfn>;</td></tr>
+<tr><th id="226">226</th><td>	};</td></tr>
+<tr><th id="227">227</th><td>};</td></tr>
+<tr><th id="228">228</th><td></td></tr>
+<tr><th id="229">229</th><td><i class="doc">/** Policer actions. */</i></td></tr>
+<tr><th id="230">230</th><td><b>enum</b> <dfn class="type def" id="rte_table_action_policer" title='rte_table_action_policer' data-ref="rte_table_action_policer">rte_table_action_policer</dfn> {</td></tr>
+<tr><th id="231">231</th><td>	<i class="doc">/** Recolor the packet as green. */</i></td></tr>
+<tr><th id="232">232</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_POLICER_COLOR_GREEN" title='RTE_TABLE_ACTION_POLICER_COLOR_GREEN' data-ref="RTE_TABLE_ACTION_POLICER_COLOR_GREEN">RTE_TABLE_ACTION_POLICER_COLOR_GREEN</dfn> = <var>0</var>,</td></tr>
+<tr><th id="233">233</th><td></td></tr>
+<tr><th id="234">234</th><td>	<i class="doc">/** Recolor the packet as yellow. */</i></td></tr>
+<tr><th id="235">235</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_POLICER_COLOR_YELLOW" title='RTE_TABLE_ACTION_POLICER_COLOR_YELLOW' data-ref="RTE_TABLE_ACTION_POLICER_COLOR_YELLOW">RTE_TABLE_ACTION_POLICER_COLOR_YELLOW</dfn>,</td></tr>
+<tr><th id="236">236</th><td></td></tr>
+<tr><th id="237">237</th><td>	<i class="doc">/** Recolor the packet as red. */</i></td></tr>
+<tr><th id="238">238</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_POLICER_COLOR_RED" title='RTE_TABLE_ACTION_POLICER_COLOR_RED' data-ref="RTE_TABLE_ACTION_POLICER_COLOR_RED">RTE_TABLE_ACTION_POLICER_COLOR_RED</dfn>,</td></tr>
+<tr><th id="239">239</th><td></td></tr>
+<tr><th id="240">240</th><td>	<i class="doc">/** Drop the packet. */</i></td></tr>
+<tr><th id="241">241</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_POLICER_DROP" title='RTE_TABLE_ACTION_POLICER_DROP' data-ref="RTE_TABLE_ACTION_POLICER_DROP">RTE_TABLE_ACTION_POLICER_DROP</dfn>,</td></tr>
+<tr><th id="242">242</th><td></td></tr>
+<tr><th id="243">243</th><td>	<i class="doc">/** Number of policer actions. */</i></td></tr>
+<tr><th id="244">244</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_POLICER_MAX" title='RTE_TABLE_ACTION_POLICER_MAX' data-ref="RTE_TABLE_ACTION_POLICER_MAX">RTE_TABLE_ACTION_POLICER_MAX</dfn></td></tr>
+<tr><th id="245">245</th><td>};</td></tr>
+<tr><th id="246">246</th><td></td></tr>
+<tr><th id="247">247</th><td><i class="doc">/** Meter action configuration per traffic class. */</i></td></tr>
+<tr><th id="248">248</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_mtr_tc_params" title='rte_table_action_mtr_tc_params' data-ref="rte_table_action_mtr_tc_params">rte_table_action_mtr_tc_params</dfn> {</td></tr>
+<tr><th id="249">249</th><td>	<i class="doc">/** Meter profile ID. */</i></td></tr>
+<tr><th id="250">250</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_mtr_tc_params::meter_profile_id" title='rte_table_action_mtr_tc_params::meter_profile_id' data-ref="rte_table_action_mtr_tc_params::meter_profile_id">meter_profile_id</dfn>;</td></tr>
+<tr><th id="251">251</th><td></td></tr>
+<tr><th id="252">252</th><td>	<i class="doc">/** Policer actions. */</i></td></tr>
+<tr><th id="253">253</th><td>	<b>enum</b> <a class="type" href="#rte_table_action_policer" title='rte_table_action_policer' data-ref="rte_table_action_policer">rte_table_action_policer</a> <dfn class="decl field" id="rte_table_action_mtr_tc_params::policer" title='rte_table_action_mtr_tc_params::policer' data-ref="rte_table_action_mtr_tc_params::policer">policer</dfn>[<a class="enum" href="../librte_meter/rte_meter.h.html#e_RTE_METER_COLORS" title='e_RTE_METER_COLORS' data-ref="e_RTE_METER_COLORS">e_RTE_METER_COLORS</a>];</td></tr>
+<tr><th id="254">254</th><td>};</td></tr>
+<tr><th id="255">255</th><td></td></tr>
+<tr><th id="256">256</th><td><i class="doc">/** Meter action statistics counters per traffic class. */</i></td></tr>
+<tr><th id="257">257</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_mtr_counters_tc" title='rte_table_action_mtr_counters_tc' data-ref="rte_table_action_mtr_counters_tc">rte_table_action_mtr_counters_tc</dfn> {</td></tr>
+<tr><th id="258">258</th><td>	<i class="doc">/** Number of packets per color at the output of the traffic metering</i></td></tr>
+<tr><th id="259">259</th><td><i class="doc">	 * and before the policer actions are executed. Only valid when</i></td></tr>
+<tr><th id="260">260</th><td><i class="doc">	 * *n_packets_valid* is non-zero.</i></td></tr>
+<tr><th id="261">261</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="262">262</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="rte_table_action_mtr_counters_tc::n_packets" title='rte_table_action_mtr_counters_tc::n_packets' data-ref="rte_table_action_mtr_counters_tc::n_packets">n_packets</dfn>[<a class="enum" href="../librte_meter/rte_meter.h.html#e_RTE_METER_COLORS" title='e_RTE_METER_COLORS' data-ref="e_RTE_METER_COLORS">e_RTE_METER_COLORS</a>];</td></tr>
+<tr><th id="263">263</th><td></td></tr>
+<tr><th id="264">264</th><td>	<i class="doc">/** Number of packet bytes per color at the output of the traffic</i></td></tr>
+<tr><th id="265">265</th><td><i class="doc">	 * metering and before the policer actions are executed. Only valid when</i></td></tr>
+<tr><th id="266">266</th><td><i class="doc">	 * *n_bytes_valid* is non-zero.</i></td></tr>
+<tr><th id="267">267</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="268">268</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="rte_table_action_mtr_counters_tc::n_bytes" title='rte_table_action_mtr_counters_tc::n_bytes' data-ref="rte_table_action_mtr_counters_tc::n_bytes">n_bytes</dfn>[<a class="enum" href="../librte_meter/rte_meter.h.html#e_RTE_METER_COLORS" title='e_RTE_METER_COLORS' data-ref="e_RTE_METER_COLORS">e_RTE_METER_COLORS</a>];</td></tr>
+<tr><th id="269">269</th><td></td></tr>
+<tr><th id="270">270</th><td>	<i class="doc">/** When non-zero, the *n_packets* field is valid. */</i></td></tr>
+<tr><th id="271">271</th><td>	<em>int</em> <dfn class="decl field" id="rte_table_action_mtr_counters_tc::n_packets_valid" title='rte_table_action_mtr_counters_tc::n_packets_valid' data-ref="rte_table_action_mtr_counters_tc::n_packets_valid">n_packets_valid</dfn>;</td></tr>
+<tr><th id="272">272</th><td></td></tr>
+<tr><th id="273">273</th><td>	<i class="doc">/** When non-zero, the *n_bytes* field is valid. */</i></td></tr>
+<tr><th id="274">274</th><td>	<em>int</em> <dfn class="decl field" id="rte_table_action_mtr_counters_tc::n_bytes_valid" title='rte_table_action_mtr_counters_tc::n_bytes_valid' data-ref="rte_table_action_mtr_counters_tc::n_bytes_valid">n_bytes_valid</dfn>;</td></tr>
+<tr><th id="275">275</th><td>};</td></tr>
+<tr><th id="276">276</th><td></td></tr>
+<tr><th id="277">277</th><td><i class="doc">/** Meter action configuration (per table action profile). */</i></td></tr>
+<tr><th id="278">278</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_mtr_config" title='rte_table_action_mtr_config' data-ref="rte_table_action_mtr_config">rte_table_action_mtr_config</dfn> {</td></tr>
+<tr><th id="279">279</th><td>	<i class="doc">/** Meter algorithm. */</i></td></tr>
+<tr><th id="280">280</th><td>	<b>enum</b> <a class="type" href="#rte_table_action_meter_algorithm" title='rte_table_action_meter_algorithm' data-ref="rte_table_action_meter_algorithm">rte_table_action_meter_algorithm</a> <dfn class="decl field" id="rte_table_action_mtr_config::alg" title='rte_table_action_mtr_config::alg' data-ref="rte_table_action_mtr_config::alg">alg</dfn>;</td></tr>
+<tr><th id="281">281</th><td></td></tr>
+<tr><th id="282">282</th><td>	<i class="doc">/** Number of traffic classes. Each traffic class has its own traffic</i></td></tr>
+<tr><th id="283">283</th><td><i class="doc">	 * meter and policer instances. Needs to be equal to either 1 or to</i></td></tr>
+<tr><th id="284">284</th><td><i class="doc">	 * *RTE_TABLE_ACTION_TC_MAX*.</i></td></tr>
+<tr><th id="285">285</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="286">286</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_mtr_config::n_tc" title='rte_table_action_mtr_config::n_tc' data-ref="rte_table_action_mtr_config::n_tc">n_tc</dfn>;</td></tr>
+<tr><th id="287">287</th><td></td></tr>
+<tr><th id="288">288</th><td>	<i class="doc">/** When non-zero, the *n_packets* meter stats counter is enabled,</i></td></tr>
+<tr><th id="289">289</th><td><i class="doc">	 * otherwise it is disabled.</i></td></tr>
+<tr><th id="290">290</th><td><i class="doc">	 *</i></td></tr>
+<tr><th id="291">291</th><td><i class="doc">	 * <span class="command">@see</span> struct rte_table_action_mtr_counters_tc</i></td></tr>
+<tr><th id="292">292</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="293">293</th><td>	<em>int</em> <dfn class="decl field" id="rte_table_action_mtr_config::n_packets_enabled" title='rte_table_action_mtr_config::n_packets_enabled' data-ref="rte_table_action_mtr_config::n_packets_enabled">n_packets_enabled</dfn>;</td></tr>
+<tr><th id="294">294</th><td></td></tr>
+<tr><th id="295">295</th><td>	<i class="doc">/** When non-zero, the *n_bytes* meter stats counter is enabled,</i></td></tr>
+<tr><th id="296">296</th><td><i class="doc">	 * otherwise it is disabled.</i></td></tr>
+<tr><th id="297">297</th><td><i class="doc">	 *</i></td></tr>
+<tr><th id="298">298</th><td><i class="doc">	 * <span class="command">@see</span> struct rte_table_action_mtr_counters_tc</i></td></tr>
+<tr><th id="299">299</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="300">300</th><td>	<em>int</em> <dfn class="decl field" id="rte_table_action_mtr_config::n_bytes_enabled" title='rte_table_action_mtr_config::n_bytes_enabled' data-ref="rte_table_action_mtr_config::n_bytes_enabled">n_bytes_enabled</dfn>;</td></tr>
+<tr><th id="301">301</th><td>};</td></tr>
+<tr><th id="302">302</th><td></td></tr>
+<tr><th id="303">303</th><td><i class="doc">/** Meter action parameters (per table rule). */</i></td></tr>
+<tr><th id="304">304</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_mtr_params" title='rte_table_action_mtr_params' data-ref="rte_table_action_mtr_params">rte_table_action_mtr_params</dfn> {</td></tr>
+<tr><th id="305">305</th><td>	<i class="doc">/** Traffic meter and policer parameters for each of the *tc_mask*</i></td></tr>
+<tr><th id="306">306</th><td><i class="doc">	 * traffic classes.</i></td></tr>
+<tr><th id="307">307</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="308">308</th><td>	<b>struct</b> <a class="type" href="#rte_table_action_mtr_tc_params" title='rte_table_action_mtr_tc_params' data-ref="rte_table_action_mtr_tc_params">rte_table_action_mtr_tc_params</a> <dfn class="decl field" id="rte_table_action_mtr_params::mtr" title='rte_table_action_mtr_params::mtr' data-ref="rte_table_action_mtr_params::mtr">mtr</dfn>[<a class="macro" href="#175" title="4" data-ref="_M/RTE_TABLE_ACTION_TC_MAX">RTE_TABLE_ACTION_TC_MAX</a>];</td></tr>
+<tr><th id="309">309</th><td></td></tr>
+<tr><th id="310">310</th><td>	<i class="doc">/** Bit mask defining which traffic class parameters are valid in *mtr*.</i></td></tr>
+<tr><th id="311">311</th><td><i class="doc">	 * If bit N is set in *tc_mask*, then parameters for traffic class N are</i></td></tr>
+<tr><th id="312">312</th><td><i class="doc">	 * valid in *mtr*.</i></td></tr>
+<tr><th id="313">313</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="314">314</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_mtr_params::tc_mask" title='rte_table_action_mtr_params::tc_mask' data-ref="rte_table_action_mtr_params::tc_mask">tc_mask</dfn>;</td></tr>
+<tr><th id="315">315</th><td>};</td></tr>
+<tr><th id="316">316</th><td></td></tr>
+<tr><th id="317">317</th><td><i class="doc">/** Meter action statistics counters (per table rule). */</i></td></tr>
+<tr><th id="318">318</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_mtr_counters" title='rte_table_action_mtr_counters' data-ref="rte_table_action_mtr_counters">rte_table_action_mtr_counters</dfn> {</td></tr>
+<tr><th id="319">319</th><td>	<i class="doc">/** Stats counters for each of the *tc_mask* traffic classes. */</i></td></tr>
+<tr><th id="320">320</th><td>	<b>struct</b> <a class="type" href="#rte_table_action_mtr_counters_tc" title='rte_table_action_mtr_counters_tc' data-ref="rte_table_action_mtr_counters_tc">rte_table_action_mtr_counters_tc</a> <dfn class="decl field" id="rte_table_action_mtr_counters::stats" title='rte_table_action_mtr_counters::stats' data-ref="rte_table_action_mtr_counters::stats">stats</dfn>[<a class="macro" href="#175" title="4" data-ref="_M/RTE_TABLE_ACTION_TC_MAX">RTE_TABLE_ACTION_TC_MAX</a>];</td></tr>
+<tr><th id="321">321</th><td></td></tr>
+<tr><th id="322">322</th><td>	<i class="doc">/** Bit mask defining which traffic class parameters are valid in *mtr*.</i></td></tr>
+<tr><th id="323">323</th><td><i class="doc">	 * If bit N is set in *tc_mask*, then parameters for traffic class N are</i></td></tr>
+<tr><th id="324">324</th><td><i class="doc">	 * valid in *mtr*.</i></td></tr>
+<tr><th id="325">325</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="326">326</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_mtr_counters::tc_mask" title='rte_table_action_mtr_counters::tc_mask' data-ref="rte_table_action_mtr_counters::tc_mask">tc_mask</dfn>;</td></tr>
+<tr><th id="327">327</th><td>};</td></tr>
+<tr><th id="328">328</th><td></td></tr>
+<tr><th id="329">329</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="330">330</th><td><i class="doc"> * RTE_TABLE_ACTION_TM</i></td></tr>
+<tr><th id="331">331</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="332">332</th><td><i class="doc">/** Traffic management action configuration (per table action profile). */</i></td></tr>
+<tr><th id="333">333</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_tm_config" title='rte_table_action_tm_config' data-ref="rte_table_action_tm_config">rte_table_action_tm_config</dfn> {</td></tr>
+<tr><th id="334">334</th><td>	<i class="doc">/** Number of subports per port. */</i></td></tr>
+<tr><th id="335">335</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_tm_config::n_subports_per_port" title='rte_table_action_tm_config::n_subports_per_port' data-ref="rte_table_action_tm_config::n_subports_per_port">n_subports_per_port</dfn>;</td></tr>
+<tr><th id="336">336</th><td></td></tr>
+<tr><th id="337">337</th><td>	<i class="doc">/** Number of pipes per subport. */</i></td></tr>
+<tr><th id="338">338</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_tm_config::n_pipes_per_subport" title='rte_table_action_tm_config::n_pipes_per_subport' data-ref="rte_table_action_tm_config::n_pipes_per_subport">n_pipes_per_subport</dfn>;</td></tr>
+<tr><th id="339">339</th><td>};</td></tr>
+<tr><th id="340">340</th><td></td></tr>
+<tr><th id="341">341</th><td><i class="doc">/** Traffic management action parameters (per table rule). */</i></td></tr>
+<tr><th id="342">342</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_tm_params" title='rte_table_action_tm_params' data-ref="rte_table_action_tm_params">rte_table_action_tm_params</dfn> {</td></tr>
+<tr><th id="343">343</th><td>	<i class="doc">/** Subport ID. */</i></td></tr>
+<tr><th id="344">344</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_tm_params::subport_id" title='rte_table_action_tm_params::subport_id' data-ref="rte_table_action_tm_params::subport_id">subport_id</dfn>;</td></tr>
+<tr><th id="345">345</th><td></td></tr>
+<tr><th id="346">346</th><td>	<i class="doc">/** Pipe ID. */</i></td></tr>
+<tr><th id="347">347</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_tm_params::pipe_id" title='rte_table_action_tm_params::pipe_id' data-ref="rte_table_action_tm_params::pipe_id">pipe_id</dfn>;</td></tr>
+<tr><th id="348">348</th><td>};</td></tr>
+<tr><th id="349">349</th><td></td></tr>
+<tr><th id="350">350</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="351">351</th><td><i class="doc"> * RTE_TABLE_ACTION_ENCAP</i></td></tr>
+<tr><th id="352">352</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="353">353</th><td><i class="doc">/** Supported packet encapsulation types. */</i></td></tr>
+<tr><th id="354">354</th><td><b>enum</b> <dfn class="type def" id="rte_table_action_encap_type" title='rte_table_action_encap_type' data-ref="rte_table_action_encap_type">rte_table_action_encap_type</dfn> {</td></tr>
+<tr><th id="355">355</th><td>	<i class="doc">/** IP -&gt; { Ether | IP } */</i></td></tr>
+<tr><th id="356">356</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_ENCAP_ETHER" title='RTE_TABLE_ACTION_ENCAP_ETHER' data-ref="RTE_TABLE_ACTION_ENCAP_ETHER">RTE_TABLE_ACTION_ENCAP_ETHER</dfn> = <var>0</var>,</td></tr>
+<tr><th id="357">357</th><td></td></tr>
+<tr><th id="358">358</th><td>	<i class="doc">/** IP -&gt; { Ether | VLAN | IP } */</i></td></tr>
+<tr><th id="359">359</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_ENCAP_VLAN" title='RTE_TABLE_ACTION_ENCAP_VLAN' data-ref="RTE_TABLE_ACTION_ENCAP_VLAN">RTE_TABLE_ACTION_ENCAP_VLAN</dfn>,</td></tr>
+<tr><th id="360">360</th><td></td></tr>
+<tr><th id="361">361</th><td>	<i class="doc">/** IP -&gt; { Ether | S-VLAN | C-VLAN | IP } */</i></td></tr>
+<tr><th id="362">362</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_ENCAP_QINQ" title='RTE_TABLE_ACTION_ENCAP_QINQ' data-ref="RTE_TABLE_ACTION_ENCAP_QINQ">RTE_TABLE_ACTION_ENCAP_QINQ</dfn>,</td></tr>
+<tr><th id="363">363</th><td></td></tr>
+<tr><th id="364">364</th><td>	<i class="doc">/** IP -&gt; { Ether | MPLS | IP } */</i></td></tr>
+<tr><th id="365">365</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_ENCAP_MPLS" title='RTE_TABLE_ACTION_ENCAP_MPLS' data-ref="RTE_TABLE_ACTION_ENCAP_MPLS">RTE_TABLE_ACTION_ENCAP_MPLS</dfn>,</td></tr>
+<tr><th id="366">366</th><td></td></tr>
+<tr><th id="367">367</th><td>	<i class="doc">/** IP -&gt; { Ether | PPPoE | PPP | IP } */</i></td></tr>
+<tr><th id="368">368</th><td>	<dfn class="enum" id="RTE_TABLE_ACTION_ENCAP_PPPOE" title='RTE_TABLE_ACTION_ENCAP_PPPOE' data-ref="RTE_TABLE_ACTION_ENCAP_PPPOE">RTE_TABLE_ACTION_ENCAP_PPPOE</dfn>,</td></tr>
+<tr><th id="369">369</th><td>};</td></tr>
+<tr><th id="370">370</th><td></td></tr>
+<tr><th id="371">371</th><td><i class="doc">/** Pre-computed Ethernet header fields for encapsulation action. */</i></td></tr>
+<tr><th id="372">372</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_ether_hdr" title='rte_table_action_ether_hdr' data-ref="rte_table_action_ether_hdr">rte_table_action_ether_hdr</dfn> {</td></tr>
+<tr><th id="373">373</th><td>	<b>struct</b> <a class="type" href="../librte_net/rte_ether.h.html#ether_addr" title='ether_addr' data-ref="ether_addr">ether_addr</a> <dfn class="decl field" id="rte_table_action_ether_hdr::da" title='rte_table_action_ether_hdr::da' data-ref="rte_table_action_ether_hdr::da">da</dfn>; <i class="doc">/**&lt; Destination address. */</i></td></tr>
+<tr><th id="374">374</th><td>	<b>struct</b> <a class="type" href="../librte_net/rte_ether.h.html#ether_addr" title='ether_addr' data-ref="ether_addr">ether_addr</a> <dfn class="decl field" id="rte_table_action_ether_hdr::sa" title='rte_table_action_ether_hdr::sa' data-ref="rte_table_action_ether_hdr::sa">sa</dfn>; <i class="doc">/**&lt; Source address. */</i></td></tr>
+<tr><th id="375">375</th><td>};</td></tr>
+<tr><th id="376">376</th><td></td></tr>
+<tr><th id="377">377</th><td><i class="doc">/** Pre-computed VLAN header fields for encapsulation action. */</i></td></tr>
+<tr><th id="378">378</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_vlan_hdr" title='rte_table_action_vlan_hdr' data-ref="rte_table_action_vlan_hdr">rte_table_action_vlan_hdr</dfn> {</td></tr>
+<tr><th id="379">379</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="rte_table_action_vlan_hdr::pcp" title='rte_table_action_vlan_hdr::pcp' data-ref="rte_table_action_vlan_hdr::pcp">pcp</dfn>; <i class="doc">/**&lt; Priority Code Point (PCP). */</i></td></tr>
+<tr><th id="380">380</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="rte_table_action_vlan_hdr::dei" title='rte_table_action_vlan_hdr::dei' data-ref="rte_table_action_vlan_hdr::dei">dei</dfn>; <i class="doc">/**&lt; Drop Eligibility Indicator (DEI). */</i></td></tr>
+<tr><th id="381">381</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="rte_table_action_vlan_hdr::vid" title='rte_table_action_vlan_hdr::vid' data-ref="rte_table_action_vlan_hdr::vid">vid</dfn>; <i class="doc">/**&lt; VLAN Identifier (VID). */</i></td></tr>
+<tr><th id="382">382</th><td>};</td></tr>
+<tr><th id="383">383</th><td></td></tr>
+<tr><th id="384">384</th><td><i class="doc">/** Pre-computed MPLS header fields for encapsulation action. */</i></td></tr>
+<tr><th id="385">385</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_mpls_hdr" title='rte_table_action_mpls_hdr' data-ref="rte_table_action_mpls_hdr">rte_table_action_mpls_hdr</dfn> {</td></tr>
+<tr><th id="386">386</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_mpls_hdr::label" title='rte_table_action_mpls_hdr::label' data-ref="rte_table_action_mpls_hdr::label">label</dfn>; <i class="doc">/**&lt; Label. */</i></td></tr>
+<tr><th id="387">387</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="rte_table_action_mpls_hdr::tc" title='rte_table_action_mpls_hdr::tc' data-ref="rte_table_action_mpls_hdr::tc">tc</dfn>; <i class="doc">/**&lt; Traffic Class (TC). */</i></td></tr>
+<tr><th id="388">388</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="rte_table_action_mpls_hdr::ttl" title='rte_table_action_mpls_hdr::ttl' data-ref="rte_table_action_mpls_hdr::ttl">ttl</dfn>; <i class="doc">/**&lt; Time to Live (TTL). */</i></td></tr>
+<tr><th id="389">389</th><td>};</td></tr>
+<tr><th id="390">390</th><td></td></tr>
+<tr><th id="391">391</th><td><i class="doc">/** Pre-computed PPPoE header fields for encapsulation action. */</i></td></tr>
+<tr><th id="392">392</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_pppoe_hdr" title='rte_table_action_pppoe_hdr' data-ref="rte_table_action_pppoe_hdr">rte_table_action_pppoe_hdr</dfn> {</td></tr>
+<tr><th id="393">393</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="rte_table_action_pppoe_hdr::session_id" title='rte_table_action_pppoe_hdr::session_id' data-ref="rte_table_action_pppoe_hdr::session_id">session_id</dfn>; <i class="doc">/**&lt; Session ID. */</i></td></tr>
+<tr><th id="394">394</th><td>};</td></tr>
+<tr><th id="395">395</th><td></td></tr>
+<tr><th id="396">396</th><td><i class="doc">/** Ether encap parameters. */</i></td></tr>
+<tr><th id="397">397</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_encap_ether_params" title='rte_table_action_encap_ether_params' data-ref="rte_table_action_encap_ether_params">rte_table_action_encap_ether_params</dfn> {</td></tr>
+<tr><th id="398">398</th><td>	<b>struct</b> <a class="type" href="#rte_table_action_ether_hdr" title='rte_table_action_ether_hdr' data-ref="rte_table_action_ether_hdr">rte_table_action_ether_hdr</a> <dfn class="decl field" id="rte_table_action_encap_ether_params::ether" title='rte_table_action_encap_ether_params::ether' data-ref="rte_table_action_encap_ether_params::ether">ether</dfn>; <i class="doc">/**&lt; Ethernet header. */</i></td></tr>
+<tr><th id="399">399</th><td>};</td></tr>
+<tr><th id="400">400</th><td></td></tr>
+<tr><th id="401">401</th><td><i class="doc">/** VLAN encap parameters. */</i></td></tr>
+<tr><th id="402">402</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_encap_vlan_params" title='rte_table_action_encap_vlan_params' data-ref="rte_table_action_encap_vlan_params">rte_table_action_encap_vlan_params</dfn> {</td></tr>
+<tr><th id="403">403</th><td>	<b>struct</b> <a class="type" href="#rte_table_action_ether_hdr" title='rte_table_action_ether_hdr' data-ref="rte_table_action_ether_hdr">rte_table_action_ether_hdr</a> <dfn class="decl field" id="rte_table_action_encap_vlan_params::ether" title='rte_table_action_encap_vlan_params::ether' data-ref="rte_table_action_encap_vlan_params::ether">ether</dfn>; <i class="doc">/**&lt; Ethernet header. */</i></td></tr>
+<tr><th id="404">404</th><td>	<b>struct</b> <a class="type" href="#rte_table_action_vlan_hdr" title='rte_table_action_vlan_hdr' data-ref="rte_table_action_vlan_hdr">rte_table_action_vlan_hdr</a> <dfn class="decl field" id="rte_table_action_encap_vlan_params::vlan" title='rte_table_action_encap_vlan_params::vlan' data-ref="rte_table_action_encap_vlan_params::vlan">vlan</dfn>; <i class="doc">/**&lt; VLAN header. */</i></td></tr>
+<tr><th id="405">405</th><td>};</td></tr>
+<tr><th id="406">406</th><td></td></tr>
+<tr><th id="407">407</th><td><i class="doc">/** QinQ encap parameters. */</i></td></tr>
+<tr><th id="408">408</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_encap_qinq_params" title='rte_table_action_encap_qinq_params' data-ref="rte_table_action_encap_qinq_params">rte_table_action_encap_qinq_params</dfn> {</td></tr>
+<tr><th id="409">409</th><td>	<b>struct</b> <a class="type" href="#rte_table_action_ether_hdr" title='rte_table_action_ether_hdr' data-ref="rte_table_action_ether_hdr">rte_table_action_ether_hdr</a> <dfn class="decl field" id="rte_table_action_encap_qinq_params::ether" title='rte_table_action_encap_qinq_params::ether' data-ref="rte_table_action_encap_qinq_params::ether">ether</dfn>; <i class="doc">/**&lt; Ethernet header. */</i></td></tr>
+<tr><th id="410">410</th><td>	<b>struct</b> <a class="type" href="#rte_table_action_vlan_hdr" title='rte_table_action_vlan_hdr' data-ref="rte_table_action_vlan_hdr">rte_table_action_vlan_hdr</a> <dfn class="decl field" id="rte_table_action_encap_qinq_params::svlan" title='rte_table_action_encap_qinq_params::svlan' data-ref="rte_table_action_encap_qinq_params::svlan">svlan</dfn>; <i class="doc">/**&lt; Service VLAN header. */</i></td></tr>
+<tr><th id="411">411</th><td>	<b>struct</b> <a class="type" href="#rte_table_action_vlan_hdr" title='rte_table_action_vlan_hdr' data-ref="rte_table_action_vlan_hdr">rte_table_action_vlan_hdr</a> <dfn class="decl field" id="rte_table_action_encap_qinq_params::cvlan" title='rte_table_action_encap_qinq_params::cvlan' data-ref="rte_table_action_encap_qinq_params::cvlan">cvlan</dfn>; <i class="doc">/**&lt; Customer VLAN header. */</i></td></tr>
+<tr><th id="412">412</th><td>};</td></tr>
+<tr><th id="413">413</th><td></td></tr>
+<tr><th id="414">414</th><td><i class="doc">/** Max number of MPLS labels per output packet for MPLS encapsulation. */</i></td></tr>
+<tr><th id="415">415</th><td><u>#<span data-ppcond="415">ifndef</span> <span class="macro" data-ref="_M/RTE_TABLE_ACTION_MPLS_LABELS_MAX">RTE_TABLE_ACTION_MPLS_LABELS_MAX</span></u></td></tr>
+<tr><th id="416">416</th><td><u>#define <dfn class="macro" id="_M/RTE_TABLE_ACTION_MPLS_LABELS_MAX" data-ref="_M/RTE_TABLE_ACTION_MPLS_LABELS_MAX">RTE_TABLE_ACTION_MPLS_LABELS_MAX</dfn>                   4</u></td></tr>
+<tr><th id="417">417</th><td><u>#<span data-ppcond="415">endif</span></u></td></tr>
+<tr><th id="418">418</th><td></td></tr>
+<tr><th id="419">419</th><td><i class="doc">/** MPLS encap parameters. */</i></td></tr>
+<tr><th id="420">420</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_encap_mpls_params" title='rte_table_action_encap_mpls_params' data-ref="rte_table_action_encap_mpls_params">rte_table_action_encap_mpls_params</dfn> {</td></tr>
+<tr><th id="421">421</th><td>	<i class="doc">/** Ethernet header. */</i></td></tr>
+<tr><th id="422">422</th><td>	<b>struct</b> <a class="type" href="#rte_table_action_ether_hdr" title='rte_table_action_ether_hdr' data-ref="rte_table_action_ether_hdr">rte_table_action_ether_hdr</a> <dfn class="decl field" id="rte_table_action_encap_mpls_params::ether" title='rte_table_action_encap_mpls_params::ether' data-ref="rte_table_action_encap_mpls_params::ether">ether</dfn>;</td></tr>
+<tr><th id="423">423</th><td></td></tr>
+<tr><th id="424">424</th><td>	<i class="doc">/** MPLS header. */</i></td></tr>
+<tr><th id="425">425</th><td>	<b>struct</b> <a class="type" href="#rte_table_action_mpls_hdr" title='rte_table_action_mpls_hdr' data-ref="rte_table_action_mpls_hdr">rte_table_action_mpls_hdr</a> <dfn class="decl field" id="rte_table_action_encap_mpls_params::mpls" title='rte_table_action_encap_mpls_params::mpls' data-ref="rte_table_action_encap_mpls_params::mpls">mpls</dfn>[<a class="macro" href="#416" title="4" data-ref="_M/RTE_TABLE_ACTION_MPLS_LABELS_MAX">RTE_TABLE_ACTION_MPLS_LABELS_MAX</a>];</td></tr>
+<tr><th id="426">426</th><td></td></tr>
+<tr><th id="427">427</th><td>	<i class="doc">/** Number of MPLS labels in MPLS header. */</i></td></tr>
+<tr><th id="428">428</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_encap_mpls_params::mpls_count" title='rte_table_action_encap_mpls_params::mpls_count' data-ref="rte_table_action_encap_mpls_params::mpls_count">mpls_count</dfn>;</td></tr>
+<tr><th id="429">429</th><td></td></tr>
+<tr><th id="430">430</th><td>	<i class="doc">/** Non-zero for MPLS unicast, zero for MPLS multicast. */</i></td></tr>
+<tr><th id="431">431</th><td>	<em>int</em> <dfn class="decl field" id="rte_table_action_encap_mpls_params::unicast" title='rte_table_action_encap_mpls_params::unicast' data-ref="rte_table_action_encap_mpls_params::unicast">unicast</dfn>;</td></tr>
+<tr><th id="432">432</th><td>};</td></tr>
+<tr><th id="433">433</th><td></td></tr>
+<tr><th id="434">434</th><td><i class="doc">/** PPPoE encap parameters. */</i></td></tr>
+<tr><th id="435">435</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_encap_pppoe_params" title='rte_table_action_encap_pppoe_params' data-ref="rte_table_action_encap_pppoe_params">rte_table_action_encap_pppoe_params</dfn> {</td></tr>
+<tr><th id="436">436</th><td>	<b>struct</b> <a class="type" href="#rte_table_action_ether_hdr" title='rte_table_action_ether_hdr' data-ref="rte_table_action_ether_hdr">rte_table_action_ether_hdr</a> <dfn class="decl field" id="rte_table_action_encap_pppoe_params::ether" title='rte_table_action_encap_pppoe_params::ether' data-ref="rte_table_action_encap_pppoe_params::ether">ether</dfn>; <i class="doc">/**&lt; Ethernet header. */</i></td></tr>
+<tr><th id="437">437</th><td>	<b>struct</b> <a class="type" href="#rte_table_action_pppoe_hdr" title='rte_table_action_pppoe_hdr' data-ref="rte_table_action_pppoe_hdr">rte_table_action_pppoe_hdr</a> <dfn class="decl field" id="rte_table_action_encap_pppoe_params::pppoe" title='rte_table_action_encap_pppoe_params::pppoe' data-ref="rte_table_action_encap_pppoe_params::pppoe">pppoe</dfn>; <i class="doc">/**&lt; PPPoE/PPP headers. */</i></td></tr>
+<tr><th id="438">438</th><td>};</td></tr>
+<tr><th id="439">439</th><td></td></tr>
+<tr><th id="440">440</th><td><i class="doc">/** Encap action configuration (per table action profile). */</i></td></tr>
+<tr><th id="441">441</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_encap_config" title='rte_table_action_encap_config' data-ref="rte_table_action_encap_config">rte_table_action_encap_config</dfn> {</td></tr>
+<tr><th id="442">442</th><td>	<i class="doc">/** Bit mask defining the set of packet encapsulations enabled for the</i></td></tr>
+<tr><th id="443">443</th><td><i class="doc">	 * current table action profile. If bit (1 &lt;&lt; N) is set in *encap_mask*,</i></td></tr>
+<tr><th id="444">444</th><td><i class="doc">	 * then packet encapsulation N is enabled, otherwise it is disabled.</i></td></tr>
+<tr><th id="445">445</th><td><i class="doc">	 *</i></td></tr>
+<tr><th id="446">446</th><td><i class="doc">	 * <span class="command">@see</span> enum rte_table_action_encap_type</i></td></tr>
+<tr><th id="447">447</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="448">448</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="rte_table_action_encap_config::encap_mask" title='rte_table_action_encap_config::encap_mask' data-ref="rte_table_action_encap_config::encap_mask">encap_mask</dfn>;</td></tr>
+<tr><th id="449">449</th><td>};</td></tr>
+<tr><th id="450">450</th><td></td></tr>
+<tr><th id="451">451</th><td><i class="doc">/** Encap action parameters (per table rule). */</i></td></tr>
+<tr><th id="452">452</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_encap_params" title='rte_table_action_encap_params' data-ref="rte_table_action_encap_params">rte_table_action_encap_params</dfn> {</td></tr>
+<tr><th id="453">453</th><td>	<i class="doc">/** Encapsulation type. */</i></td></tr>
+<tr><th id="454">454</th><td>	<b>enum</b> <a class="type" href="#rte_table_action_encap_type" title='rte_table_action_encap_type' data-ref="rte_table_action_encap_type">rte_table_action_encap_type</a> <dfn class="decl field" id="rte_table_action_encap_params::type" title='rte_table_action_encap_params::type' data-ref="rte_table_action_encap_params::type">type</dfn>;</td></tr>
+<tr><th id="455">455</th><td></td></tr>
+<tr><th id="456">456</th><td>	<a class="macro" href="../librte_eal/common/include/rte_common.h.html#39" title="" data-ref="_M/RTE_STD_C11">RTE_STD_C11</a></td></tr>
+<tr><th id="457">457</th><td>	<b>union</b> {</td></tr>
+<tr><th id="458">458</th><td>		<i class="doc">/** Only valid when *type* is set to Ether. */</i></td></tr>
+<tr><th id="459">459</th><td>		<b>struct</b> <a class="type" href="#rte_table_action_encap_ether_params" title='rte_table_action_encap_ether_params' data-ref="rte_table_action_encap_ether_params">rte_table_action_encap_ether_params</a> <dfn class="decl field" id="rte_table_action_encap_params::(anonymous)::ether" title='rte_table_action_encap_params::(anonymous union)::ether' data-ref="rte_table_action_encap_params::(anonymous)::ether">ether</dfn>;</td></tr>
+<tr><th id="460">460</th><td></td></tr>
+<tr><th id="461">461</th><td>		<i class="doc">/** Only valid when *type* is set to VLAN. */</i></td></tr>
+<tr><th id="462">462</th><td>		<b>struct</b> <a class="type" href="#rte_table_action_encap_vlan_params" title='rte_table_action_encap_vlan_params' data-ref="rte_table_action_encap_vlan_params">rte_table_action_encap_vlan_params</a> <dfn class="decl field" id="rte_table_action_encap_params::(anonymous)::vlan" title='rte_table_action_encap_params::(anonymous union)::vlan' data-ref="rte_table_action_encap_params::(anonymous)::vlan">vlan</dfn>;</td></tr>
+<tr><th id="463">463</th><td></td></tr>
+<tr><th id="464">464</th><td>		<i class="doc">/** Only valid when *type* is set to QinQ. */</i></td></tr>
+<tr><th id="465">465</th><td>		<b>struct</b> <a class="type" href="#rte_table_action_encap_qinq_params" title='rte_table_action_encap_qinq_params' data-ref="rte_table_action_encap_qinq_params">rte_table_action_encap_qinq_params</a> <dfn class="decl field" id="rte_table_action_encap_params::(anonymous)::qinq" title='rte_table_action_encap_params::(anonymous union)::qinq' data-ref="rte_table_action_encap_params::(anonymous)::qinq">qinq</dfn>;</td></tr>
+<tr><th id="466">466</th><td></td></tr>
+<tr><th id="467">467</th><td>		<i class="doc">/** Only valid when *type* is set to MPLS. */</i></td></tr>
+<tr><th id="468">468</th><td>		<b>struct</b> <a class="type" href="#rte_table_action_encap_mpls_params" title='rte_table_action_encap_mpls_params' data-ref="rte_table_action_encap_mpls_params">rte_table_action_encap_mpls_params</a> <dfn class="decl field" id="rte_table_action_encap_params::(anonymous)::mpls" title='rte_table_action_encap_params::(anonymous union)::mpls' data-ref="rte_table_action_encap_params::(anonymous)::mpls">mpls</dfn>;</td></tr>
+<tr><th id="469">469</th><td></td></tr>
+<tr><th id="470">470</th><td>		<i class="doc">/** Only valid when *type* is set to PPPoE. */</i></td></tr>
+<tr><th id="471">471</th><td>		<b>struct</b> <a class="type" href="#rte_table_action_encap_pppoe_params" title='rte_table_action_encap_pppoe_params' data-ref="rte_table_action_encap_pppoe_params">rte_table_action_encap_pppoe_params</a> <dfn class="decl field" id="rte_table_action_encap_params::(anonymous)::pppoe" title='rte_table_action_encap_params::(anonymous union)::pppoe' data-ref="rte_table_action_encap_params::(anonymous)::pppoe">pppoe</dfn>;</td></tr>
+<tr><th id="472">472</th><td>	};</td></tr>
+<tr><th id="473">473</th><td>};</td></tr>
+<tr><th id="474">474</th><td></td></tr>
+<tr><th id="475">475</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="476">476</th><td><i class="doc"> * RTE_TABLE_ACTION_NAT</i></td></tr>
+<tr><th id="477">477</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="478">478</th><td><i class="doc">/** NAT action configuration (per table action profile). */</i></td></tr>
+<tr><th id="479">479</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_nat_config" title='rte_table_action_nat_config' data-ref="rte_table_action_nat_config">rte_table_action_nat_config</dfn> {</td></tr>
+<tr><th id="480">480</th><td>	<i class="doc">/** When non-zero, the IP source address and L4 protocol source port are</i></td></tr>
+<tr><th id="481">481</th><td><i class="doc">	 * translated. When zero, the IP destination address and L4 protocol</i></td></tr>
+<tr><th id="482">482</th><td><i class="doc">	 * destination port are translated.</i></td></tr>
+<tr><th id="483">483</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="484">484</th><td>	<em>int</em> <dfn class="decl field" id="rte_table_action_nat_config::source_nat" title='rte_table_action_nat_config::source_nat' data-ref="rte_table_action_nat_config::source_nat">source_nat</dfn>;</td></tr>
+<tr><th id="485">485</th><td></td></tr>
+<tr><th id="486">486</th><td>	<i class="doc">/** Layer 4 protocol, for example TCP (0x06) or UDP (0x11). The checksum</i></td></tr>
+<tr><th id="487">487</th><td><i class="doc">	 * field is computed differently and placed at different header offset</i></td></tr>
+<tr><th id="488">488</th><td><i class="doc">	 * by each layer 4 protocol.</i></td></tr>
+<tr><th id="489">489</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="490">490</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="rte_table_action_nat_config::proto" title='rte_table_action_nat_config::proto' data-ref="rte_table_action_nat_config::proto">proto</dfn>;</td></tr>
+<tr><th id="491">491</th><td>};</td></tr>
+<tr><th id="492">492</th><td></td></tr>
+<tr><th id="493">493</th><td><i class="doc">/** NAT action parameters (per table rule). */</i></td></tr>
+<tr><th id="494">494</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_nat_params" title='rte_table_action_nat_params' data-ref="rte_table_action_nat_params">rte_table_action_nat_params</dfn> {</td></tr>
+<tr><th id="495">495</th><td>	<i class="doc">/** IP version for *addr*: non-zero for IPv4, zero for IPv6. */</i></td></tr>
+<tr><th id="496">496</th><td>	<em>int</em> <dfn class="decl field" id="rte_table_action_nat_params::ip_version" title='rte_table_action_nat_params::ip_version' data-ref="rte_table_action_nat_params::ip_version">ip_version</dfn>;</td></tr>
+<tr><th id="497">497</th><td></td></tr>
+<tr><th id="498">498</th><td>	<i class="doc">/** IP address. */</i></td></tr>
+<tr><th id="499">499</th><td>	<b>union</b> {</td></tr>
+<tr><th id="500">500</th><td>		<i class="doc">/** IPv4 address; only valid when *ip_version* is non-zero. */</i></td></tr>
+<tr><th id="501">501</th><td>		<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_table_action_nat_params::(anonymous)::ipv4" title='rte_table_action_nat_params::(anonymous union)::ipv4' data-ref="rte_table_action_nat_params::(anonymous)::ipv4">ipv4</dfn>;</td></tr>
+<tr><th id="502">502</th><td></td></tr>
+<tr><th id="503">503</th><td>		<i class="doc">/** IPv6 address; only valid when *ip_version* is set to 0. */</i></td></tr>
+<tr><th id="504">504</th><td>		<a class="typedef" href="../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="rte_table_action_nat_params::(anonymous)::ipv6" title='rte_table_action_nat_params::(anonymous union)::ipv6' data-ref="rte_table_action_nat_params::(anonymous)::ipv6">ipv6</dfn>[<var>16</var>];</td></tr>
+<tr><th id="505">505</th><td>	} <dfn class="decl field" id="rte_table_action_nat_params::addr" title='rte_table_action_nat_params::addr' data-ref="rte_table_action_nat_params::addr">addr</dfn>;</td></tr>
+<tr><th id="506">506</th><td></td></tr>
+<tr><th id="507">507</th><td>	<i class="doc">/** Port. */</i></td></tr>
+<tr><th id="508">508</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="rte_table_action_nat_params::port" title='rte_table_action_nat_params::port' data-ref="rte_table_action_nat_params::port">port</dfn>;</td></tr>
+<tr><th id="509">509</th><td>};</td></tr>
+<tr><th id="510">510</th><td></td></tr>
+<tr><th id="511">511</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="512">512</th><td><i class="doc"> * RTE_TABLE_ACTION_TTL</i></td></tr>
+<tr><th id="513">513</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="514">514</th><td><i class="doc">/** TTL action configuration (per table action profile). */</i></td></tr>
+<tr><th id="515">515</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_ttl_config" title='rte_table_action_ttl_config' data-ref="rte_table_action_ttl_config">rte_table_action_ttl_config</dfn> {</td></tr>
+<tr><th id="516">516</th><td>	<i class="doc">/** When non-zero, the input packets whose updated IPv4 Time to Live</i></td></tr>
+<tr><th id="517">517</th><td><i class="doc">	 * (TTL) field or IPv6 Hop Limit (HL) field is zero are dropped.</i></td></tr>
+<tr><th id="518">518</th><td><i class="doc">	 * When zero, the input packets whose updated IPv4 TTL field or IPv6 HL</i></td></tr>
+<tr><th id="519">519</th><td><i class="doc">	 * field is zero are forwarded as usual (typically for debugging</i></td></tr>
+<tr><th id="520">520</th><td><i class="doc">	 * purpose).</i></td></tr>
+<tr><th id="521">521</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="522">522</th><td>	<em>int</em> <dfn class="decl field" id="rte_table_action_ttl_config::drop" title='rte_table_action_ttl_config::drop' data-ref="rte_table_action_ttl_config::drop">drop</dfn>;</td></tr>
+<tr><th id="523">523</th><td></td></tr>
+<tr><th id="524">524</th><td>	<i class="doc">/** When non-zero, the *n_packets* stats counter for TTL action is</i></td></tr>
+<tr><th id="525">525</th><td><i class="doc">	 * enabled, otherwise disabled.</i></td></tr>
+<tr><th id="526">526</th><td><i class="doc">	 *</i></td></tr>
+<tr><th id="527">527</th><td><i class="doc">	 * <span class="command">@see</span> struct rte_table_action_ttl_counters</i></td></tr>
+<tr><th id="528">528</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="529">529</th><td>	<em>int</em> <dfn class="decl field" id="rte_table_action_ttl_config::n_packets_enabled" title='rte_table_action_ttl_config::n_packets_enabled' data-ref="rte_table_action_ttl_config::n_packets_enabled">n_packets_enabled</dfn>;</td></tr>
+<tr><th id="530">530</th><td>};</td></tr>
+<tr><th id="531">531</th><td></td></tr>
+<tr><th id="532">532</th><td><i class="doc">/** TTL action parameters (per table rule). */</i></td></tr>
+<tr><th id="533">533</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_ttl_params" title='rte_table_action_ttl_params' data-ref="rte_table_action_ttl_params">rte_table_action_ttl_params</dfn> {</td></tr>
+<tr><th id="534">534</th><td>	<i class="doc">/** When non-zero, decrement the IPv4 TTL field and update the checksum</i></td></tr>
+<tr><th id="535">535</th><td><i class="doc">	 * field, or decrement the IPv6 HL field. When zero, the IPv4 TTL field</i></td></tr>
+<tr><th id="536">536</th><td><i class="doc">	 * or the IPv6 HL field is not changed.</i></td></tr>
+<tr><th id="537">537</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="538">538</th><td>	<em>int</em> <dfn class="decl field" id="rte_table_action_ttl_params::decrement" title='rte_table_action_ttl_params::decrement' data-ref="rte_table_action_ttl_params::decrement">decrement</dfn>;</td></tr>
+<tr><th id="539">539</th><td>};</td></tr>
+<tr><th id="540">540</th><td></td></tr>
+<tr><th id="541">541</th><td><i class="doc">/** TTL action statistics packets (per table rule). */</i></td></tr>
+<tr><th id="542">542</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_ttl_counters" title='rte_table_action_ttl_counters' data-ref="rte_table_action_ttl_counters">rte_table_action_ttl_counters</dfn> {</td></tr>
+<tr><th id="543">543</th><td>	<i class="doc">/** Number of IPv4 packets whose updated TTL field is zero or IPv6</i></td></tr>
+<tr><th id="544">544</th><td><i class="doc">	 * packets whose updated HL field is zero.</i></td></tr>
+<tr><th id="545">545</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="546">546</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="rte_table_action_ttl_counters::n_packets" title='rte_table_action_ttl_counters::n_packets' data-ref="rte_table_action_ttl_counters::n_packets">n_packets</dfn>;</td></tr>
+<tr><th id="547">547</th><td>};</td></tr>
+<tr><th id="548">548</th><td></td></tr>
+<tr><th id="549">549</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="550">550</th><td><i class="doc"> * RTE_TABLE_ACTION_STATS</i></td></tr>
+<tr><th id="551">551</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="552">552</th><td><i class="doc">/** Stats action configuration (per table action profile). */</i></td></tr>
+<tr><th id="553">553</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_stats_config" title='rte_table_action_stats_config' data-ref="rte_table_action_stats_config">rte_table_action_stats_config</dfn> {</td></tr>
+<tr><th id="554">554</th><td>	<i class="doc">/** When non-zero, the *n_packets* stats counter is enabled, otherwise</i></td></tr>
+<tr><th id="555">555</th><td><i class="doc">	 * disabled.</i></td></tr>
+<tr><th id="556">556</th><td><i class="doc">	 *</i></td></tr>
+<tr><th id="557">557</th><td><i class="doc">	 * <span class="command">@see</span> struct rte_table_action_stats_counters</i></td></tr>
+<tr><th id="558">558</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="559">559</th><td>	<em>int</em> <dfn class="decl field" id="rte_table_action_stats_config::n_packets_enabled" title='rte_table_action_stats_config::n_packets_enabled' data-ref="rte_table_action_stats_config::n_packets_enabled">n_packets_enabled</dfn>;</td></tr>
+<tr><th id="560">560</th><td></td></tr>
+<tr><th id="561">561</th><td>	<i class="doc">/** When non-zero, the *n_bytes* stats counter is enabled, otherwise</i></td></tr>
+<tr><th id="562">562</th><td><i class="doc">	 * disabled.</i></td></tr>
+<tr><th id="563">563</th><td><i class="doc">	 *</i></td></tr>
+<tr><th id="564">564</th><td><i class="doc">	 * <span class="command">@see</span> struct rte_table_action_stats_counters</i></td></tr>
+<tr><th id="565">565</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="566">566</th><td>	<em>int</em> <dfn class="decl field" id="rte_table_action_stats_config::n_bytes_enabled" title='rte_table_action_stats_config::n_bytes_enabled' data-ref="rte_table_action_stats_config::n_bytes_enabled">n_bytes_enabled</dfn>;</td></tr>
+<tr><th id="567">567</th><td>};</td></tr>
+<tr><th id="568">568</th><td></td></tr>
+<tr><th id="569">569</th><td><i class="doc">/** Stats action parameters (per table rule). */</i></td></tr>
+<tr><th id="570">570</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_stats_params" title='rte_table_action_stats_params' data-ref="rte_table_action_stats_params">rte_table_action_stats_params</dfn> {</td></tr>
+<tr><th id="571">571</th><td>	<i class="doc">/** Initial value for the *n_packets* stats counter. Typically set to 0.</i></td></tr>
+<tr><th id="572">572</th><td><i class="doc">	 *</i></td></tr>
+<tr><th id="573">573</th><td><i class="doc">	 * <span class="command">@see</span> struct rte_table_action_stats_counters</i></td></tr>
+<tr><th id="574">574</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="575">575</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="rte_table_action_stats_params::n_packets" title='rte_table_action_stats_params::n_packets' data-ref="rte_table_action_stats_params::n_packets">n_packets</dfn>;</td></tr>
+<tr><th id="576">576</th><td></td></tr>
+<tr><th id="577">577</th><td>	<i class="doc">/** Initial value for the *n_bytes* stats counter. Typically set to 0.</i></td></tr>
+<tr><th id="578">578</th><td><i class="doc">	 *</i></td></tr>
+<tr><th id="579">579</th><td><i class="doc">	 * <span class="command">@see</span> struct rte_table_action_stats_counters</i></td></tr>
+<tr><th id="580">580</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="581">581</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="rte_table_action_stats_params::n_bytes" title='rte_table_action_stats_params::n_bytes' data-ref="rte_table_action_stats_params::n_bytes">n_bytes</dfn>;</td></tr>
+<tr><th id="582">582</th><td>};</td></tr>
+<tr><th id="583">583</th><td></td></tr>
+<tr><th id="584">584</th><td><i class="doc">/** Stats action counters (per table rule). */</i></td></tr>
+<tr><th id="585">585</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_stats_counters" title='rte_table_action_stats_counters' data-ref="rte_table_action_stats_counters">rte_table_action_stats_counters</dfn> {</td></tr>
+<tr><th id="586">586</th><td>	<i class="doc">/** Number of packets. Valid only when *n_packets_valid* is non-zero. */</i></td></tr>
+<tr><th id="587">587</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="rte_table_action_stats_counters::n_packets" title='rte_table_action_stats_counters::n_packets' data-ref="rte_table_action_stats_counters::n_packets">n_packets</dfn>;</td></tr>
+<tr><th id="588">588</th><td></td></tr>
+<tr><th id="589">589</th><td>	<i class="doc">/** Number of bytes. Valid only when *n_bytes_valid* is non-zero. */</i></td></tr>
+<tr><th id="590">590</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="rte_table_action_stats_counters::n_bytes" title='rte_table_action_stats_counters::n_bytes' data-ref="rte_table_action_stats_counters::n_bytes">n_bytes</dfn>;</td></tr>
+<tr><th id="591">591</th><td></td></tr>
+<tr><th id="592">592</th><td>	<i class="doc">/** When non-zero, the *n_packets* field is valid, otherwise invalid. */</i></td></tr>
+<tr><th id="593">593</th><td>	<em>int</em> <dfn class="decl field" id="rte_table_action_stats_counters::n_packets_valid" title='rte_table_action_stats_counters::n_packets_valid' data-ref="rte_table_action_stats_counters::n_packets_valid">n_packets_valid</dfn>;</td></tr>
+<tr><th id="594">594</th><td></td></tr>
+<tr><th id="595">595</th><td>	<i class="doc">/** When non-zero, the *n_bytes* field is valid, otherwise invalid. */</i></td></tr>
+<tr><th id="596">596</th><td>	<em>int</em> <dfn class="decl field" id="rte_table_action_stats_counters::n_bytes_valid" title='rte_table_action_stats_counters::n_bytes_valid' data-ref="rte_table_action_stats_counters::n_bytes_valid">n_bytes_valid</dfn>;</td></tr>
+<tr><th id="597">597</th><td>};</td></tr>
+<tr><th id="598">598</th><td></td></tr>
+<tr><th id="599">599</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="600">600</th><td><i class="doc"> * RTE_TABLE_ACTION_TIME</i></td></tr>
+<tr><th id="601">601</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="602">602</th><td><i class="doc">/** Timestamp action parameters (per table rule). */</i></td></tr>
+<tr><th id="603">603</th><td><b>struct</b> <dfn class="type def" id="rte_table_action_time_params" title='rte_table_action_time_params' data-ref="rte_table_action_time_params">rte_table_action_time_params</dfn> {</td></tr>
+<tr><th id="604">604</th><td>	<i class="doc">/** Initial timestamp value. Typically set to current time. */</i></td></tr>
+<tr><th id="605">605</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="rte_table_action_time_params::time" title='rte_table_action_time_params::time' data-ref="rte_table_action_time_params::time">time</dfn>;</td></tr>
+<tr><th id="606">606</th><td>};</td></tr>
+<tr><th id="607">607</th><td></td></tr>
+<tr><th id="608">608</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="609">609</th><td><i class="doc"> * Table action profile.</i></td></tr>
+<tr><th id="610">610</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="611">611</th><td><b>struct</b> <a class="type" href="rte_table_action.c.html#rte_table_action_profile" title='rte_table_action_profile' data-ref="rte_table_action_profile" id="rte_table_action_profile">rte_table_action_profile</a>;</td></tr>
+<tr><th id="612">612</th><td></td></tr>
+<tr><th id="613">613</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="614">614</th><td><i class="doc"> * Table action profile create.</i></td></tr>
+<tr><th id="615">615</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="616">616</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">common</span></i></td></tr>
+<tr><th id="617">617</th><td><i class="doc"> *   Common action configuration.</i></td></tr>
+<tr><th id="618">618</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="619">619</th><td><i class="doc"> *   Table action profile handle on success, NULL otherwise.</i></td></tr>
+<tr><th id="620">620</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="621">621</th><td><b>struct</b> <a class="type" href="rte_table_action.c.html#rte_table_action_profile" title='rte_table_action_profile' data-ref="rte_table_action_profile">rte_table_action_profile</a> * <a class="macro" href="../librte_compat/rte_compat.h.html#87" title="__attribute__((section(&quot;.text.experimental&quot;)))" data-ref="_M/__rte_experimental">__rte_experimental</a></td></tr>
+<tr><th id="622">622</th><td><a class="decl fn" href="rte_table_action.c.html#rte_table_action_profile_create" title='rte_table_action_profile_create' data-ref="rte_table_action_profile_create" id="rte_table_action_profile_create">rte_table_action_profile_create</a>(<b>struct</b> <a class="type" href="#rte_table_action_common_config" title='rte_table_action_common_config' data-ref="rte_table_action_common_config">rte_table_action_common_config</a> *<dfn class="local col1 decl" id="1common" title='common' data-type='struct rte_table_action_common_config *' data-ref="1common">common</dfn>);</td></tr>
+<tr><th id="623">623</th><td></td></tr>
+<tr><th id="624">624</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="625">625</th><td><i class="doc"> * Table action profile free.</i></td></tr>
+<tr><th id="626">626</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="627">627</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">profile</span></i></td></tr>
+<tr><th id="628">628</th><td><i class="doc"> *   Table profile action handle (needs to be valid).</i></td></tr>
+<tr><th id="629">629</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="630">630</th><td><i class="doc"> *   Zero on success, non-zero error code otherwise.</i></td></tr>
+<tr><th id="631">631</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="632">632</th><td><em>int</em> <a class="macro" href="../librte_compat/rte_compat.h.html#87" title="__attribute__((section(&quot;.text.experimental&quot;)))" data-ref="_M/__rte_experimental">__rte_experimental</a></td></tr>
+<tr><th id="633">633</th><td><a class="decl fn" href="rte_table_action.c.html#rte_table_action_profile_free" title='rte_table_action_profile_free' data-ref="rte_table_action_profile_free" id="rte_table_action_profile_free">rte_table_action_profile_free</a>(<b>struct</b> <a class="type" href="rte_table_action.c.html#rte_table_action_profile" title='rte_table_action_profile' data-ref="rte_table_action_profile">rte_table_action_profile</a> *<dfn class="local col2 decl" id="2profile" title='profile' data-type='struct rte_table_action_profile *' data-ref="2profile">profile</dfn>);</td></tr>
+<tr><th id="634">634</th><td></td></tr>
+<tr><th id="635">635</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="636">636</th><td><i class="doc"> * Table action profile action register.</i></td></tr>
+<tr><th id="637">637</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="638">638</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">profile</span></i></td></tr>
+<tr><th id="639">639</th><td><i class="doc"> *   Table profile action handle (needs to be valid and not in frozen state).</i></td></tr>
+<tr><th id="640">640</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">type</span></i></td></tr>
+<tr><th id="641">641</th><td><i class="doc"> *   Specific table action to be registered for *profile*.</i></td></tr>
+<tr><th id="642">642</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">action_config</span></i></td></tr>
+<tr><th id="643">643</th><td><i class="doc"> *   Configuration for the *type* action.</i></td></tr>
+<tr><th id="644">644</th><td><i class="doc"> *   If struct rte_table_action_*type*_config is defined by the Table Action</i></td></tr>
+<tr><th id="645">645</th><td><i class="doc"> *   API, it needs to point to a valid instance of this structure, otherwise it</i></td></tr>
+<tr><th id="646">646</th><td><i class="doc"> *   needs to be set to NULL.</i></td></tr>
+<tr><th id="647">647</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="648">648</th><td><i class="doc"> *   Zero on success, non-zero error code otherwise.</i></td></tr>
+<tr><th id="649">649</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="650">650</th><td><em>int</em> <a class="macro" href="../librte_compat/rte_compat.h.html#87" title="__attribute__((section(&quot;.text.experimental&quot;)))" data-ref="_M/__rte_experimental">__rte_experimental</a></td></tr>
+<tr><th id="651">651</th><td><a class="decl fn" href="rte_table_action.c.html#rte_table_action_profile_action_register" title='rte_table_action_profile_action_register' data-ref="rte_table_action_profile_action_register" id="rte_table_action_profile_action_register">rte_table_action_profile_action_register</a>(<b>struct</b> <a class="type" href="rte_table_action.c.html#rte_table_action_profile" title='rte_table_action_profile' data-ref="rte_table_action_profile">rte_table_action_profile</a> *<dfn class="local col3 decl" id="3profile" title='profile' data-type='struct rte_table_action_profile *' data-ref="3profile">profile</dfn>,</td></tr>
+<tr><th id="652">652</th><td>	<b>enum</b> <a class="type" href="#rte_table_action_type" title='rte_table_action_type' data-ref="rte_table_action_type">rte_table_action_type</a> <dfn class="local col4 decl" id="4type" title='type' data-type='enum rte_table_action_type' data-ref="4type">type</dfn>,</td></tr>
+<tr><th id="653">653</th><td>	<em>void</em> *<dfn class="local col5 decl" id="5action_config" title='action_config' data-type='void *' data-ref="5action_config">action_config</dfn>);</td></tr>
+<tr><th id="654">654</th><td></td></tr>
+<tr><th id="655">655</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="656">656</th><td><i class="doc"> * Table action profile freeze.</i></td></tr>
+<tr><th id="657">657</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="658">658</th><td><i class="doc"> * Once this function is called successfully, the given profile enters the</i></td></tr>
+<tr><th id="659">659</th><td><i class="doc"> * frozen state with the following immediate effects: no more actions can be</i></td></tr>
+<tr><th id="660">660</th><td><i class="doc"> * registered for this profile, so the profile can be instantiated to create</i></td></tr>
+<tr><th id="661">661</th><td><i class="doc"> * table action objects.</i></td></tr>
+<tr><th id="662">662</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="663">663</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">profile</span></i></td></tr>
+<tr><th id="664">664</th><td><i class="doc"> *   Table profile action handle (needs to be valid and not in frozen state).</i></td></tr>
+<tr><th id="665">665</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="666">666</th><td><i class="doc"> *   Zero on success, non-zero error code otherwise.</i></td></tr>
+<tr><th id="667">667</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="668">668</th><td><i class="doc"> * <span class="command">@see</span> rte_table_action_create()</i></td></tr>
+<tr><th id="669">669</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="670">670</th><td><em>int</em> <a class="macro" href="../librte_compat/rte_compat.h.html#87" title="__attribute__((section(&quot;.text.experimental&quot;)))" data-ref="_M/__rte_experimental">__rte_experimental</a></td></tr>
+<tr><th id="671">671</th><td><a class="decl fn" href="rte_table_action.c.html#rte_table_action_profile_freeze" title='rte_table_action_profile_freeze' data-ref="rte_table_action_profile_freeze" id="rte_table_action_profile_freeze">rte_table_action_profile_freeze</a>(<b>struct</b> <a class="type" href="rte_table_action.c.html#rte_table_action_profile" title='rte_table_action_profile' data-ref="rte_table_action_profile">rte_table_action_profile</a> *<dfn class="local col6 decl" id="6profile" title='profile' data-type='struct rte_table_action_profile *' data-ref="6profile">profile</dfn>);</td></tr>
+<tr><th id="672">672</th><td></td></tr>
+<tr><th id="673">673</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="674">674</th><td><i class="doc"> * Table action.</i></td></tr>
+<tr><th id="675">675</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="676">676</th><td><b>struct</b> <a class="type" href="rte_table_action.c.html#rte_table_action" title='rte_table_action' data-ref="rte_table_action" id="rte_table_action">rte_table_action</a>;</td></tr>
+<tr><th id="677">677</th><td></td></tr>
+<tr><th id="678">678</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="679">679</th><td><i class="doc"> * Table action create.</i></td></tr>
+<tr><th id="680">680</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="681">681</th><td><i class="doc"> * Instantiates the given table action profile to create a table action object.</i></td></tr>
+<tr><th id="682">682</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="683">683</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">profile</span></i></td></tr>
+<tr><th id="684">684</th><td><i class="doc"> *   Table profile action handle (needs to be valid and in frozen state).</i></td></tr>
+<tr><th id="685">685</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">socket_id</span></i></td></tr>
+<tr><th id="686">686</th><td><i class="doc"> *   CPU socket ID where the internal data structures required by the new table</i></td></tr>
+<tr><th id="687">687</th><td><i class="doc"> *   action object should be allocated.</i></td></tr>
+<tr><th id="688">688</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="689">689</th><td><i class="doc"> *   Handle to table action object on success, NULL on error.</i></td></tr>
+<tr><th id="690">690</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="691">691</th><td><i class="doc"> * <span class="command">@see</span> rte_table_action_create()</i></td></tr>
+<tr><th id="692">692</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="693">693</th><td><b>struct</b> <a class="type" href="rte_table_action.c.html#rte_table_action" title='rte_table_action' data-ref="rte_table_action">rte_table_action</a> * <a class="macro" href="../librte_compat/rte_compat.h.html#87" title="__attribute__((section(&quot;.text.experimental&quot;)))" data-ref="_M/__rte_experimental">__rte_experimental</a></td></tr>
+<tr><th id="694">694</th><td><a class="decl fn" href="rte_table_action.c.html#rte_table_action_create" title='rte_table_action_create' data-ref="rte_table_action_create" id="rte_table_action_create">rte_table_action_create</a>(<b>struct</b> <a class="type" href="rte_table_action.c.html#rte_table_action_profile" title='rte_table_action_profile' data-ref="rte_table_action_profile">rte_table_action_profile</a> *<dfn class="local col7 decl" id="7profile" title='profile' data-type='struct rte_table_action_profile *' data-ref="7profile">profile</dfn>,</td></tr>
+<tr><th id="695">695</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="local col8 decl" id="8socket_id" title='socket_id' data-type='uint32_t' data-ref="8socket_id">socket_id</dfn>);</td></tr>
+<tr><th id="696">696</th><td></td></tr>
+<tr><th id="697">697</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="698">698</th><td><i class="doc"> * Table action free.</i></td></tr>
+<tr><th id="699">699</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="700">700</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">action</span></i></td></tr>
+<tr><th id="701">701</th><td><i class="doc"> *   Handle to table action object (needs to be valid).</i></td></tr>
+<tr><th id="702">702</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="703">703</th><td><i class="doc"> *   Zero on success, non-zero error code otherwise.</i></td></tr>
+<tr><th id="704">704</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="705">705</th><td><em>int</em> <a class="macro" href="../librte_compat/rte_compat.h.html#87" title="__attribute__((section(&quot;.text.experimental&quot;)))" data-ref="_M/__rte_experimental">__rte_experimental</a></td></tr>
+<tr><th id="706">706</th><td><a class="decl fn" href="rte_table_action.c.html#rte_table_action_free" title='rte_table_action_free' data-ref="rte_table_action_free" id="rte_table_action_free">rte_table_action_free</a>(<b>struct</b> <a class="type" href="rte_table_action.c.html#rte_table_action" title='rte_table_action' data-ref="rte_table_action">rte_table_action</a> *<dfn class="local col9 decl" id="9action" title='action' data-type='struct rte_table_action *' data-ref="9action">action</dfn>);</td></tr>
+<tr><th id="707">707</th><td></td></tr>
+<tr><th id="708">708</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="709">709</th><td><i class="doc"> * Table action table params get.</i></td></tr>
+<tr><th id="710">710</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="711">711</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">action</span></i></td></tr>
+<tr><th id="712">712</th><td><i class="doc"> *   Handle to table action object (needs to be valid).</i></td></tr>
+<tr><th id="713">713</th><td><i class="doc"> * <span class="command">@param</span>[inout] <span class="arg">params</span></i></td></tr>
+<tr><th id="714">714</th><td><i class="doc"> *   Pipeline table parameters (needs to be pre-allocated).</i></td></tr>
+<tr><th id="715">715</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="716">716</th><td><i class="doc"> *   Zero on success, non-zero error code otherwise.</i></td></tr>
+<tr><th id="717">717</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="718">718</th><td><em>int</em> <a class="macro" href="../librte_compat/rte_compat.h.html#87" title="__attribute__((section(&quot;.text.experimental&quot;)))" data-ref="_M/__rte_experimental">__rte_experimental</a></td></tr>
+<tr><th id="719">719</th><td><a class="decl fn" href="rte_table_action.c.html#rte_table_action_table_params_get" title='rte_table_action_table_params_get' data-ref="rte_table_action_table_params_get" id="rte_table_action_table_params_get">rte_table_action_table_params_get</a>(<b>struct</b> <a class="type" href="rte_table_action.c.html#rte_table_action" title='rte_table_action' data-ref="rte_table_action">rte_table_action</a> *<dfn class="local col0 decl" id="10action" title='action' data-type='struct rte_table_action *' data-ref="10action">action</dfn>,</td></tr>
+<tr><th id="720">720</th><td>	<b>struct</b> <a class="type" href="rte_pipeline.h.html#rte_pipeline_table_params" title='rte_pipeline_table_params' data-ref="rte_pipeline_table_params">rte_pipeline_table_params</a> *<dfn class="local col1 decl" id="11params" title='params' data-type='struct rte_pipeline_table_params *' data-ref="11params">params</dfn>);</td></tr>
+<tr><th id="721">721</th><td></td></tr>
+<tr><th id="722">722</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="723">723</th><td><i class="doc"> * Table action apply.</i></td></tr>
+<tr><th id="724">724</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="725">725</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">action</span></i></td></tr>
+<tr><th id="726">726</th><td><i class="doc"> *   Handle to table action object (needs to be valid).</i></td></tr>
+<tr><th id="727">727</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">data</span></i></td></tr>
+<tr><th id="728">728</th><td><i class="doc"> *   Data byte array (typically table rule data) to apply action *type* on.</i></td></tr>
+<tr><th id="729">729</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">type</span></i></td></tr>
+<tr><th id="730">730</th><td><i class="doc"> *   Specific table action previously registered for the table action profile of</i></td></tr>
+<tr><th id="731">731</th><td><i class="doc"> *   the *action* object.</i></td></tr>
+<tr><th id="732">732</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">action_params</span></i></td></tr>
+<tr><th id="733">733</th><td><i class="doc"> *   Parameters for the *type* action.</i></td></tr>
+<tr><th id="734">734</th><td><i class="doc"> *   If struct rte_table_action_*type*_params is defined by the Table Action</i></td></tr>
+<tr><th id="735">735</th><td><i class="doc"> *   API, it needs to point to a valid instance of this structure, otherwise it</i></td></tr>
+<tr><th id="736">736</th><td><i class="doc"> *   needs to be set to NULL.</i></td></tr>
+<tr><th id="737">737</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="738">738</th><td><i class="doc"> *   Zero on success, non-zero error code otherwise.</i></td></tr>
+<tr><th id="739">739</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="740">740</th><td><em>int</em> <a class="macro" href="../librte_compat/rte_compat.h.html#87" title="__attribute__((section(&quot;.text.experimental&quot;)))" data-ref="_M/__rte_experimental">__rte_experimental</a></td></tr>
+<tr><th id="741">741</th><td><a class="decl fn" href="rte_table_action.c.html#rte_table_action_apply" title='rte_table_action_apply' data-ref="rte_table_action_apply" id="rte_table_action_apply">rte_table_action_apply</a>(<b>struct</b> <a class="type" href="rte_table_action.c.html#rte_table_action" title='rte_table_action' data-ref="rte_table_action">rte_table_action</a> *<dfn class="local col2 decl" id="12action" title='action' data-type='struct rte_table_action *' data-ref="12action">action</dfn>,</td></tr>
+<tr><th id="742">742</th><td>	<em>void</em> *<dfn class="local col3 decl" id="13data" title='data' data-type='void *' data-ref="13data">data</dfn>,</td></tr>
+<tr><th id="743">743</th><td>	<b>enum</b> <a class="type" href="#rte_table_action_type" title='rte_table_action_type' data-ref="rte_table_action_type">rte_table_action_type</a> <dfn class="local col4 decl" id="14type" title='type' data-type='enum rte_table_action_type' data-ref="14type">type</dfn>,</td></tr>
+<tr><th id="744">744</th><td>	<em>void</em> *<dfn class="local col5 decl" id="15action_params" title='action_params' data-type='void *' data-ref="15action_params">action_params</dfn>);</td></tr>
+<tr><th id="745">745</th><td></td></tr>
+<tr><th id="746">746</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="747">747</th><td><i class="doc"> * Table action DSCP table update.</i></td></tr>
+<tr><th id="748">748</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="749">749</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">action</span></i></td></tr>
+<tr><th id="750">750</th><td><i class="doc"> *   Handle to table action object (needs to be valid).</i></td></tr>
+<tr><th id="751">751</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">dscp_mask</span></i></td></tr>
+<tr><th id="752">752</th><td><i class="doc"> *   64-bit mask defining the DSCP table entries to be updated. If bit N is set</i></td></tr>
+<tr><th id="753">753</th><td><i class="doc"> *   in this bit mask, then DSCP table entry N is to be updated, otherwise not.</i></td></tr>
+<tr><th id="754">754</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">table</span></i></td></tr>
+<tr><th id="755">755</th><td><i class="doc"> *   DSCP table.</i></td></tr>
+<tr><th id="756">756</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="757">757</th><td><i class="doc"> *   Zero on success, non-zero error code otherwise.</i></td></tr>
+<tr><th id="758">758</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="759">759</th><td><em>int</em> <a class="macro" href="../librte_compat/rte_compat.h.html#87" title="__attribute__((section(&quot;.text.experimental&quot;)))" data-ref="_M/__rte_experimental">__rte_experimental</a></td></tr>
+<tr><th id="760">760</th><td><a class="decl fn" href="rte_table_action.c.html#rte_table_action_dscp_table_update" title='rte_table_action_dscp_table_update' data-ref="rte_table_action_dscp_table_update" id="rte_table_action_dscp_table_update">rte_table_action_dscp_table_update</a>(<b>struct</b> <a class="type" href="rte_table_action.c.html#rte_table_action" title='rte_table_action' data-ref="rte_table_action">rte_table_action</a> *<dfn class="local col6 decl" id="16action" title='action' data-type='struct rte_table_action *' data-ref="16action">action</dfn>,</td></tr>
+<tr><th id="761">761</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="local col7 decl" id="17dscp_mask" title='dscp_mask' data-type='uint64_t' data-ref="17dscp_mask">dscp_mask</dfn>,</td></tr>
+<tr><th id="762">762</th><td>	<b>struct</b> <a class="type" href="#rte_table_action_dscp_table" title='rte_table_action_dscp_table' data-ref="rte_table_action_dscp_table">rte_table_action_dscp_table</a> *<dfn class="local col8 decl" id="18table" title='table' data-type='struct rte_table_action_dscp_table *' data-ref="18table">table</dfn>);</td></tr>
+<tr><th id="763">763</th><td></td></tr>
+<tr><th id="764">764</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="765">765</th><td><i class="doc"> * Table action meter profile add.</i></td></tr>
+<tr><th id="766">766</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="767">767</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">action</span></i></td></tr>
+<tr><th id="768">768</th><td><i class="doc"> *   Handle to table action object (needs to be valid).</i></td></tr>
+<tr><th id="769">769</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">meter_profile_id</span></i></td></tr>
+<tr><th id="770">770</th><td><i class="doc"> *   Meter profile ID to be used for the *profile* once it is successfully added</i></td></tr>
+<tr><th id="771">771</th><td><i class="doc"> *   to the *action* object (needs to be unused by the set of meter profiles</i></td></tr>
+<tr><th id="772">772</th><td><i class="doc"> *   currently registered for the *action* object).</i></td></tr>
+<tr><th id="773">773</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">profile</span></i></td></tr>
+<tr><th id="774">774</th><td><i class="doc"> *   Meter profile to be added.</i></td></tr>
+<tr><th id="775">775</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="776">776</th><td><i class="doc"> *   Zero on success, non-zero error code otherwise.</i></td></tr>
+<tr><th id="777">777</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="778">778</th><td><em>int</em> <a class="macro" href="../librte_compat/rte_compat.h.html#87" title="__attribute__((section(&quot;.text.experimental&quot;)))" data-ref="_M/__rte_experimental">__rte_experimental</a></td></tr>
+<tr><th id="779">779</th><td><a class="decl fn" href="rte_table_action.c.html#rte_table_action_meter_profile_add" title='rte_table_action_meter_profile_add' data-ref="rte_table_action_meter_profile_add" id="rte_table_action_meter_profile_add">rte_table_action_meter_profile_add</a>(<b>struct</b> <a class="type" href="rte_table_action.c.html#rte_table_action" title='rte_table_action' data-ref="rte_table_action">rte_table_action</a> *<dfn class="local col9 decl" id="19action" title='action' data-type='struct rte_table_action *' data-ref="19action">action</dfn>,</td></tr>
+<tr><th id="780">780</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="local col0 decl" id="20meter_profile_id" title='meter_profile_id' data-type='uint32_t' data-ref="20meter_profile_id">meter_profile_id</dfn>,</td></tr>
+<tr><th id="781">781</th><td>	<b>struct</b> <a class="type" href="#rte_table_action_meter_profile" title='rte_table_action_meter_profile' data-ref="rte_table_action_meter_profile">rte_table_action_meter_profile</a> *<dfn class="local col1 decl" id="21profile" title='profile' data-type='struct rte_table_action_meter_profile *' data-ref="21profile">profile</dfn>);</td></tr>
+<tr><th id="782">782</th><td></td></tr>
+<tr><th id="783">783</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="784">784</th><td><i class="doc"> * Table action meter profile delete.</i></td></tr>
+<tr><th id="785">785</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="786">786</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">action</span></i></td></tr>
+<tr><th id="787">787</th><td><i class="doc"> *   Handle to table action object (needs to be valid).</i></td></tr>
+<tr><th id="788">788</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">meter_profile_id</span></i></td></tr>
+<tr><th id="789">789</th><td><i class="doc"> *   Meter profile ID of the meter profile to be deleted from the *action*</i></td></tr>
+<tr><th id="790">790</th><td><i class="doc"> *   object (needs to be valid for the *action* object).</i></td></tr>
+<tr><th id="791">791</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="792">792</th><td><i class="doc"> *   Zero on success, non-zero error code otherwise.</i></td></tr>
+<tr><th id="793">793</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="794">794</th><td><em>int</em> <a class="macro" href="../librte_compat/rte_compat.h.html#87" title="__attribute__((section(&quot;.text.experimental&quot;)))" data-ref="_M/__rte_experimental">__rte_experimental</a></td></tr>
+<tr><th id="795">795</th><td><a class="decl fn" href="rte_table_action.c.html#rte_table_action_meter_profile_delete" title='rte_table_action_meter_profile_delete' data-ref="rte_table_action_meter_profile_delete" id="rte_table_action_meter_profile_delete">rte_table_action_meter_profile_delete</a>(<b>struct</b> <a class="type" href="rte_table_action.c.html#rte_table_action" title='rte_table_action' data-ref="rte_table_action">rte_table_action</a> *<dfn class="local col2 decl" id="22action" title='action' data-type='struct rte_table_action *' data-ref="22action">action</dfn>,</td></tr>
+<tr><th id="796">796</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="local col3 decl" id="23meter_profile_id" title='meter_profile_id' data-type='uint32_t' data-ref="23meter_profile_id">meter_profile_id</dfn>);</td></tr>
+<tr><th id="797">797</th><td></td></tr>
+<tr><th id="798">798</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="799">799</th><td><i class="doc"> * Table action meter read.</i></td></tr>
+<tr><th id="800">800</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="801">801</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">action</span></i></td></tr>
+<tr><th id="802">802</th><td><i class="doc"> *   Handle to table action object (needs to be valid).</i></td></tr>
+<tr><th id="803">803</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">data</span></i></td></tr>
+<tr><th id="804">804</th><td><i class="doc"> *   Data byte array (typically table rule data) with meter action previously</i></td></tr>
+<tr><th id="805">805</th><td><i class="doc"> *   applied on it.</i></td></tr>
+<tr><th id="806">806</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">tc_mask</span></i></td></tr>
+<tr><th id="807">807</th><td><i class="doc"> *   Bit mask defining which traffic classes should have the meter stats</i></td></tr>
+<tr><th id="808">808</th><td><i class="doc"> *   counters read from *data* and stored into *stats*. If bit N is set in this</i></td></tr>
+<tr><th id="809">809</th><td><i class="doc"> *   bit mask, then traffic class N is part of this operation, otherwise it is</i></td></tr>
+<tr><th id="810">810</th><td><i class="doc"> *   not. If bit N is set in this bit mask, then traffic class N must be one of</i></td></tr>
+<tr><th id="811">811</th><td><i class="doc"> *   the traffic classes that are enabled for the meter action in the table</i></td></tr>
+<tr><th id="812">812</th><td><i class="doc"> *   action profile used by the *action* object.</i></td></tr>
+<tr><th id="813">813</th><td><i class="doc"> * <span class="command">@param</span>[inout] <span class="arg">stats</span></i></td></tr>
+<tr><th id="814">814</th><td><i class="doc"> *   When non-NULL, it points to the area where the meter stats counters read</i></td></tr>
+<tr><th id="815">815</th><td><i class="doc"> *   from *data* are saved. Only the meter stats counters for the *tc_mask*</i></td></tr>
+<tr><th id="816">816</th><td><i class="doc"> *   traffic classes are read and stored to *stats*.</i></td></tr>
+<tr><th id="817">817</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">clear</span></i></td></tr>
+<tr><th id="818">818</th><td><i class="doc"> *   When non-zero, the meter stats counters are cleared (i.e. set to zero),</i></td></tr>
+<tr><th id="819">819</th><td><i class="doc"> *   otherwise the counters are not modified. When the read operation is enabled</i></td></tr>
+<tr><th id="820">820</th><td><i class="doc"> *   (*stats* is non-NULL), the clear operation is performed after the read</i></td></tr>
+<tr><th id="821">821</th><td><i class="doc"> *   operation is completed.</i></td></tr>
+<tr><th id="822">822</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="823">823</th><td><i class="doc"> *   Zero on success, non-zero error code otherwise.</i></td></tr>
+<tr><th id="824">824</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="825">825</th><td><em>int</em> <a class="macro" href="../librte_compat/rte_compat.h.html#87" title="__attribute__((section(&quot;.text.experimental&quot;)))" data-ref="_M/__rte_experimental">__rte_experimental</a></td></tr>
+<tr><th id="826">826</th><td><a class="decl fn" href="rte_table_action.c.html#rte_table_action_meter_read" title='rte_table_action_meter_read' data-ref="rte_table_action_meter_read" id="rte_table_action_meter_read">rte_table_action_meter_read</a>(<b>struct</b> <a class="type" href="rte_table_action.c.html#rte_table_action" title='rte_table_action' data-ref="rte_table_action">rte_table_action</a> *<dfn class="local col4 decl" id="24action" title='action' data-type='struct rte_table_action *' data-ref="24action">action</dfn>,</td></tr>
+<tr><th id="827">827</th><td>	<em>void</em> *<dfn class="local col5 decl" id="25data" title='data' data-type='void *' data-ref="25data">data</dfn>,</td></tr>
+<tr><th id="828">828</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="local col6 decl" id="26tc_mask" title='tc_mask' data-type='uint32_t' data-ref="26tc_mask">tc_mask</dfn>,</td></tr>
+<tr><th id="829">829</th><td>	<b>struct</b> <a class="type" href="#rte_table_action_mtr_counters" title='rte_table_action_mtr_counters' data-ref="rte_table_action_mtr_counters">rte_table_action_mtr_counters</a> *<dfn class="local col7 decl" id="27stats" title='stats' data-type='struct rte_table_action_mtr_counters *' data-ref="27stats">stats</dfn>,</td></tr>
+<tr><th id="830">830</th><td>	<em>int</em> <dfn class="local col8 decl" id="28clear" title='clear' data-type='int' data-ref="28clear">clear</dfn>);</td></tr>
+<tr><th id="831">831</th><td></td></tr>
+<tr><th id="832">832</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="833">833</th><td><i class="doc"> * Table action TTL read.</i></td></tr>
+<tr><th id="834">834</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="835">835</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">action</span></i></td></tr>
+<tr><th id="836">836</th><td><i class="doc"> *   Handle to table action object (needs to be valid).</i></td></tr>
+<tr><th id="837">837</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">data</span></i></td></tr>
+<tr><th id="838">838</th><td><i class="doc"> *   Data byte array (typically table rule data) with TTL action previously</i></td></tr>
+<tr><th id="839">839</th><td><i class="doc"> *   applied on it.</i></td></tr>
+<tr><th id="840">840</th><td><i class="doc"> * <span class="command">@param</span>[inout] <span class="arg">stats</span></i></td></tr>
+<tr><th id="841">841</th><td><i class="doc"> *   When non-NULL, it points to the area where the TTL stats counters read from</i></td></tr>
+<tr><th id="842">842</th><td><i class="doc"> *   *data* are saved.</i></td></tr>
+<tr><th id="843">843</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">clear</span></i></td></tr>
+<tr><th id="844">844</th><td><i class="doc"> *   When non-zero, the TTL stats counters are cleared (i.e. set to zero),</i></td></tr>
+<tr><th id="845">845</th><td><i class="doc"> *   otherwise the counters are not modified. When the read operation is enabled</i></td></tr>
+<tr><th id="846">846</th><td><i class="doc"> *   (*stats* is non-NULL), the clear operation is performed after the read</i></td></tr>
+<tr><th id="847">847</th><td><i class="doc"> *   operation is completed.</i></td></tr>
+<tr><th id="848">848</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="849">849</th><td><i class="doc"> *   Zero on success, non-zero error code otherwise.</i></td></tr>
+<tr><th id="850">850</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="851">851</th><td><em>int</em> <a class="macro" href="../librte_compat/rte_compat.h.html#87" title="__attribute__((section(&quot;.text.experimental&quot;)))" data-ref="_M/__rte_experimental">__rte_experimental</a></td></tr>
+<tr><th id="852">852</th><td><a class="decl fn" href="rte_table_action.c.html#rte_table_action_ttl_read" title='rte_table_action_ttl_read' data-ref="rte_table_action_ttl_read" id="rte_table_action_ttl_read">rte_table_action_ttl_read</a>(<b>struct</b> <a class="type" href="rte_table_action.c.html#rte_table_action" title='rte_table_action' data-ref="rte_table_action">rte_table_action</a> *<dfn class="local col9 decl" id="29action" title='action' data-type='struct rte_table_action *' data-ref="29action">action</dfn>,</td></tr>
+<tr><th id="853">853</th><td>	<em>void</em> *<dfn class="local col0 decl" id="30data" title='data' data-type='void *' data-ref="30data">data</dfn>,</td></tr>
+<tr><th id="854">854</th><td>	<b>struct</b> <a class="type" href="#rte_table_action_ttl_counters" title='rte_table_action_ttl_counters' data-ref="rte_table_action_ttl_counters">rte_table_action_ttl_counters</a> *<dfn class="local col1 decl" id="31stats" title='stats' data-type='struct rte_table_action_ttl_counters *' data-ref="31stats">stats</dfn>,</td></tr>
+<tr><th id="855">855</th><td>	<em>int</em> <dfn class="local col2 decl" id="32clear" title='clear' data-type='int' data-ref="32clear">clear</dfn>);</td></tr>
+<tr><th id="856">856</th><td></td></tr>
+<tr><th id="857">857</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="858">858</th><td><i class="doc"> * Table action stats read.</i></td></tr>
+<tr><th id="859">859</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="860">860</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">action</span></i></td></tr>
+<tr><th id="861">861</th><td><i class="doc"> *   Handle to table action object (needs to be valid).</i></td></tr>
+<tr><th id="862">862</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">data</span></i></td></tr>
+<tr><th id="863">863</th><td><i class="doc"> *   Data byte array (typically table rule data) with stats action previously</i></td></tr>
+<tr><th id="864">864</th><td><i class="doc"> *   applied on it.</i></td></tr>
+<tr><th id="865">865</th><td><i class="doc"> * <span class="command">@param</span>[inout] <span class="arg">stats</span></i></td></tr>
+<tr><th id="866">866</th><td><i class="doc"> *   When non-NULL, it points to the area where the stats counters read from</i></td></tr>
+<tr><th id="867">867</th><td><i class="doc"> *   *data* are saved.</i></td></tr>
+<tr><th id="868">868</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">clear</span></i></td></tr>
+<tr><th id="869">869</th><td><i class="doc"> *   When non-zero, the stats counters are cleared (i.e. set to zero), otherwise</i></td></tr>
+<tr><th id="870">870</th><td><i class="doc"> *   the counters are not modified. When the read operation is enabled (*stats*</i></td></tr>
+<tr><th id="871">871</th><td><i class="doc"> *   is non-NULL), the clear operation is performed after the read operation is</i></td></tr>
+<tr><th id="872">872</th><td><i class="doc"> *   completed.</i></td></tr>
+<tr><th id="873">873</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="874">874</th><td><i class="doc"> *   Zero on success, non-zero error code otherwise.</i></td></tr>
+<tr><th id="875">875</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="876">876</th><td><em>int</em> <a class="macro" href="../librte_compat/rte_compat.h.html#87" title="__attribute__((section(&quot;.text.experimental&quot;)))" data-ref="_M/__rte_experimental">__rte_experimental</a></td></tr>
+<tr><th id="877">877</th><td><a class="decl fn" href="rte_table_action.c.html#rte_table_action_stats_read" title='rte_table_action_stats_read' data-ref="rte_table_action_stats_read" id="rte_table_action_stats_read">rte_table_action_stats_read</a>(<b>struct</b> <a class="type" href="rte_table_action.c.html#rte_table_action" title='rte_table_action' data-ref="rte_table_action">rte_table_action</a> *<dfn class="local col3 decl" id="33action" title='action' data-type='struct rte_table_action *' data-ref="33action">action</dfn>,</td></tr>
+<tr><th id="878">878</th><td>	<em>void</em> *<dfn class="local col4 decl" id="34data" title='data' data-type='void *' data-ref="34data">data</dfn>,</td></tr>
+<tr><th id="879">879</th><td>	<b>struct</b> <a class="type" href="#rte_table_action_stats_counters" title='rte_table_action_stats_counters' data-ref="rte_table_action_stats_counters">rte_table_action_stats_counters</a> *<dfn class="local col5 decl" id="35stats" title='stats' data-type='struct rte_table_action_stats_counters *' data-ref="35stats">stats</dfn>,</td></tr>
+<tr><th id="880">880</th><td>	<em>int</em> <dfn class="local col6 decl" id="36clear" title='clear' data-type='int' data-ref="36clear">clear</dfn>);</td></tr>
+<tr><th id="881">881</th><td></td></tr>
+<tr><th id="882">882</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="883">883</th><td><i class="doc"> * Table action timestamp read.</i></td></tr>
+<tr><th id="884">884</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="885">885</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">action</span></i></td></tr>
+<tr><th id="886">886</th><td><i class="doc"> *   Handle to table action object (needs to be valid).</i></td></tr>
+<tr><th id="887">887</th><td><i class="doc"> * <span class="command">@param</span>[in] <span class="arg">data</span></i></td></tr>
+<tr><th id="888">888</th><td><i class="doc"> *   Data byte array (typically table rule data) with timestamp action</i></td></tr>
+<tr><th id="889">889</th><td><i class="doc"> *   previously applied on it.</i></td></tr>
+<tr><th id="890">890</th><td><i class="doc"> * <span class="command">@param</span>[inout] <span class="arg">timestamp</span></i></td></tr>
+<tr><th id="891">891</th><td><i class="doc"> *   Pre-allocated memory where the timestamp read from *data* is saved (has to</i></td></tr>
+<tr><th id="892">892</th><td><i class="doc"> *   be non-NULL).</i></td></tr>
+<tr><th id="893">893</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="894">894</th><td><i class="doc"> *   Zero on success, non-zero error code otherwise.</i></td></tr>
+<tr><th id="895">895</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="896">896</th><td><em>int</em> <a class="macro" href="../librte_compat/rte_compat.h.html#87" title="__attribute__((section(&quot;.text.experimental&quot;)))" data-ref="_M/__rte_experimental">__rte_experimental</a></td></tr>
+<tr><th id="897">897</th><td><a class="decl fn" href="rte_table_action.c.html#rte_table_action_time_read" title='rte_table_action_time_read' data-ref="rte_table_action_time_read" id="rte_table_action_time_read">rte_table_action_time_read</a>(<b>struct</b> <a class="type" href="rte_table_action.c.html#rte_table_action" title='rte_table_action' data-ref="rte_table_action">rte_table_action</a> *<dfn class="local col7 decl" id="37action" title='action' data-type='struct rte_table_action *' data-ref="37action">action</dfn>,</td></tr>
+<tr><th id="898">898</th><td>	<em>void</em> *<dfn class="local col8 decl" id="38data" title='data' data-type='void *' data-ref="38data">data</dfn>,</td></tr>
+<tr><th id="899">899</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> *<dfn class="local col9 decl" id="39timestamp" title='timestamp' data-type='uint64_t *' data-ref="39timestamp">timestamp</dfn>);</td></tr>
+<tr><th id="900">900</th><td></td></tr>
+<tr><th id="901">901</th><td><u>#<span data-ppcond="901">ifdef</span> <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="902">902</th><td>}</td></tr>
+<tr><th id="903">903</th><td><u>#<span data-ppcond="901">endif</span></u></td></tr>
+<tr><th id="904">904</th><td></td></tr>
+<tr><th id="905">905</th><td><u>#<span data-ppcond="5">endif</span> /* __INCLUDE_RTE_TABLE_ACTION_H__ */</u></td></tr>
+<tr><th id="906">906</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='rte_table_action.c.html'>dpdk_1805/lib/librte_pipeline/rte_table_action.c</a><br/>Generated on <em>2018-Jul-30</em> from project dpdk_1805 revision <em>18.05</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>
