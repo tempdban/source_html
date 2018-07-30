@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>pg.c source code [vpp_1804/src/vnet/snap/pg.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'vpp_1804/src/vnet/snap/pg.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>vpp_1804</a>/<a href='../..'>src</a>/<a href='..'>vnet</a>/<a href='./'>snap</a>/<a href='pg.c.html'>pg.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright (c) 2015 Cisco and/or its affiliates.</i></td></tr>
+<tr><th id="3">3</th><td><i> * Licensed under the Apache License, Version 2.0 (the "License");</i></td></tr>
+<tr><th id="4">4</th><td><i> * you may not use this file except in compliance with the License.</i></td></tr>
+<tr><th id="5">5</th><td><i> * You may obtain a copy of the License at:</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> *     <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></i></td></tr>
+<tr><th id="8">8</th><td><i> *</i></td></tr>
+<tr><th id="9">9</th><td><i> * Unless required by applicable law or agreed to in writing, software</i></td></tr>
+<tr><th id="10">10</th><td><i> * distributed under the License is distributed on an "AS IS" BASIS,</i></td></tr>
+<tr><th id="11">11</th><td><i> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</i></td></tr>
+<tr><th id="12">12</th><td><i> * See the License for the specific language governing permissions and</i></td></tr>
+<tr><th id="13">13</th><td><i> * limitations under the License.</i></td></tr>
+<tr><th id="14">14</th><td><i> */</i></td></tr>
+<tr><th id="15">15</th><td><i>/*</i></td></tr>
+<tr><th id="16">16</th><td><i> * snap_pg.c: packet generator snap interface</i></td></tr>
+<tr><th id="17">17</th><td><i> *</i></td></tr>
+<tr><th id="18">18</th><td><i> * Copyright (c) 2008 Eliot Dresselhaus</i></td></tr>
+<tr><th id="19">19</th><td><i> *</i></td></tr>
+<tr><th id="20">20</th><td><i> * Permission is hereby granted, free of charge, to any person obtaining</i></td></tr>
+<tr><th id="21">21</th><td><i> * a copy of this software and associated documentation files (the</i></td></tr>
+<tr><th id="22">22</th><td><i> * "Software"), to deal in the Software without restriction, including</i></td></tr>
+<tr><th id="23">23</th><td><i> * without limitation the rights to use, copy, modify, merge, publish,</i></td></tr>
+<tr><th id="24">24</th><td><i> * distribute, sublicense, and/or sell copies of the Software, and to</i></td></tr>
+<tr><th id="25">25</th><td><i> * permit persons to whom the Software is furnished to do so, subject to</i></td></tr>
+<tr><th id="26">26</th><td><i> * the following conditions:</i></td></tr>
+<tr><th id="27">27</th><td><i> *</i></td></tr>
+<tr><th id="28">28</th><td><i> * The above copyright notice and this permission notice shall be</i></td></tr>
+<tr><th id="29">29</th><td><i> * included in all copies or substantial portions of the Software.</i></td></tr>
+<tr><th id="30">30</th><td><i> *</i></td></tr>
+<tr><th id="31">31</th><td><i> *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,</i></td></tr>
+<tr><th id="32">32</th><td><i> *  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF</i></td></tr>
+<tr><th id="33">33</th><td><i> *  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND</i></td></tr>
+<tr><th id="34">34</th><td><i> *  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE</i></td></tr>
+<tr><th id="35">35</th><td><i> *  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION</i></td></tr>
+<tr><th id="36">36</th><td><i> *  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION</i></td></tr>
+<tr><th id="37">37</th><td><i> *  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</i></td></tr>
+<tr><th id="38">38</th><td><i> */</i></td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><u>#include <a href="../../vlib/vlib.h.html">&lt;vlib/vlib.h&gt;</a></u></td></tr>
+<tr><th id="41">41</th><td><u>#include <a href="../pg/pg.h.html">&lt;vnet/pg/pg.h&gt;</a></u></td></tr>
+<tr><th id="42">42</th><td><u>#include <a href="snap.h.html">&lt;vnet/snap/snap.h&gt;</a></u></td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td><b>typedef</b> <b>struct</b></td></tr>
+<tr><th id="45">45</th><td>{</td></tr>
+<tr><th id="46">46</th><td>  <a class="typedef" href="../pg/edit.h.html#pg_edit_t" title='pg_edit_t' data-type='struct pg_edit_t' data-ref="pg_edit_t">pg_edit_t</a> <dfn class="tu decl field" id="(anonymous)::oui" title='(anonymous struct)::oui' data-type='pg_edit_t' data-ref="(anonymous)::oui">oui</dfn>;</td></tr>
+<tr><th id="47">47</th><td>  <a class="typedef" href="../pg/edit.h.html#pg_edit_t" title='pg_edit_t' data-type='struct pg_edit_t' data-ref="pg_edit_t">pg_edit_t</a> <dfn class="tu decl field" id="(anonymous)::protocol" title='(anonymous struct)::protocol' data-type='pg_edit_t' data-ref="(anonymous)::protocol">protocol</dfn>;</td></tr>
+<tr><th id="48">48</th><td>} <dfn class="typedef" id="pg_snap_header_t" title='pg_snap_header_t' data-type='struct pg_snap_header_t' data-ref="pg_snap_header_t">pg_snap_header_t</dfn>;</td></tr>
+<tr><th id="49">49</th><td></td></tr>
+<tr><th id="50">50</th><td><em>static</em> <b>inline</b> <em>void</em></td></tr>
+<tr><th id="51">51</th><td><dfn class="tu decl def fn" id="pg_snap_header_init" title='pg_snap_header_init' data-type='void pg_snap_header_init(pg_snap_header_t * e)' data-ref="pg_snap_header_init">pg_snap_header_init</dfn> (<a class="typedef" href="#pg_snap_header_t" title='pg_snap_header_t' data-type='struct pg_snap_header_t' data-ref="pg_snap_header_t">pg_snap_header_t</a> * <dfn class="local col1 decl" id="1e" title='e' data-type='pg_snap_header_t *' data-ref="1e">e</dfn>)</td></tr>
+<tr><th id="52">52</th><td>{</td></tr>
+<tr><th id="53">53</th><td>  <a class="macro" href="../pg/edit.h.html#116" title="do { u32 _bo; do { if ((1 &gt; 0) &amp;&amp; ! ((0) &lt; ((8*sizeof((((snap_header_t *) 0)-&gt;oui)))))) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/vpp/../../../src/vnet/snap/pg.c&quot;, (uword) 53, ((char *) __FUNCTION__), &quot;(0) &lt; STRUCT_BITS_OF (snap_header_t, oui)&quot;); } } while (0); _bo = ((uword) &amp; (((snap_header_t *) 0)-&gt;oui)); _bo += ((((8*sizeof((((snap_header_t *) 0)-&gt;oui)))) - (0) - 1) / (8*sizeof(u8))); (&amp;e-&gt;oui)-&gt;lsb_bit_offset = _bo * (8*sizeof(u8)) + ((0) % (8*sizeof(u8))); (&amp;e-&gt;oui)-&gt;n_bits = (((8*sizeof((((snap_header_t *) 0)-&gt;oui))))); } while (0)" data-ref="_M/pg_edit_init">pg_edit_init</a> (&amp;<a class="local col1 ref" href="#1e" title='e' data-ref="1e">e</a>-&gt;<a class="tu ref field" href="#(anonymous)::oui" title='(anonymous struct)::oui' data-use='a' data-ref="(anonymous)::oui">oui</a>, <a class="typedef" href="snap.h.html#snap_header_t" title='snap_header_t' data-type='union snap_header_t' data-ref="snap_header_t">snap_header_t</a>, <a class="ref field" href="snap.h.html#80" title='(anonymous union)::(anonymous struct)::oui' data-ref="(anonymousunion)::(anonymous)::oui">oui</a>);</td></tr>
+<tr><th id="54">54</th><td>  <a class="macro" href="../pg/edit.h.html#116" title="do { u32 _bo; do { if ((1 &gt; 0) &amp;&amp; ! ((0) &lt; ((8*sizeof((((snap_header_t *) 0)-&gt;protocol)))))) { _clib_error (CLIB_ERROR_ABORT, 0, 0, &quot;%s:%d (%s) assertion `%s&apos; fails&quot;, &quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/vpp/../../../src/vnet/snap/pg.c&quot;, (uword) 54, ((char *) __FUNCTION__), &quot;(0) &lt; STRUCT_BITS_OF (snap_header_t, protocol)&quot;); } } while (0); _bo = ((uword) &amp; (((snap_header_t *) 0)-&gt;protocol)); _bo += ((((8*sizeof((((snap_header_t *) 0)-&gt;protocol)))) - (0) - 1) / (8*sizeof(u8))); (&amp;e-&gt;protocol)-&gt;lsb_bit_offset = _bo * (8*sizeof(u8)) + ((0) % (8*sizeof(u8))); (&amp;e-&gt;protocol)-&gt;n_bits = (((8*sizeof((((snap_header_t *) 0)-&gt;protocol))))); } while (0)" data-ref="_M/pg_edit_init">pg_edit_init</a> (&amp;<a class="local col1 ref" href="#1e" title='e' data-ref="1e">e</a>-&gt;<a class="tu ref field" href="#(anonymous)::protocol" title='(anonymous struct)::protocol' data-use='a' data-ref="(anonymous)::protocol">protocol</a>, <a class="typedef" href="snap.h.html#snap_header_t" title='snap_header_t' data-type='union snap_header_t' data-ref="snap_header_t">snap_header_t</a>, <a class="ref field" href="snap.h.html#80" title='(anonymous union)::(anonymous struct)::protocol' data-ref="(anonymousunion)::(anonymous)::protocol">protocol</a>);</td></tr>
+<tr><th id="55">55</th><td>}</td></tr>
+<tr><th id="56">56</th><td></td></tr>
+<tr><th id="57">57</th><td><a class="typedef" href="../../vppinfra/types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a></td></tr>
+<tr><th id="58">58</th><td><dfn class="decl def fn" id="unformat_pg_snap_header" title='unformat_pg_snap_header' data-ref="unformat_pg_snap_header">unformat_pg_snap_header</dfn> (<a class="typedef" href="../../vppinfra/format.h.html#unformat_input_t" title='unformat_input_t' data-type='struct _unformat_input_t' data-ref="unformat_input_t">unformat_input_t</a> * <dfn class="local col2 decl" id="2input" title='input' data-type='unformat_input_t *' data-ref="2input">input</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col3 decl" id="3args" title='args' data-type='va_list *' data-ref="3args">args</dfn>)</td></tr>
+<tr><th id="59">59</th><td>{</td></tr>
+<tr><th id="60">60</th><td>  <a class="typedef" href="../pg/pg.h.html#pg_stream_t" title='pg_stream_t' data-type='struct pg_stream_t' data-ref="pg_stream_t">pg_stream_t</a> *<dfn class="local col4 decl" id="4s" title='s' data-type='pg_stream_t *' data-ref="4s">s</dfn> = <span class="macro" title="__builtin_va_arg(*args, pg_stream_t *)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col3 ref" href="#3args" title='args' data-ref="3args">args</a>, <a class="typedef" href="../pg/pg.h.html#pg_stream_t" title='pg_stream_t' data-type='struct pg_stream_t' data-ref="pg_stream_t">pg_stream_t</a> *);</td></tr>
+<tr><th id="61">61</th><td>  <a class="typedef" href="#pg_snap_header_t" title='pg_snap_header_t' data-type='struct pg_snap_header_t' data-ref="pg_snap_header_t">pg_snap_header_t</a> *<dfn class="local col5 decl" id="5h" title='h' data-type='pg_snap_header_t *' data-ref="5h">h</dfn>;</td></tr>
+<tr><th id="62">62</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col6 decl" id="6group_index" title='group_index' data-type='u32' data-ref="6group_index">group_index</dfn>, <dfn class="local col7 decl" id="7error" title='error' data-type='u32' data-ref="7error">error</dfn>;</td></tr>
+<tr><th id="63">63</th><td></td></tr>
+<tr><th id="64">64</th><td>  <a class="local col5 ref" href="#5h" title='h' data-ref="5h">h</a> = <a class="ref fn" href="../pg/pg.h.html#pg_create_edit_group" title='pg_create_edit_group' data-ref="pg_create_edit_group">pg_create_edit_group</a> (<a class="local col4 ref" href="#4s" title='s' data-ref="4s">s</a>, <b>sizeof</b> (<a class="local col5 ref" href="#5h" title='h' data-ref="5h">h</a>[<var>0</var>]), <b>sizeof</b> (<a class="typedef" href="snap.h.html#snap_header_t" title='snap_header_t' data-type='union snap_header_t' data-ref="snap_header_t">snap_header_t</a>),</td></tr>
+<tr><th id="65">65</th><td>			    &amp;<a class="local col6 ref" href="#6group_index" title='group_index' data-ref="6group_index">group_index</a>);</td></tr>
+<tr><th id="66">66</th><td>  <a class="tu ref fn" href="#pg_snap_header_init" title='pg_snap_header_init' data-use='c' data-ref="pg_snap_header_init">pg_snap_header_init</a> (<a class="local col5 ref" href="#5h" title='h' data-ref="5h">h</a>);</td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td>  <a class="local col7 ref" href="#7error" title='error' data-ref="7error">error</a> = <var>1</var>;</td></tr>
+<tr><th id="69">69</th><td>  <b>if</b> (!<a class="ref fn" href="../../vppinfra/format.h.html#unformat" title='unformat' data-ref="unformat">unformat</a> (<a class="local col2 ref" href="#2input" title='input' data-ref="2input">input</a>, <q>"%U -&gt; %U"</q>,</td></tr>
+<tr><th id="70">70</th><td>		 <a class="ref fn" href="../pg/edit.h.html#unformat_pg_edit" title='unformat_pg_edit' data-ref="unformat_pg_edit">unformat_pg_edit</a>,</td></tr>
+<tr><th id="71">71</th><td>		 <a class="ref fn" href="snap.h.html#unformat_snap_protocol" title='unformat_snap_protocol' data-ref="unformat_snap_protocol">unformat_snap_protocol</a>, &amp;<a class="local col5 ref" href="#5h" title='h' data-ref="5h">h</a>-&gt;<a class="tu ref field" href="#(anonymous)::oui" title='(anonymous struct)::oui' data-use='a' data-ref="(anonymous)::oui">oui</a>, &amp;<a class="local col5 ref" href="#5h" title='h' data-ref="5h">h</a>-&gt;<a class="tu ref field" href="#(anonymous)::protocol" title='(anonymous struct)::protocol' data-use='a' data-ref="(anonymous)::protocol">protocol</a>))</td></tr>
+<tr><th id="72">72</th><td>    <b>goto</b> <a class="lbl" href="#8done" data-ref="8done">done</a>;</td></tr>
+<tr><th id="73">73</th><td></td></tr>
+<tr><th id="74">74</th><td>  {</td></tr>
+<tr><th id="75">75</th><td>    <a class="typedef" href="snap.h.html#snap_main_t" title='snap_main_t' data-type='struct snap_main_t' data-ref="snap_main_t">snap_main_t</a> *<dfn class="local col9 decl" id="9pm" title='pm' data-type='snap_main_t *' data-ref="9pm">pm</dfn> = &amp;<a class="ref" href="snap.h.html#snap_main" title='snap_main' data-ref="snap_main">snap_main</a>;</td></tr>
+<tr><th id="76">76</th><td>    <a class="typedef" href="snap.h.html#snap_protocol_info_t" title='snap_protocol_info_t' data-type='struct snap_protocol_info_t' data-ref="snap_protocol_info_t">snap_protocol_info_t</a> *<dfn class="local col0 decl" id="10pi" title='pi' data-type='snap_protocol_info_t *' data-ref="10pi">pi</dfn> = <var>0</var>;</td></tr>
+<tr><th id="77">77</th><td>    <a class="typedef" href="../pg/pg.h.html#pg_node_t" title='pg_node_t' data-type='struct pg_node_t' data-ref="pg_node_t">pg_node_t</a> *<dfn class="local col1 decl" id="11pg_node" title='pg_node' data-type='pg_node_t *' data-ref="11pg_node">pg_node</dfn> = <var>0</var>;</td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td>    <b>if</b> (<a class="local col5 ref" href="#5h" title='h' data-ref="5h">h</a>-&gt;<a class="tu ref field" href="#(anonymous)::oui" title='(anonymous struct)::oui' data-use='m' data-ref="(anonymous)::oui">oui</a>.<a class="ref field" href="../pg/edit.h.html#(anonymous)::type" title='(anonymous struct)::type' data-ref="(anonymous)::type">type</a> == <a class="enum" href="../pg/edit.h.html#PG_EDIT_FIXED" title='PG_EDIT_FIXED' data-ref="PG_EDIT_FIXED">PG_EDIT_FIXED</a> &amp;&amp; <a class="local col5 ref" href="#5h" title='h' data-ref="5h">h</a>-&gt;<a class="tu ref field" href="#(anonymous)::protocol" title='(anonymous struct)::protocol' data-use='m' data-ref="(anonymous)::protocol">protocol</a>.<a class="ref field" href="../pg/edit.h.html#(anonymous)::type" title='(anonymous struct)::type' data-ref="(anonymous)::type">type</a> == <a class="enum" href="../pg/edit.h.html#PG_EDIT_FIXED" title='PG_EDIT_FIXED' data-ref="PG_EDIT_FIXED">PG_EDIT_FIXED</a>)</td></tr>
+<tr><th id="80">80</th><td>      {</td></tr>
+<tr><th id="81">81</th><td>	<a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col2 decl" id="12o" title='o' data-type='u8 *' data-ref="12o">o</dfn> = <a class="local col5 ref" href="#5h" title='h' data-ref="5h">h</a>-&gt;<a class="tu ref field" href="#(anonymous)::oui" title='(anonymous struct)::oui' data-use='m' data-ref="(anonymous)::oui">oui</a>.<a class="ref field" href="../pg/edit.h.html#(anonymous)::values" title='(anonymous struct)::values' data-ref="(anonymous)::values">values</a>[<a class="macro" href="../pg/edit.h.html#83" title="0" data-ref="_M/PG_EDIT_LO">PG_EDIT_LO</a>];</td></tr>
+<tr><th id="82">82</th><td>	<a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col3 decl" id="13p" title='p' data-type='u8 *' data-ref="13p">p</dfn> = <a class="local col5 ref" href="#5h" title='h' data-ref="5h">h</a>-&gt;<a class="tu ref field" href="#(anonymous)::protocol" title='(anonymous struct)::protocol' data-use='m' data-ref="(anonymous)::protocol">protocol</a>.<a class="ref field" href="../pg/edit.h.html#(anonymous)::values" title='(anonymous struct)::values' data-ref="(anonymous)::values">values</a>[<a class="macro" href="../pg/edit.h.html#83" title="0" data-ref="_M/PG_EDIT_LO">PG_EDIT_LO</a>];</td></tr>
+<tr><th id="83">83</th><td>	<a class="typedef" href="snap.h.html#snap_header_t" title='snap_header_t' data-type='union snap_header_t' data-ref="snap_header_t">snap_header_t</a> <dfn class="local col4 decl" id="14h" title='h' data-type='snap_header_t' data-ref="14h">h</dfn>;</td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td>	<a class="local col4 ref" href="#14h" title='h' data-ref="14h">h</a>.<a class="ref field" href="snap.h.html#80" title='(anonymous union)::(anonymous struct)::oui' data-ref="(anonymousunion)::(anonymous)::oui">oui</a>[<var>0</var>] = <a class="local col2 ref" href="#12o" title='o' data-ref="12o">o</a>[<var>0</var>];</td></tr>
+<tr><th id="86">86</th><td>	<a class="local col4 ref" href="#14h" title='h' data-ref="14h">h</a>.<a class="ref field" href="snap.h.html#80" title='(anonymous union)::(anonymous struct)::oui' data-ref="(anonymousunion)::(anonymous)::oui">oui</a>[<var>1</var>] = <a class="local col2 ref" href="#12o" title='o' data-ref="12o">o</a>[<var>1</var>];</td></tr>
+<tr><th id="87">87</th><td>	<a class="local col4 ref" href="#14h" title='h' data-ref="14h">h</a>.<a class="ref field" href="snap.h.html#80" title='(anonymous union)::(anonymous struct)::oui' data-ref="(anonymousunion)::(anonymous)::oui">oui</a>[<var>2</var>] = <a class="local col2 ref" href="#12o" title='o' data-ref="12o">o</a>[<var>2</var>];</td></tr>
+<tr><th id="88">88</th><td>	<a class="local col4 ref" href="#14h" title='h' data-ref="14h">h</a>.<a class="ref field" href="snap.h.html#80" title='(anonymous union)::(anonymous struct)::protocol' data-ref="(anonymousunion)::(anonymous)::protocol">protocol</a> = *(<a class="typedef" href="../../vppinfra/types.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> *) <a class="local col3 ref" href="#13p" title='p' data-ref="13p">p</a>;</td></tr>
+<tr><th id="89">89</th><td>	<a class="local col0 ref" href="#10pi" title='pi' data-ref="10pi">pi</a> = <a class="ref fn" href="snap.h.html#snap_get_protocol_info" title='snap_get_protocol_info' data-ref="snap_get_protocol_info">snap_get_protocol_info</a> (<a class="local col9 ref" href="#9pm" title='pm' data-ref="9pm">pm</a>, &amp;<a class="local col4 ref" href="#14h" title='h' data-ref="14h">h</a>);</td></tr>
+<tr><th id="90">90</th><td>	<b>if</b> (<a class="local col0 ref" href="#10pi" title='pi' data-ref="10pi">pi</a> &amp;&amp; <a class="local col0 ref" href="#10pi" title='pi' data-ref="10pi">pi</a>-&gt;<a class="ref field" href="snap.h.html#(anonymous)::node_index" title='(anonymous struct)::node_index' data-ref="(anonymous)::node_index">node_index</a> != ~<var>0</var>)</td></tr>
+<tr><th id="91">91</th><td>	  <a class="local col1 ref" href="#11pg_node" title='pg_node' data-ref="11pg_node">pg_node</a> = <a class="ref fn" href="../pg/pg.h.html#pg_get_node" title='pg_get_node' data-ref="pg_get_node">pg_get_node</a> (<a class="local col0 ref" href="#10pi" title='pi' data-ref="10pi">pi</a>-&gt;<a class="ref field" href="snap.h.html#(anonymous)::node_index" title='(anonymous struct)::node_index' data-ref="(anonymous)::node_index">node_index</a>);</td></tr>
+<tr><th id="92">92</th><td>      }</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td>    <b>if</b> (<a class="local col1 ref" href="#11pg_node" title='pg_node' data-ref="11pg_node">pg_node</a> &amp;&amp; <a class="local col1 ref" href="#11pg_node" title='pg_node' data-ref="11pg_node">pg_node</a>-&gt;<a class="ref field" href="../pg/pg.h.html#(anonymous)::unformat_edit" title='(anonymous struct)::unformat_edit' data-ref="(anonymous)::unformat_edit">unformat_edit</a></td></tr>
+<tr><th id="95">95</th><td>	&amp;&amp; <a class="ref fn" href="../../vppinfra/format.h.html#unformat_user" title='unformat_user' data-ref="unformat_user">unformat_user</a> (<a class="local col2 ref" href="#2input" title='input' data-ref="2input">input</a>, <a class="local col1 ref" href="#11pg_node" title='pg_node' data-ref="11pg_node">pg_node</a>-&gt;<a class="ref field" href="../pg/pg.h.html#(anonymous)::unformat_edit" title='(anonymous struct)::unformat_edit' data-ref="(anonymous)::unformat_edit">unformat_edit</a>, <a class="local col4 ref" href="#4s" title='s' data-ref="4s">s</a>))</td></tr>
+<tr><th id="96">96</th><td>      ;</td></tr>
+<tr><th id="97">97</th><td></td></tr>
+<tr><th id="98">98</th><td>    <b>else</b> <b>if</b> (!<a class="ref fn" href="../../vppinfra/format.h.html#unformat_user" title='unformat_user' data-ref="unformat_user">unformat_user</a> (<a class="local col2 ref" href="#2input" title='input' data-ref="2input">input</a>, <a class="ref fn" href="../pg/edit.h.html#unformat_pg_payload" title='unformat_pg_payload' data-ref="unformat_pg_payload">unformat_pg_payload</a>, <a class="local col4 ref" href="#4s" title='s' data-ref="4s">s</a>))</td></tr>
+<tr><th id="99">99</th><td>      <b>goto</b> <a class="lbl" href="#8done" data-ref="8done">done</a>;</td></tr>
+<tr><th id="100">100</th><td>  }</td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td>  <a class="local col7 ref" href="#7error" title='error' data-ref="7error">error</a> = <var>0</var>;</td></tr>
+<tr><th id="103">103</th><td><dfn class="lbl" id="8done" data-ref="8done">done</dfn>:</td></tr>
+<tr><th id="104">104</th><td>  <b>if</b> (<a class="local col7 ref" href="#7error" title='error' data-ref="7error">error</a>)</td></tr>
+<tr><th id="105">105</th><td>    <a class="ref fn" href="../pg/pg.h.html#pg_free_edit_group" title='pg_free_edit_group' data-ref="pg_free_edit_group">pg_free_edit_group</a> (<a class="local col4 ref" href="#4s" title='s' data-ref="4s">s</a>);</td></tr>
+<tr><th id="106">106</th><td>  <b>return</b> <a class="local col7 ref" href="#7error" title='error' data-ref="7error">error</a> == <var>0</var>;</td></tr>
+<tr><th id="107">107</th><td>}</td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td><i>/*</i></td></tr>
+<tr><th id="111">111</th><td><i> * fd.io coding-style-patch-verification: ON</i></td></tr>
+<tr><th id="112">112</th><td><i> *</i></td></tr>
+<tr><th id="113">113</th><td><i> * Local Variables:</i></td></tr>
+<tr><th id="114">114</th><td><i> * eval: (c-set-style "gnu")</i></td></tr>
+<tr><th id="115">115</th><td><i> * End:</i></td></tr>
+<tr><th id="116">116</th><td><i> */</i></td></tr>
+<tr><th id="117">117</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-30</em> from project vpp_1804 revision <em>18.05</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

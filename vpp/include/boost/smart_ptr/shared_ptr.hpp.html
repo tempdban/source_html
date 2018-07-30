@@ -1,0 +1,1054 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>shared_ptr.hpp source code [include/boost/smart_ptr/shared_ptr.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::detail::esft2_deleter_wrapper,boost::detail::sp_array_access,boost::detail::sp_dereference,boost::detail::sp_element,boost::detail::sp_enable_if_auto_ptr,boost::detail::sp_extent,boost::detail::sp_member_access,boost::shared_ptr "/>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'include/boost/smart_ptr/shared_ptr.hpp'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>include</a>/<a href='..'>boost</a>/<a href='./'>smart_ptr</a>/<a href='shared_ptr.hpp.html'>shared_ptr.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><u>#<span data-ppcond="1">ifndef</span> <span class="macro" data-ref="_M/BOOST_SMART_PTR_SHARED_PTR_HPP_INCLUDED">BOOST_SMART_PTR_SHARED_PTR_HPP_INCLUDED</span></u></td></tr>
+<tr><th id="2">2</th><td><u>#define <dfn class="macro" id="_M/BOOST_SMART_PTR_SHARED_PTR_HPP_INCLUDED" data-ref="_M/BOOST_SMART_PTR_SHARED_PTR_HPP_INCLUDED">BOOST_SMART_PTR_SHARED_PTR_HPP_INCLUDED</dfn></u></td></tr>
+<tr><th id="3">3</th><td></td></tr>
+<tr><th id="4">4</th><td><i>//</i></td></tr>
+<tr><th id="5">5</th><td><i>//  shared_ptr.hpp</i></td></tr>
+<tr><th id="6">6</th><td><i>//</i></td></tr>
+<tr><th id="7">7</th><td><i>//  (C) Copyright Greg Colvin and Beman Dawes 1998, 1999.</i></td></tr>
+<tr><th id="8">8</th><td><i>//  Copyright (c) 2001-2008 Peter Dimov</i></td></tr>
+<tr><th id="9">9</th><td><i>//</i></td></tr>
+<tr><th id="10">10</th><td><i>//  Distributed under the Boost Software License, Version 1.0. (See</i></td></tr>
+<tr><th id="11">11</th><td><i>//  accompanying file LICENSE_1_0.txt or copy at</i></td></tr>
+<tr><th id="12">12</th><td><i>//  <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="13">13</th><td><i>//</i></td></tr>
+<tr><th id="14">14</th><td><i>//  See <a href="http://www.boost.org/libs/smart_ptr/shared_ptr.htm">http://www.boost.org/libs/smart_ptr/shared_ptr.htm</a> for documentation.</i></td></tr>
+<tr><th id="15">15</th><td><i>//</i></td></tr>
+<tr><th id="16">16</th><td></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../config.hpp.html">&lt;boost/config.hpp&gt;</a>   // for broken compiler workarounds</u></td></tr>
+<tr><th id="18">18</th><td></td></tr>
+<tr><th id="19">19</th><td><u>#<span data-ppcond="19">if</span> defined(<span class="macro" data-ref="_M/BOOST_NO_MEMBER_TEMPLATES">BOOST_NO_MEMBER_TEMPLATES</span>) &amp;&amp; !defined(<a class="macro" href="../config/suffix.hpp.html#121" data-ref="_M/BOOST_MSVC6_MEMBER_TEMPLATES">BOOST_MSVC6_MEMBER_TEMPLATES</a>)</u></td></tr>
+<tr><th id="20">20</th><td><u>#include &lt;boost/smart_ptr/detail/shared_ptr_nmt.hpp&gt;</u></td></tr>
+<tr><th id="21">21</th><td><u>#<span data-ppcond="19">else</span></u></td></tr>
+<tr><th id="22">22</th><td></td></tr>
+<tr><th id="23">23</th><td><i>// In order to avoid circular dependencies with Boost.TR1</i></td></tr>
+<tr><th id="24">24</th><td><i>// we make sure that our include of &lt;memory&gt; doesn't try to</i></td></tr>
+<tr><th id="25">25</th><td><i>// pull in the TR1 headers: that's why we use this header </i></td></tr>
+<tr><th id="26">26</th><td><i>// rather than including &lt;memory&gt; directly:</i></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../config/no_tr1/memory.hpp.html">&lt;boost/config/no_tr1/memory.hpp&gt;</a>  // std::auto_ptr</u></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../assert.hpp.html">&lt;boost/assert.hpp&gt;</a></u></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="../checked_delete.hpp.html">&lt;boost/checked_delete.hpp&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="../throw_exception.hpp.html">&lt;boost/throw_exception.hpp&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="detail/shared_count.hpp.html">&lt;boost/smart_ptr/detail/shared_count.hpp&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="../detail/workaround.hpp.html">&lt;boost/detail/workaround.hpp&gt;</a></u></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="detail/sp_convertible.hpp.html">&lt;boost/smart_ptr/detail/sp_convertible.hpp&gt;</a></u></td></tr>
+<tr><th id="35">35</th><td><u>#include <a href="detail/sp_nullptr_t.hpp.html">&lt;boost/smart_ptr/detail/sp_nullptr_t.hpp&gt;</a></u></td></tr>
+<tr><th id="36">36</th><td></td></tr>
+<tr><th id="37">37</th><td><u>#<span data-ppcond="37">if</span> !defined(<span class="macro" data-ref="_M/BOOST_SP_NO_ATOMIC_ACCESS">BOOST_SP_NO_ATOMIC_ACCESS</span>)</u></td></tr>
+<tr><th id="38">38</th><td><u>#include <a href="detail/spinlock_pool.hpp.html">&lt;boost/smart_ptr/detail/spinlock_pool.hpp&gt;</a></u></td></tr>
+<tr><th id="39">39</th><td><u>#include <a href="../memory_order.hpp.html">&lt;boost/memory_order.hpp&gt;</a></u></td></tr>
+<tr><th id="40">40</th><td><u>#<span data-ppcond="37">endif</span></u></td></tr>
+<tr><th id="41">41</th><td></td></tr>
+<tr><th id="42">42</th><td><u>#include <a href="../../c++/4.8.2/algorithm.html">&lt;algorithm&gt;</a>            // for std::swap</u></td></tr>
+<tr><th id="43">43</th><td><u>#include <a href="../../c++/4.8.2/functional.html">&lt;functional&gt;</a>           // for std::less</u></td></tr>
+<tr><th id="44">44</th><td><u>#include <a href="../../c++/4.8.2/typeinfo.html">&lt;typeinfo&gt;</a>             // for std::bad_cast</u></td></tr>
+<tr><th id="45">45</th><td><u>#include <a href="../../c++/4.8.2/cstddef.html">&lt;cstddef&gt;</a>              // for std::size_t</u></td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td><u>#<span data-ppcond="47">if</span> !defined(<span class="macro" data-ref="_M/BOOST_NO_IOSTREAM">BOOST_NO_IOSTREAM</span>)</u></td></tr>
+<tr><th id="48">48</th><td><u>#<span data-ppcond="48">if</span> !defined(<span class="macro" data-ref="_M/BOOST_NO_IOSFWD">BOOST_NO_IOSFWD</span>)</u></td></tr>
+<tr><th id="49">49</th><td><u>#include <a href="../../c++/4.8.2/iosfwd.html">&lt;iosfwd&gt;</a>               // for std::basic_ostream</u></td></tr>
+<tr><th id="50">50</th><td><u>#<span data-ppcond="48">else</span></u></td></tr>
+<tr><th id="51">51</th><td><u>#include &lt;ostream&gt;</u></td></tr>
+<tr><th id="52">52</th><td><u>#<span data-ppcond="48">endif</span></u></td></tr>
+<tr><th id="53">53</th><td><u>#<span data-ppcond="47">endif</span></u></td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td><b>namespace</b> <span class="namespace">boost</span></td></tr>
+<tr><th id="56">56</th><td>{</td></tr>
+<tr><th id="57">57</th><td></td></tr>
+<tr><th id="58">58</th><td><b>template</b>&lt;<b>class</b> T&gt; <b>class</b> <a class="type" href="#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>;</td></tr>
+<tr><th id="59">59</th><td><b>template</b>&lt;<b>class</b> T&gt; <b>class</b> <a class="type" href="weak_ptr.hpp.html#boost::weak_ptr" title='boost::weak_ptr' data-ref="boost::weak_ptr" id="boost::weak_ptr">weak_ptr</a>;</td></tr>
+<tr><th id="60">60</th><td><b>template</b>&lt;<b>class</b> T&gt; <b>class</b> <dfn class="type" id="boost::enable_shared_from_this" title='boost::enable_shared_from_this' data-ref="boost::enable_shared_from_this">enable_shared_from_this</dfn>;</td></tr>
+<tr><th id="61">61</th><td><b>class</b> <dfn class="type" id="boost::enable_shared_from_raw" title='boost::enable_shared_from_raw' data-ref="boost::enable_shared_from_raw">enable_shared_from_raw</dfn>;</td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td><b>namespace</b> <span class="namespace">detail</span></td></tr>
+<tr><th id="64">64</th><td>{</td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td><i>// sp_element, element_type</i></td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td><b>template</b>&lt; <b>class</b> T &gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_element" title='boost::detail::sp_element' data-ref="boost::detail::sp_element">sp_element</dfn></td></tr>
+<tr><th id="69">69</th><td>{</td></tr>
+<tr><th id="70">70</th><td>    <b>typedef</b> T <dfn class="typedef" id="boost::detail::sp_element::type" title='boost::detail::sp_element::type' data-type='T' data-ref="boost::detail::sp_element::type">type</dfn>;</td></tr>
+<tr><th id="71">71</th><td>};</td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td><u>#<span data-ppcond="73">if</span> !defined( <span class="macro" data-ref="_M/BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION">BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION</span> )</u></td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td><b>template</b>&lt; <b>class</b> T &gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_element" title='boost::detail::sp_element' data-ref="boost::detail::sp_element">sp_element</dfn>&lt; T[] &gt;</td></tr>
+<tr><th id="76">76</th><td>{</td></tr>
+<tr><th id="77">77</th><td>    <b>typedef</b> T <dfn class="typedef" id="boost::detail::sp_element{type-parameter-0-0[]}::type" title='boost::detail::sp_element&lt;type-parameter-0-0 []&gt;::type' data-type='T' data-ref="boost::detail::sp_element{type-parameter-0-0[]}::type">type</dfn>;</td></tr>
+<tr><th id="78">78</th><td>};</td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td><u>#<span data-ppcond="80">if</span> !defined( <span class="macro" data-ref="_M/__BORLANDC__">__BORLANDC__</span> ) || !<a class="macro" href="../detail/workaround.hpp.html#233" title="((1 + 0 == 0) &amp;&amp; (__BORLANDC__ != 0) &amp;&amp; (1 % (( (__BORLANDC__ &lt; 0x600) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>( __BORLANDC__, &lt; 0x600 )</u></td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td><b>template</b>&lt; <b>class</b> T, <span class="namespace">std::</span><a class="typedef" href="../../c++/4.8.2/x86_64-redhat-linux/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> N &gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_element" title='boost::detail::sp_element' data-ref="boost::detail::sp_element">sp_element</dfn>&lt; T[<a class="tu ref" href="#boost::detail::sp_element{type-parameter-0-0[_Size]}::N" title='boost::detail::sp_element&lt;type-parameter-0-0 [_Size]&gt;::N' data-ref="boost::detail::sp_element{type-parameter-0-0[_Size]}::N">N</a>] &gt;</td></tr>
+<tr><th id="83">83</th><td>{</td></tr>
+<tr><th id="84">84</th><td>    <b>typedef</b> T <dfn class="typedef" id="boost::detail::sp_element{type-parameter-0-0[_Size]}::type" title='boost::detail::sp_element&lt;type-parameter-0-0 [_Size]&gt;::type' data-type='T' data-ref="boost::detail::sp_element{type-parameter-0-0[_Size]}::type">type</dfn>;</td></tr>
+<tr><th id="85">85</th><td>};</td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td><u>#<span data-ppcond="80">endif</span></u></td></tr>
+<tr><th id="88">88</th><td></td></tr>
+<tr><th id="89">89</th><td><u>#<span data-ppcond="73">endif</span> // !defined( BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION )</u></td></tr>
+<tr><th id="90">90</th><td></td></tr>
+<tr><th id="91">91</th><td><i>// sp_dereference, return type of operator*</i></td></tr>
+<tr><th id="92">92</th><td></td></tr>
+<tr><th id="93">93</th><td><b>template</b>&lt; <b>class</b> T &gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_dereference" title='boost::detail::sp_dereference' data-ref="boost::detail::sp_dereference">sp_dereference</dfn></td></tr>
+<tr><th id="94">94</th><td>{</td></tr>
+<tr><th id="95">95</th><td>    <b>typedef</b> T &amp; <dfn class="typedef" id="boost::detail::sp_dereference::type" title='boost::detail::sp_dereference::type' data-type='T &amp;' data-ref="boost::detail::sp_dereference::type">type</dfn>;</td></tr>
+<tr><th id="96">96</th><td>};</td></tr>
+<tr><th id="97">97</th><td></td></tr>
+<tr><th id="98">98</th><td><b>template</b>&lt;&gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_dereference" title='boost::detail::sp_dereference' data-ref="boost::detail::sp_dereference"><a class="type" href="#boost::detail::sp_dereference" title='boost::detail::sp_dereference' data-ref="boost::detail::sp_dereference">sp_dereference</a></dfn>&lt; <em>void</em> &gt;</td></tr>
+<tr><th id="99">99</th><td>{</td></tr>
+<tr><th id="100">100</th><td>    <b>typedef</b> <em>void</em> <dfn class="typedef" id="boost::detail::sp_dereference{void}::type" title='boost::detail::sp_dereference&lt;void&gt;::type' data-type='void' data-ref="boost::detail::sp_dereference{void}::type">type</dfn>;</td></tr>
+<tr><th id="101">101</th><td>};</td></tr>
+<tr><th id="102">102</th><td></td></tr>
+<tr><th id="103">103</th><td><u>#<span data-ppcond="103">if</span> !defined(<span class="macro" data-ref="_M/BOOST_NO_CV_VOID_SPECIALIZATIONS">BOOST_NO_CV_VOID_SPECIALIZATIONS</span>)</u></td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td><b>template</b>&lt;&gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_dereference" title='boost::detail::sp_dereference' data-ref="boost::detail::sp_dereference"><a class="type" href="#boost::detail::sp_dereference" title='boost::detail::sp_dereference' data-ref="boost::detail::sp_dereference">sp_dereference</a></dfn>&lt; <em>void</em> <em>const</em> &gt;</td></tr>
+<tr><th id="106">106</th><td>{</td></tr>
+<tr><th id="107">107</th><td>    <b>typedef</b> <em>void</em> <dfn class="typedef" id="boost::detail::sp_dereference{constvoid}::type" title='boost::detail::sp_dereference&lt;const void&gt;::type' data-type='void' data-ref="boost::detail::sp_dereference{constvoid}::type">type</dfn>;</td></tr>
+<tr><th id="108">108</th><td>};</td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td><b>template</b>&lt;&gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_dereference" title='boost::detail::sp_dereference' data-ref="boost::detail::sp_dereference"><a class="type" href="#boost::detail::sp_dereference" title='boost::detail::sp_dereference' data-ref="boost::detail::sp_dereference">sp_dereference</a></dfn>&lt; <em>void</em> <em>volatile</em> &gt;</td></tr>
+<tr><th id="111">111</th><td>{</td></tr>
+<tr><th id="112">112</th><td>    <b>typedef</b> <em>void</em> <dfn class="typedef" id="boost::detail::sp_dereference{volatilevoid}::type" title='boost::detail::sp_dereference&lt;volatile void&gt;::type' data-type='void' data-ref="boost::detail::sp_dereference{volatilevoid}::type">type</dfn>;</td></tr>
+<tr><th id="113">113</th><td>};</td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td><b>template</b>&lt;&gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_dereference" title='boost::detail::sp_dereference' data-ref="boost::detail::sp_dereference"><a class="type" href="#boost::detail::sp_dereference" title='boost::detail::sp_dereference' data-ref="boost::detail::sp_dereference">sp_dereference</a></dfn>&lt; <em>void</em> <em>const</em> <em>volatile</em> &gt;</td></tr>
+<tr><th id="116">116</th><td>{</td></tr>
+<tr><th id="117">117</th><td>    <b>typedef</b> <em>void</em> <dfn class="typedef" id="boost::detail::sp_dereference{constvolatilevoid}::type" title='boost::detail::sp_dereference&lt;const volatile void&gt;::type' data-type='void' data-ref="boost::detail::sp_dereference{constvolatilevoid}::type">type</dfn>;</td></tr>
+<tr><th id="118">118</th><td>};</td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td><u>#<span data-ppcond="103">endif</span> // !defined(BOOST_NO_CV_VOID_SPECIALIZATIONS)</u></td></tr>
+<tr><th id="121">121</th><td></td></tr>
+<tr><th id="122">122</th><td><u>#<span data-ppcond="122">if</span> !defined( <span class="macro" data-ref="_M/BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION">BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION</span> )</u></td></tr>
+<tr><th id="123">123</th><td></td></tr>
+<tr><th id="124">124</th><td><b>template</b>&lt; <b>class</b> T &gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_dereference" title='boost::detail::sp_dereference' data-ref="boost::detail::sp_dereference">sp_dereference</dfn>&lt; T[] &gt;</td></tr>
+<tr><th id="125">125</th><td>{</td></tr>
+<tr><th id="126">126</th><td>    <b>typedef</b> <em>void</em> <dfn class="typedef" id="boost::detail::sp_dereference{type-parameter-0-0[]}::type" title='boost::detail::sp_dereference&lt;type-parameter-0-0 []&gt;::type' data-type='void' data-ref="boost::detail::sp_dereference{type-parameter-0-0[]}::type">type</dfn>;</td></tr>
+<tr><th id="127">127</th><td>};</td></tr>
+<tr><th id="128">128</th><td></td></tr>
+<tr><th id="129">129</th><td><u>#<span data-ppcond="129">if</span> !defined( <span class="macro" data-ref="_M/__BORLANDC__">__BORLANDC__</span> ) || !<a class="macro" href="../detail/workaround.hpp.html#233" title="((1 + 0 == 0) &amp;&amp; (__BORLANDC__ != 0) &amp;&amp; (1 % (( (__BORLANDC__ &lt; 0x600) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>( __BORLANDC__, &lt; 0x600 )</u></td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td><b>template</b>&lt; <b>class</b> T, <span class="namespace">std::</span><a class="typedef" href="../../c++/4.8.2/x86_64-redhat-linux/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> N &gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_dereference" title='boost::detail::sp_dereference' data-ref="boost::detail::sp_dereference">sp_dereference</dfn>&lt; T[<a class="tu ref" href="#boost::detail::sp_dereference{type-parameter-0-0[_Size]}::N" title='boost::detail::sp_dereference&lt;type-parameter-0-0 [_Size]&gt;::N' data-ref="boost::detail::sp_dereference{type-parameter-0-0[_Size]}::N">N</a>] &gt;</td></tr>
+<tr><th id="132">132</th><td>{</td></tr>
+<tr><th id="133">133</th><td>    <b>typedef</b> <em>void</em> <dfn class="typedef" id="boost::detail::sp_dereference{type-parameter-0-0[_Size]}::type" title='boost::detail::sp_dereference&lt;type-parameter-0-0 [_Size]&gt;::type' data-type='void' data-ref="boost::detail::sp_dereference{type-parameter-0-0[_Size]}::type">type</dfn>;</td></tr>
+<tr><th id="134">134</th><td>};</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td><u>#<span data-ppcond="129">endif</span></u></td></tr>
+<tr><th id="137">137</th><td></td></tr>
+<tr><th id="138">138</th><td><u>#<span data-ppcond="122">endif</span> // !defined( BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION )</u></td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td><i>// sp_member_access, return type of operator-&gt;</i></td></tr>
+<tr><th id="141">141</th><td></td></tr>
+<tr><th id="142">142</th><td><b>template</b>&lt; <b>class</b> T &gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_member_access" title='boost::detail::sp_member_access' data-ref="boost::detail::sp_member_access">sp_member_access</dfn></td></tr>
+<tr><th id="143">143</th><td>{</td></tr>
+<tr><th id="144">144</th><td>    <b>typedef</b> T * <dfn class="typedef" id="boost::detail::sp_member_access::type" title='boost::detail::sp_member_access::type' data-type='T *' data-ref="boost::detail::sp_member_access::type">type</dfn>;</td></tr>
+<tr><th id="145">145</th><td>};</td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td><u>#<span data-ppcond="147">if</span> !defined( <span class="macro" data-ref="_M/BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION">BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION</span> )</u></td></tr>
+<tr><th id="148">148</th><td></td></tr>
+<tr><th id="149">149</th><td><b>template</b>&lt; <b>class</b> T &gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_member_access" title='boost::detail::sp_member_access' data-ref="boost::detail::sp_member_access">sp_member_access</dfn>&lt; T[] &gt;</td></tr>
+<tr><th id="150">150</th><td>{</td></tr>
+<tr><th id="151">151</th><td>    <b>typedef</b> <em>void</em> <dfn class="typedef" id="boost::detail::sp_member_access{type-parameter-0-0[]}::type" title='boost::detail::sp_member_access&lt;type-parameter-0-0 []&gt;::type' data-type='void' data-ref="boost::detail::sp_member_access{type-parameter-0-0[]}::type">type</dfn>;</td></tr>
+<tr><th id="152">152</th><td>};</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td><u>#<span data-ppcond="154">if</span> !defined( <span class="macro" data-ref="_M/__BORLANDC__">__BORLANDC__</span> ) || !<a class="macro" href="../detail/workaround.hpp.html#233" title="((1 + 0 == 0) &amp;&amp; (__BORLANDC__ != 0) &amp;&amp; (1 % (( (__BORLANDC__ &lt; 0x600) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>( __BORLANDC__, &lt; 0x600 )</u></td></tr>
+<tr><th id="155">155</th><td></td></tr>
+<tr><th id="156">156</th><td><b>template</b>&lt; <b>class</b> T, <span class="namespace">std::</span><a class="typedef" href="../../c++/4.8.2/x86_64-redhat-linux/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> N &gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_member_access" title='boost::detail::sp_member_access' data-ref="boost::detail::sp_member_access">sp_member_access</dfn>&lt; T[<a class="tu ref" href="#boost::detail::sp_member_access{type-parameter-0-0[_Size]}::N" title='boost::detail::sp_member_access&lt;type-parameter-0-0 [_Size]&gt;::N' data-ref="boost::detail::sp_member_access{type-parameter-0-0[_Size]}::N">N</a>] &gt;</td></tr>
+<tr><th id="157">157</th><td>{</td></tr>
+<tr><th id="158">158</th><td>    <b>typedef</b> <em>void</em> <dfn class="typedef" id="boost::detail::sp_member_access{type-parameter-0-0[_Size]}::type" title='boost::detail::sp_member_access&lt;type-parameter-0-0 [_Size]&gt;::type' data-type='void' data-ref="boost::detail::sp_member_access{type-parameter-0-0[_Size]}::type">type</dfn>;</td></tr>
+<tr><th id="159">159</th><td>};</td></tr>
+<tr><th id="160">160</th><td></td></tr>
+<tr><th id="161">161</th><td><u>#<span data-ppcond="154">endif</span></u></td></tr>
+<tr><th id="162">162</th><td></td></tr>
+<tr><th id="163">163</th><td><u>#<span data-ppcond="147">endif</span> // !defined( BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION )</u></td></tr>
+<tr><th id="164">164</th><td></td></tr>
+<tr><th id="165">165</th><td><i>// sp_array_access, return type of operator[]</i></td></tr>
+<tr><th id="166">166</th><td></td></tr>
+<tr><th id="167">167</th><td><b>template</b>&lt; <b>class</b> T &gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_array_access" title='boost::detail::sp_array_access' data-ref="boost::detail::sp_array_access">sp_array_access</dfn></td></tr>
+<tr><th id="168">168</th><td>{</td></tr>
+<tr><th id="169">169</th><td>    <b>typedef</b> <em>void</em> <dfn class="typedef" id="boost::detail::sp_array_access::type" title='boost::detail::sp_array_access::type' data-type='void' data-ref="boost::detail::sp_array_access::type">type</dfn>;</td></tr>
+<tr><th id="170">170</th><td>};</td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td><u>#<span data-ppcond="172">if</span> !defined( <span class="macro" data-ref="_M/BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION">BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION</span> )</u></td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td><b>template</b>&lt; <b>class</b> T &gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_array_access" title='boost::detail::sp_array_access' data-ref="boost::detail::sp_array_access">sp_array_access</dfn>&lt; T[] &gt;</td></tr>
+<tr><th id="175">175</th><td>{</td></tr>
+<tr><th id="176">176</th><td>    <b>typedef</b> T &amp; <dfn class="typedef" id="boost::detail::sp_array_access{type-parameter-0-0[]}::type" title='boost::detail::sp_array_access&lt;type-parameter-0-0 []&gt;::type' data-type='T &amp;' data-ref="boost::detail::sp_array_access{type-parameter-0-0[]}::type">type</dfn>;</td></tr>
+<tr><th id="177">177</th><td>};</td></tr>
+<tr><th id="178">178</th><td></td></tr>
+<tr><th id="179">179</th><td><u>#<span data-ppcond="179">if</span> !defined( <span class="macro" data-ref="_M/__BORLANDC__">__BORLANDC__</span> ) || !<a class="macro" href="../detail/workaround.hpp.html#233" title="((1 + 0 == 0) &amp;&amp; (__BORLANDC__ != 0) &amp;&amp; (1 % (( (__BORLANDC__ &lt; 0x600) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>( __BORLANDC__, &lt; 0x600 )</u></td></tr>
+<tr><th id="180">180</th><td></td></tr>
+<tr><th id="181">181</th><td><b>template</b>&lt; <b>class</b> T, <span class="namespace">std::</span><a class="typedef" href="../../c++/4.8.2/x86_64-redhat-linux/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> N &gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_array_access" title='boost::detail::sp_array_access' data-ref="boost::detail::sp_array_access">sp_array_access</dfn>&lt; T[<a class="tu ref" href="#boost::detail::sp_array_access{type-parameter-0-0[_Size]}::N" title='boost::detail::sp_array_access&lt;type-parameter-0-0 [_Size]&gt;::N' data-ref="boost::detail::sp_array_access{type-parameter-0-0[_Size]}::N">N</a>] &gt;</td></tr>
+<tr><th id="182">182</th><td>{</td></tr>
+<tr><th id="183">183</th><td>    <b>typedef</b> T &amp; <dfn class="typedef" id="boost::detail::sp_array_access{type-parameter-0-0[_Size]}::type" title='boost::detail::sp_array_access&lt;type-parameter-0-0 [_Size]&gt;::type' data-type='T &amp;' data-ref="boost::detail::sp_array_access{type-parameter-0-0[_Size]}::type">type</dfn>;</td></tr>
+<tr><th id="184">184</th><td>};</td></tr>
+<tr><th id="185">185</th><td></td></tr>
+<tr><th id="186">186</th><td><u>#<span data-ppcond="179">endif</span></u></td></tr>
+<tr><th id="187">187</th><td></td></tr>
+<tr><th id="188">188</th><td><u>#<span data-ppcond="172">endif</span> // !defined( BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION )</u></td></tr>
+<tr><th id="189">189</th><td></td></tr>
+<tr><th id="190">190</th><td><i>// sp_extent, for operator[] index check</i></td></tr>
+<tr><th id="191">191</th><td></td></tr>
+<tr><th id="192">192</th><td><b>template</b>&lt; <b>class</b> T &gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_extent" title='boost::detail::sp_extent' data-ref="boost::detail::sp_extent">sp_extent</dfn></td></tr>
+<tr><th id="193">193</th><td>{</td></tr>
+<tr><th id="194">194</th><td>    <b>enum</b> <dfn class="type def" id="boost::detail::sp_extent::_vt" title='boost::detail::sp_extent::_vt' data-ref="boost::detail::sp_extent::_vt">_vt</dfn> { <dfn class="enum" id="boost::detail::sp_extent::value" title='boost::detail::sp_extent::value' data-ref="boost::detail::sp_extent::value">value</dfn> = <var>0</var> };</td></tr>
+<tr><th id="195">195</th><td>};</td></tr>
+<tr><th id="196">196</th><td></td></tr>
+<tr><th id="197">197</th><td><u>#<span data-ppcond="197">if</span> !defined( <span class="macro" data-ref="_M/BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION">BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION</span> )</u></td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td><b>template</b>&lt; <b>class</b> T, <span class="namespace">std::</span><a class="typedef" href="../../c++/4.8.2/x86_64-redhat-linux/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> N &gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_extent" title='boost::detail::sp_extent' data-ref="boost::detail::sp_extent">sp_extent</dfn>&lt; T[<a class="tu ref" href="#boost::detail::sp_extent{type-parameter-0-0[_Size]}::N" title='boost::detail::sp_extent&lt;type-parameter-0-0 [_Size]&gt;::N' data-ref="boost::detail::sp_extent{type-parameter-0-0[_Size]}::N">N</a>] &gt;</td></tr>
+<tr><th id="200">200</th><td>{</td></tr>
+<tr><th id="201">201</th><td>    <b>enum</b> <dfn class="type def" id="boost::detail::sp_extent{type-parameter-0-0[_Size]}::_vt" title='boost::detail::sp_extent&lt;type-parameter-0-0 [_Size]&gt;::_vt' data-ref="boost::detail::sp_extent{type-parameter-0-0[_Size]}::_vt">_vt</dfn> { <dfn class="enum" id="boost::detail::sp_extent{type-parameter-0-0[_Size]}::value" title='boost::detail::sp_extent&lt;type-parameter-0-0 [_Size]&gt;::value' data-ref="boost::detail::sp_extent{type-parameter-0-0[_Size]}::value">value</dfn> = <a class="tu ref" href="#boost::detail::sp_extent{type-parameter-0-0[_Size]}::N" title='boost::detail::sp_extent&lt;type-parameter-0-0 [_Size]&gt;::N' data-ref="boost::detail::sp_extent{type-parameter-0-0[_Size]}::N">N</a> };</td></tr>
+<tr><th id="202">202</th><td>};</td></tr>
+<tr><th id="203">203</th><td></td></tr>
+<tr><th id="204">204</th><td><u>#<span data-ppcond="197">endif</span> // !defined( BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION )</u></td></tr>
+<tr><th id="205">205</th><td></td></tr>
+<tr><th id="206">206</th><td><i>// enable_shared_from_this support</i></td></tr>
+<tr><th id="207">207</th><td></td></tr>
+<tr><th id="208">208</th><td><b>template</b>&lt; <b>class</b> X, <b>class</b> Y, <b>class</b> T &gt; <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost6detail26sp_enable_shared_from_thisEPKNS_10shared_ptrIT_EEPKT0_PKNS_23enable_shared_from_thisIT1_EE" title='boost::detail::sp_enable_shared_from_this' data-ref="_ZN5boost6detail26sp_enable_shared_from_thisEPKNS_10shared_ptrIT_EEPKT0_PKNS_23enable_shared_from_thisIT1_EE">sp_enable_shared_from_this</dfn>( <span class="namespace">boost::</span><a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;X&gt; <em>const</em> * <dfn class="local col6 decl" id="8216ppx" title='ppx' data-type='const boost::shared_ptr&lt;X&gt; *' data-ref="8216ppx">ppx</dfn>, Y <em>const</em> * <dfn class="local col7 decl" id="8217py" title='py' data-type='const Y *' data-ref="8217py">py</dfn>, <span class="namespace">boost::</span><a class="type" href="#boost::enable_shared_from_this" title='boost::enable_shared_from_this' data-ref="boost::enable_shared_from_this">enable_shared_from_this</a>&lt; T &gt; <em>const</em> * <dfn class="local col8 decl" id="8218pe" title='pe' data-type='const boost::enable_shared_from_this&lt;T&gt; *' data-ref="8218pe">pe</dfn> )</td></tr>
+<tr><th id="209">209</th><td>{</td></tr>
+<tr><th id="210">210</th><td>    <b>if</b>( <a class="local col8 ref" href="#8218pe" title='pe' data-ref="8218pe">pe</a> != <var>0</var> )</td></tr>
+<tr><th id="211">211</th><td>    {</td></tr>
+<tr><th id="212">212</th><td>        <a class="local col8 ref" href="#8218pe" title='pe' data-ref="8218pe">pe</a>-&gt;_internal_accept_owner( <a class="local col6 ref" href="#8216ppx" title='ppx' data-ref="8216ppx">ppx</a>, <b>const_cast</b>&lt; Y* &gt;( <a class="local col7 ref" href="#8217py" title='py' data-ref="8217py">py</a> ) );</td></tr>
+<tr><th id="213">213</th><td>    }</td></tr>
+<tr><th id="214">214</th><td>}</td></tr>
+<tr><th id="215">215</th><td></td></tr>
+<tr><th id="216">216</th><td><b>template</b>&lt; <b>class</b> X, <b>class</b> Y &gt; <b>inline</b> <em>void</em> <dfn class="decl fn" id="_ZN5boost6detail26sp_enable_shared_from_thisEPNS_10shared_ptrIT_EEPKT0_PKNS_22enable_shared_from_rawE" title='boost::detail::sp_enable_shared_from_this' data-ref="_ZN5boost6detail26sp_enable_shared_from_thisEPNS_10shared_ptrIT_EEPKT0_PKNS_22enable_shared_from_rawE">sp_enable_shared_from_this</dfn>( <span class="namespace">boost::</span><a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;X&gt; * <dfn class="local col9 decl" id="8219ppx" title='ppx' data-type='boost::shared_ptr&lt;X&gt; *' data-ref="8219ppx">ppx</dfn>, Y <em>const</em> * <dfn class="local col0 decl" id="8220py" title='py' data-type='const Y *' data-ref="8220py">py</dfn>, <span class="namespace">boost::</span><a class="type" href="#boost::enable_shared_from_raw" title='boost::enable_shared_from_raw' data-ref="boost::enable_shared_from_raw">enable_shared_from_raw</a> <em>const</em> * <dfn class="local col1 decl" id="8221pe" title='pe' data-type='const boost::enable_shared_from_raw *' data-ref="8221pe">pe</dfn> );</td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td><u>#<span data-ppcond="218">ifdef</span> <span class="macro" data-ref="_M/_MANAGED">_MANAGED</span></u></td></tr>
+<tr><th id="219">219</th><td></td></tr>
+<tr><th id="220">220</th><td><i>// Avoid C4793, ... causes native code generation</i></td></tr>
+<tr><th id="221">221</th><td></td></tr>
+<tr><th id="222">222</th><td><b>struct</b> sp_any_pointer</td></tr>
+<tr><th id="223">223</th><td>{</td></tr>
+<tr><th id="224">224</th><td>    <b>template</b>&lt;<b>class</b> T&gt; sp_any_pointer( T* ) {}</td></tr>
+<tr><th id="225">225</th><td>};</td></tr>
+<tr><th id="226">226</th><td></td></tr>
+<tr><th id="227">227</th><td><b>inline</b> <em>void</em> sp_enable_shared_from_this( sp_any_pointer, sp_any_pointer, sp_any_pointer )</td></tr>
+<tr><th id="228">228</th><td>{</td></tr>
+<tr><th id="229">229</th><td>}</td></tr>
+<tr><th id="230">230</th><td></td></tr>
+<tr><th id="231">231</th><td><u>#<span data-ppcond="218">else</span> // _MANAGED</u></td></tr>
+<tr><th id="232">232</th><td></td></tr>
+<tr><th id="233">233</th><td><b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost6detail26sp_enable_shared_from_thisEz" title='boost::detail::sp_enable_shared_from_this' data-ref="_ZN5boost6detail26sp_enable_shared_from_thisEz">sp_enable_shared_from_this</dfn>( ... )</td></tr>
+<tr><th id="234">234</th><td>{</td></tr>
+<tr><th id="235">235</th><td>}</td></tr>
+<tr><th id="236">236</th><td></td></tr>
+<tr><th id="237">237</th><td><u>#<span data-ppcond="218">endif</span> // _MANAGED</u></td></tr>
+<tr><th id="238">238</th><td></td></tr>
+<tr><th id="239">239</th><td><u>#<span data-ppcond="239">if</span> !defined( <span class="macro" data-ref="_M/BOOST_NO_SFINAE">BOOST_NO_SFINAE</span> ) &amp;&amp; !defined( <span class="macro" data-ref="_M/BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION">BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION</span> ) &amp;&amp; !defined( <span class="macro" data-ref="_M/BOOST_NO_AUTO_PTR">BOOST_NO_AUTO_PTR</span> )</u></td></tr>
+<tr><th id="240">240</th><td></td></tr>
+<tr><th id="241">241</th><td><i>// rvalue auto_ptr support based on a technique by Dave Abrahams</i></td></tr>
+<tr><th id="242">242</th><td></td></tr>
+<tr><th id="243">243</th><td><b>template</b>&lt; <b>class</b> T, <b>class</b> R &gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_enable_if_auto_ptr" title='boost::detail::sp_enable_if_auto_ptr' data-ref="boost::detail::sp_enable_if_auto_ptr">sp_enable_if_auto_ptr</dfn></td></tr>
+<tr><th id="244">244</th><td>{</td></tr>
+<tr><th id="245">245</th><td>};</td></tr>
+<tr><th id="246">246</th><td></td></tr>
+<tr><th id="247">247</th><td><b>template</b>&lt; <b>class</b> T, <b>class</b> R &gt; <b>struct</b> <dfn class="type def" id="boost::detail::sp_enable_if_auto_ptr" title='boost::detail::sp_enable_if_auto_ptr' data-ref="boost::detail::sp_enable_if_auto_ptr">sp_enable_if_auto_ptr</dfn>&lt; <span class="namespace">std::</span><a class="type" href="../../c++/4.8.2/bits/unique_ptr.h.html#std::auto_ptr" title='std::auto_ptr' data-ref="std::auto_ptr">auto_ptr</a>&lt; T &gt;, R &gt;</td></tr>
+<tr><th id="248">248</th><td>{</td></tr>
+<tr><th id="249">249</th><td>    <b>typedef</b> R <dfn class="typedef" id="boost::detail::sp_enable_if_auto_ptr{auto_ptr{type-parameter-0-0},type-parameter-0-1}::type" title='boost::detail::sp_enable_if_auto_ptr&lt;auto_ptr&lt;type-parameter-0-0&gt;, type-parameter-0-1&gt;::type' data-type='R' data-ref="boost::detail::sp_enable_if_auto_ptr{auto_ptr{type-parameter-0-0},type-parameter-0-1}::type">type</dfn>;</td></tr>
+<tr><th id="250">250</th><td>}; </td></tr>
+<tr><th id="251">251</th><td></td></tr>
+<tr><th id="252">252</th><td><u>#<span data-ppcond="239">endif</span></u></td></tr>
+<tr><th id="253">253</th><td></td></tr>
+<tr><th id="254">254</th><td><i>// sp_assert_convertible</i></td></tr>
+<tr><th id="255">255</th><td></td></tr>
+<tr><th id="256">256</th><td><b>template</b>&lt; <b>class</b> Y, <b>class</b> T &gt; <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost6detail21sp_assert_convertibleEv" title='boost::detail::sp_assert_convertible' data-ref="_ZN5boost6detail21sp_assert_convertibleEv">sp_assert_convertible</dfn>()</td></tr>
+<tr><th id="257">257</th><td>{</td></tr>
+<tr><th id="258">258</th><td><u>#<span data-ppcond="258">if</span> !defined( <span class="macro" data-ref="_M/BOOST_SP_NO_SP_CONVERTIBLE">BOOST_SP_NO_SP_CONVERTIBLE</span> )</u></td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td>    <i>// static_assert( sp_convertible&lt; Y, T &gt;::value );</i></td></tr>
+<tr><th id="261">261</th><td>    <b>typedef</b> <em>char</em> <dfn class="local col2 typedef" id="8222tmp" title='tmp' data-type='char [sp_convertible&lt;Y, T&gt;::value ? 1 : -1]' data-ref="8222tmp">tmp</dfn>[ <a class="type" href="detail/sp_convertible.hpp.html#boost::detail::sp_convertible" title='boost::detail::sp_convertible' data-ref="boost::detail::sp_convertible">sp_convertible</a>&lt; Y, T &gt;::value? <var>1</var>: -<var>1</var> ];</td></tr>
+<tr><th id="262">262</th><td>    (<em>void</em>)<b>sizeof</b>( <a class="local col2 typedef" href="#8222tmp" title='tmp' data-type='char [sp_convertible&lt;Y, T&gt;::value ? 1 : -1]' data-ref="8222tmp">tmp</a> );</td></tr>
+<tr><th id="263">263</th><td></td></tr>
+<tr><th id="264">264</th><td><u>#<span data-ppcond="258">else</span></u></td></tr>
+<tr><th id="265">265</th><td></td></tr>
+<tr><th id="266">266</th><td>    T* p = <b>static_cast</b>&lt; Y* &gt;( <var>0</var> );</td></tr>
+<tr><th id="267">267</th><td>    (<em>void</em>)p;</td></tr>
+<tr><th id="268">268</th><td></td></tr>
+<tr><th id="269">269</th><td><u>#<span data-ppcond="258">endif</span></u></td></tr>
+<tr><th id="270">270</th><td>}</td></tr>
+<tr><th id="271">271</th><td></td></tr>
+<tr><th id="272">272</th><td><i>// pointer constructor helper</i></td></tr>
+<tr><th id="273">273</th><td></td></tr>
+<tr><th id="274">274</th><td><b>template</b>&lt; <b>class</b> T, <b>class</b> Y &gt; <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost6detail20sp_pointer_constructEPNS_10shared_ptrIT_EEPT0_RNS0_12shared_countE" title='boost::detail::sp_pointer_construct' data-ref="_ZN5boost6detail20sp_pointer_constructEPNS_10shared_ptrIT_EEPT0_RNS0_12shared_countE">sp_pointer_construct</dfn>( <span class="namespace">boost::</span><a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt; T &gt; * <dfn class="local col3 decl" id="8223ppx" title='ppx' data-type='boost::shared_ptr&lt;T&gt; *' data-ref="8223ppx">ppx</dfn>, Y * <dfn class="local col4 decl" id="8224p" title='p' data-type='Y *' data-ref="8224p">p</dfn>, <span class="namespace">boost::detail::</span><a class="type" href="detail/shared_count.hpp.html#boost::detail::shared_count" title='boost::detail::shared_count' data-ref="boost::detail::shared_count">shared_count</a> &amp; <dfn class="local col5 decl" id="8225pn" title='pn' data-type='boost::detail::shared_count &amp;' data-ref="8225pn">pn</dfn> )</td></tr>
+<tr><th id="275">275</th><td>{</td></tr>
+<tr><th id="276">276</th><td>    <span class="namespace">boost::detail::</span><a class="type" href="detail/shared_count.hpp.html#boost::detail::shared_count" title='boost::detail::shared_count' data-ref="boost::detail::shared_count">shared_count</a>( <a class="local col4 ref" href="#8224p" title='p' data-ref="8224p">p</a> ).<a class="ref fn" href="detail/shared_count.hpp.html#_ZN5boost6detail12shared_count4swapERS1_" title='boost::detail::shared_count::swap' data-ref="_ZN5boost6detail12shared_count4swapERS1_">swap</a>( <span class='refarg'><a class="local col5 ref" href="#8225pn" title='pn' data-ref="8225pn">pn</a></span> );</td></tr>
+<tr><th id="277">277</th><td>    <span class="namespace">boost::detail::</span>sp_enable_shared_from_this( <a class="local col3 ref" href="#8223ppx" title='ppx' data-ref="8223ppx">ppx</a>, <a class="local col4 ref" href="#8224p" title='p' data-ref="8224p">p</a>, <a class="local col4 ref" href="#8224p" title='p' data-ref="8224p">p</a> );</td></tr>
+<tr><th id="278">278</th><td>}</td></tr>
+<tr><th id="279">279</th><td></td></tr>
+<tr><th id="280">280</th><td><u>#<span data-ppcond="280">if</span> !defined( <span class="macro" data-ref="_M/BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION">BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION</span> )</u></td></tr>
+<tr><th id="281">281</th><td></td></tr>
+<tr><th id="282">282</th><td><b>template</b>&lt; <b>class</b> T, <b>class</b> Y &gt; <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost6detail20sp_pointer_constructEPNS_10shared_ptrIA_T_EEPT0_RNS0_12shared_countE" title='boost::detail::sp_pointer_construct' data-ref="_ZN5boost6detail20sp_pointer_constructEPNS_10shared_ptrIA_T_EEPT0_RNS0_12shared_countE">sp_pointer_construct</dfn>( <span class="namespace">boost::</span><a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt; T[] &gt; * <i>/*ppx*/</i>, Y * <dfn class="local col6 decl" id="8226p" title='p' data-type='Y *' data-ref="8226p">p</dfn>, <span class="namespace">boost::detail::</span><a class="type" href="detail/shared_count.hpp.html#boost::detail::shared_count" title='boost::detail::shared_count' data-ref="boost::detail::shared_count">shared_count</a> &amp; <dfn class="local col7 decl" id="8227pn" title='pn' data-type='boost::detail::shared_count &amp;' data-ref="8227pn">pn</dfn> )</td></tr>
+<tr><th id="283">283</th><td>{</td></tr>
+<tr><th id="284">284</th><td>    sp_assert_convertible&lt; Y[], T[] &gt;();</td></tr>
+<tr><th id="285">285</th><td>    <span class="namespace">boost::detail::</span><a class="type" href="detail/shared_count.hpp.html#boost::detail::shared_count" title='boost::detail::shared_count' data-ref="boost::detail::shared_count">shared_count</a>( <a class="local col6 ref" href="#8226p" title='p' data-ref="8226p">p</a>, <span class="namespace">boost::</span><a class="type" href="../checked_delete.hpp.html#boost::checked_array_deleter" title='boost::checked_array_deleter' data-ref="boost::checked_array_deleter">checked_array_deleter</a>&lt; T &gt;() ).<a class="ref fn" href="detail/shared_count.hpp.html#_ZN5boost6detail12shared_count4swapERS1_" title='boost::detail::shared_count::swap' data-ref="_ZN5boost6detail12shared_count4swapERS1_">swap</a>( <span class='refarg'><a class="local col7 ref" href="#8227pn" title='pn' data-ref="8227pn">pn</a></span> );</td></tr>
+<tr><th id="286">286</th><td>}</td></tr>
+<tr><th id="287">287</th><td></td></tr>
+<tr><th id="288">288</th><td><b>template</b>&lt; <b>class</b> T, <span class="namespace">std::</span><a class="typedef" href="../../c++/4.8.2/x86_64-redhat-linux/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> N, <b>class</b> Y &gt; <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost6detail20sp_pointer_constructEPNS_10shared_ptrIAT0__T_EEPT1_RNS0_12shared_countE" title='boost::detail::sp_pointer_construct' data-ref="_ZN5boost6detail20sp_pointer_constructEPNS_10shared_ptrIAT0__T_EEPT1_RNS0_12shared_countE">sp_pointer_construct</dfn>( <span class="namespace">boost::</span><a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt; T[<a class="tu ref" href="#N" title='N' data-ref="N">N</a>] &gt; * <i>/*ppx*/</i>, Y * <dfn class="local col8 decl" id="8228p" title='p' data-type='Y *' data-ref="8228p">p</dfn>, <span class="namespace">boost::detail::</span><a class="type" href="detail/shared_count.hpp.html#boost::detail::shared_count" title='boost::detail::shared_count' data-ref="boost::detail::shared_count">shared_count</a> &amp; <dfn class="local col9 decl" id="8229pn" title='pn' data-type='boost::detail::shared_count &amp;' data-ref="8229pn">pn</dfn> )</td></tr>
+<tr><th id="289">289</th><td>{</td></tr>
+<tr><th id="290">290</th><td>    sp_assert_convertible&lt; Y[<a class="tu ref" href="#N" title='N' data-use='c' data-ref="N">N</a>], T[<a class="tu ref" href="#N" title='N' data-use='c' data-ref="N">N</a>] &gt;();</td></tr>
+<tr><th id="291">291</th><td>    <span class="namespace">boost::detail::</span><a class="type" href="detail/shared_count.hpp.html#boost::detail::shared_count" title='boost::detail::shared_count' data-ref="boost::detail::shared_count">shared_count</a>( <a class="local col8 ref" href="#8228p" title='p' data-ref="8228p">p</a>, <span class="namespace">boost::</span><a class="type" href="../checked_delete.hpp.html#boost::checked_array_deleter" title='boost::checked_array_deleter' data-ref="boost::checked_array_deleter">checked_array_deleter</a>&lt; T &gt;() ).<a class="ref fn" href="detail/shared_count.hpp.html#_ZN5boost6detail12shared_count4swapERS1_" title='boost::detail::shared_count::swap' data-ref="_ZN5boost6detail12shared_count4swapERS1_">swap</a>( <span class='refarg'><a class="local col9 ref" href="#8229pn" title='pn' data-ref="8229pn">pn</a></span> );</td></tr>
+<tr><th id="292">292</th><td>}</td></tr>
+<tr><th id="293">293</th><td></td></tr>
+<tr><th id="294">294</th><td><u>#<span data-ppcond="280">endif</span> // !defined( BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION )</u></td></tr>
+<tr><th id="295">295</th><td></td></tr>
+<tr><th id="296">296</th><td><i>// deleter constructor helper</i></td></tr>
+<tr><th id="297">297</th><td></td></tr>
+<tr><th id="298">298</th><td><b>template</b>&lt; <b>class</b> T, <b>class</b> Y &gt; <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost6detail20sp_deleter_constructEPNS_10shared_ptrIT_EEPT0_" title='boost::detail::sp_deleter_construct' data-ref="_ZN5boost6detail20sp_deleter_constructEPNS_10shared_ptrIT_EEPT0_">sp_deleter_construct</dfn>( <span class="namespace">boost::</span><a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt; T &gt; * <dfn class="local col0 decl" id="8230ppx" title='ppx' data-type='boost::shared_ptr&lt;T&gt; *' data-ref="8230ppx">ppx</dfn>, Y * <dfn class="local col1 decl" id="8231p" title='p' data-type='Y *' data-ref="8231p">p</dfn> )</td></tr>
+<tr><th id="299">299</th><td>{</td></tr>
+<tr><th id="300">300</th><td>    <span class="namespace">boost::detail::</span>sp_enable_shared_from_this( <a class="local col0 ref" href="#8230ppx" title='ppx' data-ref="8230ppx">ppx</a>, <a class="local col1 ref" href="#8231p" title='p' data-ref="8231p">p</a>, <a class="local col1 ref" href="#8231p" title='p' data-ref="8231p">p</a> );</td></tr>
+<tr><th id="301">301</th><td>}</td></tr>
+<tr><th id="302">302</th><td></td></tr>
+<tr><th id="303">303</th><td><u>#<span data-ppcond="303">if</span> !defined( <span class="macro" data-ref="_M/BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION">BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION</span> )</u></td></tr>
+<tr><th id="304">304</th><td></td></tr>
+<tr><th id="305">305</th><td><b>template</b>&lt; <b>class</b> T, <b>class</b> Y &gt; <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost6detail20sp_deleter_constructEPNS_10shared_ptrIA_T_EEPT0_" title='boost::detail::sp_deleter_construct' data-ref="_ZN5boost6detail20sp_deleter_constructEPNS_10shared_ptrIA_T_EEPT0_">sp_deleter_construct</dfn>( <span class="namespace">boost::</span><a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt; T[] &gt; * <i>/*ppx*/</i>, Y * <i>/*p*/</i> )</td></tr>
+<tr><th id="306">306</th><td>{</td></tr>
+<tr><th id="307">307</th><td>    sp_assert_convertible&lt; Y[], T[] &gt;();</td></tr>
+<tr><th id="308">308</th><td>}</td></tr>
+<tr><th id="309">309</th><td></td></tr>
+<tr><th id="310">310</th><td><b>template</b>&lt; <b>class</b> T, <span class="namespace">std::</span><a class="typedef" href="../../c++/4.8.2/x86_64-redhat-linux/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> N, <b>class</b> Y &gt; <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost6detail20sp_deleter_constructEPNS_10shared_ptrIAT0__T_EEPT1_" title='boost::detail::sp_deleter_construct' data-ref="_ZN5boost6detail20sp_deleter_constructEPNS_10shared_ptrIAT0__T_EEPT1_">sp_deleter_construct</dfn>( <span class="namespace">boost::</span><a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt; T[<a class="tu ref" href="#N" title='N' data-ref="N">N</a>] &gt; * <i>/*ppx*/</i>, Y * <i>/*p*/</i> )</td></tr>
+<tr><th id="311">311</th><td>{</td></tr>
+<tr><th id="312">312</th><td>    sp_assert_convertible&lt; Y[<a class="tu ref" href="#N" title='N' data-use='c' data-ref="N">N</a>], T[<a class="tu ref" href="#N" title='N' data-use='c' data-ref="N">N</a>] &gt;();</td></tr>
+<tr><th id="313">313</th><td>}</td></tr>
+<tr><th id="314">314</th><td></td></tr>
+<tr><th id="315">315</th><td><u>#<span data-ppcond="303">endif</span> // !defined( BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION )</u></td></tr>
+<tr><th id="316">316</th><td></td></tr>
+<tr><th id="317">317</th><td>} <i>// namespace detail</i></td></tr>
+<tr><th id="318">318</th><td></td></tr>
+<tr><th id="319">319</th><td></td></tr>
+<tr><th id="320">320</th><td><i>//</i></td></tr>
+<tr><th id="321">321</th><td><i>//  shared_ptr</i></td></tr>
+<tr><th id="322">322</th><td><i>//</i></td></tr>
+<tr><th id="323">323</th><td><i>//  An enhanced relative of scoped_ptr with reference counted copy semantics.</i></td></tr>
+<tr><th id="324">324</th><td><i>//  The object pointed to is deleted when the last shared_ptr pointing to it</i></td></tr>
+<tr><th id="325">325</th><td><i>//  is destroyed or reset.</i></td></tr>
+<tr><th id="326">326</th><td><i>//</i></td></tr>
+<tr><th id="327">327</th><td></td></tr>
+<tr><th id="328">328</th><td><b>template</b>&lt;<b>class</b> T&gt; <b>class</b> <dfn class="type def" id="boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</dfn></td></tr>
+<tr><th id="329">329</th><td>{</td></tr>
+<tr><th id="330">330</th><td><b>private</b>:</td></tr>
+<tr><th id="331">331</th><td></td></tr>
+<tr><th id="332">332</th><td>    <i>// Borland 5.5.1 specific workaround</i></td></tr>
+<tr><th id="333">333</th><td>    <b>typedef</b> <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <dfn class="typedef" id="boost::shared_ptr::this_type" title='boost::shared_ptr::this_type' data-type='shared_ptr&lt;T&gt;' data-ref="boost::shared_ptr::this_type">this_type</dfn>;</td></tr>
+<tr><th id="334">334</th><td></td></tr>
+<tr><th id="335">335</th><td><b>public</b>:</td></tr>
+<tr><th id="336">336</th><td></td></tr>
+<tr><th id="337">337</th><td>    <b>typedef</b> <b>typename</b> <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::sp_element" title='boost::detail::sp_element' data-ref="boost::detail::sp_element">sp_element</a>&lt; T &gt;::type <dfn class="typedef" id="boost::shared_ptr::element_type" title='boost::shared_ptr::element_type' data-type='typename boost::detail::sp_element&lt;T&gt;::type' data-ref="boost::shared_ptr::element_type">element_type</dfn>;</td></tr>
+<tr><th id="338">338</th><td></td></tr>
+<tr><th id="339">339</th><td>    <dfn class="decl def fn" id="_ZN5boost10shared_ptrC1Ev" title='boost::shared_ptr::shared_ptr&lt;T&gt;' data-ref="_ZN5boost10shared_ptrC1Ev">shared_ptr</dfn>() <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a> : <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>( <var>0</var> ), <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a><a class="ref fn" href="detail/shared_count.hpp.html#_ZN5boost6detail12shared_countC1Ev" title='boost::detail::shared_count::shared_count' data-ref="_ZN5boost6detail12shared_countC1Ev">(</a>) <i>// never throws in 1.30+</i></td></tr>
+<tr><th id="340">340</th><td>    {</td></tr>
+<tr><th id="341">341</th><td>    }</td></tr>
+<tr><th id="342">342</th><td></td></tr>
+<tr><th id="343">343</th><td><u>#<span data-ppcond="343">if</span> !defined( <span class="macro" data-ref="_M/BOOST_NO_CXX11_NULLPTR">BOOST_NO_CXX11_NULLPTR</span> )</u></td></tr>
+<tr><th id="344">344</th><td></td></tr>
+<tr><th id="345">345</th><td>    <dfn class="decl def fn" id="_ZN5boost10shared_ptrC1EDn" title='boost::shared_ptr::shared_ptr&lt;T&gt;' data-ref="_ZN5boost10shared_ptrC1EDn">shared_ptr</dfn>( <span class="namespace">boost::detail::</span><a class="typedef" href="detail/sp_nullptr_t.hpp.html#boost::detail::sp_nullptr_t" title='boost::detail::sp_nullptr_t' data-type='decltype(nullptr)' data-ref="boost::detail::sp_nullptr_t">sp_nullptr_t</a> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a> : <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>( <var>0</var> ), <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a><a class="ref fn" href="detail/shared_count.hpp.html#_ZN5boost6detail12shared_countC1Ev" title='boost::detail::shared_count::shared_count' data-ref="_ZN5boost6detail12shared_countC1Ev">(</a>) <i>// never throws</i></td></tr>
+<tr><th id="346">346</th><td>    {</td></tr>
+<tr><th id="347">347</th><td>    }</td></tr>
+<tr><th id="348">348</th><td></td></tr>
+<tr><th id="349">349</th><td><u>#<span data-ppcond="343">endif</span></u></td></tr>
+<tr><th id="350">350</th><td></td></tr>
+<tr><th id="351">351</th><td>    <b>template</b>&lt;<b>class</b> Y&gt;</td></tr>
+<tr><th id="352">352</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZN5boost10shared_ptrC1EPT_" title='boost::shared_ptr::shared_ptr&lt;T&gt;' data-ref="_ZN5boost10shared_ptrC1EPT_">shared_ptr</dfn>( Y * <dfn class="local col2 decl" id="8232p" title='p' data-type='Y *' data-ref="8232p">p</dfn> ): <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>( <a class="local col2 ref" href="#8232p" title='p' data-ref="8232p">p</a> ), <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a><a class="ref fn" href="detail/shared_count.hpp.html#_ZN5boost6detail12shared_countC1Ev" title='boost::detail::shared_count::shared_count' data-ref="_ZN5boost6detail12shared_countC1Ev">(</a>) <i>// Y must be complete</i></td></tr>
+<tr><th id="353">353</th><td>    {</td></tr>
+<tr><th id="354">354</th><td>        <span class="namespace">boost::detail::</span>sp_pointer_construct( <b>this</b>, <a class="local col2 ref" href="#8232p" title='p' data-ref="8232p">p</a>, <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a> );</td></tr>
+<tr><th id="355">355</th><td>    }</td></tr>
+<tr><th id="356">356</th><td></td></tr>
+<tr><th id="357">357</th><td>    <i>//</i></td></tr>
+<tr><th id="358">358</th><td><i>    // Requirements: D's copy constructor must not throw</i></td></tr>
+<tr><th id="359">359</th><td><i>    //</i></td></tr>
+<tr><th id="360">360</th><td><i>    // shared_ptr will release p by calling d(p)</i></td></tr>
+<tr><th id="361">361</th><td><i>    //</i></td></tr>
+<tr><th id="362">362</th><td></td></tr>
+<tr><th id="363">363</th><td>    <b>template</b>&lt;<b>class</b> Y, <b>class</b> D&gt; <dfn class="decl def fn" id="_ZN5boost10shared_ptrC1EPT_T0_" title='boost::shared_ptr::shared_ptr&lt;T&gt;' data-ref="_ZN5boost10shared_ptrC1EPT_T0_">shared_ptr</dfn>( Y * <dfn class="local col3 decl" id="8233p" title='p' data-type='Y *' data-ref="8233p">p</dfn>, D <dfn class="local col4 decl" id="8234d" title='d' data-type='D' data-ref="8234d">d</dfn> ): <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>( <a class="local col3 ref" href="#8233p" title='p' data-ref="8233p">p</a> ), <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a>( <a class="local col3 ref" href="#8233p" title='p' data-ref="8233p">p</a>, <a class="local col4 ref" href="#8234d" title='d' data-ref="8234d">d</a> )</td></tr>
+<tr><th id="364">364</th><td>    {</td></tr>
+<tr><th id="365">365</th><td>        <span class="namespace">boost::detail::</span>sp_deleter_construct( <b>this</b>, <a class="local col3 ref" href="#8233p" title='p' data-ref="8233p">p</a> );</td></tr>
+<tr><th id="366">366</th><td>    }</td></tr>
+<tr><th id="367">367</th><td></td></tr>
+<tr><th id="368">368</th><td><u>#<span data-ppcond="368">if</span> !defined( <span class="macro" data-ref="_M/BOOST_NO_CXX11_NULLPTR">BOOST_NO_CXX11_NULLPTR</span> )</u></td></tr>
+<tr><th id="369">369</th><td></td></tr>
+<tr><th id="370">370</th><td>    <b>template</b>&lt;<b>class</b> D&gt; <dfn class="decl def fn" id="_ZN5boost10shared_ptrC1EDnT_" title='boost::shared_ptr::shared_ptr&lt;T&gt;' data-ref="_ZN5boost10shared_ptrC1EDnT_">shared_ptr</dfn>( <span class="namespace">boost::detail::</span><a class="typedef" href="detail/sp_nullptr_t.hpp.html#boost::detail::sp_nullptr_t" title='boost::detail::sp_nullptr_t' data-type='decltype(nullptr)' data-ref="boost::detail::sp_nullptr_t">sp_nullptr_t</a> <dfn class="local col5 decl" id="8235p" title='p' data-type='boost::detail::sp_nullptr_t' data-ref="8235p">p</dfn>, D <dfn class="local col6 decl" id="8236d" title='d' data-type='D' data-ref="8236d">d</dfn> ): <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>( <a class="local col5 ref" href="#8235p" title='p' data-ref="8235p">p</a> ), <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a>( <a class="local col5 ref" href="#8235p" title='p' data-ref="8235p">p</a>, <a class="local col6 ref" href="#8236d" title='d' data-ref="8236d">d</a> )</td></tr>
+<tr><th id="371">371</th><td>    {</td></tr>
+<tr><th id="372">372</th><td>    }</td></tr>
+<tr><th id="373">373</th><td></td></tr>
+<tr><th id="374">374</th><td><u>#<span data-ppcond="368">endif</span></u></td></tr>
+<tr><th id="375">375</th><td></td></tr>
+<tr><th id="376">376</th><td>    <i>// As above, but with allocator. A's copy constructor shall not throw.</i></td></tr>
+<tr><th id="377">377</th><td></td></tr>
+<tr><th id="378">378</th><td>    <b>template</b>&lt;<b>class</b> Y, <b>class</b> D, <b>class</b> A&gt; <dfn class="decl def fn" id="_ZN5boost10shared_ptrC1EPT_T0_T1_" title='boost::shared_ptr::shared_ptr&lt;T&gt;' data-ref="_ZN5boost10shared_ptrC1EPT_T0_T1_">shared_ptr</dfn>( Y * <dfn class="local col7 decl" id="8237p" title='p' data-type='Y *' data-ref="8237p">p</dfn>, D <dfn class="local col8 decl" id="8238d" title='d' data-type='D' data-ref="8238d">d</dfn>, A <dfn class="local col9 decl" id="8239a" title='a' data-type='A' data-ref="8239a">a</dfn> ): <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>( <a class="local col7 ref" href="#8237p" title='p' data-ref="8237p">p</a> ), <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a>( <a class="local col7 ref" href="#8237p" title='p' data-ref="8237p">p</a>, <a class="local col8 ref" href="#8238d" title='d' data-ref="8238d">d</a>, <a class="local col9 ref" href="#8239a" title='a' data-ref="8239a">a</a> )</td></tr>
+<tr><th id="379">379</th><td>    {</td></tr>
+<tr><th id="380">380</th><td>        <span class="namespace">boost::detail::</span>sp_deleter_construct( <b>this</b>, <a class="local col7 ref" href="#8237p" title='p' data-ref="8237p">p</a> );</td></tr>
+<tr><th id="381">381</th><td>    }</td></tr>
+<tr><th id="382">382</th><td></td></tr>
+<tr><th id="383">383</th><td><u>#<span data-ppcond="383">if</span> !defined( <span class="macro" data-ref="_M/BOOST_NO_CXX11_NULLPTR">BOOST_NO_CXX11_NULLPTR</span> )</u></td></tr>
+<tr><th id="384">384</th><td></td></tr>
+<tr><th id="385">385</th><td>    <b>template</b>&lt;<b>class</b> D, <b>class</b> A&gt; <dfn class="decl def fn" id="_ZN5boost10shared_ptrC1EDnT_T0_" title='boost::shared_ptr::shared_ptr&lt;T&gt;' data-ref="_ZN5boost10shared_ptrC1EDnT_T0_">shared_ptr</dfn>( <span class="namespace">boost::detail::</span><a class="typedef" href="detail/sp_nullptr_t.hpp.html#boost::detail::sp_nullptr_t" title='boost::detail::sp_nullptr_t' data-type='decltype(nullptr)' data-ref="boost::detail::sp_nullptr_t">sp_nullptr_t</a> <dfn class="local col0 decl" id="8240p" title='p' data-type='boost::detail::sp_nullptr_t' data-ref="8240p">p</dfn>, D <dfn class="local col1 decl" id="8241d" title='d' data-type='D' data-ref="8241d">d</dfn>, A <dfn class="local col2 decl" id="8242a" title='a' data-type='A' data-ref="8242a">a</dfn> ): <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>( <a class="local col0 ref" href="#8240p" title='p' data-ref="8240p">p</a> ), <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a>( <a class="local col0 ref" href="#8240p" title='p' data-ref="8240p">p</a>, <a class="local col1 ref" href="#8241d" title='d' data-ref="8241d">d</a>, <a class="local col2 ref" href="#8242a" title='a' data-ref="8242a">a</a> )</td></tr>
+<tr><th id="386">386</th><td>    {</td></tr>
+<tr><th id="387">387</th><td>    }</td></tr>
+<tr><th id="388">388</th><td></td></tr>
+<tr><th id="389">389</th><td><u>#<span data-ppcond="383">endif</span></u></td></tr>
+<tr><th id="390">390</th><td></td></tr>
+<tr><th id="391">391</th><td><i>//  generated copy constructor, destructor are fine...</i></td></tr>
+<tr><th id="392">392</th><td></td></tr>
+<tr><th id="393">393</th><td><u>#<span data-ppcond="393">if</span> !defined( <span class="macro" data-ref="_M/BOOST_NO_CXX11_RVALUE_REFERENCES">BOOST_NO_CXX11_RVALUE_REFERENCES</span> )</u></td></tr>
+<tr><th id="394">394</th><td></td></tr>
+<tr><th id="395">395</th><td><i>// ... except in C++0x, move disables the implicit copy</i></td></tr>
+<tr><th id="396">396</th><td></td></tr>
+<tr><th id="397">397</th><td>    <dfn class="decl def fn" id="_ZN5boost10shared_ptrC1ERKNS_10shared_ptrIT_EE" title='boost::shared_ptr::shared_ptr&lt;T&gt;' data-ref="_ZN5boost10shared_ptrC1ERKNS_10shared_ptrIT_EE">shared_ptr</dfn>( shared_ptr <em>const</em> &amp; <dfn class="local col3 decl" id="8243r" title='r' data-type='const shared_ptr&lt;T&gt; &amp;' data-ref="8243r">r</dfn> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a> : <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>( <a class="local col3 ref" href="#8243r" title='r' data-ref="8243r">r</a>.px ), <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a>( <a class="local col3 ref" href="#8243r" title='r' data-ref="8243r">r</a>.pn )</td></tr>
+<tr><th id="398">398</th><td>    {</td></tr>
+<tr><th id="399">399</th><td>    }</td></tr>
+<tr><th id="400">400</th><td></td></tr>
+<tr><th id="401">401</th><td><u>#<span data-ppcond="393">endif</span></u></td></tr>
+<tr><th id="402">402</th><td></td></tr>
+<tr><th id="403">403</th><td>    <b>template</b>&lt;<b>class</b> Y&gt;</td></tr>
+<tr><th id="404">404</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZN5boost10shared_ptrC1ERKNS_8weak_ptrIT_EE" title='boost::shared_ptr::shared_ptr&lt;T&gt;' data-ref="_ZN5boost10shared_ptrC1ERKNS_8weak_ptrIT_EE">shared_ptr</dfn>( <a class="type" href="#boost::weak_ptr" title='boost::weak_ptr' data-ref="boost::weak_ptr">weak_ptr</a>&lt;Y&gt; <em>const</em> &amp; <dfn class="local col4 decl" id="8244r" title='r' data-type='const weak_ptr&lt;Y&gt; &amp;' data-ref="8244r">r</dfn> ): <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a>( <a class="local col4 ref" href="#8244r" title='r' data-ref="8244r">r</a>.pn ) <i>// may throw</i></td></tr>
+<tr><th id="405">405</th><td>    {</td></tr>
+<tr><th id="406">406</th><td>        <span class="namespace">boost::detail::</span>sp_assert_convertible&lt; Y, T &gt;();</td></tr>
+<tr><th id="407">407</th><td></td></tr>
+<tr><th id="408">408</th><td>        <i>// it is now safe to copy r.px, as pn(r.pn) did not throw</i></td></tr>
+<tr><th id="409">409</th><td>        <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a> = <a class="local col4 ref" href="#8244r" title='r' data-ref="8244r">r</a>.px;</td></tr>
+<tr><th id="410">410</th><td>    }</td></tr>
+<tr><th id="411">411</th><td></td></tr>
+<tr><th id="412">412</th><td>    <b>template</b>&lt;<b>class</b> Y&gt;</td></tr>
+<tr><th id="413">413</th><td>    <dfn class="decl def fn" id="_ZN5boost10shared_ptrC1ERKNS_8weak_ptrIT_EENS_6detail14sp_nothrow_tagE" title='boost::shared_ptr::shared_ptr&lt;T&gt;' data-ref="_ZN5boost10shared_ptrC1ERKNS_8weak_ptrIT_EENS_6detail14sp_nothrow_tagE">shared_ptr</dfn>( <a class="type" href="#boost::weak_ptr" title='boost::weak_ptr' data-ref="boost::weak_ptr">weak_ptr</a>&lt;Y&gt; <em>const</em> &amp; <dfn class="local col5 decl" id="8245r" title='r' data-type='const weak_ptr&lt;Y&gt; &amp;' data-ref="8245r">r</dfn>, <span class="namespace">boost::detail::</span><a class="type" href="detail/shared_count.hpp.html#boost::detail::sp_nothrow_tag" title='boost::detail::sp_nothrow_tag' data-ref="boost::detail::sp_nothrow_tag">sp_nothrow_tag</a> )</td></tr>
+<tr><th id="414">414</th><td>    <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a> : <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>( <var>0</var> ), <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a>( <a class="local col5 ref" href="#8245r" title='r' data-ref="8245r">r</a>.pn, <span class="namespace">boost::detail::</span><a class="type" href="detail/shared_count.hpp.html#boost::detail::sp_nothrow_tag" title='boost::detail::sp_nothrow_tag' data-ref="boost::detail::sp_nothrow_tag">sp_nothrow_tag</a><a class="ref fn" href="detail/shared_count.hpp.html#60" title='boost::detail::sp_nothrow_tag::sp_nothrow_tag' data-ref="_ZN5boost6detail14sp_nothrow_tagC1Ev">(</a>) )</td></tr>
+<tr><th id="415">415</th><td>    {</td></tr>
+<tr><th id="416">416</th><td>        <b>if</b>( !<a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a>.<a class="ref fn" href="detail/shared_count.hpp.html#_ZNK5boost6detail12shared_count5emptyEv" title='boost::detail::shared_count::empty' data-ref="_ZNK5boost6detail12shared_count5emptyEv">empty</a>() )</td></tr>
+<tr><th id="417">417</th><td>        {</td></tr>
+<tr><th id="418">418</th><td>            <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a> = <a class="local col5 ref" href="#8245r" title='r' data-ref="8245r">r</a>.px;</td></tr>
+<tr><th id="419">419</th><td>        }</td></tr>
+<tr><th id="420">420</th><td>    }</td></tr>
+<tr><th id="421">421</th><td></td></tr>
+<tr><th id="422">422</th><td>    <b>template</b>&lt;<b>class</b> Y&gt;</td></tr>
+<tr><th id="423">423</th><td><u>#<span data-ppcond="423">if</span> !defined( <span class="macro" data-ref="_M/BOOST_SP_NO_SP_CONVERTIBLE">BOOST_SP_NO_SP_CONVERTIBLE</span> )</u></td></tr>
+<tr><th id="424">424</th><td></td></tr>
+<tr><th id="425">425</th><td>    <dfn class="decl def fn" id="_ZN5boost10shared_ptrC1ERKNS_10shared_ptrIT_EENS_6detail24sp_enable_if_convertibleIS2_T_E4typeE" title='boost::shared_ptr::shared_ptr&lt;T&gt;' data-ref="_ZN5boost10shared_ptrC1ERKNS_10shared_ptrIT_EENS_6detail24sp_enable_if_convertibleIS2_T_E4typeE">shared_ptr</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;Y&gt; <em>const</em> &amp; <dfn class="local col6 decl" id="8246r" title='r' data-type='const shared_ptr&lt;Y&gt; &amp;' data-ref="8246r">r</dfn>, <b>typename</b> <span class="namespace">boost::detail::</span><a class="type" href="detail/sp_convertible.hpp.html#boost::detail::sp_enable_if_convertible" title='boost::detail::sp_enable_if_convertible' data-ref="boost::detail::sp_enable_if_convertible">sp_enable_if_convertible</a>&lt;Y,T&gt;::type = <span class="namespace">boost::detail::</span><a class="type" href="detail/sp_convertible.hpp.html#boost::detail::sp_empty" title='boost::detail::sp_empty' data-ref="boost::detail::sp_empty">sp_empty</a><a class="ref fn" href="detail/sp_convertible.hpp.html#66" title='boost::detail::sp_empty::sp_empty' data-ref="_ZN5boost6detail8sp_emptyC1Ev">(</a>) )</td></tr>
+<tr><th id="426">426</th><td></td></tr>
+<tr><th id="427">427</th><td><u>#<span data-ppcond="423">else</span></u></td></tr>
+<tr><th id="428">428</th><td></td></tr>
+<tr><th id="429">429</th><td>    shared_ptr( shared_ptr&lt;Y&gt; <em>const</em> &amp; r )</td></tr>
+<tr><th id="430">430</th><td></td></tr>
+<tr><th id="431">431</th><td><u>#<span data-ppcond="423">endif</span></u></td></tr>
+<tr><th id="432">432</th><td>    <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a> : <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>( <a class="local col6 ref" href="#8246r" title='r' data-ref="8246r">r</a>.px ), <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a>( <a class="local col6 ref" href="#8246r" title='r' data-ref="8246r">r</a>.pn )</td></tr>
+<tr><th id="433">433</th><td>    {</td></tr>
+<tr><th id="434">434</th><td>        <span class="namespace">boost::detail::</span>sp_assert_convertible&lt; Y, T &gt;();</td></tr>
+<tr><th id="435">435</th><td>    }</td></tr>
+<tr><th id="436">436</th><td></td></tr>
+<tr><th id="437">437</th><td>    <i>// aliasing</i></td></tr>
+<tr><th id="438">438</th><td>    <b>template</b>&lt; <b>class</b> Y &gt;</td></tr>
+<tr><th id="439">439</th><td>    <dfn class="decl def fn" id="_ZN5boost10shared_ptrC1ERKNS_10shared_ptrIT_EEPNS_6detail10sp_elementIT_E4typeE" title='boost::shared_ptr::shared_ptr&lt;T&gt;' data-ref="_ZN5boost10shared_ptrC1ERKNS_10shared_ptrIT_EEPNS_6detail10sp_elementIT_E4typeE">shared_ptr</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;Y&gt; <em>const</em> &amp; <dfn class="local col7 decl" id="8247r" title='r' data-type='const shared_ptr&lt;Y&gt; &amp;' data-ref="8247r">r</dfn>, <a class="typedef" href="#boost::shared_ptr::element_type" title='boost::shared_ptr::element_type' data-type='typename boost::detail::sp_element&lt;T&gt;::type' data-ref="boost::shared_ptr::element_type">element_type</a> * <dfn class="local col8 decl" id="8248p" title='p' data-type='boost::shared_ptr::element_type *' data-ref="8248p">p</dfn> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a> : <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>( <a class="local col8 ref" href="#8248p" title='p' data-ref="8248p">p</a> ), <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a>( <a class="local col7 ref" href="#8247r" title='r' data-ref="8247r">r</a>.pn )</td></tr>
+<tr><th id="440">440</th><td>    {</td></tr>
+<tr><th id="441">441</th><td>    }</td></tr>
+<tr><th id="442">442</th><td></td></tr>
+<tr><th id="443">443</th><td><u>#<span data-ppcond="443">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_AUTO_PTR">BOOST_NO_AUTO_PTR</span></u></td></tr>
+<tr><th id="444">444</th><td></td></tr>
+<tr><th id="445">445</th><td>    <b>template</b>&lt;<b>class</b> Y&gt;</td></tr>
+<tr><th id="446">446</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZN5boost10shared_ptrC1ERSt8auto_ptrIT_E" title='boost::shared_ptr::shared_ptr&lt;T&gt;' data-ref="_ZN5boost10shared_ptrC1ERSt8auto_ptrIT_E">shared_ptr</dfn>( <span class="namespace">std::</span><a class="type" href="../../c++/4.8.2/bits/unique_ptr.h.html#std::auto_ptr" title='std::auto_ptr' data-ref="std::auto_ptr">auto_ptr</a>&lt;Y&gt; &amp; <dfn class="local col9 decl" id="8249r" title='r' data-type='std::auto_ptr&lt;Y&gt; &amp;' data-ref="8249r">r</dfn> ): <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>(<a class="local col9 ref" href="#8249r" title='r' data-ref="8249r">r</a>.get()), <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a><a class="ref fn" href="detail/shared_count.hpp.html#_ZN5boost6detail12shared_countC1Ev" title='boost::detail::shared_count::shared_count' data-ref="_ZN5boost6detail12shared_countC1Ev">(</a>)</td></tr>
+<tr><th id="447">447</th><td>    {</td></tr>
+<tr><th id="448">448</th><td>        <span class="namespace">boost::detail::</span>sp_assert_convertible&lt; Y, T &gt;();</td></tr>
+<tr><th id="449">449</th><td></td></tr>
+<tr><th id="450">450</th><td>        Y * <dfn class="local col0 decl" id="8250tmp" title='tmp' data-type='Y *' data-ref="8250tmp">tmp</dfn> = <a class="local col9 ref" href="#8249r" title='r' data-ref="8249r">r</a>.get();</td></tr>
+<tr><th id="451">451</th><td>        <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a> = <span class="namespace">boost::detail::</span><a class="type" href="detail/shared_count.hpp.html#boost::detail::shared_count" title='boost::detail::shared_count' data-ref="boost::detail::shared_count">shared_count</a>( <a class="local col9 ref" href="#8249r" title='r' data-ref="8249r">r</a> );</td></tr>
+<tr><th id="452">452</th><td></td></tr>
+<tr><th id="453">453</th><td>        <span class="namespace">boost::detail::</span>sp_deleter_construct( <b>this</b>, <a class="local col0 ref" href="#8250tmp" title='tmp' data-ref="8250tmp">tmp</a> );</td></tr>
+<tr><th id="454">454</th><td>    }</td></tr>
+<tr><th id="455">455</th><td></td></tr>
+<tr><th id="456">456</th><td><u>#<span data-ppcond="456">if</span> !defined( <span class="macro" data-ref="_M/BOOST_NO_CXX11_RVALUE_REFERENCES">BOOST_NO_CXX11_RVALUE_REFERENCES</span> )</u></td></tr>
+<tr><th id="457">457</th><td></td></tr>
+<tr><th id="458">458</th><td>    <b>template</b>&lt;<b>class</b> Y&gt;</td></tr>
+<tr><th id="459">459</th><td>    <dfn class="decl def fn" id="_ZN5boost10shared_ptrC1EOSt8auto_ptrIT_E" title='boost::shared_ptr::shared_ptr&lt;T&gt;' data-ref="_ZN5boost10shared_ptrC1EOSt8auto_ptrIT_E">shared_ptr</dfn>( <span class="namespace">std::</span><a class="type" href="../../c++/4.8.2/bits/unique_ptr.h.html#std::auto_ptr" title='std::auto_ptr' data-ref="std::auto_ptr">auto_ptr</a>&lt;Y&gt; &amp;&amp; <dfn class="local col1 decl" id="8251r" title='r' data-type='std::auto_ptr&lt;Y&gt; &amp;&amp;' data-ref="8251r">r</dfn> ): <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>(<a class="local col1 ref" href="#8251r" title='r' data-ref="8251r">r</a>.get()), <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a><a class="ref fn" href="detail/shared_count.hpp.html#_ZN5boost6detail12shared_countC1Ev" title='boost::detail::shared_count::shared_count' data-ref="_ZN5boost6detail12shared_countC1Ev">(</a>)</td></tr>
+<tr><th id="460">460</th><td>    {</td></tr>
+<tr><th id="461">461</th><td>        <span class="namespace">boost::detail::</span>sp_assert_convertible&lt; Y, T &gt;();</td></tr>
+<tr><th id="462">462</th><td></td></tr>
+<tr><th id="463">463</th><td>        Y * <dfn class="local col2 decl" id="8252tmp" title='tmp' data-type='Y *' data-ref="8252tmp">tmp</dfn> = <a class="local col1 ref" href="#8251r" title='r' data-ref="8251r">r</a>.get();</td></tr>
+<tr><th id="464">464</th><td>        <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a> = <span class="namespace">boost::detail::</span><a class="type" href="detail/shared_count.hpp.html#boost::detail::shared_count" title='boost::detail::shared_count' data-ref="boost::detail::shared_count">shared_count</a>( <a class="local col1 ref" href="#8251r" title='r' data-ref="8251r">r</a> );</td></tr>
+<tr><th id="465">465</th><td></td></tr>
+<tr><th id="466">466</th><td>        <span class="namespace">boost::detail::</span>sp_deleter_construct( <b>this</b>, <a class="local col2 ref" href="#8252tmp" title='tmp' data-ref="8252tmp">tmp</a> );</td></tr>
+<tr><th id="467">467</th><td>    }</td></tr>
+<tr><th id="468">468</th><td></td></tr>
+<tr><th id="469">469</th><td><u>#<span data-ppcond="456">elif</span> !defined( BOOST_NO_SFINAE ) &amp;&amp; !defined( BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION )</u></td></tr>
+<tr><th id="470">470</th><td></td></tr>
+<tr><th id="471">471</th><td>    <b>template</b>&lt;<b>class</b> Ap&gt;</td></tr>
+<tr><th id="472">472</th><td>    <b>explicit</b> shared_ptr( Ap r, <b>typename</b> boost::detail::sp_enable_if_auto_ptr&lt;Ap, <em>int</em>&gt;::type = <var>0</var> ): px( r.get() ), pn()</td></tr>
+<tr><th id="473">473</th><td>    {</td></tr>
+<tr><th id="474">474</th><td>        <b>typedef</b> <b>typename</b> Ap::element_type Y;</td></tr>
+<tr><th id="475">475</th><td></td></tr>
+<tr><th id="476">476</th><td>        boost::detail::sp_assert_convertible&lt; Y, T &gt;();</td></tr>
+<tr><th id="477">477</th><td></td></tr>
+<tr><th id="478">478</th><td>        Y * tmp = r.get();</td></tr>
+<tr><th id="479">479</th><td>        pn = boost::detail::shared_count( r );</td></tr>
+<tr><th id="480">480</th><td></td></tr>
+<tr><th id="481">481</th><td>        boost::detail::sp_deleter_construct( <b>this</b>, tmp );</td></tr>
+<tr><th id="482">482</th><td>    }</td></tr>
+<tr><th id="483">483</th><td></td></tr>
+<tr><th id="484">484</th><td><u>#<span data-ppcond="456">endif</span> // BOOST_NO_SFINAE, BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION</u></td></tr>
+<tr><th id="485">485</th><td></td></tr>
+<tr><th id="486">486</th><td><u>#<span data-ppcond="443">endif</span> // BOOST_NO_AUTO_PTR</u></td></tr>
+<tr><th id="487">487</th><td></td></tr>
+<tr><th id="488">488</th><td><u>#<span data-ppcond="488">if</span> !defined( <a class="macro" href="../config/stdlib/libstdcpp3.hpp.html#125" data-ref="_M/BOOST_NO_CXX11_SMART_PTR">BOOST_NO_CXX11_SMART_PTR</a> )</u></td></tr>
+<tr><th id="489">489</th><td></td></tr>
+<tr><th id="490">490</th><td>    <b>template</b>&lt; <b>class</b> Y, <b>class</b> D &gt;</td></tr>
+<tr><th id="491">491</th><td>    shared_ptr( std::unique_ptr&lt; Y, D &gt; &amp;&amp; r ): px( r.get() ), pn()</td></tr>
+<tr><th id="492">492</th><td>    {</td></tr>
+<tr><th id="493">493</th><td>        boost::detail::sp_assert_convertible&lt; Y, T &gt;();</td></tr>
+<tr><th id="494">494</th><td></td></tr>
+<tr><th id="495">495</th><td>        <b>typename</b> std::unique_ptr&lt; Y, D &gt;::pointer tmp = r.get();</td></tr>
+<tr><th id="496">496</th><td>        pn = boost::detail::shared_count( r );</td></tr>
+<tr><th id="497">497</th><td></td></tr>
+<tr><th id="498">498</th><td>        boost::detail::sp_deleter_construct( <b>this</b>, tmp );</td></tr>
+<tr><th id="499">499</th><td>    }</td></tr>
+<tr><th id="500">500</th><td></td></tr>
+<tr><th id="501">501</th><td><u>#<span data-ppcond="488">endif</span></u></td></tr>
+<tr><th id="502">502</th><td></td></tr>
+<tr><th id="503">503</th><td>    <i>// assignment</i></td></tr>
+<tr><th id="504">504</th><td></td></tr>
+<tr><th id="505">505</th><td>    shared_ptr &amp; <dfn class="decl def fn" id="_ZN5boost10shared_ptraSERKNS_10shared_ptrIT_EE" title='boost::shared_ptr::operator=' data-ref="_ZN5boost10shared_ptraSERKNS_10shared_ptrIT_EE"><b>operator</b>=</dfn>( shared_ptr <em>const</em> &amp; <dfn class="local col3 decl" id="8253r" title='r' data-type='const shared_ptr&lt;T&gt; &amp;' data-ref="8253r">r</dfn> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="506">506</th><td>    {</td></tr>
+<tr><th id="507">507</th><td>        <a class="typedef" href="#boost::shared_ptr::this_type" title='boost::shared_ptr::this_type' data-type='shared_ptr&lt;T&gt;' data-ref="boost::shared_ptr::this_type">this_type</a>(<a class="local col3 ref" href="#8253r" title='r' data-ref="8253r">r</a>).swap(*<b>this</b>);</td></tr>
+<tr><th id="508">508</th><td>        <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="509">509</th><td>    }</td></tr>
+<tr><th id="510">510</th><td></td></tr>
+<tr><th id="511">511</th><td><u>#<span data-ppcond="511">if</span> !defined(<span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span>) || (BOOST_MSVC &gt;= 1400)</u></td></tr>
+<tr><th id="512">512</th><td></td></tr>
+<tr><th id="513">513</th><td>    <b>template</b>&lt;<b>class</b> Y&gt;</td></tr>
+<tr><th id="514">514</th><td>    shared_ptr &amp; <dfn class="decl def fn" id="_ZN5boost10shared_ptraSERKNS_10shared_ptrIT_EE" title='boost::shared_ptr::operator=' data-ref="_ZN5boost10shared_ptraSERKNS_10shared_ptrIT_EE"><b>operator</b>=</dfn>(<a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;Y&gt; <em>const</em> &amp; <dfn class="local col4 decl" id="8254r" title='r' data-type='const shared_ptr&lt;Y&gt; &amp;' data-ref="8254r">r</dfn>) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="515">515</th><td>    {</td></tr>
+<tr><th id="516">516</th><td>        <a class="typedef" href="#boost::shared_ptr::this_type" title='boost::shared_ptr::this_type' data-type='shared_ptr&lt;T&gt;' data-ref="boost::shared_ptr::this_type">this_type</a>(<a class="local col4 ref" href="#8254r" title='r' data-ref="8254r">r</a>).swap(*<b>this</b>);</td></tr>
+<tr><th id="517">517</th><td>        <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="518">518</th><td>    }</td></tr>
+<tr><th id="519">519</th><td></td></tr>
+<tr><th id="520">520</th><td><u>#<span data-ppcond="511">endif</span></u></td></tr>
+<tr><th id="521">521</th><td></td></tr>
+<tr><th id="522">522</th><td><u>#<span data-ppcond="522">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_AUTO_PTR">BOOST_NO_AUTO_PTR</span></u></td></tr>
+<tr><th id="523">523</th><td></td></tr>
+<tr><th id="524">524</th><td>    <b>template</b>&lt;<b>class</b> Y&gt;</td></tr>
+<tr><th id="525">525</th><td>    shared_ptr &amp; <dfn class="decl def fn" id="_ZN5boost10shared_ptraSERSt8auto_ptrIT_E" title='boost::shared_ptr::operator=' data-ref="_ZN5boost10shared_ptraSERSt8auto_ptrIT_E"><b>operator</b>=</dfn>( <span class="namespace">std::</span><a class="type" href="../../c++/4.8.2/bits/unique_ptr.h.html#std::auto_ptr" title='std::auto_ptr' data-ref="std::auto_ptr">auto_ptr</a>&lt;Y&gt; &amp; <dfn class="local col5 decl" id="8255r" title='r' data-type='std::auto_ptr&lt;Y&gt; &amp;' data-ref="8255r">r</dfn> )</td></tr>
+<tr><th id="526">526</th><td>    {</td></tr>
+<tr><th id="527">527</th><td>        <a class="typedef" href="#boost::shared_ptr::this_type" title='boost::shared_ptr::this_type' data-type='shared_ptr&lt;T&gt;' data-ref="boost::shared_ptr::this_type">this_type</a>( <a class="local col5 ref" href="#8255r" title='r' data-ref="8255r">r</a> ).swap( *<b>this</b> );</td></tr>
+<tr><th id="528">528</th><td>        <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="529">529</th><td>    }</td></tr>
+<tr><th id="530">530</th><td></td></tr>
+<tr><th id="531">531</th><td><u>#<span data-ppcond="531">if</span> !defined( <span class="macro" data-ref="_M/BOOST_NO_CXX11_RVALUE_REFERENCES">BOOST_NO_CXX11_RVALUE_REFERENCES</span> )</u></td></tr>
+<tr><th id="532">532</th><td></td></tr>
+<tr><th id="533">533</th><td>    <b>template</b>&lt;<b>class</b> Y&gt;</td></tr>
+<tr><th id="534">534</th><td>    shared_ptr &amp; <dfn class="decl def fn" id="_ZN5boost10shared_ptraSEOSt8auto_ptrIT_E" title='boost::shared_ptr::operator=' data-ref="_ZN5boost10shared_ptraSEOSt8auto_ptrIT_E"><b>operator</b>=</dfn>( <span class="namespace">std::</span><a class="type" href="../../c++/4.8.2/bits/unique_ptr.h.html#std::auto_ptr" title='std::auto_ptr' data-ref="std::auto_ptr">auto_ptr</a>&lt;Y&gt; &amp;&amp; <dfn class="local col6 decl" id="8256r" title='r' data-type='std::auto_ptr&lt;Y&gt; &amp;&amp;' data-ref="8256r">r</dfn> )</td></tr>
+<tr><th id="535">535</th><td>    {</td></tr>
+<tr><th id="536">536</th><td>        <a class="typedef" href="#boost::shared_ptr::this_type" title='boost::shared_ptr::this_type' data-type='shared_ptr&lt;T&gt;' data-ref="boost::shared_ptr::this_type">this_type</a>( <b>static_cast</b>&lt; <span class="namespace">std::</span><a class="type" href="../../c++/4.8.2/bits/unique_ptr.h.html#std::auto_ptr" title='std::auto_ptr' data-ref="std::auto_ptr">auto_ptr</a>&lt;Y&gt; &amp;&amp; &gt;( <a class="local col6 ref" href="#8256r" title='r' data-ref="8256r">r</a> ) ).swap( *<b>this</b> );</td></tr>
+<tr><th id="537">537</th><td>        <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="538">538</th><td>    }</td></tr>
+<tr><th id="539">539</th><td></td></tr>
+<tr><th id="540">540</th><td><u>#<span data-ppcond="531">elif</span> !defined( BOOST_NO_SFINAE ) &amp;&amp; !defined( BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION )</u></td></tr>
+<tr><th id="541">541</th><td></td></tr>
+<tr><th id="542">542</th><td>    <b>template</b>&lt;<b>class</b> Ap&gt;</td></tr>
+<tr><th id="543">543</th><td>    <b>typename</b> boost::detail::sp_enable_if_auto_ptr&lt; Ap, shared_ptr &amp; &gt;::type <b>operator</b>=( Ap r )</td></tr>
+<tr><th id="544">544</th><td>    {</td></tr>
+<tr><th id="545">545</th><td>        this_type( r ).swap( *<b>this</b> );</td></tr>
+<tr><th id="546">546</th><td>        <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="547">547</th><td>    }</td></tr>
+<tr><th id="548">548</th><td></td></tr>
+<tr><th id="549">549</th><td><u>#<span data-ppcond="531">endif</span> // BOOST_NO_SFINAE, BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION</u></td></tr>
+<tr><th id="550">550</th><td></td></tr>
+<tr><th id="551">551</th><td><u>#<span data-ppcond="522">endif</span> // BOOST_NO_AUTO_PTR</u></td></tr>
+<tr><th id="552">552</th><td></td></tr>
+<tr><th id="553">553</th><td><u>#<span data-ppcond="553">if</span> !defined( <a class="macro" href="../config/stdlib/libstdcpp3.hpp.html#125" data-ref="_M/BOOST_NO_CXX11_SMART_PTR">BOOST_NO_CXX11_SMART_PTR</a> )</u></td></tr>
+<tr><th id="554">554</th><td></td></tr>
+<tr><th id="555">555</th><td>    <b>template</b>&lt;<b>class</b> Y, <b>class</b> D&gt;</td></tr>
+<tr><th id="556">556</th><td>    shared_ptr &amp; <b>operator</b>=( std::unique_ptr&lt;Y, D&gt; &amp;&amp; r )</td></tr>
+<tr><th id="557">557</th><td>    {</td></tr>
+<tr><th id="558">558</th><td>        this_type( <b>static_cast</b>&lt; std::unique_ptr&lt;Y, D&gt; &amp;&amp; &gt;( r ) ).swap(*<b>this</b>);</td></tr>
+<tr><th id="559">559</th><td>        <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="560">560</th><td>    }</td></tr>
+<tr><th id="561">561</th><td></td></tr>
+<tr><th id="562">562</th><td><u>#<span data-ppcond="553">endif</span></u></td></tr>
+<tr><th id="563">563</th><td></td></tr>
+<tr><th id="564">564</th><td><i>// Move support</i></td></tr>
+<tr><th id="565">565</th><td></td></tr>
+<tr><th id="566">566</th><td><u>#<span data-ppcond="566">if</span> !defined( <span class="macro" data-ref="_M/BOOST_NO_CXX11_RVALUE_REFERENCES">BOOST_NO_CXX11_RVALUE_REFERENCES</span> )</u></td></tr>
+<tr><th id="567">567</th><td></td></tr>
+<tr><th id="568">568</th><td>    <dfn class="decl def fn" id="_ZN5boost10shared_ptrC1EONS_10shared_ptrIT_EE" title='boost::shared_ptr::shared_ptr&lt;T&gt;' data-ref="_ZN5boost10shared_ptrC1EONS_10shared_ptrIT_EE">shared_ptr</dfn>( shared_ptr &amp;&amp; <dfn class="local col7 decl" id="8257r" title='r' data-type='shared_ptr&lt;T&gt; &amp;&amp;' data-ref="8257r">r</dfn> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a> : <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>( <a class="local col7 ref" href="#8257r" title='r' data-ref="8257r">r</a>.px ), <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a><a class="ref fn" href="detail/shared_count.hpp.html#_ZN5boost6detail12shared_countC1Ev" title='boost::detail::shared_count::shared_count' data-ref="_ZN5boost6detail12shared_countC1Ev">(</a>)</td></tr>
+<tr><th id="569">569</th><td>    {</td></tr>
+<tr><th id="570">570</th><td>        <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a>.<a class="ref fn" href="detail/shared_count.hpp.html#_ZN5boost6detail12shared_count4swapERS1_" title='boost::detail::shared_count::swap' data-ref="_ZN5boost6detail12shared_count4swapERS1_">swap</a>( <span class='refarg'><a class="local col7 ref" href="#8257r" title='r' data-ref="8257r">r</a>.pn</span> );</td></tr>
+<tr><th id="571">571</th><td>        <a class="local col7 ref" href="#8257r" title='r' data-ref="8257r">r</a>.px = <var>0</var>;</td></tr>
+<tr><th id="572">572</th><td>    }</td></tr>
+<tr><th id="573">573</th><td></td></tr>
+<tr><th id="574">574</th><td>    <b>template</b>&lt;<b>class</b> Y&gt;</td></tr>
+<tr><th id="575">575</th><td><u>#<span data-ppcond="575">if</span> !defined( <span class="macro" data-ref="_M/BOOST_SP_NO_SP_CONVERTIBLE">BOOST_SP_NO_SP_CONVERTIBLE</span> )</u></td></tr>
+<tr><th id="576">576</th><td></td></tr>
+<tr><th id="577">577</th><td>    <dfn class="decl def fn" id="_ZN5boost10shared_ptrC1EONS_10shared_ptrIT_EENS_6detail24sp_enable_if_convertibleIS2_T_E4typeE" title='boost::shared_ptr::shared_ptr&lt;T&gt;' data-ref="_ZN5boost10shared_ptrC1EONS_10shared_ptrIT_EENS_6detail24sp_enable_if_convertibleIS2_T_E4typeE">shared_ptr</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;Y&gt; &amp;&amp; <dfn class="local col8 decl" id="8258r" title='r' data-type='shared_ptr&lt;Y&gt; &amp;&amp;' data-ref="8258r">r</dfn>, <b>typename</b> <span class="namespace">boost::detail::</span><a class="type" href="detail/sp_convertible.hpp.html#boost::detail::sp_enable_if_convertible" title='boost::detail::sp_enable_if_convertible' data-ref="boost::detail::sp_enable_if_convertible">sp_enable_if_convertible</a>&lt;Y,T&gt;::type = <span class="namespace">boost::detail::</span><a class="type" href="detail/sp_convertible.hpp.html#boost::detail::sp_empty" title='boost::detail::sp_empty' data-ref="boost::detail::sp_empty">sp_empty</a><a class="ref fn" href="detail/sp_convertible.hpp.html#66" title='boost::detail::sp_empty::sp_empty' data-ref="_ZN5boost6detail8sp_emptyC1Ev">(</a>) )</td></tr>
+<tr><th id="578">578</th><td></td></tr>
+<tr><th id="579">579</th><td><u>#<span data-ppcond="575">else</span></u></td></tr>
+<tr><th id="580">580</th><td></td></tr>
+<tr><th id="581">581</th><td>    shared_ptr( shared_ptr&lt;Y&gt; &amp;&amp; r )</td></tr>
+<tr><th id="582">582</th><td></td></tr>
+<tr><th id="583">583</th><td><u>#<span data-ppcond="575">endif</span></u></td></tr>
+<tr><th id="584">584</th><td>    <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a> : <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>( <a class="local col8 ref" href="#8258r" title='r' data-ref="8258r">r</a>.px ), <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a><a class="ref fn" href="detail/shared_count.hpp.html#_ZN5boost6detail12shared_countC1Ev" title='boost::detail::shared_count::shared_count' data-ref="_ZN5boost6detail12shared_countC1Ev">(</a>)</td></tr>
+<tr><th id="585">585</th><td>    {</td></tr>
+<tr><th id="586">586</th><td>        <span class="namespace">boost::detail::</span>sp_assert_convertible&lt; Y, T &gt;();</td></tr>
+<tr><th id="587">587</th><td></td></tr>
+<tr><th id="588">588</th><td>        <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a>.<a class="ref fn" href="detail/shared_count.hpp.html#_ZN5boost6detail12shared_count4swapERS1_" title='boost::detail::shared_count::swap' data-ref="_ZN5boost6detail12shared_count4swapERS1_">swap</a>( <span class='refarg'><a class="local col8 ref" href="#8258r" title='r' data-ref="8258r">r</a>.pn</span> );</td></tr>
+<tr><th id="589">589</th><td>        <a class="local col8 ref" href="#8258r" title='r' data-ref="8258r">r</a>.px = <var>0</var>;</td></tr>
+<tr><th id="590">590</th><td>    }</td></tr>
+<tr><th id="591">591</th><td></td></tr>
+<tr><th id="592">592</th><td>    shared_ptr &amp; <dfn class="decl def fn" id="_ZN5boost10shared_ptraSEONS_10shared_ptrIT_EE" title='boost::shared_ptr::operator=' data-ref="_ZN5boost10shared_ptraSEONS_10shared_ptrIT_EE"><b>operator</b>=</dfn>( shared_ptr &amp;&amp; <dfn class="local col9 decl" id="8259r" title='r' data-type='shared_ptr&lt;T&gt; &amp;&amp;' data-ref="8259r">r</dfn> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="593">593</th><td>    {</td></tr>
+<tr><th id="594">594</th><td>        <a class="typedef" href="#boost::shared_ptr::this_type" title='boost::shared_ptr::this_type' data-type='shared_ptr&lt;T&gt;' data-ref="boost::shared_ptr::this_type">this_type</a>( <b>static_cast</b>&lt; shared_ptr &amp;&amp; &gt;( <a class="local col9 ref" href="#8259r" title='r' data-ref="8259r">r</a> ) ).swap( *<b>this</b> );</td></tr>
+<tr><th id="595">595</th><td>        <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="596">596</th><td>    }</td></tr>
+<tr><th id="597">597</th><td></td></tr>
+<tr><th id="598">598</th><td>    <b>template</b>&lt;<b>class</b> Y&gt;</td></tr>
+<tr><th id="599">599</th><td>    shared_ptr &amp; <dfn class="decl def fn" id="_ZN5boost10shared_ptraSEONS_10shared_ptrIT_EE" title='boost::shared_ptr::operator=' data-ref="_ZN5boost10shared_ptraSEONS_10shared_ptrIT_EE"><b>operator</b>=</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;Y&gt; &amp;&amp; <dfn class="local col0 decl" id="8260r" title='r' data-type='shared_ptr&lt;Y&gt; &amp;&amp;' data-ref="8260r">r</dfn> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="600">600</th><td>    {</td></tr>
+<tr><th id="601">601</th><td>        <a class="typedef" href="#boost::shared_ptr::this_type" title='boost::shared_ptr::this_type' data-type='shared_ptr&lt;T&gt;' data-ref="boost::shared_ptr::this_type">this_type</a>( <b>static_cast</b>&lt; <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;Y&gt; &amp;&amp; &gt;( <a class="local col0 ref" href="#8260r" title='r' data-ref="8260r">r</a> ) ).swap( *<b>this</b> );</td></tr>
+<tr><th id="602">602</th><td>        <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="603">603</th><td>    }</td></tr>
+<tr><th id="604">604</th><td></td></tr>
+<tr><th id="605">605</th><td><u>#<span data-ppcond="566">endif</span></u></td></tr>
+<tr><th id="606">606</th><td></td></tr>
+<tr><th id="607">607</th><td><u>#<span data-ppcond="607">if</span> !defined( <span class="macro" data-ref="_M/BOOST_NO_CXX11_NULLPTR">BOOST_NO_CXX11_NULLPTR</span> )</u></td></tr>
+<tr><th id="608">608</th><td></td></tr>
+<tr><th id="609">609</th><td>    shared_ptr &amp; <dfn class="decl def fn" id="_ZN5boost10shared_ptraSEDn" title='boost::shared_ptr::operator=' data-ref="_ZN5boost10shared_ptraSEDn"><b>operator</b>=</dfn>( <span class="namespace">boost::detail::</span><a class="typedef" href="detail/sp_nullptr_t.hpp.html#boost::detail::sp_nullptr_t" title='boost::detail::sp_nullptr_t' data-type='decltype(nullptr)' data-ref="boost::detail::sp_nullptr_t">sp_nullptr_t</a> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a> <i>// never throws</i></td></tr>
+<tr><th id="610">610</th><td>    {</td></tr>
+<tr><th id="611">611</th><td>        <a class="typedef" href="#boost::shared_ptr::this_type" title='boost::shared_ptr::this_type' data-type='shared_ptr&lt;T&gt;' data-ref="boost::shared_ptr::this_type">this_type</a>().swap(*<b>this</b>);</td></tr>
+<tr><th id="612">612</th><td>        <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="613">613</th><td>    }</td></tr>
+<tr><th id="614">614</th><td></td></tr>
+<tr><th id="615">615</th><td><u>#<span data-ppcond="607">endif</span></u></td></tr>
+<tr><th id="616">616</th><td></td></tr>
+<tr><th id="617">617</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN5boost10shared_ptr5resetEv" title='boost::shared_ptr::reset' data-ref="_ZN5boost10shared_ptr5resetEv">reset</dfn>() <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a> <i>// never throws in 1.30+</i></td></tr>
+<tr><th id="618">618</th><td>    {</td></tr>
+<tr><th id="619">619</th><td>        <a class="typedef" href="#boost::shared_ptr::this_type" title='boost::shared_ptr::this_type' data-type='shared_ptr&lt;T&gt;' data-ref="boost::shared_ptr::this_type">this_type</a>().swap(*<b>this</b>);</td></tr>
+<tr><th id="620">620</th><td>    }</td></tr>
+<tr><th id="621">621</th><td></td></tr>
+<tr><th id="622">622</th><td>    <b>template</b>&lt;<b>class</b> Y&gt; <em>void</em> <dfn class="decl def fn" id="_ZN5boost10shared_ptr5resetEPT_" title='boost::shared_ptr::reset' data-ref="_ZN5boost10shared_ptr5resetEPT_">reset</dfn>( Y * <dfn class="local col1 decl" id="8261p" title='p' data-type='Y *' data-ref="8261p">p</dfn> ) <i>// Y must be complete</i></td></tr>
+<tr><th id="623">623</th><td>    {</td></tr>
+<tr><th id="624">624</th><td>        <a class="macro" href="../assert.hpp.html#51" title="((p == 0 || p != px) ? static_cast&lt;void&gt; (0) : __assert_fail (&quot;p == 0 || p != px&quot;, &quot;/usr/include/boost/smart_ptr/shared_ptr.hpp&quot;, 624, __PRETTY_FUNCTION__))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>( <a class="local col1 ref" href="#8261p" title='p' data-ref="8261p">p</a> == <var>0</var> || <a class="local col1 ref" href="#8261p" title='p' data-ref="8261p">p</a> != <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a> ); <i>// catch self-reset errors</i></td></tr>
+<tr><th id="625">625</th><td>        <a class="typedef" href="#boost::shared_ptr::this_type" title='boost::shared_ptr::this_type' data-type='shared_ptr&lt;T&gt;' data-ref="boost::shared_ptr::this_type">this_type</a>( <a class="local col1 ref" href="#8261p" title='p' data-ref="8261p">p</a> ).swap( *<b>this</b> );</td></tr>
+<tr><th id="626">626</th><td>    }</td></tr>
+<tr><th id="627">627</th><td></td></tr>
+<tr><th id="628">628</th><td>    <b>template</b>&lt;<b>class</b> Y, <b>class</b> D&gt; <em>void</em> <dfn class="decl def fn" id="_ZN5boost10shared_ptr5resetEPT_T0_" title='boost::shared_ptr::reset' data-ref="_ZN5boost10shared_ptr5resetEPT_T0_">reset</dfn>( Y * <dfn class="local col2 decl" id="8262p" title='p' data-type='Y *' data-ref="8262p">p</dfn>, D <dfn class="local col3 decl" id="8263d" title='d' data-type='D' data-ref="8263d">d</dfn> )</td></tr>
+<tr><th id="629">629</th><td>    {</td></tr>
+<tr><th id="630">630</th><td>        <a class="typedef" href="#boost::shared_ptr::this_type" title='boost::shared_ptr::this_type' data-type='shared_ptr&lt;T&gt;' data-ref="boost::shared_ptr::this_type">this_type</a>( <a class="local col2 ref" href="#8262p" title='p' data-ref="8262p">p</a>, <a class="local col3 ref" href="#8263d" title='d' data-ref="8263d">d</a> ).swap( *<b>this</b> );</td></tr>
+<tr><th id="631">631</th><td>    }</td></tr>
+<tr><th id="632">632</th><td></td></tr>
+<tr><th id="633">633</th><td>    <b>template</b>&lt;<b>class</b> Y, <b>class</b> D, <b>class</b> A&gt; <em>void</em> <dfn class="decl def fn" id="_ZN5boost10shared_ptr5resetEPT_T0_T1_" title='boost::shared_ptr::reset' data-ref="_ZN5boost10shared_ptr5resetEPT_T0_T1_">reset</dfn>( Y * <dfn class="local col4 decl" id="8264p" title='p' data-type='Y *' data-ref="8264p">p</dfn>, D <dfn class="local col5 decl" id="8265d" title='d' data-type='D' data-ref="8265d">d</dfn>, A <dfn class="local col6 decl" id="8266a" title='a' data-type='A' data-ref="8266a">a</dfn> )</td></tr>
+<tr><th id="634">634</th><td>    {</td></tr>
+<tr><th id="635">635</th><td>        <a class="typedef" href="#boost::shared_ptr::this_type" title='boost::shared_ptr::this_type' data-type='shared_ptr&lt;T&gt;' data-ref="boost::shared_ptr::this_type">this_type</a>( <a class="local col4 ref" href="#8264p" title='p' data-ref="8264p">p</a>, <a class="local col5 ref" href="#8265d" title='d' data-ref="8265d">d</a>, <a class="local col6 ref" href="#8266a" title='a' data-ref="8266a">a</a> ).swap( *<b>this</b> );</td></tr>
+<tr><th id="636">636</th><td>    }</td></tr>
+<tr><th id="637">637</th><td></td></tr>
+<tr><th id="638">638</th><td>    <b>template</b>&lt;<b>class</b> Y&gt; <em>void</em> <dfn class="decl def fn" id="_ZN5boost10shared_ptr5resetERKNS_10shared_ptrIT_EEPNS_6detail10sp_elementIT_E4typeE" title='boost::shared_ptr::reset' data-ref="_ZN5boost10shared_ptr5resetERKNS_10shared_ptrIT_EEPNS_6detail10sp_elementIT_E4typeE">reset</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;Y&gt; <em>const</em> &amp; <dfn class="local col7 decl" id="8267r" title='r' data-type='const shared_ptr&lt;Y&gt; &amp;' data-ref="8267r">r</dfn>, <a class="typedef" href="#boost::shared_ptr::element_type" title='boost::shared_ptr::element_type' data-type='typename boost::detail::sp_element&lt;T&gt;::type' data-ref="boost::shared_ptr::element_type">element_type</a> * <dfn class="local col8 decl" id="8268p" title='p' data-type='boost::shared_ptr::element_type *' data-ref="8268p">p</dfn> )</td></tr>
+<tr><th id="639">639</th><td>    {</td></tr>
+<tr><th id="640">640</th><td>        <a class="typedef" href="#boost::shared_ptr::this_type" title='boost::shared_ptr::this_type' data-type='shared_ptr&lt;T&gt;' data-ref="boost::shared_ptr::this_type">this_type</a>( <a class="local col7 ref" href="#8267r" title='r' data-ref="8267r">r</a>, <a class="local col8 ref" href="#8268p" title='p' data-ref="8268p">p</a> ).swap( *<b>this</b> );</td></tr>
+<tr><th id="641">641</th><td>    }</td></tr>
+<tr><th id="642">642</th><td>    </td></tr>
+<tr><th id="643">643</th><td>    <i>// never throws (but has a BOOST_ASSERT in it, so not marked with BOOST_NOEXCEPT)</i></td></tr>
+<tr><th id="644">644</th><td>    <b>typename</b> <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::sp_dereference" title='boost::detail::sp_dereference' data-ref="boost::detail::sp_dereference">sp_dereference</a>&lt; T &gt;::type <dfn class="decl def fn" id="_ZNK5boost10shared_ptrdeEv" title='boost::shared_ptr::operator*' data-ref="_ZNK5boost10shared_ptrdeEv"><b>operator</b>*</dfn> () <em>const</em></td></tr>
+<tr><th id="645">645</th><td>    {</td></tr>
+<tr><th id="646">646</th><td>        <a class="macro" href="../assert.hpp.html#51" title="((px != 0) ? static_cast&lt;void&gt; (0) : __assert_fail (&quot;px != 0&quot;, &quot;/usr/include/boost/smart_ptr/shared_ptr.hpp&quot;, 646, __PRETTY_FUNCTION__))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>( <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a> != <var>0</var> );</td></tr>
+<tr><th id="647">647</th><td>        <b>return</b> *<a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>;</td></tr>
+<tr><th id="648">648</th><td>    }</td></tr>
+<tr><th id="649">649</th><td>    </td></tr>
+<tr><th id="650">650</th><td>    <i>// never throws (but has a BOOST_ASSERT in it, so not marked with BOOST_NOEXCEPT)</i></td></tr>
+<tr><th id="651">651</th><td>    <b>typename</b> <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::sp_member_access" title='boost::detail::sp_member_access' data-ref="boost::detail::sp_member_access">sp_member_access</a>&lt; T &gt;::type <dfn class="decl def fn" id="_ZNK5boost10shared_ptrptEv" title='boost::shared_ptr::operator-&gt;' data-ref="_ZNK5boost10shared_ptrptEv"><b>operator</b>-&gt;</dfn> () <em>const</em> </td></tr>
+<tr><th id="652">652</th><td>    {</td></tr>
+<tr><th id="653">653</th><td>        <a class="macro" href="../assert.hpp.html#51" title="((px != 0) ? static_cast&lt;void&gt; (0) : __assert_fail (&quot;px != 0&quot;, &quot;/usr/include/boost/smart_ptr/shared_ptr.hpp&quot;, 653, __PRETTY_FUNCTION__))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>( <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a> != <var>0</var> );</td></tr>
+<tr><th id="654">654</th><td>        <b>return</b> <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>;</td></tr>
+<tr><th id="655">655</th><td>    }</td></tr>
+<tr><th id="656">656</th><td>    </td></tr>
+<tr><th id="657">657</th><td>    <i>// never throws (but has a BOOST_ASSERT in it, so not marked with BOOST_NOEXCEPT)</i></td></tr>
+<tr><th id="658">658</th><td>    <b>typename</b> <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::sp_array_access" title='boost::detail::sp_array_access' data-ref="boost::detail::sp_array_access">sp_array_access</a>&lt; T &gt;::type <dfn class="decl def fn" id="_ZNK5boost10shared_ptrixEl" title='boost::shared_ptr::operator[]' data-ref="_ZNK5boost10shared_ptrixEl"><b>operator</b>[]</dfn> ( <span class="namespace">std::</span><a class="typedef" href="../../c++/4.8.2/x86_64-redhat-linux/bits/c++config.h.html#std::ptrdiff_t" title='std::ptrdiff_t' data-type='long' data-ref="std::ptrdiff_t">ptrdiff_t</a> <dfn class="local col9 decl" id="8269i" title='i' data-type='std::ptrdiff_t' data-ref="8269i">i</dfn> ) <em>const</em></td></tr>
+<tr><th id="659">659</th><td>    {</td></tr>
+<tr><th id="660">660</th><td>        <a class="macro" href="../assert.hpp.html#51" title="((px != 0) ? static_cast&lt;void&gt; (0) : __assert_fail (&quot;px != 0&quot;, &quot;/usr/include/boost/smart_ptr/shared_ptr.hpp&quot;, 660, __PRETTY_FUNCTION__))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>( <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a> != <var>0</var> );</td></tr>
+<tr><th id="661">661</th><td>        <a class="macro" href="../assert.hpp.html#51" title="((i &gt;= 0 &amp;&amp; ( i &lt; boost::detail::sp_extent&lt; T &gt;::value || boost::detail::sp_extent&lt; T &gt;::value == 0 )) ? static_cast&lt;void&gt; (0) : __assert_fail (&quot;i &gt;= 0 &amp;&amp; ( i &lt; boost::detail::sp_extent&lt; T &gt;::value || boost::detail::sp_extent&lt; T &gt;::value == 0 )&quot;, &quot;/usr/include/boost/smart_ptr/shared_ptr.hpp&quot;, 661, __PRETTY_FUNCTION__))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>( <a class="local col9 ref" href="#8269i" title='i' data-ref="8269i">i</a> &gt;= <var>0</var> &amp;&amp; ( <a class="local col9 ref" href="#8269i" title='i' data-ref="8269i">i</a> &lt; boost::detail::<a class="type" href="#boost::detail::sp_extent" title='boost::detail::sp_extent' data-ref="boost::detail::sp_extent">sp_extent</a>&lt; T &gt;::value || boost::detail::<a class="type" href="#boost::detail::sp_extent" title='boost::detail::sp_extent' data-ref="boost::detail::sp_extent">sp_extent</a>&lt; T &gt;::value == <var>0</var> ) );</td></tr>
+<tr><th id="662">662</th><td></td></tr>
+<tr><th id="663">663</th><td>        <b>return</b> <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>[ <a class="local col9 ref" href="#8269i" title='i' data-ref="8269i">i</a> ];</td></tr>
+<tr><th id="664">664</th><td>    }</td></tr>
+<tr><th id="665">665</th><td></td></tr>
+<tr><th id="666">666</th><td>    <a class="typedef" href="#boost::shared_ptr::element_type" title='boost::shared_ptr::element_type' data-type='typename boost::detail::sp_element&lt;T&gt;::type' data-ref="boost::shared_ptr::element_type">element_type</a> * <dfn class="decl def fn" id="_ZNK5boost10shared_ptr3getEv" title='boost::shared_ptr::get' data-ref="_ZNK5boost10shared_ptr3getEv">get</dfn>() <em>const</em> <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="667">667</th><td>    {</td></tr>
+<tr><th id="668">668</th><td>        <b>return</b> <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>;</td></tr>
+<tr><th id="669">669</th><td>    }</td></tr>
+<tr><th id="670">670</th><td></td></tr>
+<tr><th id="671">671</th><td><i>// implicit conversion to "bool"</i></td></tr>
+<tr><th id="672">672</th><td><u>#include <a href="detail/operator_bool.hpp.html">&lt;boost/smart_ptr/detail/operator_bool.hpp&gt;</a></u></td></tr>
+<tr><th id="673">673</th><td></td></tr>
+<tr><th id="674">674</th><td>    <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost10shared_ptr6uniqueEv" title='boost::shared_ptr::unique' data-ref="_ZNK5boost10shared_ptr6uniqueEv">unique</dfn>() <em>const</em> <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="675">675</th><td>    {</td></tr>
+<tr><th id="676">676</th><td>        <b>return</b> <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a>.<a class="ref fn" href="detail/shared_count.hpp.html#_ZNK5boost6detail12shared_count6uniqueEv" title='boost::detail::shared_count::unique' data-ref="_ZNK5boost6detail12shared_count6uniqueEv">unique</a>();</td></tr>
+<tr><th id="677">677</th><td>    }</td></tr>
+<tr><th id="678">678</th><td></td></tr>
+<tr><th id="679">679</th><td>    <em>long</em> <dfn class="decl def fn" id="_ZNK5boost10shared_ptr9use_countEv" title='boost::shared_ptr::use_count' data-ref="_ZNK5boost10shared_ptr9use_countEv">use_count</dfn>() <em>const</em> <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="680">680</th><td>    {</td></tr>
+<tr><th id="681">681</th><td>        <b>return</b> <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a>.<a class="ref fn" href="detail/shared_count.hpp.html#_ZNK5boost6detail12shared_count9use_countEv" title='boost::detail::shared_count::use_count' data-ref="_ZNK5boost6detail12shared_count9use_countEv">use_count</a>();</td></tr>
+<tr><th id="682">682</th><td>    }</td></tr>
+<tr><th id="683">683</th><td></td></tr>
+<tr><th id="684">684</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN5boost10shared_ptr4swapERNS_10shared_ptrIT_EE" title='boost::shared_ptr::swap' data-ref="_ZN5boost10shared_ptr4swapERNS_10shared_ptrIT_EE">swap</dfn>( shared_ptr &amp; <dfn class="local col0 decl" id="8270other" title='other' data-type='shared_ptr&lt;T&gt; &amp;' data-ref="8270other">other</dfn> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="685">685</th><td>    {</td></tr>
+<tr><th id="686">686</th><td>        <span class="namespace">std::</span>swap(<a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a>, <a class="local col0 ref" href="#8270other" title='other' data-ref="8270other">other</a>.px);</td></tr>
+<tr><th id="687">687</th><td>        <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a>.<a class="ref fn" href="detail/shared_count.hpp.html#_ZN5boost6detail12shared_count4swapERS1_" title='boost::detail::shared_count::swap' data-ref="_ZN5boost6detail12shared_count4swapERS1_">swap</a>(<span class='refarg'><a class="local col0 ref" href="#8270other" title='other' data-ref="8270other">other</a>.pn</span>);</td></tr>
+<tr><th id="688">688</th><td>    }</td></tr>
+<tr><th id="689">689</th><td></td></tr>
+<tr><th id="690">690</th><td>    <b>template</b>&lt;<b>class</b> Y&gt; <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost10shared_ptr12owner_beforeERKNS_10shared_ptrIT_EE" title='boost::shared_ptr::owner_before' data-ref="_ZNK5boost10shared_ptr12owner_beforeERKNS_10shared_ptrIT_EE">owner_before</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;Y&gt; <em>const</em> &amp; <dfn class="local col1 decl" id="8271rhs" title='rhs' data-type='const shared_ptr&lt;Y&gt; &amp;' data-ref="8271rhs">rhs</dfn> ) <em>const</em> <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="691">691</th><td>    {</td></tr>
+<tr><th id="692">692</th><td>        <b>return</b> <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a> &lt; <a class="local col1 ref" href="#8271rhs" title='rhs' data-ref="8271rhs">rhs</a>.pn;</td></tr>
+<tr><th id="693">693</th><td>    }</td></tr>
+<tr><th id="694">694</th><td></td></tr>
+<tr><th id="695">695</th><td>    <b>template</b>&lt;<b>class</b> Y&gt; <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost10shared_ptr12owner_beforeERKNS_8weak_ptrIT_EE" title='boost::shared_ptr::owner_before' data-ref="_ZNK5boost10shared_ptr12owner_beforeERKNS_8weak_ptrIT_EE">owner_before</dfn>( <a class="type" href="#boost::weak_ptr" title='boost::weak_ptr' data-ref="boost::weak_ptr">weak_ptr</a>&lt;Y&gt; <em>const</em> &amp; <dfn class="local col2 decl" id="8272rhs" title='rhs' data-type='const weak_ptr&lt;Y&gt; &amp;' data-ref="8272rhs">rhs</dfn> ) <em>const</em> <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="696">696</th><td>    {</td></tr>
+<tr><th id="697">697</th><td>        <b>return</b> <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a> &lt; <a class="local col2 ref" href="#8272rhs" title='rhs' data-ref="8272rhs">rhs</a>.pn;</td></tr>
+<tr><th id="698">698</th><td>    }</td></tr>
+<tr><th id="699">699</th><td></td></tr>
+<tr><th id="700">700</th><td>    <em>void</em> * <dfn class="decl def fn" id="_ZNK5boost10shared_ptr21_internal_get_deleterERKSt9type_info" title='boost::shared_ptr::_internal_get_deleter' data-ref="_ZNK5boost10shared_ptr21_internal_get_deleterERKSt9type_info">_internal_get_deleter</dfn>( <span class="namespace">boost::detail::</span><a class="typedef" href="../detail/sp_typeinfo.hpp.html#boost::detail::sp_typeinfo" title='boost::detail::sp_typeinfo' data-type='std::type_info' data-ref="boost::detail::sp_typeinfo">sp_typeinfo</a> <em>const</em> &amp; <dfn class="local col3 decl" id="8273ti" title='ti' data-type='const boost::detail::sp_typeinfo &amp;' data-ref="8273ti">ti</dfn> ) <em>const</em> <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="701">701</th><td>    {</td></tr>
+<tr><th id="702">702</th><td>        <b>return</b> <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a>.<a class="ref fn" href="detail/shared_count.hpp.html#_ZNK5boost6detail12shared_count11get_deleterERKSt9type_info" title='boost::detail::shared_count::get_deleter' data-ref="_ZNK5boost6detail12shared_count11get_deleterERKSt9type_info">get_deleter</a>( <a class="local col3 ref" href="#8273ti" title='ti' data-ref="8273ti">ti</a> );</td></tr>
+<tr><th id="703">703</th><td>    }</td></tr>
+<tr><th id="704">704</th><td></td></tr>
+<tr><th id="705">705</th><td>    <em>void</em> * <dfn class="decl def fn" id="_ZNK5boost10shared_ptr29_internal_get_untyped_deleterEv" title='boost::shared_ptr::_internal_get_untyped_deleter' data-ref="_ZNK5boost10shared_ptr29_internal_get_untyped_deleterEv">_internal_get_untyped_deleter</dfn>() <em>const</em> <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="706">706</th><td>    {</td></tr>
+<tr><th id="707">707</th><td>        <b>return</b> <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a>.<a class="ref fn" href="detail/shared_count.hpp.html#_ZNK5boost6detail12shared_count19get_untyped_deleterEv" title='boost::detail::shared_count::get_untyped_deleter' data-ref="_ZNK5boost6detail12shared_count19get_untyped_deleterEv">get_untyped_deleter</a>();</td></tr>
+<tr><th id="708">708</th><td>    }</td></tr>
+<tr><th id="709">709</th><td></td></tr>
+<tr><th id="710">710</th><td>    <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost10shared_ptr15_internal_equivERKNS_10shared_ptrIT_EE" title='boost::shared_ptr::_internal_equiv' data-ref="_ZNK5boost10shared_ptr15_internal_equivERKNS_10shared_ptrIT_EE">_internal_equiv</dfn>( shared_ptr <em>const</em> &amp; <dfn class="local col4 decl" id="8274r" title='r' data-type='const shared_ptr&lt;T&gt; &amp;' data-ref="8274r">r</dfn> ) <em>const</em> <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="711">711</th><td>    {</td></tr>
+<tr><th id="712">712</th><td>        <b>return</b> <a class="member field" href="#boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</a> == <a class="local col4 ref" href="#8274r" title='r' data-ref="8274r">r</a>.px &amp;&amp; <a class="member field" href="#boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</a> == <a class="local col4 ref" href="#8274r" title='r' data-ref="8274r">r</a>.pn;</td></tr>
+<tr><th id="713">713</th><td>    }</td></tr>
+<tr><th id="714">714</th><td></td></tr>
+<tr><th id="715">715</th><td><i>// Tasteless as this may seem, making all members public allows member templates</i></td></tr>
+<tr><th id="716">716</th><td><i>// to work in the absence of member template friends. (Matthew Langston)</i></td></tr>
+<tr><th id="717">717</th><td></td></tr>
+<tr><th id="718">718</th><td><u>#<span data-ppcond="718">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_MEMBER_TEMPLATE_FRIENDS">BOOST_NO_MEMBER_TEMPLATE_FRIENDS</span></u></td></tr>
+<tr><th id="719">719</th><td></td></tr>
+<tr><th id="720">720</th><td><b>private</b>:</td></tr>
+<tr><th id="721">721</th><td></td></tr>
+<tr><th id="722">722</th><td>    <b>template</b>&lt;<b>class</b> Y&gt; <b>friend</b> <b>class</b> <dfn class="type" id="boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</dfn>;</td></tr>
+<tr><th id="723">723</th><td>    <b>template</b>&lt;<b>class</b> Y&gt; <b>friend</b> <b>class</b> <dfn class="type" id="boost::weak_ptr" title='boost::weak_ptr' data-ref="boost::weak_ptr">weak_ptr</dfn>;</td></tr>
+<tr><th id="724">724</th><td></td></tr>
+<tr><th id="725">725</th><td></td></tr>
+<tr><th id="726">726</th><td><u>#<span data-ppcond="718">endif</span></u></td></tr>
+<tr><th id="727">727</th><td></td></tr>
+<tr><th id="728">728</th><td>    <a class="typedef" href="#boost::shared_ptr::element_type" title='boost::shared_ptr::element_type' data-type='typename boost::detail::sp_element&lt;T&gt;::type' data-ref="boost::shared_ptr::element_type">element_type</a> * <dfn class="decl field" id="boost::shared_ptr::px" title='boost::shared_ptr::px' data-ref="boost::shared_ptr::px">px</dfn>;                 <i>// contained pointer</i></td></tr>
+<tr><th id="729">729</th><td>    <span class="namespace">boost::detail::</span><a class="type" href="detail/shared_count.hpp.html#boost::detail::shared_count" title='boost::detail::shared_count' data-ref="boost::detail::shared_count">shared_count</a> <dfn class="decl field" id="boost::shared_ptr::pn" title='boost::shared_ptr::pn' data-ref="boost::shared_ptr::pn">pn</dfn>;    <i>// reference counter</i></td></tr>
+<tr><th id="730">730</th><td></td></tr>
+<tr><th id="731">731</th><td>};  <i>// shared_ptr</i></td></tr>
+<tr><th id="732">732</th><td></td></tr>
+<tr><th id="733">733</th><td><b>template</b>&lt;<b>class</b> T, <b>class</b> U&gt; <b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZN5boosteqERKNS_10shared_ptrIT_EERKNS0_IT0_EE" title='boost::operator==' data-ref="_ZN5boosteqERKNS_10shared_ptrIT_EERKNS0_IT0_EE"><b>operator</b>==</dfn>(<a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <em>const</em> &amp; <dfn class="local col5 decl" id="8275a" title='a' data-type='const shared_ptr&lt;T&gt; &amp;' data-ref="8275a">a</dfn>, <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;U&gt; <em>const</em> &amp; <dfn class="local col6 decl" id="8276b" title='b' data-type='const shared_ptr&lt;U&gt; &amp;' data-ref="8276b">b</dfn>) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="734">734</th><td>{</td></tr>
+<tr><th id="735">735</th><td>    <b>return</b> <a class="local col5 ref" href="#8275a" title='a' data-ref="8275a">a</a>.get() == <a class="local col6 ref" href="#8276b" title='b' data-ref="8276b">b</a>.get();</td></tr>
+<tr><th id="736">736</th><td>}</td></tr>
+<tr><th id="737">737</th><td></td></tr>
+<tr><th id="738">738</th><td><b>template</b>&lt;<b>class</b> T, <b>class</b> U&gt; <b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZN5boostneERKNS_10shared_ptrIT_EERKNS0_IT0_EE" title='boost::operator!=' data-ref="_ZN5boostneERKNS_10shared_ptrIT_EERKNS0_IT0_EE"><b>operator</b>!=</dfn>(<a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <em>const</em> &amp; <dfn class="local col7 decl" id="8277a" title='a' data-type='const shared_ptr&lt;T&gt; &amp;' data-ref="8277a">a</dfn>, <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;U&gt; <em>const</em> &amp; <dfn class="local col8 decl" id="8278b" title='b' data-type='const shared_ptr&lt;U&gt; &amp;' data-ref="8278b">b</dfn>) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="739">739</th><td>{</td></tr>
+<tr><th id="740">740</th><td>    <b>return</b> <a class="local col7 ref" href="#8277a" title='a' data-ref="8277a">a</a>.get() != <a class="local col8 ref" href="#8278b" title='b' data-ref="8278b">b</a>.get();</td></tr>
+<tr><th id="741">741</th><td>}</td></tr>
+<tr><th id="742">742</th><td></td></tr>
+<tr><th id="743">743</th><td><u>#<span data-ppcond="743">if</span> <span class="macro" title="4" data-ref="_M/__GNUC__">__GNUC__</span> == 2 &amp;&amp; <span class="macro" title="2" data-ref="_M/__GNUC_MINOR__">__GNUC_MINOR__</span> &lt;= 96</u></td></tr>
+<tr><th id="744">744</th><td></td></tr>
+<tr><th id="745">745</th><td><i>// Resolve the ambiguity between our op!= and the one in rel_ops</i></td></tr>
+<tr><th id="746">746</th><td></td></tr>
+<tr><th id="747">747</th><td><b>template</b>&lt;<b>class</b> T&gt; <b>inline</b> <em>bool</em> <b>operator</b>!=(shared_ptr&lt;T&gt; <em>const</em> &amp; a, shared_ptr&lt;T&gt; <em>const</em> &amp; b) BOOST_NOEXCEPT</td></tr>
+<tr><th id="748">748</th><td>{</td></tr>
+<tr><th id="749">749</th><td>    <b>return</b> a.get() != b.get();</td></tr>
+<tr><th id="750">750</th><td>}</td></tr>
+<tr><th id="751">751</th><td></td></tr>
+<tr><th id="752">752</th><td><u>#<span data-ppcond="743">endif</span></u></td></tr>
+<tr><th id="753">753</th><td></td></tr>
+<tr><th id="754">754</th><td><u>#<span data-ppcond="754">if</span> !defined( <span class="macro" data-ref="_M/BOOST_NO_CXX11_NULLPTR">BOOST_NO_CXX11_NULLPTR</span> )</u></td></tr>
+<tr><th id="755">755</th><td></td></tr>
+<tr><th id="756">756</th><td><b>template</b>&lt;<b>class</b> T&gt; <b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZN5boosteqERKNS_10shared_ptrIT_EEDn" title='boost::operator==' data-ref="_ZN5boosteqERKNS_10shared_ptrIT_EEDn"><b>operator</b>==</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <em>const</em> &amp; <dfn class="local col9 decl" id="8279p" title='p' data-type='const shared_ptr&lt;T&gt; &amp;' data-ref="8279p">p</dfn>, <span class="namespace">boost::detail::</span><a class="typedef" href="detail/sp_nullptr_t.hpp.html#boost::detail::sp_nullptr_t" title='boost::detail::sp_nullptr_t' data-type='decltype(nullptr)' data-ref="boost::detail::sp_nullptr_t">sp_nullptr_t</a> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="757">757</th><td>{</td></tr>
+<tr><th id="758">758</th><td>    <b>return</b> <a class="local col9 ref" href="#8279p" title='p' data-ref="8279p">p</a>.get() == <var>0</var>;</td></tr>
+<tr><th id="759">759</th><td>}</td></tr>
+<tr><th id="760">760</th><td></td></tr>
+<tr><th id="761">761</th><td><b>template</b>&lt;<b>class</b> T&gt; <b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZN5boosteqEDnRKNS_10shared_ptrIT_EE" title='boost::operator==' data-ref="_ZN5boosteqEDnRKNS_10shared_ptrIT_EE"><b>operator</b>==</dfn>( <span class="namespace">boost::detail::</span><a class="typedef" href="detail/sp_nullptr_t.hpp.html#boost::detail::sp_nullptr_t" title='boost::detail::sp_nullptr_t' data-type='decltype(nullptr)' data-ref="boost::detail::sp_nullptr_t">sp_nullptr_t</a>, <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <em>const</em> &amp; <dfn class="local col0 decl" id="8280p" title='p' data-type='const shared_ptr&lt;T&gt; &amp;' data-ref="8280p">p</dfn> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="762">762</th><td>{</td></tr>
+<tr><th id="763">763</th><td>    <b>return</b> <a class="local col0 ref" href="#8280p" title='p' data-ref="8280p">p</a>.get() == <var>0</var>;</td></tr>
+<tr><th id="764">764</th><td>}</td></tr>
+<tr><th id="765">765</th><td></td></tr>
+<tr><th id="766">766</th><td><b>template</b>&lt;<b>class</b> T&gt; <b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZN5boostneERKNS_10shared_ptrIT_EEDn" title='boost::operator!=' data-ref="_ZN5boostneERKNS_10shared_ptrIT_EEDn"><b>operator</b>!=</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <em>const</em> &amp; <dfn class="local col1 decl" id="8281p" title='p' data-type='const shared_ptr&lt;T&gt; &amp;' data-ref="8281p">p</dfn>, <span class="namespace">boost::detail::</span><a class="typedef" href="detail/sp_nullptr_t.hpp.html#boost::detail::sp_nullptr_t" title='boost::detail::sp_nullptr_t' data-type='decltype(nullptr)' data-ref="boost::detail::sp_nullptr_t">sp_nullptr_t</a> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="767">767</th><td>{</td></tr>
+<tr><th id="768">768</th><td>    <b>return</b> <a class="local col1 ref" href="#8281p" title='p' data-ref="8281p">p</a>.get() != <var>0</var>;</td></tr>
+<tr><th id="769">769</th><td>}</td></tr>
+<tr><th id="770">770</th><td></td></tr>
+<tr><th id="771">771</th><td><b>template</b>&lt;<b>class</b> T&gt; <b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZN5boostneEDnRKNS_10shared_ptrIT_EE" title='boost::operator!=' data-ref="_ZN5boostneEDnRKNS_10shared_ptrIT_EE"><b>operator</b>!=</dfn>( <span class="namespace">boost::detail::</span><a class="typedef" href="detail/sp_nullptr_t.hpp.html#boost::detail::sp_nullptr_t" title='boost::detail::sp_nullptr_t' data-type='decltype(nullptr)' data-ref="boost::detail::sp_nullptr_t">sp_nullptr_t</a>, <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <em>const</em> &amp; <dfn class="local col2 decl" id="8282p" title='p' data-type='const shared_ptr&lt;T&gt; &amp;' data-ref="8282p">p</dfn> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="772">772</th><td>{</td></tr>
+<tr><th id="773">773</th><td>    <b>return</b> <a class="local col2 ref" href="#8282p" title='p' data-ref="8282p">p</a>.get() != <var>0</var>;</td></tr>
+<tr><th id="774">774</th><td>}</td></tr>
+<tr><th id="775">775</th><td></td></tr>
+<tr><th id="776">776</th><td><u>#<span data-ppcond="754">endif</span></u></td></tr>
+<tr><th id="777">777</th><td></td></tr>
+<tr><th id="778">778</th><td><b>template</b>&lt;<b>class</b> T, <b>class</b> U&gt; <b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZN5boostltERKNS_10shared_ptrIT_EERKNS0_IT0_EE" title='boost::operator&lt;' data-ref="_ZN5boostltERKNS_10shared_ptrIT_EERKNS0_IT0_EE"><b>operator</b>&lt;</dfn>(<a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <em>const</em> &amp; <dfn class="local col3 decl" id="8283a" title='a' data-type='const shared_ptr&lt;T&gt; &amp;' data-ref="8283a">a</dfn>, <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;U&gt; <em>const</em> &amp; <dfn class="local col4 decl" id="8284b" title='b' data-type='const shared_ptr&lt;U&gt; &amp;' data-ref="8284b">b</dfn>) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="779">779</th><td>{</td></tr>
+<tr><th id="780">780</th><td>    <b>return</b> <a class="local col3 ref" href="#8283a" title='a' data-ref="8283a">a</a>.owner_before( <a class="local col4 ref" href="#8284b" title='b' data-ref="8284b">b</a> );</td></tr>
+<tr><th id="781">781</th><td>}</td></tr>
+<tr><th id="782">782</th><td></td></tr>
+<tr><th id="783">783</th><td><b>template</b>&lt;<b>class</b> T&gt; <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost4swapERNS_10shared_ptrIT_EES3_" title='boost::swap' data-ref="_ZN5boost4swapERNS_10shared_ptrIT_EES3_">swap</dfn>(<a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; &amp; <dfn class="local col5 decl" id="8285a" title='a' data-type='shared_ptr&lt;T&gt; &amp;' data-ref="8285a">a</dfn>, <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; &amp; <dfn class="local col6 decl" id="8286b" title='b' data-type='shared_ptr&lt;T&gt; &amp;' data-ref="8286b">b</dfn>) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="784">784</th><td>{</td></tr>
+<tr><th id="785">785</th><td>    <a class="local col5 ref" href="#8285a" title='a' data-ref="8285a">a</a>.swap(<a class="local col6 ref" href="#8286b" title='b' data-ref="8286b">b</a>);</td></tr>
+<tr><th id="786">786</th><td>}</td></tr>
+<tr><th id="787">787</th><td></td></tr>
+<tr><th id="788">788</th><td><b>template</b>&lt;<b>class</b> T, <b>class</b> U&gt; <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <dfn class="decl def fn" id="_ZN5boost19static_pointer_castERKNS_10shared_ptrIT0_EE" title='boost::static_pointer_cast' data-ref="_ZN5boost19static_pointer_castERKNS_10shared_ptrIT0_EE">static_pointer_cast</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;U&gt; <em>const</em> &amp; <dfn class="local col7 decl" id="8287r" title='r' data-type='const shared_ptr&lt;U&gt; &amp;' data-ref="8287r">r</dfn> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="789">789</th><td>{</td></tr>
+<tr><th id="790">790</th><td>    (<em>void</em>) <b>static_cast</b>&lt; T* &gt;( <b>static_cast</b>&lt; U* &gt;( <var>0</var> ) );</td></tr>
+<tr><th id="791">791</th><td></td></tr>
+<tr><th id="792">792</th><td>    <b>typedef</b> <b>typename</b> <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt;::element_type <dfn class="local col8 typedef" id="8288E" title='E' data-type='typename shared_ptr&lt;T&gt;::element_type' data-ref="8288E">E</dfn>;</td></tr>
+<tr><th id="793">793</th><td></td></tr>
+<tr><th id="794">794</th><td>    <a class="local col8 typedef" href="#8288E" title='E' data-type='typename shared_ptr&lt;T&gt;::element_type' data-ref="8288E">E</a> * <dfn class="local col9 decl" id="8289p" title='p' data-type='E *' data-ref="8289p">p</dfn> = <b>static_cast</b>&lt; <a class="local col8 typedef" href="#8288E" title='E' data-type='typename shared_ptr&lt;T&gt;::element_type' data-ref="8288E">E</a>* &gt;( <a class="local col7 ref" href="#8287r" title='r' data-ref="8287r">r</a>.get() );</td></tr>
+<tr><th id="795">795</th><td>    <b>return</b> <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt;( <a class="local col7 ref" href="#8287r" title='r' data-ref="8287r">r</a>, <a class="local col9 ref" href="#8289p" title='p' data-ref="8289p">p</a> );</td></tr>
+<tr><th id="796">796</th><td>}</td></tr>
+<tr><th id="797">797</th><td></td></tr>
+<tr><th id="798">798</th><td><b>template</b>&lt;<b>class</b> T, <b>class</b> U&gt; <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <dfn class="decl def fn" id="_ZN5boost18const_pointer_castERKNS_10shared_ptrIT0_EE" title='boost::const_pointer_cast' data-ref="_ZN5boost18const_pointer_castERKNS_10shared_ptrIT0_EE">const_pointer_cast</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;U&gt; <em>const</em> &amp; <dfn class="local col0 decl" id="8290r" title='r' data-type='const shared_ptr&lt;U&gt; &amp;' data-ref="8290r">r</dfn> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="799">799</th><td>{</td></tr>
+<tr><th id="800">800</th><td>    (<em>void</em>) <b>const_cast</b>&lt; T* &gt;( <b>static_cast</b>&lt; U* &gt;( <var>0</var> ) );</td></tr>
+<tr><th id="801">801</th><td></td></tr>
+<tr><th id="802">802</th><td>    <b>typedef</b> <b>typename</b> <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt;::element_type <dfn class="local col1 typedef" id="8291E" title='E' data-type='typename shared_ptr&lt;T&gt;::element_type' data-ref="8291E">E</dfn>;</td></tr>
+<tr><th id="803">803</th><td></td></tr>
+<tr><th id="804">804</th><td>    <a class="local col1 typedef" href="#8291E" title='E' data-type='typename shared_ptr&lt;T&gt;::element_type' data-ref="8291E">E</a> * <dfn class="local col2 decl" id="8292p" title='p' data-type='E *' data-ref="8292p">p</dfn> = <b>const_cast</b>&lt; <a class="local col1 typedef" href="#8291E" title='E' data-type='typename shared_ptr&lt;T&gt;::element_type' data-ref="8291E">E</a>* &gt;( <a class="local col0 ref" href="#8290r" title='r' data-ref="8290r">r</a>.get() );</td></tr>
+<tr><th id="805">805</th><td>    <b>return</b> <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt;( <a class="local col0 ref" href="#8290r" title='r' data-ref="8290r">r</a>, <a class="local col2 ref" href="#8292p" title='p' data-ref="8292p">p</a> );</td></tr>
+<tr><th id="806">806</th><td>}</td></tr>
+<tr><th id="807">807</th><td></td></tr>
+<tr><th id="808">808</th><td><b>template</b>&lt;<b>class</b> T, <b>class</b> U&gt; <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <dfn class="decl def fn" id="_ZN5boost20dynamic_pointer_castERKNS_10shared_ptrIT0_EE" title='boost::dynamic_pointer_cast' data-ref="_ZN5boost20dynamic_pointer_castERKNS_10shared_ptrIT0_EE">dynamic_pointer_cast</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;U&gt; <em>const</em> &amp; <dfn class="local col3 decl" id="8293r" title='r' data-type='const shared_ptr&lt;U&gt; &amp;' data-ref="8293r">r</dfn> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="809">809</th><td>{</td></tr>
+<tr><th id="810">810</th><td>    (<em>void</em>) <b>dynamic_cast</b>&lt; T* &gt;( <b>static_cast</b>&lt; U* &gt;( <var>0</var> ) );</td></tr>
+<tr><th id="811">811</th><td></td></tr>
+<tr><th id="812">812</th><td>    <b>typedef</b> <b>typename</b> <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt;::element_type <dfn class="local col4 typedef" id="8294E" title='E' data-type='typename shared_ptr&lt;T&gt;::element_type' data-ref="8294E">E</dfn>;</td></tr>
+<tr><th id="813">813</th><td></td></tr>
+<tr><th id="814">814</th><td>    <a class="local col4 typedef" href="#8294E" title='E' data-type='typename shared_ptr&lt;T&gt;::element_type' data-ref="8294E">E</a> * <dfn class="local col5 decl" id="8295p" title='p' data-type='E *' data-ref="8295p">p</dfn> = <b>dynamic_cast</b>&lt; <a class="local col4 typedef" href="#8294E" title='E' data-type='typename shared_ptr&lt;T&gt;::element_type' data-ref="8294E">E</a>* &gt;( <a class="local col3 ref" href="#8293r" title='r' data-ref="8293r">r</a>.get() );</td></tr>
+<tr><th id="815">815</th><td>    <b>return</b> <a class="local col5 ref" href="#8295p" title='p' data-ref="8295p">p</a>? <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt;( <a class="local col3 ref" href="#8293r" title='r' data-ref="8293r">r</a>, <a class="local col5 ref" href="#8295p" title='p' data-ref="8295p">p</a> ): <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt;();</td></tr>
+<tr><th id="816">816</th><td>}</td></tr>
+<tr><th id="817">817</th><td></td></tr>
+<tr><th id="818">818</th><td><b>template</b>&lt;<b>class</b> T, <b>class</b> U&gt; <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <dfn class="decl def fn" id="_ZN5boost24reinterpret_pointer_castERKNS_10shared_ptrIT0_EE" title='boost::reinterpret_pointer_cast' data-ref="_ZN5boost24reinterpret_pointer_castERKNS_10shared_ptrIT0_EE">reinterpret_pointer_cast</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;U&gt; <em>const</em> &amp; <dfn class="local col6 decl" id="8296r" title='r' data-type='const shared_ptr&lt;U&gt; &amp;' data-ref="8296r">r</dfn> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="819">819</th><td>{</td></tr>
+<tr><th id="820">820</th><td>    (<em>void</em>) <b>reinterpret_cast</b>&lt; T* &gt;( <b>static_cast</b>&lt; U* &gt;( <var>0</var> ) );</td></tr>
+<tr><th id="821">821</th><td></td></tr>
+<tr><th id="822">822</th><td>    <b>typedef</b> <b>typename</b> <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt;::element_type <dfn class="local col7 typedef" id="8297E" title='E' data-type='typename shared_ptr&lt;T&gt;::element_type' data-ref="8297E">E</dfn>;</td></tr>
+<tr><th id="823">823</th><td></td></tr>
+<tr><th id="824">824</th><td>    <a class="local col7 typedef" href="#8297E" title='E' data-type='typename shared_ptr&lt;T&gt;::element_type' data-ref="8297E">E</a> * <dfn class="local col8 decl" id="8298p" title='p' data-type='E *' data-ref="8298p">p</dfn> = <b>reinterpret_cast</b>&lt; <a class="local col7 typedef" href="#8297E" title='E' data-type='typename shared_ptr&lt;T&gt;::element_type' data-ref="8297E">E</a>* &gt;( <a class="local col6 ref" href="#8296r" title='r' data-ref="8296r">r</a>.get() );</td></tr>
+<tr><th id="825">825</th><td>    <b>return</b> <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt;( <a class="local col6 ref" href="#8296r" title='r' data-ref="8296r">r</a>, <a class="local col8 ref" href="#8298p" title='p' data-ref="8298p">p</a> );</td></tr>
+<tr><th id="826">826</th><td>}</td></tr>
+<tr><th id="827">827</th><td></td></tr>
+<tr><th id="828">828</th><td><i>// get_pointer() enables boost::mem_fn to recognize shared_ptr</i></td></tr>
+<tr><th id="829">829</th><td></td></tr>
+<tr><th id="830">830</th><td><b>template</b>&lt;<b>class</b> T&gt; <b>inline</b> <b>typename</b> <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt;::element_type * <dfn class="decl def fn" id="_ZN5boost11get_pointerERKNS_10shared_ptrIT_EE" title='boost::get_pointer' data-ref="_ZN5boost11get_pointerERKNS_10shared_ptrIT_EE">get_pointer</dfn>(<a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <em>const</em> &amp; <dfn class="local col9 decl" id="8299p" title='p' data-type='const shared_ptr&lt;T&gt; &amp;' data-ref="8299p">p</dfn>) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="831">831</th><td>{</td></tr>
+<tr><th id="832">832</th><td>    <b>return</b> <a class="local col9 ref" href="#8299p" title='p' data-ref="8299p">p</a>.get();</td></tr>
+<tr><th id="833">833</th><td>}</td></tr>
+<tr><th id="834">834</th><td></td></tr>
+<tr><th id="835">835</th><td><i>// operator&lt;&lt;</i></td></tr>
+<tr><th id="836">836</th><td></td></tr>
+<tr><th id="837">837</th><td><u>#<span data-ppcond="837">if</span> !defined(<span class="macro" data-ref="_M/BOOST_NO_IOSTREAM">BOOST_NO_IOSTREAM</span>)</u></td></tr>
+<tr><th id="838">838</th><td></td></tr>
+<tr><th id="839">839</th><td><u>#<span data-ppcond="839">if</span> defined(<span class="macro" data-ref="_M/BOOST_NO_TEMPLATED_IOSTREAMS">BOOST_NO_TEMPLATED_IOSTREAMS</span>) || ( defined(<span class="macro" data-ref="_M/__GNUC__">__GNUC__</span>) &amp;&amp;  (<span class="macro" title="4" data-ref="_M/__GNUC__">__GNUC__</span> &lt; 3) )</u></td></tr>
+<tr><th id="840">840</th><td></td></tr>
+<tr><th id="841">841</th><td><b>template</b>&lt;<b>class</b> Y&gt; std::ostream &amp; <b>operator</b>&lt;&lt; (std::ostream &amp; os, shared_ptr&lt;Y&gt; <em>const</em> &amp; p)</td></tr>
+<tr><th id="842">842</th><td>{</td></tr>
+<tr><th id="843">843</th><td>    os &lt;&lt; p.get();</td></tr>
+<tr><th id="844">844</th><td>    <b>return</b> os;</td></tr>
+<tr><th id="845">845</th><td>}</td></tr>
+<tr><th id="846">846</th><td></td></tr>
+<tr><th id="847">847</th><td><u>#<span data-ppcond="839">else</span></u></td></tr>
+<tr><th id="848">848</th><td></td></tr>
+<tr><th id="849">849</th><td><i>// in STLport's no-iostreams mode no iostream symbols can be used</i></td></tr>
+<tr><th id="850">850</th><td><u>#<span data-ppcond="850">ifndef</span> <span class="macro" data-ref="_M/_STLP_NO_IOSTREAMS">_STLP_NO_IOSTREAMS</span></u></td></tr>
+<tr><th id="851">851</th><td></td></tr>
+<tr><th id="852">852</th><td><u># <span data-ppcond="852">if</span> defined(<span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span>) &amp;&amp; <a class="macro" href="../detail/workaround.hpp.html#233" title="((1 + 0 == 0) &amp;&amp; (BOOST_MSVC != 0) &amp;&amp; (1 % (( (BOOST_MSVC &lt; 1300 &amp;&amp; __SGI_STL_PORT) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_MSVC, &lt; 1300 &amp;&amp; __SGI_STL_PORT)</u></td></tr>
+<tr><th id="853">853</th><td><i>// MSVC6 has problems finding std::basic_ostream through the using declaration in namespace _STL</i></td></tr>
+<tr><th id="854">854</th><td><b>using</b> std::basic_ostream;</td></tr>
+<tr><th id="855">855</th><td><b>template</b>&lt;<b>class</b> E, <b>class</b> T, <b>class</b> Y&gt; basic_ostream&lt;E, T&gt; &amp; <b>operator</b>&lt;&lt; (basic_ostream&lt;E, T&gt; &amp; os, shared_ptr&lt;Y&gt; <em>const</em> &amp; p)</td></tr>
+<tr><th id="856">856</th><td><u># <span data-ppcond="852">else</span></u></td></tr>
+<tr><th id="857">857</th><td><b>template</b>&lt;<b>class</b> E, <b>class</b> T, <b>class</b> Y&gt; <span class="namespace">std::</span><a class="type" href="../../c++/4.8.2/iosfwd.html#std::basic_ostream" title='std::basic_ostream' data-ref="std::basic_ostream">basic_ostream</a>&lt;E, T&gt; &amp; <dfn class="decl def fn" id="_ZN5boostlsERSt13basic_ostreamIT_T0_ERKNS_10shared_ptrIT1_EE" title='boost::operator&lt;&lt;' data-ref="_ZN5boostlsERSt13basic_ostreamIT_T0_ERKNS_10shared_ptrIT1_EE"><b>operator</b>&lt;&lt;</dfn> (<span class="namespace">std::</span><a class="type" href="../../c++/4.8.2/iosfwd.html#std::basic_ostream" title='std::basic_ostream' data-ref="std::basic_ostream">basic_ostream</a>&lt;E, T&gt; &amp; <dfn class="local col0 decl" id="8300os" title='os' data-type='std::basic_ostream&lt;E, T&gt; &amp;' data-ref="8300os">os</dfn>, <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;Y&gt; <em>const</em> &amp; <dfn class="local col1 decl" id="8301p" title='p' data-type='const shared_ptr&lt;Y&gt; &amp;' data-ref="8301p">p</dfn>)</td></tr>
+<tr><th id="858">858</th><td><u># <span data-ppcond="852">endif</span></u></td></tr>
+<tr><th id="859">859</th><td>{</td></tr>
+<tr><th id="860">860</th><td>    <a class="local col0 ref" href="#8300os" title='os' data-ref="8300os">os</a> &lt;&lt; <a class="local col1 ref" href="#8301p" title='p' data-ref="8301p">p</a>.get();</td></tr>
+<tr><th id="861">861</th><td>    <b>return</b> <a class="local col0 ref" href="#8300os" title='os' data-ref="8300os">os</a>;</td></tr>
+<tr><th id="862">862</th><td>}</td></tr>
+<tr><th id="863">863</th><td></td></tr>
+<tr><th id="864">864</th><td><u>#<span data-ppcond="850">endif</span> // _STLP_NO_IOSTREAMS</u></td></tr>
+<tr><th id="865">865</th><td></td></tr>
+<tr><th id="866">866</th><td><u>#<span data-ppcond="839">endif</span> // __GNUC__ &lt; 3</u></td></tr>
+<tr><th id="867">867</th><td></td></tr>
+<tr><th id="868">868</th><td><u>#<span data-ppcond="837">endif</span> // !defined(BOOST_NO_IOSTREAM)</u></td></tr>
+<tr><th id="869">869</th><td></td></tr>
+<tr><th id="870">870</th><td><i>// get_deleter</i></td></tr>
+<tr><th id="871">871</th><td></td></tr>
+<tr><th id="872">872</th><td><b>namespace</b> <span class="namespace">detail</span></td></tr>
+<tr><th id="873">873</th><td>{</td></tr>
+<tr><th id="874">874</th><td></td></tr>
+<tr><th id="875">875</th><td><u>#<span data-ppcond="875">if</span> ( defined(<span class="macro" data-ref="_M/__GNUC__">__GNUC__</span>) &amp;&amp; <a class="macro" href="../detail/workaround.hpp.html#233" title="((0 + 0 == 0) &amp;&amp; (4 != 0) &amp;&amp; (1 % (( (4 &lt; 3) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(<span class="macro" title="4" data-ref="_M/__GNUC__">__GNUC__</span>, &lt; 3) ) || \</u></td></tr>
+<tr><th id="876">876</th><td><u>    ( defined(<span class="macro" data-ref="_M/__EDG_VERSION__">__EDG_VERSION__</span>) &amp;&amp; <a class="macro" href="../detail/workaround.hpp.html#233" title="((1 + 0 == 0) &amp;&amp; (__EDG_VERSION__ != 0) &amp;&amp; (1 % (( (__EDG_VERSION__ &lt;= 238) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(__EDG_VERSION__, &lt;= 238) ) || \</u></td></tr>
+<tr><th id="877">877</th><td><u>    ( defined(<span class="macro" data-ref="_M/__HP_aCC">__HP_aCC</span>) &amp;&amp; <a class="macro" href="../detail/workaround.hpp.html#233" title="((1 + 0 == 0) &amp;&amp; (__HP_aCC != 0) &amp;&amp; (1 % (( (__HP_aCC &lt;= 33500) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(__HP_aCC, &lt;= 33500) )</u></td></tr>
+<tr><th id="878">878</th><td></td></tr>
+<tr><th id="879">879</th><td><i>// g++ 2.9x doesn't allow static_cast&lt;X const *&gt;(void *)</i></td></tr>
+<tr><th id="880">880</th><td><i>// apparently EDG 2.38 and HP aCC A.03.35 also don't accept it</i></td></tr>
+<tr><th id="881">881</th><td></td></tr>
+<tr><th id="882">882</th><td><b>template</b>&lt;<b>class</b> D, <b>class</b> T&gt; D * basic_get_deleter(shared_ptr&lt;T&gt; <em>const</em> &amp; p)</td></tr>
+<tr><th id="883">883</th><td>{</td></tr>
+<tr><th id="884">884</th><td>    <em>void</em> <em>const</em> * q = p._internal_get_deleter(BOOST_SP_TYPEID(D));</td></tr>
+<tr><th id="885">885</th><td>    <b>return</b> <b>const_cast</b>&lt;D *&gt;(<b>static_cast</b>&lt;D <em>const</em> *&gt;(q));</td></tr>
+<tr><th id="886">886</th><td>}</td></tr>
+<tr><th id="887">887</th><td></td></tr>
+<tr><th id="888">888</th><td><u>#<span data-ppcond="875">else</span></u></td></tr>
+<tr><th id="889">889</th><td></td></tr>
+<tr><th id="890">890</th><td><b>template</b>&lt;<b>class</b> D, <b>class</b> T&gt; D * <dfn class="decl def fn" id="_ZN5boost6detail17basic_get_deleterERKNS_10shared_ptrIT0_EE" title='boost::detail::basic_get_deleter' data-ref="_ZN5boost6detail17basic_get_deleterERKNS_10shared_ptrIT0_EE">basic_get_deleter</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <em>const</em> &amp; <dfn class="local col2 decl" id="8302p" title='p' data-type='const shared_ptr&lt;T&gt; &amp;' data-ref="8302p">p</dfn> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="891">891</th><td>{</td></tr>
+<tr><th id="892">892</th><td>    <b>return</b> <b>static_cast</b>&lt;D *&gt;( <a class="local col2 ref" href="#8302p" title='p' data-ref="8302p">p</a>._internal_get_deleter(<a class="macro" href="../detail/sp_typeinfo.hpp.html#131" title="typeid(D)" data-ref="_M/BOOST_SP_TYPEID">BOOST_SP_TYPEID</a>(D)) );</td></tr>
+<tr><th id="893">893</th><td>}</td></tr>
+<tr><th id="894">894</th><td></td></tr>
+<tr><th id="895">895</th><td><u>#<span data-ppcond="875">endif</span></u></td></tr>
+<tr><th id="896">896</th><td></td></tr>
+<tr><th id="897">897</th><td><b>class</b> <dfn class="type def" id="boost::detail::esft2_deleter_wrapper" title='boost::detail::esft2_deleter_wrapper' data-ref="boost::detail::esft2_deleter_wrapper">esft2_deleter_wrapper</dfn></td></tr>
+<tr><th id="898">898</th><td>{</td></tr>
+<tr><th id="899">899</th><td><b>private</b>:</td></tr>
+<tr><th id="900">900</th><td></td></tr>
+<tr><th id="901">901</th><td>    <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;<em>void</em>&gt; <dfn class="decl field" id="boost::detail::esft2_deleter_wrapper::deleter_" title='boost::detail::esft2_deleter_wrapper::deleter_' data-ref="boost::detail::esft2_deleter_wrapper::deleter_">deleter_</dfn>;</td></tr>
+<tr><th id="902">902</th><td></td></tr>
+<tr><th id="903">903</th><td><b>public</b>:</td></tr>
+<tr><th id="904">904</th><td></td></tr>
+<tr><th id="905">905</th><td>    <dfn class="decl def fn" id="_ZN5boost6detail21esft2_deleter_wrapperC1Ev" title='boost::detail::esft2_deleter_wrapper::esft2_deleter_wrapper' data-ref="_ZN5boost6detail21esft2_deleter_wrapperC1Ev">esft2_deleter_wrapper</dfn>()</td></tr>
+<tr><th id="906">906</th><td>    {</td></tr>
+<tr><th id="907">907</th><td>    }</td></tr>
+<tr><th id="908">908</th><td></td></tr>
+<tr><th id="909">909</th><td>    <b>template</b>&lt; <b>class</b> T &gt; <em>void</em> <dfn class="decl def fn" id="_ZN5boost6detail21esft2_deleter_wrapper11set_deleterERKNS_10shared_ptrIT_EE" title='boost::detail::esft2_deleter_wrapper::set_deleter' data-ref="_ZN5boost6detail21esft2_deleter_wrapper11set_deleterERKNS_10shared_ptrIT_EE">set_deleter</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <em>const</em> &amp; <dfn class="local col3 decl" id="8303deleter" title='deleter' data-type='const shared_ptr&lt;T&gt; &amp;' data-ref="8303deleter">deleter</dfn> )</td></tr>
+<tr><th id="910">910</th><td>    {</td></tr>
+<tr><th id="911">911</th><td>        <a class="member field" href="#boost::detail::esft2_deleter_wrapper::deleter_" title='boost::detail::esft2_deleter_wrapper::deleter_' data-ref="boost::detail::esft2_deleter_wrapper::deleter_">deleter_</a> = <a class="local col3 ref" href="#8303deleter" title='deleter' data-ref="8303deleter">deleter</a>;</td></tr>
+<tr><th id="912">912</th><td>    }</td></tr>
+<tr><th id="913">913</th><td></td></tr>
+<tr><th id="914">914</th><td>    <b>template</b>&lt;<b>typename</b> D&gt; D* <dfn class="decl def fn" id="_ZNK5boost6detail21esft2_deleter_wrapper11get_deleterEv" title='boost::detail::esft2_deleter_wrapper::get_deleter' data-ref="_ZNK5boost6detail21esft2_deleter_wrapper11get_deleterEv">get_deleter</dfn>() <em>const</em> <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="915">915</th><td>    {</td></tr>
+<tr><th id="916">916</th><td>        <b>return</b> <span class="namespace">boost::detail::</span>basic_get_deleter&lt;D&gt;( <a class="member field" href="#boost::detail::esft2_deleter_wrapper::deleter_" title='boost::detail::esft2_deleter_wrapper::deleter_' data-ref="boost::detail::esft2_deleter_wrapper::deleter_">deleter_</a> );</td></tr>
+<tr><th id="917">917</th><td>    }</td></tr>
+<tr><th id="918">918</th><td></td></tr>
+<tr><th id="919">919</th><td>    <b>template</b>&lt; <b>class</b> T&gt; <em>void</em> <dfn class="decl def fn" id="_ZN5boost6detail21esft2_deleter_wrapperclEPT_" title='boost::detail::esft2_deleter_wrapper::operator()' data-ref="_ZN5boost6detail21esft2_deleter_wrapperclEPT_"><b>operator</b>()</dfn>( T* )</td></tr>
+<tr><th id="920">920</th><td>    {</td></tr>
+<tr><th id="921">921</th><td>        <a class="macro" href="../assert.hpp.html#51" title="((deleter_.use_count() &lt;= 1) ? static_cast&lt;void&gt; (0) : __assert_fail (&quot;deleter_.use_count() &lt;= 1&quot;, &quot;/usr/include/boost/smart_ptr/shared_ptr.hpp&quot;, 921, __PRETTY_FUNCTION__))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>( <a class="member field" href="#boost::detail::esft2_deleter_wrapper::deleter_" title='boost::detail::esft2_deleter_wrapper::deleter_' data-ref="boost::detail::esft2_deleter_wrapper::deleter_">deleter_</a>.<a class="ref fn" href="#_ZNK5boost10shared_ptr9use_countEv" title='boost::shared_ptr::use_count' data-ref="_ZNK5boost10shared_ptr9use_countEv">use_count</a>() &lt;= <var>1</var> );</td></tr>
+<tr><th id="922">922</th><td>        <a class="member field" href="#boost::detail::esft2_deleter_wrapper::deleter_" title='boost::detail::esft2_deleter_wrapper::deleter_' data-ref="boost::detail::esft2_deleter_wrapper::deleter_">deleter_</a>.<a class="ref fn" href="#_ZN5boost10shared_ptr5resetEv" title='boost::shared_ptr::reset' data-ref="_ZN5boost10shared_ptr5resetEv">reset</a>();</td></tr>
+<tr><th id="923">923</th><td>    }</td></tr>
+<tr><th id="924">924</th><td>};</td></tr>
+<tr><th id="925">925</th><td></td></tr>
+<tr><th id="926">926</th><td>} <i>// namespace detail</i></td></tr>
+<tr><th id="927">927</th><td></td></tr>
+<tr><th id="928">928</th><td><b>template</b>&lt;<b>class</b> D, <b>class</b> T&gt; D * <dfn class="decl def fn" id="_ZN5boost11get_deleterERKNS_10shared_ptrIT0_EE" title='boost::get_deleter' data-ref="_ZN5boost11get_deleterERKNS_10shared_ptrIT0_EE">get_deleter</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <em>const</em> &amp; <dfn class="local col4 decl" id="8304p" title='p' data-type='const shared_ptr&lt;T&gt; &amp;' data-ref="8304p">p</dfn> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="929">929</th><td>{</td></tr>
+<tr><th id="930">930</th><td>    D *<dfn class="local col5 decl" id="8305del" title='del' data-type='D *' data-ref="8305del">del</dfn> = <span class="namespace">boost::detail::</span>basic_get_deleter&lt;D&gt;(<a class="local col4 ref" href="#8304p" title='p' data-ref="8304p">p</a>);</td></tr>
+<tr><th id="931">931</th><td></td></tr>
+<tr><th id="932">932</th><td>    <b>if</b>(<a class="local col5 ref" href="#8305del" title='del' data-ref="8305del">del</a> == <var>0</var>)</td></tr>
+<tr><th id="933">933</th><td>    {</td></tr>
+<tr><th id="934">934</th><td>        <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::esft2_deleter_wrapper" title='boost::detail::esft2_deleter_wrapper' data-ref="boost::detail::esft2_deleter_wrapper">esft2_deleter_wrapper</a> *<dfn class="local col6 decl" id="8306del_wrapper" title='del_wrapper' data-type='boost::detail::esft2_deleter_wrapper *' data-ref="8306del_wrapper">del_wrapper</dfn> = <span class="namespace">boost::detail::</span>basic_get_deleter&lt;<span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::esft2_deleter_wrapper" title='boost::detail::esft2_deleter_wrapper' data-ref="boost::detail::esft2_deleter_wrapper">esft2_deleter_wrapper</a>&gt;(<a class="local col4 ref" href="#8304p" title='p' data-ref="8304p">p</a>);</td></tr>
+<tr><th id="935">935</th><td><i>// The following get_deleter method call is fully qualified because</i></td></tr>
+<tr><th id="936">936</th><td><i>// older versions of gcc (2.95, 3.2.3) fail to compile it when written del_wrapper-&gt;get_deleter&lt;D&gt;()</i></td></tr>
+<tr><th id="937">937</th><td>        <b>if</b>(<a class="local col6 ref" href="#8306del_wrapper" title='del_wrapper' data-ref="8306del_wrapper">del_wrapper</a>) <a class="local col5 ref" href="#8305del" title='del' data-ref="8305del">del</a> = <a class="local col6 ref" href="#8306del_wrapper" title='del_wrapper' data-ref="8306del_wrapper">del_wrapper</a>-&gt;<span class="namespace">::boost::detail::</span><a class="type" href="#boost::detail::esft2_deleter_wrapper" title='boost::detail::esft2_deleter_wrapper' data-ref="boost::detail::esft2_deleter_wrapper">esft2_deleter_wrapper</a>::get_deleter&lt;D&gt;();</td></tr>
+<tr><th id="938">938</th><td>    }</td></tr>
+<tr><th id="939">939</th><td></td></tr>
+<tr><th id="940">940</th><td>    <b>return</b> <a class="local col5 ref" href="#8305del" title='del' data-ref="8305del">del</a>;</td></tr>
+<tr><th id="941">941</th><td>}</td></tr>
+<tr><th id="942">942</th><td></td></tr>
+<tr><th id="943">943</th><td><i>// atomic access</i></td></tr>
+<tr><th id="944">944</th><td></td></tr>
+<tr><th id="945">945</th><td><u>#<span data-ppcond="945">if</span> !defined(<span class="macro" data-ref="_M/BOOST_SP_NO_ATOMIC_ACCESS">BOOST_SP_NO_ATOMIC_ACCESS</span>)</u></td></tr>
+<tr><th id="946">946</th><td></td></tr>
+<tr><th id="947">947</th><td><b>template</b>&lt;<b>class</b> T&gt; <b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZN5boost19atomic_is_lock_freeEPKNS_10shared_ptrIT_EE" title='boost::atomic_is_lock_free' data-ref="_ZN5boost19atomic_is_lock_freeEPKNS_10shared_ptrIT_EE">atomic_is_lock_free</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <em>const</em> * <i>/*p*/</i> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="948">948</th><td>{</td></tr>
+<tr><th id="949">949</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="950">950</th><td>}</td></tr>
+<tr><th id="951">951</th><td></td></tr>
+<tr><th id="952">952</th><td><b>template</b>&lt;<b>class</b> T&gt; <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <dfn class="decl def fn" id="_ZN5boost11atomic_loadEPKNS_10shared_ptrIT_EE" title='boost::atomic_load' data-ref="_ZN5boost11atomic_loadEPKNS_10shared_ptrIT_EE">atomic_load</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <em>const</em> * <dfn class="local col7 decl" id="8307p" title='p' data-type='const shared_ptr&lt;T&gt; *' data-ref="8307p">p</dfn> )</td></tr>
+<tr><th id="953">953</th><td>{</td></tr>
+<tr><th id="954">954</th><td>    <span class="namespace">boost::detail::</span><a class="type" href="detail/spinlock_pool.hpp.html#boost::detail::spinlock_pool" title='boost::detail::spinlock_pool' data-ref="boost::detail::spinlock_pool">spinlock_pool</a>&lt;<var>2</var>&gt;::<a class="type" href="detail/spinlock_pool.hpp.html#boost::detail::spinlock_pool::scoped_lock" title='boost::detail::spinlock_pool::scoped_lock' data-ref="boost::detail::spinlock_pool::scoped_lock">scoped_lock</a> <dfn class="local col8 decl" id="8308lock" title='lock' data-type='boost::detail::spinlock_pool&lt;2&gt;::scoped_lock' data-ref="8308lock">lock</dfn>( <a class="local col7 ref" href="#8307p" title='p' data-ref="8307p">p</a> );</td></tr>
+<tr><th id="955">955</th><td>    <b>return</b> *<a class="local col7 ref" href="#8307p" title='p' data-ref="8307p">p</a>;</td></tr>
+<tr><th id="956">956</th><td>}</td></tr>
+<tr><th id="957">957</th><td></td></tr>
+<tr><th id="958">958</th><td><b>template</b>&lt;<b>class</b> T&gt; <b>inline</b> <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <dfn class="decl def fn" id="_ZN5boost20atomic_load_explicitEPKNS_10shared_ptrIT_EENS_12memory_orderE" title='boost::atomic_load_explicit' data-ref="_ZN5boost20atomic_load_explicitEPKNS_10shared_ptrIT_EENS_12memory_orderE">atomic_load_explicit</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <em>const</em> * <dfn class="local col9 decl" id="8309p" title='p' data-type='const shared_ptr&lt;T&gt; *' data-ref="8309p">p</dfn>, <a class="type" href="../memory_order.hpp.html#boost::memory_order" title='boost::memory_order' data-ref="boost::memory_order">memory_order</a> <i>/*mo*/</i> )</td></tr>
+<tr><th id="959">959</th><td>{</td></tr>
+<tr><th id="960">960</th><td>    <b>return</b> atomic_load( <a class="local col9 ref" href="#8309p" title='p' data-ref="8309p">p</a> );</td></tr>
+<tr><th id="961">961</th><td>}</td></tr>
+<tr><th id="962">962</th><td></td></tr>
+<tr><th id="963">963</th><td><b>template</b>&lt;<b>class</b> T&gt; <em>void</em> <dfn class="decl def fn" id="_ZN5boost12atomic_storeEPNS_10shared_ptrIT_EES2_" title='boost::atomic_store' data-ref="_ZN5boost12atomic_storeEPNS_10shared_ptrIT_EES2_">atomic_store</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; * <dfn class="local col0 decl" id="8310p" title='p' data-type='shared_ptr&lt;T&gt; *' data-ref="8310p">p</dfn>, <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <dfn class="local col1 decl" id="8311r" title='r' data-type='shared_ptr&lt;T&gt;' data-ref="8311r">r</dfn> )</td></tr>
+<tr><th id="964">964</th><td>{</td></tr>
+<tr><th id="965">965</th><td>    <span class="namespace">boost::detail::</span><a class="type" href="detail/spinlock_pool.hpp.html#boost::detail::spinlock_pool" title='boost::detail::spinlock_pool' data-ref="boost::detail::spinlock_pool">spinlock_pool</a>&lt;<var>2</var>&gt;::<a class="type" href="detail/spinlock_pool.hpp.html#boost::detail::spinlock_pool::scoped_lock" title='boost::detail::spinlock_pool::scoped_lock' data-ref="boost::detail::spinlock_pool::scoped_lock">scoped_lock</a> <dfn class="local col2 decl" id="8312lock" title='lock' data-type='boost::detail::spinlock_pool&lt;2&gt;::scoped_lock' data-ref="8312lock">lock</dfn>( <a class="local col0 ref" href="#8310p" title='p' data-ref="8310p">p</a> );</td></tr>
+<tr><th id="966">966</th><td>    <a class="local col0 ref" href="#8310p" title='p' data-ref="8310p">p</a>-&gt;swap( <a class="local col1 ref" href="#8311r" title='r' data-ref="8311r">r</a> );</td></tr>
+<tr><th id="967">967</th><td>}</td></tr>
+<tr><th id="968">968</th><td></td></tr>
+<tr><th id="969">969</th><td><b>template</b>&lt;<b>class</b> T&gt; <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost21atomic_store_explicitEPNS_10shared_ptrIT_EES2_NS_12memory_orderE" title='boost::atomic_store_explicit' data-ref="_ZN5boost21atomic_store_explicitEPNS_10shared_ptrIT_EES2_NS_12memory_orderE">atomic_store_explicit</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; * <dfn class="local col3 decl" id="8313p" title='p' data-type='shared_ptr&lt;T&gt; *' data-ref="8313p">p</dfn>, <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <dfn class="local col4 decl" id="8314r" title='r' data-type='shared_ptr&lt;T&gt;' data-ref="8314r">r</dfn>, <a class="type" href="../memory_order.hpp.html#boost::memory_order" title='boost::memory_order' data-ref="boost::memory_order">memory_order</a> <i>/*mo*/</i> )</td></tr>
+<tr><th id="970">970</th><td>{</td></tr>
+<tr><th id="971">971</th><td>    atomic_store( <a class="local col3 ref" href="#8313p" title='p' data-ref="8313p">p</a>, <a class="local col4 ref" href="#8314r" title='r' data-ref="8314r">r</a> ); <i>// std::move( r )</i></td></tr>
+<tr><th id="972">972</th><td>}</td></tr>
+<tr><th id="973">973</th><td></td></tr>
+<tr><th id="974">974</th><td><b>template</b>&lt;<b>class</b> T&gt; <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <dfn class="decl def fn" id="_ZN5boost15atomic_exchangeEPNS_10shared_ptrIT_EES2_" title='boost::atomic_exchange' data-ref="_ZN5boost15atomic_exchangeEPNS_10shared_ptrIT_EES2_">atomic_exchange</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; * <dfn class="local col5 decl" id="8315p" title='p' data-type='shared_ptr&lt;T&gt; *' data-ref="8315p">p</dfn>, <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <dfn class="local col6 decl" id="8316r" title='r' data-type='shared_ptr&lt;T&gt;' data-ref="8316r">r</dfn> )</td></tr>
+<tr><th id="975">975</th><td>{</td></tr>
+<tr><th id="976">976</th><td>    <span class="namespace">boost::detail::</span><a class="type" href="detail/spinlock_sync.hpp.html#boost::detail::spinlock" title='boost::detail::spinlock' data-ref="boost::detail::spinlock">spinlock</a> &amp; <dfn class="local col7 decl" id="8317sp" title='sp' data-type='boost::detail::spinlock &amp;' data-ref="8317sp">sp</dfn> = <span class="namespace">boost::detail::</span><a class="type" href="detail/spinlock_pool.hpp.html#boost::detail::spinlock_pool" title='boost::detail::spinlock_pool' data-ref="boost::detail::spinlock_pool">spinlock_pool</a>&lt;<var>2</var>&gt;::<a class="ref fn" href="detail/spinlock_pool.hpp.html#_ZN5boost6detail13spinlock_pool12spinlock_forEPKv" title='boost::detail::spinlock_pool::spinlock_for' data-ref="_ZN5boost6detail13spinlock_pool12spinlock_forEPKv">spinlock_for</a>( <a class="local col5 ref" href="#8315p" title='p' data-ref="8315p">p</a> );</td></tr>
+<tr><th id="977">977</th><td></td></tr>
+<tr><th id="978">978</th><td>    <a class="local col7 ref" href="#8317sp" title='sp' data-ref="8317sp">sp</a>.<a class="ref fn" href="detail/spinlock_sync.hpp.html#_ZN5boost6detail8spinlock4lockEv" title='boost::detail::spinlock::lock' data-ref="_ZN5boost6detail8spinlock4lockEv">lock</a>();</td></tr>
+<tr><th id="979">979</th><td>    <a class="local col5 ref" href="#8315p" title='p' data-ref="8315p">p</a>-&gt;swap( <a class="local col6 ref" href="#8316r" title='r' data-ref="8316r">r</a> );</td></tr>
+<tr><th id="980">980</th><td>    <a class="local col7 ref" href="#8317sp" title='sp' data-ref="8317sp">sp</a>.<a class="ref fn" href="detail/spinlock_sync.hpp.html#_ZN5boost6detail8spinlock6unlockEv" title='boost::detail::spinlock::unlock' data-ref="_ZN5boost6detail8spinlock6unlockEv">unlock</a>();</td></tr>
+<tr><th id="981">981</th><td></td></tr>
+<tr><th id="982">982</th><td>    <b>return</b> <a class="local col6 ref" href="#8316r" title='r' data-ref="8316r">r</a>; <i>// return std::move( r )</i></td></tr>
+<tr><th id="983">983</th><td>}</td></tr>
+<tr><th id="984">984</th><td></td></tr>
+<tr><th id="985">985</th><td><b>template</b>&lt;<b>class</b> T&gt; <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <dfn class="decl def fn" id="_ZN5boost24atomic_exchange_explicitEPNS_10shared_ptrIT_EES2_NS_12memory_orderE" title='boost::atomic_exchange_explicit' data-ref="_ZN5boost24atomic_exchange_explicitEPNS_10shared_ptrIT_EES2_NS_12memory_orderE">atomic_exchange_explicit</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; * <dfn class="local col8 decl" id="8318p" title='p' data-type='shared_ptr&lt;T&gt; *' data-ref="8318p">p</dfn>, <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <dfn class="local col9 decl" id="8319r" title='r' data-type='shared_ptr&lt;T&gt;' data-ref="8319r">r</dfn>, <a class="type" href="../memory_order.hpp.html#boost::memory_order" title='boost::memory_order' data-ref="boost::memory_order">memory_order</a> <i>/*mo*/</i> )</td></tr>
+<tr><th id="986">986</th><td>{</td></tr>
+<tr><th id="987">987</th><td>    <b>return</b> atomic_exchange( <a class="local col8 ref" href="#8318p" title='p' data-ref="8318p">p</a>, <a class="local col9 ref" href="#8319r" title='r' data-ref="8319r">r</a> ); <i>// std::move( r )</i></td></tr>
+<tr><th id="988">988</th><td>}</td></tr>
+<tr><th id="989">989</th><td></td></tr>
+<tr><th id="990">990</th><td><b>template</b>&lt;<b>class</b> T&gt; <em>bool</em> <dfn class="decl def fn" id="_ZN5boost23atomic_compare_exchangeEPNS_10shared_ptrIT_EES3_S2_" title='boost::atomic_compare_exchange' data-ref="_ZN5boost23atomic_compare_exchangeEPNS_10shared_ptrIT_EES3_S2_">atomic_compare_exchange</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; * <dfn class="local col0 decl" id="8320p" title='p' data-type='shared_ptr&lt;T&gt; *' data-ref="8320p">p</dfn>, <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; * <dfn class="local col1 decl" id="8321v" title='v' data-type='shared_ptr&lt;T&gt; *' data-ref="8321v">v</dfn>, <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <dfn class="local col2 decl" id="8322w" title='w' data-type='shared_ptr&lt;T&gt;' data-ref="8322w">w</dfn> )</td></tr>
+<tr><th id="991">991</th><td>{</td></tr>
+<tr><th id="992">992</th><td>    <span class="namespace">boost::detail::</span><a class="type" href="detail/spinlock_sync.hpp.html#boost::detail::spinlock" title='boost::detail::spinlock' data-ref="boost::detail::spinlock">spinlock</a> &amp; <dfn class="local col3 decl" id="8323sp" title='sp' data-type='boost::detail::spinlock &amp;' data-ref="8323sp">sp</dfn> = <span class="namespace">boost::detail::</span><a class="type" href="detail/spinlock_pool.hpp.html#boost::detail::spinlock_pool" title='boost::detail::spinlock_pool' data-ref="boost::detail::spinlock_pool">spinlock_pool</a>&lt;<var>2</var>&gt;::<a class="ref fn" href="detail/spinlock_pool.hpp.html#_ZN5boost6detail13spinlock_pool12spinlock_forEPKv" title='boost::detail::spinlock_pool::spinlock_for' data-ref="_ZN5boost6detail13spinlock_pool12spinlock_forEPKv">spinlock_for</a>( <a class="local col0 ref" href="#8320p" title='p' data-ref="8320p">p</a> );</td></tr>
+<tr><th id="993">993</th><td></td></tr>
+<tr><th id="994">994</th><td>    <a class="local col3 ref" href="#8323sp" title='sp' data-ref="8323sp">sp</a>.<a class="ref fn" href="detail/spinlock_sync.hpp.html#_ZN5boost6detail8spinlock4lockEv" title='boost::detail::spinlock::lock' data-ref="_ZN5boost6detail8spinlock4lockEv">lock</a>();</td></tr>
+<tr><th id="995">995</th><td></td></tr>
+<tr><th id="996">996</th><td>    <b>if</b>( <a class="local col0 ref" href="#8320p" title='p' data-ref="8320p">p</a>-&gt;_internal_equiv( *<a class="local col1 ref" href="#8321v" title='v' data-ref="8321v">v</a> ) )</td></tr>
+<tr><th id="997">997</th><td>    {</td></tr>
+<tr><th id="998">998</th><td>        <a class="local col0 ref" href="#8320p" title='p' data-ref="8320p">p</a>-&gt;swap( <a class="local col2 ref" href="#8322w" title='w' data-ref="8322w">w</a> );</td></tr>
+<tr><th id="999">999</th><td></td></tr>
+<tr><th id="1000">1000</th><td>        <a class="local col3 ref" href="#8323sp" title='sp' data-ref="8323sp">sp</a>.<a class="ref fn" href="detail/spinlock_sync.hpp.html#_ZN5boost6detail8spinlock6unlockEv" title='boost::detail::spinlock::unlock' data-ref="_ZN5boost6detail8spinlock6unlockEv">unlock</a>();</td></tr>
+<tr><th id="1001">1001</th><td></td></tr>
+<tr><th id="1002">1002</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="1003">1003</th><td>    }</td></tr>
+<tr><th id="1004">1004</th><td>    <b>else</b></td></tr>
+<tr><th id="1005">1005</th><td>    {</td></tr>
+<tr><th id="1006">1006</th><td>        <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <dfn class="local col4 decl" id="8324tmp" title='tmp' data-type='shared_ptr&lt;T&gt;' data-ref="8324tmp">tmp</dfn>( *<a class="local col0 ref" href="#8320p" title='p' data-ref="8320p">p</a> );</td></tr>
+<tr><th id="1007">1007</th><td></td></tr>
+<tr><th id="1008">1008</th><td>        <a class="local col3 ref" href="#8323sp" title='sp' data-ref="8323sp">sp</a>.<a class="ref fn" href="detail/spinlock_sync.hpp.html#_ZN5boost6detail8spinlock6unlockEv" title='boost::detail::spinlock::unlock' data-ref="_ZN5boost6detail8spinlock6unlockEv">unlock</a>();</td></tr>
+<tr><th id="1009">1009</th><td></td></tr>
+<tr><th id="1010">1010</th><td>        <a class="local col4 ref" href="#8324tmp" title='tmp' data-ref="8324tmp">tmp</a>.swap( *<a class="local col1 ref" href="#8321v" title='v' data-ref="8321v">v</a> );</td></tr>
+<tr><th id="1011">1011</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="1012">1012</th><td>    }</td></tr>
+<tr><th id="1013">1013</th><td>}</td></tr>
+<tr><th id="1014">1014</th><td></td></tr>
+<tr><th id="1015">1015</th><td><b>template</b>&lt;<b>class</b> T&gt; <b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZN5boost32atomic_compare_exchange_explicitEPNS_10shared_ptrIT_EES3_S2_NS_12memory_orderES4_" title='boost::atomic_compare_exchange_explicit' data-ref="_ZN5boost32atomic_compare_exchange_explicitEPNS_10shared_ptrIT_EES3_S2_NS_12memory_orderES4_">atomic_compare_exchange_explicit</dfn>( <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; * <dfn class="local col5 decl" id="8325p" title='p' data-type='shared_ptr&lt;T&gt; *' data-ref="8325p">p</dfn>, <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; * <dfn class="local col6 decl" id="8326v" title='v' data-type='shared_ptr&lt;T&gt; *' data-ref="8326v">v</dfn>, <a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <dfn class="local col7 decl" id="8327w" title='w' data-type='shared_ptr&lt;T&gt;' data-ref="8327w">w</dfn>, <a class="type" href="../memory_order.hpp.html#boost::memory_order" title='boost::memory_order' data-ref="boost::memory_order">memory_order</a> <i>/*success*/</i>, <a class="type" href="../memory_order.hpp.html#boost::memory_order" title='boost::memory_order' data-ref="boost::memory_order">memory_order</a> <i>/*failure*/</i> )</td></tr>
+<tr><th id="1016">1016</th><td>{</td></tr>
+<tr><th id="1017">1017</th><td>    <b>return</b> atomic_compare_exchange( <a class="local col5 ref" href="#8325p" title='p' data-ref="8325p">p</a>, <a class="local col6 ref" href="#8326v" title='v' data-ref="8326v">v</a>, <a class="local col7 ref" href="#8327w" title='w' data-ref="8327w">w</a> ); <i>// std::move( w )</i></td></tr>
+<tr><th id="1018">1018</th><td>}</td></tr>
+<tr><th id="1019">1019</th><td></td></tr>
+<tr><th id="1020">1020</th><td><u>#<span data-ppcond="945">endif</span> // !defined(BOOST_SP_NO_ATOMIC_ACCESS)</u></td></tr>
+<tr><th id="1021">1021</th><td></td></tr>
+<tr><th id="1022">1022</th><td><i>// hash_value</i></td></tr>
+<tr><th id="1023">1023</th><td></td></tr>
+<tr><th id="1024">1024</th><td><b>template</b>&lt; <b>class</b> T &gt; <b>struct</b> <a class="type" href="../functional/hash/hash_fwd.hpp.html#boost::hash" title='boost::hash' data-ref="boost::hash" id="boost::hash">hash</a>;</td></tr>
+<tr><th id="1025">1025</th><td></td></tr>
+<tr><th id="1026">1026</th><td><b>template</b>&lt; <b>class</b> T &gt; <span class="namespace">std::</span><a class="typedef" href="../../c++/4.8.2/x86_64-redhat-linux/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="decl def fn" id="_ZN5boost10hash_valueERKNS_10shared_ptrIT_EE" title='boost::hash_value' data-ref="_ZN5boost10hash_valueERKNS_10shared_ptrIT_EE">hash_value</dfn>( <span class="namespace">boost::</span><a class="type" href="../exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;T&gt; <em>const</em> &amp; <dfn class="local col8 decl" id="8328p" title='p' data-type='const boost::shared_ptr&lt;T&gt; &amp;' data-ref="8328p">p</dfn> ) <a class="macro" href="../config/suffix.hpp.html#880" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="1027">1027</th><td>{</td></tr>
+<tr><th id="1028">1028</th><td>    <b>return</b> <span class="namespace">boost::</span><a class="type" href="../functional/hash/hash_fwd.hpp.html#boost::hash" title='boost::hash' data-ref="boost::hash">hash</a>&lt; T* &gt;()( <a class="local col8 ref" href="#8328p" title='p' data-ref="8328p">p</a>.get() );</td></tr>
+<tr><th id="1029">1029</th><td>}</td></tr>
+<tr><th id="1030">1030</th><td></td></tr>
+<tr><th id="1031">1031</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="1032">1032</th><td></td></tr>
+<tr><th id="1033">1033</th><td><u>#<span data-ppcond="19">endif</span>  // #if defined(BOOST_NO_MEMBER_TEMPLATES) &amp;&amp; !defined(BOOST_MSVC6_MEMBER_TEMPLATES)</u></td></tr>
+<tr><th id="1034">1034</th><td></td></tr>
+<tr><th id="1035">1035</th><td><u>#<span data-ppcond="1">endif</span>  // #ifndef BOOST_SMART_PTR_SHARED_PTR_HPP_INCLUDED</u></td></tr>
+<tr><th id="1036">1036</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../vpp_1804/src/vpp-api/vom/acl_binding.cpp.html'>vpp_1804/src/vpp-api/vom/acl_binding.cpp</a><br/>Generated on <em>2018-Jul-30</em> from project include<br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

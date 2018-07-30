@@ -1,0 +1,864 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>eal_vfio.c source code [vpp_1804/build-root/build-vpp_debug-native/dpdk/dpdk-stable-18.02.1/lib/librte_eal/linuxapp/eal/eal_vfio.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'vpp_1804/build-root/build-vpp_debug-native/dpdk/dpdk-stable-18.02.1/lib/librte_eal/linuxapp/eal/eal_vfio.c'; var root_path = '../../../../../../../../..'; var data_path = '../../../../../../../../../../data';</script>
+<script src='../../../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../../../..'>vpp_1804</a>/<a href='../../../../../../..'>build-root</a>/<a href='../../../../../..'>build-vpp_debug-native</a>/<a href='../../../../..'>dpdk</a>/<a href='../../../..'>dpdk-stable-18.02.1</a>/<a href='../../..'>lib</a>/<a href='../..'>librte_eal</a>/<a href='..'>linuxapp</a>/<a href='./'>eal</a>/<a href='eal_vfio.c.html'>eal_vfio.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright(c) 2010-2014 Intel Corporation</i></td></tr>
+<tr><th id="3">3</th><td><i> */</i></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><u>#include <a href="../../../../../../../../../include/string.h.html">&lt;string.h&gt;</a></u></td></tr>
+<tr><th id="6">6</th><td><u>#include <a href="../../../../../../../../../include/fcntl.h.html">&lt;fcntl.h&gt;</a></u></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="../../../../../../../../../include/unistd.h.html">&lt;unistd.h&gt;</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="../../../../../../../../../include/sys/ioctl.h.html">&lt;sys/ioctl.h&gt;</a></u></td></tr>
+<tr><th id="9">9</th><td></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../common/include/rte_log.h.html">&lt;rte_log.h&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../common/include/rte_memory.h.html">&lt;rte_memory.h&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../common/include/rte_eal_memconfig.h.html">&lt;rte_eal_memconfig.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../common/include/rte_vfio.h.html">&lt;rte_vfio.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../common/eal_filesystem.h.html">"eal_filesystem.h"</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="eal_vfio.h.html">"eal_vfio.h"</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../common/eal_private.h.html">"eal_private.h"</a></u></td></tr>
+<tr><th id="18">18</th><td></td></tr>
+<tr><th id="19">19</th><td><u>#<span data-ppcond="19">ifdef</span> <a class="macro" href="../../common/include/rte_vfio.h.html#14" data-ref="_M/VFIO_PRESENT">VFIO_PRESENT</a></u></td></tr>
+<tr><th id="20">20</th><td></td></tr>
+<tr><th id="21">21</th><td><i  data-doc="vfio_cfg">/* per-process VFIO config */</i></td></tr>
+<tr><th id="22">22</th><td><em>static</em> <b>struct</b> <a class="type" href="eal_vfio.h.html#vfio_config" title='vfio_config' data-ref="vfio_config">vfio_config</a> <dfn class="tu decl def" id="vfio_cfg" title='vfio_cfg' data-type='struct vfio_config' data-ref="vfio_cfg">vfio_cfg</dfn>;</td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><em>static</em> <em>int</em> <a class="tu decl fn" href="#vfio_type1_dma_map" title='vfio_type1_dma_map' data-type='int vfio_type1_dma_map(int )' data-ref="vfio_type1_dma_map">vfio_type1_dma_map</a>(<em>int</em>);</td></tr>
+<tr><th id="25">25</th><td><em>static</em> <em>int</em> <a class="tu decl fn" href="#vfio_spapr_dma_map" title='vfio_spapr_dma_map' data-type='int vfio_spapr_dma_map(int )' data-ref="vfio_spapr_dma_map">vfio_spapr_dma_map</a>(<em>int</em>);</td></tr>
+<tr><th id="26">26</th><td><em>static</em> <em>int</em> <a class="tu decl fn" href="#vfio_noiommu_dma_map" title='vfio_noiommu_dma_map' data-type='int vfio_noiommu_dma_map(int )' data-ref="vfio_noiommu_dma_map">vfio_noiommu_dma_map</a>(<em>int</em>);</td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td><i  data-doc="iommu_types">/* IOMMU types we support */</i></td></tr>
+<tr><th id="29">29</th><td><em>static</em> <em>const</em> <b>struct</b> <a class="type" href="eal_vfio.h.html#vfio_iommu_type" title='vfio_iommu_type' data-ref="vfio_iommu_type">vfio_iommu_type</a> <dfn class="tu decl def" id="iommu_types" title='iommu_types' data-type='const struct vfio_iommu_type [3]' data-ref="iommu_types">iommu_types</dfn>[] = {</td></tr>
+<tr><th id="30">30</th><td>	<i>/* x86 IOMMU, otherwise known as type 1 */</i></td></tr>
+<tr><th id="31">31</th><td>	{ <a class="macro" href="eal_vfio.h.html#24" title="1" data-ref="_M/RTE_VFIO_TYPE1">RTE_VFIO_TYPE1</a>, <q>"Type 1"</q>, &amp;<a class="tu ref fn" href="#vfio_type1_dma_map" title='vfio_type1_dma_map' data-use='a' data-ref="vfio_type1_dma_map">vfio_type1_dma_map</a>},</td></tr>
+<tr><th id="32">32</th><td>	<i>/* ppc64 IOMMU, otherwise known as spapr */</i></td></tr>
+<tr><th id="33">33</th><td>	{ <a class="macro" href="eal_vfio.h.html#79" title="7" data-ref="_M/RTE_VFIO_SPAPR">RTE_VFIO_SPAPR</a>, <q>"sPAPR"</q>, &amp;<a class="tu ref fn" href="#vfio_spapr_dma_map" title='vfio_spapr_dma_map' data-use='a' data-ref="vfio_spapr_dma_map">vfio_spapr_dma_map</a>},</td></tr>
+<tr><th id="34">34</th><td>	<i>/* IOMMU-less mode */</i></td></tr>
+<tr><th id="35">35</th><td>	{ <a class="macro" href="eal_vfio.h.html#83" title="8" data-ref="_M/RTE_VFIO_NOIOMMU">RTE_VFIO_NOIOMMU</a>, <q>"No-IOMMU"</q>, &amp;<a class="tu ref fn" href="#vfio_noiommu_dma_map" title='vfio_noiommu_dma_map' data-use='a' data-ref="vfio_noiommu_dma_map">vfio_noiommu_dma_map</a>},</td></tr>
+<tr><th id="36">36</th><td>};</td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><em>int</em></td></tr>
+<tr><th id="39">39</th><td><dfn class="decl def fn" id="vfio_get_group_fd" title='vfio_get_group_fd' data-ref="vfio_get_group_fd">vfio_get_group_fd</dfn>(<em>int</em> <dfn class="local col1 decl" id="1iommu_group_no" title='iommu_group_no' data-type='int' data-ref="1iommu_group_no">iommu_group_no</dfn>)</td></tr>
+<tr><th id="40">40</th><td>{</td></tr>
+<tr><th id="41">41</th><td>	<em>int</em> <dfn class="local col2 decl" id="2i" title='i' data-type='int' data-ref="2i">i</dfn>;</td></tr>
+<tr><th id="42">42</th><td>	<em>int</em> <dfn class="local col3 decl" id="3vfio_group_fd" title='vfio_group_fd' data-type='int' data-ref="3vfio_group_fd">vfio_group_fd</dfn>;</td></tr>
+<tr><th id="43">43</th><td>	<em>char</em> <dfn class="local col4 decl" id="4filename" title='filename' data-type='char [4096]' data-ref="4filename">filename</dfn>[<a class="macro" href="../../../../../../../../../include/linux/limits.h.html#12" title="4096" data-ref="_M/PATH_MAX">PATH_MAX</a>];</td></tr>
+<tr><th id="44">44</th><td>	<b>struct</b> <a class="type" href="eal_vfio.h.html#vfio_group" title='vfio_group' data-ref="vfio_group">vfio_group</a> *<dfn class="local col5 decl" id="5cur_grp" title='cur_grp' data-type='struct vfio_group *' data-ref="5cur_grp">cur_grp</dfn>;</td></tr>
+<tr><th id="45">45</th><td></td></tr>
+<tr><th id="46">46</th><td>	<i>/* check if we already have the group descriptor open */</i></td></tr>
+<tr><th id="47">47</th><td>	<b>for</b> (<a class="local col2 ref" href="#2i" title='i' data-ref="2i">i</a> = <var>0</var>; <a class="local col2 ref" href="#2i" title='i' data-ref="2i">i</a> &lt; <a class="macro" href="eal_vfio.h.html#88" title="64" data-ref="_M/VFIO_MAX_GROUPS">VFIO_MAX_GROUPS</a>; <a class="local col2 ref" href="#2i" title='i' data-ref="2i">i</a>++)</td></tr>
+<tr><th id="48">48</th><td>		<b>if</b> (<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_groups" title='vfio_config::vfio_groups' data-ref="vfio_config::vfio_groups">vfio_groups</a>[<a class="local col2 ref" href="#2i" title='i' data-ref="2i">i</a>].<a class="ref field" href="eal_vfio.h.html#vfio_group::group_no" title='vfio_group::group_no' data-ref="vfio_group::group_no">group_no</a> == <a class="local col1 ref" href="#1iommu_group_no" title='iommu_group_no' data-ref="1iommu_group_no">iommu_group_no</a>)</td></tr>
+<tr><th id="49">49</th><td>			<b>return</b> <a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_groups" title='vfio_config::vfio_groups' data-ref="vfio_config::vfio_groups">vfio_groups</a>[<a class="local col2 ref" href="#2i" title='i' data-ref="2i">i</a>].<a class="ref field" href="eal_vfio.h.html#vfio_group::fd" title='vfio_group::fd' data-ref="vfio_group::fd">fd</a>;</td></tr>
+<tr><th id="50">50</th><td></td></tr>
+<tr><th id="51">51</th><td>	<i>/* Lets see first if there is room for a new group */</i></td></tr>
+<tr><th id="52">52</th><td>	<b>if</b> (<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_active_groups" title='vfio_config::vfio_active_groups' data-ref="vfio_config::vfio_active_groups">vfio_active_groups</a> == <a class="macro" href="eal_vfio.h.html#88" title="64" data-ref="_M/VFIO_MAX_GROUPS">VFIO_MAX_GROUPS</a>) {</td></tr>
+<tr><th id="53">53</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Maximum number of VFIO groups reached!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"Maximum number of VFIO groups reached!\n"</q>);</td></tr>
+<tr><th id="54">54</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="55">55</th><td>	}</td></tr>
+<tr><th id="56">56</th><td></td></tr>
+<tr><th id="57">57</th><td>	<i>/* Now lets get an index for the new group */</i></td></tr>
+<tr><th id="58">58</th><td>	<b>for</b> (<a class="local col2 ref" href="#2i" title='i' data-ref="2i">i</a> = <var>0</var>; <a class="local col2 ref" href="#2i" title='i' data-ref="2i">i</a> &lt; <a class="macro" href="eal_vfio.h.html#88" title="64" data-ref="_M/VFIO_MAX_GROUPS">VFIO_MAX_GROUPS</a>; <a class="local col2 ref" href="#2i" title='i' data-ref="2i">i</a>++)</td></tr>
+<tr><th id="59">59</th><td>		<b>if</b> (<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_groups" title='vfio_config::vfio_groups' data-ref="vfio_config::vfio_groups">vfio_groups</a>[<a class="local col2 ref" href="#2i" title='i' data-ref="2i">i</a>].<a class="ref field" href="eal_vfio.h.html#vfio_group::group_no" title='vfio_group::group_no' data-ref="vfio_group::group_no">group_no</a> == -<var>1</var>) {</td></tr>
+<tr><th id="60">60</th><td>			<a class="local col5 ref" href="#5cur_grp" title='cur_grp' data-ref="5cur_grp">cur_grp</a> = &amp;<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_groups" title='vfio_config::vfio_groups' data-ref="vfio_config::vfio_groups">vfio_groups</a>[<a class="local col2 ref" href="#2i" title='i' data-ref="2i">i</a>];</td></tr>
+<tr><th id="61">61</th><td>			<b>break</b>;</td></tr>
+<tr><th id="62">62</th><td>		}</td></tr>
+<tr><th id="63">63</th><td></td></tr>
+<tr><th id="64">64</th><td>	<i>/* This should not happen */</i></td></tr>
+<tr><th id="65">65</th><td>	<b>if</b> (<a class="local col2 ref" href="#2i" title='i' data-ref="2i">i</a> == <a class="macro" href="eal_vfio.h.html#88" title="64" data-ref="_M/VFIO_MAX_GROUPS">VFIO_MAX_GROUPS</a>) {</td></tr>
+<tr><th id="66">66</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;No VFIO group free slot found\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"No VFIO group free slot found\n"</q>);</td></tr>
+<tr><th id="67">67</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="68">68</th><td>	}</td></tr>
+<tr><th id="69">69</th><td>	<i>/* if primary, try to open the group */</i></td></tr>
+<tr><th id="70">70</th><td>	<b>if</b> (<a class="ref" href="../../common/eal_internal_cfg.h.html#internal_config" title='internal_config' data-ref="internal_config">internal_config</a>.<a class="ref field" href="../../common/eal_internal_cfg.h.html#internal_config::process_type" title='internal_config::process_type' data-ref="internal_config::process_type">process_type</a> == <a class="enum" href="../../common/include/rte_eal.h.html#RTE_PROC_PRIMARY" title='RTE_PROC_PRIMARY' data-ref="RTE_PROC_PRIMARY">RTE_PROC_PRIMARY</a>) {</td></tr>
+<tr><th id="71">71</th><td>		<i>/* try regular group format */</i></td></tr>
+<tr><th id="72">72</th><td>		<a class="ref fn" href="../../../../../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a>(<a class="local col4 ref" href="#4filename" title='filename' data-ref="4filename">filename</a>, <b>sizeof</b>(<a class="local col4 ref" href="#4filename" title='filename' data-ref="4filename">filename</a>),</td></tr>
+<tr><th id="73">73</th><td>				 <a class="macro" href="../../common/include/rte_vfio.h.html#24" title="&quot;/dev/vfio/%u&quot;" data-ref="_M/VFIO_GROUP_FMT">VFIO_GROUP_FMT</a>, <a class="local col1 ref" href="#1iommu_group_no" title='iommu_group_no' data-ref="1iommu_group_no">iommu_group_no</a>);</td></tr>
+<tr><th id="74">74</th><td>		<a class="local col3 ref" href="#3vfio_group_fd" title='vfio_group_fd' data-ref="3vfio_group_fd">vfio_group_fd</a> = <a class="ref fn" href="../../../../../../../../../include/fcntl.h.html#open" title='open' data-ref="open">open</a>(<a class="local col4 ref" href="#4filename" title='filename' data-ref="4filename">filename</a>, <a class="macro" href="../../../../../../../../../include/bits/fcntl-linux.h.html#45" title="02" data-ref="_M/O_RDWR">O_RDWR</a>);</td></tr>
+<tr><th id="75">75</th><td>		<b>if</b> (<a class="local col3 ref" href="#3vfio_group_fd" title='vfio_group_fd' data-ref="3vfio_group_fd">vfio_group_fd</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="76">76</th><td>			<i>/* if file not found, it's not an error */</i></td></tr>
+<tr><th id="77">77</th><td>			<b>if</b> (<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a> != <a class="macro" href="../../../../../../../../../include/asm-generic/errno-base.h.html#5" title="2" data-ref="_M/ENOENT">ENOENT</a>) {</td></tr>
+<tr><th id="78">78</th><td>				<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Cannot open %s: %s\n&quot;, filename, strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"Cannot open %s: %s\n"</q>, <a class="local col4 ref" href="#4filename" title='filename' data-ref="4filename">filename</a>,</td></tr>
+<tr><th id="79">79</th><td>						<a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="80">80</th><td>				<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="81">81</th><td>			}</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td>			<i>/* special case: try no-IOMMU path as well */</i></td></tr>
+<tr><th id="84">84</th><td>			<a class="ref fn" href="../../../../../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a>(<a class="local col4 ref" href="#4filename" title='filename' data-ref="4filename">filename</a>, <b>sizeof</b>(<a class="local col4 ref" href="#4filename" title='filename' data-ref="4filename">filename</a>),</td></tr>
+<tr><th id="85">85</th><td>					<a class="macro" href="../../common/include/rte_vfio.h.html#25" title="&quot;/dev/vfio/noiommu-%u&quot;" data-ref="_M/VFIO_NOIOMMU_GROUP_FMT">VFIO_NOIOMMU_GROUP_FMT</a>, <a class="local col1 ref" href="#1iommu_group_no" title='iommu_group_no' data-ref="1iommu_group_no">iommu_group_no</a>);</td></tr>
+<tr><th id="86">86</th><td>			<a class="local col3 ref" href="#3vfio_group_fd" title='vfio_group_fd' data-ref="3vfio_group_fd">vfio_group_fd</a> = <a class="ref fn" href="../../../../../../../../../include/fcntl.h.html#open" title='open' data-ref="open">open</a>(<a class="local col4 ref" href="#4filename" title='filename' data-ref="4filename">filename</a>, <a class="macro" href="../../../../../../../../../include/bits/fcntl-linux.h.html#45" title="02" data-ref="_M/O_RDWR">O_RDWR</a>);</td></tr>
+<tr><th id="87">87</th><td>			<b>if</b> (<a class="local col3 ref" href="#3vfio_group_fd" title='vfio_group_fd' data-ref="3vfio_group_fd">vfio_group_fd</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="88">88</th><td>				<b>if</b> (<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a> != <a class="macro" href="../../../../../../../../../include/asm-generic/errno-base.h.html#5" title="2" data-ref="_M/ENOENT">ENOENT</a>) {</td></tr>
+<tr><th id="89">89</th><td>					<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Cannot open %s: %s\n&quot;, filename, strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"Cannot open %s: %s\n"</q>, <a class="local col4 ref" href="#4filename" title='filename' data-ref="4filename">filename</a>,</td></tr>
+<tr><th id="90">90</th><td>							<a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="91">91</th><td>					<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="92">92</th><td>				}</td></tr>
+<tr><th id="93">93</th><td>				<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="94">94</th><td>			}</td></tr>
+<tr><th id="95">95</th><td>			<i>/* noiommu group found */</i></td></tr>
+<tr><th id="96">96</th><td>		}</td></tr>
+<tr><th id="97">97</th><td></td></tr>
+<tr><th id="98">98</th><td>		<a class="local col5 ref" href="#5cur_grp" title='cur_grp' data-ref="5cur_grp">cur_grp</a>-&gt;<a class="ref field" href="eal_vfio.h.html#vfio_group::group_no" title='vfio_group::group_no' data-ref="vfio_group::group_no">group_no</a> = <a class="local col1 ref" href="#1iommu_group_no" title='iommu_group_no' data-ref="1iommu_group_no">iommu_group_no</a>;</td></tr>
+<tr><th id="99">99</th><td>		<a class="local col5 ref" href="#5cur_grp" title='cur_grp' data-ref="5cur_grp">cur_grp</a>-&gt;<a class="ref field" href="eal_vfio.h.html#vfio_group::fd" title='vfio_group::fd' data-ref="vfio_group::fd">fd</a> = <a class="local col3 ref" href="#3vfio_group_fd" title='vfio_group_fd' data-ref="3vfio_group_fd">vfio_group_fd</a>;</td></tr>
+<tr><th id="100">100</th><td>		<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_active_groups" title='vfio_config::vfio_active_groups' data-ref="vfio_config::vfio_active_groups">vfio_active_groups</a>++;</td></tr>
+<tr><th id="101">101</th><td>		<b>return</b> <a class="local col3 ref" href="#3vfio_group_fd" title='vfio_group_fd' data-ref="3vfio_group_fd">vfio_group_fd</a>;</td></tr>
+<tr><th id="102">102</th><td>	}</td></tr>
+<tr><th id="103">103</th><td>	<i>/* if we're in a secondary process, request group fd from the primary</i></td></tr>
+<tr><th id="104">104</th><td><i>	 * process via our socket</i></td></tr>
+<tr><th id="105">105</th><td><i>	 */</i></td></tr>
+<tr><th id="106">106</th><td>	<b>else</b> {</td></tr>
+<tr><th id="107">107</th><td>		<em>int</em> <dfn class="local col6 decl" id="6socket_fd" title='socket_fd' data-type='int' data-ref="6socket_fd">socket_fd</dfn>, <dfn class="local col7 decl" id="7ret" title='ret' data-type='int' data-ref="7ret">ret</dfn>;</td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td>		<a class="local col6 ref" href="#6socket_fd" title='socket_fd' data-ref="6socket_fd">socket_fd</a> = <a class="ref fn" href="eal_vfio.h.html#vfio_mp_sync_connect_to_primary" title='vfio_mp_sync_connect_to_primary' data-ref="vfio_mp_sync_connect_to_primary">vfio_mp_sync_connect_to_primary</a>();</td></tr>
+<tr><th id="110">110</th><td></td></tr>
+<tr><th id="111">111</th><td>		<b>if</b> (<a class="local col6 ref" href="#6socket_fd" title='socket_fd' data-ref="6socket_fd">socket_fd</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="112">112</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  cannot connect to primary process!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  cannot connect to primary process!\n"</q>);</td></tr>
+<tr><th id="113">113</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="114">114</th><td>		}</td></tr>
+<tr><th id="115">115</th><td>		<b>if</b> (<a class="ref fn" href="eal_vfio.h.html#vfio_mp_sync_send_request" title='vfio_mp_sync_send_request' data-ref="vfio_mp_sync_send_request">vfio_mp_sync_send_request</a>(<a class="local col6 ref" href="#6socket_fd" title='socket_fd' data-ref="6socket_fd">socket_fd</a>, <a class="macro" href="eal_vfio.h.html#154" title="0x200" data-ref="_M/SOCKET_REQ_GROUP">SOCKET_REQ_GROUP</a>) &lt; <var>0</var>) {</td></tr>
+<tr><th id="116">116</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  cannot request container fd!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  cannot request container fd!\n"</q>);</td></tr>
+<tr><th id="117">117</th><td>			<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col6 ref" href="#6socket_fd" title='socket_fd' data-ref="6socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="118">118</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="119">119</th><td>		}</td></tr>
+<tr><th id="120">120</th><td>		<b>if</b> (<a class="ref fn" href="eal_vfio.h.html#vfio_mp_sync_send_request" title='vfio_mp_sync_send_request' data-ref="vfio_mp_sync_send_request">vfio_mp_sync_send_request</a>(<a class="local col6 ref" href="#6socket_fd" title='socket_fd' data-ref="6socket_fd">socket_fd</a>, <a class="local col1 ref" href="#1iommu_group_no" title='iommu_group_no' data-ref="1iommu_group_no">iommu_group_no</a>) &lt; <var>0</var>) {</td></tr>
+<tr><th id="121">121</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  cannot send group number!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  cannot send group number!\n"</q>);</td></tr>
+<tr><th id="122">122</th><td>			<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col6 ref" href="#6socket_fd" title='socket_fd' data-ref="6socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="123">123</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="124">124</th><td>		}</td></tr>
+<tr><th id="125">125</th><td>		<a class="local col7 ref" href="#7ret" title='ret' data-ref="7ret">ret</a> = <a class="ref fn" href="eal_vfio.h.html#vfio_mp_sync_receive_request" title='vfio_mp_sync_receive_request' data-ref="vfio_mp_sync_receive_request">vfio_mp_sync_receive_request</a>(<a class="local col6 ref" href="#6socket_fd" title='socket_fd' data-ref="6socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="126">126</th><td>		<b>switch</b> (<a class="local col7 ref" href="#7ret" title='ret' data-ref="7ret">ret</a>) {</td></tr>
+<tr><th id="127">127</th><td>		<b>case</b> <a class="macro" href="eal_vfio.h.html#157" title="0x1" data-ref="_M/SOCKET_NO_FD">SOCKET_NO_FD</a>:</td></tr>
+<tr><th id="128">128</th><td>			<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col6 ref" href="#6socket_fd" title='socket_fd' data-ref="6socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="129">129</th><td>			<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="130">130</th><td>		<b>case</b> <a class="macro" href="eal_vfio.h.html#156" title="0x0" data-ref="_M/SOCKET_OK">SOCKET_OK</a>:</td></tr>
+<tr><th id="131">131</th><td>			<a class="local col3 ref" href="#3vfio_group_fd" title='vfio_group_fd' data-ref="3vfio_group_fd">vfio_group_fd</a> = <a class="ref fn" href="eal_vfio.h.html#vfio_mp_sync_receive_fd" title='vfio_mp_sync_receive_fd' data-ref="vfio_mp_sync_receive_fd">vfio_mp_sync_receive_fd</a>(<a class="local col6 ref" href="#6socket_fd" title='socket_fd' data-ref="6socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="132">132</th><td>			<i>/* if we got the fd, store it and return it */</i></td></tr>
+<tr><th id="133">133</th><td>			<b>if</b> (<a class="local col3 ref" href="#3vfio_group_fd" title='vfio_group_fd' data-ref="3vfio_group_fd">vfio_group_fd</a> &gt; <var>0</var>) {</td></tr>
+<tr><th id="134">134</th><td>				<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col6 ref" href="#6socket_fd" title='socket_fd' data-ref="6socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="135">135</th><td>				<a class="local col5 ref" href="#5cur_grp" title='cur_grp' data-ref="5cur_grp">cur_grp</a>-&gt;<a class="ref field" href="eal_vfio.h.html#vfio_group::group_no" title='vfio_group::group_no' data-ref="vfio_group::group_no">group_no</a> = <a class="local col1 ref" href="#1iommu_group_no" title='iommu_group_no' data-ref="1iommu_group_no">iommu_group_no</a>;</td></tr>
+<tr><th id="136">136</th><td>				<a class="local col5 ref" href="#5cur_grp" title='cur_grp' data-ref="5cur_grp">cur_grp</a>-&gt;<a class="ref field" href="eal_vfio.h.html#vfio_group::fd" title='vfio_group::fd' data-ref="vfio_group::fd">fd</a> = <a class="local col3 ref" href="#3vfio_group_fd" title='vfio_group_fd' data-ref="3vfio_group_fd">vfio_group_fd</a>;</td></tr>
+<tr><th id="137">137</th><td>				<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_active_groups" title='vfio_config::vfio_active_groups' data-ref="vfio_config::vfio_active_groups">vfio_active_groups</a>++;</td></tr>
+<tr><th id="138">138</th><td>				<b>return</b> <a class="local col3 ref" href="#3vfio_group_fd" title='vfio_group_fd' data-ref="3vfio_group_fd">vfio_group_fd</a>;</td></tr>
+<tr><th id="139">139</th><td>			}</td></tr>
+<tr><th id="140">140</th><td>			<i>/* fall-through on error */</i></td></tr>
+<tr><th id="141">141</th><td>		<b>default</b>:</td></tr>
+<tr><th id="142">142</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  cannot get container fd!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  cannot get container fd!\n"</q>);</td></tr>
+<tr><th id="143">143</th><td>			<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col6 ref" href="#6socket_fd" title='socket_fd' data-ref="6socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="144">144</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="145">145</th><td>		}</td></tr>
+<tr><th id="146">146</th><td>	}</td></tr>
+<tr><th id="147">147</th><td>	<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="148">148</th><td>}</td></tr>
+<tr><th id="149">149</th><td></td></tr>
+<tr><th id="150">150</th><td></td></tr>
+<tr><th id="151">151</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="152">152</th><td><dfn class="tu decl def fn" id="get_vfio_group_idx" title='get_vfio_group_idx' data-type='int get_vfio_group_idx(int vfio_group_fd)' data-ref="get_vfio_group_idx">get_vfio_group_idx</dfn>(<em>int</em> <dfn class="local col8 decl" id="8vfio_group_fd" title='vfio_group_fd' data-type='int' data-ref="8vfio_group_fd">vfio_group_fd</dfn>)</td></tr>
+<tr><th id="153">153</th><td>{</td></tr>
+<tr><th id="154">154</th><td>	<em>int</em> <dfn class="local col9 decl" id="9i" title='i' data-type='int' data-ref="9i">i</dfn>;</td></tr>
+<tr><th id="155">155</th><td>	<b>for</b> (<a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a> = <var>0</var>; <a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a> &lt; <a class="macro" href="eal_vfio.h.html#88" title="64" data-ref="_M/VFIO_MAX_GROUPS">VFIO_MAX_GROUPS</a>; <a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a>++)</td></tr>
+<tr><th id="156">156</th><td>		<b>if</b> (<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_groups" title='vfio_config::vfio_groups' data-ref="vfio_config::vfio_groups">vfio_groups</a>[<a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a>].<a class="ref field" href="eal_vfio.h.html#vfio_group::fd" title='vfio_group::fd' data-ref="vfio_group::fd">fd</a> == <a class="local col8 ref" href="#8vfio_group_fd" title='vfio_group_fd' data-ref="8vfio_group_fd">vfio_group_fd</a>)</td></tr>
+<tr><th id="157">157</th><td>			<b>return</b> <a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a>;</td></tr>
+<tr><th id="158">158</th><td>	<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="159">159</th><td>}</td></tr>
+<tr><th id="160">160</th><td></td></tr>
+<tr><th id="161">161</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="162">162</th><td><dfn class="tu decl def fn" id="vfio_group_device_get" title='vfio_group_device_get' data-type='void vfio_group_device_get(int vfio_group_fd)' data-ref="vfio_group_device_get">vfio_group_device_get</dfn>(<em>int</em> <dfn class="local col0 decl" id="10vfio_group_fd" title='vfio_group_fd' data-type='int' data-ref="10vfio_group_fd">vfio_group_fd</dfn>)</td></tr>
+<tr><th id="163">163</th><td>{</td></tr>
+<tr><th id="164">164</th><td>	<em>int</em> <dfn class="local col1 decl" id="11i" title='i' data-type='int' data-ref="11i">i</dfn>;</td></tr>
+<tr><th id="165">165</th><td></td></tr>
+<tr><th id="166">166</th><td>	<a class="local col1 ref" href="#11i" title='i' data-ref="11i">i</a> = <a class="tu ref fn" href="#get_vfio_group_idx" title='get_vfio_group_idx' data-use='c' data-ref="get_vfio_group_idx">get_vfio_group_idx</a>(<a class="local col0 ref" href="#10vfio_group_fd" title='vfio_group_fd' data-ref="10vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="167">167</th><td>	<b>if</b> (<a class="local col1 ref" href="#11i" title='i' data-ref="11i">i</a> &lt; <var>0</var> || <a class="local col1 ref" href="#11i" title='i' data-ref="11i">i</a> &gt; (<a class="macro" href="eal_vfio.h.html#88" title="64" data-ref="_M/VFIO_MAX_GROUPS">VFIO_MAX_GROUPS</a> - <var>1</var>))</td></tr>
+<tr><th id="168">168</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  wrong vfio_group index (%d)\n&quot;, i)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  wrong vfio_group index (%d)\n"</q>, <a class="local col1 ref" href="#11i" title='i' data-ref="11i">i</a>);</td></tr>
+<tr><th id="169">169</th><td>	<b>else</b></td></tr>
+<tr><th id="170">170</th><td>		<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_groups" title='vfio_config::vfio_groups' data-ref="vfio_config::vfio_groups">vfio_groups</a>[<a class="local col1 ref" href="#11i" title='i' data-ref="11i">i</a>].<a class="ref field" href="eal_vfio.h.html#vfio_group::devices" title='vfio_group::devices' data-ref="vfio_group::devices">devices</a>++;</td></tr>
+<tr><th id="171">171</th><td>}</td></tr>
+<tr><th id="172">172</th><td></td></tr>
+<tr><th id="173">173</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="174">174</th><td><dfn class="tu decl def fn" id="vfio_group_device_put" title='vfio_group_device_put' data-type='void vfio_group_device_put(int vfio_group_fd)' data-ref="vfio_group_device_put">vfio_group_device_put</dfn>(<em>int</em> <dfn class="local col2 decl" id="12vfio_group_fd" title='vfio_group_fd' data-type='int' data-ref="12vfio_group_fd">vfio_group_fd</dfn>)</td></tr>
+<tr><th id="175">175</th><td>{</td></tr>
+<tr><th id="176">176</th><td>	<em>int</em> <dfn class="local col3 decl" id="13i" title='i' data-type='int' data-ref="13i">i</dfn>;</td></tr>
+<tr><th id="177">177</th><td></td></tr>
+<tr><th id="178">178</th><td>	<a class="local col3 ref" href="#13i" title='i' data-ref="13i">i</a> = <a class="tu ref fn" href="#get_vfio_group_idx" title='get_vfio_group_idx' data-use='c' data-ref="get_vfio_group_idx">get_vfio_group_idx</a>(<a class="local col2 ref" href="#12vfio_group_fd" title='vfio_group_fd' data-ref="12vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="179">179</th><td>	<b>if</b> (<a class="local col3 ref" href="#13i" title='i' data-ref="13i">i</a> &lt; <var>0</var> || <a class="local col3 ref" href="#13i" title='i' data-ref="13i">i</a> &gt; (<a class="macro" href="eal_vfio.h.html#88" title="64" data-ref="_M/VFIO_MAX_GROUPS">VFIO_MAX_GROUPS</a> - <var>1</var>))</td></tr>
+<tr><th id="180">180</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  wrong vfio_group index (%d)\n&quot;, i)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  wrong vfio_group index (%d)\n"</q>, <a class="local col3 ref" href="#13i" title='i' data-ref="13i">i</a>);</td></tr>
+<tr><th id="181">181</th><td>	<b>else</b></td></tr>
+<tr><th id="182">182</th><td>		<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_groups" title='vfio_config::vfio_groups' data-ref="vfio_config::vfio_groups">vfio_groups</a>[<a class="local col3 ref" href="#13i" title='i' data-ref="13i">i</a>].<a class="ref field" href="eal_vfio.h.html#vfio_group::devices" title='vfio_group::devices' data-ref="vfio_group::devices">devices</a>--;</td></tr>
+<tr><th id="183">183</th><td>}</td></tr>
+<tr><th id="184">184</th><td></td></tr>
+<tr><th id="185">185</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="186">186</th><td><dfn class="tu decl def fn" id="vfio_group_device_count" title='vfio_group_device_count' data-type='int vfio_group_device_count(int vfio_group_fd)' data-ref="vfio_group_device_count">vfio_group_device_count</dfn>(<em>int</em> <dfn class="local col4 decl" id="14vfio_group_fd" title='vfio_group_fd' data-type='int' data-ref="14vfio_group_fd">vfio_group_fd</dfn>)</td></tr>
+<tr><th id="187">187</th><td>{</td></tr>
+<tr><th id="188">188</th><td>	<em>int</em> <dfn class="local col5 decl" id="15i" title='i' data-type='int' data-ref="15i">i</dfn>;</td></tr>
+<tr><th id="189">189</th><td></td></tr>
+<tr><th id="190">190</th><td>	<a class="local col5 ref" href="#15i" title='i' data-ref="15i">i</a> = <a class="tu ref fn" href="#get_vfio_group_idx" title='get_vfio_group_idx' data-use='c' data-ref="get_vfio_group_idx">get_vfio_group_idx</a>(<a class="local col4 ref" href="#14vfio_group_fd" title='vfio_group_fd' data-ref="14vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="191">191</th><td>	<b>if</b> (<a class="local col5 ref" href="#15i" title='i' data-ref="15i">i</a> &lt; <var>0</var> || <a class="local col5 ref" href="#15i" title='i' data-ref="15i">i</a> &gt; (<a class="macro" href="eal_vfio.h.html#88" title="64" data-ref="_M/VFIO_MAX_GROUPS">VFIO_MAX_GROUPS</a> - <var>1</var>)) {</td></tr>
+<tr><th id="192">192</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  wrong vfio_group index (%d)\n&quot;, i)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  wrong vfio_group index (%d)\n"</q>, <a class="local col5 ref" href="#15i" title='i' data-ref="15i">i</a>);</td></tr>
+<tr><th id="193">193</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="194">194</th><td>	}</td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td>	<b>return</b> <a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_groups" title='vfio_config::vfio_groups' data-ref="vfio_config::vfio_groups">vfio_groups</a>[<a class="local col5 ref" href="#15i" title='i' data-ref="15i">i</a>].<a class="ref field" href="eal_vfio.h.html#vfio_group::devices" title='vfio_group::devices' data-ref="vfio_group::devices">devices</a>;</td></tr>
+<tr><th id="197">197</th><td>}</td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td><em>int</em></td></tr>
+<tr><th id="200">200</th><td><dfn class="decl def fn" id="rte_vfio_clear_group" title='rte_vfio_clear_group' data-ref="rte_vfio_clear_group">rte_vfio_clear_group</dfn>(<em>int</em> <dfn class="local col6 decl" id="16vfio_group_fd" title='vfio_group_fd' data-type='int' data-ref="16vfio_group_fd">vfio_group_fd</dfn>)</td></tr>
+<tr><th id="201">201</th><td>{</td></tr>
+<tr><th id="202">202</th><td>	<em>int</em> <dfn class="local col7 decl" id="17i" title='i' data-type='int' data-ref="17i">i</dfn>;</td></tr>
+<tr><th id="203">203</th><td>	<em>int</em> <dfn class="local col8 decl" id="18socket_fd" title='socket_fd' data-type='int' data-ref="18socket_fd">socket_fd</dfn>, <dfn class="local col9 decl" id="19ret" title='ret' data-type='int' data-ref="19ret">ret</dfn>;</td></tr>
+<tr><th id="204">204</th><td></td></tr>
+<tr><th id="205">205</th><td>	<b>if</b> (<a class="ref" href="../../common/eal_internal_cfg.h.html#internal_config" title='internal_config' data-ref="internal_config">internal_config</a>.<a class="ref field" href="../../common/eal_internal_cfg.h.html#internal_config::process_type" title='internal_config::process_type' data-ref="internal_config::process_type">process_type</a> == <a class="enum" href="../../common/include/rte_eal.h.html#RTE_PROC_PRIMARY" title='RTE_PROC_PRIMARY' data-ref="RTE_PROC_PRIMARY">RTE_PROC_PRIMARY</a>) {</td></tr>
+<tr><th id="206">206</th><td></td></tr>
+<tr><th id="207">207</th><td>		<a class="local col7 ref" href="#17i" title='i' data-ref="17i">i</a> = <a class="tu ref fn" href="#get_vfio_group_idx" title='get_vfio_group_idx' data-use='c' data-ref="get_vfio_group_idx">get_vfio_group_idx</a>(<a class="local col6 ref" href="#16vfio_group_fd" title='vfio_group_fd' data-ref="16vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="208">208</th><td>		<b>if</b> (<a class="local col7 ref" href="#17i" title='i' data-ref="17i">i</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="209">209</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="210">210</th><td>		<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_groups" title='vfio_config::vfio_groups' data-ref="vfio_config::vfio_groups">vfio_groups</a>[<a class="local col7 ref" href="#17i" title='i' data-ref="17i">i</a>].<a class="ref field" href="eal_vfio.h.html#vfio_group::group_no" title='vfio_group::group_no' data-ref="vfio_group::group_no">group_no</a> = -<var>1</var>;</td></tr>
+<tr><th id="211">211</th><td>		<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_groups" title='vfio_config::vfio_groups' data-ref="vfio_config::vfio_groups">vfio_groups</a>[<a class="local col7 ref" href="#17i" title='i' data-ref="17i">i</a>].<a class="ref field" href="eal_vfio.h.html#vfio_group::fd" title='vfio_group::fd' data-ref="vfio_group::fd">fd</a> = -<var>1</var>;</td></tr>
+<tr><th id="212">212</th><td>		<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_groups" title='vfio_config::vfio_groups' data-ref="vfio_config::vfio_groups">vfio_groups</a>[<a class="local col7 ref" href="#17i" title='i' data-ref="17i">i</a>].<a class="ref field" href="eal_vfio.h.html#vfio_group::devices" title='vfio_group::devices' data-ref="vfio_group::devices">devices</a> = <var>0</var>;</td></tr>
+<tr><th id="213">213</th><td>		<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_active_groups" title='vfio_config::vfio_active_groups' data-ref="vfio_config::vfio_active_groups">vfio_active_groups</a>--;</td></tr>
+<tr><th id="214">214</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="215">215</th><td>	}</td></tr>
+<tr><th id="216">216</th><td></td></tr>
+<tr><th id="217">217</th><td>	<i>/* This is just for SECONDARY processes */</i></td></tr>
+<tr><th id="218">218</th><td>	<a class="local col8 ref" href="#18socket_fd" title='socket_fd' data-ref="18socket_fd">socket_fd</a> = <a class="ref fn" href="eal_vfio.h.html#vfio_mp_sync_connect_to_primary" title='vfio_mp_sync_connect_to_primary' data-ref="vfio_mp_sync_connect_to_primary">vfio_mp_sync_connect_to_primary</a>();</td></tr>
+<tr><th id="219">219</th><td></td></tr>
+<tr><th id="220">220</th><td>	<b>if</b> (<a class="local col8 ref" href="#18socket_fd" title='socket_fd' data-ref="18socket_fd">socket_fd</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="221">221</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  cannot connect to primary process!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  cannot connect to primary process!\n"</q>);</td></tr>
+<tr><th id="222">222</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="223">223</th><td>	}</td></tr>
+<tr><th id="224">224</th><td></td></tr>
+<tr><th id="225">225</th><td>	<b>if</b> (<a class="ref fn" href="eal_vfio.h.html#vfio_mp_sync_send_request" title='vfio_mp_sync_send_request' data-ref="vfio_mp_sync_send_request">vfio_mp_sync_send_request</a>(<a class="local col8 ref" href="#18socket_fd" title='socket_fd' data-ref="18socket_fd">socket_fd</a>, <a class="macro" href="eal_vfio.h.html#155" title="0x300" data-ref="_M/SOCKET_CLR_GROUP">SOCKET_CLR_GROUP</a>) &lt; <var>0</var>) {</td></tr>
+<tr><th id="226">226</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  cannot request container fd!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  cannot request container fd!\n"</q>);</td></tr>
+<tr><th id="227">227</th><td>		<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col8 ref" href="#18socket_fd" title='socket_fd' data-ref="18socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="228">228</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="229">229</th><td>	}</td></tr>
+<tr><th id="230">230</th><td></td></tr>
+<tr><th id="231">231</th><td>	<b>if</b> (<a class="ref fn" href="eal_vfio.h.html#vfio_mp_sync_send_request" title='vfio_mp_sync_send_request' data-ref="vfio_mp_sync_send_request">vfio_mp_sync_send_request</a>(<a class="local col8 ref" href="#18socket_fd" title='socket_fd' data-ref="18socket_fd">socket_fd</a>, <a class="local col6 ref" href="#16vfio_group_fd" title='vfio_group_fd' data-ref="16vfio_group_fd">vfio_group_fd</a>) &lt; <var>0</var>) {</td></tr>
+<tr><th id="232">232</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  cannot send group fd!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  cannot send group fd!\n"</q>);</td></tr>
+<tr><th id="233">233</th><td>		<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col8 ref" href="#18socket_fd" title='socket_fd' data-ref="18socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="234">234</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="235">235</th><td>	}</td></tr>
+<tr><th id="236">236</th><td></td></tr>
+<tr><th id="237">237</th><td>	<a class="local col9 ref" href="#19ret" title='ret' data-ref="19ret">ret</a> = <a class="ref fn" href="eal_vfio.h.html#vfio_mp_sync_receive_request" title='vfio_mp_sync_receive_request' data-ref="vfio_mp_sync_receive_request">vfio_mp_sync_receive_request</a>(<a class="local col8 ref" href="#18socket_fd" title='socket_fd' data-ref="18socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="238">238</th><td>	<b>switch</b> (<a class="local col9 ref" href="#19ret" title='ret' data-ref="19ret">ret</a>) {</td></tr>
+<tr><th id="239">239</th><td>	<b>case</b> <a class="macro" href="eal_vfio.h.html#157" title="0x1" data-ref="_M/SOCKET_NO_FD">SOCKET_NO_FD</a>:</td></tr>
+<tr><th id="240">240</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  BAD VFIO group fd!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  BAD VFIO group fd!\n"</q>);</td></tr>
+<tr><th id="241">241</th><td>		<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col8 ref" href="#18socket_fd" title='socket_fd' data-ref="18socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="242">242</th><td>		<b>break</b>;</td></tr>
+<tr><th id="243">243</th><td>	<b>case</b> <a class="macro" href="eal_vfio.h.html#156" title="0x0" data-ref="_M/SOCKET_OK">SOCKET_OK</a>:</td></tr>
+<tr><th id="244">244</th><td>		<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col8 ref" href="#18socket_fd" title='socket_fd' data-ref="18socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="245">245</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="246">246</th><td>	<b>case</b> <a class="macro" href="eal_vfio.h.html#158" title="0xFF" data-ref="_M/SOCKET_ERR">SOCKET_ERR</a>:</td></tr>
+<tr><th id="247">247</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  Socket error\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  Socket error\n"</q>);</td></tr>
+<tr><th id="248">248</th><td>		<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col8 ref" href="#18socket_fd" title='socket_fd' data-ref="18socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="249">249</th><td>		<b>break</b>;</td></tr>
+<tr><th id="250">250</th><td>	<b>default</b>:</td></tr>
+<tr><th id="251">251</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  UNKNOWN reply, %d\n&quot;, ret)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  UNKNOWN reply, %d\n"</q>, <a class="local col9 ref" href="#19ret" title='ret' data-ref="19ret">ret</a>);</td></tr>
+<tr><th id="252">252</th><td>		<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col8 ref" href="#18socket_fd" title='socket_fd' data-ref="18socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="253">253</th><td>	}</td></tr>
+<tr><th id="254">254</th><td>	<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="255">255</th><td>}</td></tr>
+<tr><th id="256">256</th><td></td></tr>
+<tr><th id="257">257</th><td><em>int</em></td></tr>
+<tr><th id="258">258</th><td><dfn class="decl def fn" id="rte_vfio_setup_device" title='rte_vfio_setup_device' data-ref="rte_vfio_setup_device">rte_vfio_setup_device</dfn>(<em>const</em> <em>char</em> *<dfn class="local col0 decl" id="20sysfs_base" title='sysfs_base' data-type='const char *' data-ref="20sysfs_base">sysfs_base</dfn>, <em>const</em> <em>char</em> *<dfn class="local col1 decl" id="21dev_addr" title='dev_addr' data-type='const char *' data-ref="21dev_addr">dev_addr</dfn>,</td></tr>
+<tr><th id="259">259</th><td>		<em>int</em> *<dfn class="local col2 decl" id="22vfio_dev_fd" title='vfio_dev_fd' data-type='int *' data-ref="22vfio_dev_fd">vfio_dev_fd</dfn>, <b>struct</b> <a class="type" href="../../../../../../../../../include/linux/vfio.h.html#vfio_device_info" title='vfio_device_info' data-ref="vfio_device_info">vfio_device_info</a> *<dfn class="local col3 decl" id="23device_info" title='device_info' data-type='struct vfio_device_info *' data-ref="23device_info">device_info</dfn>)</td></tr>
+<tr><th id="260">260</th><td>{</td></tr>
+<tr><th id="261">261</th><td>	<b>struct</b> <a class="type" href="../../../../../../../../../include/linux/vfio.h.html#vfio_group_status" title='vfio_group_status' data-ref="vfio_group_status">vfio_group_status</a> <dfn class="local col4 decl" id="24group_status" title='group_status' data-type='struct vfio_group_status' data-ref="24group_status">group_status</dfn> = {</td></tr>
+<tr><th id="262">262</th><td>			.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_group_status::argsz" title='vfio_group_status::argsz' data-ref="vfio_group_status::argsz">argsz</a> = <b>sizeof</b>(<a class="local col4 ref" href="#24group_status" title='group_status' data-ref="24group_status">group_status</a>)</td></tr>
+<tr><th id="263">263</th><td>	};</td></tr>
+<tr><th id="264">264</th><td>	<em>int</em> <dfn class="local col5 decl" id="25vfio_group_fd" title='vfio_group_fd' data-type='int' data-ref="25vfio_group_fd">vfio_group_fd</dfn>;</td></tr>
+<tr><th id="265">265</th><td>	<em>int</em> <dfn class="local col6 decl" id="26iommu_group_no" title='iommu_group_no' data-type='int' data-ref="26iommu_group_no">iommu_group_no</dfn>;</td></tr>
+<tr><th id="266">266</th><td>	<em>int</em> <dfn class="local col7 decl" id="27ret" title='ret' data-type='int' data-ref="27ret">ret</dfn>;</td></tr>
+<tr><th id="267">267</th><td></td></tr>
+<tr><th id="268">268</th><td>	<i>/* get group number */</i></td></tr>
+<tr><th id="269">269</th><td>	<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a> = <a class="ref fn" href="#vfio_get_group_no" title='vfio_get_group_no' data-ref="vfio_get_group_no">vfio_get_group_no</a>(<a class="local col0 ref" href="#20sysfs_base" title='sysfs_base' data-ref="20sysfs_base">sysfs_base</a>, <a class="local col1 ref" href="#21dev_addr" title='dev_addr' data-ref="21dev_addr">dev_addr</a>, &amp;<a class="local col6 ref" href="#26iommu_group_no" title='iommu_group_no' data-ref="26iommu_group_no">iommu_group_no</a>);</td></tr>
+<tr><th id="270">270</th><td>	<b>if</b> (<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a> == <var>0</var>) {</td></tr>
+<tr><th id="271">271</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(5U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  %s not managed by VFIO driver, skipping\n&quot;, dev_addr)" data-ref="_M/RTE_LOG">RTE_LOG</a>(WARNING, EAL, <q>"  %s not managed by VFIO driver, skipping\n"</q>,</td></tr>
+<tr><th id="272">272</th><td>			<a class="local col1 ref" href="#21dev_addr" title='dev_addr' data-ref="21dev_addr">dev_addr</a>);</td></tr>
+<tr><th id="273">273</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="274">274</th><td>	}</td></tr>
+<tr><th id="275">275</th><td></td></tr>
+<tr><th id="276">276</th><td>	<i>/* if negative, something failed */</i></td></tr>
+<tr><th id="277">277</th><td>	<b>if</b> (<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="278">278</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="279">279</th><td></td></tr>
+<tr><th id="280">280</th><td>	<i>/* get the actual group fd */</i></td></tr>
+<tr><th id="281">281</th><td>	<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a> = <a class="ref fn" href="#vfio_get_group_fd" title='vfio_get_group_fd' data-ref="vfio_get_group_fd">vfio_get_group_fd</a>(<a class="local col6 ref" href="#26iommu_group_no" title='iommu_group_no' data-ref="26iommu_group_no">iommu_group_no</a>);</td></tr>
+<tr><th id="282">282</th><td>	<b>if</b> (<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="283">283</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="284">284</th><td></td></tr>
+<tr><th id="285">285</th><td>	<i>/* if group_fd == 0, that means the device isn't managed by VFIO */</i></td></tr>
+<tr><th id="286">286</th><td>	<b>if</b> (<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a> == <var>0</var>) {</td></tr>
+<tr><th id="287">287</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(5U, 0, &quot;EAL&quot; &quot;: &quot; &quot; %s not managed by VFIO driver, skipping\n&quot;, dev_addr)" data-ref="_M/RTE_LOG">RTE_LOG</a>(WARNING, EAL, <q>" %s not managed by VFIO driver, skipping\n"</q>,</td></tr>
+<tr><th id="288">288</th><td>				<a class="local col1 ref" href="#21dev_addr" title='dev_addr' data-ref="21dev_addr">dev_addr</a>);</td></tr>
+<tr><th id="289">289</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="290">290</th><td>	}</td></tr>
+<tr><th id="291">291</th><td></td></tr>
+<tr><th id="292">292</th><td>	<i>/*</i></td></tr>
+<tr><th id="293">293</th><td><i>	 * at this point, we know that this group is viable (meaning, all devices</i></td></tr>
+<tr><th id="294">294</th><td><i>	 * are either bound to VFIO or not bound to anything)</i></td></tr>
+<tr><th id="295">295</th><td><i>	 */</i></td></tr>
+<tr><th id="296">296</th><td></td></tr>
+<tr><th id="297">297</th><td>	<i>/* check if the group is viable */</i></td></tr>
+<tr><th id="298">298</th><td>	<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/sys/ioctl.h.html#ioctl" title='ioctl' data-ref="ioctl">ioctl</a>(<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a>, <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#138" title="(((0U) &lt;&lt; (((0+8)+8)+14)) | ((((&apos;;&apos;))) &lt;&lt; (0+8)) | (((100 + 3)) &lt;&lt; 0) | ((0) &lt;&lt; ((0+8)+8)))" data-ref="_M/VFIO_GROUP_GET_STATUS">VFIO_GROUP_GET_STATUS</a>, &amp;<a class="local col4 ref" href="#24group_status" title='group_status' data-ref="24group_status">group_status</a>);</td></tr>
+<tr><th id="299">299</th><td>	<b>if</b> (<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a>) {</td></tr>
+<tr><th id="300">300</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  %s cannot get group status, &quot; &quot;error %i (%s)\n&quot;, dev_addr, (*__errno_location ()), strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  %s cannot get group status, "</q></td></tr>
+<tr><th id="301">301</th><td>				<q>"error %i (%s)\n"</q>, <a class="local col1 ref" href="#21dev_addr" title='dev_addr' data-ref="21dev_addr">dev_addr</a>, <a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>, <a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="302">302</th><td>		<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="303">303</th><td>		<a class="ref fn" href="#rte_vfio_clear_group" title='rte_vfio_clear_group' data-ref="rte_vfio_clear_group">rte_vfio_clear_group</a>(<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="304">304</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="305">305</th><td>	} <b>else</b> <b>if</b> (!(<a class="local col4 ref" href="#24group_status" title='group_status' data-ref="24group_status">group_status</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_group_status::flags" title='vfio_group_status::flags' data-ref="vfio_group_status::flags">flags</a> &amp; <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#135" title="(1 &lt;&lt; 0)" data-ref="_M/VFIO_GROUP_FLAGS_VIABLE">VFIO_GROUP_FLAGS_VIABLE</a>)) {</td></tr>
+<tr><th id="306">306</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  %s VFIO group is not viable!\n&quot;, dev_addr)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  %s VFIO group is not viable!\n"</q>, <a class="local col1 ref" href="#21dev_addr" title='dev_addr' data-ref="21dev_addr">dev_addr</a>);</td></tr>
+<tr><th id="307">307</th><td>		<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="308">308</th><td>		<a class="ref fn" href="#rte_vfio_clear_group" title='rte_vfio_clear_group' data-ref="rte_vfio_clear_group">rte_vfio_clear_group</a>(<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="309">309</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="310">310</th><td>	}</td></tr>
+<tr><th id="311">311</th><td></td></tr>
+<tr><th id="312">312</th><td>	<i>/* check if group does not have a container yet */</i></td></tr>
+<tr><th id="313">313</th><td>	<b>if</b> (!(<a class="local col4 ref" href="#24group_status" title='group_status' data-ref="24group_status">group_status</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_group_status::flags" title='vfio_group_status::flags' data-ref="vfio_group_status::flags">flags</a> &amp; <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#136" title="(1 &lt;&lt; 1)" data-ref="_M/VFIO_GROUP_FLAGS_CONTAINER_SET">VFIO_GROUP_FLAGS_CONTAINER_SET</a>)) {</td></tr>
+<tr><th id="314">314</th><td></td></tr>
+<tr><th id="315">315</th><td>		<i>/* add group to a container */</i></td></tr>
+<tr><th id="316">316</th><td>		<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/sys/ioctl.h.html#ioctl" title='ioctl' data-ref="ioctl">ioctl</a>(<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a>, <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#152" title="(((0U) &lt;&lt; (((0+8)+8)+14)) | ((((&apos;;&apos;))) &lt;&lt; (0+8)) | (((100 + 4)) &lt;&lt; 0) | ((0) &lt;&lt; ((0+8)+8)))" data-ref="_M/VFIO_GROUP_SET_CONTAINER">VFIO_GROUP_SET_CONTAINER</a>,</td></tr>
+<tr><th id="317">317</th><td>				&amp;<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_container_fd" title='vfio_config::vfio_container_fd' data-ref="vfio_config::vfio_container_fd">vfio_container_fd</a>);</td></tr>
+<tr><th id="318">318</th><td>		<b>if</b> (<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a>) {</td></tr>
+<tr><th id="319">319</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  %s cannot add VFIO group to container, &quot; &quot;error %i (%s)\n&quot;, dev_addr, (*__errno_location ()), strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  %s cannot add VFIO group to container, "</q></td></tr>
+<tr><th id="320">320</th><td>					<q>"error %i (%s)\n"</q>, <a class="local col1 ref" href="#21dev_addr" title='dev_addr' data-ref="21dev_addr">dev_addr</a>, <a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>, <a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="321">321</th><td>			<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="322">322</th><td>			<a class="ref fn" href="#rte_vfio_clear_group" title='rte_vfio_clear_group' data-ref="rte_vfio_clear_group">rte_vfio_clear_group</a>(<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="323">323</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="324">324</th><td>		}</td></tr>
+<tr><th id="325">325</th><td></td></tr>
+<tr><th id="326">326</th><td>		<i>/*</i></td></tr>
+<tr><th id="327">327</th><td><i>		 * pick an IOMMU type and set up DMA mappings for container</i></td></tr>
+<tr><th id="328">328</th><td><i>		 *</i></td></tr>
+<tr><th id="329">329</th><td><i>		 * needs to be done only once, only when first group is</i></td></tr>
+<tr><th id="330">330</th><td><i>		 * assigned to a container and only in primary process.</i></td></tr>
+<tr><th id="331">331</th><td><i>		 * Note this can happen several times with the hotplug</i></td></tr>
+<tr><th id="332">332</th><td><i>		 * functionality.</i></td></tr>
+<tr><th id="333">333</th><td><i>		 */</i></td></tr>
+<tr><th id="334">334</th><td>		<b>if</b> (<a class="ref" href="../../common/eal_internal_cfg.h.html#internal_config" title='internal_config' data-ref="internal_config">internal_config</a>.<a class="ref field" href="../../common/eal_internal_cfg.h.html#internal_config::process_type" title='internal_config::process_type' data-ref="internal_config::process_type">process_type</a> == <a class="enum" href="../../common/include/rte_eal.h.html#RTE_PROC_PRIMARY" title='RTE_PROC_PRIMARY' data-ref="RTE_PROC_PRIMARY">RTE_PROC_PRIMARY</a> &amp;&amp;</td></tr>
+<tr><th id="335">335</th><td>				<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_active_groups" title='vfio_config::vfio_active_groups' data-ref="vfio_config::vfio_active_groups">vfio_active_groups</a> == <var>1</var>) {</td></tr>
+<tr><th id="336">336</th><td>			<i>/* select an IOMMU type which we will be using */</i></td></tr>
+<tr><th id="337">337</th><td>			<em>const</em> <b>struct</b> <a class="type" href="eal_vfio.h.html#vfio_iommu_type" title='vfio_iommu_type' data-ref="vfio_iommu_type">vfio_iommu_type</a> *<dfn class="local col8 decl" id="28t" title='t' data-type='const struct vfio_iommu_type *' data-ref="28t">t</dfn> =</td></tr>
+<tr><th id="338">338</th><td>				<a class="ref fn" href="#vfio_set_iommu_type" title='vfio_set_iommu_type' data-ref="vfio_set_iommu_type">vfio_set_iommu_type</a>(<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_container_fd" title='vfio_config::vfio_container_fd' data-ref="vfio_config::vfio_container_fd">vfio_container_fd</a>);</td></tr>
+<tr><th id="339">339</th><td>			<b>if</b> (!<a class="local col8 ref" href="#28t" title='t' data-ref="28t">t</a>) {</td></tr>
+<tr><th id="340">340</th><td>				<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  %s failed to select IOMMU type\n&quot;, dev_addr)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL,</td></tr>
+<tr><th id="341">341</th><td>					<q>"  %s failed to select IOMMU type\n"</q>,</td></tr>
+<tr><th id="342">342</th><td>					<a class="local col1 ref" href="#21dev_addr" title='dev_addr' data-ref="21dev_addr">dev_addr</a>);</td></tr>
+<tr><th id="343">343</th><td>				<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="344">344</th><td>				<a class="ref fn" href="#rte_vfio_clear_group" title='rte_vfio_clear_group' data-ref="rte_vfio_clear_group">rte_vfio_clear_group</a>(<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="345">345</th><td>				<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="346">346</th><td>			}</td></tr>
+<tr><th id="347">347</th><td>			<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a> = <a class="local col8 ref" href="#28t" title='t' data-ref="28t">t</a>-&gt;<a class="ref field" href="eal_vfio.h.html#vfio_iommu_type::dma_map_func" title='vfio_iommu_type::dma_map_func' data-ref="vfio_iommu_type::dma_map_func">dma_map_func</a>(<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_container_fd" title='vfio_config::vfio_container_fd' data-ref="vfio_config::vfio_container_fd">vfio_container_fd</a>);</td></tr>
+<tr><th id="348">348</th><td>			<b>if</b> (<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a>) {</td></tr>
+<tr><th id="349">349</th><td>				<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  %s DMA remapping failed, error %i (%s)\n&quot;, dev_addr, (*__errno_location ()), strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL,</td></tr>
+<tr><th id="350">350</th><td>					<q>"  %s DMA remapping failed, error %i (%s)\n"</q>,</td></tr>
+<tr><th id="351">351</th><td>					<a class="local col1 ref" href="#21dev_addr" title='dev_addr' data-ref="21dev_addr">dev_addr</a>, <a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>, <a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="352">352</th><td>				<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="353">353</th><td>				<a class="ref fn" href="#rte_vfio_clear_group" title='rte_vfio_clear_group' data-ref="rte_vfio_clear_group">rte_vfio_clear_group</a>(<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="354">354</th><td>				<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="355">355</th><td>			}</td></tr>
+<tr><th id="356">356</th><td>		}</td></tr>
+<tr><th id="357">357</th><td>	}</td></tr>
+<tr><th id="358">358</th><td></td></tr>
+<tr><th id="359">359</th><td>	<i>/* get a file descriptor for the device */</i></td></tr>
+<tr><th id="360">360</th><td>	*<a class="local col2 ref" href="#22vfio_dev_fd" title='vfio_dev_fd' data-ref="22vfio_dev_fd">vfio_dev_fd</a> = <a class="ref fn" href="../../../../../../../../../include/sys/ioctl.h.html#ioctl" title='ioctl' data-ref="ioctl">ioctl</a>(<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a>, <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#179" title="(((0U) &lt;&lt; (((0+8)+8)+14)) | ((((&apos;;&apos;))) &lt;&lt; (0+8)) | (((100 + 6)) &lt;&lt; 0) | ((0) &lt;&lt; ((0+8)+8)))" data-ref="_M/VFIO_GROUP_GET_DEVICE_FD">VFIO_GROUP_GET_DEVICE_FD</a>, <a class="local col1 ref" href="#21dev_addr" title='dev_addr' data-ref="21dev_addr">dev_addr</a>);</td></tr>
+<tr><th id="361">361</th><td>	<b>if</b> (*<a class="local col2 ref" href="#22vfio_dev_fd" title='vfio_dev_fd' data-ref="22vfio_dev_fd">vfio_dev_fd</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="362">362</th><td>		<i>/* if we cannot get a device fd, this implies a problem with</i></td></tr>
+<tr><th id="363">363</th><td><i>		 * the VFIO group or the container not having IOMMU configured.</i></td></tr>
+<tr><th id="364">364</th><td><i>		 */</i></td></tr>
+<tr><th id="365">365</th><td></td></tr>
+<tr><th id="366">366</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(5U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Getting a vfio_dev_fd for %s failed\n&quot;, dev_addr)" data-ref="_M/RTE_LOG">RTE_LOG</a>(WARNING, EAL, <q>"Getting a vfio_dev_fd for %s failed\n"</q>,</td></tr>
+<tr><th id="367">367</th><td>				<a class="local col1 ref" href="#21dev_addr" title='dev_addr' data-ref="21dev_addr">dev_addr</a>);</td></tr>
+<tr><th id="368">368</th><td>		<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="369">369</th><td>		<a class="ref fn" href="#rte_vfio_clear_group" title='rte_vfio_clear_group' data-ref="rte_vfio_clear_group">rte_vfio_clear_group</a>(<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="370">370</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="371">371</th><td>	}</td></tr>
+<tr><th id="372">372</th><td></td></tr>
+<tr><th id="373">373</th><td>	<i>/* test and setup the device */</i></td></tr>
+<tr><th id="374">374</th><td>	<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/sys/ioctl.h.html#ioctl" title='ioctl' data-ref="ioctl">ioctl</a>(*<a class="local col2 ref" href="#22vfio_dev_fd" title='vfio_dev_fd' data-ref="22vfio_dev_fd">vfio_dev_fd</a>, <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#199" title="(((0U) &lt;&lt; (((0+8)+8)+14)) | ((((&apos;;&apos;))) &lt;&lt; (0+8)) | (((100 + 7)) &lt;&lt; 0) | ((0) &lt;&lt; ((0+8)+8)))" data-ref="_M/VFIO_DEVICE_GET_INFO">VFIO_DEVICE_GET_INFO</a>, <a class="local col3 ref" href="#23device_info" title='device_info' data-ref="23device_info">device_info</a>);</td></tr>
+<tr><th id="375">375</th><td>	<b>if</b> (<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a>) {</td></tr>
+<tr><th id="376">376</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  %s cannot get device info, &quot; &quot;error %i (%s)\n&quot;, dev_addr, (*__errno_location ()), strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  %s cannot get device info, "</q></td></tr>
+<tr><th id="377">377</th><td>				<q>"error %i (%s)\n"</q>, <a class="local col1 ref" href="#21dev_addr" title='dev_addr' data-ref="21dev_addr">dev_addr</a>, <a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>,</td></tr>
+<tr><th id="378">378</th><td>				<a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="379">379</th><td>		<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(*<a class="local col2 ref" href="#22vfio_dev_fd" title='vfio_dev_fd' data-ref="22vfio_dev_fd">vfio_dev_fd</a>);</td></tr>
+<tr><th id="380">380</th><td>		<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="381">381</th><td>		<a class="ref fn" href="#rte_vfio_clear_group" title='rte_vfio_clear_group' data-ref="rte_vfio_clear_group">rte_vfio_clear_group</a>(<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="382">382</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="383">383</th><td>	}</td></tr>
+<tr><th id="384">384</th><td>	<a class="tu ref fn" href="#vfio_group_device_get" title='vfio_group_device_get' data-use='c' data-ref="vfio_group_device_get">vfio_group_device_get</a>(<a class="local col5 ref" href="#25vfio_group_fd" title='vfio_group_fd' data-ref="25vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="385">385</th><td></td></tr>
+<tr><th id="386">386</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="387">387</th><td>}</td></tr>
+<tr><th id="388">388</th><td></td></tr>
+<tr><th id="389">389</th><td><em>int</em></td></tr>
+<tr><th id="390">390</th><td><dfn class="decl def fn" id="rte_vfio_release_device" title='rte_vfio_release_device' data-ref="rte_vfio_release_device">rte_vfio_release_device</dfn>(<em>const</em> <em>char</em> *<dfn class="local col9 decl" id="29sysfs_base" title='sysfs_base' data-type='const char *' data-ref="29sysfs_base">sysfs_base</dfn>, <em>const</em> <em>char</em> *<dfn class="local col0 decl" id="30dev_addr" title='dev_addr' data-type='const char *' data-ref="30dev_addr">dev_addr</dfn>,</td></tr>
+<tr><th id="391">391</th><td>		    <em>int</em> <dfn class="local col1 decl" id="31vfio_dev_fd" title='vfio_dev_fd' data-type='int' data-ref="31vfio_dev_fd">vfio_dev_fd</dfn>)</td></tr>
+<tr><th id="392">392</th><td>{</td></tr>
+<tr><th id="393">393</th><td>	<b>struct</b> <a class="type" href="../../../../../../../../../include/linux/vfio.h.html#vfio_group_status" title='vfio_group_status' data-ref="vfio_group_status">vfio_group_status</a> <dfn class="local col2 decl" id="32group_status" title='group_status' data-type='struct vfio_group_status' data-ref="32group_status">group_status</dfn> = {</td></tr>
+<tr><th id="394">394</th><td>			.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_group_status::argsz" title='vfio_group_status::argsz' data-ref="vfio_group_status::argsz">argsz</a> = <b>sizeof</b>(<a class="local col2 ref" href="#32group_status" title='group_status' data-ref="32group_status">group_status</a>)</td></tr>
+<tr><th id="395">395</th><td>	};</td></tr>
+<tr><th id="396">396</th><td>	<em>int</em> <dfn class="local col3 decl" id="33vfio_group_fd" title='vfio_group_fd' data-type='int' data-ref="33vfio_group_fd">vfio_group_fd</dfn>;</td></tr>
+<tr><th id="397">397</th><td>	<em>int</em> <dfn class="local col4 decl" id="34iommu_group_no" title='iommu_group_no' data-type='int' data-ref="34iommu_group_no">iommu_group_no</dfn>;</td></tr>
+<tr><th id="398">398</th><td>	<em>int</em> <dfn class="local col5 decl" id="35ret" title='ret' data-type='int' data-ref="35ret">ret</dfn>;</td></tr>
+<tr><th id="399">399</th><td></td></tr>
+<tr><th id="400">400</th><td>	<i>/* get group number */</i></td></tr>
+<tr><th id="401">401</th><td>	<a class="local col5 ref" href="#35ret" title='ret' data-ref="35ret">ret</a> = <a class="ref fn" href="#vfio_get_group_no" title='vfio_get_group_no' data-ref="vfio_get_group_no">vfio_get_group_no</a>(<a class="local col9 ref" href="#29sysfs_base" title='sysfs_base' data-ref="29sysfs_base">sysfs_base</a>, <a class="local col0 ref" href="#30dev_addr" title='dev_addr' data-ref="30dev_addr">dev_addr</a>, &amp;<a class="local col4 ref" href="#34iommu_group_no" title='iommu_group_no' data-ref="34iommu_group_no">iommu_group_no</a>);</td></tr>
+<tr><th id="402">402</th><td>	<b>if</b> (<a class="local col5 ref" href="#35ret" title='ret' data-ref="35ret">ret</a> &lt;= <var>0</var>) {</td></tr>
+<tr><th id="403">403</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(5U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  %s not managed by VFIO driver\n&quot;, dev_addr)" data-ref="_M/RTE_LOG">RTE_LOG</a>(WARNING, EAL, <q>"  %s not managed by VFIO driver\n"</q>,</td></tr>
+<tr><th id="404">404</th><td>			<a class="local col0 ref" href="#30dev_addr" title='dev_addr' data-ref="30dev_addr">dev_addr</a>);</td></tr>
+<tr><th id="405">405</th><td>		<i>/* This is an error at this point. */</i></td></tr>
+<tr><th id="406">406</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="407">407</th><td>	}</td></tr>
+<tr><th id="408">408</th><td></td></tr>
+<tr><th id="409">409</th><td>	<i>/* get the actual group fd */</i></td></tr>
+<tr><th id="410">410</th><td>	<a class="local col3 ref" href="#33vfio_group_fd" title='vfio_group_fd' data-ref="33vfio_group_fd">vfio_group_fd</a> = <a class="ref fn" href="#vfio_get_group_fd" title='vfio_get_group_fd' data-ref="vfio_get_group_fd">vfio_get_group_fd</a>(<a class="local col4 ref" href="#34iommu_group_no" title='iommu_group_no' data-ref="34iommu_group_no">iommu_group_no</a>);</td></tr>
+<tr><th id="411">411</th><td>	<b>if</b> (<a class="local col3 ref" href="#33vfio_group_fd" title='vfio_group_fd' data-ref="33vfio_group_fd">vfio_group_fd</a> &lt;= <var>0</var>) {</td></tr>
+<tr><th id="412">412</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(7U, 0, &quot;EAL&quot; &quot;: &quot; &quot;vfio_get_group_fd failed for %s\n&quot;, dev_addr)" data-ref="_M/RTE_LOG">RTE_LOG</a>(INFO, EAL, <q>"vfio_get_group_fd failed for %s\n"</q>,</td></tr>
+<tr><th id="413">413</th><td>				   <a class="local col0 ref" href="#30dev_addr" title='dev_addr' data-ref="30dev_addr">dev_addr</a>);</td></tr>
+<tr><th id="414">414</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="415">415</th><td>	}</td></tr>
+<tr><th id="416">416</th><td></td></tr>
+<tr><th id="417">417</th><td>	<i>/* At this point we got an active group. Closing it will make the</i></td></tr>
+<tr><th id="418">418</th><td><i>	 * container detachment. If this is the last active group, VFIO kernel</i></td></tr>
+<tr><th id="419">419</th><td><i>	 * code will unset the container and the IOMMU mappings.</i></td></tr>
+<tr><th id="420">420</th><td><i>	 */</i></td></tr>
+<tr><th id="421">421</th><td></td></tr>
+<tr><th id="422">422</th><td>	<i>/* Closing a device */</i></td></tr>
+<tr><th id="423">423</th><td>	<b>if</b> (<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col1 ref" href="#31vfio_dev_fd" title='vfio_dev_fd' data-ref="31vfio_dev_fd">vfio_dev_fd</a>) &lt; <var>0</var>) {</td></tr>
+<tr><th id="424">424</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(7U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Error when closing vfio_dev_fd for %s\n&quot;, dev_addr)" data-ref="_M/RTE_LOG">RTE_LOG</a>(INFO, EAL, <q>"Error when closing vfio_dev_fd for %s\n"</q>,</td></tr>
+<tr><th id="425">425</th><td>				   <a class="local col0 ref" href="#30dev_addr" title='dev_addr' data-ref="30dev_addr">dev_addr</a>);</td></tr>
+<tr><th id="426">426</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="427">427</th><td>	}</td></tr>
+<tr><th id="428">428</th><td></td></tr>
+<tr><th id="429">429</th><td>	<i>/* An VFIO group can have several devices attached. Just when there is</i></td></tr>
+<tr><th id="430">430</th><td><i>	 * no devices remaining should the group be closed.</i></td></tr>
+<tr><th id="431">431</th><td><i>	 */</i></td></tr>
+<tr><th id="432">432</th><td>	<a class="tu ref fn" href="#vfio_group_device_put" title='vfio_group_device_put' data-use='c' data-ref="vfio_group_device_put">vfio_group_device_put</a>(<a class="local col3 ref" href="#33vfio_group_fd" title='vfio_group_fd' data-ref="33vfio_group_fd">vfio_group_fd</a>);</td></tr>
+<tr><th id="433">433</th><td>	<b>if</b> (!<a class="tu ref fn" href="#vfio_group_device_count" title='vfio_group_device_count' data-use='c' data-ref="vfio_group_device_count">vfio_group_device_count</a>(<a class="local col3 ref" href="#33vfio_group_fd" title='vfio_group_fd' data-ref="33vfio_group_fd">vfio_group_fd</a>)) {</td></tr>
+<tr><th id="434">434</th><td></td></tr>
+<tr><th id="435">435</th><td>		<b>if</b> (<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col3 ref" href="#33vfio_group_fd" title='vfio_group_fd' data-ref="33vfio_group_fd">vfio_group_fd</a>) &lt; <var>0</var>) {</td></tr>
+<tr><th id="436">436</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(7U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Error when closing vfio_group_fd for %s\n&quot;, dev_addr)" data-ref="_M/RTE_LOG">RTE_LOG</a>(INFO, EAL, <q>"Error when closing vfio_group_fd for %s\n"</q>,</td></tr>
+<tr><th id="437">437</th><td>				<a class="local col0 ref" href="#30dev_addr" title='dev_addr' data-ref="30dev_addr">dev_addr</a>);</td></tr>
+<tr><th id="438">438</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="439">439</th><td>		}</td></tr>
+<tr><th id="440">440</th><td></td></tr>
+<tr><th id="441">441</th><td>		<b>if</b> (<a class="ref fn" href="#rte_vfio_clear_group" title='rte_vfio_clear_group' data-ref="rte_vfio_clear_group">rte_vfio_clear_group</a>(<a class="local col3 ref" href="#33vfio_group_fd" title='vfio_group_fd' data-ref="33vfio_group_fd">vfio_group_fd</a>) &lt; <var>0</var>) {</td></tr>
+<tr><th id="442">442</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(7U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Error when clearing group for %s\n&quot;, dev_addr)" data-ref="_M/RTE_LOG">RTE_LOG</a>(INFO, EAL, <q>"Error when clearing group for %s\n"</q>,</td></tr>
+<tr><th id="443">443</th><td>					   <a class="local col0 ref" href="#30dev_addr" title='dev_addr' data-ref="30dev_addr">dev_addr</a>);</td></tr>
+<tr><th id="444">444</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="445">445</th><td>		}</td></tr>
+<tr><th id="446">446</th><td>	}</td></tr>
+<tr><th id="447">447</th><td></td></tr>
+<tr><th id="448">448</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="449">449</th><td>}</td></tr>
+<tr><th id="450">450</th><td></td></tr>
+<tr><th id="451">451</th><td><em>int</em></td></tr>
+<tr><th id="452">452</th><td><dfn class="decl def fn" id="rte_vfio_enable" title='rte_vfio_enable' data-ref="rte_vfio_enable">rte_vfio_enable</dfn>(<em>const</em> <em>char</em> *<dfn class="local col6 decl" id="36modname" title='modname' data-type='const char *' data-ref="36modname">modname</dfn>)</td></tr>
+<tr><th id="453">453</th><td>{</td></tr>
+<tr><th id="454">454</th><td>	<i>/* initialize group list */</i></td></tr>
+<tr><th id="455">455</th><td>	<em>int</em> <dfn class="local col7 decl" id="37i" title='i' data-type='int' data-ref="37i">i</dfn>;</td></tr>
+<tr><th id="456">456</th><td>	<em>int</em> <dfn class="local col8 decl" id="38vfio_available" title='vfio_available' data-type='int' data-ref="38vfio_available">vfio_available</dfn>;</td></tr>
+<tr><th id="457">457</th><td></td></tr>
+<tr><th id="458">458</th><td>	<b>for</b> (<a class="local col7 ref" href="#37i" title='i' data-ref="37i">i</a> = <var>0</var>; <a class="local col7 ref" href="#37i" title='i' data-ref="37i">i</a> &lt; <a class="macro" href="eal_vfio.h.html#88" title="64" data-ref="_M/VFIO_MAX_GROUPS">VFIO_MAX_GROUPS</a>; <a class="local col7 ref" href="#37i" title='i' data-ref="37i">i</a>++) {</td></tr>
+<tr><th id="459">459</th><td>		<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_groups" title='vfio_config::vfio_groups' data-ref="vfio_config::vfio_groups">vfio_groups</a>[<a class="local col7 ref" href="#37i" title='i' data-ref="37i">i</a>].<a class="ref field" href="eal_vfio.h.html#vfio_group::fd" title='vfio_group::fd' data-ref="vfio_group::fd">fd</a> = -<var>1</var>;</td></tr>
+<tr><th id="460">460</th><td>		<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_groups" title='vfio_config::vfio_groups' data-ref="vfio_config::vfio_groups">vfio_groups</a>[<a class="local col7 ref" href="#37i" title='i' data-ref="37i">i</a>].<a class="ref field" href="eal_vfio.h.html#vfio_group::group_no" title='vfio_group::group_no' data-ref="vfio_group::group_no">group_no</a> = -<var>1</var>;</td></tr>
+<tr><th id="461">461</th><td>		<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_groups" title='vfio_config::vfio_groups' data-ref="vfio_config::vfio_groups">vfio_groups</a>[<a class="local col7 ref" href="#37i" title='i' data-ref="37i">i</a>].<a class="ref field" href="eal_vfio.h.html#vfio_group::devices" title='vfio_group::devices' data-ref="vfio_group::devices">devices</a> = <var>0</var>;</td></tr>
+<tr><th id="462">462</th><td>	}</td></tr>
+<tr><th id="463">463</th><td></td></tr>
+<tr><th id="464">464</th><td>	<i>/* inform the user that we are probing for VFIO */</i></td></tr>
+<tr><th id="465">465</th><td>	<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(7U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Probing VFIO support...\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(INFO, EAL, <q>"Probing VFIO support...\n"</q>);</td></tr>
+<tr><th id="466">466</th><td></td></tr>
+<tr><th id="467">467</th><td>	<i>/* check if vfio module is loaded */</i></td></tr>
+<tr><th id="468">468</th><td>	<a class="local col8 ref" href="#38vfio_available" title='vfio_available' data-ref="38vfio_available">vfio_available</a> = <a class="ref fn" href="../../common/eal_private.h.html#rte_eal_check_module" title='rte_eal_check_module' data-ref="rte_eal_check_module">rte_eal_check_module</a>(<a class="local col6 ref" href="#36modname" title='modname' data-ref="36modname">modname</a>);</td></tr>
+<tr><th id="469">469</th><td></td></tr>
+<tr><th id="470">470</th><td>	<i>/* return error directly */</i></td></tr>
+<tr><th id="471">471</th><td>	<b>if</b> (<a class="local col8 ref" href="#38vfio_available" title='vfio_available' data-ref="38vfio_available">vfio_available</a> == -<var>1</var>) {</td></tr>
+<tr><th id="472">472</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(7U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Could not get loaded module details!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(INFO, EAL, <q>"Could not get loaded module details!\n"</q>);</td></tr>
+<tr><th id="473">473</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="474">474</th><td>	}</td></tr>
+<tr><th id="475">475</th><td></td></tr>
+<tr><th id="476">476</th><td>	<i>/* return 0 if VFIO modules not loaded */</i></td></tr>
+<tr><th id="477">477</th><td>	<b>if</b> (<a class="local col8 ref" href="#38vfio_available" title='vfio_available' data-ref="38vfio_available">vfio_available</a> == <var>0</var>) {</td></tr>
+<tr><th id="478">478</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(8U, 0, &quot;EAL&quot; &quot;: &quot; &quot;VFIO modules not loaded, &quot; &quot;skipping VFIO support...\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(DEBUG, EAL, <q>"VFIO modules not loaded, "</q></td></tr>
+<tr><th id="479">479</th><td>			<q>"skipping VFIO support...\n"</q>);</td></tr>
+<tr><th id="480">480</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="481">481</th><td>	}</td></tr>
+<tr><th id="482">482</th><td></td></tr>
+<tr><th id="483">483</th><td>	<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_container_fd" title='vfio_config::vfio_container_fd' data-ref="vfio_config::vfio_container_fd">vfio_container_fd</a> = <a class="ref fn" href="#vfio_get_container_fd" title='vfio_get_container_fd' data-ref="vfio_get_container_fd">vfio_get_container_fd</a>();</td></tr>
+<tr><th id="484">484</th><td></td></tr>
+<tr><th id="485">485</th><td>	<i>/* check if we have VFIO driver enabled */</i></td></tr>
+<tr><th id="486">486</th><td>	<b>if</b> (<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_container_fd" title='vfio_config::vfio_container_fd' data-ref="vfio_config::vfio_container_fd">vfio_container_fd</a> != -<var>1</var>) {</td></tr>
+<tr><th id="487">487</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(6U, 0, &quot;EAL&quot; &quot;: &quot; &quot;VFIO support initialized\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(NOTICE, EAL, <q>"VFIO support initialized\n"</q>);</td></tr>
+<tr><th id="488">488</th><td>		<a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_enabled" title='vfio_config::vfio_enabled' data-ref="vfio_config::vfio_enabled">vfio_enabled</a> = <var>1</var>;</td></tr>
+<tr><th id="489">489</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="490">490</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(6U, 0, &quot;EAL&quot; &quot;: &quot; &quot;VFIO support could not be initialized\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(NOTICE, EAL, <q>"VFIO support could not be initialized\n"</q>);</td></tr>
+<tr><th id="491">491</th><td>	}</td></tr>
+<tr><th id="492">492</th><td></td></tr>
+<tr><th id="493">493</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="494">494</th><td>}</td></tr>
+<tr><th id="495">495</th><td></td></tr>
+<tr><th id="496">496</th><td><em>int</em></td></tr>
+<tr><th id="497">497</th><td><dfn class="decl def fn" id="rte_vfio_is_enabled" title='rte_vfio_is_enabled' data-ref="rte_vfio_is_enabled">rte_vfio_is_enabled</dfn>(<em>const</em> <em>char</em> *<dfn class="local col9 decl" id="39modname" title='modname' data-type='const char *' data-ref="39modname">modname</dfn>)</td></tr>
+<tr><th id="498">498</th><td>{</td></tr>
+<tr><th id="499">499</th><td>	<em>const</em> <em>int</em> <dfn class="local col0 decl" id="40mod_available" title='mod_available' data-type='const int' data-ref="40mod_available">mod_available</dfn> = <a class="ref fn" href="../../common/eal_private.h.html#rte_eal_check_module" title='rte_eal_check_module' data-ref="rte_eal_check_module">rte_eal_check_module</a>(<a class="local col9 ref" href="#39modname" title='modname' data-ref="39modname">modname</a>) &gt; <var>0</var>;</td></tr>
+<tr><th id="500">500</th><td>	<b>return</b> <a class="tu ref" href="#vfio_cfg" title='vfio_cfg' data-use='m' data-ref="vfio_cfg">vfio_cfg</a>.<a class="ref field" href="eal_vfio.h.html#vfio_config::vfio_enabled" title='vfio_config::vfio_enabled' data-ref="vfio_config::vfio_enabled">vfio_enabled</a> &amp;&amp; <a class="local col0 ref" href="#40mod_available" title='mod_available' data-ref="40mod_available">mod_available</a>;</td></tr>
+<tr><th id="501">501</th><td>}</td></tr>
+<tr><th id="502">502</th><td></td></tr>
+<tr><th id="503">503</th><td><em>const</em> <b>struct</b> <a class="type" href="eal_vfio.h.html#vfio_iommu_type" title='vfio_iommu_type' data-ref="vfio_iommu_type">vfio_iommu_type</a> *</td></tr>
+<tr><th id="504">504</th><td><dfn class="decl def fn" id="vfio_set_iommu_type" title='vfio_set_iommu_type' data-ref="vfio_set_iommu_type">vfio_set_iommu_type</dfn>(<em>int</em> <dfn class="local col1 decl" id="41vfio_container_fd" title='vfio_container_fd' data-type='int' data-ref="41vfio_container_fd">vfio_container_fd</dfn>)</td></tr>
+<tr><th id="505">505</th><td>{</td></tr>
+<tr><th id="506">506</th><td>	<em>unsigned</em> <dfn class="local col2 decl" id="42idx" title='idx' data-type='unsigned int' data-ref="42idx">idx</dfn>;</td></tr>
+<tr><th id="507">507</th><td>	<b>for</b> (<a class="local col2 ref" href="#42idx" title='idx' data-ref="42idx">idx</a> = <var>0</var>; <a class="local col2 ref" href="#42idx" title='idx' data-ref="42idx">idx</a> &lt; <a class="macro" href="../../common/include/rte_common.h.html#389" title="(sizeof (iommu_types) / sizeof ((iommu_types)[0]))" data-ref="_M/RTE_DIM">RTE_DIM</a>(<a class="tu ref" href="#iommu_types" title='iommu_types' data-use='r' data-ref="iommu_types">iommu_types</a>); <a class="local col2 ref" href="#42idx" title='idx' data-ref="42idx">idx</a>++) {</td></tr>
+<tr><th id="508">508</th><td>		<em>const</em> <b>struct</b> <a class="type" href="eal_vfio.h.html#vfio_iommu_type" title='vfio_iommu_type' data-ref="vfio_iommu_type">vfio_iommu_type</a> *<dfn class="local col3 decl" id="43t" title='t' data-type='const struct vfio_iommu_type *' data-ref="43t">t</dfn> = &amp;<a class="tu ref" href="#iommu_types" title='iommu_types' data-use='a' data-ref="iommu_types">iommu_types</a>[<a class="local col2 ref" href="#42idx" title='idx' data-ref="42idx">idx</a>];</td></tr>
+<tr><th id="509">509</th><td></td></tr>
+<tr><th id="510">510</th><td>		<em>int</em> <dfn class="local col4 decl" id="44ret" title='ret' data-type='int' data-ref="44ret">ret</dfn> = <a class="ref fn" href="../../../../../../../../../include/sys/ioctl.h.html#ioctl" title='ioctl' data-ref="ioctl">ioctl</a>(<a class="local col1 ref" href="#41vfio_container_fd" title='vfio_container_fd' data-ref="41vfio_container_fd">vfio_container_fd</a>, <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#119" title="(((0U) &lt;&lt; (((0+8)+8)+14)) | ((((&apos;;&apos;))) &lt;&lt; (0+8)) | (((100 + 2)) &lt;&lt; 0) | ((0) &lt;&lt; ((0+8)+8)))" data-ref="_M/VFIO_SET_IOMMU">VFIO_SET_IOMMU</a>,</td></tr>
+<tr><th id="511">511</th><td>				<a class="local col3 ref" href="#43t" title='t' data-ref="43t">t</a>-&gt;<a class="ref field" href="eal_vfio.h.html#vfio_iommu_type::type_id" title='vfio_iommu_type::type_id' data-ref="vfio_iommu_type::type_id">type_id</a>);</td></tr>
+<tr><th id="512">512</th><td>		<b>if</b> (!<a class="local col4 ref" href="#44ret" title='ret' data-ref="44ret">ret</a>) {</td></tr>
+<tr><th id="513">513</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(6U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  using IOMMU type %d (%s)\n&quot;, t-&gt;type_id, t-&gt;name)" data-ref="_M/RTE_LOG">RTE_LOG</a>(NOTICE, EAL, <q>"  using IOMMU type %d (%s)\n"</q>,</td></tr>
+<tr><th id="514">514</th><td>					<a class="local col3 ref" href="#43t" title='t' data-ref="43t">t</a>-&gt;<a class="ref field" href="eal_vfio.h.html#vfio_iommu_type::type_id" title='vfio_iommu_type::type_id' data-ref="vfio_iommu_type::type_id">type_id</a>, <a class="local col3 ref" href="#43t" title='t' data-ref="43t">t</a>-&gt;<a class="ref field" href="eal_vfio.h.html#vfio_iommu_type::name" title='vfio_iommu_type::name' data-ref="vfio_iommu_type::name">name</a>);</td></tr>
+<tr><th id="515">515</th><td>			<b>return</b> <a class="local col3 ref" href="#43t" title='t' data-ref="43t">t</a>;</td></tr>
+<tr><th id="516">516</th><td>		}</td></tr>
+<tr><th id="517">517</th><td>		<i>/* not an error, there may be more supported IOMMU types */</i></td></tr>
+<tr><th id="518">518</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(8U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  set IOMMU type %d (%s) failed, &quot; &quot;error %i (%s)\n&quot;, t-&gt;type_id, t-&gt;name, (*__errno_location ()), strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(DEBUG, EAL, <q>"  set IOMMU type %d (%s) failed, "</q></td></tr>
+<tr><th id="519">519</th><td>				<q>"error %i (%s)\n"</q>, <a class="local col3 ref" href="#43t" title='t' data-ref="43t">t</a>-&gt;<a class="ref field" href="eal_vfio.h.html#vfio_iommu_type::type_id" title='vfio_iommu_type::type_id' data-ref="vfio_iommu_type::type_id">type_id</a>, <a class="local col3 ref" href="#43t" title='t' data-ref="43t">t</a>-&gt;<a class="ref field" href="eal_vfio.h.html#vfio_iommu_type::name" title='vfio_iommu_type::name' data-ref="vfio_iommu_type::name">name</a>, <a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>,</td></tr>
+<tr><th id="520">520</th><td>				<a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="521">521</th><td>	}</td></tr>
+<tr><th id="522">522</th><td>	<i>/* if we didn't find a suitable IOMMU type, fail */</i></td></tr>
+<tr><th id="523">523</th><td>	<b>return</b> <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="524">524</th><td>}</td></tr>
+<tr><th id="525">525</th><td></td></tr>
+<tr><th id="526">526</th><td><em>int</em></td></tr>
+<tr><th id="527">527</th><td><dfn class="decl def fn" id="vfio_has_supported_extensions" title='vfio_has_supported_extensions' data-ref="vfio_has_supported_extensions">vfio_has_supported_extensions</dfn>(<em>int</em> <dfn class="local col5 decl" id="45vfio_container_fd" title='vfio_container_fd' data-type='int' data-ref="45vfio_container_fd">vfio_container_fd</dfn>)</td></tr>
+<tr><th id="528">528</th><td>{</td></tr>
+<tr><th id="529">529</th><td>	<em>int</em> <dfn class="local col6 decl" id="46ret" title='ret' data-type='int' data-ref="46ret">ret</dfn>;</td></tr>
+<tr><th id="530">530</th><td>	<em>unsigned</em> <dfn class="local col7 decl" id="47idx" title='idx' data-type='unsigned int' data-ref="47idx">idx</dfn>, <dfn class="local col8 decl" id="48n_extensions" title='n_extensions' data-type='unsigned int' data-ref="48n_extensions">n_extensions</dfn> = <var>0</var>;</td></tr>
+<tr><th id="531">531</th><td>	<b>for</b> (<a class="local col7 ref" href="#47idx" title='idx' data-ref="47idx">idx</a> = <var>0</var>; <a class="local col7 ref" href="#47idx" title='idx' data-ref="47idx">idx</a> &lt; <a class="macro" href="../../common/include/rte_common.h.html#389" title="(sizeof (iommu_types) / sizeof ((iommu_types)[0]))" data-ref="_M/RTE_DIM">RTE_DIM</a>(<a class="tu ref" href="#iommu_types" title='iommu_types' data-use='r' data-ref="iommu_types">iommu_types</a>); <a class="local col7 ref" href="#47idx" title='idx' data-ref="47idx">idx</a>++) {</td></tr>
+<tr><th id="532">532</th><td>		<em>const</em> <b>struct</b> <a class="type" href="eal_vfio.h.html#vfio_iommu_type" title='vfio_iommu_type' data-ref="vfio_iommu_type">vfio_iommu_type</a> *<dfn class="local col9 decl" id="49t" title='t' data-type='const struct vfio_iommu_type *' data-ref="49t">t</dfn> = &amp;<a class="tu ref" href="#iommu_types" title='iommu_types' data-use='a' data-ref="iommu_types">iommu_types</a>[<a class="local col7 ref" href="#47idx" title='idx' data-ref="47idx">idx</a>];</td></tr>
+<tr><th id="533">533</th><td></td></tr>
+<tr><th id="534">534</th><td>		<a class="local col6 ref" href="#46ret" title='ret' data-ref="46ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/sys/ioctl.h.html#ioctl" title='ioctl' data-ref="ioctl">ioctl</a>(<a class="local col5 ref" href="#45vfio_container_fd" title='vfio_container_fd' data-ref="45vfio_container_fd">vfio_container_fd</a>, <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#106" title="(((0U) &lt;&lt; (((0+8)+8)+14)) | ((((&apos;;&apos;))) &lt;&lt; (0+8)) | (((100 + 1)) &lt;&lt; 0) | ((0) &lt;&lt; ((0+8)+8)))" data-ref="_M/VFIO_CHECK_EXTENSION">VFIO_CHECK_EXTENSION</a>,</td></tr>
+<tr><th id="535">535</th><td>				<a class="local col9 ref" href="#49t" title='t' data-ref="49t">t</a>-&gt;<a class="ref field" href="eal_vfio.h.html#vfio_iommu_type::type_id" title='vfio_iommu_type::type_id' data-ref="vfio_iommu_type::type_id">type_id</a>);</td></tr>
+<tr><th id="536">536</th><td>		<b>if</b> (<a class="local col6 ref" href="#46ret" title='ret' data-ref="46ret">ret</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="537">537</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  could not get IOMMU type, &quot; &quot;error %i (%s)\n&quot;, (*__errno_location ()), strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  could not get IOMMU type, "</q></td></tr>
+<tr><th id="538">538</th><td>				<q>"error %i (%s)\n"</q>, <a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>,</td></tr>
+<tr><th id="539">539</th><td>				<a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="540">540</th><td>			<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col5 ref" href="#45vfio_container_fd" title='vfio_container_fd' data-ref="45vfio_container_fd">vfio_container_fd</a>);</td></tr>
+<tr><th id="541">541</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="542">542</th><td>		} <b>else</b> <b>if</b> (<a class="local col6 ref" href="#46ret" title='ret' data-ref="46ret">ret</a> == <var>1</var>) {</td></tr>
+<tr><th id="543">543</th><td>			<i>/* we found a supported extension */</i></td></tr>
+<tr><th id="544">544</th><td>			<a class="local col8 ref" href="#48n_extensions" title='n_extensions' data-ref="48n_extensions">n_extensions</a>++;</td></tr>
+<tr><th id="545">545</th><td>		}</td></tr>
+<tr><th id="546">546</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(8U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  IOMMU type %d (%s) is %s\n&quot;, t-&gt;type_id, t-&gt;name, ret ? &quot;supported&quot; : &quot;not supported&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(DEBUG, EAL, <q>"  IOMMU type %d (%s) is %s\n"</q>,</td></tr>
+<tr><th id="547">547</th><td>				<a class="local col9 ref" href="#49t" title='t' data-ref="49t">t</a>-&gt;<a class="ref field" href="eal_vfio.h.html#vfio_iommu_type::type_id" title='vfio_iommu_type::type_id' data-ref="vfio_iommu_type::type_id">type_id</a>, <a class="local col9 ref" href="#49t" title='t' data-ref="49t">t</a>-&gt;<a class="ref field" href="eal_vfio.h.html#vfio_iommu_type::name" title='vfio_iommu_type::name' data-ref="vfio_iommu_type::name">name</a>,</td></tr>
+<tr><th id="548">548</th><td>				<a class="local col6 ref" href="#46ret" title='ret' data-ref="46ret">ret</a> ? <q>"supported"</q> : <q>"not supported"</q>);</td></tr>
+<tr><th id="549">549</th><td>	}</td></tr>
+<tr><th id="550">550</th><td></td></tr>
+<tr><th id="551">551</th><td>	<i>/* if we didn't find any supported IOMMU types, fail */</i></td></tr>
+<tr><th id="552">552</th><td>	<b>if</b> (!<a class="local col8 ref" href="#48n_extensions" title='n_extensions' data-ref="48n_extensions">n_extensions</a>) {</td></tr>
+<tr><th id="553">553</th><td>		<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col5 ref" href="#45vfio_container_fd" title='vfio_container_fd' data-ref="45vfio_container_fd">vfio_container_fd</a>);</td></tr>
+<tr><th id="554">554</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="555">555</th><td>	}</td></tr>
+<tr><th id="556">556</th><td></td></tr>
+<tr><th id="557">557</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="558">558</th><td>}</td></tr>
+<tr><th id="559">559</th><td></td></tr>
+<tr><th id="560">560</th><td><em>int</em></td></tr>
+<tr><th id="561">561</th><td><dfn class="decl def fn" id="vfio_get_container_fd" title='vfio_get_container_fd' data-ref="vfio_get_container_fd">vfio_get_container_fd</dfn>(<em>void</em>)</td></tr>
+<tr><th id="562">562</th><td>{</td></tr>
+<tr><th id="563">563</th><td>	<em>int</em> <dfn class="local col0 decl" id="50ret" title='ret' data-type='int' data-ref="50ret">ret</dfn>, <dfn class="local col1 decl" id="51vfio_container_fd" title='vfio_container_fd' data-type='int' data-ref="51vfio_container_fd">vfio_container_fd</dfn>;</td></tr>
+<tr><th id="564">564</th><td></td></tr>
+<tr><th id="565">565</th><td>	<i>/* if we're in a primary process, try to open the container */</i></td></tr>
+<tr><th id="566">566</th><td>	<b>if</b> (<a class="ref" href="../../common/eal_internal_cfg.h.html#internal_config" title='internal_config' data-ref="internal_config">internal_config</a>.<a class="ref field" href="../../common/eal_internal_cfg.h.html#internal_config::process_type" title='internal_config::process_type' data-ref="internal_config::process_type">process_type</a> == <a class="enum" href="../../common/include/rte_eal.h.html#RTE_PROC_PRIMARY" title='RTE_PROC_PRIMARY' data-ref="RTE_PROC_PRIMARY">RTE_PROC_PRIMARY</a>) {</td></tr>
+<tr><th id="567">567</th><td>		<a class="local col1 ref" href="#51vfio_container_fd" title='vfio_container_fd' data-ref="51vfio_container_fd">vfio_container_fd</a> = <a class="ref fn" href="../../../../../../../../../include/fcntl.h.html#open" title='open' data-ref="open">open</a>(<a class="macro" href="../../common/include/rte_vfio.h.html#23" title="&quot;/dev/vfio/vfio&quot;" data-ref="_M/VFIO_CONTAINER_PATH">VFIO_CONTAINER_PATH</a>, <a class="macro" href="../../../../../../../../../include/bits/fcntl-linux.h.html#45" title="02" data-ref="_M/O_RDWR">O_RDWR</a>);</td></tr>
+<tr><th id="568">568</th><td>		<b>if</b> (<a class="local col1 ref" href="#51vfio_container_fd" title='vfio_container_fd' data-ref="51vfio_container_fd">vfio_container_fd</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="569">569</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  cannot open VFIO container, &quot; &quot;error %i (%s)\n&quot;, (*__errno_location ()), strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  cannot open VFIO container, "</q></td></tr>
+<tr><th id="570">570</th><td>					<q>"error %i (%s)\n"</q>, <a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>, <a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="571">571</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="572">572</th><td>		}</td></tr>
+<tr><th id="573">573</th><td></td></tr>
+<tr><th id="574">574</th><td>		<i>/* check VFIO API version */</i></td></tr>
+<tr><th id="575">575</th><td>		<a class="local col0 ref" href="#50ret" title='ret' data-ref="50ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/sys/ioctl.h.html#ioctl" title='ioctl' data-ref="ioctl">ioctl</a>(<a class="local col1 ref" href="#51vfio_container_fd" title='vfio_container_fd' data-ref="51vfio_container_fd">vfio_container_fd</a>, <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#97" title="(((0U) &lt;&lt; (((0+8)+8)+14)) | ((((&apos;;&apos;))) &lt;&lt; (0+8)) | (((100 + 0)) &lt;&lt; 0) | ((0) &lt;&lt; ((0+8)+8)))" data-ref="_M/VFIO_GET_API_VERSION">VFIO_GET_API_VERSION</a>);</td></tr>
+<tr><th id="576">576</th><td>		<b>if</b> (<a class="local col0 ref" href="#50ret" title='ret' data-ref="50ret">ret</a> != <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#17" title="0" data-ref="_M/VFIO_API_VERSION">VFIO_API_VERSION</a>) {</td></tr>
+<tr><th id="577">577</th><td>			<b>if</b> (<a class="local col0 ref" href="#50ret" title='ret' data-ref="50ret">ret</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="578">578</th><td>				<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  could not get VFIO API version, &quot; &quot;error %i (%s)\n&quot;, (*__errno_location ()), strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  could not get VFIO API version, "</q></td></tr>
+<tr><th id="579">579</th><td>						<q>"error %i (%s)\n"</q>, <a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>, <a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="580">580</th><td>			<b>else</b></td></tr>
+<tr><th id="581">581</th><td>				<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  unsupported VFIO API version!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  unsupported VFIO API version!\n"</q>);</td></tr>
+<tr><th id="582">582</th><td>			<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col1 ref" href="#51vfio_container_fd" title='vfio_container_fd' data-ref="51vfio_container_fd">vfio_container_fd</a>);</td></tr>
+<tr><th id="583">583</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="584">584</th><td>		}</td></tr>
+<tr><th id="585">585</th><td></td></tr>
+<tr><th id="586">586</th><td>		<a class="local col0 ref" href="#50ret" title='ret' data-ref="50ret">ret</a> = <a class="ref fn" href="#vfio_has_supported_extensions" title='vfio_has_supported_extensions' data-ref="vfio_has_supported_extensions">vfio_has_supported_extensions</a>(<a class="local col1 ref" href="#51vfio_container_fd" title='vfio_container_fd' data-ref="51vfio_container_fd">vfio_container_fd</a>);</td></tr>
+<tr><th id="587">587</th><td>		<b>if</b> (<a class="local col0 ref" href="#50ret" title='ret' data-ref="50ret">ret</a>) {</td></tr>
+<tr><th id="588">588</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  no supported IOMMU &quot; &quot;extensions found!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  no supported IOMMU "</q></td></tr>
+<tr><th id="589">589</th><td>					<q>"extensions found!\n"</q>);</td></tr>
+<tr><th id="590">590</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="591">591</th><td>		}</td></tr>
+<tr><th id="592">592</th><td></td></tr>
+<tr><th id="593">593</th><td>		<b>return</b> <a class="local col1 ref" href="#51vfio_container_fd" title='vfio_container_fd' data-ref="51vfio_container_fd">vfio_container_fd</a>;</td></tr>
+<tr><th id="594">594</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="595">595</th><td>		<i>/*</i></td></tr>
+<tr><th id="596">596</th><td><i>		 * if we're in a secondary process, request container fd from the</i></td></tr>
+<tr><th id="597">597</th><td><i>		 * primary process via our socket</i></td></tr>
+<tr><th id="598">598</th><td><i>		 */</i></td></tr>
+<tr><th id="599">599</th><td>		<em>int</em> <dfn class="local col2 decl" id="52socket_fd" title='socket_fd' data-type='int' data-ref="52socket_fd">socket_fd</dfn>;</td></tr>
+<tr><th id="600">600</th><td></td></tr>
+<tr><th id="601">601</th><td>		<a class="local col2 ref" href="#52socket_fd" title='socket_fd' data-ref="52socket_fd">socket_fd</a> = <a class="ref fn" href="eal_vfio.h.html#vfio_mp_sync_connect_to_primary" title='vfio_mp_sync_connect_to_primary' data-ref="vfio_mp_sync_connect_to_primary">vfio_mp_sync_connect_to_primary</a>();</td></tr>
+<tr><th id="602">602</th><td>		<b>if</b> (<a class="local col2 ref" href="#52socket_fd" title='socket_fd' data-ref="52socket_fd">socket_fd</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="603">603</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  cannot connect to primary process!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  cannot connect to primary process!\n"</q>);</td></tr>
+<tr><th id="604">604</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="605">605</th><td>		}</td></tr>
+<tr><th id="606">606</th><td>		<b>if</b> (<a class="ref fn" href="eal_vfio.h.html#vfio_mp_sync_send_request" title='vfio_mp_sync_send_request' data-ref="vfio_mp_sync_send_request">vfio_mp_sync_send_request</a>(<a class="local col2 ref" href="#52socket_fd" title='socket_fd' data-ref="52socket_fd">socket_fd</a>, <a class="macro" href="eal_vfio.h.html#153" title="0x100" data-ref="_M/SOCKET_REQ_CONTAINER">SOCKET_REQ_CONTAINER</a>) &lt; <var>0</var>) {</td></tr>
+<tr><th id="607">607</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  cannot request container fd!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  cannot request container fd!\n"</q>);</td></tr>
+<tr><th id="608">608</th><td>			<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col2 ref" href="#52socket_fd" title='socket_fd' data-ref="52socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="609">609</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="610">610</th><td>		}</td></tr>
+<tr><th id="611">611</th><td>		<a class="local col1 ref" href="#51vfio_container_fd" title='vfio_container_fd' data-ref="51vfio_container_fd">vfio_container_fd</a> = <a class="ref fn" href="eal_vfio.h.html#vfio_mp_sync_receive_fd" title='vfio_mp_sync_receive_fd' data-ref="vfio_mp_sync_receive_fd">vfio_mp_sync_receive_fd</a>(<a class="local col2 ref" href="#52socket_fd" title='socket_fd' data-ref="52socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="612">612</th><td>		<b>if</b> (<a class="local col1 ref" href="#51vfio_container_fd" title='vfio_container_fd' data-ref="51vfio_container_fd">vfio_container_fd</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="613">613</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  cannot get container fd!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  cannot get container fd!\n"</q>);</td></tr>
+<tr><th id="614">614</th><td>			<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col2 ref" href="#52socket_fd" title='socket_fd' data-ref="52socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="615">615</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="616">616</th><td>		}</td></tr>
+<tr><th id="617">617</th><td>		<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col2 ref" href="#52socket_fd" title='socket_fd' data-ref="52socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="618">618</th><td>		<b>return</b> <a class="local col1 ref" href="#51vfio_container_fd" title='vfio_container_fd' data-ref="51vfio_container_fd">vfio_container_fd</a>;</td></tr>
+<tr><th id="619">619</th><td>	}</td></tr>
+<tr><th id="620">620</th><td></td></tr>
+<tr><th id="621">621</th><td>	<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="622">622</th><td>}</td></tr>
+<tr><th id="623">623</th><td></td></tr>
+<tr><th id="624">624</th><td><em>int</em></td></tr>
+<tr><th id="625">625</th><td><dfn class="decl def fn" id="vfio_get_group_no" title='vfio_get_group_no' data-ref="vfio_get_group_no">vfio_get_group_no</dfn>(<em>const</em> <em>char</em> *<dfn class="local col3 decl" id="53sysfs_base" title='sysfs_base' data-type='const char *' data-ref="53sysfs_base">sysfs_base</dfn>,</td></tr>
+<tr><th id="626">626</th><td>		<em>const</em> <em>char</em> *<dfn class="local col4 decl" id="54dev_addr" title='dev_addr' data-type='const char *' data-ref="54dev_addr">dev_addr</dfn>, <em>int</em> *<dfn class="local col5 decl" id="55iommu_group_no" title='iommu_group_no' data-type='int *' data-ref="55iommu_group_no">iommu_group_no</dfn>)</td></tr>
+<tr><th id="627">627</th><td>{</td></tr>
+<tr><th id="628">628</th><td>	<em>char</em> <dfn class="local col6 decl" id="56linkname" title='linkname' data-type='char [4096]' data-ref="56linkname">linkname</dfn>[<a class="macro" href="../../../../../../../../../include/linux/limits.h.html#12" title="4096" data-ref="_M/PATH_MAX">PATH_MAX</a>];</td></tr>
+<tr><th id="629">629</th><td>	<em>char</em> <dfn class="local col7 decl" id="57filename" title='filename' data-type='char [4096]' data-ref="57filename">filename</dfn>[<a class="macro" href="../../../../../../../../../include/linux/limits.h.html#12" title="4096" data-ref="_M/PATH_MAX">PATH_MAX</a>];</td></tr>
+<tr><th id="630">630</th><td>	<em>char</em> *<dfn class="local col8 decl" id="58tok" title='tok' data-type='char *[16]' data-ref="58tok">tok</dfn>[<var>16</var>], *<dfn class="local col9 decl" id="59group_tok" title='group_tok' data-type='char *' data-ref="59group_tok">group_tok</dfn>, *<dfn class="local col0 decl" id="60end" title='end' data-type='char *' data-ref="60end">end</dfn>;</td></tr>
+<tr><th id="631">631</th><td>	<em>int</em> <dfn class="local col1 decl" id="61ret" title='ret' data-type='int' data-ref="61ret">ret</dfn>;</td></tr>
+<tr><th id="632">632</th><td></td></tr>
+<tr><th id="633">633</th><td>	<a class="ref fn" href="../../../../../../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(<a class="local col6 ref" href="#56linkname" title='linkname' data-ref="56linkname">linkname</a>, <var>0</var>, <b>sizeof</b>(<a class="local col6 ref" href="#56linkname" title='linkname' data-ref="56linkname">linkname</a>));</td></tr>
+<tr><th id="634">634</th><td>	<a class="ref fn" href="../../../../../../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(<a class="local col7 ref" href="#57filename" title='filename' data-ref="57filename">filename</a>, <var>0</var>, <b>sizeof</b>(<a class="local col7 ref" href="#57filename" title='filename' data-ref="57filename">filename</a>));</td></tr>
+<tr><th id="635">635</th><td></td></tr>
+<tr><th id="636">636</th><td>	<i>/* try to find out IOMMU group for this device */</i></td></tr>
+<tr><th id="637">637</th><td>	<a class="ref fn" href="../../../../../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a>(<a class="local col6 ref" href="#56linkname" title='linkname' data-ref="56linkname">linkname</a>, <b>sizeof</b>(<a class="local col6 ref" href="#56linkname" title='linkname' data-ref="56linkname">linkname</a>),</td></tr>
+<tr><th id="638">638</th><td>			 <q>"%s/%s/iommu_group"</q>, <a class="local col3 ref" href="#53sysfs_base" title='sysfs_base' data-ref="53sysfs_base">sysfs_base</a>, <a class="local col4 ref" href="#54dev_addr" title='dev_addr' data-ref="54dev_addr">dev_addr</a>);</td></tr>
+<tr><th id="639">639</th><td></td></tr>
+<tr><th id="640">640</th><td>	<a class="local col1 ref" href="#61ret" title='ret' data-ref="61ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/unistd.h.html#readlink" title='readlink' data-ref="readlink">readlink</a>(<a class="local col6 ref" href="#56linkname" title='linkname' data-ref="56linkname">linkname</a>, <a class="local col7 ref" href="#57filename" title='filename' data-ref="57filename">filename</a>, <b>sizeof</b>(<a class="local col7 ref" href="#57filename" title='filename' data-ref="57filename">filename</a>));</td></tr>
+<tr><th id="641">641</th><td></td></tr>
+<tr><th id="642">642</th><td>	<i>/* if the link doesn't exist, no VFIO for us */</i></td></tr>
+<tr><th id="643">643</th><td>	<b>if</b> (<a class="local col1 ref" href="#61ret" title='ret' data-ref="61ret">ret</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="644">644</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="645">645</th><td></td></tr>
+<tr><th id="646">646</th><td>	<a class="local col1 ref" href="#61ret" title='ret' data-ref="61ret">ret</a> = <a class="ref fn" href="../../common/include/rte_string_fns.h.html#rte_strsplit" title='rte_strsplit' data-ref="rte_strsplit">rte_strsplit</a>(<a class="local col7 ref" href="#57filename" title='filename' data-ref="57filename">filename</a>, <b>sizeof</b>(<a class="local col7 ref" href="#57filename" title='filename' data-ref="57filename">filename</a>),</td></tr>
+<tr><th id="647">647</th><td>			<a class="local col8 ref" href="#58tok" title='tok' data-ref="58tok">tok</a>, <a class="macro" href="../../common/include/rte_common.h.html#389" title="(sizeof (tok) / sizeof ((tok)[0]))" data-ref="_M/RTE_DIM">RTE_DIM</a>(<a class="local col8 ref" href="#58tok" title='tok' data-ref="58tok">tok</a>), <kbd>'/'</kbd>);</td></tr>
+<tr><th id="648">648</th><td></td></tr>
+<tr><th id="649">649</th><td>	<b>if</b> (<a class="local col1 ref" href="#61ret" title='ret' data-ref="61ret">ret</a> &lt;= <var>0</var>) {</td></tr>
+<tr><th id="650">650</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  %s cannot get IOMMU group\n&quot;, dev_addr)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  %s cannot get IOMMU group\n"</q>, <a class="local col4 ref" href="#54dev_addr" title='dev_addr' data-ref="54dev_addr">dev_addr</a>);</td></tr>
+<tr><th id="651">651</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="652">652</th><td>	}</td></tr>
+<tr><th id="653">653</th><td></td></tr>
+<tr><th id="654">654</th><td>	<i>/* IOMMU group is always the last token */</i></td></tr>
+<tr><th id="655">655</th><td>	<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a> = <var>0</var>;</td></tr>
+<tr><th id="656">656</th><td>	<a class="local col9 ref" href="#59group_tok" title='group_tok' data-ref="59group_tok">group_tok</a> = <a class="local col8 ref" href="#58tok" title='tok' data-ref="58tok">tok</a>[<a class="local col1 ref" href="#61ret" title='ret' data-ref="61ret">ret</a> - <var>1</var>];</td></tr>
+<tr><th id="657">657</th><td>	<a class="local col0 ref" href="#60end" title='end' data-ref="60end">end</a> = <a class="local col9 ref" href="#59group_tok" title='group_tok' data-ref="59group_tok">group_tok</a>;</td></tr>
+<tr><th id="658">658</th><td>	*<a class="local col5 ref" href="#55iommu_group_no" title='iommu_group_no' data-ref="55iommu_group_no">iommu_group_no</a> = <a class="ref fn" href="../../../../../../../../../include/stdlib.h.html#strtol" title='strtol' data-ref="strtol">strtol</a>(<a class="local col9 ref" href="#59group_tok" title='group_tok' data-ref="59group_tok">group_tok</a>, &amp;<a class="local col0 ref" href="#60end" title='end' data-ref="60end">end</a>, <var>10</var>);</td></tr>
+<tr><th id="659">659</th><td>	<b>if</b> ((<a class="local col0 ref" href="#60end" title='end' data-ref="60end">end</a> != <a class="local col9 ref" href="#59group_tok" title='group_tok' data-ref="59group_tok">group_tok</a> &amp;&amp; *<a class="local col0 ref" href="#60end" title='end' data-ref="60end">end</a> != <kbd>'\0'</kbd>) || <a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a> != <var>0</var>) {</td></tr>
+<tr><th id="660">660</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  %s error parsing IOMMU number!\n&quot;, dev_addr)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  %s error parsing IOMMU number!\n"</q>, <a class="local col4 ref" href="#54dev_addr" title='dev_addr' data-ref="54dev_addr">dev_addr</a>);</td></tr>
+<tr><th id="661">661</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="662">662</th><td>	}</td></tr>
+<tr><th id="663">663</th><td></td></tr>
+<tr><th id="664">664</th><td>	<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="665">665</th><td>}</td></tr>
+<tr><th id="666">666</th><td></td></tr>
+<tr><th id="667">667</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="668">668</th><td><dfn class="tu decl def fn" id="vfio_type1_dma_map" title='vfio_type1_dma_map' data-type='int vfio_type1_dma_map(int vfio_container_fd)' data-ref="vfio_type1_dma_map">vfio_type1_dma_map</dfn>(<em>int</em> <dfn class="local col2 decl" id="62vfio_container_fd" title='vfio_container_fd' data-type='int' data-ref="62vfio_container_fd">vfio_container_fd</dfn>)</td></tr>
+<tr><th id="669">669</th><td>{</td></tr>
+<tr><th id="670">670</th><td>	<em>const</em> <b>struct</b> <a class="type" href="../../common/include/rte_memory.h.html#rte_memseg" title='rte_memseg' data-ref="rte_memseg">rte_memseg</a> *<dfn class="local col3 decl" id="63ms" title='ms' data-type='const struct rte_memseg *' data-ref="63ms">ms</dfn> = <a class="ref fn" href="../../common/include/rte_memory.h.html#rte_eal_get_physmem_layout" title='rte_eal_get_physmem_layout' data-ref="rte_eal_get_physmem_layout">rte_eal_get_physmem_layout</a>();</td></tr>
+<tr><th id="671">671</th><td>	<em>int</em> <dfn class="local col4 decl" id="64i" title='i' data-type='int' data-ref="64i">i</dfn>, <dfn class="local col5 decl" id="65ret" title='ret' data-type='int' data-ref="65ret">ret</dfn>;</td></tr>
+<tr><th id="672">672</th><td></td></tr>
+<tr><th id="673">673</th><td>	<i>/* map all DPDK segments for DMA. use 1:1 PA to IOVA mapping */</i></td></tr>
+<tr><th id="674">674</th><td>	<b>for</b> (<a class="local col4 ref" href="#64i" title='i' data-ref="64i">i</a> = <var>0</var>; <a class="local col4 ref" href="#64i" title='i' data-ref="64i">i</a> &lt; <a class="macro" href="../../../../x86_64-native-linuxapp-gcc/include/rte_config.h.html#26" title="256" data-ref="_M/RTE_MAX_MEMSEG">RTE_MAX_MEMSEG</a>; <a class="local col4 ref" href="#64i" title='i' data-ref="64i">i</a>++) {</td></tr>
+<tr><th id="675">675</th><td>		<b>struct</b> <a class="type" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_type1_dma_map" title='vfio_iommu_type1_dma_map' data-ref="vfio_iommu_type1_dma_map">vfio_iommu_type1_dma_map</a> <dfn class="local col6 decl" id="66dma_map" title='dma_map' data-type='struct vfio_iommu_type1_dma_map' data-ref="66dma_map">dma_map</dfn>;</td></tr>
+<tr><th id="676">676</th><td></td></tr>
+<tr><th id="677">677</th><td>		<b>if</b> (<a class="local col3 ref" href="#63ms" title='ms' data-ref="63ms">ms</a>[<a class="local col4 ref" href="#64i" title='i' data-ref="64i">i</a>].<a class="ref field" href="../../common/include/rte_memory.h.html#rte_memseg::(anonymous)::addr" title='rte_memseg::(anonymous union)::addr' data-ref="rte_memseg::(anonymous)::addr">addr</a> == <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>)</td></tr>
+<tr><th id="678">678</th><td>			<b>break</b>;</td></tr>
+<tr><th id="679">679</th><td></td></tr>
+<tr><th id="680">680</th><td>		<a class="ref fn" href="../../../../../../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(&amp;<a class="local col6 ref" href="#66dma_map" title='dma_map' data-ref="66dma_map">dma_map</a>, <var>0</var>, <b>sizeof</b>(<a class="local col6 ref" href="#66dma_map" title='dma_map' data-ref="66dma_map">dma_map</a>));</td></tr>
+<tr><th id="681">681</th><td>		<a class="local col6 ref" href="#66dma_map" title='dma_map' data-ref="66dma_map">dma_map</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_type1_dma_map::argsz" title='vfio_iommu_type1_dma_map::argsz' data-ref="vfio_iommu_type1_dma_map::argsz">argsz</a> = <b>sizeof</b>(<b>struct</b> <a class="type" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_type1_dma_map" title='vfio_iommu_type1_dma_map' data-ref="vfio_iommu_type1_dma_map">vfio_iommu_type1_dma_map</a>);</td></tr>
+<tr><th id="682">682</th><td>		<a class="local col6 ref" href="#66dma_map" title='dma_map' data-ref="66dma_map">dma_map</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_type1_dma_map::vaddr" title='vfio_iommu_type1_dma_map::vaddr' data-ref="vfio_iommu_type1_dma_map::vaddr">vaddr</a> = <a class="local col3 ref" href="#63ms" title='ms' data-ref="63ms">ms</a>[<a class="local col4 ref" href="#64i" title='i' data-ref="64i">i</a>].<a class="ref field" href="../../common/include/rte_memory.h.html#rte_memseg::(anonymous)::addr_64" title='rte_memseg::(anonymous union)::addr_64' data-ref="rte_memseg::(anonymous)::addr_64">addr_64</a>;</td></tr>
+<tr><th id="683">683</th><td>		<a class="local col6 ref" href="#66dma_map" title='dma_map' data-ref="66dma_map">dma_map</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_type1_dma_map::size" title='vfio_iommu_type1_dma_map::size' data-ref="vfio_iommu_type1_dma_map::size">size</a> = <a class="local col3 ref" href="#63ms" title='ms' data-ref="63ms">ms</a>[<a class="local col4 ref" href="#64i" title='i' data-ref="64i">i</a>].<a class="ref field" href="../../common/include/rte_memory.h.html#rte_memseg::len" title='rte_memseg::len' data-ref="rte_memseg::len">len</a>;</td></tr>
+<tr><th id="684">684</th><td>		<b>if</b> (<a class="ref fn" href="../../common/include/rte_eal.h.html#rte_eal_iova_mode" title='rte_eal_iova_mode' data-ref="rte_eal_iova_mode">rte_eal_iova_mode</a>() == <a class="enum" href="../../common/include/rte_bus.h.html#RTE_IOVA_VA" title='RTE_IOVA_VA' data-ref="RTE_IOVA_VA">RTE_IOVA_VA</a>)</td></tr>
+<tr><th id="685">685</th><td>			<a class="local col6 ref" href="#66dma_map" title='dma_map' data-ref="66dma_map">dma_map</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_type1_dma_map::iova" title='vfio_iommu_type1_dma_map::iova' data-ref="vfio_iommu_type1_dma_map::iova">iova</a> = <a class="local col6 ref" href="#66dma_map" title='dma_map' data-ref="66dma_map">dma_map</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_type1_dma_map::vaddr" title='vfio_iommu_type1_dma_map::vaddr' data-ref="vfio_iommu_type1_dma_map::vaddr">vaddr</a>;</td></tr>
+<tr><th id="686">686</th><td>		<b>else</b></td></tr>
+<tr><th id="687">687</th><td>			<a class="local col6 ref" href="#66dma_map" title='dma_map' data-ref="66dma_map">dma_map</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_type1_dma_map::iova" title='vfio_iommu_type1_dma_map::iova' data-ref="vfio_iommu_type1_dma_map::iova">iova</a> = <a class="local col3 ref" href="#63ms" title='ms' data-ref="63ms">ms</a>[<a class="local col4 ref" href="#64i" title='i' data-ref="64i">i</a>].<a class="ref field" href="../../common/include/rte_memory.h.html#rte_memseg::(anonymous)::iova" title='rte_memseg::(anonymous union)::iova' data-ref="rte_memseg::(anonymous)::iova">iova</a>;</td></tr>
+<tr><th id="688">688</th><td>		<a class="local col6 ref" href="#66dma_map" title='dma_map' data-ref="66dma_map">dma_map</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_type1_dma_map::flags" title='vfio_iommu_type1_dma_map::flags' data-ref="vfio_iommu_type1_dma_map::flags">flags</a> = <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#502" title="(1 &lt;&lt; 0)" data-ref="_M/VFIO_DMA_MAP_FLAG_READ">VFIO_DMA_MAP_FLAG_READ</a> | <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#503" title="(1 &lt;&lt; 1)" data-ref="_M/VFIO_DMA_MAP_FLAG_WRITE">VFIO_DMA_MAP_FLAG_WRITE</a>;</td></tr>
+<tr><th id="689">689</th><td></td></tr>
+<tr><th id="690">690</th><td>		<a class="local col5 ref" href="#65ret" title='ret' data-ref="65ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/sys/ioctl.h.html#ioctl" title='ioctl' data-ref="ioctl">ioctl</a>(<a class="local col2 ref" href="#62vfio_container_fd" title='vfio_container_fd' data-ref="62vfio_container_fd">vfio_container_fd</a>, <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#509" title="(((0U) &lt;&lt; (((0+8)+8)+14)) | ((((&apos;;&apos;))) &lt;&lt; (0+8)) | (((100 + 13)) &lt;&lt; 0) | ((0) &lt;&lt; ((0+8)+8)))" data-ref="_M/VFIO_IOMMU_MAP_DMA">VFIO_IOMMU_MAP_DMA</a>, &amp;<a class="local col6 ref" href="#66dma_map" title='dma_map' data-ref="66dma_map">dma_map</a>);</td></tr>
+<tr><th id="691">691</th><td></td></tr>
+<tr><th id="692">692</th><td>		<b>if</b> (<a class="local col5 ref" href="#65ret" title='ret' data-ref="65ret">ret</a>) {</td></tr>
+<tr><th id="693">693</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  cannot set up DMA remapping, &quot; &quot;error %i (%s)\n&quot;, (*__errno_location ()), strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  cannot set up DMA remapping, "</q></td></tr>
+<tr><th id="694">694</th><td>					  <q>"error %i (%s)\n"</q>, <a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>,</td></tr>
+<tr><th id="695">695</th><td>					  <a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="696">696</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="697">697</th><td>		}</td></tr>
+<tr><th id="698">698</th><td>	}</td></tr>
+<tr><th id="699">699</th><td></td></tr>
+<tr><th id="700">700</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="701">701</th><td>}</td></tr>
+<tr><th id="702">702</th><td></td></tr>
+<tr><th id="703">703</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="704">704</th><td><dfn class="tu decl def fn" id="vfio_spapr_dma_map" title='vfio_spapr_dma_map' data-type='int vfio_spapr_dma_map(int vfio_container_fd)' data-ref="vfio_spapr_dma_map">vfio_spapr_dma_map</dfn>(<em>int</em> <dfn class="local col7 decl" id="67vfio_container_fd" title='vfio_container_fd' data-type='int' data-ref="67vfio_container_fd">vfio_container_fd</dfn>)</td></tr>
+<tr><th id="705">705</th><td>{</td></tr>
+<tr><th id="706">706</th><td>	<em>const</em> <b>struct</b> <a class="type" href="../../common/include/rte_memory.h.html#rte_memseg" title='rte_memseg' data-ref="rte_memseg">rte_memseg</a> *<dfn class="local col8 decl" id="68ms" title='ms' data-type='const struct rte_memseg *' data-ref="68ms">ms</dfn> = <a class="ref fn" href="../../common/include/rte_memory.h.html#rte_eal_get_physmem_layout" title='rte_eal_get_physmem_layout' data-ref="rte_eal_get_physmem_layout">rte_eal_get_physmem_layout</a>();</td></tr>
+<tr><th id="707">707</th><td>	<em>int</em> <dfn class="local col9 decl" id="69i" title='i' data-type='int' data-ref="69i">i</dfn>, <dfn class="local col0 decl" id="70ret" title='ret' data-type='int' data-ref="70ret">ret</dfn>;</td></tr>
+<tr><th id="708">708</th><td></td></tr>
+<tr><th id="709">709</th><td>	<b>struct</b> <a class="type" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_register_memory" title='vfio_iommu_spapr_register_memory' data-ref="vfio_iommu_spapr_register_memory">vfio_iommu_spapr_register_memory</a> <dfn class="local col1 decl" id="71reg" title='reg' data-type='struct vfio_iommu_spapr_register_memory' data-ref="71reg">reg</dfn> = {</td></tr>
+<tr><th id="710">710</th><td>		.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_register_memory::argsz" title='vfio_iommu_spapr_register_memory::argsz' data-ref="vfio_iommu_spapr_register_memory::argsz">argsz</a> = <b>sizeof</b>(<a class="local col1 ref" href="#71reg" title='reg' data-ref="71reg">reg</a>),</td></tr>
+<tr><th id="711">711</th><td>		.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_register_memory::flags" title='vfio_iommu_spapr_register_memory::flags' data-ref="vfio_iommu_spapr_register_memory::flags">flags</a> = <var>0</var></td></tr>
+<tr><th id="712">712</th><td>	};</td></tr>
+<tr><th id="713">713</th><td>	<b>struct</b> <a class="type" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_tce_info" title='vfio_iommu_spapr_tce_info' data-ref="vfio_iommu_spapr_tce_info">vfio_iommu_spapr_tce_info</a> <dfn class="local col2 decl" id="72info" title='info' data-type='struct vfio_iommu_spapr_tce_info' data-ref="72info">info</dfn> = {</td></tr>
+<tr><th id="714">714</th><td>		.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_tce_info::argsz" title='vfio_iommu_spapr_tce_info::argsz' data-ref="vfio_iommu_spapr_tce_info::argsz">argsz</a> = <b>sizeof</b>(<a class="local col2 ref" href="#72info" title='info' data-ref="72info">info</a>),</td></tr>
+<tr><th id="715">715</th><td>	};</td></tr>
+<tr><th id="716">716</th><td>	<b>struct</b> <a class="type" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_tce_create" title='vfio_iommu_spapr_tce_create' data-ref="vfio_iommu_spapr_tce_create">vfio_iommu_spapr_tce_create</a> <dfn class="local col3 decl" id="73create" title='create' data-type='struct vfio_iommu_spapr_tce_create' data-ref="73create">create</dfn> = {</td></tr>
+<tr><th id="717">717</th><td>		.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_tce_create::argsz" title='vfio_iommu_spapr_tce_create::argsz' data-ref="vfio_iommu_spapr_tce_create::argsz">argsz</a> = <b>sizeof</b>(<a class="local col3 ref" href="#73create" title='create' data-ref="73create">create</a>),</td></tr>
+<tr><th id="718">718</th><td>	};</td></tr>
+<tr><th id="719">719</th><td>	<b>struct</b> <a class="type" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_tce_remove" title='vfio_iommu_spapr_tce_remove' data-ref="vfio_iommu_spapr_tce_remove">vfio_iommu_spapr_tce_remove</a> <dfn class="local col4 decl" id="74remove" title='remove' data-type='struct vfio_iommu_spapr_tce_remove' data-ref="74remove">remove</dfn> = {</td></tr>
+<tr><th id="720">720</th><td>		.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_tce_remove::argsz" title='vfio_iommu_spapr_tce_remove::argsz' data-ref="vfio_iommu_spapr_tce_remove::argsz">argsz</a> = <b>sizeof</b>(<a class="local col4 ref" href="#74remove" title='remove' data-ref="74remove">remove</a>),</td></tr>
+<tr><th id="721">721</th><td>	};</td></tr>
+<tr><th id="722">722</th><td></td></tr>
+<tr><th id="723">723</th><td>	<i>/* query spapr iommu info */</i></td></tr>
+<tr><th id="724">724</th><td>	<a class="local col0 ref" href="#70ret" title='ret' data-ref="70ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/sys/ioctl.h.html#ioctl" title='ioctl' data-ref="ioctl">ioctl</a>(<a class="local col7 ref" href="#67vfio_container_fd" title='vfio_container_fd' data-ref="67vfio_container_fd">vfio_container_fd</a>, <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#579" title="(((0U) &lt;&lt; (((0+8)+8)+14)) | ((((&apos;;&apos;))) &lt;&lt; (0+8)) | (((100 + 12)) &lt;&lt; 0) | ((0) &lt;&lt; ((0+8)+8)))" data-ref="_M/VFIO_IOMMU_SPAPR_TCE_GET_INFO">VFIO_IOMMU_SPAPR_TCE_GET_INFO</a>, &amp;<a class="local col2 ref" href="#72info" title='info' data-ref="72info">info</a>);</td></tr>
+<tr><th id="725">725</th><td>	<b>if</b> (<a class="local col0 ref" href="#70ret" title='ret' data-ref="70ret">ret</a>) {</td></tr>
+<tr><th id="726">726</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  cannot get iommu info, &quot; &quot;error %i (%s)\n&quot;, (*__errno_location ()), strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  cannot get iommu info, "</q></td></tr>
+<tr><th id="727">727</th><td>				<q>"error %i (%s)\n"</q>, <a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>, <a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="728">728</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="729">729</th><td>	}</td></tr>
+<tr><th id="730">730</th><td></td></tr>
+<tr><th id="731">731</th><td>	<i>/* remove default DMA of 32 bit window */</i></td></tr>
+<tr><th id="732">732</th><td>	<a class="local col4 ref" href="#74remove" title='remove' data-ref="74remove">remove</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_tce_remove::start_addr" title='vfio_iommu_spapr_tce_remove::start_addr' data-ref="vfio_iommu_spapr_tce_remove::start_addr">start_addr</a> = <a class="local col2 ref" href="#72info" title='info' data-ref="72info">info</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_tce_info::dma32_window_start" title='vfio_iommu_spapr_tce_info::dma32_window_start' data-ref="vfio_iommu_spapr_tce_info::dma32_window_start">dma32_window_start</a>;</td></tr>
+<tr><th id="733">733</th><td>	<a class="local col0 ref" href="#70ret" title='ret' data-ref="70ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/sys/ioctl.h.html#ioctl" title='ioctl' data-ref="ioctl">ioctl</a>(<a class="local col7 ref" href="#67vfio_container_fd" title='vfio_container_fd' data-ref="67vfio_container_fd">vfio_container_fd</a>, <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#670" title="(((0U) &lt;&lt; (((0+8)+8)+14)) | ((((&apos;;&apos;))) &lt;&lt; (0+8)) | (((100 + 20)) &lt;&lt; 0) | ((0) &lt;&lt; ((0+8)+8)))" data-ref="_M/VFIO_IOMMU_SPAPR_TCE_REMOVE">VFIO_IOMMU_SPAPR_TCE_REMOVE</a>, &amp;<a class="local col4 ref" href="#74remove" title='remove' data-ref="74remove">remove</a>);</td></tr>
+<tr><th id="734">734</th><td>	<b>if</b> (<a class="local col0 ref" href="#70ret" title='ret' data-ref="70ret">ret</a>) {</td></tr>
+<tr><th id="735">735</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  cannot remove default DMA window, &quot; &quot;error %i (%s)\n&quot;, (*__errno_location ()), strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  cannot remove default DMA window, "</q></td></tr>
+<tr><th id="736">736</th><td>				<q>"error %i (%s)\n"</q>, <a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>, <a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="737">737</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="738">738</th><td>	}</td></tr>
+<tr><th id="739">739</th><td></td></tr>
+<tr><th id="740">740</th><td>	<i>/* create DMA window from 0 to max(phys_addr + len) */</i></td></tr>
+<tr><th id="741">741</th><td>	<b>for</b> (<a class="local col9 ref" href="#69i" title='i' data-ref="69i">i</a> = <var>0</var>; <a class="local col9 ref" href="#69i" title='i' data-ref="69i">i</a> &lt; <a class="macro" href="../../../../x86_64-native-linuxapp-gcc/include/rte_config.h.html#26" title="256" data-ref="_M/RTE_MAX_MEMSEG">RTE_MAX_MEMSEG</a>; <a class="local col9 ref" href="#69i" title='i' data-ref="69i">i</a>++) {</td></tr>
+<tr><th id="742">742</th><td>		<b>if</b> (<a class="local col8 ref" href="#68ms" title='ms' data-ref="68ms">ms</a>[<a class="local col9 ref" href="#69i" title='i' data-ref="69i">i</a>].<a class="ref field" href="../../common/include/rte_memory.h.html#rte_memseg::(anonymous)::addr" title='rte_memseg::(anonymous union)::addr' data-ref="rte_memseg::(anonymous)::addr">addr</a> == <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>)</td></tr>
+<tr><th id="743">743</th><td>			<b>break</b>;</td></tr>
+<tr><th id="744">744</th><td></td></tr>
+<tr><th id="745">745</th><td>		<a class="local col3 ref" href="#73create" title='create' data-ref="73create">create</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_tce_create::window_size" title='vfio_iommu_spapr_tce_create::window_size' data-ref="vfio_iommu_spapr_tce_create::window_size">window_size</a> = <a class="macro" href="../../common/include/rte_common.h.html#300" title="__extension__ ({ __typeof__ (create.window_size) _a = (create.window_size); __typeof__ (ms[i].iova + ms[i].len) _b = (ms[i].iova + ms[i].len); _a &gt; _b ? _a : _b; })" data-ref="_M/RTE_MAX">RTE_MAX</a>(<a class="local col3 ref" href="#73create" title='create' data-ref="73create">create</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_tce_create::window_size" title='vfio_iommu_spapr_tce_create::window_size' data-ref="vfio_iommu_spapr_tce_create::window_size">window_size</a>,</td></tr>
+<tr><th id="746">746</th><td>				<a class="local col8 ref" href="#68ms" title='ms' data-ref="68ms">ms</a>[<a class="local col9 ref" href="#69i" title='i' data-ref="69i">i</a>].<a class="ref field" href="../../common/include/rte_memory.h.html#rte_memseg::(anonymous)::iova" title='rte_memseg::(anonymous union)::iova' data-ref="rte_memseg::(anonymous)::iova">iova</a> + <a class="local col8 ref" href="#68ms" title='ms' data-ref="68ms">ms</a>[<a class="local col9 ref" href="#69i" title='i' data-ref="69i">i</a>].<a class="ref field" href="../../common/include/rte_memory.h.html#rte_memseg::len" title='rte_memseg::len' data-ref="rte_memseg::len">len</a>);</td></tr>
+<tr><th id="747">747</th><td>	}</td></tr>
+<tr><th id="748">748</th><td></td></tr>
+<tr><th id="749">749</th><td>	<i>/* sPAPR requires window size to be a power of 2 */</i></td></tr>
+<tr><th id="750">750</th><td>	<a class="local col3 ref" href="#73create" title='create' data-ref="73create">create</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_tce_create::window_size" title='vfio_iommu_spapr_tce_create::window_size' data-ref="vfio_iommu_spapr_tce_create::window_size">window_size</a> = <a class="ref fn" href="../../common/include/rte_common.h.html#rte_align64pow2" title='rte_align64pow2' data-ref="rte_align64pow2">rte_align64pow2</a>(<a class="local col3 ref" href="#73create" title='create' data-ref="73create">create</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_tce_create::window_size" title='vfio_iommu_spapr_tce_create::window_size' data-ref="vfio_iommu_spapr_tce_create::window_size">window_size</a>);</td></tr>
+<tr><th id="751">751</th><td>	<a class="local col3 ref" href="#73create" title='create' data-ref="73create">create</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_tce_create::page_shift" title='vfio_iommu_spapr_tce_create::page_shift' data-ref="vfio_iommu_spapr_tce_create::page_shift">page_shift</a> = <a class="ref fn" href="#751" title='__builtin_ctzll' data-ref="__builtin_ctzll">__builtin_ctzll</a>(<a class="local col8 ref" href="#68ms" title='ms' data-ref="68ms">ms</a>-&gt;<a class="ref field" href="../../common/include/rte_memory.h.html#rte_memseg::hugepage_sz" title='rte_memseg::hugepage_sz' data-ref="rte_memseg::hugepage_sz">hugepage_sz</a>);</td></tr>
+<tr><th id="752">752</th><td>	<a class="local col3 ref" href="#73create" title='create' data-ref="73create">create</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_tce_create::levels" title='vfio_iommu_spapr_tce_create::levels' data-ref="vfio_iommu_spapr_tce_create::levels">levels</a> = <var>1</var>;</td></tr>
+<tr><th id="753">753</th><td></td></tr>
+<tr><th id="754">754</th><td>	<a class="local col0 ref" href="#70ret" title='ret' data-ref="70ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/sys/ioctl.h.html#ioctl" title='ioctl' data-ref="ioctl">ioctl</a>(<a class="local col7 ref" href="#67vfio_container_fd" title='vfio_container_fd' data-ref="67vfio_container_fd">vfio_container_fd</a>, <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#656" title="(((0U) &lt;&lt; (((0+8)+8)+14)) | ((((&apos;;&apos;))) &lt;&lt; (0+8)) | (((100 + 19)) &lt;&lt; 0) | ((0) &lt;&lt; ((0+8)+8)))" data-ref="_M/VFIO_IOMMU_SPAPR_TCE_CREATE">VFIO_IOMMU_SPAPR_TCE_CREATE</a>, &amp;<a class="local col3 ref" href="#73create" title='create' data-ref="73create">create</a>);</td></tr>
+<tr><th id="755">755</th><td>	<b>if</b> (<a class="local col0 ref" href="#70ret" title='ret' data-ref="70ret">ret</a>) {</td></tr>
+<tr><th id="756">756</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  cannot create new DMA window, &quot; &quot;error %i (%s)\n&quot;, (*__errno_location ()), strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  cannot create new DMA window, "</q></td></tr>
+<tr><th id="757">757</th><td>				<q>"error %i (%s)\n"</q>, <a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>, <a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="758">758</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="759">759</th><td>	}</td></tr>
+<tr><th id="760">760</th><td></td></tr>
+<tr><th id="761">761</th><td>	<b>if</b> (<a class="local col3 ref" href="#73create" title='create' data-ref="73create">create</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_tce_create::start_addr" title='vfio_iommu_spapr_tce_create::start_addr' data-ref="vfio_iommu_spapr_tce_create::start_addr">start_addr</a> != <var>0</var>) {</td></tr>
+<tr><th id="762">762</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  DMA window start address != 0\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  DMA window start address != 0\n"</q>);</td></tr>
+<tr><th id="763">763</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="764">764</th><td>	}</td></tr>
+<tr><th id="765">765</th><td></td></tr>
+<tr><th id="766">766</th><td>	<i>/* map all DPDK segments for DMA. use 1:1 PA to IOVA mapping */</i></td></tr>
+<tr><th id="767">767</th><td>	<b>for</b> (<a class="local col9 ref" href="#69i" title='i' data-ref="69i">i</a> = <var>0</var>; <a class="local col9 ref" href="#69i" title='i' data-ref="69i">i</a> &lt; <a class="macro" href="../../../../x86_64-native-linuxapp-gcc/include/rte_config.h.html#26" title="256" data-ref="_M/RTE_MAX_MEMSEG">RTE_MAX_MEMSEG</a>; <a class="local col9 ref" href="#69i" title='i' data-ref="69i">i</a>++) {</td></tr>
+<tr><th id="768">768</th><td>		<b>struct</b> <a class="type" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_type1_dma_map" title='vfio_iommu_type1_dma_map' data-ref="vfio_iommu_type1_dma_map">vfio_iommu_type1_dma_map</a> <dfn class="local col5 decl" id="75dma_map" title='dma_map' data-type='struct vfio_iommu_type1_dma_map' data-ref="75dma_map">dma_map</dfn>;</td></tr>
+<tr><th id="769">769</th><td></td></tr>
+<tr><th id="770">770</th><td>		<b>if</b> (<a class="local col8 ref" href="#68ms" title='ms' data-ref="68ms">ms</a>[<a class="local col9 ref" href="#69i" title='i' data-ref="69i">i</a>].<a class="ref field" href="../../common/include/rte_memory.h.html#rte_memseg::(anonymous)::addr" title='rte_memseg::(anonymous union)::addr' data-ref="rte_memseg::(anonymous)::addr">addr</a> == <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>)</td></tr>
+<tr><th id="771">771</th><td>			<b>break</b>;</td></tr>
+<tr><th id="772">772</th><td></td></tr>
+<tr><th id="773">773</th><td>		<a class="local col1 ref" href="#71reg" title='reg' data-ref="71reg">reg</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_register_memory::vaddr" title='vfio_iommu_spapr_register_memory::vaddr' data-ref="vfio_iommu_spapr_register_memory::vaddr">vaddr</a> = (<a class="typedef" href="../../../../../../../../../include/stdint.h.html#uintptr_t" title='uintptr_t' data-type='unsigned long' data-ref="uintptr_t">uintptr_t</a>) <a class="local col8 ref" href="#68ms" title='ms' data-ref="68ms">ms</a>[<a class="local col9 ref" href="#69i" title='i' data-ref="69i">i</a>].<a class="ref field" href="../../common/include/rte_memory.h.html#rte_memseg::(anonymous)::addr" title='rte_memseg::(anonymous union)::addr' data-ref="rte_memseg::(anonymous)::addr">addr</a>;</td></tr>
+<tr><th id="774">774</th><td>		<a class="local col1 ref" href="#71reg" title='reg' data-ref="71reg">reg</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_spapr_register_memory::size" title='vfio_iommu_spapr_register_memory::size' data-ref="vfio_iommu_spapr_register_memory::size">size</a> = <a class="local col8 ref" href="#68ms" title='ms' data-ref="68ms">ms</a>[<a class="local col9 ref" href="#69i" title='i' data-ref="69i">i</a>].<a class="ref field" href="../../common/include/rte_memory.h.html#rte_memseg::len" title='rte_memseg::len' data-ref="rte_memseg::len">len</a>;</td></tr>
+<tr><th id="775">775</th><td>		<a class="local col0 ref" href="#70ret" title='ret' data-ref="70ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/sys/ioctl.h.html#ioctl" title='ioctl' data-ref="ioctl">ioctl</a>(<a class="local col7 ref" href="#67vfio_container_fd" title='vfio_container_fd' data-ref="67vfio_container_fd">vfio_container_fd</a>,</td></tr>
+<tr><th id="776">776</th><td>			<a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#626" title="(((0U) &lt;&lt; (((0+8)+8)+14)) | ((((&apos;;&apos;))) &lt;&lt; (0+8)) | (((100 + 17)) &lt;&lt; 0) | ((0) &lt;&lt; ((0+8)+8)))" data-ref="_M/VFIO_IOMMU_SPAPR_REGISTER_MEMORY">VFIO_IOMMU_SPAPR_REGISTER_MEMORY</a>, &amp;<a class="local col1 ref" href="#71reg" title='reg' data-ref="71reg">reg</a>);</td></tr>
+<tr><th id="777">777</th><td>		<b>if</b> (<a class="local col0 ref" href="#70ret" title='ret' data-ref="70ret">ret</a>) {</td></tr>
+<tr><th id="778">778</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  cannot register vaddr for IOMMU, &quot; &quot;error %i (%s)\n&quot;, (*__errno_location ()), strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  cannot register vaddr for IOMMU, "</q></td></tr>
+<tr><th id="779">779</th><td>				<q>"error %i (%s)\n"</q>, <a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>, <a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="780">780</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="781">781</th><td>		}</td></tr>
+<tr><th id="782">782</th><td></td></tr>
+<tr><th id="783">783</th><td>		<a class="ref fn" href="../../../../../../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(&amp;<a class="local col5 ref" href="#75dma_map" title='dma_map' data-ref="75dma_map">dma_map</a>, <var>0</var>, <b>sizeof</b>(<a class="local col5 ref" href="#75dma_map" title='dma_map' data-ref="75dma_map">dma_map</a>));</td></tr>
+<tr><th id="784">784</th><td>		<a class="local col5 ref" href="#75dma_map" title='dma_map' data-ref="75dma_map">dma_map</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_type1_dma_map::argsz" title='vfio_iommu_type1_dma_map::argsz' data-ref="vfio_iommu_type1_dma_map::argsz">argsz</a> = <b>sizeof</b>(<b>struct</b> <a class="type" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_type1_dma_map" title='vfio_iommu_type1_dma_map' data-ref="vfio_iommu_type1_dma_map">vfio_iommu_type1_dma_map</a>);</td></tr>
+<tr><th id="785">785</th><td>		<a class="local col5 ref" href="#75dma_map" title='dma_map' data-ref="75dma_map">dma_map</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_type1_dma_map::vaddr" title='vfio_iommu_type1_dma_map::vaddr' data-ref="vfio_iommu_type1_dma_map::vaddr">vaddr</a> = <a class="local col8 ref" href="#68ms" title='ms' data-ref="68ms">ms</a>[<a class="local col9 ref" href="#69i" title='i' data-ref="69i">i</a>].<a class="ref field" href="../../common/include/rte_memory.h.html#rte_memseg::(anonymous)::addr_64" title='rte_memseg::(anonymous union)::addr_64' data-ref="rte_memseg::(anonymous)::addr_64">addr_64</a>;</td></tr>
+<tr><th id="786">786</th><td>		<a class="local col5 ref" href="#75dma_map" title='dma_map' data-ref="75dma_map">dma_map</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_type1_dma_map::size" title='vfio_iommu_type1_dma_map::size' data-ref="vfio_iommu_type1_dma_map::size">size</a> = <a class="local col8 ref" href="#68ms" title='ms' data-ref="68ms">ms</a>[<a class="local col9 ref" href="#69i" title='i' data-ref="69i">i</a>].<a class="ref field" href="../../common/include/rte_memory.h.html#rte_memseg::len" title='rte_memseg::len' data-ref="rte_memseg::len">len</a>;</td></tr>
+<tr><th id="787">787</th><td>		<b>if</b> (<a class="ref fn" href="../../common/include/rte_eal.h.html#rte_eal_iova_mode" title='rte_eal_iova_mode' data-ref="rte_eal_iova_mode">rte_eal_iova_mode</a>() == <a class="enum" href="../../common/include/rte_bus.h.html#RTE_IOVA_VA" title='RTE_IOVA_VA' data-ref="RTE_IOVA_VA">RTE_IOVA_VA</a>)</td></tr>
+<tr><th id="788">788</th><td>			<a class="local col5 ref" href="#75dma_map" title='dma_map' data-ref="75dma_map">dma_map</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_type1_dma_map::iova" title='vfio_iommu_type1_dma_map::iova' data-ref="vfio_iommu_type1_dma_map::iova">iova</a> = <a class="local col5 ref" href="#75dma_map" title='dma_map' data-ref="75dma_map">dma_map</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_type1_dma_map::vaddr" title='vfio_iommu_type1_dma_map::vaddr' data-ref="vfio_iommu_type1_dma_map::vaddr">vaddr</a>;</td></tr>
+<tr><th id="789">789</th><td>		<b>else</b></td></tr>
+<tr><th id="790">790</th><td>			<a class="local col5 ref" href="#75dma_map" title='dma_map' data-ref="75dma_map">dma_map</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_type1_dma_map::iova" title='vfio_iommu_type1_dma_map::iova' data-ref="vfio_iommu_type1_dma_map::iova">iova</a> = <a class="local col8 ref" href="#68ms" title='ms' data-ref="68ms">ms</a>[<a class="local col9 ref" href="#69i" title='i' data-ref="69i">i</a>].<a class="ref field" href="../../common/include/rte_memory.h.html#rte_memseg::(anonymous)::iova" title='rte_memseg::(anonymous union)::iova' data-ref="rte_memseg::(anonymous)::iova">iova</a>;</td></tr>
+<tr><th id="791">791</th><td>		<a class="local col5 ref" href="#75dma_map" title='dma_map' data-ref="75dma_map">dma_map</a>.<a class="ref field" href="../../../../../../../../../include/linux/vfio.h.html#vfio_iommu_type1_dma_map::flags" title='vfio_iommu_type1_dma_map::flags' data-ref="vfio_iommu_type1_dma_map::flags">flags</a> = <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#502" title="(1 &lt;&lt; 0)" data-ref="_M/VFIO_DMA_MAP_FLAG_READ">VFIO_DMA_MAP_FLAG_READ</a> |</td></tr>
+<tr><th id="792">792</th><td>				 <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#503" title="(1 &lt;&lt; 1)" data-ref="_M/VFIO_DMA_MAP_FLAG_WRITE">VFIO_DMA_MAP_FLAG_WRITE</a>;</td></tr>
+<tr><th id="793">793</th><td></td></tr>
+<tr><th id="794">794</th><td>		<a class="local col0 ref" href="#70ret" title='ret' data-ref="70ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/sys/ioctl.h.html#ioctl" title='ioctl' data-ref="ioctl">ioctl</a>(<a class="local col7 ref" href="#67vfio_container_fd" title='vfio_container_fd' data-ref="67vfio_container_fd">vfio_container_fd</a>, <a class="macro" href="../../../../../../../../../include/linux/vfio.h.html#509" title="(((0U) &lt;&lt; (((0+8)+8)+14)) | ((((&apos;;&apos;))) &lt;&lt; (0+8)) | (((100 + 13)) &lt;&lt; 0) | ((0) &lt;&lt; ((0+8)+8)))" data-ref="_M/VFIO_IOMMU_MAP_DMA">VFIO_IOMMU_MAP_DMA</a>, &amp;<a class="local col5 ref" href="#75dma_map" title='dma_map' data-ref="75dma_map">dma_map</a>);</td></tr>
+<tr><th id="795">795</th><td></td></tr>
+<tr><th id="796">796</th><td>		<b>if</b> (<a class="local col0 ref" href="#70ret" title='ret' data-ref="70ret">ret</a>) {</td></tr>
+<tr><th id="797">797</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  cannot set up DMA remapping, &quot; &quot;error %i (%s)\n&quot;, (*__errno_location ()), strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  cannot set up DMA remapping, "</q></td></tr>
+<tr><th id="798">798</th><td>				<q>"error %i (%s)\n"</q>, <a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>, <a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="799">799</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="800">800</th><td>		}</td></tr>
+<tr><th id="801">801</th><td></td></tr>
+<tr><th id="802">802</th><td>	}</td></tr>
+<tr><th id="803">803</th><td></td></tr>
+<tr><th id="804">804</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="805">805</th><td>}</td></tr>
+<tr><th id="806">806</th><td></td></tr>
+<tr><th id="807">807</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="808">808</th><td><dfn class="tu decl def fn" id="vfio_noiommu_dma_map" title='vfio_noiommu_dma_map' data-type='int vfio_noiommu_dma_map(int vfio_container_fd)' data-ref="vfio_noiommu_dma_map">vfio_noiommu_dma_map</dfn>(<em>int</em> <a class="macro" href="../../common/include/rte_common.h.html#76" title="__attribute__((__unused__))" data-ref="_M/__rte_unused">__rte_unused</a> <dfn class="local col6 decl" id="76vfio_container_fd" title='vfio_container_fd' data-type='int' data-ref="76vfio_container_fd">vfio_container_fd</dfn>)</td></tr>
+<tr><th id="809">809</th><td>{</td></tr>
+<tr><th id="810">810</th><td>	<i>/* No-IOMMU mode does not need DMA mapping */</i></td></tr>
+<tr><th id="811">811</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="812">812</th><td>}</td></tr>
+<tr><th id="813">813</th><td></td></tr>
+<tr><th id="814">814</th><td><em>int</em></td></tr>
+<tr><th id="815">815</th><td><dfn class="decl def fn" id="rte_vfio_noiommu_is_enabled" title='rte_vfio_noiommu_is_enabled' data-ref="rte_vfio_noiommu_is_enabled">rte_vfio_noiommu_is_enabled</dfn>(<em>void</em>)</td></tr>
+<tr><th id="816">816</th><td>{</td></tr>
+<tr><th id="817">817</th><td>	<em>int</em> <dfn class="local col7 decl" id="77fd" title='fd' data-type='int' data-ref="77fd">fd</dfn>;</td></tr>
+<tr><th id="818">818</th><td>	<a class="typedef" href="../../../../../../../../../include/unistd.h.html#ssize_t" title='ssize_t' data-type='__ssize_t' data-ref="ssize_t">ssize_t</a> <dfn class="local col8 decl" id="78cnt" title='cnt' data-type='ssize_t' data-ref="78cnt">cnt</dfn>;</td></tr>
+<tr><th id="819">819</th><td>	<em>char</em> <dfn class="local col9 decl" id="79c" title='c' data-type='char' data-ref="79c">c</dfn>;</td></tr>
+<tr><th id="820">820</th><td></td></tr>
+<tr><th id="821">821</th><td>	<a class="local col7 ref" href="#77fd" title='fd' data-ref="77fd">fd</a> = <a class="ref fn" href="../../../../../../../../../include/fcntl.h.html#open" title='open' data-ref="open">open</a>(<a class="macro" href="../../common/include/rte_vfio.h.html#28" title="&quot;/sys/module/vfio/parameters/enable_unsafe_noiommu_mode&quot;" data-ref="_M/VFIO_NOIOMMU_MODE">VFIO_NOIOMMU_MODE</a>, <a class="macro" href="../../../../../../../../../include/bits/fcntl-linux.h.html#43" title="00" data-ref="_M/O_RDONLY">O_RDONLY</a>);</td></tr>
+<tr><th id="822">822</th><td>	<b>if</b> (<a class="local col7 ref" href="#77fd" title='fd' data-ref="77fd">fd</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="823">823</th><td>		<b>if</b> (<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a> != <a class="macro" href="../../../../../../../../../include/asm-generic/errno-base.h.html#5" title="2" data-ref="_M/ENOENT">ENOENT</a>) {</td></tr>
+<tr><th id="824">824</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  cannot open vfio noiommu file %i (%s)\n&quot;, (*__errno_location ()), strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  cannot open vfio noiommu file %i (%s)\n"</q>,</td></tr>
+<tr><th id="825">825</th><td>					<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>, <a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="826">826</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="827">827</th><td>		}</td></tr>
+<tr><th id="828">828</th><td>		<i>/*</i></td></tr>
+<tr><th id="829">829</th><td><i>		 * else the file does not exists</i></td></tr>
+<tr><th id="830">830</th><td><i>		 * i.e. noiommu is not enabled</i></td></tr>
+<tr><th id="831">831</th><td><i>		 */</i></td></tr>
+<tr><th id="832">832</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="833">833</th><td>	}</td></tr>
+<tr><th id="834">834</th><td></td></tr>
+<tr><th id="835">835</th><td>	<a class="local col8 ref" href="#78cnt" title='cnt' data-ref="78cnt">cnt</a> = <a class="ref fn" href="../../../../../../../../../include/unistd.h.html#read" title='read' data-ref="read">read</a>(<a class="local col7 ref" href="#77fd" title='fd' data-ref="77fd">fd</a>, &amp;<a class="local col9 ref" href="#79c" title='c' data-ref="79c">c</a>, <var>1</var>);</td></tr>
+<tr><th id="836">836</th><td>	<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col7 ref" href="#77fd" title='fd' data-ref="77fd">fd</a>);</td></tr>
+<tr><th id="837">837</th><td>	<b>if</b> (<a class="local col8 ref" href="#78cnt" title='cnt' data-ref="78cnt">cnt</a> != <var>1</var>) {</td></tr>
+<tr><th id="838">838</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;  unable to read from vfio noiommu &quot; &quot;file %i (%s)\n&quot;, (*__errno_location ()), strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"  unable to read from vfio noiommu "</q></td></tr>
+<tr><th id="839">839</th><td>				<q>"file %i (%s)\n"</q>, <a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>, <a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="840">840</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="841">841</th><td>	}</td></tr>
+<tr><th id="842">842</th><td></td></tr>
+<tr><th id="843">843</th><td>	<b>return</b> <a class="local col9 ref" href="#79c" title='c' data-ref="79c">c</a> == <kbd>'Y'</kbd>;</td></tr>
+<tr><th id="844">844</th><td>}</td></tr>
+<tr><th id="845">845</th><td></td></tr>
+<tr><th id="846">846</th><td><u>#<span data-ppcond="19">endif</span></u></td></tr>
+<tr><th id="847">847</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-30</em> from project vpp_1804 revision <em>18.05</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

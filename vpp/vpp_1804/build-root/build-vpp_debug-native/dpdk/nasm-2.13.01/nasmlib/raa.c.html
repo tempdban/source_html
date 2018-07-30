@@ -1,0 +1,192 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>raa.c source code [vpp_1804/build-root/build-vpp_debug-native/dpdk/nasm-2.13.01/nasmlib/raa.c] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="RAA,RAA_BRANCH,RAA_LEAF,RAA_UNION "/>
+<link rel="stylesheet" href="../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'vpp_1804/build-root/build-vpp_debug-native/dpdk/nasm-2.13.01/nasmlib/raa.c'; var root_path = '../../../../../..'; var data_path = '../../../../../../../data';</script>
+<script src='../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../..'>vpp_1804</a>/<a href='../../../..'>build-root</a>/<a href='../../..'>build-vpp_debug-native</a>/<a href='../..'>dpdk</a>/<a href='..'>nasm-2.13.01</a>/<a href='./'>nasmlib</a>/<a href='raa.c.html'>raa.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* ----------------------------------------------------------------------- *</i></td></tr>
+<tr><th id="2">2</th><td><i> *   </i></td></tr>
+<tr><th id="3">3</th><td><i> *   Copyright 1996-2009 The NASM Authors - All Rights Reserved</i></td></tr>
+<tr><th id="4">4</th><td><i> *   See the file AUTHORS included with the NASM distribution for</i></td></tr>
+<tr><th id="5">5</th><td><i> *   the specific copyright holders.</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> *   Redistribution and use in source and binary forms, with or without</i></td></tr>
+<tr><th id="8">8</th><td><i> *   modification, are permitted provided that the following</i></td></tr>
+<tr><th id="9">9</th><td><i> *   conditions are met:</i></td></tr>
+<tr><th id="10">10</th><td><i> *</i></td></tr>
+<tr><th id="11">11</th><td><i> *   * Redistributions of source code must retain the above copyright</i></td></tr>
+<tr><th id="12">12</th><td><i> *     notice, this list of conditions and the following disclaimer.</i></td></tr>
+<tr><th id="13">13</th><td><i> *   * Redistributions in binary form must reproduce the above</i></td></tr>
+<tr><th id="14">14</th><td><i> *     copyright notice, this list of conditions and the following</i></td></tr>
+<tr><th id="15">15</th><td><i> *     disclaimer in the documentation and/or other materials provided</i></td></tr>
+<tr><th id="16">16</th><td><i> *     with the distribution.</i></td></tr>
+<tr><th id="17">17</th><td><i> *     </i></td></tr>
+<tr><th id="18">18</th><td><i> *     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND</i></td></tr>
+<tr><th id="19">19</th><td><i> *     CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,</i></td></tr>
+<tr><th id="20">20</th><td><i> *     INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF</i></td></tr>
+<tr><th id="21">21</th><td><i> *     MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE</i></td></tr>
+<tr><th id="22">22</th><td><i> *     DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR</i></td></tr>
+<tr><th id="23">23</th><td><i> *     CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</i></td></tr>
+<tr><th id="24">24</th><td><i> *     SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT</i></td></tr>
+<tr><th id="25">25</th><td><i> *     NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</i></td></tr>
+<tr><th id="26">26</th><td><i> *     LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)</i></td></tr>
+<tr><th id="27">27</th><td><i> *     HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN</i></td></tr>
+<tr><th id="28">28</th><td><i> *     CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR</i></td></tr>
+<tr><th id="29">29</th><td><i> *     OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,</i></td></tr>
+<tr><th id="30">30</th><td><i> *     EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</i></td></tr>
+<tr><th id="31">31</th><td><i> *</i></td></tr>
+<tr><th id="32">32</th><td><i> * ----------------------------------------------------------------------- */</i></td></tr>
+<tr><th id="33">33</th><td></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="../include/nasmlib.h.html">"nasmlib.h"</a></u></td></tr>
+<tr><th id="35">35</th><td><u>#include <a href="../include/raa.h.html">"raa.h"</a></u></td></tr>
+<tr><th id="36">36</th><td></td></tr>
+<tr><th id="37">37</th><td><i>/*</i></td></tr>
+<tr><th id="38">38</th><td><i> * Routines to manage a dynamic random access array of int64_ts which</i></td></tr>
+<tr><th id="39">39</th><td><i> * may grow in size to be more than the largest single malloc'able</i></td></tr>
+<tr><th id="40">40</th><td><i> * chunk.</i></td></tr>
+<tr><th id="41">41</th><td><i> */</i></td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><u>#define <dfn class="macro" id="_M/RAA_BLKSHIFT" data-ref="_M/RAA_BLKSHIFT">RAA_BLKSHIFT</dfn>	15      /* 2**this many longs allocated at once */</u></td></tr>
+<tr><th id="44">44</th><td><u>#define <dfn class="macro" id="_M/RAA_BLKSIZE" data-ref="_M/RAA_BLKSIZE">RAA_BLKSIZE</dfn>	(1 &lt;&lt; RAA_BLKSHIFT)</u></td></tr>
+<tr><th id="45">45</th><td><u>#define <dfn class="macro" id="_M/RAA_LAYERSHIFT" data-ref="_M/RAA_LAYERSHIFT">RAA_LAYERSHIFT</dfn>	15      /* 2**this many _pointers_ allocated */</u></td></tr>
+<tr><th id="46">46</th><td><u>#define <dfn class="macro" id="_M/RAA_LAYERSIZE" data-ref="_M/RAA_LAYERSIZE">RAA_LAYERSIZE</dfn>	(1 &lt;&lt; RAA_LAYERSHIFT)</u></td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td><b>typedef</b> <b>struct</b> <a class="type" href="#RAA" title='RAA' data-ref="RAA">RAA</a> <dfn class="typedef" id="RAA" title='RAA' data-type='struct RAA' data-ref="RAA">RAA</dfn>;</td></tr>
+<tr><th id="49">49</th><td><b>typedef</b> <b>union</b> <a class="type" href="#RAA_UNION" title='RAA_UNION' data-ref="RAA_UNION">RAA_UNION</a> <dfn class="typedef" id="RAA_UNION" title='RAA_UNION' data-type='union RAA_UNION' data-ref="RAA_UNION">RAA_UNION</dfn>;</td></tr>
+<tr><th id="50">50</th><td><b>typedef</b> <b>struct</b> <a class="type" href="#RAA_LEAF" title='RAA_LEAF' data-ref="RAA_LEAF">RAA_LEAF</a> <dfn class="typedef" id="RAA_LEAF" title='RAA_LEAF' data-type='struct RAA_LEAF' data-ref="RAA_LEAF">RAA_LEAF</dfn>;</td></tr>
+<tr><th id="51">51</th><td><b>typedef</b> <b>struct</b> <a class="type" href="#RAA_BRANCH" title='RAA_BRANCH' data-ref="RAA_BRANCH">RAA_BRANCH</a> <dfn class="typedef" id="RAA_BRANCH" title='RAA_BRANCH' data-type='struct RAA_BRANCH' data-ref="RAA_BRANCH">RAA_BRANCH</dfn>;</td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td><b>struct</b> <dfn class="type def" id="RAA" title='RAA' data-ref="RAA">RAA</dfn> {</td></tr>
+<tr><th id="54">54</th><td>    <i>/*</i></td></tr>
+<tr><th id="55">55</th><td><i>     * Number of layers below this one to get to the real data. 0</i></td></tr>
+<tr><th id="56">56</th><td><i>     * means this structure is a leaf, holding RAA_BLKSIZE real</i></td></tr>
+<tr><th id="57">57</th><td><i>     * data items; 1 and above mean it's a branch, holding</i></td></tr>
+<tr><th id="58">58</th><td><i>     * RAA_LAYERSIZE pointers to the next level branch or leaf</i></td></tr>
+<tr><th id="59">59</th><td><i>     * structures.</i></td></tr>
+<tr><th id="60">60</th><td><i>     */</i></td></tr>
+<tr><th id="61">61</th><td>    <em>int</em> <dfn class="decl field" id="RAA::layers" title='RAA::layers' data-ref="RAA::layers">layers</dfn>;</td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td>    <i>/*</i></td></tr>
+<tr><th id="64">64</th><td><i>     * Number of real data items spanned by one position in the</i></td></tr>
+<tr><th id="65">65</th><td><i>     * `data' array at this level. This number is 0 trivially, for</i></td></tr>
+<tr><th id="66">66</th><td><i>     * a leaf (level 0): for a level 1 branch it should be</i></td></tr>
+<tr><th id="67">67</th><td><i>     * RAA_BLKSHIFT, and for a level 2 branch it's</i></td></tr>
+<tr><th id="68">68</th><td><i>     * RAA_LAYERSHIFT+RAA_BLKSHIFT.</i></td></tr>
+<tr><th id="69">69</th><td><i>     */</i></td></tr>
+<tr><th id="70">70</th><td>    <em>int</em> <dfn class="decl field" id="RAA::shift" title='RAA::shift' data-ref="RAA::shift">shift</dfn>;</td></tr>
+<tr><th id="71">71</th><td></td></tr>
+<tr><th id="72">72</th><td>    <b>union</b> <dfn class="type def" id="RAA_UNION" title='RAA_UNION' data-ref="RAA_UNION"><a class="type" href="#RAA_UNION" title='RAA_UNION' data-ref="RAA_UNION">RAA_UNION</a></dfn> {</td></tr>
+<tr><th id="73">73</th><td>        <b>struct</b> <dfn class="type def" id="RAA_LEAF" title='RAA_LEAF' data-ref="RAA_LEAF"><a class="type" href="#RAA_LEAF" title='RAA_LEAF' data-ref="RAA_LEAF">RAA_LEAF</a></dfn> {</td></tr>
+<tr><th id="74">74</th><td>            <a class="typedef" href="../../../../../../include/stdint.h.html#int64_t" title='int64_t' data-type='long' data-ref="int64_t">int64_t</a> <dfn class="tu decl field" id="RAA_LEAF::data" title='RAA_LEAF::data' data-type='int64_t [32768]' data-ref="RAA_LEAF::data">data</dfn>[<a class="macro" href="#44" title="(1 &lt;&lt; 15)" data-ref="_M/RAA_BLKSIZE">RAA_BLKSIZE</a>];</td></tr>
+<tr><th id="75">75</th><td>        } <dfn class="tu decl field" id="RAA_UNION::l" title='RAA_UNION::l' data-type='struct RAA_LEAF' data-ref="RAA_UNION::l">l</dfn>;</td></tr>
+<tr><th id="76">76</th><td>        <b>struct</b> <dfn class="type def" id="RAA_BRANCH" title='RAA_BRANCH' data-ref="RAA_BRANCH"><a class="type" href="#RAA_BRANCH" title='RAA_BRANCH' data-ref="RAA_BRANCH">RAA_BRANCH</a></dfn> {</td></tr>
+<tr><th id="77">77</th><td>            <b>struct</b> <a class="type" href="#RAA" title='RAA' data-ref="RAA">RAA</a> *<dfn class="tu decl field" id="RAA_BRANCH::data" title='RAA_BRANCH::data' data-type='struct RAA *[32768]' data-ref="RAA_BRANCH::data">data</dfn>[<a class="macro" href="#46" title="(1 &lt;&lt; 15)" data-ref="_M/RAA_LAYERSIZE">RAA_LAYERSIZE</a>];</td></tr>
+<tr><th id="78">78</th><td>        } <dfn class="tu decl field" id="RAA_UNION::b" title='RAA_UNION::b' data-type='struct RAA_BRANCH' data-ref="RAA_UNION::b">b</dfn>;</td></tr>
+<tr><th id="79">79</th><td>    } <dfn class="decl field" id="RAA::u" title='RAA::u' data-ref="RAA::u">u</dfn>;</td></tr>
+<tr><th id="80">80</th><td>};</td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td><u>#define <dfn class="macro" id="_M/LEAFSIZ" data-ref="_M/LEAFSIZ">LEAFSIZ</dfn> (sizeof(<a class="typedef" href="#RAA" title='RAA' data-type='struct RAA' data-ref="RAA">RAA</a>)-sizeof(<a class="typedef" href="#RAA_UNION" title='RAA_UNION' data-type='union RAA_UNION' data-ref="RAA_UNION">RAA_UNION</a>)+sizeof(<a class="typedef" href="#RAA_LEAF" title='RAA_LEAF' data-type='struct RAA_LEAF' data-ref="RAA_LEAF">RAA_LEAF</a>))</u></td></tr>
+<tr><th id="83">83</th><td><u>#define <dfn class="macro" id="_M/BRANCHSIZ" data-ref="_M/BRANCHSIZ">BRANCHSIZ</dfn> (sizeof(<a class="typedef" href="#RAA" title='RAA' data-type='struct RAA' data-ref="RAA">RAA</a>)-sizeof(<a class="typedef" href="#RAA_UNION" title='RAA_UNION' data-type='union RAA_UNION' data-ref="RAA_UNION">RAA_UNION</a>)+sizeof(<a class="typedef" href="#RAA_BRANCH" title='RAA_BRANCH' data-type='struct RAA_BRANCH' data-ref="RAA_BRANCH">RAA_BRANCH</a>))</u></td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td><u>#define <dfn class="macro" id="_M/LAYERSHIFT" data-ref="_M/LAYERSHIFT">LAYERSHIFT</dfn>(r) ( (r)-&gt;<a class="ref field" href="#RAA::layers" title='RAA::layers' data-ref="RAA::layers">layers</a>==0 ? RAA_BLKSHIFT : RAA_LAYERSHIFT )</u></td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td><em>static</em> <b>struct</b> <a class="type" href="#RAA" title='RAA' data-ref="RAA">RAA</a> *<dfn class="tu decl def fn" id="real_raa_init" title='real_raa_init' data-type='struct RAA * real_raa_init(int layers)' data-ref="real_raa_init">real_raa_init</dfn>(<em>int</em> <dfn class="local col1 decl" id="1layers" title='layers' data-type='int' data-ref="1layers">layers</dfn>)</td></tr>
+<tr><th id="88">88</th><td>{</td></tr>
+<tr><th id="89">89</th><td>    <b>struct</b> <a class="type" href="#RAA" title='RAA' data-ref="RAA">RAA</a> *<dfn class="local col2 decl" id="2r" title='r' data-type='struct RAA *' data-ref="2r">r</dfn>;</td></tr>
+<tr><th id="90">90</th><td>    <em>int</em> <dfn class="local col3 decl" id="3i" title='i' data-type='int' data-ref="3i">i</dfn>;</td></tr>
+<tr><th id="91">91</th><td></td></tr>
+<tr><th id="92">92</th><td>    <b>if</b> (<a class="local col1 ref" href="#1layers" title='layers' data-ref="1layers">layers</a> == <var>0</var>) {</td></tr>
+<tr><th id="93">93</th><td>        <a class="local col2 ref" href="#2r" title='r' data-ref="2r">r</a> = <a class="ref fn" href="../include/nasmlib.h.html#nasm_zalloc" title='nasm_zalloc' data-ref="nasm_zalloc">nasm_zalloc</a>(<a class="macro" href="#82" title="(sizeof(RAA)-sizeof(RAA_UNION)+sizeof(RAA_LEAF))" data-ref="_M/LEAFSIZ">LEAFSIZ</a>);</td></tr>
+<tr><th id="94">94</th><td>        <a class="local col2 ref" href="#2r" title='r' data-ref="2r">r</a>-&gt;<a class="ref field" href="#RAA::shift" title='RAA::shift' data-ref="RAA::shift">shift</a> = <var>0</var>;</td></tr>
+<tr><th id="95">95</th><td>    } <b>else</b> {</td></tr>
+<tr><th id="96">96</th><td>        <a class="local col2 ref" href="#2r" title='r' data-ref="2r">r</a> = <a class="ref fn" href="../include/nasmlib.h.html#nasm_malloc" title='nasm_malloc' data-ref="nasm_malloc">nasm_malloc</a>(<a class="macro" href="#83" title="(sizeof(RAA)-sizeof(RAA_UNION)+sizeof(RAA_BRANCH))" data-ref="_M/BRANCHSIZ">BRANCHSIZ</a>);</td></tr>
+<tr><th id="97">97</th><td>        <a class="local col2 ref" href="#2r" title='r' data-ref="2r">r</a>-&gt;<a class="ref field" href="#RAA::layers" title='RAA::layers' data-ref="RAA::layers">layers</a> = <a class="local col1 ref" href="#1layers" title='layers' data-ref="1layers">layers</a>;</td></tr>
+<tr><th id="98">98</th><td>        <b>for</b> (<a class="local col3 ref" href="#3i" title='i' data-ref="3i">i</a> = <var>0</var>; <a class="local col3 ref" href="#3i" title='i' data-ref="3i">i</a> &lt; <a class="macro" href="#46" title="(1 &lt;&lt; 15)" data-ref="_M/RAA_LAYERSIZE">RAA_LAYERSIZE</a>; <a class="local col3 ref" href="#3i" title='i' data-ref="3i">i</a>++)</td></tr>
+<tr><th id="99">99</th><td>            <a class="local col2 ref" href="#2r" title='r' data-ref="2r">r</a>-&gt;<a class="ref field" href="#RAA::u" title='RAA::u' data-ref="RAA::u">u</a>.<a class="tu ref field" href="#RAA_UNION::b" title='RAA_UNION::b' data-use='m' data-ref="RAA_UNION::b">b</a>.<a class="tu ref field" href="#RAA_BRANCH::data" title='RAA_BRANCH::data' data-use='w' data-ref="RAA_BRANCH::data">data</a>[<a class="local col3 ref" href="#3i" title='i' data-ref="3i">i</a>] = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="100">100</th><td>        <a class="local col2 ref" href="#2r" title='r' data-ref="2r">r</a>-&gt;<a class="ref field" href="#RAA::shift" title='RAA::shift' data-ref="RAA::shift">shift</a> =</td></tr>
+<tr><th id="101">101</th><td>            (<a class="macro" href="#43" title="15" data-ref="_M/RAA_BLKSHIFT">RAA_BLKSHIFT</a> - <a class="macro" href="#45" title="15" data-ref="_M/RAA_LAYERSHIFT">RAA_LAYERSHIFT</a>) + <a class="local col1 ref" href="#1layers" title='layers' data-ref="1layers">layers</a> * <a class="macro" href="#45" title="15" data-ref="_M/RAA_LAYERSHIFT">RAA_LAYERSHIFT</a>;</td></tr>
+<tr><th id="102">102</th><td>    }</td></tr>
+<tr><th id="103">103</th><td>    <b>return</b> <a class="local col2 ref" href="#2r" title='r' data-ref="2r">r</a>;</td></tr>
+<tr><th id="104">104</th><td>}</td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td><b>struct</b> <a class="type" href="#RAA" title='RAA' data-ref="RAA">RAA</a> *<dfn class="decl def fn" id="raa_init" title='raa_init' data-ref="raa_init">raa_init</dfn>(<em>void</em>)</td></tr>
+<tr><th id="107">107</th><td>{</td></tr>
+<tr><th id="108">108</th><td>    <b>return</b> <a class="tu ref fn" href="#real_raa_init" title='real_raa_init' data-use='c' data-ref="real_raa_init">real_raa_init</a>(<var>0</var>);</td></tr>
+<tr><th id="109">109</th><td>}</td></tr>
+<tr><th id="110">110</th><td></td></tr>
+<tr><th id="111">111</th><td><em>void</em> <dfn class="decl def fn" id="raa_free" title='raa_free' data-ref="raa_free">raa_free</dfn>(<b>struct</b> <a class="type" href="#RAA" title='RAA' data-ref="RAA">RAA</a> *<dfn class="local col4 decl" id="4r" title='r' data-type='struct RAA *' data-ref="4r">r</dfn>)</td></tr>
+<tr><th id="112">112</th><td>{</td></tr>
+<tr><th id="113">113</th><td>    <b>if</b> (<a class="local col4 ref" href="#4r" title='r' data-ref="4r">r</a>-&gt;<a class="ref field" href="#RAA::layers" title='RAA::layers' data-ref="RAA::layers">layers</a>) {</td></tr>
+<tr><th id="114">114</th><td>        <b>struct</b> <a class="type" href="#RAA" title='RAA' data-ref="RAA">RAA</a> **<dfn class="local col5 decl" id="5p" title='p' data-type='struct RAA **' data-ref="5p">p</dfn>;</td></tr>
+<tr><th id="115">115</th><td>        <b>for</b> (<a class="local col5 ref" href="#5p" title='p' data-ref="5p">p</a> = <a class="local col4 ref" href="#4r" title='r' data-ref="4r">r</a>-&gt;<a class="ref field" href="#RAA::u" title='RAA::u' data-ref="RAA::u">u</a>.<a class="tu ref field" href="#RAA_UNION::b" title='RAA_UNION::b' data-use='m' data-ref="RAA_UNION::b">b</a>.<a class="tu ref field" href="#RAA_BRANCH::data" title='RAA_BRANCH::data' data-use='r' data-ref="RAA_BRANCH::data">data</a>; <a class="local col5 ref" href="#5p" title='p' data-ref="5p">p</a> - <a class="local col4 ref" href="#4r" title='r' data-ref="4r">r</a>-&gt;<a class="ref field" href="#RAA::u" title='RAA::u' data-ref="RAA::u">u</a>.<a class="tu ref field" href="#RAA_UNION::b" title='RAA_UNION::b' data-use='m' data-ref="RAA_UNION::b">b</a>.<a class="tu ref field" href="#RAA_BRANCH::data" title='RAA_BRANCH::data' data-use='r' data-ref="RAA_BRANCH::data">data</a> &lt; <a class="macro" href="#46" title="(1 &lt;&lt; 15)" data-ref="_M/RAA_LAYERSIZE">RAA_LAYERSIZE</a>; <a class="local col5 ref" href="#5p" title='p' data-ref="5p">p</a>++)</td></tr>
+<tr><th id="116">116</th><td>            <b>if</b> (*<a class="local col5 ref" href="#5p" title='p' data-ref="5p">p</a>)</td></tr>
+<tr><th id="117">117</th><td>                <a class="ref fn" href="#raa_free" title='raa_free' data-ref="raa_free">raa_free</a>(*<a class="local col5 ref" href="#5p" title='p' data-ref="5p">p</a>);</td></tr>
+<tr><th id="118">118</th><td>    }</td></tr>
+<tr><th id="119">119</th><td>    <a class="ref fn" href="../include/nasmlib.h.html#nasm_free" title='nasm_free' data-ref="nasm_free">nasm_free</a>(<a class="local col4 ref" href="#4r" title='r' data-ref="4r">r</a>);</td></tr>
+<tr><th id="120">120</th><td>}</td></tr>
+<tr><th id="121">121</th><td></td></tr>
+<tr><th id="122">122</th><td><a class="typedef" href="../../../../../../include/stdint.h.html#int64_t" title='int64_t' data-type='long' data-ref="int64_t">int64_t</a> <dfn class="decl def fn" id="raa_read" title='raa_read' data-ref="raa_read">raa_read</dfn>(<b>struct</b> <a class="type" href="#RAA" title='RAA' data-ref="RAA">RAA</a> *<dfn class="local col6 decl" id="6r" title='r' data-type='struct RAA *' data-ref="6r">r</dfn>, <a class="typedef" href="../../../../../../include/stdint.h.html#int32_t" title='int32_t' data-type='int' data-ref="int32_t">int32_t</a> <dfn class="local col7 decl" id="7posn" title='posn' data-type='int32_t' data-ref="7posn">posn</dfn>)</td></tr>
+<tr><th id="123">123</th><td>{</td></tr>
+<tr><th id="124">124</th><td>    <b>if</b> ((<a class="typedef" href="../../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a>) <a class="local col7 ref" href="#7posn" title='posn' data-ref="7posn">posn</a> &gt;= (<a class="macro" href="../../../../../../include/stdint.h.html#295" title="1U" data-ref="_M/UINT32_C">UINT32_C</a>(<var>1</var>) &lt;&lt; (<a class="local col6 ref" href="#6r" title='r' data-ref="6r">r</a>-&gt;<a class="ref field" href="#RAA::shift" title='RAA::shift' data-ref="RAA::shift">shift</a> + <a class="macro" href="#85" title="( (r)-&gt;layers==0 ? 15 : 15 )" data-ref="_M/LAYERSHIFT">LAYERSHIFT</a>(<a class="local col6 ref" href="#6r" title='r' data-ref="6r">r</a>))))</td></tr>
+<tr><th id="125">125</th><td>        <b>return</b> <var>0</var>;               <i>/* Return 0 for undefined entries */</i></td></tr>
+<tr><th id="126">126</th><td>    <b>while</b> (<a class="local col6 ref" href="#6r" title='r' data-ref="6r">r</a>-&gt;<a class="ref field" href="#RAA::layers" title='RAA::layers' data-ref="RAA::layers">layers</a> &gt; <var>0</var>) {</td></tr>
+<tr><th id="127">127</th><td>        <a class="typedef" href="../../../../../../include/stdint.h.html#int32_t" title='int32_t' data-type='int' data-ref="int32_t">int32_t</a> <dfn class="local col8 decl" id="8l" title='l' data-type='int32_t' data-ref="8l">l</dfn> = <a class="local col7 ref" href="#7posn" title='posn' data-ref="7posn">posn</a> &gt;&gt; <a class="local col6 ref" href="#6r" title='r' data-ref="6r">r</a>-&gt;<a class="ref field" href="#RAA::shift" title='RAA::shift' data-ref="RAA::shift">shift</a>;</td></tr>
+<tr><th id="128">128</th><td>        <a class="local col7 ref" href="#7posn" title='posn' data-ref="7posn">posn</a> &amp;= (<a class="macro" href="../../../../../../include/stdint.h.html#295" title="1U" data-ref="_M/UINT32_C">UINT32_C</a>(<var>1</var>) &lt;&lt; <a class="local col6 ref" href="#6r" title='r' data-ref="6r">r</a>-&gt;<a class="ref field" href="#RAA::shift" title='RAA::shift' data-ref="RAA::shift">shift</a>) - <var>1</var>;</td></tr>
+<tr><th id="129">129</th><td>        <a class="local col6 ref" href="#6r" title='r' data-ref="6r">r</a> = <a class="local col6 ref" href="#6r" title='r' data-ref="6r">r</a>-&gt;<a class="ref field" href="#RAA::u" title='RAA::u' data-ref="RAA::u">u</a>.<a class="tu ref field" href="#RAA_UNION::b" title='RAA_UNION::b' data-use='m' data-ref="RAA_UNION::b">b</a>.<a class="tu ref field" href="#RAA_BRANCH::data" title='RAA_BRANCH::data' data-use='r' data-ref="RAA_BRANCH::data">data</a>[<a class="local col8 ref" href="#8l" title='l' data-ref="8l">l</a>];</td></tr>
+<tr><th id="130">130</th><td>        <b>if</b> (!<a class="local col6 ref" href="#6r" title='r' data-ref="6r">r</a>)</td></tr>
+<tr><th id="131">131</th><td>            <b>return</b> <var>0</var>;           <i>/* Return 0 for undefined entries */</i></td></tr>
+<tr><th id="132">132</th><td>    }</td></tr>
+<tr><th id="133">133</th><td>    <b>return</b> <a class="local col6 ref" href="#6r" title='r' data-ref="6r">r</a>-&gt;<a class="ref field" href="#RAA::u" title='RAA::u' data-ref="RAA::u">u</a>.<a class="tu ref field" href="#RAA_UNION::l" title='RAA_UNION::l' data-use='m' data-ref="RAA_UNION::l">l</a>.<a class="tu ref field" href="#RAA_LEAF::data" title='RAA_LEAF::data' data-use='r' data-ref="RAA_LEAF::data">data</a>[<a class="local col7 ref" href="#7posn" title='posn' data-ref="7posn">posn</a>];</td></tr>
+<tr><th id="134">134</th><td>}</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td><b>struct</b> <a class="type" href="#RAA" title='RAA' data-ref="RAA">RAA</a> *<dfn class="decl def fn" id="raa_write" title='raa_write' data-ref="raa_write">raa_write</dfn>(<b>struct</b> <a class="type" href="#RAA" title='RAA' data-ref="RAA">RAA</a> *<dfn class="local col9 decl" id="9r" title='r' data-type='struct RAA *' data-ref="9r">r</dfn>, <a class="typedef" href="../../../../../../include/stdint.h.html#int32_t" title='int32_t' data-type='int' data-ref="int32_t">int32_t</a> <dfn class="local col0 decl" id="10posn" title='posn' data-type='int32_t' data-ref="10posn">posn</dfn>, <a class="typedef" href="../../../../../../include/stdint.h.html#int64_t" title='int64_t' data-type='long' data-ref="int64_t">int64_t</a> <dfn class="local col1 decl" id="11value" title='value' data-type='int64_t' data-ref="11value">value</dfn>)</td></tr>
+<tr><th id="137">137</th><td>{</td></tr>
+<tr><th id="138">138</th><td>    <b>struct</b> <a class="type" href="#RAA" title='RAA' data-ref="RAA">RAA</a> *<dfn class="local col2 decl" id="12result" title='result' data-type='struct RAA *' data-ref="12result">result</dfn>;</td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td>    <a class="macro" href="../include/nasmlib.h.html#114" title="do { if (__builtin_expect(!!(!(posn &gt;= 0)), 0)) nasm_assert_failed(&quot;/home/tempdban/vpp/build-root/build-vpp_debug-native/dpdk/nasm-2.13.01/nasmlib/raa.c&quot;,140,&quot;posn &gt;= 0&quot;); } while (0)" data-ref="_M/nasm_assert">nasm_assert</a>(<a class="local col0 ref" href="#10posn" title='posn' data-ref="10posn">posn</a> &gt;= <var>0</var>);</td></tr>
+<tr><th id="141">141</th><td></td></tr>
+<tr><th id="142">142</th><td>    <b>while</b> ((<a class="macro" href="../../../../../../include/stdint.h.html#295" title="1U" data-ref="_M/UINT32_C">UINT32_C</a>(<var>1</var>) &lt;&lt; (<a class="local col9 ref" href="#9r" title='r' data-ref="9r">r</a>-&gt;<a class="ref field" href="#RAA::shift" title='RAA::shift' data-ref="RAA::shift">shift</a> + <a class="macro" href="#85" title="( (r)-&gt;layers==0 ? 15 : 15 )" data-ref="_M/LAYERSHIFT">LAYERSHIFT</a>(<a class="local col9 ref" href="#9r" title='r' data-ref="9r">r</a>))) &lt;= (<a class="typedef" href="../../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a>) <a class="local col0 ref" href="#10posn" title='posn' data-ref="10posn">posn</a>) {</td></tr>
+<tr><th id="143">143</th><td>        <i>/*</i></td></tr>
+<tr><th id="144">144</th><td><i>         * Must add a layer.</i></td></tr>
+<tr><th id="145">145</th><td><i>         */</i></td></tr>
+<tr><th id="146">146</th><td>        <b>struct</b> <a class="type" href="#RAA" title='RAA' data-ref="RAA">RAA</a> *<dfn class="local col3 decl" id="13s" title='s' data-type='struct RAA *' data-ref="13s">s</dfn>;</td></tr>
+<tr><th id="147">147</th><td>        <em>int</em> <dfn class="local col4 decl" id="14i" title='i' data-type='int' data-ref="14i">i</dfn>;</td></tr>
+<tr><th id="148">148</th><td></td></tr>
+<tr><th id="149">149</th><td>        <a class="local col3 ref" href="#13s" title='s' data-ref="13s">s</a> = <a class="ref fn" href="../include/nasmlib.h.html#nasm_malloc" title='nasm_malloc' data-ref="nasm_malloc">nasm_malloc</a>(<a class="macro" href="#83" title="(sizeof(RAA)-sizeof(RAA_UNION)+sizeof(RAA_BRANCH))" data-ref="_M/BRANCHSIZ">BRANCHSIZ</a>);</td></tr>
+<tr><th id="150">150</th><td>        <b>for</b> (<a class="local col4 ref" href="#14i" title='i' data-ref="14i">i</a> = <var>0</var>; <a class="local col4 ref" href="#14i" title='i' data-ref="14i">i</a> &lt; <a class="macro" href="#46" title="(1 &lt;&lt; 15)" data-ref="_M/RAA_LAYERSIZE">RAA_LAYERSIZE</a>; <a class="local col4 ref" href="#14i" title='i' data-ref="14i">i</a>++)</td></tr>
+<tr><th id="151">151</th><td>            <a class="local col3 ref" href="#13s" title='s' data-ref="13s">s</a>-&gt;<a class="ref field" href="#RAA::u" title='RAA::u' data-ref="RAA::u">u</a>.<a class="tu ref field" href="#RAA_UNION::b" title='RAA_UNION::b' data-use='m' data-ref="RAA_UNION::b">b</a>.<a class="tu ref field" href="#RAA_BRANCH::data" title='RAA_BRANCH::data' data-use='w' data-ref="RAA_BRANCH::data">data</a>[<a class="local col4 ref" href="#14i" title='i' data-ref="14i">i</a>] = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="152">152</th><td>        <a class="local col3 ref" href="#13s" title='s' data-ref="13s">s</a>-&gt;<a class="ref field" href="#RAA::layers" title='RAA::layers' data-ref="RAA::layers">layers</a> = <a class="local col9 ref" href="#9r" title='r' data-ref="9r">r</a>-&gt;<a class="ref field" href="#RAA::layers" title='RAA::layers' data-ref="RAA::layers">layers</a> + <var>1</var>;</td></tr>
+<tr><th id="153">153</th><td>        <a class="local col3 ref" href="#13s" title='s' data-ref="13s">s</a>-&gt;<a class="ref field" href="#RAA::shift" title='RAA::shift' data-ref="RAA::shift">shift</a> = <a class="macro" href="#85" title="( (r)-&gt;layers==0 ? 15 : 15 )" data-ref="_M/LAYERSHIFT">LAYERSHIFT</a>(<a class="local col9 ref" href="#9r" title='r' data-ref="9r">r</a>) + <a class="local col9 ref" href="#9r" title='r' data-ref="9r">r</a>-&gt;<a class="ref field" href="#RAA::shift" title='RAA::shift' data-ref="RAA::shift">shift</a>;</td></tr>
+<tr><th id="154">154</th><td>        <a class="local col3 ref" href="#13s" title='s' data-ref="13s">s</a>-&gt;<a class="ref field" href="#RAA::u" title='RAA::u' data-ref="RAA::u">u</a>.<a class="tu ref field" href="#RAA_UNION::b" title='RAA_UNION::b' data-use='m' data-ref="RAA_UNION::b">b</a>.<a class="tu ref field" href="#RAA_BRANCH::data" title='RAA_BRANCH::data' data-use='w' data-ref="RAA_BRANCH::data">data</a>[<var>0</var>] = <a class="local col9 ref" href="#9r" title='r' data-ref="9r">r</a>;</td></tr>
+<tr><th id="155">155</th><td>        <a class="local col9 ref" href="#9r" title='r' data-ref="9r">r</a> = <a class="local col3 ref" href="#13s" title='s' data-ref="13s">s</a>;</td></tr>
+<tr><th id="156">156</th><td>    }</td></tr>
+<tr><th id="157">157</th><td></td></tr>
+<tr><th id="158">158</th><td>    <a class="local col2 ref" href="#12result" title='result' data-ref="12result">result</a> = <a class="local col9 ref" href="#9r" title='r' data-ref="9r">r</a>;</td></tr>
+<tr><th id="159">159</th><td></td></tr>
+<tr><th id="160">160</th><td>    <b>while</b> (<a class="local col9 ref" href="#9r" title='r' data-ref="9r">r</a>-&gt;<a class="ref field" href="#RAA::layers" title='RAA::layers' data-ref="RAA::layers">layers</a> &gt; <var>0</var>) {</td></tr>
+<tr><th id="161">161</th><td>        <b>struct</b> <a class="type" href="#RAA" title='RAA' data-ref="RAA">RAA</a> **<dfn class="local col5 decl" id="15s" title='s' data-type='struct RAA **' data-ref="15s">s</dfn>;</td></tr>
+<tr><th id="162">162</th><td>        <a class="typedef" href="../../../../../../include/stdint.h.html#int32_t" title='int32_t' data-type='int' data-ref="int32_t">int32_t</a> <dfn class="local col6 decl" id="16l" title='l' data-type='int32_t' data-ref="16l">l</dfn> = <a class="local col0 ref" href="#10posn" title='posn' data-ref="10posn">posn</a> &gt;&gt; <a class="local col9 ref" href="#9r" title='r' data-ref="9r">r</a>-&gt;<a class="ref field" href="#RAA::shift" title='RAA::shift' data-ref="RAA::shift">shift</a>;</td></tr>
+<tr><th id="163">163</th><td>        <a class="local col0 ref" href="#10posn" title='posn' data-ref="10posn">posn</a> &amp;= (<a class="macro" href="../../../../../../include/stdint.h.html#295" title="1U" data-ref="_M/UINT32_C">UINT32_C</a>(<var>1</var>) &lt;&lt; <a class="local col9 ref" href="#9r" title='r' data-ref="9r">r</a>-&gt;<a class="ref field" href="#RAA::shift" title='RAA::shift' data-ref="RAA::shift">shift</a>) - <var>1</var>;</td></tr>
+<tr><th id="164">164</th><td>        <a class="local col5 ref" href="#15s" title='s' data-ref="15s">s</a> = &amp;<a class="local col9 ref" href="#9r" title='r' data-ref="9r">r</a>-&gt;<a class="ref field" href="#RAA::u" title='RAA::u' data-ref="RAA::u">u</a>.<a class="tu ref field" href="#RAA_UNION::b" title='RAA_UNION::b' data-use='m' data-ref="RAA_UNION::b">b</a>.<a class="tu ref field" href="#RAA_BRANCH::data" title='RAA_BRANCH::data' data-use='a' data-ref="RAA_BRANCH::data">data</a>[<a class="local col6 ref" href="#16l" title='l' data-ref="16l">l</a>];</td></tr>
+<tr><th id="165">165</th><td>        <b>if</b> (!*<a class="local col5 ref" href="#15s" title='s' data-ref="15s">s</a>)</td></tr>
+<tr><th id="166">166</th><td>            *<a class="local col5 ref" href="#15s" title='s' data-ref="15s">s</a> = <a class="tu ref fn" href="#real_raa_init" title='real_raa_init' data-use='c' data-ref="real_raa_init">real_raa_init</a>(<a class="local col9 ref" href="#9r" title='r' data-ref="9r">r</a>-&gt;<a class="ref field" href="#RAA::layers" title='RAA::layers' data-ref="RAA::layers">layers</a> - <var>1</var>);</td></tr>
+<tr><th id="167">167</th><td>        <a class="local col9 ref" href="#9r" title='r' data-ref="9r">r</a> = *<a class="local col5 ref" href="#15s" title='s' data-ref="15s">s</a>;</td></tr>
+<tr><th id="168">168</th><td>    }</td></tr>
+<tr><th id="169">169</th><td></td></tr>
+<tr><th id="170">170</th><td>    <a class="local col9 ref" href="#9r" title='r' data-ref="9r">r</a>-&gt;<a class="ref field" href="#RAA::u" title='RAA::u' data-ref="RAA::u">u</a>.<a class="tu ref field" href="#RAA_UNION::l" title='RAA_UNION::l' data-use='m' data-ref="RAA_UNION::l">l</a>.<a class="tu ref field" href="#RAA_LEAF::data" title='RAA_LEAF::data' data-use='w' data-ref="RAA_LEAF::data">data</a>[<a class="local col0 ref" href="#10posn" title='posn' data-ref="10posn">posn</a>] = <a class="local col1 ref" href="#11value" title='value' data-ref="11value">value</a>;</td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td>    <b>return</b> <a class="local col2 ref" href="#12result" title='result' data-ref="12result">result</a>;</td></tr>
+<tr><th id="173">173</th><td>}</td></tr>
+<tr><th id="174">174</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-30</em> from project vpp_1804 revision <em>18.05</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

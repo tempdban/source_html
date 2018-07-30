@@ -1,0 +1,403 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>vppctl.c source code [vpp_1804/src/vpp/app/vppctl.c] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="main "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'vpp_1804/src/vpp/app/vppctl.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>vpp_1804</a>/<a href='../..'>src</a>/<a href='..'>vpp</a>/<a href='./'>app</a>/<a href='vppctl.c.html'>vppctl.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright (c) 2017 Cisco and/or its affiliates.</i></td></tr>
+<tr><th id="3">3</th><td><i> * Licensed under the Apache License, Version 2.0 (the "License");</i></td></tr>
+<tr><th id="4">4</th><td><i> * you may not use this file except in compliance with the License.</i></td></tr>
+<tr><th id="5">5</th><td><i> * You may obtain a copy of the License at:</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> *     <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></i></td></tr>
+<tr><th id="8">8</th><td><i> *</i></td></tr>
+<tr><th id="9">9</th><td><i> * Unless required by applicable law or agreed to in writing, software</i></td></tr>
+<tr><th id="10">10</th><td><i> * distributed under the License is distributed on an "AS IS" BASIS,</i></td></tr>
+<tr><th id="11">11</th><td><i> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</i></td></tr>
+<tr><th id="12">12</th><td><i> * See the License for the specific language governing permissions and</i></td></tr>
+<tr><th id="13">13</th><td><i> * limitations under the License.</i></td></tr>
+<tr><th id="14">14</th><td><i> */</i></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../../include/sys/socket.h.html">&lt;sys/socket.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../../include/sys/un.h.html">&lt;sys/un.h&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../../include/sys/epoll.h.html">&lt;sys/epoll.h&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../../include/sys/ioctl.h.html">&lt;sys/ioctl.h&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../../include/signal.h.html">&lt;signal.h&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../../include/termios.h.html">&lt;termios.h&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../../include/unistd.h.html">&lt;unistd.h&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../../../include/string.h.html">&lt;string.h&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td><u>#define <dfn class="macro" id="_M/DEBUG" data-ref="_M/DEBUG">DEBUG</dfn> 0</u></td></tr>
+<tr><th id="26">26</th><td></td></tr>
+<tr><th id="27">27</th><td><u>#<span data-ppcond="27">if</span> <a class="macro" href="#25" title="0" data-ref="_M/DEBUG">DEBUG</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#define TELCMDS</u></td></tr>
+<tr><th id="29">29</th><td><u>#define TELOPTS</u></td></tr>
+<tr><th id="30">30</th><td><u>#<span data-ppcond="27">endif</span></u></td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="../../../../include/arpa/telnet.h.html">&lt;arpa/telnet.h&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="../../vppinfra/mem.h.html">&lt;vppinfra/mem.h&gt;</a></u></td></tr>
+<tr><th id="35">35</th><td><u>#include <a href="../../vppinfra/format.h.html">&lt;vppinfra/format.h&gt;</a></u></td></tr>
+<tr><th id="36">36</th><td><u>#include <a href="../../vppinfra/socket.h.html">&lt;vppinfra/socket.h&gt;</a></u></td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><u>#define <dfn class="macro" id="_M/SOCKET_FILE" data-ref="_M/SOCKET_FILE">SOCKET_FILE</dfn> "/run/vpp/cli.sock"</u></td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><em>volatile</em> <em>int</em> <dfn class="decl def" id="window_resized" title='window_resized' data-ref="window_resized">window_resized</dfn> = <var>0</var>;</td></tr>
+<tr><th id="41">41</th><td><b>struct</b> <a class="type" href="../../../../include/bits/termios.h.html#termios" title='termios' data-ref="termios">termios</a> <dfn class="decl def" id="orig_tio" title='orig_tio' data-ref="orig_tio">orig_tio</dfn>;</td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="44">44</th><td><dfn class="tu decl def fn" id="send_ttype" title='send_ttype' data-type='void send_ttype(clib_socket_t * s, int is_interactive)' data-ref="send_ttype">send_ttype</dfn> (<a class="typedef" href="../../vppinfra/socket.h.html#clib_socket_t" title='clib_socket_t' data-type='struct _socket_t' data-ref="clib_socket_t">clib_socket_t</a> * <dfn class="local col1 decl" id="1s" title='s' data-type='clib_socket_t *' data-ref="1s">s</dfn>, <em>int</em> <dfn class="local col2 decl" id="2is_interactive" title='is_interactive' data-type='int' data-ref="2is_interactive">is_interactive</dfn>)</td></tr>
+<tr><th id="45">45</th><td>{</td></tr>
+<tr><th id="46">46</th><td>  <em>char</em> *<dfn class="local col3 decl" id="3term" title='term' data-type='char *' data-ref="3term">term</dfn>;</td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td>  <a class="local col3 ref" href="#3term" title='term' data-ref="3term">term</a> = <a class="local col2 ref" href="#2is_interactive" title='is_interactive' data-ref="2is_interactive">is_interactive</a> ? <a class="ref fn" href="../../../../include/stdlib.h.html#getenv" title='getenv' data-ref="getenv">getenv</a> (<q>"TERM"</q>) : <q>"vppctl"</q>;</td></tr>
+<tr><th id="49">49</th><td>  <b>if</b> (<a class="local col3 ref" href="#3term" title='term' data-ref="3term">term</a> == <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>)</td></tr>
+<tr><th id="50">50</th><td>    <a class="local col3 ref" href="#3term" title='term' data-ref="3term">term</a> = <q>"dumb"</q>;</td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td>  <a class="ref fn" href="../../vppinfra/socket.h.html#clib_socket_tx_add_formatted" title='clib_socket_tx_add_formatted' data-ref="clib_socket_tx_add_formatted">clib_socket_tx_add_formatted</a> (<a class="local col1 ref" href="#1s" title='s' data-ref="1s">s</a>, <q>"%c%c%c"</q> <q>"%c%s"</q> <q>"%c%c"</q>,</td></tr>
+<tr><th id="53">53</th><td>				<a class="macro" href="../../../../include/arpa/telnet.h.html#38" title="255" data-ref="_M/IAC">IAC</a>, <a class="macro" href="../../../../include/arpa/telnet.h.html#43" title="250" data-ref="_M/SB">SB</a>, <a class="macro" href="../../../../include/arpa/telnet.h.html#102" title="24" data-ref="_M/TELOPT_TTYPE">TELOPT_TTYPE</a>, <var>0</var>, <a class="local col3 ref" href="#3term" title='term' data-ref="3term">term</a>, <a class="macro" href="../../../../include/arpa/telnet.h.html#38" title="255" data-ref="_M/IAC">IAC</a>, <a class="macro" href="../../../../include/arpa/telnet.h.html#53" title="240" data-ref="_M/SE">SE</a>);</td></tr>
+<tr><th id="54">54</th><td>  <a class="ref fn" href="../../vppinfra/socket.h.html#clib_socket_tx" title='clib_socket_tx' data-ref="clib_socket_tx">clib_socket_tx</a> (<a class="local col1 ref" href="#1s" title='s' data-ref="1s">s</a>);</td></tr>
+<tr><th id="55">55</th><td>}</td></tr>
+<tr><th id="56">56</th><td></td></tr>
+<tr><th id="57">57</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="58">58</th><td><dfn class="tu decl def fn" id="send_naws" title='send_naws' data-type='void send_naws(clib_socket_t * s)' data-ref="send_naws">send_naws</dfn> (<a class="typedef" href="../../vppinfra/socket.h.html#clib_socket_t" title='clib_socket_t' data-type='struct _socket_t' data-ref="clib_socket_t">clib_socket_t</a> * <dfn class="local col4 decl" id="4s" title='s' data-type='clib_socket_t *' data-ref="4s">s</dfn>)</td></tr>
+<tr><th id="59">59</th><td>{</td></tr>
+<tr><th id="60">60</th><td>  <b>struct</b> <a class="type" href="../../../../include/bits/ioctl-types.h.html#winsize" title='winsize' data-ref="winsize">winsize</a> <dfn class="local col5 decl" id="5ws" title='ws' data-type='struct winsize' data-ref="5ws">ws</dfn>;</td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td>  <b>if</b> (<a class="ref fn" href="../../../../include/sys/ioctl.h.html#ioctl" title='ioctl' data-ref="ioctl">ioctl</a> (<a class="macro" href="../../../../include/unistd.h.html#210" title="0" data-ref="_M/STDIN_FILENO">STDIN_FILENO</a>, <a class="macro" href="../../../../include/asm-generic/ioctls.h.html#37" title="0x5413" data-ref="_M/TIOCGWINSZ">TIOCGWINSZ</a>, &amp;<a class="local col5 ref" href="#5ws" title='ws' data-ref="5ws">ws</a>) &lt; <var>0</var>)</td></tr>
+<tr><th id="63">63</th><td>    {</td></tr>
+<tr><th id="64">64</th><td>      <a class="macro" href="../../vppinfra/error.h.html#68" title="_clib_error (CLIB_ERROR_WARNING | CLIB_ERROR_ERRNO_VALID, ((char *) __FUNCTION__), 64, &quot;ioctl(TIOCGWINSZ)&quot;)" data-ref="_M/clib_unix_warning">clib_unix_warning</a> (<q>"ioctl(TIOCGWINSZ)"</q>);</td></tr>
+<tr><th id="65">65</th><td>      <b>return</b>;</td></tr>
+<tr><th id="66">66</th><td>    }</td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td>  <a class="ref fn" href="../../vppinfra/socket.h.html#clib_socket_tx_add_formatted" title='clib_socket_tx_add_formatted' data-ref="clib_socket_tx_add_formatted">clib_socket_tx_add_formatted</a> (<a class="local col4 ref" href="#4s" title='s' data-ref="4s">s</a>, <q>"%c%c%c"</q> <q>"%c%c%c%c"</q> <q>"%c%c"</q>,</td></tr>
+<tr><th id="69">69</th><td>				<a class="macro" href="../../../../include/arpa/telnet.h.html#38" title="255" data-ref="_M/IAC">IAC</a>, <a class="macro" href="../../../../include/arpa/telnet.h.html#43" title="250" data-ref="_M/SB">SB</a>, <a class="macro" href="../../../../include/arpa/telnet.h.html#109" title="31" data-ref="_M/TELOPT_NAWS">TELOPT_NAWS</a>,</td></tr>
+<tr><th id="70">70</th><td>				<a class="local col5 ref" href="#5ws" title='ws' data-ref="5ws">ws</a>.<a class="ref field" href="../../../../include/bits/ioctl-types.h.html#winsize::ws_col" title='winsize::ws_col' data-ref="winsize::ws_col">ws_col</a> &gt;&gt; <var>8</var>, <a class="local col5 ref" href="#5ws" title='ws' data-ref="5ws">ws</a>.<a class="ref field" href="../../../../include/bits/ioctl-types.h.html#winsize::ws_col" title='winsize::ws_col' data-ref="winsize::ws_col">ws_col</a> &amp; <var>0xff</var>,</td></tr>
+<tr><th id="71">71</th><td>				<a class="local col5 ref" href="#5ws" title='ws' data-ref="5ws">ws</a>.<a class="ref field" href="../../../../include/bits/ioctl-types.h.html#winsize::ws_row" title='winsize::ws_row' data-ref="winsize::ws_row">ws_row</a> &gt;&gt; <var>8</var>, <a class="local col5 ref" href="#5ws" title='ws' data-ref="5ws">ws</a>.<a class="ref field" href="../../../../include/bits/ioctl-types.h.html#winsize::ws_row" title='winsize::ws_row' data-ref="winsize::ws_row">ws_row</a> &amp; <var>0xff</var>, <a class="macro" href="../../../../include/arpa/telnet.h.html#38" title="255" data-ref="_M/IAC">IAC</a>, <a class="macro" href="../../../../include/arpa/telnet.h.html#53" title="240" data-ref="_M/SE">SE</a>);</td></tr>
+<tr><th id="72">72</th><td>  <a class="ref fn" href="../../vppinfra/socket.h.html#clib_socket_tx" title='clib_socket_tx' data-ref="clib_socket_tx">clib_socket_tx</a> (<a class="local col4 ref" href="#4s" title='s' data-ref="4s">s</a>);</td></tr>
+<tr><th id="73">73</th><td>}</td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="76">76</th><td><dfn class="tu decl def fn" id="signal_handler_winch" title='signal_handler_winch' data-type='void signal_handler_winch(int signum)' data-ref="signal_handler_winch">signal_handler_winch</dfn> (<em>int</em> <dfn class="local col6 decl" id="6signum" title='signum' data-type='int' data-ref="6signum">signum</dfn>)</td></tr>
+<tr><th id="77">77</th><td>{</td></tr>
+<tr><th id="78">78</th><td>  <a class="ref" href="#window_resized" title='window_resized' data-ref="window_resized">window_resized</a> = <var>1</var>;</td></tr>
+<tr><th id="79">79</th><td>}</td></tr>
+<tr><th id="80">80</th><td></td></tr>
+<tr><th id="81">81</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="82">82</th><td><dfn class="tu decl def fn" id="signal_handler_term" title='signal_handler_term' data-type='void signal_handler_term(int signum)' data-ref="signal_handler_term">signal_handler_term</dfn> (<em>int</em> <dfn class="local col7 decl" id="7signum" title='signum' data-type='int' data-ref="7signum">signum</dfn>)</td></tr>
+<tr><th id="83">83</th><td>{</td></tr>
+<tr><th id="84">84</th><td>  <a class="ref fn" href="../../../../include/termios.h.html#tcsetattr" title='tcsetattr' data-ref="tcsetattr">tcsetattr</a> (<a class="macro" href="../../../../include/unistd.h.html#210" title="0" data-ref="_M/STDIN_FILENO">STDIN_FILENO</a>, <a class="macro" href="../../../../include/bits/termios.h.html#215" title="2" data-ref="_M/TCSAFLUSH">TCSAFLUSH</a>, &amp;<a class="ref" href="#orig_tio" title='orig_tio' data-ref="orig_tio">orig_tio</a>);</td></tr>
+<tr><th id="85">85</th><td>}</td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td><em>static</em> <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *</td></tr>
+<tr><th id="88">88</th><td><dfn class="tu decl def fn" id="process_input" title='process_input' data-type='u8 * process_input(u8 * str, clib_socket_t * s, int is_interactive, int * sent_ttype)' data-ref="process_input">process_input</dfn> (<a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> * <dfn class="local col8 decl" id="8str" title='str' data-type='u8 *' data-ref="8str">str</dfn>, <a class="typedef" href="../../vppinfra/socket.h.html#clib_socket_t" title='clib_socket_t' data-type='struct _socket_t' data-ref="clib_socket_t">clib_socket_t</a> * <dfn class="local col9 decl" id="9s" title='s' data-type='clib_socket_t *' data-ref="9s">s</dfn>, <em>int</em> <dfn class="local col0 decl" id="10is_interactive" title='is_interactive' data-type='int' data-ref="10is_interactive">is_interactive</dfn>,</td></tr>
+<tr><th id="89">89</th><td>	       <em>int</em> *<dfn class="local col1 decl" id="11sent_ttype" title='sent_ttype' data-type='int *' data-ref="11sent_ttype">sent_ttype</dfn>)</td></tr>
+<tr><th id="90">90</th><td>{</td></tr>
+<tr><th id="91">91</th><td>  <em>int</em> <dfn class="local col2 decl" id="12i" title='i' data-type='int' data-ref="12i">i</dfn> = <var>0</var>;</td></tr>
+<tr><th id="92">92</th><td></td></tr>
+<tr><th id="93">93</th><td>  <b>while</b> (<a class="local col2 ref" href="#12i" title='i' data-ref="12i">i</a> &lt; <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#142" title="((s-&gt;rx_buffer) ? (((vec_header_t *) (s-&gt;rx_buffer) - 1)-&gt;len) : 0)" data-ref="_M/vec_len">vec_len</a> (<a class="local col9 ref" href="#9s" title='s' data-ref="9s">s</a>-&gt;<a class="ref field" href="../../vppinfra/socket.h.html#_socket_t::rx_buffer" title='_socket_t::rx_buffer' data-ref="_socket_t::rx_buffer">rx_buffer</a>))</td></tr>
+<tr><th id="94">94</th><td>    {</td></tr>
+<tr><th id="95">95</th><td>      <b>if</b> (<a class="local col9 ref" href="#9s" title='s' data-ref="9s">s</a>-&gt;<a class="ref field" href="../../vppinfra/socket.h.html#_socket_t::rx_buffer" title='_socket_t::rx_buffer' data-ref="_socket_t::rx_buffer">rx_buffer</a>[<a class="local col2 ref" href="#12i" title='i' data-ref="12i">i</a>] == <a class="macro" href="../../../../include/arpa/telnet.h.html#38" title="255" data-ref="_M/IAC">IAC</a>)</td></tr>
+<tr><th id="96">96</th><td>	{</td></tr>
+<tr><th id="97">97</th><td>	  <b>if</b> (<a class="local col9 ref" href="#9s" title='s' data-ref="9s">s</a>-&gt;<a class="ref field" href="../../vppinfra/socket.h.html#_socket_t::rx_buffer" title='_socket_t::rx_buffer' data-ref="_socket_t::rx_buffer">rx_buffer</a>[<a class="local col2 ref" href="#12i" title='i' data-ref="12i">i</a> + <var>1</var>] == <a class="macro" href="../../../../include/arpa/telnet.h.html#43" title="250" data-ref="_M/SB">SB</a>)</td></tr>
+<tr><th id="98">98</th><td>	    {</td></tr>
+<tr><th id="99">99</th><td>	      <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col3 decl" id="13sb" title='sb' data-type='u8 *' data-ref="13sb">sb</dfn> = <var>0</var>;</td></tr>
+<tr><th id="100">100</th><td>	      <em>char</em> <dfn class="local col4 decl" id="14opt" title='opt' data-type='char' data-ref="14opt">opt</dfn> = <a class="local col9 ref" href="#9s" title='s' data-ref="9s">s</a>-&gt;<a class="ref field" href="../../vppinfra/socket.h.html#_socket_t::rx_buffer" title='_socket_t::rx_buffer' data-ref="_socket_t::rx_buffer">rx_buffer</a>[<a class="local col2 ref" href="#12i" title='i' data-ref="12i">i</a> + <var>2</var>];</td></tr>
+<tr><th id="101">101</th><td>	      <a class="local col2 ref" href="#12i" title='i' data-ref="12i">i</a> += <var>3</var>;</td></tr>
+<tr><th id="102">102</th><td>	      <b>while</b> (<a class="local col9 ref" href="#9s" title='s' data-ref="9s">s</a>-&gt;<a class="ref field" href="../../vppinfra/socket.h.html#_socket_t::rx_buffer" title='_socket_t::rx_buffer' data-ref="_socket_t::rx_buffer">rx_buffer</a>[<a class="local col2 ref" href="#12i" title='i' data-ref="12i">i</a>] != <a class="macro" href="../../../../include/arpa/telnet.h.html#38" title="255" data-ref="_M/IAC">IAC</a>)</td></tr>
+<tr><th id="103">103</th><td>		<a class="macro" href="../../vppinfra/vec.h.html#520" title="do { word _vec_l = ((sb) ? (((vec_header_t *) (sb) - 1)-&gt;len) : 0); sb = _vec_resize ((sb), 1, (_vec_l + 1) * sizeof ((sb)[0]), (0), (0)); (sb)[_vec_l] = (s-&gt;rx_buffer[i++]); } while (0)" data-ref="_M/vec_add1">vec_add1</a> (<a class="local col3 ref" href="#13sb" title='sb' data-ref="13sb">sb</a>, <a class="local col9 ref" href="#9s" title='s' data-ref="9s">s</a>-&gt;<a class="ref field" href="../../vppinfra/socket.h.html#_socket_t::rx_buffer" title='_socket_t::rx_buffer' data-ref="_socket_t::rx_buffer">rx_buffer</a>[<a class="local col2 ref" href="#12i" title='i' data-ref="12i">i</a>++]);</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td><u>#<span data-ppcond="105">if</span> <a class="macro" href="#25" title="0" data-ref="_M/DEBUG">DEBUG</a></u></td></tr>
+<tr><th id="106">106</th><td>	      clib_warning (<q>"SB %s\n  %U"</q>, TELOPT (opt),</td></tr>
+<tr><th id="107">107</th><td>			    format_hexdump, sb, vec_len (sb));</td></tr>
+<tr><th id="108">108</th><td><u>#<span data-ppcond="105">endif</span></u></td></tr>
+<tr><th id="109">109</th><td>	      <a class="macro" href="../../vppinfra/vec.h.html#336" title="do { if (sb) { clib_mem_free (vec_header ((sb), (0))); sb = 0; } } while (0)" data-ref="_M/vec_free">vec_free</a> (<a class="local col3 ref" href="#13sb" title='sb' data-ref="13sb">sb</a>);</td></tr>
+<tr><th id="110">110</th><td>	      <a class="local col2 ref" href="#12i" title='i' data-ref="12i">i</a> += <var>2</var>;</td></tr>
+<tr><th id="111">111</th><td>	      <b>if</b> (<a class="local col4 ref" href="#14opt" title='opt' data-ref="14opt">opt</a> == <a class="macro" href="../../../../include/arpa/telnet.h.html#102" title="24" data-ref="_M/TELOPT_TTYPE">TELOPT_TTYPE</a>)</td></tr>
+<tr><th id="112">112</th><td>		{</td></tr>
+<tr><th id="113">113</th><td>		  <a class="tu ref fn" href="#send_ttype" title='send_ttype' data-use='c' data-ref="send_ttype">send_ttype</a> (<a class="local col9 ref" href="#9s" title='s' data-ref="9s">s</a>, <a class="local col0 ref" href="#10is_interactive" title='is_interactive' data-ref="10is_interactive">is_interactive</a>);</td></tr>
+<tr><th id="114">114</th><td>		  *<a class="local col1 ref" href="#11sent_ttype" title='sent_ttype' data-ref="11sent_ttype">sent_ttype</a> = <var>1</var>;</td></tr>
+<tr><th id="115">115</th><td>		}</td></tr>
+<tr><th id="116">116</th><td>	      <b>else</b> <b>if</b> (<a class="local col0 ref" href="#10is_interactive" title='is_interactive' data-ref="10is_interactive">is_interactive</a> &amp;&amp; <a class="local col4 ref" href="#14opt" title='opt' data-ref="14opt">opt</a> == <a class="macro" href="../../../../include/arpa/telnet.h.html#109" title="31" data-ref="_M/TELOPT_NAWS">TELOPT_NAWS</a>)</td></tr>
+<tr><th id="117">117</th><td>		<a class="tu ref fn" href="#send_naws" title='send_naws' data-use='c' data-ref="send_naws">send_naws</a> (<a class="local col9 ref" href="#9s" title='s' data-ref="9s">s</a>);</td></tr>
+<tr><th id="118">118</th><td>	    }</td></tr>
+<tr><th id="119">119</th><td>	  <b>else</b></td></tr>
+<tr><th id="120">120</th><td>	    {</td></tr>
+<tr><th id="121">121</th><td><u>#<span data-ppcond="121">if</span> <a class="macro" href="#25" title="0" data-ref="_M/DEBUG">DEBUG</a></u></td></tr>
+<tr><th id="122">122</th><td>	      clib_warning (<q>"IAC at %d, IAC %s %s"</q>, i,</td></tr>
+<tr><th id="123">123</th><td>			    TELCMD (s-&gt;rx_buffer[i + <var>1</var>]),</td></tr>
+<tr><th id="124">124</th><td>			    TELOPT (s-&gt;rx_buffer[i + <var>2</var>]));</td></tr>
+<tr><th id="125">125</th><td><u>#<span data-ppcond="121">endif</span></u></td></tr>
+<tr><th id="126">126</th><td>	      <a class="local col2 ref" href="#12i" title='i' data-ref="12i">i</a> += <var>3</var>;</td></tr>
+<tr><th id="127">127</th><td>	    }</td></tr>
+<tr><th id="128">128</th><td>	}</td></tr>
+<tr><th id="129">129</th><td>      <b>else</b></td></tr>
+<tr><th id="130">130</th><td>	<a class="macro" href="../../vppinfra/vec.h.html#520" title="do { word _vec_l = ((str) ? (((vec_header_t *) (str) - 1)-&gt;len) : 0); str = _vec_resize ((str), 1, (_vec_l + 1) * sizeof ((str)[0]), (0), (0)); (str)[_vec_l] = (s-&gt;rx_buffer[i++]); } while (0)" data-ref="_M/vec_add1">vec_add1</a> (<a class="local col8 ref" href="#8str" title='str' data-ref="8str">str</a>, <a class="local col9 ref" href="#9s" title='s' data-ref="9s">s</a>-&gt;<a class="ref field" href="../../vppinfra/socket.h.html#_socket_t::rx_buffer" title='_socket_t::rx_buffer' data-ref="_socket_t::rx_buffer">rx_buffer</a>[<a class="local col2 ref" href="#12i" title='i' data-ref="12i">i</a>++]);</td></tr>
+<tr><th id="131">131</th><td>    }</td></tr>
+<tr><th id="132">132</th><td>  <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#148" title="do { if (s-&gt;rx_buffer) (((vec_header_t *) (s-&gt;rx_buffer) - 1)-&gt;len) = 0; } while (0)" data-ref="_M/vec_reset_length">vec_reset_length</a> (<a class="local col9 ref" href="#9s" title='s' data-ref="9s">s</a>-&gt;<a class="ref field" href="../../vppinfra/socket.h.html#_socket_t::rx_buffer" title='_socket_t::rx_buffer' data-ref="_socket_t::rx_buffer">rx_buffer</a>);</td></tr>
+<tr><th id="133">133</th><td>  <b>return</b> <a class="local col8 ref" href="#8str" title='str' data-ref="8str">str</a>;</td></tr>
+<tr><th id="134">134</th><td>}</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td></td></tr>
+<tr><th id="137">137</th><td><em>int</em></td></tr>
+<tr><th id="138">138</th><td><dfn class="decl def fn" id="main" title='main' data-ref="main">main</dfn> (<em>int</em> <dfn class="local col5 decl" id="15argc" title='argc' data-type='int' data-ref="15argc">argc</dfn>, <em>char</em> *<dfn class="local col6 decl" id="16argv" title='argv' data-type='char **' data-ref="16argv">argv</dfn>[])</td></tr>
+<tr><th id="139">139</th><td>{</td></tr>
+<tr><th id="140">140</th><td>  <a class="typedef" href="../../vppinfra/socket.h.html#clib_socket_t" title='clib_socket_t' data-type='struct _socket_t' data-ref="clib_socket_t">clib_socket_t</a> <dfn class="local col7 decl" id="17_s" title='_s' data-type='clib_socket_t' data-ref="17_s">_s</dfn> = { <var>0</var> }, *<dfn class="local col8 decl" id="18s" title='s' data-type='clib_socket_t *' data-ref="18s">s</dfn> = &amp;<a class="local col7 ref" href="#17_s" title='_s' data-ref="17_s">_s</a>;</td></tr>
+<tr><th id="141">141</th><td>  <a class="typedef" href="../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *<dfn class="local col9 decl" id="19error" title='error' data-type='clib_error_t *' data-ref="19error">error</dfn> = <var>0</var>;</td></tr>
+<tr><th id="142">142</th><td>  <b>struct</b> <a class="type" href="../../../../include/sys/epoll.h.html#epoll_event" title='epoll_event' data-ref="epoll_event">epoll_event</a> <dfn class="local col0 decl" id="20event" title='event' data-type='struct epoll_event' data-ref="20event">event</dfn>;</td></tr>
+<tr><th id="143">143</th><td>  <b>struct</b> <a class="type" href="../../../../include/bits/sigaction.h.html#sigaction" title='sigaction' data-ref="sigaction">sigaction</a> <dfn class="local col1 decl" id="21sa" title='sa' data-type='struct sigaction' data-ref="21sa">sa</dfn>;</td></tr>
+<tr><th id="144">144</th><td>  <b>struct</b> <a class="type" href="../../../../include/bits/termios.h.html#termios" title='termios' data-ref="termios">termios</a> <dfn class="local col2 decl" id="22tio" title='tio' data-type='struct termios' data-ref="22tio">tio</dfn>;</td></tr>
+<tr><th id="145">145</th><td>  <em>int</em> <dfn class="local col3 decl" id="23efd" title='efd' data-type='int' data-ref="23efd">efd</dfn> = -<var>1</var>;</td></tr>
+<tr><th id="146">146</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col4 decl" id="24str" title='str' data-type='u8 *' data-ref="24str">str</dfn> = <var>0</var>;</td></tr>
+<tr><th id="147">147</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col5 decl" id="25cmd" title='cmd' data-type='u8 *' data-ref="25cmd">cmd</dfn> = <var>0</var>;</td></tr>
+<tr><th id="148">148</th><td>  <em>int</em> <dfn class="local col6 decl" id="26do_quit" title='do_quit' data-type='int' data-ref="26do_quit">do_quit</dfn> = <var>0</var>;</td></tr>
+<tr><th id="149">149</th><td>  <em>int</em> <dfn class="local col7 decl" id="27is_interactive" title='is_interactive' data-type='int' data-ref="27is_interactive">is_interactive</dfn> = <var>0</var>;</td></tr>
+<tr><th id="150">150</th><td>  <em>int</em> <dfn class="local col8 decl" id="28acked" title='acked' data-type='int' data-ref="28acked">acked</dfn> = <var>1</var>;		<i>/* counts messages from VPP; starts at 1 */</i></td></tr>
+<tr><th id="151">151</th><td>  <em>int</em> <dfn class="local col9 decl" id="29sent_ttype" title='sent_ttype' data-type='int' data-ref="29sent_ttype">sent_ttype</dfn> = <var>0</var>;</td></tr>
+<tr><th id="152">152</th><td></td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td>  <a class="ref fn" href="../../vppinfra/mem.h.html#clib_mem_init" title='clib_mem_init' data-ref="clib_mem_init">clib_mem_init</a> (<var>0</var>, <var>64ULL</var> &lt;&lt; <var>10</var>);</td></tr>
+<tr><th id="155">155</th><td></td></tr>
+<tr><th id="156">156</th><td>  <i>/* process command line */</i></td></tr>
+<tr><th id="157">157</th><td>  <a class="local col5 ref" href="#15argc" title='argc' data-ref="15argc">argc</a>--;</td></tr>
+<tr><th id="158">158</th><td>  <a class="local col6 ref" href="#16argv" title='argv' data-ref="16argv">argv</a>++;</td></tr>
+<tr><th id="159">159</th><td></td></tr>
+<tr><th id="160">160</th><td>  <b>if</b> (<a class="local col5 ref" href="#15argc" title='argc' data-ref="15argc">argc</a> &gt; <var>1</var> &amp;&amp; <a class="ref fn" href="../../../../include/string.h.html#strncmp" title='strncmp' data-ref="strncmp">strncmp</a> (<a class="local col6 ref" href="#16argv" title='argv' data-ref="16argv">argv</a>[<var>0</var>], <q>"-s"</q>, <var>2</var>) == <var>0</var>)</td></tr>
+<tr><th id="161">161</th><td>    {</td></tr>
+<tr><th id="162">162</th><td>      <a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>-&gt;<a class="ref field" href="../../vppinfra/socket.h.html#_socket_t::config" title='_socket_t::config' data-ref="_socket_t::config">config</a> = <a class="local col6 ref" href="#16argv" title='argv' data-ref="16argv">argv</a>[<var>1</var>];</td></tr>
+<tr><th id="163">163</th><td>      <a class="local col5 ref" href="#15argc" title='argc' data-ref="15argc">argc</a> -= <var>2</var>;</td></tr>
+<tr><th id="164">164</th><td>      <a class="local col6 ref" href="#16argv" title='argv' data-ref="16argv">argv</a> += <var>2</var>;</td></tr>
+<tr><th id="165">165</th><td>    }</td></tr>
+<tr><th id="166">166</th><td>  <b>else</b></td></tr>
+<tr><th id="167">167</th><td>    <a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>-&gt;<a class="ref field" href="../../vppinfra/socket.h.html#_socket_t::config" title='_socket_t::config' data-ref="_socket_t::config">config</a> = <a class="macro" href="#38" title="&quot;/run/vpp/cli.sock&quot;" data-ref="_M/SOCKET_FILE">SOCKET_FILE</a>;</td></tr>
+<tr><th id="168">168</th><td></td></tr>
+<tr><th id="169">169</th><td>  <b>while</b> (<a class="local col5 ref" href="#15argc" title='argc' data-ref="15argc">argc</a>--)</td></tr>
+<tr><th id="170">170</th><td>    <a class="local col5 ref" href="#25cmd" title='cmd' data-ref="25cmd">cmd</a> = <a class="ref fn" href="../../vppinfra/format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col5 ref" href="#25cmd" title='cmd' data-ref="25cmd">cmd</a>, <q>"%s%c"</q>, (<a class="local col6 ref" href="#16argv" title='argv' data-ref="16argv">argv</a>++)[<var>0</var>], <a class="local col5 ref" href="#15argc" title='argc' data-ref="15argc">argc</a> ? <kbd>' '</kbd> : <var>0</var>);</td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td>  <a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>-&gt;<a class="ref field" href="../../vppinfra/socket.h.html#_socket_t::flags" title='_socket_t::flags' data-ref="_socket_t::flags">flags</a> = <a class="macro" href="../../vppinfra/socket.h.html#59" title="(0 &lt;&lt; 0)" data-ref="_M/CLIB_SOCKET_F_IS_CLIENT">CLIB_SOCKET_F_IS_CLIENT</a>;</td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td>  <a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a> = <a class="ref fn" href="../../vppinfra/socket.h.html#clib_socket_init" title='clib_socket_init' data-ref="clib_socket_init">clib_socket_init</a> (<a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>);</td></tr>
+<tr><th id="175">175</th><td>  <b>if</b> (<a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a>)</td></tr>
+<tr><th id="176">176</th><td>    <b>goto</b> <a class="lbl" href="#30done" data-ref="30done">done</a>;</td></tr>
+<tr><th id="177">177</th><td></td></tr>
+<tr><th id="178">178</th><td>  <a class="local col7 ref" href="#27is_interactive" title='is_interactive' data-ref="27is_interactive">is_interactive</a> = <a class="ref fn" href="../../../../include/unistd.h.html#isatty" title='isatty' data-ref="isatty">isatty</a> (<a class="macro" href="../../../../include/unistd.h.html#210" title="0" data-ref="_M/STDIN_FILENO">STDIN_FILENO</a>) &amp;&amp; <a class="local col5 ref" href="#25cmd" title='cmd' data-ref="25cmd">cmd</a> == <var>0</var>;</td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td>  <b>if</b> (<a class="local col7 ref" href="#27is_interactive" title='is_interactive' data-ref="27is_interactive">is_interactive</a>)</td></tr>
+<tr><th id="181">181</th><td>    {</td></tr>
+<tr><th id="182">182</th><td>      <i>/* Capture terminal resize events */</i></td></tr>
+<tr><th id="183">183</th><td>      <a class="ref fn" href="../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a> (&amp;<a class="local col1 ref" href="#21sa" title='sa' data-ref="21sa">sa</a>, <var>0</var>, <b>sizeof</b> (<b>struct</b> <a class="type" href="../../../../include/bits/sigaction.h.html#sigaction" title='sigaction' data-ref="sigaction">sigaction</a>));</td></tr>
+<tr><th id="184">184</th><td>      <a class="local col1 ref" href="#21sa" title='sa' data-ref="21sa">sa</a>.<a class="macro" href="../../../../include/bits/sigaction.h.html#36" title="__sigaction_handler.sa_handler" data-ref="_M/sa_handler">sa_handler</a> = <a class="tu ref fn" href="#signal_handler_winch" title='signal_handler_winch' data-use='r' data-ref="signal_handler_winch">signal_handler_winch</a>;</td></tr>
+<tr><th id="185">185</th><td>      <b>if</b> (<a class="ref fn" href="../../../../include/signal.h.html#sigaction" title='sigaction' data-ref="sigaction">sigaction</a> (<a class="macro" href="../../../../include/bits/signum.h.html#61" title="28" data-ref="_M/SIGWINCH">SIGWINCH</a>, &amp;<a class="local col1 ref" href="#21sa" title='sa' data-ref="21sa">sa</a>, <var>0</var>) &lt; <var>0</var>)</td></tr>
+<tr><th id="186">186</th><td>	{</td></tr>
+<tr><th id="187">187</th><td>	  <a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a> = <a class="macro" href="../../vppinfra/error.h.html#102" title="_clib_error_return((0),((*__errno_location ())),(CLIB_ERROR_ERRNO_VALID),(char *)((char *) __FUNCTION__),&quot;sigaction&quot;)" data-ref="_M/clib_error_return_unix">clib_error_return_unix</a> (<var>0</var>, <q>"sigaction"</q>);</td></tr>
+<tr><th id="188">188</th><td>	  <b>goto</b> <a class="lbl" href="#30done" data-ref="30done">done</a>;</td></tr>
+<tr><th id="189">189</th><td>	}</td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td>      <i>/* Capture SIGTERM to reset tty settings */</i></td></tr>
+<tr><th id="192">192</th><td>      <a class="local col1 ref" href="#21sa" title='sa' data-ref="21sa">sa</a>.<a class="macro" href="../../../../include/bits/sigaction.h.html#36" title="__sigaction_handler.sa_handler" data-ref="_M/sa_handler">sa_handler</a> = <a class="tu ref fn" href="#signal_handler_term" title='signal_handler_term' data-use='r' data-ref="signal_handler_term">signal_handler_term</a>;</td></tr>
+<tr><th id="193">193</th><td>      <b>if</b> (<a class="ref fn" href="../../../../include/signal.h.html#sigaction" title='sigaction' data-ref="sigaction">sigaction</a> (<a class="macro" href="../../../../include/bits/signum.h.html#47" title="15" data-ref="_M/SIGTERM">SIGTERM</a>, &amp;<a class="local col1 ref" href="#21sa" title='sa' data-ref="21sa">sa</a>, <var>0</var>) &lt; <var>0</var>)</td></tr>
+<tr><th id="194">194</th><td>	{</td></tr>
+<tr><th id="195">195</th><td>	  <a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a> = <a class="macro" href="../../vppinfra/error.h.html#102" title="_clib_error_return((0),((*__errno_location ())),(CLIB_ERROR_ERRNO_VALID),(char *)((char *) __FUNCTION__),&quot;sigaction&quot;)" data-ref="_M/clib_error_return_unix">clib_error_return_unix</a> (<var>0</var>, <q>"sigaction"</q>);</td></tr>
+<tr><th id="196">196</th><td>	  <b>goto</b> <a class="lbl" href="#30done" data-ref="30done">done</a>;</td></tr>
+<tr><th id="197">197</th><td>	}</td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td>      <i>/* Save the original tty state so we can restore it later */</i></td></tr>
+<tr><th id="200">200</th><td>      <b>if</b> (<a class="ref fn" href="../../../../include/termios.h.html#tcgetattr" title='tcgetattr' data-ref="tcgetattr">tcgetattr</a> (<a class="macro" href="../../../../include/unistd.h.html#210" title="0" data-ref="_M/STDIN_FILENO">STDIN_FILENO</a>, &amp;<a class="ref" href="#orig_tio" title='orig_tio' data-ref="orig_tio">orig_tio</a>) &lt; <var>0</var>)</td></tr>
+<tr><th id="201">201</th><td>	{</td></tr>
+<tr><th id="202">202</th><td>	  <a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a> = <a class="macro" href="../../vppinfra/error.h.html#102" title="_clib_error_return((0),((*__errno_location ())),(CLIB_ERROR_ERRNO_VALID),(char *)((char *) __FUNCTION__),&quot;tcgetattr&quot;)" data-ref="_M/clib_error_return_unix">clib_error_return_unix</a> (<var>0</var>, <q>"tcgetattr"</q>);</td></tr>
+<tr><th id="203">203</th><td>	  <b>goto</b> <a class="lbl" href="#30done" data-ref="30done">done</a>;</td></tr>
+<tr><th id="204">204</th><td>	}</td></tr>
+<tr><th id="205">205</th><td></td></tr>
+<tr><th id="206">206</th><td>      <i>/* Tweak the tty settings */</i></td></tr>
+<tr><th id="207">207</th><td>      <a class="local col2 ref" href="#22tio" title='tio' data-ref="22tio">tio</a> = <a class="ref" href="#orig_tio" title='orig_tio' data-ref="orig_tio">orig_tio</a>;</td></tr>
+<tr><th id="208">208</th><td>      <i>/* echo off, canonical mode off, ext'd input processing off */</i></td></tr>
+<tr><th id="209">209</th><td>      <a class="local col2 ref" href="#22tio" title='tio' data-ref="22tio">tio</a>.<a class="ref field" href="../../../../include/bits/termios.h.html#termios::c_lflag" title='termios::c_lflag' data-ref="termios::c_lflag">c_lflag</a> &amp;= ~(<a class="macro" href="../../../../include/bits/termios.h.html#183" title="0000010" data-ref="_M/ECHO">ECHO</a> | <a class="macro" href="../../../../include/bits/termios.h.html#179" title="0000002" data-ref="_M/ICANON">ICANON</a> | <a class="macro" href="../../../../include/bits/termios.h.html#196" title="0100000" data-ref="_M/IEXTEN">IEXTEN</a>);</td></tr>
+<tr><th id="210">210</th><td>      <a class="local col2 ref" href="#22tio" title='tio' data-ref="22tio">tio</a>.<a class="ref field" href="../../../../include/bits/termios.h.html#termios::c_cc" title='termios::c_cc' data-ref="termios::c_cc">c_cc</a>[<a class="macro" href="../../../../include/bits/termios.h.html#49" title="6" data-ref="_M/VMIN">VMIN</a>] = <var>1</var>;	<i>/* 1 byte at a time */</i></td></tr>
+<tr><th id="211">211</th><td>      <a class="local col2 ref" href="#22tio" title='tio' data-ref="22tio">tio</a>.<a class="ref field" href="../../../../include/bits/termios.h.html#termios::c_cc" title='termios::c_cc' data-ref="termios::c_cc">c_cc</a>[<a class="macro" href="../../../../include/bits/termios.h.html#48" title="5" data-ref="_M/VTIME">VTIME</a>] = <var>0</var>;	<i>/* no timer */</i></td></tr>
+<tr><th id="212">212</th><td></td></tr>
+<tr><th id="213">213</th><td>      <b>if</b> (<a class="ref fn" href="../../../../include/termios.h.html#tcsetattr" title='tcsetattr' data-ref="tcsetattr">tcsetattr</a> (<a class="macro" href="../../../../include/unistd.h.html#210" title="0" data-ref="_M/STDIN_FILENO">STDIN_FILENO</a>, <a class="macro" href="../../../../include/bits/termios.h.html#215" title="2" data-ref="_M/TCSAFLUSH">TCSAFLUSH</a>, &amp;<a class="local col2 ref" href="#22tio" title='tio' data-ref="22tio">tio</a>) &lt; <var>0</var>)</td></tr>
+<tr><th id="214">214</th><td>	{</td></tr>
+<tr><th id="215">215</th><td>	  <a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a> = <a class="macro" href="../../vppinfra/error.h.html#102" title="_clib_error_return((0),((*__errno_location ())),(CLIB_ERROR_ERRNO_VALID),(char *)((char *) __FUNCTION__),&quot;tcsetattr&quot;)" data-ref="_M/clib_error_return_unix">clib_error_return_unix</a> (<var>0</var>, <q>"tcsetattr"</q>);</td></tr>
+<tr><th id="216">216</th><td>	  <b>goto</b> <a class="lbl" href="#30done" data-ref="30done">done</a>;</td></tr>
+<tr><th id="217">217</th><td>	}</td></tr>
+<tr><th id="218">218</th><td>    }</td></tr>
+<tr><th id="219">219</th><td></td></tr>
+<tr><th id="220">220</th><td>  <a class="local col3 ref" href="#23efd" title='efd' data-ref="23efd">efd</a> = <a class="ref fn" href="../../../../include/sys/epoll.h.html#epoll_create1" title='epoll_create1' data-ref="epoll_create1">epoll_create1</a> (<var>0</var>);</td></tr>
+<tr><th id="221">221</th><td></td></tr>
+<tr><th id="222">222</th><td>  <i>/* register STDIN */</i></td></tr>
+<tr><th id="223">223</th><td>  <a class="local col0 ref" href="#20event" title='event' data-ref="20event">event</a>.<a class="ref field" href="../../../../include/sys/epoll.h.html#epoll_event::events" title='epoll_event::events' data-ref="epoll_event::events">events</a> = <a class="macro" href="../../../../include/sys/epoll.h.html#43" title="EPOLLIN" data-ref="_M/EPOLLIN">EPOLLIN</a> | <a class="macro" href="../../../../include/sys/epoll.h.html#45" title="EPOLLPRI" data-ref="_M/EPOLLPRI">EPOLLPRI</a> | <a class="macro" href="../../../../include/sys/epoll.h.html#59" title="EPOLLERR" data-ref="_M/EPOLLERR">EPOLLERR</a>;</td></tr>
+<tr><th id="224">224</th><td>  <a class="local col0 ref" href="#20event" title='event' data-ref="20event">event</a>.<a class="ref field" href="../../../../include/sys/epoll.h.html#epoll_event::data" title='epoll_event::data' data-ref="epoll_event::data">data</a>.<a class="ref field" href="../../../../include/sys/epoll.h.html#epoll_data::fd" title='epoll_data::fd' data-ref="epoll_data::fd">fd</a> = <a class="macro" href="../../../../include/unistd.h.html#210" title="0" data-ref="_M/STDIN_FILENO">STDIN_FILENO</a>;</td></tr>
+<tr><th id="225">225</th><td>  <b>if</b> (<a class="ref fn" href="../../../../include/sys/epoll.h.html#epoll_ctl" title='epoll_ctl' data-ref="epoll_ctl">epoll_ctl</a> (<a class="local col3 ref" href="#23efd" title='efd' data-ref="23efd">efd</a>, <a class="macro" href="../../../../include/sys/epoll.h.html#74" title="1" data-ref="_M/EPOLL_CTL_ADD">EPOLL_CTL_ADD</a>, <a class="macro" href="../../../../include/unistd.h.html#210" title="0" data-ref="_M/STDIN_FILENO">STDIN_FILENO</a>, &amp;<a class="local col0 ref" href="#20event" title='event' data-ref="20event">event</a>) != <var>0</var>)</td></tr>
+<tr><th id="226">226</th><td>    {</td></tr>
+<tr><th id="227">227</th><td>      <i>/* ignore EPERM; it means stdin is something like /dev/null */</i></td></tr>
+<tr><th id="228">228</th><td>      <b>if</b> (<a class="macro" href="../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a> != <a class="macro" href="../../../../include/asm-generic/errno-base.h.html#4" title="1" data-ref="_M/EPERM">EPERM</a>)</td></tr>
+<tr><th id="229">229</th><td>	{</td></tr>
+<tr><th id="230">230</th><td>	  <a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a> = <a class="macro" href="../../vppinfra/error.h.html#102" title="_clib_error_return((0),((*__errno_location ())),(CLIB_ERROR_ERRNO_VALID),(char *)((char *) __FUNCTION__),&quot;epoll_ctl[%d]&quot;, 0)" data-ref="_M/clib_error_return_unix">clib_error_return_unix</a> (<var>0</var>, <q>"epoll_ctl[%d]"</q>, <a class="macro" href="../../../../include/unistd.h.html#210" title="0" data-ref="_M/STDIN_FILENO">STDIN_FILENO</a>);</td></tr>
+<tr><th id="231">231</th><td>	  <b>goto</b> <a class="lbl" href="#30done" data-ref="30done">done</a>;</td></tr>
+<tr><th id="232">232</th><td>	}</td></tr>
+<tr><th id="233">233</th><td>    }</td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td>  <i>/* register socket */</i></td></tr>
+<tr><th id="236">236</th><td>  <a class="local col0 ref" href="#20event" title='event' data-ref="20event">event</a>.<a class="ref field" href="../../../../include/sys/epoll.h.html#epoll_event::events" title='epoll_event::events' data-ref="epoll_event::events">events</a> = <a class="macro" href="../../../../include/sys/epoll.h.html#43" title="EPOLLIN" data-ref="_M/EPOLLIN">EPOLLIN</a> | <a class="macro" href="../../../../include/sys/epoll.h.html#45" title="EPOLLPRI" data-ref="_M/EPOLLPRI">EPOLLPRI</a> | <a class="macro" href="../../../../include/sys/epoll.h.html#59" title="EPOLLERR" data-ref="_M/EPOLLERR">EPOLLERR</a>;</td></tr>
+<tr><th id="237">237</th><td>  <a class="local col0 ref" href="#20event" title='event' data-ref="20event">event</a>.<a class="ref field" href="../../../../include/sys/epoll.h.html#epoll_event::data" title='epoll_event::data' data-ref="epoll_event::data">data</a>.<a class="ref field" href="../../../../include/sys/epoll.h.html#epoll_data::fd" title='epoll_data::fd' data-ref="epoll_data::fd">fd</a> = <a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>-&gt;<a class="ref field" href="../../vppinfra/socket.h.html#_socket_t::fd" title='_socket_t::fd' data-ref="_socket_t::fd">fd</a>;</td></tr>
+<tr><th id="238">238</th><td>  <b>if</b> (<a class="ref fn" href="../../../../include/sys/epoll.h.html#epoll_ctl" title='epoll_ctl' data-ref="epoll_ctl">epoll_ctl</a> (<a class="local col3 ref" href="#23efd" title='efd' data-ref="23efd">efd</a>, <a class="macro" href="../../../../include/sys/epoll.h.html#74" title="1" data-ref="_M/EPOLL_CTL_ADD">EPOLL_CTL_ADD</a>, <a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>-&gt;<a class="ref field" href="../../vppinfra/socket.h.html#_socket_t::fd" title='_socket_t::fd' data-ref="_socket_t::fd">fd</a>, &amp;<a class="local col0 ref" href="#20event" title='event' data-ref="20event">event</a>) != <var>0</var>)</td></tr>
+<tr><th id="239">239</th><td>    {</td></tr>
+<tr><th id="240">240</th><td>      <a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a> = <a class="macro" href="../../vppinfra/error.h.html#102" title="_clib_error_return((0),((*__errno_location ())),(CLIB_ERROR_ERRNO_VALID),(char *)((char *) __FUNCTION__),&quot;epoll_ctl[%d]&quot;, s-&gt;fd)" data-ref="_M/clib_error_return_unix">clib_error_return_unix</a> (<var>0</var>, <q>"epoll_ctl[%d]"</q>, <a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>-&gt;<a class="ref field" href="../../vppinfra/socket.h.html#_socket_t::fd" title='_socket_t::fd' data-ref="_socket_t::fd">fd</a>);</td></tr>
+<tr><th id="241">241</th><td>      <b>goto</b> <a class="lbl" href="#30done" data-ref="30done">done</a>;</td></tr>
+<tr><th id="242">242</th><td>    }</td></tr>
+<tr><th id="243">243</th><td></td></tr>
+<tr><th id="244">244</th><td>  <b>while</b> (<var>1</var>)</td></tr>
+<tr><th id="245">245</th><td>    {</td></tr>
+<tr><th id="246">246</th><td>      <em>int</em> <dfn class="local col1 decl" id="31n" title='n' data-type='int' data-ref="31n">n</dfn>;</td></tr>
+<tr><th id="247">247</th><td></td></tr>
+<tr><th id="248">248</th><td>      <b>if</b> (<a class="ref" href="#window_resized" title='window_resized' data-ref="window_resized">window_resized</a>)</td></tr>
+<tr><th id="249">249</th><td>	{</td></tr>
+<tr><th id="250">250</th><td>	  <a class="ref" href="#window_resized" title='window_resized' data-ref="window_resized">window_resized</a> = <var>0</var>;</td></tr>
+<tr><th id="251">251</th><td>	  <a class="tu ref fn" href="#send_naws" title='send_naws' data-use='c' data-ref="send_naws">send_naws</a> (<a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>);</td></tr>
+<tr><th id="252">252</th><td>	}</td></tr>
+<tr><th id="253">253</th><td></td></tr>
+<tr><th id="254">254</th><td>      <b>if</b> ((<a class="local col1 ref" href="#31n" title='n' data-ref="31n">n</a> = <a class="ref fn" href="../../../../include/sys/epoll.h.html#epoll_wait" title='epoll_wait' data-ref="epoll_wait">epoll_wait</a> (<a class="local col3 ref" href="#23efd" title='efd' data-ref="23efd">efd</a>, &amp;<a class="local col0 ref" href="#20event" title='event' data-ref="20event">event</a>, <var>1</var>, -<var>1</var>)) &lt; <var>0</var>)</td></tr>
+<tr><th id="255">255</th><td>	{</td></tr>
+<tr><th id="256">256</th><td>	  <i>/* maybe we received signal */</i></td></tr>
+<tr><th id="257">257</th><td>	  <b>if</b> (<a class="macro" href="../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a> == <a class="macro" href="../../../../include/asm-generic/errno-base.h.html#7" title="4" data-ref="_M/EINTR">EINTR</a>)</td></tr>
+<tr><th id="258">258</th><td>	    <b>continue</b>;</td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td>	  <a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a> = <a class="macro" href="../../vppinfra/error.h.html#102" title="_clib_error_return((0),((*__errno_location ())),(CLIB_ERROR_ERRNO_VALID),(char *)((char *) __FUNCTION__),&quot;epoll_wait&quot;)" data-ref="_M/clib_error_return_unix">clib_error_return_unix</a> (<var>0</var>, <q>"epoll_wait"</q>);</td></tr>
+<tr><th id="261">261</th><td>	  <b>goto</b> <a class="lbl" href="#30done" data-ref="30done">done</a>;</td></tr>
+<tr><th id="262">262</th><td>	}</td></tr>
+<tr><th id="263">263</th><td></td></tr>
+<tr><th id="264">264</th><td>      <b>if</b> (<a class="local col1 ref" href="#31n" title='n' data-ref="31n">n</a> == <var>0</var>)</td></tr>
+<tr><th id="265">265</th><td>	<b>continue</b>;</td></tr>
+<tr><th id="266">266</th><td></td></tr>
+<tr><th id="267">267</th><td>      <b>if</b> (<a class="local col0 ref" href="#20event" title='event' data-ref="20event">event</a>.<a class="ref field" href="../../../../include/sys/epoll.h.html#epoll_event::data" title='epoll_event::data' data-ref="epoll_event::data">data</a>.<a class="ref field" href="../../../../include/sys/epoll.h.html#epoll_data::fd" title='epoll_data::fd' data-ref="epoll_data::fd">fd</a> == <a class="macro" href="../../../../include/unistd.h.html#210" title="0" data-ref="_M/STDIN_FILENO">STDIN_FILENO</a>)</td></tr>
+<tr><th id="268">268</th><td>	{</td></tr>
+<tr><th id="269">269</th><td>	  <em>int</em> <dfn class="local col2 decl" id="32n" title='n' data-type='int' data-ref="32n">n</dfn>;</td></tr>
+<tr><th id="270">270</th><td>	  <em>char</em> <dfn class="local col3 decl" id="33c" title='c' data-type='char [100]' data-ref="33c">c</dfn>[<var>100</var>];</td></tr>
+<tr><th id="271">271</th><td></td></tr>
+<tr><th id="272">272</th><td>	  <b>if</b> (!<a class="local col9 ref" href="#29sent_ttype" title='sent_ttype' data-ref="29sent_ttype">sent_ttype</a>)</td></tr>
+<tr><th id="273">273</th><td>	    <b>continue</b>;		<i>/* not ready for this yet */</i></td></tr>
+<tr><th id="274">274</th><td></td></tr>
+<tr><th id="275">275</th><td>	  <a class="local col2 ref" href="#32n" title='n' data-ref="32n">n</a> = <a class="ref fn" href="../../../../include/unistd.h.html#read" title='read' data-ref="read">read</a> (<a class="macro" href="../../../../include/unistd.h.html#210" title="0" data-ref="_M/STDIN_FILENO">STDIN_FILENO</a>, <a class="local col3 ref" href="#33c" title='c' data-ref="33c">c</a>, <b>sizeof</b> (<a class="local col3 ref" href="#33c" title='c' data-ref="33c">c</a>));</td></tr>
+<tr><th id="276">276</th><td>	  <b>if</b> (<a class="local col2 ref" href="#32n" title='n' data-ref="32n">n</a> &gt; <var>0</var>)</td></tr>
+<tr><th id="277">277</th><td>	    {</td></tr>
+<tr><th id="278">278</th><td>	      <a class="ref fn" href="../../../../include/string.h.html#memcpy" title='memcpy' data-ref="memcpy">memcpy</a> (<a class="ref fn" href="../../vppinfra/socket.h.html#clib_socket_tx_add" title='clib_socket_tx_add' data-ref="clib_socket_tx_add">clib_socket_tx_add</a> (<a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>, <a class="local col2 ref" href="#32n" title='n' data-ref="32n">n</a>), <a class="local col3 ref" href="#33c" title='c' data-ref="33c">c</a>, <a class="local col2 ref" href="#32n" title='n' data-ref="32n">n</a>);</td></tr>
+<tr><th id="279">279</th><td>	      <a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a> = <a class="ref fn" href="../../vppinfra/socket.h.html#clib_socket_tx" title='clib_socket_tx' data-ref="clib_socket_tx">clib_socket_tx</a> (<a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>);</td></tr>
+<tr><th id="280">280</th><td>	      <b>if</b> (<a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a>)</td></tr>
+<tr><th id="281">281</th><td>		<b>goto</b> <a class="lbl" href="#30done" data-ref="30done">done</a>;</td></tr>
+<tr><th id="282">282</th><td>	    }</td></tr>
+<tr><th id="283">283</th><td>	  <b>else</b> <b>if</b> (<a class="local col2 ref" href="#32n" title='n' data-ref="32n">n</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="284">284</th><td>	    <a class="macro" href="../../vppinfra/error.h.html#59" title="_clib_error (CLIB_ERROR_WARNING, ((char *) __FUNCTION__), 284, &quot;read rv=%d&quot;, n)" data-ref="_M/clib_warning">clib_warning</a> (<q>"read rv=%d"</q>, <a class="local col2 ref" href="#32n" title='n' data-ref="32n">n</a>);</td></tr>
+<tr><th id="285">285</th><td>	  <b>else</b>			<i>/* EOF */</i></td></tr>
+<tr><th id="286">286</th><td>	    <a class="local col6 ref" href="#26do_quit" title='do_quit' data-ref="26do_quit">do_quit</a> = <var>1</var>;</td></tr>
+<tr><th id="287">287</th><td>	}</td></tr>
+<tr><th id="288">288</th><td>      <b>else</b> <b>if</b> (<a class="local col0 ref" href="#20event" title='event' data-ref="20event">event</a>.<a class="ref field" href="../../../../include/sys/epoll.h.html#epoll_event::data" title='epoll_event::data' data-ref="epoll_event::data">data</a>.<a class="ref field" href="../../../../include/sys/epoll.h.html#epoll_data::fd" title='epoll_data::fd' data-ref="epoll_data::fd">fd</a> == <a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>-&gt;<a class="ref field" href="../../vppinfra/socket.h.html#_socket_t::fd" title='_socket_t::fd' data-ref="_socket_t::fd">fd</a>)</td></tr>
+<tr><th id="289">289</th><td>	{</td></tr>
+<tr><th id="290">290</th><td>	  <a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a> = <a class="ref fn" href="../../vppinfra/socket.h.html#clib_socket_rx" title='clib_socket_rx' data-ref="clib_socket_rx">clib_socket_rx</a> (<a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>, <var>100</var>);</td></tr>
+<tr><th id="291">291</th><td>	  <b>if</b> (<a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a>)</td></tr>
+<tr><th id="292">292</th><td>	    <b>break</b>;</td></tr>
+<tr><th id="293">293</th><td></td></tr>
+<tr><th id="294">294</th><td>	  <b>if</b> (<a class="ref fn" href="../../vppinfra/socket.h.html#clib_socket_rx_end_of_file" title='clib_socket_rx_end_of_file' data-ref="clib_socket_rx_end_of_file">clib_socket_rx_end_of_file</a> (<a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>))</td></tr>
+<tr><th id="295">295</th><td>	    <b>break</b>;</td></tr>
+<tr><th id="296">296</th><td></td></tr>
+<tr><th id="297">297</th><td>	  <a class="local col4 ref" href="#24str" title='str' data-ref="24str">str</a> = <a class="tu ref fn" href="#process_input" title='process_input' data-use='c' data-ref="process_input">process_input</a> (<a class="local col4 ref" href="#24str" title='str' data-ref="24str">str</a>, <a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>, <a class="local col7 ref" href="#27is_interactive" title='is_interactive' data-ref="27is_interactive">is_interactive</a>, &amp;<a class="local col9 ref" href="#29sent_ttype" title='sent_ttype' data-ref="29sent_ttype">sent_ttype</a>);</td></tr>
+<tr><th id="298">298</th><td></td></tr>
+<tr><th id="299">299</th><td>	  <b>if</b> (<a class="macro" href="../../vppinfra/vec_bootstrap.h.html#142" title="((str) ? (((vec_header_t *) (str) - 1)-&gt;len) : 0)" data-ref="_M/vec_len">vec_len</a> (<a class="local col4 ref" href="#24str" title='str' data-ref="24str">str</a>) &gt; <var>0</var>)</td></tr>
+<tr><th id="300">300</th><td>	    {</td></tr>
+<tr><th id="301">301</th><td>	      <em>int</em> <dfn class="local col4 decl" id="34len" title='len' data-type='int' data-ref="34len">len</dfn> = <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#142" title="((str) ? (((vec_header_t *) (str) - 1)-&gt;len) : 0)" data-ref="_M/vec_len">vec_len</a> (<a class="local col4 ref" href="#24str" title='str' data-ref="24str">str</a>);</td></tr>
+<tr><th id="302">302</th><td>	      <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col5 decl" id="35p" title='p' data-type='u8 *' data-ref="35p">p</dfn> = <a class="local col4 ref" href="#24str" title='str' data-ref="24str">str</a>, *<dfn class="local col6 decl" id="36q" title='q' data-type='u8 *' data-ref="36q">q</dfn> = <a class="local col4 ref" href="#24str" title='str' data-ref="24str">str</a>;</td></tr>
+<tr><th id="303">303</th><td></td></tr>
+<tr><th id="304">304</th><td>	      <b>while</b> (<a class="local col4 ref" href="#34len" title='len' data-ref="34len">len</a>)</td></tr>
+<tr><th id="305">305</th><td>		{</td></tr>
+<tr><th id="306">306</th><td>		  <i>/* Search for and skip NUL bytes */</i></td></tr>
+<tr><th id="307">307</th><td>		  <b>while</b> (<a class="local col6 ref" href="#36q" title='q' data-ref="36q">q</a> &lt; (<a class="local col5 ref" href="#35p" title='p' data-ref="35p">p</a> + <a class="local col4 ref" href="#34len" title='len' data-ref="34len">len</a>) &amp;&amp; *<a class="local col6 ref" href="#36q" title='q' data-ref="36q">q</a>)</td></tr>
+<tr><th id="308">308</th><td>		    <a class="local col6 ref" href="#36q" title='q' data-ref="36q">q</a>++;</td></tr>
+<tr><th id="309">309</th><td></td></tr>
+<tr><th id="310">310</th><td>		  <a class="local col1 ref" href="#31n" title='n' data-ref="31n">n</a> = <a class="ref fn" href="../../../../include/unistd.h.html#write" title='write' data-ref="write">write</a> (<a class="macro" href="../../../../include/unistd.h.html#211" title="1" data-ref="_M/STDOUT_FILENO">STDOUT_FILENO</a>, <a class="local col5 ref" href="#35p" title='p' data-ref="35p">p</a>, <a class="local col6 ref" href="#36q" title='q' data-ref="36q">q</a> - <a class="local col5 ref" href="#35p" title='p' data-ref="35p">p</a>);</td></tr>
+<tr><th id="311">311</th><td>		  <b>if</b> (<a class="local col1 ref" href="#31n" title='n' data-ref="31n">n</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="312">312</th><td>		    {</td></tr>
+<tr><th id="313">313</th><td>		      <a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a> = <a class="macro" href="../../vppinfra/error.h.html#102" title="_clib_error_return((0),((*__errno_location ())),(CLIB_ERROR_ERRNO_VALID),(char *)((char *) __FUNCTION__),&quot;write&quot;)" data-ref="_M/clib_error_return_unix">clib_error_return_unix</a> (<var>0</var>, <q>"write"</q>);</td></tr>
+<tr><th id="314">314</th><td>		      <b>goto</b> <a class="lbl" href="#30done" data-ref="30done">done</a>;</td></tr>
+<tr><th id="315">315</th><td>		    }</td></tr>
+<tr><th id="316">316</th><td></td></tr>
+<tr><th id="317">317</th><td>		  <b>while</b> (<a class="local col6 ref" href="#36q" title='q' data-ref="36q">q</a> &lt; (<a class="local col5 ref" href="#35p" title='p' data-ref="35p">p</a> + <a class="local col4 ref" href="#34len" title='len' data-ref="34len">len</a>) &amp;&amp; !*<a class="local col6 ref" href="#36q" title='q' data-ref="36q">q</a>)</td></tr>
+<tr><th id="318">318</th><td>		    {</td></tr>
+<tr><th id="319">319</th><td>		      <a class="local col6 ref" href="#36q" title='q' data-ref="36q">q</a>++;</td></tr>
+<tr><th id="320">320</th><td>		      <a class="local col8 ref" href="#28acked" title='acked' data-ref="28acked">acked</a>++;	<i>/* every NUL is an acknowledgement */</i></td></tr>
+<tr><th id="321">321</th><td>		    }</td></tr>
+<tr><th id="322">322</th><td>		  <a class="local col4 ref" href="#34len" title='len' data-ref="34len">len</a> -= <a class="local col6 ref" href="#36q" title='q' data-ref="36q">q</a> - <a class="local col5 ref" href="#35p" title='p' data-ref="35p">p</a>;</td></tr>
+<tr><th id="323">323</th><td>		  <a class="local col5 ref" href="#35p" title='p' data-ref="35p">p</a> = <a class="local col6 ref" href="#36q" title='q' data-ref="36q">q</a>;</td></tr>
+<tr><th id="324">324</th><td>		}</td></tr>
+<tr><th id="325">325</th><td></td></tr>
+<tr><th id="326">326</th><td>	      <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#148" title="do { if (str) (((vec_header_t *) (str) - 1)-&gt;len) = 0; } while (0)" data-ref="_M/vec_reset_length">vec_reset_length</a> (<a class="local col4 ref" href="#24str" title='str' data-ref="24str">str</a>);</td></tr>
+<tr><th id="327">327</th><td>	    }</td></tr>
+<tr><th id="328">328</th><td></td></tr>
+<tr><th id="329">329</th><td>	  <b>if</b> (<a class="local col6 ref" href="#26do_quit" title='do_quit' data-ref="26do_quit">do_quit</a> &amp;&amp; <a class="local col6 ref" href="#26do_quit" title='do_quit' data-ref="26do_quit">do_quit</a> &lt; <a class="local col8 ref" href="#28acked" title='acked' data-ref="28acked">acked</a>)</td></tr>
+<tr><th id="330">330</th><td>	    {</td></tr>
+<tr><th id="331">331</th><td>	      <i>/* Ask the other end to close the connection */</i></td></tr>
+<tr><th id="332">332</th><td>	      <a class="ref fn" href="../../vppinfra/socket.h.html#clib_socket_tx_add_formatted" title='clib_socket_tx_add_formatted' data-ref="clib_socket_tx_add_formatted">clib_socket_tx_add_formatted</a> (<a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>, <q>"quit\n"</q>);</td></tr>
+<tr><th id="333">333</th><td>	      <a class="ref fn" href="../../vppinfra/socket.h.html#clib_socket_tx" title='clib_socket_tx' data-ref="clib_socket_tx">clib_socket_tx</a> (<a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>);</td></tr>
+<tr><th id="334">334</th><td>	      <a class="local col6 ref" href="#26do_quit" title='do_quit' data-ref="26do_quit">do_quit</a> = <var>0</var>;</td></tr>
+<tr><th id="335">335</th><td>	    }</td></tr>
+<tr><th id="336">336</th><td>	  <b>if</b> (<a class="local col5 ref" href="#25cmd" title='cmd' data-ref="25cmd">cmd</a> &amp;&amp; <a class="local col9 ref" href="#29sent_ttype" title='sent_ttype' data-ref="29sent_ttype">sent_ttype</a>)</td></tr>
+<tr><th id="337">337</th><td>	    {</td></tr>
+<tr><th id="338">338</th><td>	      <i>/* We wait until after the TELNET TTYPE option has been sent.</i></td></tr>
+<tr><th id="339">339</th><td><i>	       * That is to make sure the session at the VPP end has switched</i></td></tr>
+<tr><th id="340">340</th><td><i>	       * to line-by-line mode, and thus avoid prompts and echoing.</i></td></tr>
+<tr><th id="341">341</th><td><i>	       * Note that it does also disable further TELNET option processing.</i></td></tr>
+<tr><th id="342">342</th><td><i>	       */</i></td></tr>
+<tr><th id="343">343</th><td>	      <a class="ref fn" href="../../vppinfra/socket.h.html#clib_socket_tx_add_formatted" title='clib_socket_tx_add_formatted' data-ref="clib_socket_tx_add_formatted">clib_socket_tx_add_formatted</a> (<a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>, <q>"%s\n"</q>, <a class="local col5 ref" href="#25cmd" title='cmd' data-ref="25cmd">cmd</a>);</td></tr>
+<tr><th id="344">344</th><td>	      <a class="ref fn" href="../../vppinfra/socket.h.html#clib_socket_tx" title='clib_socket_tx' data-ref="clib_socket_tx">clib_socket_tx</a> (<a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>);</td></tr>
+<tr><th id="345">345</th><td>	      <a class="macro" href="../../vppinfra/vec.h.html#336" title="do { if (cmd) { clib_mem_free (vec_header ((cmd), (0))); cmd = 0; } } while (0)" data-ref="_M/vec_free">vec_free</a> (<a class="local col5 ref" href="#25cmd" title='cmd' data-ref="25cmd">cmd</a>);</td></tr>
+<tr><th id="346">346</th><td>	      <a class="local col6 ref" href="#26do_quit" title='do_quit' data-ref="26do_quit">do_quit</a> = <a class="local col8 ref" href="#28acked" title='acked' data-ref="28acked">acked</a>;	<i>/* quit after the next response */</i></td></tr>
+<tr><th id="347">347</th><td>	    }</td></tr>
+<tr><th id="348">348</th><td>	}</td></tr>
+<tr><th id="349">349</th><td>      <b>else</b></td></tr>
+<tr><th id="350">350</th><td>	{</td></tr>
+<tr><th id="351">351</th><td>	  <a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a> = <a class="macro" href="../../vppinfra/error.h.html#99" title="_clib_error_return((0),(0),(0),(char *)((char *) __FUNCTION__),&quot;unknown fd&quot;)" data-ref="_M/clib_error_return">clib_error_return</a> (<var>0</var>, <q>"unknown fd"</q>);</td></tr>
+<tr><th id="352">352</th><td>	  <b>goto</b> <a class="lbl" href="#30done" data-ref="30done">done</a>;</td></tr>
+<tr><th id="353">353</th><td>	}</td></tr>
+<tr><th id="354">354</th><td>    }</td></tr>
+<tr><th id="355">355</th><td></td></tr>
+<tr><th id="356">356</th><td>  <a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a> = <a class="ref fn" href="../../vppinfra/socket.h.html#clib_socket_close" title='clib_socket_close' data-ref="clib_socket_close">clib_socket_close</a> (<a class="local col8 ref" href="#18s" title='s' data-ref="18s">s</a>);</td></tr>
+<tr><th id="357">357</th><td></td></tr>
+<tr><th id="358">358</th><td><dfn class="lbl" id="30done" data-ref="30done">done</dfn>:</td></tr>
+<tr><th id="359">359</th><td>  <a class="macro" href="../../vppinfra/vec.h.html#336" title="do { if (cmd) { clib_mem_free (vec_header ((cmd), (0))); cmd = 0; } } while (0)" data-ref="_M/vec_free">vec_free</a> (<a class="local col5 ref" href="#25cmd" title='cmd' data-ref="25cmd">cmd</a>);</td></tr>
+<tr><th id="360">360</th><td>  <a class="macro" href="../../vppinfra/vec.h.html#336" title="do { if (str) { clib_mem_free (vec_header ((str), (0))); str = 0; } } while (0)" data-ref="_M/vec_free">vec_free</a> (<a class="local col4 ref" href="#24str" title='str' data-ref="24str">str</a>);</td></tr>
+<tr><th id="361">361</th><td>  <b>if</b> (<a class="local col3 ref" href="#23efd" title='efd' data-ref="23efd">efd</a> &gt; -<var>1</var>)</td></tr>
+<tr><th id="362">362</th><td>    <a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a> (<a class="local col3 ref" href="#23efd" title='efd' data-ref="23efd">efd</a>);</td></tr>
+<tr><th id="363">363</th><td></td></tr>
+<tr><th id="364">364</th><td>  <b>if</b> (<a class="local col7 ref" href="#27is_interactive" title='is_interactive' data-ref="27is_interactive">is_interactive</a>)</td></tr>
+<tr><th id="365">365</th><td>    <a class="ref fn" href="../../../../include/termios.h.html#tcsetattr" title='tcsetattr' data-ref="tcsetattr">tcsetattr</a> (<a class="macro" href="../../../../include/unistd.h.html#210" title="0" data-ref="_M/STDIN_FILENO">STDIN_FILENO</a>, <a class="macro" href="../../../../include/bits/termios.h.html#215" title="2" data-ref="_M/TCSAFLUSH">TCSAFLUSH</a>, &amp;<a class="ref" href="#orig_tio" title='orig_tio' data-ref="orig_tio">orig_tio</a>);</td></tr>
+<tr><th id="366">366</th><td></td></tr>
+<tr><th id="367">367</th><td>  <b>if</b> (<a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a>)</td></tr>
+<tr><th id="368">368</th><td>    {</td></tr>
+<tr><th id="369">369</th><td>      <a class="macro" href="../../vppinfra/error.h.html#113" title="do { (error) = _clib_error_report (error); } while (0)" data-ref="_M/clib_error_report">clib_error_report</a> (<a class="local col9 ref" href="#19error" title='error' data-ref="19error">error</a>);</td></tr>
+<tr><th id="370">370</th><td>      <b>return</b> <var>1</var>;</td></tr>
+<tr><th id="371">371</th><td>    }</td></tr>
+<tr><th id="372">372</th><td></td></tr>
+<tr><th id="373">373</th><td>  <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="374">374</th><td>}</td></tr>
+<tr><th id="375">375</th><td></td></tr>
+<tr><th id="376">376</th><td><i>/* *INDENT-ON* */</i></td></tr>
+<tr><th id="377">377</th><td></td></tr>
+<tr><th id="378">378</th><td><i>/*</i></td></tr>
+<tr><th id="379">379</th><td><i> * fd.io coding-style-patch-verification: ON</i></td></tr>
+<tr><th id="380">380</th><td><i> *</i></td></tr>
+<tr><th id="381">381</th><td><i> * Local Variables:</i></td></tr>
+<tr><th id="382">382</th><td><i> * eval: (c-set-style "gnu")</i></td></tr>
+<tr><th id="383">383</th><td><i> * End:</i></td></tr>
+<tr><th id="384">384</th><td><i> */</i></td></tr>
+<tr><th id="385">385</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-30</em> from project vpp_1804 revision <em>18.05</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

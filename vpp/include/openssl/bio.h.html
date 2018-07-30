@@ -1,0 +1,902 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>bio.h source code [include/openssl/bio.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="bio_dgram_sctp_prinfo,bio_dgram_sctp_rcvinfo,bio_dgram_sctp_sndinfo,bio_f_buffer_ctx_struct,bio_method_st,bio_st "/>
+<link rel="stylesheet" href="../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'include/openssl/bio.h'; var root_path = '../..'; var data_path = '../../../data';</script>
+<script src='../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='..'>include</a>/<a href='./'>openssl</a>/<a href='bio.h.html'>bio.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* crypto/bio/bio.h */</i></td></tr>
+<tr><th id="2">2</th><td><i>/* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)</i></td></tr>
+<tr><th id="3">3</th><td><i> * All rights reserved.</i></td></tr>
+<tr><th id="4">4</th><td><i> *</i></td></tr>
+<tr><th id="5">5</th><td><i> * This package is an SSL implementation written</i></td></tr>
+<tr><th id="6">6</th><td><i> * by Eric Young (eay@cryptsoft.com).</i></td></tr>
+<tr><th id="7">7</th><td><i> * The implementation was written so as to conform with Netscapes SSL.</i></td></tr>
+<tr><th id="8">8</th><td><i> *</i></td></tr>
+<tr><th id="9">9</th><td><i> * This library is free for commercial and non-commercial use as long as</i></td></tr>
+<tr><th id="10">10</th><td><i> * the following conditions are aheared to.  The following conditions</i></td></tr>
+<tr><th id="11">11</th><td><i> * apply to all code found in this distribution, be it the RC4, RSA,</i></td></tr>
+<tr><th id="12">12</th><td><i> * lhash, DES, etc., code; not just the SSL code.  The SSL documentation</i></td></tr>
+<tr><th id="13">13</th><td><i> * included with this distribution is covered by the same copyright terms</i></td></tr>
+<tr><th id="14">14</th><td><i> * except that the holder is Tim Hudson (tjh@cryptsoft.com).</i></td></tr>
+<tr><th id="15">15</th><td><i> *</i></td></tr>
+<tr><th id="16">16</th><td><i> * Copyright remains Eric Young's, and as such any Copyright notices in</i></td></tr>
+<tr><th id="17">17</th><td><i> * the code are not to be removed.</i></td></tr>
+<tr><th id="18">18</th><td><i> * If this package is used in a product, Eric Young should be given attribution</i></td></tr>
+<tr><th id="19">19</th><td><i> * as the author of the parts of the library used.</i></td></tr>
+<tr><th id="20">20</th><td><i> * This can be in the form of a textual message at program startup or</i></td></tr>
+<tr><th id="21">21</th><td><i> * in documentation (online or textual) provided with the package.</i></td></tr>
+<tr><th id="22">22</th><td><i> *</i></td></tr>
+<tr><th id="23">23</th><td><i> * Redistribution and use in source and binary forms, with or without</i></td></tr>
+<tr><th id="24">24</th><td><i> * modification, are permitted provided that the following conditions</i></td></tr>
+<tr><th id="25">25</th><td><i> * are met:</i></td></tr>
+<tr><th id="26">26</th><td><i> * 1. Redistributions of source code must retain the copyright</i></td></tr>
+<tr><th id="27">27</th><td><i> *    notice, this list of conditions and the following disclaimer.</i></td></tr>
+<tr><th id="28">28</th><td><i> * 2. Redistributions in binary form must reproduce the above copyright</i></td></tr>
+<tr><th id="29">29</th><td><i> *    notice, this list of conditions and the following disclaimer in the</i></td></tr>
+<tr><th id="30">30</th><td><i> *    documentation and/or other materials provided with the distribution.</i></td></tr>
+<tr><th id="31">31</th><td><i> * 3. All advertising materials mentioning features or use of this software</i></td></tr>
+<tr><th id="32">32</th><td><i> *    must display the following acknowledgement:</i></td></tr>
+<tr><th id="33">33</th><td><i> *    "This product includes cryptographic software written by</i></td></tr>
+<tr><th id="34">34</th><td><i> *     Eric Young (eay@cryptsoft.com)"</i></td></tr>
+<tr><th id="35">35</th><td><i> *    The word 'cryptographic' can be left out if the rouines from the library</i></td></tr>
+<tr><th id="36">36</th><td><i> *    being used are not cryptographic related :-).</i></td></tr>
+<tr><th id="37">37</th><td><i> * 4. If you include any Windows specific code (or a derivative thereof) from</i></td></tr>
+<tr><th id="38">38</th><td><i> *    the apps directory (application code) you must include an acknowledgement:</i></td></tr>
+<tr><th id="39">39</th><td><i> *    "This product includes software written by Tim Hudson (tjh@cryptsoft.com)"</i></td></tr>
+<tr><th id="40">40</th><td><i> *</i></td></tr>
+<tr><th id="41">41</th><td><i> * THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND</i></td></tr>
+<tr><th id="42">42</th><td><i> * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE</i></td></tr>
+<tr><th id="43">43</th><td><i> * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE</i></td></tr>
+<tr><th id="44">44</th><td><i> * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE</i></td></tr>
+<tr><th id="45">45</th><td><i> * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL</i></td></tr>
+<tr><th id="46">46</th><td><i> * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS</i></td></tr>
+<tr><th id="47">47</th><td><i> * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)</i></td></tr>
+<tr><th id="48">48</th><td><i> * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</i></td></tr>
+<tr><th id="49">49</th><td><i> * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY</i></td></tr>
+<tr><th id="50">50</th><td><i> * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF</i></td></tr>
+<tr><th id="51">51</th><td><i> * SUCH DAMAGE.</i></td></tr>
+<tr><th id="52">52</th><td><i> *</i></td></tr>
+<tr><th id="53">53</th><td><i> * The licence and distribution terms for any publically available version or</i></td></tr>
+<tr><th id="54">54</th><td><i> * derivative of this code cannot be changed.  i.e. this code cannot simply be</i></td></tr>
+<tr><th id="55">55</th><td><i> * copied and put under another distribution licence</i></td></tr>
+<tr><th id="56">56</th><td><i> * [including the GNU Public Licence.]</i></td></tr>
+<tr><th id="57">57</th><td><i> */</i></td></tr>
+<tr><th id="58">58</th><td></td></tr>
+<tr><th id="59">59</th><td><u>#<span data-ppcond="59">ifndef</span> <span class="macro" data-ref="_M/HEADER_BIO_H">HEADER_BIO_H</span></u></td></tr>
+<tr><th id="60">60</th><td><u># define <dfn class="macro" id="_M/HEADER_BIO_H" data-ref="_M/HEADER_BIO_H">HEADER_BIO_H</dfn></u></td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td><u># include <a href="e_os2.h.html">&lt;openssl/e_os2.h&gt;</a></u></td></tr>
+<tr><th id="63">63</th><td></td></tr>
+<tr><th id="64">64</th><td><u># <span data-ppcond="64">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_FP_API">OPENSSL_NO_FP_API</span></u></td></tr>
+<tr><th id="65">65</th><td><u>#  include <a href="../stdio.h.html">&lt;stdio.h&gt;</a></u></td></tr>
+<tr><th id="66">66</th><td><u># <span data-ppcond="64">endif</span></u></td></tr>
+<tr><th id="67">67</th><td><u># include &lt;stdarg.h&gt;</u></td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td><u># include <a href="crypto.h.html">&lt;openssl/crypto.h&gt;</a></u></td></tr>
+<tr><th id="70">70</th><td></td></tr>
+<tr><th id="71">71</th><td><u># <span data-ppcond="71">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_SCTP">OPENSSL_NO_SCTP</span></u></td></tr>
+<tr><th id="72">72</th><td><u>#  <span data-ppcond="72">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_SYS_VMS">OPENSSL_SYS_VMS</span></u></td></tr>
+<tr><th id="73">73</th><td><u>#   include &lt;stdint.h&gt;</u></td></tr>
+<tr><th id="74">74</th><td><u>#  <span data-ppcond="72">else</span></u></td></tr>
+<tr><th id="75">75</th><td><u>#   include &lt;inttypes.h&gt;</u></td></tr>
+<tr><th id="76">76</th><td><u>#  <span data-ppcond="72">endif</span></u></td></tr>
+<tr><th id="77">77</th><td><u># <span data-ppcond="71">endif</span></u></td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td><u>#<span data-ppcond="79">ifdef</span>  <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="80">80</th><td><b>extern</b> <q>"C"</q> {</td></tr>
+<tr><th id="81">81</th><td><u>#<span data-ppcond="79">endif</span></u></td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td><i>/* These are the 'types' of BIOs */</i></td></tr>
+<tr><th id="84">84</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_NONE" data-ref="_M/BIO_TYPE_NONE">BIO_TYPE_NONE</dfn>           0</u></td></tr>
+<tr><th id="85">85</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_MEM" data-ref="_M/BIO_TYPE_MEM">BIO_TYPE_MEM</dfn>            (1|0x0400)</u></td></tr>
+<tr><th id="86">86</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_FILE" data-ref="_M/BIO_TYPE_FILE">BIO_TYPE_FILE</dfn>           (2|0x0400)</u></td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_FD" data-ref="_M/BIO_TYPE_FD">BIO_TYPE_FD</dfn>             (4|0x0400|0x0100)</u></td></tr>
+<tr><th id="89">89</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_SOCKET" data-ref="_M/BIO_TYPE_SOCKET">BIO_TYPE_SOCKET</dfn>         (5|0x0400|0x0100)</u></td></tr>
+<tr><th id="90">90</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_NULL" data-ref="_M/BIO_TYPE_NULL">BIO_TYPE_NULL</dfn>           (6|0x0400)</u></td></tr>
+<tr><th id="91">91</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_SSL" data-ref="_M/BIO_TYPE_SSL">BIO_TYPE_SSL</dfn>            (7|0x0200)</u></td></tr>
+<tr><th id="92">92</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_MD" data-ref="_M/BIO_TYPE_MD">BIO_TYPE_MD</dfn>             (8|0x0200)/* passive filter */</u></td></tr>
+<tr><th id="93">93</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_BUFFER" data-ref="_M/BIO_TYPE_BUFFER">BIO_TYPE_BUFFER</dfn>         (9|0x0200)/* filter */</u></td></tr>
+<tr><th id="94">94</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_CIPHER" data-ref="_M/BIO_TYPE_CIPHER">BIO_TYPE_CIPHER</dfn>         (10|0x0200)/* filter */</u></td></tr>
+<tr><th id="95">95</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_BASE64" data-ref="_M/BIO_TYPE_BASE64">BIO_TYPE_BASE64</dfn>         (11|0x0200)/* filter */</u></td></tr>
+<tr><th id="96">96</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_CONNECT" data-ref="_M/BIO_TYPE_CONNECT">BIO_TYPE_CONNECT</dfn>        (12|0x0400|0x0100)/* socket - connect */</u></td></tr>
+<tr><th id="97">97</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_ACCEPT" data-ref="_M/BIO_TYPE_ACCEPT">BIO_TYPE_ACCEPT</dfn>         (13|0x0400|0x0100)/* socket for accept */</u></td></tr>
+<tr><th id="98">98</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_PROXY_CLIENT" data-ref="_M/BIO_TYPE_PROXY_CLIENT">BIO_TYPE_PROXY_CLIENT</dfn>   (14|0x0200)/* client proxy BIO */</u></td></tr>
+<tr><th id="99">99</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_PROXY_SERVER" data-ref="_M/BIO_TYPE_PROXY_SERVER">BIO_TYPE_PROXY_SERVER</dfn>   (15|0x0200)/* server proxy BIO */</u></td></tr>
+<tr><th id="100">100</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_NBIO_TEST" data-ref="_M/BIO_TYPE_NBIO_TEST">BIO_TYPE_NBIO_TEST</dfn>      (16|0x0200)/* server proxy BIO */</u></td></tr>
+<tr><th id="101">101</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_NULL_FILTER" data-ref="_M/BIO_TYPE_NULL_FILTER">BIO_TYPE_NULL_FILTER</dfn>    (17|0x0200)</u></td></tr>
+<tr><th id="102">102</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_BER" data-ref="_M/BIO_TYPE_BER">BIO_TYPE_BER</dfn>            (18|0x0200)/* BER -&gt; bin filter */</u></td></tr>
+<tr><th id="103">103</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_BIO" data-ref="_M/BIO_TYPE_BIO">BIO_TYPE_BIO</dfn>            (19|0x0400)/* (half a) BIO pair */</u></td></tr>
+<tr><th id="104">104</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_LINEBUFFER" data-ref="_M/BIO_TYPE_LINEBUFFER">BIO_TYPE_LINEBUFFER</dfn>     (20|0x0200)/* filter */</u></td></tr>
+<tr><th id="105">105</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_DGRAM" data-ref="_M/BIO_TYPE_DGRAM">BIO_TYPE_DGRAM</dfn>          (21|0x0400|0x0100)</u></td></tr>
+<tr><th id="106">106</th><td><u># <span data-ppcond="106">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_SCTP">OPENSSL_NO_SCTP</span></u></td></tr>
+<tr><th id="107">107</th><td><u>#  define <dfn class="macro" id="_M/BIO_TYPE_DGRAM_SCTP" data-ref="_M/BIO_TYPE_DGRAM_SCTP">BIO_TYPE_DGRAM_SCTP</dfn>     (24|0x0400|0x0100)</u></td></tr>
+<tr><th id="108">108</th><td><u># <span data-ppcond="106">endif</span></u></td></tr>
+<tr><th id="109">109</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_ASN1" data-ref="_M/BIO_TYPE_ASN1">BIO_TYPE_ASN1</dfn>           (22|0x0200)/* filter */</u></td></tr>
+<tr><th id="110">110</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_COMP" data-ref="_M/BIO_TYPE_COMP">BIO_TYPE_COMP</dfn>           (23|0x0200)/* filter */</u></td></tr>
+<tr><th id="111">111</th><td></td></tr>
+<tr><th id="112">112</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_DESCRIPTOR" data-ref="_M/BIO_TYPE_DESCRIPTOR">BIO_TYPE_DESCRIPTOR</dfn>     0x0100/* socket, fd, connect or accept */</u></td></tr>
+<tr><th id="113">113</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_FILTER" data-ref="_M/BIO_TYPE_FILTER">BIO_TYPE_FILTER</dfn>         0x0200</u></td></tr>
+<tr><th id="114">114</th><td><u># define <dfn class="macro" id="_M/BIO_TYPE_SOURCE_SINK" data-ref="_M/BIO_TYPE_SOURCE_SINK">BIO_TYPE_SOURCE_SINK</dfn>    0x0400</u></td></tr>
+<tr><th id="115">115</th><td></td></tr>
+<tr><th id="116">116</th><td><i>/*</i></td></tr>
+<tr><th id="117">117</th><td><i> * BIO_FILENAME_READ|BIO_CLOSE to open or close on free.</i></td></tr>
+<tr><th id="118">118</th><td><i> * BIO_set_fp(in,stdin,BIO_NOCLOSE);</i></td></tr>
+<tr><th id="119">119</th><td><i> */</i></td></tr>
+<tr><th id="120">120</th><td><u># define <dfn class="macro" id="_M/BIO_NOCLOSE" data-ref="_M/BIO_NOCLOSE">BIO_NOCLOSE</dfn>             0x00</u></td></tr>
+<tr><th id="121">121</th><td><u># define <dfn class="macro" id="_M/BIO_CLOSE" data-ref="_M/BIO_CLOSE">BIO_CLOSE</dfn>               0x01</u></td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td><i>/*</i></td></tr>
+<tr><th id="124">124</th><td><i> * These are used in the following macros and are passed to BIO_ctrl()</i></td></tr>
+<tr><th id="125">125</th><td><i> */</i></td></tr>
+<tr><th id="126">126</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_RESET" data-ref="_M/BIO_CTRL_RESET">BIO_CTRL_RESET</dfn>          1/* opt - rewind/zero etc */</u></td></tr>
+<tr><th id="127">127</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_EOF" data-ref="_M/BIO_CTRL_EOF">BIO_CTRL_EOF</dfn>            2/* opt - are we at the eof */</u></td></tr>
+<tr><th id="128">128</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_INFO" data-ref="_M/BIO_CTRL_INFO">BIO_CTRL_INFO</dfn>           3/* opt - extra tit-bits */</u></td></tr>
+<tr><th id="129">129</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_SET" data-ref="_M/BIO_CTRL_SET">BIO_CTRL_SET</dfn>            4/* man - set the 'IO' type */</u></td></tr>
+<tr><th id="130">130</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_GET" data-ref="_M/BIO_CTRL_GET">BIO_CTRL_GET</dfn>            5/* man - get the 'IO' type */</u></td></tr>
+<tr><th id="131">131</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_PUSH" data-ref="_M/BIO_CTRL_PUSH">BIO_CTRL_PUSH</dfn>           6/* opt - internal, used to signify change */</u></td></tr>
+<tr><th id="132">132</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_POP" data-ref="_M/BIO_CTRL_POP">BIO_CTRL_POP</dfn>            7/* opt - internal, used to signify change */</u></td></tr>
+<tr><th id="133">133</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_GET_CLOSE" data-ref="_M/BIO_CTRL_GET_CLOSE">BIO_CTRL_GET_CLOSE</dfn>      8/* man - set the 'close' on free */</u></td></tr>
+<tr><th id="134">134</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_SET_CLOSE" data-ref="_M/BIO_CTRL_SET_CLOSE">BIO_CTRL_SET_CLOSE</dfn>      9/* man - set the 'close' on free */</u></td></tr>
+<tr><th id="135">135</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_PENDING" data-ref="_M/BIO_CTRL_PENDING">BIO_CTRL_PENDING</dfn>        10/* opt - is their more data buffered */</u></td></tr>
+<tr><th id="136">136</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_FLUSH" data-ref="_M/BIO_CTRL_FLUSH">BIO_CTRL_FLUSH</dfn>          11/* opt - 'flush' buffered output */</u></td></tr>
+<tr><th id="137">137</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DUP" data-ref="_M/BIO_CTRL_DUP">BIO_CTRL_DUP</dfn>            12/* man - extra stuff for 'duped' BIO */</u></td></tr>
+<tr><th id="138">138</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_WPENDING" data-ref="_M/BIO_CTRL_WPENDING">BIO_CTRL_WPENDING</dfn>       13/* opt - number of bytes still to write */</u></td></tr>
+<tr><th id="139">139</th><td><i>/* callback is int cb(BIO *bio,state,ret); */</i></td></tr>
+<tr><th id="140">140</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_SET_CALLBACK" data-ref="_M/BIO_CTRL_SET_CALLBACK">BIO_CTRL_SET_CALLBACK</dfn>   14/* opt - set callback function */</u></td></tr>
+<tr><th id="141">141</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_GET_CALLBACK" data-ref="_M/BIO_CTRL_GET_CALLBACK">BIO_CTRL_GET_CALLBACK</dfn>   15/* opt - set callback function */</u></td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_SET_FILENAME" data-ref="_M/BIO_CTRL_SET_FILENAME">BIO_CTRL_SET_FILENAME</dfn>   30/* BIO_s_file special */</u></td></tr>
+<tr><th id="144">144</th><td></td></tr>
+<tr><th id="145">145</th><td><i>/* dgram BIO stuff */</i></td></tr>
+<tr><th id="146">146</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_CONNECT" data-ref="_M/BIO_CTRL_DGRAM_CONNECT">BIO_CTRL_DGRAM_CONNECT</dfn>       31/* BIO dgram special */</u></td></tr>
+<tr><th id="147">147</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_SET_CONNECTED" data-ref="_M/BIO_CTRL_DGRAM_SET_CONNECTED">BIO_CTRL_DGRAM_SET_CONNECTED</dfn> 32/* allow for an externally connected</u></td></tr>
+<tr><th id="148">148</th><td><u>                                         * socket to be passed in */</u></td></tr>
+<tr><th id="149">149</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_SET_RECV_TIMEOUT" data-ref="_M/BIO_CTRL_DGRAM_SET_RECV_TIMEOUT">BIO_CTRL_DGRAM_SET_RECV_TIMEOUT</dfn> 33/* setsockopt, essentially */</u></td></tr>
+<tr><th id="150">150</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_GET_RECV_TIMEOUT" data-ref="_M/BIO_CTRL_DGRAM_GET_RECV_TIMEOUT">BIO_CTRL_DGRAM_GET_RECV_TIMEOUT</dfn> 34/* getsockopt, essentially */</u></td></tr>
+<tr><th id="151">151</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_SET_SEND_TIMEOUT" data-ref="_M/BIO_CTRL_DGRAM_SET_SEND_TIMEOUT">BIO_CTRL_DGRAM_SET_SEND_TIMEOUT</dfn> 35/* setsockopt, essentially */</u></td></tr>
+<tr><th id="152">152</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_GET_SEND_TIMEOUT" data-ref="_M/BIO_CTRL_DGRAM_GET_SEND_TIMEOUT">BIO_CTRL_DGRAM_GET_SEND_TIMEOUT</dfn> 36/* getsockopt, essentially */</u></td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_GET_RECV_TIMER_EXP" data-ref="_M/BIO_CTRL_DGRAM_GET_RECV_TIMER_EXP">BIO_CTRL_DGRAM_GET_RECV_TIMER_EXP</dfn> 37/* flag whether the last */</u></td></tr>
+<tr><th id="155">155</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_GET_SEND_TIMER_EXP" data-ref="_M/BIO_CTRL_DGRAM_GET_SEND_TIMER_EXP">BIO_CTRL_DGRAM_GET_SEND_TIMER_EXP</dfn> 38/* I/O operation tiemd out */</u></td></tr>
+<tr><th id="156">156</th><td></td></tr>
+<tr><th id="157">157</th><td><i>/* #ifdef IP_MTU_DISCOVER */</i></td></tr>
+<tr><th id="158">158</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_MTU_DISCOVER" data-ref="_M/BIO_CTRL_DGRAM_MTU_DISCOVER">BIO_CTRL_DGRAM_MTU_DISCOVER</dfn>       39/* set DF bit on egress packets */</u></td></tr>
+<tr><th id="159">159</th><td><i>/* #endif */</i></td></tr>
+<tr><th id="160">160</th><td></td></tr>
+<tr><th id="161">161</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_QUERY_MTU" data-ref="_M/BIO_CTRL_DGRAM_QUERY_MTU">BIO_CTRL_DGRAM_QUERY_MTU</dfn>          40/* as kernel for current MTU */</u></td></tr>
+<tr><th id="162">162</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_GET_FALLBACK_MTU" data-ref="_M/BIO_CTRL_DGRAM_GET_FALLBACK_MTU">BIO_CTRL_DGRAM_GET_FALLBACK_MTU</dfn>   47</u></td></tr>
+<tr><th id="163">163</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_GET_MTU" data-ref="_M/BIO_CTRL_DGRAM_GET_MTU">BIO_CTRL_DGRAM_GET_MTU</dfn>            41/* get cached value for MTU */</u></td></tr>
+<tr><th id="164">164</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_SET_MTU" data-ref="_M/BIO_CTRL_DGRAM_SET_MTU">BIO_CTRL_DGRAM_SET_MTU</dfn>            42/* set cached value for MTU.</u></td></tr>
+<tr><th id="165">165</th><td><u>                                              * want to use this if asking</u></td></tr>
+<tr><th id="166">166</th><td><u>                                              * the kernel fails */</u></td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_MTU_EXCEEDED" data-ref="_M/BIO_CTRL_DGRAM_MTU_EXCEEDED">BIO_CTRL_DGRAM_MTU_EXCEEDED</dfn>       43/* check whether the MTU was</u></td></tr>
+<tr><th id="169">169</th><td><u>                                              * exceed in the previous write</u></td></tr>
+<tr><th id="170">170</th><td><u>                                              * operation */</u></td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_GET_PEER" data-ref="_M/BIO_CTRL_DGRAM_GET_PEER">BIO_CTRL_DGRAM_GET_PEER</dfn>           46</u></td></tr>
+<tr><th id="173">173</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_SET_PEER" data-ref="_M/BIO_CTRL_DGRAM_SET_PEER">BIO_CTRL_DGRAM_SET_PEER</dfn>           44/* Destination for the data */</u></td></tr>
+<tr><th id="174">174</th><td></td></tr>
+<tr><th id="175">175</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_SET_NEXT_TIMEOUT" data-ref="_M/BIO_CTRL_DGRAM_SET_NEXT_TIMEOUT">BIO_CTRL_DGRAM_SET_NEXT_TIMEOUT</dfn>   45/* Next DTLS handshake timeout</u></td></tr>
+<tr><th id="176">176</th><td><u>                                              * to adjust socket timeouts */</u></td></tr>
+<tr><th id="177">177</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_SET_DONT_FRAG" data-ref="_M/BIO_CTRL_DGRAM_SET_DONT_FRAG">BIO_CTRL_DGRAM_SET_DONT_FRAG</dfn>      48</u></td></tr>
+<tr><th id="178">178</th><td></td></tr>
+<tr><th id="179">179</th><td><u># define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_GET_MTU_OVERHEAD" data-ref="_M/BIO_CTRL_DGRAM_GET_MTU_OVERHEAD">BIO_CTRL_DGRAM_GET_MTU_OVERHEAD</dfn>   49</u></td></tr>
+<tr><th id="180">180</th><td></td></tr>
+<tr><th id="181">181</th><td><u># <span data-ppcond="181">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_SCTP">OPENSSL_NO_SCTP</span></u></td></tr>
+<tr><th id="182">182</th><td><i>/* SCTP stuff */</i></td></tr>
+<tr><th id="183">183</th><td><u>#  define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_SCTP_SET_IN_HANDSHAKE" data-ref="_M/BIO_CTRL_DGRAM_SCTP_SET_IN_HANDSHAKE">BIO_CTRL_DGRAM_SCTP_SET_IN_HANDSHAKE</dfn>    50</u></td></tr>
+<tr><th id="184">184</th><td><u>#  define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_SCTP_ADD_AUTH_KEY" data-ref="_M/BIO_CTRL_DGRAM_SCTP_ADD_AUTH_KEY">BIO_CTRL_DGRAM_SCTP_ADD_AUTH_KEY</dfn>                51</u></td></tr>
+<tr><th id="185">185</th><td><u>#  define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_SCTP_NEXT_AUTH_KEY" data-ref="_M/BIO_CTRL_DGRAM_SCTP_NEXT_AUTH_KEY">BIO_CTRL_DGRAM_SCTP_NEXT_AUTH_KEY</dfn>               52</u></td></tr>
+<tr><th id="186">186</th><td><u>#  define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_SCTP_AUTH_CCS_RCVD" data-ref="_M/BIO_CTRL_DGRAM_SCTP_AUTH_CCS_RCVD">BIO_CTRL_DGRAM_SCTP_AUTH_CCS_RCVD</dfn>               53</u></td></tr>
+<tr><th id="187">187</th><td><u>#  define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_SCTP_GET_SNDINFO" data-ref="_M/BIO_CTRL_DGRAM_SCTP_GET_SNDINFO">BIO_CTRL_DGRAM_SCTP_GET_SNDINFO</dfn>         60</u></td></tr>
+<tr><th id="188">188</th><td><u>#  define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_SCTP_SET_SNDINFO" data-ref="_M/BIO_CTRL_DGRAM_SCTP_SET_SNDINFO">BIO_CTRL_DGRAM_SCTP_SET_SNDINFO</dfn>         61</u></td></tr>
+<tr><th id="189">189</th><td><u>#  define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_SCTP_GET_RCVINFO" data-ref="_M/BIO_CTRL_DGRAM_SCTP_GET_RCVINFO">BIO_CTRL_DGRAM_SCTP_GET_RCVINFO</dfn>         62</u></td></tr>
+<tr><th id="190">190</th><td><u>#  define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_SCTP_SET_RCVINFO" data-ref="_M/BIO_CTRL_DGRAM_SCTP_SET_RCVINFO">BIO_CTRL_DGRAM_SCTP_SET_RCVINFO</dfn>         63</u></td></tr>
+<tr><th id="191">191</th><td><u>#  define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_SCTP_GET_PRINFO" data-ref="_M/BIO_CTRL_DGRAM_SCTP_GET_PRINFO">BIO_CTRL_DGRAM_SCTP_GET_PRINFO</dfn>                  64</u></td></tr>
+<tr><th id="192">192</th><td><u>#  define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_SCTP_SET_PRINFO" data-ref="_M/BIO_CTRL_DGRAM_SCTP_SET_PRINFO">BIO_CTRL_DGRAM_SCTP_SET_PRINFO</dfn>                  65</u></td></tr>
+<tr><th id="193">193</th><td><u>#  define <dfn class="macro" id="_M/BIO_CTRL_DGRAM_SCTP_SAVE_SHUTDOWN" data-ref="_M/BIO_CTRL_DGRAM_SCTP_SAVE_SHUTDOWN">BIO_CTRL_DGRAM_SCTP_SAVE_SHUTDOWN</dfn>               70</u></td></tr>
+<tr><th id="194">194</th><td><u># <span data-ppcond="181">endif</span></u></td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td><i>/* modifiers */</i></td></tr>
+<tr><th id="197">197</th><td><u># define <dfn class="macro" id="_M/BIO_FP_READ" data-ref="_M/BIO_FP_READ">BIO_FP_READ</dfn>             0x02</u></td></tr>
+<tr><th id="198">198</th><td><u># define <dfn class="macro" id="_M/BIO_FP_WRITE" data-ref="_M/BIO_FP_WRITE">BIO_FP_WRITE</dfn>            0x04</u></td></tr>
+<tr><th id="199">199</th><td><u># define <dfn class="macro" id="_M/BIO_FP_APPEND" data-ref="_M/BIO_FP_APPEND">BIO_FP_APPEND</dfn>           0x08</u></td></tr>
+<tr><th id="200">200</th><td><u># define <dfn class="macro" id="_M/BIO_FP_TEXT" data-ref="_M/BIO_FP_TEXT">BIO_FP_TEXT</dfn>             0x10</u></td></tr>
+<tr><th id="201">201</th><td></td></tr>
+<tr><th id="202">202</th><td><u># define <dfn class="macro" id="_M/BIO_FLAGS_READ" data-ref="_M/BIO_FLAGS_READ">BIO_FLAGS_READ</dfn>          0x01</u></td></tr>
+<tr><th id="203">203</th><td><u># define <dfn class="macro" id="_M/BIO_FLAGS_WRITE" data-ref="_M/BIO_FLAGS_WRITE">BIO_FLAGS_WRITE</dfn>         0x02</u></td></tr>
+<tr><th id="204">204</th><td><u># define <dfn class="macro" id="_M/BIO_FLAGS_IO_SPECIAL" data-ref="_M/BIO_FLAGS_IO_SPECIAL">BIO_FLAGS_IO_SPECIAL</dfn>    0x04</u></td></tr>
+<tr><th id="205">205</th><td><u># define <dfn class="macro" id="_M/BIO_FLAGS_RWS" data-ref="_M/BIO_FLAGS_RWS">BIO_FLAGS_RWS</dfn> (BIO_FLAGS_READ|BIO_FLAGS_WRITE|BIO_FLAGS_IO_SPECIAL)</u></td></tr>
+<tr><th id="206">206</th><td><u># define <dfn class="macro" id="_M/BIO_FLAGS_SHOULD_RETRY" data-ref="_M/BIO_FLAGS_SHOULD_RETRY">BIO_FLAGS_SHOULD_RETRY</dfn>  0x08</u></td></tr>
+<tr><th id="207">207</th><td><u># <span data-ppcond="207">ifndef</span> <span class="macro" data-ref="_M/BIO_FLAGS_UPLINK">BIO_FLAGS_UPLINK</span></u></td></tr>
+<tr><th id="208">208</th><td><i>/*</i></td></tr>
+<tr><th id="209">209</th><td><i> * "UPLINK" flag denotes file descriptors provided by application. It</i></td></tr>
+<tr><th id="210">210</th><td><i> * defaults to 0, as most platforms don't require UPLINK interface.</i></td></tr>
+<tr><th id="211">211</th><td><i> */</i></td></tr>
+<tr><th id="212">212</th><td><u>#  define <dfn class="macro" id="_M/BIO_FLAGS_UPLINK" data-ref="_M/BIO_FLAGS_UPLINK">BIO_FLAGS_UPLINK</dfn>        0</u></td></tr>
+<tr><th id="213">213</th><td><u># <span data-ppcond="207">endif</span></u></td></tr>
+<tr><th id="214">214</th><td></td></tr>
+<tr><th id="215">215</th><td><i>/* Used in BIO_gethostbyname() */</i></td></tr>
+<tr><th id="216">216</th><td><u># define <dfn class="macro" id="_M/BIO_GHBN_CTRL_HITS" data-ref="_M/BIO_GHBN_CTRL_HITS">BIO_GHBN_CTRL_HITS</dfn>              1</u></td></tr>
+<tr><th id="217">217</th><td><u># define <dfn class="macro" id="_M/BIO_GHBN_CTRL_MISSES" data-ref="_M/BIO_GHBN_CTRL_MISSES">BIO_GHBN_CTRL_MISSES</dfn>            2</u></td></tr>
+<tr><th id="218">218</th><td><u># define <dfn class="macro" id="_M/BIO_GHBN_CTRL_CACHE_SIZE" data-ref="_M/BIO_GHBN_CTRL_CACHE_SIZE">BIO_GHBN_CTRL_CACHE_SIZE</dfn>        3</u></td></tr>
+<tr><th id="219">219</th><td><u># define <dfn class="macro" id="_M/BIO_GHBN_CTRL_GET_ENTRY" data-ref="_M/BIO_GHBN_CTRL_GET_ENTRY">BIO_GHBN_CTRL_GET_ENTRY</dfn>         4</u></td></tr>
+<tr><th id="220">220</th><td><u># define <dfn class="macro" id="_M/BIO_GHBN_CTRL_FLUSH" data-ref="_M/BIO_GHBN_CTRL_FLUSH">BIO_GHBN_CTRL_FLUSH</dfn>             5</u></td></tr>
+<tr><th id="221">221</th><td></td></tr>
+<tr><th id="222">222</th><td><i>/* Mostly used in the SSL BIO */</i></td></tr>
+<tr><th id="223">223</th><td><i>/*-</i></td></tr>
+<tr><th id="224">224</th><td><i> * Not used anymore</i></td></tr>
+<tr><th id="225">225</th><td><i> * #define BIO_FLAGS_PROTOCOL_DELAYED_READ 0x10</i></td></tr>
+<tr><th id="226">226</th><td><i> * #define BIO_FLAGS_PROTOCOL_DELAYED_WRITE 0x20</i></td></tr>
+<tr><th id="227">227</th><td><i> * #define BIO_FLAGS_PROTOCOL_STARTUP   0x40</i></td></tr>
+<tr><th id="228">228</th><td><i> */</i></td></tr>
+<tr><th id="229">229</th><td></td></tr>
+<tr><th id="230">230</th><td><u># define <dfn class="macro" id="_M/BIO_FLAGS_BASE64_NO_NL" data-ref="_M/BIO_FLAGS_BASE64_NO_NL">BIO_FLAGS_BASE64_NO_NL</dfn>  0x100</u></td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td><i>/*</i></td></tr>
+<tr><th id="233">233</th><td><i> * This is used with memory BIOs: it means we shouldn't free up or change the</i></td></tr>
+<tr><th id="234">234</th><td><i> * data in any way.</i></td></tr>
+<tr><th id="235">235</th><td><i> */</i></td></tr>
+<tr><th id="236">236</th><td><u># define <dfn class="macro" id="_M/BIO_FLAGS_MEM_RDONLY" data-ref="_M/BIO_FLAGS_MEM_RDONLY">BIO_FLAGS_MEM_RDONLY</dfn>    0x200</u></td></tr>
+<tr><th id="237">237</th><td></td></tr>
+<tr><th id="238">238</th><td><b>typedef</b> <b>struct</b> <a class="type" href="#bio_st" title='bio_st' data-ref="bio_st">bio_st</a> <dfn class="typedef" id="BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</dfn>;</td></tr>
+<tr><th id="239">239</th><td></td></tr>
+<tr><th id="240">240</th><td><em>void</em> <dfn class="decl fn" id="BIO_set_flags" title='BIO_set_flags' data-ref="BIO_set_flags">BIO_set_flags</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col2 decl" id="242b" title='b' data-type='BIO *' data-ref="242b">b</dfn>, <em>int</em> <dfn class="local col3 decl" id="243flags" title='flags' data-type='int' data-ref="243flags">flags</dfn>);</td></tr>
+<tr><th id="241">241</th><td><em>int</em> <dfn class="decl fn" id="BIO_test_flags" title='BIO_test_flags' data-ref="BIO_test_flags">BIO_test_flags</dfn>(<em>const</em> <a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col4 decl" id="244b" title='b' data-type='const BIO *' data-ref="244b">b</dfn>, <em>int</em> <dfn class="local col5 decl" id="245flags" title='flags' data-type='int' data-ref="245flags">flags</dfn>);</td></tr>
+<tr><th id="242">242</th><td><em>void</em> <dfn class="decl fn" id="BIO_clear_flags" title='BIO_clear_flags' data-ref="BIO_clear_flags">BIO_clear_flags</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col6 decl" id="246b" title='b' data-type='BIO *' data-ref="246b">b</dfn>, <em>int</em> <dfn class="local col7 decl" id="247flags" title='flags' data-type='int' data-ref="247flags">flags</dfn>);</td></tr>
+<tr><th id="243">243</th><td></td></tr>
+<tr><th id="244">244</th><td><u># define <dfn class="macro" id="_M/BIO_get_flags" data-ref="_M/BIO_get_flags">BIO_get_flags</dfn>(b) BIO_test_flags(b, ~(0x0))</u></td></tr>
+<tr><th id="245">245</th><td><u># define <dfn class="macro" id="_M/BIO_set_retry_special" data-ref="_M/BIO_set_retry_special">BIO_set_retry_special</dfn>(b) \</u></td></tr>
+<tr><th id="246">246</th><td><u>                BIO_set_flags(b, (BIO_FLAGS_IO_SPECIAL|BIO_FLAGS_SHOULD_RETRY))</u></td></tr>
+<tr><th id="247">247</th><td><u># define <dfn class="macro" id="_M/BIO_set_retry_read" data-ref="_M/BIO_set_retry_read">BIO_set_retry_read</dfn>(b) \</u></td></tr>
+<tr><th id="248">248</th><td><u>                BIO_set_flags(b, (BIO_FLAGS_READ|BIO_FLAGS_SHOULD_RETRY))</u></td></tr>
+<tr><th id="249">249</th><td><u># define <dfn class="macro" id="_M/BIO_set_retry_write" data-ref="_M/BIO_set_retry_write">BIO_set_retry_write</dfn>(b) \</u></td></tr>
+<tr><th id="250">250</th><td><u>                BIO_set_flags(b, (BIO_FLAGS_WRITE|BIO_FLAGS_SHOULD_RETRY))</u></td></tr>
+<tr><th id="251">251</th><td></td></tr>
+<tr><th id="252">252</th><td><i>/* These are normally used internally in BIOs */</i></td></tr>
+<tr><th id="253">253</th><td><u># define <dfn class="macro" id="_M/BIO_clear_retry_flags" data-ref="_M/BIO_clear_retry_flags">BIO_clear_retry_flags</dfn>(b) \</u></td></tr>
+<tr><th id="254">254</th><td><u>                BIO_clear_flags(b, (BIO_FLAGS_RWS|BIO_FLAGS_SHOULD_RETRY))</u></td></tr>
+<tr><th id="255">255</th><td><u># define <dfn class="macro" id="_M/BIO_get_retry_flags" data-ref="_M/BIO_get_retry_flags">BIO_get_retry_flags</dfn>(b) \</u></td></tr>
+<tr><th id="256">256</th><td><u>                BIO_test_flags(b, (BIO_FLAGS_RWS|BIO_FLAGS_SHOULD_RETRY))</u></td></tr>
+<tr><th id="257">257</th><td></td></tr>
+<tr><th id="258">258</th><td><i>/* These should be used by the application to tell why we should retry */</i></td></tr>
+<tr><th id="259">259</th><td><u># define <dfn class="macro" id="_M/BIO_should_read" data-ref="_M/BIO_should_read">BIO_should_read</dfn>(a)              BIO_test_flags(a, BIO_FLAGS_READ)</u></td></tr>
+<tr><th id="260">260</th><td><u># define <dfn class="macro" id="_M/BIO_should_write" data-ref="_M/BIO_should_write">BIO_should_write</dfn>(a)             BIO_test_flags(a, BIO_FLAGS_WRITE)</u></td></tr>
+<tr><th id="261">261</th><td><u># define <dfn class="macro" id="_M/BIO_should_io_special" data-ref="_M/BIO_should_io_special">BIO_should_io_special</dfn>(a)        BIO_test_flags(a, BIO_FLAGS_IO_SPECIAL)</u></td></tr>
+<tr><th id="262">262</th><td><u># define <dfn class="macro" id="_M/BIO_retry_type" data-ref="_M/BIO_retry_type">BIO_retry_type</dfn>(a)               BIO_test_flags(a, BIO_FLAGS_RWS)</u></td></tr>
+<tr><th id="263">263</th><td><u># define <dfn class="macro" id="_M/BIO_should_retry" data-ref="_M/BIO_should_retry">BIO_should_retry</dfn>(a)             BIO_test_flags(a, BIO_FLAGS_SHOULD_RETRY)</u></td></tr>
+<tr><th id="264">264</th><td></td></tr>
+<tr><th id="265">265</th><td><i>/*</i></td></tr>
+<tr><th id="266">266</th><td><i> * The next three are used in conjunction with the BIO_should_io_special()</i></td></tr>
+<tr><th id="267">267</th><td><i> * condition.  After this returns true, BIO *BIO_get_retry_BIO(BIO *bio, int</i></td></tr>
+<tr><th id="268">268</th><td><i> * *reason); will walk the BIO stack and return the 'reason' for the special</i></td></tr>
+<tr><th id="269">269</th><td><i> * and the offending BIO. Given a BIO, BIO_get_retry_reason(bio) will return</i></td></tr>
+<tr><th id="270">270</th><td><i> * the code.</i></td></tr>
+<tr><th id="271">271</th><td><i> */</i></td></tr>
+<tr><th id="272">272</th><td><i>/*</i></td></tr>
+<tr><th id="273">273</th><td><i> * Returned from the SSL bio when the certificate retrieval code had an error</i></td></tr>
+<tr><th id="274">274</th><td><i> */</i></td></tr>
+<tr><th id="275">275</th><td><u># define <dfn class="macro" id="_M/BIO_RR_SSL_X509_LOOKUP" data-ref="_M/BIO_RR_SSL_X509_LOOKUP">BIO_RR_SSL_X509_LOOKUP</dfn>          0x01</u></td></tr>
+<tr><th id="276">276</th><td><i>/* Returned from the connect BIO when a connect would have blocked */</i></td></tr>
+<tr><th id="277">277</th><td><u># define <dfn class="macro" id="_M/BIO_RR_CONNECT" data-ref="_M/BIO_RR_CONNECT">BIO_RR_CONNECT</dfn>                  0x02</u></td></tr>
+<tr><th id="278">278</th><td><i>/* Returned from the accept BIO when an accept would have blocked */</i></td></tr>
+<tr><th id="279">279</th><td><u># define <dfn class="macro" id="_M/BIO_RR_ACCEPT" data-ref="_M/BIO_RR_ACCEPT">BIO_RR_ACCEPT</dfn>                   0x03</u></td></tr>
+<tr><th id="280">280</th><td></td></tr>
+<tr><th id="281">281</th><td><i>/* These are passed by the BIO callback */</i></td></tr>
+<tr><th id="282">282</th><td><u># define <dfn class="macro" id="_M/BIO_CB_FREE" data-ref="_M/BIO_CB_FREE">BIO_CB_FREE</dfn>     0x01</u></td></tr>
+<tr><th id="283">283</th><td><u># define <dfn class="macro" id="_M/BIO_CB_READ" data-ref="_M/BIO_CB_READ">BIO_CB_READ</dfn>     0x02</u></td></tr>
+<tr><th id="284">284</th><td><u># define <dfn class="macro" id="_M/BIO_CB_WRITE" data-ref="_M/BIO_CB_WRITE">BIO_CB_WRITE</dfn>    0x03</u></td></tr>
+<tr><th id="285">285</th><td><u># define <dfn class="macro" id="_M/BIO_CB_PUTS" data-ref="_M/BIO_CB_PUTS">BIO_CB_PUTS</dfn>     0x04</u></td></tr>
+<tr><th id="286">286</th><td><u># define <dfn class="macro" id="_M/BIO_CB_GETS" data-ref="_M/BIO_CB_GETS">BIO_CB_GETS</dfn>     0x05</u></td></tr>
+<tr><th id="287">287</th><td><u># define <dfn class="macro" id="_M/BIO_CB_CTRL" data-ref="_M/BIO_CB_CTRL">BIO_CB_CTRL</dfn>     0x06</u></td></tr>
+<tr><th id="288">288</th><td></td></tr>
+<tr><th id="289">289</th><td><i>/*</i></td></tr>
+<tr><th id="290">290</th><td><i> * The callback is called before and after the underling operation, The</i></td></tr>
+<tr><th id="291">291</th><td><i> * BIO_CB_RETURN flag indicates if it is after the call</i></td></tr>
+<tr><th id="292">292</th><td><i> */</i></td></tr>
+<tr><th id="293">293</th><td><u># define <dfn class="macro" id="_M/BIO_CB_RETURN" data-ref="_M/BIO_CB_RETURN">BIO_CB_RETURN</dfn>   0x80</u></td></tr>
+<tr><th id="294">294</th><td><u># define <dfn class="macro" id="_M/BIO_CB_return" data-ref="_M/BIO_CB_return">BIO_CB_return</dfn>(a) ((a)|BIO_CB_RETURN)</u></td></tr>
+<tr><th id="295">295</th><td><u># define <dfn class="macro" id="_M/BIO_cb_pre" data-ref="_M/BIO_cb_pre">BIO_cb_pre</dfn>(a)   (!((a)&amp;BIO_CB_RETURN))</u></td></tr>
+<tr><th id="296">296</th><td><u># define <dfn class="macro" id="_M/BIO_cb_post" data-ref="_M/BIO_cb_post">BIO_cb_post</dfn>(a)  ((a)&amp;BIO_CB_RETURN)</u></td></tr>
+<tr><th id="297">297</th><td></td></tr>
+<tr><th id="298">298</th><td><em>long</em> (*<dfn class="decl fn" id="BIO_get_callback" title='BIO_get_callback' data-ref="BIO_get_callback">BIO_get_callback</dfn>(<em>const</em> <a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col8 decl" id="248b" title='b' data-type='const BIO *' data-ref="248b">b</dfn>)) (<b>struct</b> <a class="type" href="#bio_st" title='bio_st' data-ref="bio_st">bio_st</a> *, <em>int</em>, <em>const</em> <em>char</em> *,</td></tr>
+<tr><th id="299">299</th><td>                                        <em>int</em>, <em>long</em>, <em>long</em>);</td></tr>
+<tr><th id="300">300</th><td><em>void</em> <dfn class="decl fn" id="BIO_set_callback" title='BIO_set_callback' data-ref="BIO_set_callback">BIO_set_callback</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col9 decl" id="249b" title='b' data-type='BIO *' data-ref="249b">b</dfn>,</td></tr>
+<tr><th id="301">301</th><td>                      <em>long</em> (*<dfn class="local col0 decl" id="250callback" title='callback' data-type='long (*)(struct bio_st *, int, const char *, int, long, long)' data-ref="250callback">callback</dfn>) (<b>struct</b> <a class="type" href="#bio_st" title='bio_st' data-ref="bio_st">bio_st</a> *, <em>int</em>, <em>const</em> <em>char</em> *,</td></tr>
+<tr><th id="302">302</th><td>                                        <em>int</em>, <em>long</em>, <em>long</em>));</td></tr>
+<tr><th id="303">303</th><td><em>char</em> *<dfn class="decl fn" id="BIO_get_callback_arg" title='BIO_get_callback_arg' data-ref="BIO_get_callback_arg">BIO_get_callback_arg</dfn>(<em>const</em> <a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col1 decl" id="251b" title='b' data-type='const BIO *' data-ref="251b">b</dfn>);</td></tr>
+<tr><th id="304">304</th><td><em>void</em> <dfn class="decl fn" id="BIO_set_callback_arg" title='BIO_set_callback_arg' data-ref="BIO_set_callback_arg">BIO_set_callback_arg</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col2 decl" id="252b" title='b' data-type='BIO *' data-ref="252b">b</dfn>, <em>char</em> *<dfn class="local col3 decl" id="253arg" title='arg' data-type='char *' data-ref="253arg">arg</dfn>);</td></tr>
+<tr><th id="305">305</th><td></td></tr>
+<tr><th id="306">306</th><td><em>const</em> <em>char</em> *<dfn class="decl fn" id="BIO_method_name" title='BIO_method_name' data-ref="BIO_method_name">BIO_method_name</dfn>(<em>const</em> <a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col4 decl" id="254b" title='b' data-type='const BIO *' data-ref="254b">b</dfn>);</td></tr>
+<tr><th id="307">307</th><td><em>int</em> <dfn class="decl fn" id="BIO_method_type" title='BIO_method_type' data-ref="BIO_method_type">BIO_method_type</dfn>(<em>const</em> <a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col5 decl" id="255b" title='b' data-type='const BIO *' data-ref="255b">b</dfn>);</td></tr>
+<tr><th id="308">308</th><td></td></tr>
+<tr><th id="309">309</th><td><b>typedef</b> <em>void</em> <dfn class="typedef" id="bio_info_cb" title='bio_info_cb' data-type='void (struct bio_st *, int, const char *, int, long, long)' data-ref="bio_info_cb">bio_info_cb</dfn> (<b>struct</b> <a class="type" href="#bio_st" title='bio_st' data-ref="bio_st">bio_st</a> *, <em>int</em>, <em>const</em> <em>char</em> *, <em>int</em>, <em>long</em>,</td></tr>
+<tr><th id="310">310</th><td>                          <em>long</em>);</td></tr>
+<tr><th id="311">311</th><td></td></tr>
+<tr><th id="312">312</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="bio_method_st" title='bio_method_st' data-ref="bio_method_st"><a class="type" href="#bio_method_st" title='bio_method_st' data-ref="bio_method_st">bio_method_st</a></dfn> {</td></tr>
+<tr><th id="313">313</th><td>    <em>int</em> <dfn class="decl field" id="bio_method_st::type" title='bio_method_st::type' data-ref="bio_method_st::type">type</dfn>;</td></tr>
+<tr><th id="314">314</th><td>    <em>const</em> <em>char</em> *<dfn class="decl field" id="bio_method_st::name" title='bio_method_st::name' data-ref="bio_method_st::name">name</dfn>;</td></tr>
+<tr><th id="315">315</th><td>    <em>int</em> (*<dfn class="decl field" id="bio_method_st::bwrite" title='bio_method_st::bwrite' data-ref="bio_method_st::bwrite">bwrite</dfn>) (<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *, <em>const</em> <em>char</em> *, <em>int</em>);</td></tr>
+<tr><th id="316">316</th><td>    <em>int</em> (*<dfn class="decl field" id="bio_method_st::bread" title='bio_method_st::bread' data-ref="bio_method_st::bread">bread</dfn>) (<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *, <em>char</em> *, <em>int</em>);</td></tr>
+<tr><th id="317">317</th><td>    <em>int</em> (*<dfn class="decl field" id="bio_method_st::bputs" title='bio_method_st::bputs' data-ref="bio_method_st::bputs">bputs</dfn>) (<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *, <em>const</em> <em>char</em> *);</td></tr>
+<tr><th id="318">318</th><td>    <em>int</em> (*<dfn class="decl field" id="bio_method_st::bgets" title='bio_method_st::bgets' data-ref="bio_method_st::bgets">bgets</dfn>) (<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *, <em>char</em> *, <em>int</em>);</td></tr>
+<tr><th id="319">319</th><td>    <em>long</em> (*<dfn class="decl field" id="bio_method_st::ctrl" title='bio_method_st::ctrl' data-ref="bio_method_st::ctrl">ctrl</dfn>) (<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *, <em>int</em>, <em>long</em>, <em>void</em> *);</td></tr>
+<tr><th id="320">320</th><td>    <em>int</em> (*<dfn class="decl field" id="bio_method_st::create" title='bio_method_st::create' data-ref="bio_method_st::create">create</dfn>) (<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *);</td></tr>
+<tr><th id="321">321</th><td>    <em>int</em> (*<dfn class="decl field" id="bio_method_st::destroy" title='bio_method_st::destroy' data-ref="bio_method_st::destroy">destroy</dfn>) (<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *);</td></tr>
+<tr><th id="322">322</th><td>    <em>long</em> (*<dfn class="decl field" id="bio_method_st::callback_ctrl" title='bio_method_st::callback_ctrl' data-ref="bio_method_st::callback_ctrl">callback_ctrl</dfn>) (<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *, <em>int</em>, <a class="typedef" href="#bio_info_cb" title='bio_info_cb' data-type='void (struct bio_st *, int, const char *, int, long, long)' data-ref="bio_info_cb">bio_info_cb</a> *);</td></tr>
+<tr><th id="323">323</th><td>} <dfn class="typedef" id="BIO_METHOD" title='BIO_METHOD' data-type='struct bio_method_st' data-ref="BIO_METHOD">BIO_METHOD</dfn>;</td></tr>
+<tr><th id="324">324</th><td></td></tr>
+<tr><th id="325">325</th><td><b>struct</b> <dfn class="type def" id="bio_st" title='bio_st' data-ref="bio_st">bio_st</dfn> {</td></tr>
+<tr><th id="326">326</th><td>    <a class="typedef" href="#BIO_METHOD" title='BIO_METHOD' data-type='struct bio_method_st' data-ref="BIO_METHOD">BIO_METHOD</a> *<dfn class="decl field" id="bio_st::method" title='bio_st::method' data-ref="bio_st::method">method</dfn>;</td></tr>
+<tr><th id="327">327</th><td>    <i>/* bio, mode, argp, argi, argl, ret */</i></td></tr>
+<tr><th id="328">328</th><td>    <em>long</em> (*<dfn class="decl field" id="bio_st::callback" title='bio_st::callback' data-ref="bio_st::callback">callback</dfn>) (<b>struct</b> <a class="type" href="#bio_st" title='bio_st' data-ref="bio_st">bio_st</a> *, <em>int</em>, <em>const</em> <em>char</em> *, <em>int</em>, <em>long</em>, <em>long</em>);</td></tr>
+<tr><th id="329">329</th><td>    <em>char</em> *<dfn class="decl field" id="bio_st::cb_arg" title='bio_st::cb_arg' data-ref="bio_st::cb_arg">cb_arg</dfn>;               <i>/* first argument for the callback */</i></td></tr>
+<tr><th id="330">330</th><td>    <em>int</em> <dfn class="decl field" id="bio_st::init" title='bio_st::init' data-ref="bio_st::init">init</dfn>;</td></tr>
+<tr><th id="331">331</th><td>    <em>int</em> <dfn class="decl field" id="bio_st::shutdown" title='bio_st::shutdown' data-ref="bio_st::shutdown">shutdown</dfn>;</td></tr>
+<tr><th id="332">332</th><td>    <em>int</em> <dfn class="decl field" id="bio_st::flags" title='bio_st::flags' data-ref="bio_st::flags">flags</dfn>;                  <i>/* extra storage */</i></td></tr>
+<tr><th id="333">333</th><td>    <em>int</em> <dfn class="decl field" id="bio_st::retry_reason" title='bio_st::retry_reason' data-ref="bio_st::retry_reason">retry_reason</dfn>;</td></tr>
+<tr><th id="334">334</th><td>    <em>int</em> <dfn class="decl field" id="bio_st::num" title='bio_st::num' data-ref="bio_st::num">num</dfn>;</td></tr>
+<tr><th id="335">335</th><td>    <em>void</em> *<dfn class="decl field" id="bio_st::ptr" title='bio_st::ptr' data-ref="bio_st::ptr">ptr</dfn>;</td></tr>
+<tr><th id="336">336</th><td>    <b>struct</b> <a class="type" href="#bio_st" title='bio_st' data-ref="bio_st">bio_st</a> *<dfn class="decl field" id="bio_st::next_bio" title='bio_st::next_bio' data-ref="bio_st::next_bio">next_bio</dfn>;    <i>/* used by filter BIOs */</i></td></tr>
+<tr><th id="337">337</th><td>    <b>struct</b> <a class="type" href="#bio_st" title='bio_st' data-ref="bio_st">bio_st</a> *<dfn class="decl field" id="bio_st::prev_bio" title='bio_st::prev_bio' data-ref="bio_st::prev_bio">prev_bio</dfn>;    <i>/* used by filter BIOs */</i></td></tr>
+<tr><th id="338">338</th><td>    <em>int</em> <dfn class="decl field" id="bio_st::references" title='bio_st::references' data-ref="bio_st::references">references</dfn>;</td></tr>
+<tr><th id="339">339</th><td>    <em>unsigned</em> <em>long</em> <dfn class="decl field" id="bio_st::num_read" title='bio_st::num_read' data-ref="bio_st::num_read">num_read</dfn>;</td></tr>
+<tr><th id="340">340</th><td>    <em>unsigned</em> <em>long</em> <dfn class="decl field" id="bio_st::num_write" title='bio_st::num_write' data-ref="bio_st::num_write">num_write</dfn>;</td></tr>
+<tr><th id="341">341</th><td>    <a class="typedef" href="ossl_typ.h.html#CRYPTO_EX_DATA" title='CRYPTO_EX_DATA' data-type='struct crypto_ex_data_st' data-ref="CRYPTO_EX_DATA">CRYPTO_EX_DATA</a> <dfn class="decl field" id="bio_st::ex_data" title='bio_st::ex_data' data-ref="bio_st::ex_data">ex_data</dfn>;</td></tr>
+<tr><th id="342">342</th><td>};</td></tr>
+<tr><th id="343">343</th><td></td></tr>
+<tr><th id="344">344</th><td><a class="macro" href="safestack.h.html#91" title="struct stack_st_BIO { _STACK stack; };" data-ref="_M/DECLARE_STACK_OF">DECLARE_STACK_OF</a>(BIO)</td></tr>
+<tr><th id="345">345</th><td></td></tr>
+<tr><th id="346">346</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="bio_f_buffer_ctx_struct" title='bio_f_buffer_ctx_struct' data-ref="bio_f_buffer_ctx_struct"><a class="type" href="#bio_f_buffer_ctx_struct" title='bio_f_buffer_ctx_struct' data-ref="bio_f_buffer_ctx_struct">bio_f_buffer_ctx_struct</a></dfn> {</td></tr>
+<tr><th id="347">347</th><td>    <i>/*-</i></td></tr>
+<tr><th id="348">348</th><td><i>     * Buffers are setup like this:</i></td></tr>
+<tr><th id="349">349</th><td><i>     *</i></td></tr>
+<tr><th id="350">350</th><td><i>     * &lt;---------------------- size -----------------------&gt;</i></td></tr>
+<tr><th id="351">351</th><td><i>     * +---------------------------------------------------+</i></td></tr>
+<tr><th id="352">352</th><td><i>     * | consumed | remaining          | free space        |</i></td></tr>
+<tr><th id="353">353</th><td><i>     * +---------------------------------------------------+</i></td></tr>
+<tr><th id="354">354</th><td><i>     * &lt;-- off --&gt;&lt;------- len -------&gt;</i></td></tr>
+<tr><th id="355">355</th><td><i>     */</i></td></tr>
+<tr><th id="356">356</th><td>    <i>/*- BIO *bio; */</i><i>/*</i></td></tr>
+<tr><th id="357">357</th><td><i>     * this is now in the BIO struct</i></td></tr>
+<tr><th id="358">358</th><td><i>     */</i></td></tr>
+<tr><th id="359">359</th><td>    <em>int</em> <dfn class="decl field" id="bio_f_buffer_ctx_struct::ibuf_size" title='bio_f_buffer_ctx_struct::ibuf_size' data-ref="bio_f_buffer_ctx_struct::ibuf_size">ibuf_size</dfn>;              <i>/* how big is the input buffer */</i></td></tr>
+<tr><th id="360">360</th><td>    <em>int</em> <dfn class="decl field" id="bio_f_buffer_ctx_struct::obuf_size" title='bio_f_buffer_ctx_struct::obuf_size' data-ref="bio_f_buffer_ctx_struct::obuf_size">obuf_size</dfn>;              <i>/* how big is the output buffer */</i></td></tr>
+<tr><th id="361">361</th><td>    <em>char</em> *<dfn class="decl field" id="bio_f_buffer_ctx_struct::ibuf" title='bio_f_buffer_ctx_struct::ibuf' data-ref="bio_f_buffer_ctx_struct::ibuf">ibuf</dfn>;                 <i>/* the char array */</i></td></tr>
+<tr><th id="362">362</th><td>    <em>int</em> <dfn class="decl field" id="bio_f_buffer_ctx_struct::ibuf_len" title='bio_f_buffer_ctx_struct::ibuf_len' data-ref="bio_f_buffer_ctx_struct::ibuf_len">ibuf_len</dfn>;               <i>/* how many bytes are in it */</i></td></tr>
+<tr><th id="363">363</th><td>    <em>int</em> <dfn class="decl field" id="bio_f_buffer_ctx_struct::ibuf_off" title='bio_f_buffer_ctx_struct::ibuf_off' data-ref="bio_f_buffer_ctx_struct::ibuf_off">ibuf_off</dfn>;               <i>/* write/read offset */</i></td></tr>
+<tr><th id="364">364</th><td>    <em>char</em> *<dfn class="decl field" id="bio_f_buffer_ctx_struct::obuf" title='bio_f_buffer_ctx_struct::obuf' data-ref="bio_f_buffer_ctx_struct::obuf">obuf</dfn>;                 <i>/* the char array */</i></td></tr>
+<tr><th id="365">365</th><td>    <em>int</em> <dfn class="decl field" id="bio_f_buffer_ctx_struct::obuf_len" title='bio_f_buffer_ctx_struct::obuf_len' data-ref="bio_f_buffer_ctx_struct::obuf_len">obuf_len</dfn>;               <i>/* how many bytes are in it */</i></td></tr>
+<tr><th id="366">366</th><td>    <em>int</em> <dfn class="decl field" id="bio_f_buffer_ctx_struct::obuf_off" title='bio_f_buffer_ctx_struct::obuf_off' data-ref="bio_f_buffer_ctx_struct::obuf_off">obuf_off</dfn>;               <i>/* write/read offset */</i></td></tr>
+<tr><th id="367">367</th><td>} <dfn class="typedef" id="BIO_F_BUFFER_CTX" title='BIO_F_BUFFER_CTX' data-type='struct bio_f_buffer_ctx_struct' data-ref="BIO_F_BUFFER_CTX">BIO_F_BUFFER_CTX</dfn>;</td></tr>
+<tr><th id="368">368</th><td></td></tr>
+<tr><th id="369">369</th><td><i>/* Prefix and suffix callback in ASN1 BIO */</i></td></tr>
+<tr><th id="370">370</th><td><b>typedef</b> <em>int</em> <dfn class="typedef" id="asn1_ps_func" title='asn1_ps_func' data-type='int (BIO *, unsigned char **, int *, void *)' data-ref="asn1_ps_func">asn1_ps_func</dfn> (<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col6 decl" id="256b" title='b' data-type='BIO *' data-ref="256b">b</dfn>, <em>unsigned</em> <em>char</em> **<dfn class="local col7 decl" id="257pbuf" title='pbuf' data-type='unsigned char **' data-ref="257pbuf">pbuf</dfn>, <em>int</em> *<dfn class="local col8 decl" id="258plen" title='plen' data-type='int *' data-ref="258plen">plen</dfn>,</td></tr>
+<tr><th id="371">371</th><td>                          <em>void</em> *<dfn class="local col9 decl" id="259parg" title='parg' data-type='void *' data-ref="259parg">parg</dfn>);</td></tr>
+<tr><th id="372">372</th><td></td></tr>
+<tr><th id="373">373</th><td><u># <span data-ppcond="373">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_SCTP">OPENSSL_NO_SCTP</span></u></td></tr>
+<tr><th id="374">374</th><td><i>/* SCTP parameter structs */</i></td></tr>
+<tr><th id="375">375</th><td><b>struct</b> <dfn class="type def" id="bio_dgram_sctp_sndinfo" title='bio_dgram_sctp_sndinfo' data-ref="bio_dgram_sctp_sndinfo">bio_dgram_sctp_sndinfo</dfn> {</td></tr>
+<tr><th id="376">376</th><td>    <a class="typedef" href="../stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="bio_dgram_sctp_sndinfo::snd_sid" title='bio_dgram_sctp_sndinfo::snd_sid' data-ref="bio_dgram_sctp_sndinfo::snd_sid">snd_sid</dfn>;</td></tr>
+<tr><th id="377">377</th><td>    <a class="typedef" href="../stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="bio_dgram_sctp_sndinfo::snd_flags" title='bio_dgram_sctp_sndinfo::snd_flags' data-ref="bio_dgram_sctp_sndinfo::snd_flags">snd_flags</dfn>;</td></tr>
+<tr><th id="378">378</th><td>    <a class="typedef" href="../stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="bio_dgram_sctp_sndinfo::snd_ppid" title='bio_dgram_sctp_sndinfo::snd_ppid' data-ref="bio_dgram_sctp_sndinfo::snd_ppid">snd_ppid</dfn>;</td></tr>
+<tr><th id="379">379</th><td>    <a class="typedef" href="../stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="bio_dgram_sctp_sndinfo::snd_context" title='bio_dgram_sctp_sndinfo::snd_context' data-ref="bio_dgram_sctp_sndinfo::snd_context">snd_context</dfn>;</td></tr>
+<tr><th id="380">380</th><td>};</td></tr>
+<tr><th id="381">381</th><td></td></tr>
+<tr><th id="382">382</th><td><b>struct</b> <dfn class="type def" id="bio_dgram_sctp_rcvinfo" title='bio_dgram_sctp_rcvinfo' data-ref="bio_dgram_sctp_rcvinfo">bio_dgram_sctp_rcvinfo</dfn> {</td></tr>
+<tr><th id="383">383</th><td>    <a class="typedef" href="../stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="bio_dgram_sctp_rcvinfo::rcv_sid" title='bio_dgram_sctp_rcvinfo::rcv_sid' data-ref="bio_dgram_sctp_rcvinfo::rcv_sid">rcv_sid</dfn>;</td></tr>
+<tr><th id="384">384</th><td>    <a class="typedef" href="../stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="bio_dgram_sctp_rcvinfo::rcv_ssn" title='bio_dgram_sctp_rcvinfo::rcv_ssn' data-ref="bio_dgram_sctp_rcvinfo::rcv_ssn">rcv_ssn</dfn>;</td></tr>
+<tr><th id="385">385</th><td>    <a class="typedef" href="../stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="bio_dgram_sctp_rcvinfo::rcv_flags" title='bio_dgram_sctp_rcvinfo::rcv_flags' data-ref="bio_dgram_sctp_rcvinfo::rcv_flags">rcv_flags</dfn>;</td></tr>
+<tr><th id="386">386</th><td>    <a class="typedef" href="../stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="bio_dgram_sctp_rcvinfo::rcv_ppid" title='bio_dgram_sctp_rcvinfo::rcv_ppid' data-ref="bio_dgram_sctp_rcvinfo::rcv_ppid">rcv_ppid</dfn>;</td></tr>
+<tr><th id="387">387</th><td>    <a class="typedef" href="../stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="bio_dgram_sctp_rcvinfo::rcv_tsn" title='bio_dgram_sctp_rcvinfo::rcv_tsn' data-ref="bio_dgram_sctp_rcvinfo::rcv_tsn">rcv_tsn</dfn>;</td></tr>
+<tr><th id="388">388</th><td>    <a class="typedef" href="../stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="bio_dgram_sctp_rcvinfo::rcv_cumtsn" title='bio_dgram_sctp_rcvinfo::rcv_cumtsn' data-ref="bio_dgram_sctp_rcvinfo::rcv_cumtsn">rcv_cumtsn</dfn>;</td></tr>
+<tr><th id="389">389</th><td>    <a class="typedef" href="../stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="bio_dgram_sctp_rcvinfo::rcv_context" title='bio_dgram_sctp_rcvinfo::rcv_context' data-ref="bio_dgram_sctp_rcvinfo::rcv_context">rcv_context</dfn>;</td></tr>
+<tr><th id="390">390</th><td>};</td></tr>
+<tr><th id="391">391</th><td></td></tr>
+<tr><th id="392">392</th><td><b>struct</b> <dfn class="type def" id="bio_dgram_sctp_prinfo" title='bio_dgram_sctp_prinfo' data-ref="bio_dgram_sctp_prinfo">bio_dgram_sctp_prinfo</dfn> {</td></tr>
+<tr><th id="393">393</th><td>    <a class="typedef" href="../stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="bio_dgram_sctp_prinfo::pr_policy" title='bio_dgram_sctp_prinfo::pr_policy' data-ref="bio_dgram_sctp_prinfo::pr_policy">pr_policy</dfn>;</td></tr>
+<tr><th id="394">394</th><td>    <a class="typedef" href="../stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="bio_dgram_sctp_prinfo::pr_value" title='bio_dgram_sctp_prinfo::pr_value' data-ref="bio_dgram_sctp_prinfo::pr_value">pr_value</dfn>;</td></tr>
+<tr><th id="395">395</th><td>};</td></tr>
+<tr><th id="396">396</th><td><u># <span data-ppcond="373">endif</span></u></td></tr>
+<tr><th id="397">397</th><td></td></tr>
+<tr><th id="398">398</th><td><i>/* connect BIO stuff */</i></td></tr>
+<tr><th id="399">399</th><td><u># define <dfn class="macro" id="_M/BIO_CONN_S_BEFORE" data-ref="_M/BIO_CONN_S_BEFORE">BIO_CONN_S_BEFORE</dfn>               1</u></td></tr>
+<tr><th id="400">400</th><td><u># define <dfn class="macro" id="_M/BIO_CONN_S_GET_IP" data-ref="_M/BIO_CONN_S_GET_IP">BIO_CONN_S_GET_IP</dfn>               2</u></td></tr>
+<tr><th id="401">401</th><td><u># define <dfn class="macro" id="_M/BIO_CONN_S_GET_PORT" data-ref="_M/BIO_CONN_S_GET_PORT">BIO_CONN_S_GET_PORT</dfn>             3</u></td></tr>
+<tr><th id="402">402</th><td><u># define <dfn class="macro" id="_M/BIO_CONN_S_CREATE_SOCKET" data-ref="_M/BIO_CONN_S_CREATE_SOCKET">BIO_CONN_S_CREATE_SOCKET</dfn>        4</u></td></tr>
+<tr><th id="403">403</th><td><u># define <dfn class="macro" id="_M/BIO_CONN_S_CONNECT" data-ref="_M/BIO_CONN_S_CONNECT">BIO_CONN_S_CONNECT</dfn>              5</u></td></tr>
+<tr><th id="404">404</th><td><u># define <dfn class="macro" id="_M/BIO_CONN_S_OK" data-ref="_M/BIO_CONN_S_OK">BIO_CONN_S_OK</dfn>                   6</u></td></tr>
+<tr><th id="405">405</th><td><u># define <dfn class="macro" id="_M/BIO_CONN_S_BLOCKED_CONNECT" data-ref="_M/BIO_CONN_S_BLOCKED_CONNECT">BIO_CONN_S_BLOCKED_CONNECT</dfn>      7</u></td></tr>
+<tr><th id="406">406</th><td><u># define <dfn class="macro" id="_M/BIO_CONN_S_NBIO" data-ref="_M/BIO_CONN_S_NBIO">BIO_CONN_S_NBIO</dfn>                 8</u></td></tr>
+<tr><th id="407">407</th><td><i>/*</i></td></tr>
+<tr><th id="408">408</th><td><i> * #define BIO_CONN_get_param_hostname BIO_ctrl</i></td></tr>
+<tr><th id="409">409</th><td><i> */</i></td></tr>
+<tr><th id="410">410</th><td></td></tr>
+<tr><th id="411">411</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_CONNECT" data-ref="_M/BIO_C_SET_CONNECT">BIO_C_SET_CONNECT</dfn>                       100</u></td></tr>
+<tr><th id="412">412</th><td><u># define <dfn class="macro" id="_M/BIO_C_DO_STATE_MACHINE" data-ref="_M/BIO_C_DO_STATE_MACHINE">BIO_C_DO_STATE_MACHINE</dfn>                  101</u></td></tr>
+<tr><th id="413">413</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_NBIO" data-ref="_M/BIO_C_SET_NBIO">BIO_C_SET_NBIO</dfn>                          102</u></td></tr>
+<tr><th id="414">414</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_PROXY_PARAM" data-ref="_M/BIO_C_SET_PROXY_PARAM">BIO_C_SET_PROXY_PARAM</dfn>                   103</u></td></tr>
+<tr><th id="415">415</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_FD" data-ref="_M/BIO_C_SET_FD">BIO_C_SET_FD</dfn>                            104</u></td></tr>
+<tr><th id="416">416</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_FD" data-ref="_M/BIO_C_GET_FD">BIO_C_GET_FD</dfn>                            105</u></td></tr>
+<tr><th id="417">417</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_FILE_PTR" data-ref="_M/BIO_C_SET_FILE_PTR">BIO_C_SET_FILE_PTR</dfn>                      106</u></td></tr>
+<tr><th id="418">418</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_FILE_PTR" data-ref="_M/BIO_C_GET_FILE_PTR">BIO_C_GET_FILE_PTR</dfn>                      107</u></td></tr>
+<tr><th id="419">419</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_FILENAME" data-ref="_M/BIO_C_SET_FILENAME">BIO_C_SET_FILENAME</dfn>                      108</u></td></tr>
+<tr><th id="420">420</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_SSL" data-ref="_M/BIO_C_SET_SSL">BIO_C_SET_SSL</dfn>                           109</u></td></tr>
+<tr><th id="421">421</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_SSL" data-ref="_M/BIO_C_GET_SSL">BIO_C_GET_SSL</dfn>                           110</u></td></tr>
+<tr><th id="422">422</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_MD" data-ref="_M/BIO_C_SET_MD">BIO_C_SET_MD</dfn>                            111</u></td></tr>
+<tr><th id="423">423</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_MD" data-ref="_M/BIO_C_GET_MD">BIO_C_GET_MD</dfn>                            112</u></td></tr>
+<tr><th id="424">424</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_CIPHER_STATUS" data-ref="_M/BIO_C_GET_CIPHER_STATUS">BIO_C_GET_CIPHER_STATUS</dfn>                 113</u></td></tr>
+<tr><th id="425">425</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_BUF_MEM" data-ref="_M/BIO_C_SET_BUF_MEM">BIO_C_SET_BUF_MEM</dfn>                       114</u></td></tr>
+<tr><th id="426">426</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_BUF_MEM_PTR" data-ref="_M/BIO_C_GET_BUF_MEM_PTR">BIO_C_GET_BUF_MEM_PTR</dfn>                   115</u></td></tr>
+<tr><th id="427">427</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_BUFF_NUM_LINES" data-ref="_M/BIO_C_GET_BUFF_NUM_LINES">BIO_C_GET_BUFF_NUM_LINES</dfn>                116</u></td></tr>
+<tr><th id="428">428</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_BUFF_SIZE" data-ref="_M/BIO_C_SET_BUFF_SIZE">BIO_C_SET_BUFF_SIZE</dfn>                     117</u></td></tr>
+<tr><th id="429">429</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_ACCEPT" data-ref="_M/BIO_C_SET_ACCEPT">BIO_C_SET_ACCEPT</dfn>                        118</u></td></tr>
+<tr><th id="430">430</th><td><u># define <dfn class="macro" id="_M/BIO_C_SSL_MODE" data-ref="_M/BIO_C_SSL_MODE">BIO_C_SSL_MODE</dfn>                          119</u></td></tr>
+<tr><th id="431">431</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_MD_CTX" data-ref="_M/BIO_C_GET_MD_CTX">BIO_C_GET_MD_CTX</dfn>                        120</u></td></tr>
+<tr><th id="432">432</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_PROXY_PARAM" data-ref="_M/BIO_C_GET_PROXY_PARAM">BIO_C_GET_PROXY_PARAM</dfn>                   121</u></td></tr>
+<tr><th id="433">433</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_BUFF_READ_DATA" data-ref="_M/BIO_C_SET_BUFF_READ_DATA">BIO_C_SET_BUFF_READ_DATA</dfn>                122/* data to read first */</u></td></tr>
+<tr><th id="434">434</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_CONNECT" data-ref="_M/BIO_C_GET_CONNECT">BIO_C_GET_CONNECT</dfn>                       123</u></td></tr>
+<tr><th id="435">435</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_ACCEPT" data-ref="_M/BIO_C_GET_ACCEPT">BIO_C_GET_ACCEPT</dfn>                        124</u></td></tr>
+<tr><th id="436">436</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_SSL_RENEGOTIATE_BYTES" data-ref="_M/BIO_C_SET_SSL_RENEGOTIATE_BYTES">BIO_C_SET_SSL_RENEGOTIATE_BYTES</dfn>         125</u></td></tr>
+<tr><th id="437">437</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_SSL_NUM_RENEGOTIATES" data-ref="_M/BIO_C_GET_SSL_NUM_RENEGOTIATES">BIO_C_GET_SSL_NUM_RENEGOTIATES</dfn>          126</u></td></tr>
+<tr><th id="438">438</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_SSL_RENEGOTIATE_TIMEOUT" data-ref="_M/BIO_C_SET_SSL_RENEGOTIATE_TIMEOUT">BIO_C_SET_SSL_RENEGOTIATE_TIMEOUT</dfn>       127</u></td></tr>
+<tr><th id="439">439</th><td><u># define <dfn class="macro" id="_M/BIO_C_FILE_SEEK" data-ref="_M/BIO_C_FILE_SEEK">BIO_C_FILE_SEEK</dfn>                         128</u></td></tr>
+<tr><th id="440">440</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_CIPHER_CTX" data-ref="_M/BIO_C_GET_CIPHER_CTX">BIO_C_GET_CIPHER_CTX</dfn>                    129</u></td></tr>
+<tr><th id="441">441</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_BUF_MEM_EOF_RETURN" data-ref="_M/BIO_C_SET_BUF_MEM_EOF_RETURN">BIO_C_SET_BUF_MEM_EOF_RETURN</dfn>            130/* return end of input</u></td></tr>
+<tr><th id="442">442</th><td><u>                                                     * value */</u></td></tr>
+<tr><th id="443">443</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_BIND_MODE" data-ref="_M/BIO_C_SET_BIND_MODE">BIO_C_SET_BIND_MODE</dfn>                     131</u></td></tr>
+<tr><th id="444">444</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_BIND_MODE" data-ref="_M/BIO_C_GET_BIND_MODE">BIO_C_GET_BIND_MODE</dfn>                     132</u></td></tr>
+<tr><th id="445">445</th><td><u># define <dfn class="macro" id="_M/BIO_C_FILE_TELL" data-ref="_M/BIO_C_FILE_TELL">BIO_C_FILE_TELL</dfn>                         133</u></td></tr>
+<tr><th id="446">446</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_SOCKS" data-ref="_M/BIO_C_GET_SOCKS">BIO_C_GET_SOCKS</dfn>                         134</u></td></tr>
+<tr><th id="447">447</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_SOCKS" data-ref="_M/BIO_C_SET_SOCKS">BIO_C_SET_SOCKS</dfn>                         135</u></td></tr>
+<tr><th id="448">448</th><td></td></tr>
+<tr><th id="449">449</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_WRITE_BUF_SIZE" data-ref="_M/BIO_C_SET_WRITE_BUF_SIZE">BIO_C_SET_WRITE_BUF_SIZE</dfn>                136/* for BIO_s_bio */</u></td></tr>
+<tr><th id="450">450</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_WRITE_BUF_SIZE" data-ref="_M/BIO_C_GET_WRITE_BUF_SIZE">BIO_C_GET_WRITE_BUF_SIZE</dfn>                137</u></td></tr>
+<tr><th id="451">451</th><td><u># define <dfn class="macro" id="_M/BIO_C_MAKE_BIO_PAIR" data-ref="_M/BIO_C_MAKE_BIO_PAIR">BIO_C_MAKE_BIO_PAIR</dfn>                     138</u></td></tr>
+<tr><th id="452">452</th><td><u># define <dfn class="macro" id="_M/BIO_C_DESTROY_BIO_PAIR" data-ref="_M/BIO_C_DESTROY_BIO_PAIR">BIO_C_DESTROY_BIO_PAIR</dfn>                  139</u></td></tr>
+<tr><th id="453">453</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_WRITE_GUARANTEE" data-ref="_M/BIO_C_GET_WRITE_GUARANTEE">BIO_C_GET_WRITE_GUARANTEE</dfn>               140</u></td></tr>
+<tr><th id="454">454</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_READ_REQUEST" data-ref="_M/BIO_C_GET_READ_REQUEST">BIO_C_GET_READ_REQUEST</dfn>                  141</u></td></tr>
+<tr><th id="455">455</th><td><u># define <dfn class="macro" id="_M/BIO_C_SHUTDOWN_WR" data-ref="_M/BIO_C_SHUTDOWN_WR">BIO_C_SHUTDOWN_WR</dfn>                       142</u></td></tr>
+<tr><th id="456">456</th><td><u># define <dfn class="macro" id="_M/BIO_C_NREAD0" data-ref="_M/BIO_C_NREAD0">BIO_C_NREAD0</dfn>                            143</u></td></tr>
+<tr><th id="457">457</th><td><u># define <dfn class="macro" id="_M/BIO_C_NREAD" data-ref="_M/BIO_C_NREAD">BIO_C_NREAD</dfn>                             144</u></td></tr>
+<tr><th id="458">458</th><td><u># define <dfn class="macro" id="_M/BIO_C_NWRITE0" data-ref="_M/BIO_C_NWRITE0">BIO_C_NWRITE0</dfn>                           145</u></td></tr>
+<tr><th id="459">459</th><td><u># define <dfn class="macro" id="_M/BIO_C_NWRITE" data-ref="_M/BIO_C_NWRITE">BIO_C_NWRITE</dfn>                            146</u></td></tr>
+<tr><th id="460">460</th><td><u># define <dfn class="macro" id="_M/BIO_C_RESET_READ_REQUEST" data-ref="_M/BIO_C_RESET_READ_REQUEST">BIO_C_RESET_READ_REQUEST</dfn>                147</u></td></tr>
+<tr><th id="461">461</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_MD_CTX" data-ref="_M/BIO_C_SET_MD_CTX">BIO_C_SET_MD_CTX</dfn>                        148</u></td></tr>
+<tr><th id="462">462</th><td></td></tr>
+<tr><th id="463">463</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_PREFIX" data-ref="_M/BIO_C_SET_PREFIX">BIO_C_SET_PREFIX</dfn>                        149</u></td></tr>
+<tr><th id="464">464</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_PREFIX" data-ref="_M/BIO_C_GET_PREFIX">BIO_C_GET_PREFIX</dfn>                        150</u></td></tr>
+<tr><th id="465">465</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_SUFFIX" data-ref="_M/BIO_C_SET_SUFFIX">BIO_C_SET_SUFFIX</dfn>                        151</u></td></tr>
+<tr><th id="466">466</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_SUFFIX" data-ref="_M/BIO_C_GET_SUFFIX">BIO_C_GET_SUFFIX</dfn>                        152</u></td></tr>
+<tr><th id="467">467</th><td></td></tr>
+<tr><th id="468">468</th><td><u># define <dfn class="macro" id="_M/BIO_C_SET_EX_ARG" data-ref="_M/BIO_C_SET_EX_ARG">BIO_C_SET_EX_ARG</dfn>                        153</u></td></tr>
+<tr><th id="469">469</th><td><u># define <dfn class="macro" id="_M/BIO_C_GET_EX_ARG" data-ref="_M/BIO_C_GET_EX_ARG">BIO_C_GET_EX_ARG</dfn>                        154</u></td></tr>
+<tr><th id="470">470</th><td></td></tr>
+<tr><th id="471">471</th><td><u># define <dfn class="macro" id="_M/BIO_set_app_data" data-ref="_M/BIO_set_app_data">BIO_set_app_data</dfn>(s,arg)         BIO_set_ex_data(s,0,arg)</u></td></tr>
+<tr><th id="472">472</th><td><u># define <dfn class="macro" id="_M/BIO_get_app_data" data-ref="_M/BIO_get_app_data">BIO_get_app_data</dfn>(s)             BIO_get_ex_data(s,0)</u></td></tr>
+<tr><th id="473">473</th><td></td></tr>
+<tr><th id="474">474</th><td><i>/* BIO_s_connect() and BIO_s_socks4a_connect() */</i></td></tr>
+<tr><th id="475">475</th><td><u># define <dfn class="macro" id="_M/BIO_set_conn_hostname" data-ref="_M/BIO_set_conn_hostname">BIO_set_conn_hostname</dfn>(b,name) BIO_ctrl(b,BIO_C_SET_CONNECT,0,(char *)name)</u></td></tr>
+<tr><th id="476">476</th><td><u># define <dfn class="macro" id="_M/BIO_set_conn_port" data-ref="_M/BIO_set_conn_port">BIO_set_conn_port</dfn>(b,port) BIO_ctrl(b,BIO_C_SET_CONNECT,1,(char *)port)</u></td></tr>
+<tr><th id="477">477</th><td><u># define <dfn class="macro" id="_M/BIO_set_conn_ip" data-ref="_M/BIO_set_conn_ip">BIO_set_conn_ip</dfn>(b,ip)     BIO_ctrl(b,BIO_C_SET_CONNECT,2,(char *)ip)</u></td></tr>
+<tr><th id="478">478</th><td><u># define <dfn class="macro" id="_M/BIO_set_conn_int_port" data-ref="_M/BIO_set_conn_int_port">BIO_set_conn_int_port</dfn>(b,port) BIO_ctrl(b,BIO_C_SET_CONNECT,3,(char *)port)</u></td></tr>
+<tr><th id="479">479</th><td><u># define <dfn class="macro" id="_M/BIO_get_conn_hostname" data-ref="_M/BIO_get_conn_hostname">BIO_get_conn_hostname</dfn>(b)  BIO_ptr_ctrl(b,BIO_C_GET_CONNECT,0)</u></td></tr>
+<tr><th id="480">480</th><td><u># define <dfn class="macro" id="_M/BIO_get_conn_port" data-ref="_M/BIO_get_conn_port">BIO_get_conn_port</dfn>(b)      BIO_ptr_ctrl(b,BIO_C_GET_CONNECT,1)</u></td></tr>
+<tr><th id="481">481</th><td><u># define <dfn class="macro" id="_M/BIO_get_conn_ip" data-ref="_M/BIO_get_conn_ip">BIO_get_conn_ip</dfn>(b)               BIO_ptr_ctrl(b,BIO_C_GET_CONNECT,2)</u></td></tr>
+<tr><th id="482">482</th><td><u># define <dfn class="macro" id="_M/BIO_get_conn_int_port" data-ref="_M/BIO_get_conn_int_port">BIO_get_conn_int_port</dfn>(b) BIO_ctrl(b,BIO_C_GET_CONNECT,3,NULL)</u></td></tr>
+<tr><th id="483">483</th><td></td></tr>
+<tr><th id="484">484</th><td><u># define <dfn class="macro" id="_M/BIO_set_nbio" data-ref="_M/BIO_set_nbio">BIO_set_nbio</dfn>(b,n)       BIO_ctrl(b,BIO_C_SET_NBIO,(n),NULL)</u></td></tr>
+<tr><th id="485">485</th><td></td></tr>
+<tr><th id="486">486</th><td><i>/* BIO_s_accept() */</i></td></tr>
+<tr><th id="487">487</th><td><u># define <dfn class="macro" id="_M/BIO_set_accept_port" data-ref="_M/BIO_set_accept_port">BIO_set_accept_port</dfn>(b,name) BIO_ctrl(b,BIO_C_SET_ACCEPT,0,(char *)name)</u></td></tr>
+<tr><th id="488">488</th><td><u># define <dfn class="macro" id="_M/BIO_get_accept_port" data-ref="_M/BIO_get_accept_port">BIO_get_accept_port</dfn>(b)  BIO_ptr_ctrl(b,BIO_C_GET_ACCEPT,0)</u></td></tr>
+<tr><th id="489">489</th><td><i>/* #define BIO_set_nbio(b,n)    BIO_ctrl(b,BIO_C_SET_NBIO,(n),NULL) */</i></td></tr>
+<tr><th id="490">490</th><td><u># define <dfn class="macro" id="_M/BIO_set_nbio_accept" data-ref="_M/BIO_set_nbio_accept">BIO_set_nbio_accept</dfn>(b,n) BIO_ctrl(b,BIO_C_SET_ACCEPT,1,(n)?(void *)"a":NULL)</u></td></tr>
+<tr><th id="491">491</th><td><u># define <dfn class="macro" id="_M/BIO_set_accept_bios" data-ref="_M/BIO_set_accept_bios">BIO_set_accept_bios</dfn>(b,bio) BIO_ctrl(b,BIO_C_SET_ACCEPT,2,(char *)bio)</u></td></tr>
+<tr><th id="492">492</th><td></td></tr>
+<tr><th id="493">493</th><td><u># define <dfn class="macro" id="_M/BIO_BIND_NORMAL" data-ref="_M/BIO_BIND_NORMAL">BIO_BIND_NORMAL</dfn>                 0</u></td></tr>
+<tr><th id="494">494</th><td><u># define <dfn class="macro" id="_M/BIO_BIND_REUSEADDR_IF_UNUSED" data-ref="_M/BIO_BIND_REUSEADDR_IF_UNUSED">BIO_BIND_REUSEADDR_IF_UNUSED</dfn>    1</u></td></tr>
+<tr><th id="495">495</th><td><u># define <dfn class="macro" id="_M/BIO_BIND_REUSEADDR" data-ref="_M/BIO_BIND_REUSEADDR">BIO_BIND_REUSEADDR</dfn>              2</u></td></tr>
+<tr><th id="496">496</th><td><u># define <dfn class="macro" id="_M/BIO_set_bind_mode" data-ref="_M/BIO_set_bind_mode">BIO_set_bind_mode</dfn>(b,mode) BIO_ctrl(b,BIO_C_SET_BIND_MODE,mode,NULL)</u></td></tr>
+<tr><th id="497">497</th><td><u># define <dfn class="macro" id="_M/BIO_get_bind_mode" data-ref="_M/BIO_get_bind_mode">BIO_get_bind_mode</dfn>(b,mode) BIO_ctrl(b,BIO_C_GET_BIND_MODE,0,NULL)</u></td></tr>
+<tr><th id="498">498</th><td></td></tr>
+<tr><th id="499">499</th><td><i>/* BIO_s_accept() and BIO_s_connect() */</i></td></tr>
+<tr><th id="500">500</th><td><u># define <dfn class="macro" id="_M/BIO_do_connect" data-ref="_M/BIO_do_connect">BIO_do_connect</dfn>(b)       BIO_do_handshake(b)</u></td></tr>
+<tr><th id="501">501</th><td><u># define <dfn class="macro" id="_M/BIO_do_accept" data-ref="_M/BIO_do_accept">BIO_do_accept</dfn>(b)        BIO_do_handshake(b)</u></td></tr>
+<tr><th id="502">502</th><td><u># define <dfn class="macro" id="_M/BIO_do_handshake" data-ref="_M/BIO_do_handshake">BIO_do_handshake</dfn>(b)     BIO_ctrl(b,BIO_C_DO_STATE_MACHINE,0,NULL)</u></td></tr>
+<tr><th id="503">503</th><td></td></tr>
+<tr><th id="504">504</th><td><i>/* BIO_s_proxy_client() */</i></td></tr>
+<tr><th id="505">505</th><td><u># define <dfn class="macro" id="_M/BIO_set_url" data-ref="_M/BIO_set_url">BIO_set_url</dfn>(b,url)      BIO_ctrl(b,BIO_C_SET_PROXY_PARAM,0,(char *)(url))</u></td></tr>
+<tr><th id="506">506</th><td><u># define <dfn class="macro" id="_M/BIO_set_proxies" data-ref="_M/BIO_set_proxies">BIO_set_proxies</dfn>(b,p)    BIO_ctrl(b,BIO_C_SET_PROXY_PARAM,1,(char *)(p))</u></td></tr>
+<tr><th id="507">507</th><td><i>/* BIO_set_nbio(b,n) */</i></td></tr>
+<tr><th id="508">508</th><td><u># define <dfn class="macro" id="_M/BIO_set_filter_bio" data-ref="_M/BIO_set_filter_bio">BIO_set_filter_bio</dfn>(b,s) BIO_ctrl(b,BIO_C_SET_PROXY_PARAM,2,(char *)(s))</u></td></tr>
+<tr><th id="509">509</th><td><i>/* BIO *BIO_get_filter_bio(BIO *bio); */</i></td></tr>
+<tr><th id="510">510</th><td><u># define <dfn class="macro" id="_M/BIO_set_proxy_cb" data-ref="_M/BIO_set_proxy_cb">BIO_set_proxy_cb</dfn>(b,cb) BIO_callback_ctrl(b,BIO_C_SET_PROXY_PARAM,3,(void *(*cb)()))</u></td></tr>
+<tr><th id="511">511</th><td><u># define <dfn class="macro" id="_M/BIO_set_proxy_header" data-ref="_M/BIO_set_proxy_header">BIO_set_proxy_header</dfn>(b,sk) BIO_ctrl(b,BIO_C_SET_PROXY_PARAM,4,(char *)sk)</u></td></tr>
+<tr><th id="512">512</th><td><u># define <dfn class="macro" id="_M/BIO_set_no_connect_return" data-ref="_M/BIO_set_no_connect_return">BIO_set_no_connect_return</dfn>(b,bool) BIO_int_ctrl(b,BIO_C_SET_PROXY_PARAM,5,bool)</u></td></tr>
+<tr><th id="513">513</th><td></td></tr>
+<tr><th id="514">514</th><td><u># define <dfn class="macro" id="_M/BIO_get_proxy_header" data-ref="_M/BIO_get_proxy_header">BIO_get_proxy_header</dfn>(b,skp) BIO_ctrl(b,BIO_C_GET_PROXY_PARAM,0,(char *)skp)</u></td></tr>
+<tr><th id="515">515</th><td><u># define <dfn class="macro" id="_M/BIO_get_proxies" data-ref="_M/BIO_get_proxies">BIO_get_proxies</dfn>(b,pxy_p) BIO_ctrl(b,BIO_C_GET_PROXY_PARAM,1,(char *)(pxy_p))</u></td></tr>
+<tr><th id="516">516</th><td><u># define <dfn class="macro" id="_M/BIO_get_url" data-ref="_M/BIO_get_url">BIO_get_url</dfn>(b,url)      BIO_ctrl(b,BIO_C_GET_PROXY_PARAM,2,(char *)(url))</u></td></tr>
+<tr><th id="517">517</th><td><u># define <dfn class="macro" id="_M/BIO_get_no_connect_return" data-ref="_M/BIO_get_no_connect_return">BIO_get_no_connect_return</dfn>(b)    BIO_ctrl(b,BIO_C_GET_PROXY_PARAM,5,NULL)</u></td></tr>
+<tr><th id="518">518</th><td></td></tr>
+<tr><th id="519">519</th><td><i>/* BIO_s_datagram(), BIO_s_fd(), BIO_s_socket(), BIO_s_accept() and BIO_s_connect() */</i></td></tr>
+<tr><th id="520">520</th><td><u># define <dfn class="macro" id="_M/BIO_set_fd" data-ref="_M/BIO_set_fd">BIO_set_fd</dfn>(b,fd,c)      BIO_int_ctrl(b,BIO_C_SET_FD,c,fd)</u></td></tr>
+<tr><th id="521">521</th><td><u># define <dfn class="macro" id="_M/BIO_get_fd" data-ref="_M/BIO_get_fd">BIO_get_fd</dfn>(b,c)         BIO_ctrl(b,BIO_C_GET_FD,0,(char *)c)</u></td></tr>
+<tr><th id="522">522</th><td></td></tr>
+<tr><th id="523">523</th><td><i>/* BIO_s_file() */</i></td></tr>
+<tr><th id="524">524</th><td><u># define <dfn class="macro" id="_M/BIO_set_fp" data-ref="_M/BIO_set_fp">BIO_set_fp</dfn>(b,fp,c)      BIO_ctrl(b,BIO_C_SET_FILE_PTR,c,(char *)fp)</u></td></tr>
+<tr><th id="525">525</th><td><u># define <dfn class="macro" id="_M/BIO_get_fp" data-ref="_M/BIO_get_fp">BIO_get_fp</dfn>(b,fpp)       BIO_ctrl(b,BIO_C_GET_FILE_PTR,0,(char *)fpp)</u></td></tr>
+<tr><th id="526">526</th><td></td></tr>
+<tr><th id="527">527</th><td><i>/* BIO_s_fd() and BIO_s_file() */</i></td></tr>
+<tr><th id="528">528</th><td><u># define <dfn class="macro" id="_M/BIO_seek" data-ref="_M/BIO_seek">BIO_seek</dfn>(b,ofs) (int)BIO_ctrl(b,BIO_C_FILE_SEEK,ofs,NULL)</u></td></tr>
+<tr><th id="529">529</th><td><u># define <dfn class="macro" id="_M/BIO_tell" data-ref="_M/BIO_tell">BIO_tell</dfn>(b)     (int)BIO_ctrl(b,BIO_C_FILE_TELL,0,NULL)</u></td></tr>
+<tr><th id="530">530</th><td></td></tr>
+<tr><th id="531">531</th><td><i>/*</i></td></tr>
+<tr><th id="532">532</th><td><i> * name is cast to lose const, but might be better to route through a</i></td></tr>
+<tr><th id="533">533</th><td><i> * function so we can do it safely</i></td></tr>
+<tr><th id="534">534</th><td><i> */</i></td></tr>
+<tr><th id="535">535</th><td><u># <span data-ppcond="535">ifdef</span> <span class="macro" data-ref="_M/CONST_STRICT">CONST_STRICT</span></u></td></tr>
+<tr><th id="536">536</th><td><i>/*</i></td></tr>
+<tr><th id="537">537</th><td><i> * If you are wondering why this isn't defined, its because CONST_STRICT is</i></td></tr>
+<tr><th id="538">538</th><td><i> * purely a compile-time kludge to allow const to be checked.</i></td></tr>
+<tr><th id="539">539</th><td><i> */</i></td></tr>
+<tr><th id="540">540</th><td><em>int</em> BIO_read_filename(BIO *b, <em>const</em> <em>char</em> *name);</td></tr>
+<tr><th id="541">541</th><td><u># <span data-ppcond="535">else</span></u></td></tr>
+<tr><th id="542">542</th><td><u>#  define <dfn class="macro" id="_M/BIO_read_filename" data-ref="_M/BIO_read_filename">BIO_read_filename</dfn>(b,name) BIO_ctrl(b,BIO_C_SET_FILENAME, \</u></td></tr>
+<tr><th id="543">543</th><td><u>                BIO_CLOSE|BIO_FP_READ,(char *)name)</u></td></tr>
+<tr><th id="544">544</th><td><u># <span data-ppcond="535">endif</span></u></td></tr>
+<tr><th id="545">545</th><td><u># define <dfn class="macro" id="_M/BIO_write_filename" data-ref="_M/BIO_write_filename">BIO_write_filename</dfn>(b,name) BIO_ctrl(b,BIO_C_SET_FILENAME, \</u></td></tr>
+<tr><th id="546">546</th><td><u>                BIO_CLOSE|BIO_FP_WRITE,name)</u></td></tr>
+<tr><th id="547">547</th><td><u># define <dfn class="macro" id="_M/BIO_append_filename" data-ref="_M/BIO_append_filename">BIO_append_filename</dfn>(b,name) BIO_ctrl(b,BIO_C_SET_FILENAME, \</u></td></tr>
+<tr><th id="548">548</th><td><u>                BIO_CLOSE|BIO_FP_APPEND,name)</u></td></tr>
+<tr><th id="549">549</th><td><u># define <dfn class="macro" id="_M/BIO_rw_filename" data-ref="_M/BIO_rw_filename">BIO_rw_filename</dfn>(b,name) BIO_ctrl(b,BIO_C_SET_FILENAME, \</u></td></tr>
+<tr><th id="550">550</th><td><u>                BIO_CLOSE|BIO_FP_READ|BIO_FP_WRITE,name)</u></td></tr>
+<tr><th id="551">551</th><td></td></tr>
+<tr><th id="552">552</th><td><i>/*</i></td></tr>
+<tr><th id="553">553</th><td><i> * WARNING WARNING, this ups the reference count on the read bio of the SSL</i></td></tr>
+<tr><th id="554">554</th><td><i> * structure.  This is because the ssl read BIO is now pointed to by the</i></td></tr>
+<tr><th id="555">555</th><td><i> * next_bio field in the bio.  So when you free the BIO, make sure you are</i></td></tr>
+<tr><th id="556">556</th><td><i> * doing a BIO_free_all() to catch the underlying BIO.</i></td></tr>
+<tr><th id="557">557</th><td><i> */</i></td></tr>
+<tr><th id="558">558</th><td><u># define <dfn class="macro" id="_M/BIO_set_ssl" data-ref="_M/BIO_set_ssl">BIO_set_ssl</dfn>(b,ssl,c)    BIO_ctrl(b,BIO_C_SET_SSL,c,(char *)ssl)</u></td></tr>
+<tr><th id="559">559</th><td><u># define <dfn class="macro" id="_M/BIO_get_ssl" data-ref="_M/BIO_get_ssl">BIO_get_ssl</dfn>(b,sslp)     BIO_ctrl(b,BIO_C_GET_SSL,0,(char *)sslp)</u></td></tr>
+<tr><th id="560">560</th><td><u># define <dfn class="macro" id="_M/BIO_set_ssl_mode" data-ref="_M/BIO_set_ssl_mode">BIO_set_ssl_mode</dfn>(b,client)      BIO_ctrl(b,BIO_C_SSL_MODE,client,NULL)</u></td></tr>
+<tr><th id="561">561</th><td><u># define <dfn class="macro" id="_M/BIO_set_ssl_renegotiate_bytes" data-ref="_M/BIO_set_ssl_renegotiate_bytes">BIO_set_ssl_renegotiate_bytes</dfn>(b,num) \</u></td></tr>
+<tr><th id="562">562</th><td><u>        BIO_ctrl(b,BIO_C_SET_SSL_RENEGOTIATE_BYTES,num,NULL)</u></td></tr>
+<tr><th id="563">563</th><td><u># define <dfn class="macro" id="_M/BIO_get_num_renegotiates" data-ref="_M/BIO_get_num_renegotiates">BIO_get_num_renegotiates</dfn>(b) \</u></td></tr>
+<tr><th id="564">564</th><td><u>        BIO_ctrl(b,BIO_C_GET_SSL_NUM_RENEGOTIATES,0,NULL)</u></td></tr>
+<tr><th id="565">565</th><td><u># define <dfn class="macro" id="_M/BIO_set_ssl_renegotiate_timeout" data-ref="_M/BIO_set_ssl_renegotiate_timeout">BIO_set_ssl_renegotiate_timeout</dfn>(b,seconds) \</u></td></tr>
+<tr><th id="566">566</th><td><u>        BIO_ctrl(b,BIO_C_SET_SSL_RENEGOTIATE_TIMEOUT,seconds,NULL)</u></td></tr>
+<tr><th id="567">567</th><td></td></tr>
+<tr><th id="568">568</th><td><i>/* defined in evp.h */</i></td></tr>
+<tr><th id="569">569</th><td><i>/* #define BIO_set_md(b,md)     BIO_ctrl(b,BIO_C_SET_MD,1,(char *)md) */</i></td></tr>
+<tr><th id="570">570</th><td></td></tr>
+<tr><th id="571">571</th><td><u># define <dfn class="macro" id="_M/BIO_get_mem_data" data-ref="_M/BIO_get_mem_data">BIO_get_mem_data</dfn>(b,pp)  BIO_ctrl(b,BIO_CTRL_INFO,0,(char *)pp)</u></td></tr>
+<tr><th id="572">572</th><td><u># define <dfn class="macro" id="_M/BIO_set_mem_buf" data-ref="_M/BIO_set_mem_buf">BIO_set_mem_buf</dfn>(b,bm,c) BIO_ctrl(b,BIO_C_SET_BUF_MEM,c,(char *)bm)</u></td></tr>
+<tr><th id="573">573</th><td><u># define <dfn class="macro" id="_M/BIO_get_mem_ptr" data-ref="_M/BIO_get_mem_ptr">BIO_get_mem_ptr</dfn>(b,pp)   BIO_ctrl(b,BIO_C_GET_BUF_MEM_PTR,0,(char *)pp)</u></td></tr>
+<tr><th id="574">574</th><td><u># define <dfn class="macro" id="_M/BIO_set_mem_eof_return" data-ref="_M/BIO_set_mem_eof_return">BIO_set_mem_eof_return</dfn>(b,v) \</u></td></tr>
+<tr><th id="575">575</th><td><u>                                BIO_ctrl(b,BIO_C_SET_BUF_MEM_EOF_RETURN,v,NULL)</u></td></tr>
+<tr><th id="576">576</th><td></td></tr>
+<tr><th id="577">577</th><td><i>/* For the BIO_f_buffer() type */</i></td></tr>
+<tr><th id="578">578</th><td><u># define <dfn class="macro" id="_M/BIO_get_buffer_num_lines" data-ref="_M/BIO_get_buffer_num_lines">BIO_get_buffer_num_lines</dfn>(b)     BIO_ctrl(b,BIO_C_GET_BUFF_NUM_LINES,0,NULL)</u></td></tr>
+<tr><th id="579">579</th><td><u># define <dfn class="macro" id="_M/BIO_set_buffer_size" data-ref="_M/BIO_set_buffer_size">BIO_set_buffer_size</dfn>(b,size)     BIO_ctrl(b,BIO_C_SET_BUFF_SIZE,size,NULL)</u></td></tr>
+<tr><th id="580">580</th><td><u># define <dfn class="macro" id="_M/BIO_set_read_buffer_size" data-ref="_M/BIO_set_read_buffer_size">BIO_set_read_buffer_size</dfn>(b,size) BIO_int_ctrl(b,BIO_C_SET_BUFF_SIZE,size,0)</u></td></tr>
+<tr><th id="581">581</th><td><u># define <dfn class="macro" id="_M/BIO_set_write_buffer_size" data-ref="_M/BIO_set_write_buffer_size">BIO_set_write_buffer_size</dfn>(b,size) BIO_int_ctrl(b,BIO_C_SET_BUFF_SIZE,size,1)</u></td></tr>
+<tr><th id="582">582</th><td><u># define <dfn class="macro" id="_M/BIO_set_buffer_read_data" data-ref="_M/BIO_set_buffer_read_data">BIO_set_buffer_read_data</dfn>(b,buf,num) BIO_ctrl(b,BIO_C_SET_BUFF_READ_DATA,num,buf)</u></td></tr>
+<tr><th id="583">583</th><td></td></tr>
+<tr><th id="584">584</th><td><i>/* Don't use the next one unless you know what you are doing :-) */</i></td></tr>
+<tr><th id="585">585</th><td><u># define <dfn class="macro" id="_M/BIO_dup_state" data-ref="_M/BIO_dup_state">BIO_dup_state</dfn>(b,ret)    BIO_ctrl(b,BIO_CTRL_DUP,0,(char *)(ret))</u></td></tr>
+<tr><th id="586">586</th><td></td></tr>
+<tr><th id="587">587</th><td><u># define <dfn class="macro" id="_M/BIO_reset" data-ref="_M/BIO_reset">BIO_reset</dfn>(b)            (int)BIO_ctrl(b,BIO_CTRL_RESET,0,NULL)</u></td></tr>
+<tr><th id="588">588</th><td><u># define <dfn class="macro" id="_M/BIO_eof" data-ref="_M/BIO_eof">BIO_eof</dfn>(b)              (int)BIO_ctrl(b,BIO_CTRL_EOF,0,NULL)</u></td></tr>
+<tr><th id="589">589</th><td><u># define <dfn class="macro" id="_M/BIO_set_close" data-ref="_M/BIO_set_close">BIO_set_close</dfn>(b,c)      (int)BIO_ctrl(b,BIO_CTRL_SET_CLOSE,(c),NULL)</u></td></tr>
+<tr><th id="590">590</th><td><u># define <dfn class="macro" id="_M/BIO_get_close" data-ref="_M/BIO_get_close">BIO_get_close</dfn>(b)        (int)BIO_ctrl(b,BIO_CTRL_GET_CLOSE,0,NULL)</u></td></tr>
+<tr><th id="591">591</th><td><u># define <dfn class="macro" id="_M/BIO_pending" data-ref="_M/BIO_pending">BIO_pending</dfn>(b)          (int)BIO_ctrl(b,BIO_CTRL_PENDING,0,NULL)</u></td></tr>
+<tr><th id="592">592</th><td><u># define <dfn class="macro" id="_M/BIO_wpending" data-ref="_M/BIO_wpending">BIO_wpending</dfn>(b)         (int)BIO_ctrl(b,BIO_CTRL_WPENDING,0,NULL)</u></td></tr>
+<tr><th id="593">593</th><td><i>/* ...pending macros have inappropriate return type */</i></td></tr>
+<tr><th id="594">594</th><td><span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="decl fn" id="BIO_ctrl_pending" title='BIO_ctrl_pending' data-ref="BIO_ctrl_pending">BIO_ctrl_pending</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col0 decl" id="260b" title='b' data-type='BIO *' data-ref="260b">b</dfn>);</td></tr>
+<tr><th id="595">595</th><td><span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="decl fn" id="BIO_ctrl_wpending" title='BIO_ctrl_wpending' data-ref="BIO_ctrl_wpending">BIO_ctrl_wpending</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col1 decl" id="261b" title='b' data-type='BIO *' data-ref="261b">b</dfn>);</td></tr>
+<tr><th id="596">596</th><td><u># define <dfn class="macro" id="_M/BIO_flush" data-ref="_M/BIO_flush">BIO_flush</dfn>(b)            (int)BIO_ctrl(b,BIO_CTRL_FLUSH,0,NULL)</u></td></tr>
+<tr><th id="597">597</th><td><u># define <dfn class="macro" id="_M/BIO_get_info_callback" data-ref="_M/BIO_get_info_callback">BIO_get_info_callback</dfn>(b,cbp) (int)BIO_ctrl(b,BIO_CTRL_GET_CALLBACK,0, \</u></td></tr>
+<tr><th id="598">598</th><td><u>                                                   cbp)</u></td></tr>
+<tr><th id="599">599</th><td><u># define <dfn class="macro" id="_M/BIO_set_info_callback" data-ref="_M/BIO_set_info_callback">BIO_set_info_callback</dfn>(b,cb) (int)BIO_callback_ctrl(b,BIO_CTRL_SET_CALLBACK,cb)</u></td></tr>
+<tr><th id="600">600</th><td></td></tr>
+<tr><th id="601">601</th><td><i>/* For the BIO_f_buffer() type */</i></td></tr>
+<tr><th id="602">602</th><td><u># define <dfn class="macro" id="_M/BIO_buffer_get_num_lines" data-ref="_M/BIO_buffer_get_num_lines">BIO_buffer_get_num_lines</dfn>(b) BIO_ctrl(b,BIO_CTRL_GET,0,NULL)</u></td></tr>
+<tr><th id="603">603</th><td></td></tr>
+<tr><th id="604">604</th><td><i>/* For BIO_s_bio() */</i></td></tr>
+<tr><th id="605">605</th><td><u># define <dfn class="macro" id="_M/BIO_set_write_buf_size" data-ref="_M/BIO_set_write_buf_size">BIO_set_write_buf_size</dfn>(b,size) (int)BIO_ctrl(b,BIO_C_SET_WRITE_BUF_SIZE,size,NULL)</u></td></tr>
+<tr><th id="606">606</th><td><u># define <dfn class="macro" id="_M/BIO_get_write_buf_size" data-ref="_M/BIO_get_write_buf_size">BIO_get_write_buf_size</dfn>(b,size) (size_t)BIO_ctrl(b,BIO_C_GET_WRITE_BUF_SIZE,size,NULL)</u></td></tr>
+<tr><th id="607">607</th><td><u># define <dfn class="macro" id="_M/BIO_make_bio_pair" data-ref="_M/BIO_make_bio_pair">BIO_make_bio_pair</dfn>(b1,b2)   (int)BIO_ctrl(b1,BIO_C_MAKE_BIO_PAIR,0,b2)</u></td></tr>
+<tr><th id="608">608</th><td><u># define <dfn class="macro" id="_M/BIO_destroy_bio_pair" data-ref="_M/BIO_destroy_bio_pair">BIO_destroy_bio_pair</dfn>(b)    (int)BIO_ctrl(b,BIO_C_DESTROY_BIO_PAIR,0,NULL)</u></td></tr>
+<tr><th id="609">609</th><td><u># define <dfn class="macro" id="_M/BIO_shutdown_wr" data-ref="_M/BIO_shutdown_wr">BIO_shutdown_wr</dfn>(b) (int)BIO_ctrl(b, BIO_C_SHUTDOWN_WR, 0, NULL)</u></td></tr>
+<tr><th id="610">610</th><td><i>/* macros with inappropriate type -- but ...pending macros use int too: */</i></td></tr>
+<tr><th id="611">611</th><td><u># define <dfn class="macro" id="_M/BIO_get_write_guarantee" data-ref="_M/BIO_get_write_guarantee">BIO_get_write_guarantee</dfn>(b) (int)BIO_ctrl(b,BIO_C_GET_WRITE_GUARANTEE,0,NULL)</u></td></tr>
+<tr><th id="612">612</th><td><u># define <dfn class="macro" id="_M/BIO_get_read_request" data-ref="_M/BIO_get_read_request">BIO_get_read_request</dfn>(b)    (int)BIO_ctrl(b,BIO_C_GET_READ_REQUEST,0,NULL)</u></td></tr>
+<tr><th id="613">613</th><td><span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="decl fn" id="BIO_ctrl_get_write_guarantee" title='BIO_ctrl_get_write_guarantee' data-ref="BIO_ctrl_get_write_guarantee">BIO_ctrl_get_write_guarantee</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col2 decl" id="262b" title='b' data-type='BIO *' data-ref="262b">b</dfn>);</td></tr>
+<tr><th id="614">614</th><td><span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="decl fn" id="BIO_ctrl_get_read_request" title='BIO_ctrl_get_read_request' data-ref="BIO_ctrl_get_read_request">BIO_ctrl_get_read_request</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col3 decl" id="263b" title='b' data-type='BIO *' data-ref="263b">b</dfn>);</td></tr>
+<tr><th id="615">615</th><td><em>int</em> <dfn class="decl fn" id="BIO_ctrl_reset_read_request" title='BIO_ctrl_reset_read_request' data-ref="BIO_ctrl_reset_read_request">BIO_ctrl_reset_read_request</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col4 decl" id="264b" title='b' data-type='BIO *' data-ref="264b">b</dfn>);</td></tr>
+<tr><th id="616">616</th><td></td></tr>
+<tr><th id="617">617</th><td><i>/* ctrl macros for dgram */</i></td></tr>
+<tr><th id="618">618</th><td><u># define <dfn class="macro" id="_M/BIO_ctrl_dgram_connect" data-ref="_M/BIO_ctrl_dgram_connect">BIO_ctrl_dgram_connect</dfn>(b,peer)  \</u></td></tr>
+<tr><th id="619">619</th><td><u>                     (int)BIO_ctrl(b,BIO_CTRL_DGRAM_CONNECT,0, (char *)peer)</u></td></tr>
+<tr><th id="620">620</th><td><u># define <dfn class="macro" id="_M/BIO_ctrl_set_connected" data-ref="_M/BIO_ctrl_set_connected">BIO_ctrl_set_connected</dfn>(b, state, peer) \</u></td></tr>
+<tr><th id="621">621</th><td><u>         (int)BIO_ctrl(b, BIO_CTRL_DGRAM_SET_CONNECTED, state, (char *)peer)</u></td></tr>
+<tr><th id="622">622</th><td><u># define <dfn class="macro" id="_M/BIO_dgram_recv_timedout" data-ref="_M/BIO_dgram_recv_timedout">BIO_dgram_recv_timedout</dfn>(b) \</u></td></tr>
+<tr><th id="623">623</th><td><u>         (int)BIO_ctrl(b, BIO_CTRL_DGRAM_GET_RECV_TIMER_EXP, 0, NULL)</u></td></tr>
+<tr><th id="624">624</th><td><u># define <dfn class="macro" id="_M/BIO_dgram_send_timedout" data-ref="_M/BIO_dgram_send_timedout">BIO_dgram_send_timedout</dfn>(b) \</u></td></tr>
+<tr><th id="625">625</th><td><u>         (int)BIO_ctrl(b, BIO_CTRL_DGRAM_GET_SEND_TIMER_EXP, 0, NULL)</u></td></tr>
+<tr><th id="626">626</th><td><u># define <dfn class="macro" id="_M/BIO_dgram_get_peer" data-ref="_M/BIO_dgram_get_peer">BIO_dgram_get_peer</dfn>(b,peer) \</u></td></tr>
+<tr><th id="627">627</th><td><u>         (int)BIO_ctrl(b, BIO_CTRL_DGRAM_GET_PEER, 0, (char *)peer)</u></td></tr>
+<tr><th id="628">628</th><td><u># define <dfn class="macro" id="_M/BIO_dgram_set_peer" data-ref="_M/BIO_dgram_set_peer">BIO_dgram_set_peer</dfn>(b,peer) \</u></td></tr>
+<tr><th id="629">629</th><td><u>         (int)BIO_ctrl(b, BIO_CTRL_DGRAM_SET_PEER, 0, (char *)peer)</u></td></tr>
+<tr><th id="630">630</th><td><u># define <dfn class="macro" id="_M/BIO_dgram_get_mtu_overhead" data-ref="_M/BIO_dgram_get_mtu_overhead">BIO_dgram_get_mtu_overhead</dfn>(b) \</u></td></tr>
+<tr><th id="631">631</th><td><u>         (unsigned int)BIO_ctrl((b), BIO_CTRL_DGRAM_GET_MTU_OVERHEAD, 0, NULL)</u></td></tr>
+<tr><th id="632">632</th><td></td></tr>
+<tr><th id="633">633</th><td><i>/* These two aren't currently implemented */</i></td></tr>
+<tr><th id="634">634</th><td><i>/* int BIO_get_ex_num(BIO *bio); */</i></td></tr>
+<tr><th id="635">635</th><td><i>/* void BIO_set_ex_free_func(BIO *bio,int idx,void (*cb)()); */</i></td></tr>
+<tr><th id="636">636</th><td><em>int</em> <dfn class="decl fn" id="BIO_set_ex_data" title='BIO_set_ex_data' data-ref="BIO_set_ex_data">BIO_set_ex_data</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col5 decl" id="265bio" title='bio' data-type='BIO *' data-ref="265bio">bio</dfn>, <em>int</em> <dfn class="local col6 decl" id="266idx" title='idx' data-type='int' data-ref="266idx">idx</dfn>, <em>void</em> *<dfn class="local col7 decl" id="267data" title='data' data-type='void *' data-ref="267data">data</dfn>);</td></tr>
+<tr><th id="637">637</th><td><em>void</em> *<dfn class="decl fn" id="BIO_get_ex_data" title='BIO_get_ex_data' data-ref="BIO_get_ex_data">BIO_get_ex_data</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col8 decl" id="268bio" title='bio' data-type='BIO *' data-ref="268bio">bio</dfn>, <em>int</em> <dfn class="local col9 decl" id="269idx" title='idx' data-type='int' data-ref="269idx">idx</dfn>);</td></tr>
+<tr><th id="638">638</th><td><em>int</em> <dfn class="decl fn" id="BIO_get_ex_new_index" title='BIO_get_ex_new_index' data-ref="BIO_get_ex_new_index">BIO_get_ex_new_index</dfn>(<em>long</em> <dfn class="local col0 decl" id="270argl" title='argl' data-type='long' data-ref="270argl">argl</dfn>, <em>void</em> *<dfn class="local col1 decl" id="271argp" title='argp' data-type='void *' data-ref="271argp">argp</dfn>, <a class="typedef" href="ossl_typ.h.html#CRYPTO_EX_new" title='CRYPTO_EX_new' data-type='int (void *, void *, CRYPTO_EX_DATA *, int, long, void *)' data-ref="CRYPTO_EX_new">CRYPTO_EX_new</a> *<dfn class="local col2 decl" id="272new_func" title='new_func' data-type='CRYPTO_EX_new *' data-ref="272new_func">new_func</dfn>,</td></tr>
+<tr><th id="639">639</th><td>                         <a class="typedef" href="ossl_typ.h.html#CRYPTO_EX_dup" title='CRYPTO_EX_dup' data-type='int (CRYPTO_EX_DATA *, CRYPTO_EX_DATA *, void *, int, long, void *)' data-ref="CRYPTO_EX_dup">CRYPTO_EX_dup</a> *<dfn class="local col3 decl" id="273dup_func" title='dup_func' data-type='CRYPTO_EX_dup *' data-ref="273dup_func">dup_func</dfn>, <a class="typedef" href="ossl_typ.h.html#CRYPTO_EX_free" title='CRYPTO_EX_free' data-type='void (void *, void *, CRYPTO_EX_DATA *, int, long, void *)' data-ref="CRYPTO_EX_free">CRYPTO_EX_free</a> *<dfn class="local col4 decl" id="274free_func" title='free_func' data-type='CRYPTO_EX_free *' data-ref="274free_func">free_func</dfn>);</td></tr>
+<tr><th id="640">640</th><td><em>unsigned</em> <em>long</em> <dfn class="decl fn" id="BIO_number_read" title='BIO_number_read' data-ref="BIO_number_read">BIO_number_read</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col5 decl" id="275bio" title='bio' data-type='BIO *' data-ref="275bio">bio</dfn>);</td></tr>
+<tr><th id="641">641</th><td><em>unsigned</em> <em>long</em> <dfn class="decl fn" id="BIO_number_written" title='BIO_number_written' data-ref="BIO_number_written">BIO_number_written</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col6 decl" id="276bio" title='bio' data-type='BIO *' data-ref="276bio">bio</dfn>);</td></tr>
+<tr><th id="642">642</th><td></td></tr>
+<tr><th id="643">643</th><td><i>/* For BIO_f_asn1() */</i></td></tr>
+<tr><th id="644">644</th><td><em>int</em> <dfn class="decl fn" id="BIO_asn1_set_prefix" title='BIO_asn1_set_prefix' data-ref="BIO_asn1_set_prefix">BIO_asn1_set_prefix</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col7 decl" id="277b" title='b' data-type='BIO *' data-ref="277b">b</dfn>, <a class="typedef" href="#asn1_ps_func" title='asn1_ps_func' data-type='int (BIO *, unsigned char **, int *, void *)' data-ref="asn1_ps_func">asn1_ps_func</a> *<dfn class="local col8 decl" id="278prefix" title='prefix' data-type='asn1_ps_func *' data-ref="278prefix">prefix</dfn>,</td></tr>
+<tr><th id="645">645</th><td>                        <a class="typedef" href="#asn1_ps_func" title='asn1_ps_func' data-type='int (BIO *, unsigned char **, int *, void *)' data-ref="asn1_ps_func">asn1_ps_func</a> *<dfn class="local col9 decl" id="279prefix_free" title='prefix_free' data-type='asn1_ps_func *' data-ref="279prefix_free">prefix_free</dfn>);</td></tr>
+<tr><th id="646">646</th><td><em>int</em> <dfn class="decl fn" id="BIO_asn1_get_prefix" title='BIO_asn1_get_prefix' data-ref="BIO_asn1_get_prefix">BIO_asn1_get_prefix</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col0 decl" id="280b" title='b' data-type='BIO *' data-ref="280b">b</dfn>, <a class="typedef" href="#asn1_ps_func" title='asn1_ps_func' data-type='int (BIO *, unsigned char **, int *, void *)' data-ref="asn1_ps_func">asn1_ps_func</a> **<dfn class="local col1 decl" id="281pprefix" title='pprefix' data-type='asn1_ps_func **' data-ref="281pprefix">pprefix</dfn>,</td></tr>
+<tr><th id="647">647</th><td>                        <a class="typedef" href="#asn1_ps_func" title='asn1_ps_func' data-type='int (BIO *, unsigned char **, int *, void *)' data-ref="asn1_ps_func">asn1_ps_func</a> **<dfn class="local col2 decl" id="282pprefix_free" title='pprefix_free' data-type='asn1_ps_func **' data-ref="282pprefix_free">pprefix_free</dfn>);</td></tr>
+<tr><th id="648">648</th><td><em>int</em> <dfn class="decl fn" id="BIO_asn1_set_suffix" title='BIO_asn1_set_suffix' data-ref="BIO_asn1_set_suffix">BIO_asn1_set_suffix</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col3 decl" id="283b" title='b' data-type='BIO *' data-ref="283b">b</dfn>, <a class="typedef" href="#asn1_ps_func" title='asn1_ps_func' data-type='int (BIO *, unsigned char **, int *, void *)' data-ref="asn1_ps_func">asn1_ps_func</a> *<dfn class="local col4 decl" id="284suffix" title='suffix' data-type='asn1_ps_func *' data-ref="284suffix">suffix</dfn>,</td></tr>
+<tr><th id="649">649</th><td>                        <a class="typedef" href="#asn1_ps_func" title='asn1_ps_func' data-type='int (BIO *, unsigned char **, int *, void *)' data-ref="asn1_ps_func">asn1_ps_func</a> *<dfn class="local col5 decl" id="285suffix_free" title='suffix_free' data-type='asn1_ps_func *' data-ref="285suffix_free">suffix_free</dfn>);</td></tr>
+<tr><th id="650">650</th><td><em>int</em> <dfn class="decl fn" id="BIO_asn1_get_suffix" title='BIO_asn1_get_suffix' data-ref="BIO_asn1_get_suffix">BIO_asn1_get_suffix</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col6 decl" id="286b" title='b' data-type='BIO *' data-ref="286b">b</dfn>, <a class="typedef" href="#asn1_ps_func" title='asn1_ps_func' data-type='int (BIO *, unsigned char **, int *, void *)' data-ref="asn1_ps_func">asn1_ps_func</a> **<dfn class="local col7 decl" id="287psuffix" title='psuffix' data-type='asn1_ps_func **' data-ref="287psuffix">psuffix</dfn>,</td></tr>
+<tr><th id="651">651</th><td>                        <a class="typedef" href="#asn1_ps_func" title='asn1_ps_func' data-type='int (BIO *, unsigned char **, int *, void *)' data-ref="asn1_ps_func">asn1_ps_func</a> **<dfn class="local col8 decl" id="288psuffix_free" title='psuffix_free' data-type='asn1_ps_func **' data-ref="288psuffix_free">psuffix_free</dfn>);</td></tr>
+<tr><th id="652">652</th><td></td></tr>
+<tr><th id="653">653</th><td><u># <span data-ppcond="653">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_FP_API">OPENSSL_NO_FP_API</span></u></td></tr>
+<tr><th id="654">654</th><td><a class="typedef" href="#BIO_METHOD" title='BIO_METHOD' data-type='struct bio_method_st' data-ref="BIO_METHOD">BIO_METHOD</a> *<dfn class="decl fn" id="BIO_s_file" title='BIO_s_file' data-ref="BIO_s_file">BIO_s_file</dfn>(<em>void</em>);</td></tr>
+<tr><th id="655">655</th><td><a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="decl fn" id="BIO_new_file" title='BIO_new_file' data-ref="BIO_new_file">BIO_new_file</dfn>(<em>const</em> <em>char</em> *<dfn class="local col9 decl" id="289filename" title='filename' data-type='const char *' data-ref="289filename">filename</dfn>, <em>const</em> <em>char</em> *<dfn class="local col0 decl" id="290mode" title='mode' data-type='const char *' data-ref="290mode">mode</dfn>);</td></tr>
+<tr><th id="656">656</th><td><a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="decl fn" id="BIO_new_fp" title='BIO_new_fp' data-ref="BIO_new_fp">BIO_new_fp</dfn>(<a class="typedef" href="../stdio.h.html#FILE" title='FILE' data-type='struct _IO_FILE' data-ref="FILE">FILE</a> *<dfn class="local col1 decl" id="291stream" title='stream' data-type='FILE *' data-ref="291stream">stream</dfn>, <em>int</em> <dfn class="local col2 decl" id="292close_flag" title='close_flag' data-type='int' data-ref="292close_flag">close_flag</dfn>);</td></tr>
+<tr><th id="657">657</th><td><u>#  define <dfn class="macro" id="_M/BIO_s_file_internal" data-ref="_M/BIO_s_file_internal">BIO_s_file_internal</dfn>    BIO_s_file</u></td></tr>
+<tr><th id="658">658</th><td><u># <span data-ppcond="653">endif</span></u></td></tr>
+<tr><th id="659">659</th><td><a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="decl fn" id="BIO_new" title='BIO_new' data-ref="BIO_new">BIO_new</dfn>(<a class="typedef" href="#BIO_METHOD" title='BIO_METHOD' data-type='struct bio_method_st' data-ref="BIO_METHOD">BIO_METHOD</a> *<dfn class="local col3 decl" id="293type" title='type' data-type='BIO_METHOD *' data-ref="293type">type</dfn>);</td></tr>
+<tr><th id="660">660</th><td><em>int</em> <dfn class="decl fn" id="BIO_set" title='BIO_set' data-ref="BIO_set">BIO_set</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col4 decl" id="294a" title='a' data-type='BIO *' data-ref="294a">a</dfn>, <a class="typedef" href="#BIO_METHOD" title='BIO_METHOD' data-type='struct bio_method_st' data-ref="BIO_METHOD">BIO_METHOD</a> *<dfn class="local col5 decl" id="295type" title='type' data-type='BIO_METHOD *' data-ref="295type">type</dfn>);</td></tr>
+<tr><th id="661">661</th><td><em>int</em> <dfn class="decl fn" id="BIO_free" title='BIO_free' data-ref="BIO_free">BIO_free</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col6 decl" id="296a" title='a' data-type='BIO *' data-ref="296a">a</dfn>);</td></tr>
+<tr><th id="662">662</th><td><em>void</em> <dfn class="decl fn" id="BIO_vfree" title='BIO_vfree' data-ref="BIO_vfree">BIO_vfree</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col7 decl" id="297a" title='a' data-type='BIO *' data-ref="297a">a</dfn>);</td></tr>
+<tr><th id="663">663</th><td><em>int</em> <dfn class="decl fn" id="BIO_read" title='BIO_read' data-ref="BIO_read">BIO_read</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col8 decl" id="298b" title='b' data-type='BIO *' data-ref="298b">b</dfn>, <em>void</em> *<dfn class="local col9 decl" id="299data" title='data' data-type='void *' data-ref="299data">data</dfn>, <em>int</em> <dfn class="local col0 decl" id="300len" title='len' data-type='int' data-ref="300len">len</dfn>);</td></tr>
+<tr><th id="664">664</th><td><em>int</em> <dfn class="decl fn" id="BIO_gets" title='BIO_gets' data-ref="BIO_gets">BIO_gets</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col1 decl" id="301bp" title='bp' data-type='BIO *' data-ref="301bp">bp</dfn>, <em>char</em> *<dfn class="local col2 decl" id="302buf" title='buf' data-type='char *' data-ref="302buf">buf</dfn>, <em>int</em> <dfn class="local col3 decl" id="303size" title='size' data-type='int' data-ref="303size">size</dfn>);</td></tr>
+<tr><th id="665">665</th><td><em>int</em> <dfn class="decl fn" id="BIO_write" title='BIO_write' data-ref="BIO_write">BIO_write</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col4 decl" id="304b" title='b' data-type='BIO *' data-ref="304b">b</dfn>, <em>const</em> <em>void</em> *<dfn class="local col5 decl" id="305data" title='data' data-type='const void *' data-ref="305data">data</dfn>, <em>int</em> <dfn class="local col6 decl" id="306len" title='len' data-type='int' data-ref="306len">len</dfn>);</td></tr>
+<tr><th id="666">666</th><td><em>int</em> <dfn class="decl fn" id="BIO_puts" title='BIO_puts' data-ref="BIO_puts">BIO_puts</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col7 decl" id="307bp" title='bp' data-type='BIO *' data-ref="307bp">bp</dfn>, <em>const</em> <em>char</em> *<dfn class="local col8 decl" id="308buf" title='buf' data-type='const char *' data-ref="308buf">buf</dfn>);</td></tr>
+<tr><th id="667">667</th><td><em>int</em> <dfn class="decl fn" id="BIO_indent" title='BIO_indent' data-ref="BIO_indent">BIO_indent</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col9 decl" id="309b" title='b' data-type='BIO *' data-ref="309b">b</dfn>, <em>int</em> <dfn class="local col0 decl" id="310indent" title='indent' data-type='int' data-ref="310indent">indent</dfn>, <em>int</em> <dfn class="local col1 decl" id="311max" title='max' data-type='int' data-ref="311max">max</dfn>);</td></tr>
+<tr><th id="668">668</th><td><em>long</em> <dfn class="decl fn" id="BIO_ctrl" title='BIO_ctrl' data-ref="BIO_ctrl">BIO_ctrl</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col2 decl" id="312bp" title='bp' data-type='BIO *' data-ref="312bp">bp</dfn>, <em>int</em> <dfn class="local col3 decl" id="313cmd" title='cmd' data-type='int' data-ref="313cmd">cmd</dfn>, <em>long</em> <dfn class="local col4 decl" id="314larg" title='larg' data-type='long' data-ref="314larg">larg</dfn>, <em>void</em> *<dfn class="local col5 decl" id="315parg" title='parg' data-type='void *' data-ref="315parg">parg</dfn>);</td></tr>
+<tr><th id="669">669</th><td><em>long</em> <dfn class="decl fn" id="BIO_callback_ctrl" title='BIO_callback_ctrl' data-ref="BIO_callback_ctrl">BIO_callback_ctrl</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col6 decl" id="316b" title='b' data-type='BIO *' data-ref="316b">b</dfn>, <em>int</em> <dfn class="local col7 decl" id="317cmd" title='cmd' data-type='int' data-ref="317cmd">cmd</dfn>,</td></tr>
+<tr><th id="670">670</th><td>                       <em>void</em> (*<dfn class="local col8 decl" id="318fp" title='fp' data-type='void (*)(struct bio_st *, int, const char *, int, long, long)' data-ref="318fp">fp</dfn>) (<b>struct</b> <a class="type" href="#bio_st" title='bio_st' data-ref="bio_st">bio_st</a> *, <em>int</em>, <em>const</em> <em>char</em> *, <em>int</em>,</td></tr>
+<tr><th id="671">671</th><td>                                   <em>long</em>, <em>long</em>));</td></tr>
+<tr><th id="672">672</th><td><em>char</em> *<dfn class="decl fn" id="BIO_ptr_ctrl" title='BIO_ptr_ctrl' data-ref="BIO_ptr_ctrl">BIO_ptr_ctrl</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col9 decl" id="319bp" title='bp' data-type='BIO *' data-ref="319bp">bp</dfn>, <em>int</em> <dfn class="local col0 decl" id="320cmd" title='cmd' data-type='int' data-ref="320cmd">cmd</dfn>, <em>long</em> <dfn class="local col1 decl" id="321larg" title='larg' data-type='long' data-ref="321larg">larg</dfn>);</td></tr>
+<tr><th id="673">673</th><td><em>long</em> <dfn class="decl fn" id="BIO_int_ctrl" title='BIO_int_ctrl' data-ref="BIO_int_ctrl">BIO_int_ctrl</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col2 decl" id="322bp" title='bp' data-type='BIO *' data-ref="322bp">bp</dfn>, <em>int</em> <dfn class="local col3 decl" id="323cmd" title='cmd' data-type='int' data-ref="323cmd">cmd</dfn>, <em>long</em> <dfn class="local col4 decl" id="324larg" title='larg' data-type='long' data-ref="324larg">larg</dfn>, <em>int</em> <dfn class="local col5 decl" id="325iarg" title='iarg' data-type='int' data-ref="325iarg">iarg</dfn>);</td></tr>
+<tr><th id="674">674</th><td><a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="decl fn" id="BIO_push" title='BIO_push' data-ref="BIO_push">BIO_push</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col6 decl" id="326b" title='b' data-type='BIO *' data-ref="326b">b</dfn>, <a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col7 decl" id="327append" title='append' data-type='BIO *' data-ref="327append">append</dfn>);</td></tr>
+<tr><th id="675">675</th><td><a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="decl fn" id="BIO_pop" title='BIO_pop' data-ref="BIO_pop">BIO_pop</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col8 decl" id="328b" title='b' data-type='BIO *' data-ref="328b">b</dfn>);</td></tr>
+<tr><th id="676">676</th><td><em>void</em> <dfn class="decl fn" id="BIO_free_all" title='BIO_free_all' data-ref="BIO_free_all">BIO_free_all</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col9 decl" id="329a" title='a' data-type='BIO *' data-ref="329a">a</dfn>);</td></tr>
+<tr><th id="677">677</th><td><a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="decl fn" id="BIO_find_type" title='BIO_find_type' data-ref="BIO_find_type">BIO_find_type</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col0 decl" id="330b" title='b' data-type='BIO *' data-ref="330b">b</dfn>, <em>int</em> <dfn class="local col1 decl" id="331bio_type" title='bio_type' data-type='int' data-ref="331bio_type">bio_type</dfn>);</td></tr>
+<tr><th id="678">678</th><td><a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="decl fn" id="BIO_next" title='BIO_next' data-ref="BIO_next">BIO_next</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col2 decl" id="332b" title='b' data-type='BIO *' data-ref="332b">b</dfn>);</td></tr>
+<tr><th id="679">679</th><td><a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="decl fn" id="BIO_get_retry_BIO" title='BIO_get_retry_BIO' data-ref="BIO_get_retry_BIO">BIO_get_retry_BIO</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col3 decl" id="333bio" title='bio' data-type='BIO *' data-ref="333bio">bio</dfn>, <em>int</em> *<dfn class="local col4 decl" id="334reason" title='reason' data-type='int *' data-ref="334reason">reason</dfn>);</td></tr>
+<tr><th id="680">680</th><td><em>int</em> <dfn class="decl fn" id="BIO_get_retry_reason" title='BIO_get_retry_reason' data-ref="BIO_get_retry_reason">BIO_get_retry_reason</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col5 decl" id="335bio" title='bio' data-type='BIO *' data-ref="335bio">bio</dfn>);</td></tr>
+<tr><th id="681">681</th><td><a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="decl fn" id="BIO_dup_chain" title='BIO_dup_chain' data-ref="BIO_dup_chain">BIO_dup_chain</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col6 decl" id="336in" title='in' data-type='BIO *' data-ref="336in">in</dfn>);</td></tr>
+<tr><th id="682">682</th><td></td></tr>
+<tr><th id="683">683</th><td><em>int</em> <dfn class="decl fn" id="BIO_nread0" title='BIO_nread0' data-ref="BIO_nread0">BIO_nread0</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col7 decl" id="337bio" title='bio' data-type='BIO *' data-ref="337bio">bio</dfn>, <em>char</em> **<dfn class="local col8 decl" id="338buf" title='buf' data-type='char **' data-ref="338buf">buf</dfn>);</td></tr>
+<tr><th id="684">684</th><td><em>int</em> <dfn class="decl fn" id="BIO_nread" title='BIO_nread' data-ref="BIO_nread">BIO_nread</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col9 decl" id="339bio" title='bio' data-type='BIO *' data-ref="339bio">bio</dfn>, <em>char</em> **<dfn class="local col0 decl" id="340buf" title='buf' data-type='char **' data-ref="340buf">buf</dfn>, <em>int</em> <dfn class="local col1 decl" id="341num" title='num' data-type='int' data-ref="341num">num</dfn>);</td></tr>
+<tr><th id="685">685</th><td><em>int</em> <dfn class="decl fn" id="BIO_nwrite0" title='BIO_nwrite0' data-ref="BIO_nwrite0">BIO_nwrite0</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col2 decl" id="342bio" title='bio' data-type='BIO *' data-ref="342bio">bio</dfn>, <em>char</em> **<dfn class="local col3 decl" id="343buf" title='buf' data-type='char **' data-ref="343buf">buf</dfn>);</td></tr>
+<tr><th id="686">686</th><td><em>int</em> <dfn class="decl fn" id="BIO_nwrite" title='BIO_nwrite' data-ref="BIO_nwrite">BIO_nwrite</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col4 decl" id="344bio" title='bio' data-type='BIO *' data-ref="344bio">bio</dfn>, <em>char</em> **<dfn class="local col5 decl" id="345buf" title='buf' data-type='char **' data-ref="345buf">buf</dfn>, <em>int</em> <dfn class="local col6 decl" id="346num" title='num' data-type='int' data-ref="346num">num</dfn>);</td></tr>
+<tr><th id="687">687</th><td></td></tr>
+<tr><th id="688">688</th><td><em>long</em> <dfn class="decl fn" id="BIO_debug_callback" title='BIO_debug_callback' data-ref="BIO_debug_callback">BIO_debug_callback</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col7 decl" id="347bio" title='bio' data-type='BIO *' data-ref="347bio">bio</dfn>, <em>int</em> <dfn class="local col8 decl" id="348cmd" title='cmd' data-type='int' data-ref="348cmd">cmd</dfn>, <em>const</em> <em>char</em> *<dfn class="local col9 decl" id="349argp" title='argp' data-type='const char *' data-ref="349argp">argp</dfn>, <em>int</em> <dfn class="local col0 decl" id="350argi" title='argi' data-type='int' data-ref="350argi">argi</dfn>,</td></tr>
+<tr><th id="689">689</th><td>                        <em>long</em> <dfn class="local col1 decl" id="351argl" title='argl' data-type='long' data-ref="351argl">argl</dfn>, <em>long</em> <dfn class="local col2 decl" id="352ret" title='ret' data-type='long' data-ref="352ret">ret</dfn>);</td></tr>
+<tr><th id="690">690</th><td></td></tr>
+<tr><th id="691">691</th><td><a class="typedef" href="#BIO_METHOD" title='BIO_METHOD' data-type='struct bio_method_st' data-ref="BIO_METHOD">BIO_METHOD</a> *<dfn class="decl fn" id="BIO_s_mem" title='BIO_s_mem' data-ref="BIO_s_mem">BIO_s_mem</dfn>(<em>void</em>);</td></tr>
+<tr><th id="692">692</th><td><a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="decl fn" id="BIO_new_mem_buf" title='BIO_new_mem_buf' data-ref="BIO_new_mem_buf">BIO_new_mem_buf</dfn>(<em>const</em> <em>void</em> *<dfn class="local col3 decl" id="353buf" title='buf' data-type='const void *' data-ref="353buf">buf</dfn>, <em>int</em> <dfn class="local col4 decl" id="354len" title='len' data-type='int' data-ref="354len">len</dfn>);</td></tr>
+<tr><th id="693">693</th><td><a class="typedef" href="#BIO_METHOD" title='BIO_METHOD' data-type='struct bio_method_st' data-ref="BIO_METHOD">BIO_METHOD</a> *<dfn class="decl fn" id="BIO_s_socket" title='BIO_s_socket' data-ref="BIO_s_socket">BIO_s_socket</dfn>(<em>void</em>);</td></tr>
+<tr><th id="694">694</th><td><a class="typedef" href="#BIO_METHOD" title='BIO_METHOD' data-type='struct bio_method_st' data-ref="BIO_METHOD">BIO_METHOD</a> *<dfn class="decl fn" id="BIO_s_connect" title='BIO_s_connect' data-ref="BIO_s_connect">BIO_s_connect</dfn>(<em>void</em>);</td></tr>
+<tr><th id="695">695</th><td><a class="typedef" href="#BIO_METHOD" title='BIO_METHOD' data-type='struct bio_method_st' data-ref="BIO_METHOD">BIO_METHOD</a> *<dfn class="decl fn" id="BIO_s_accept" title='BIO_s_accept' data-ref="BIO_s_accept">BIO_s_accept</dfn>(<em>void</em>);</td></tr>
+<tr><th id="696">696</th><td><a class="typedef" href="#BIO_METHOD" title='BIO_METHOD' data-type='struct bio_method_st' data-ref="BIO_METHOD">BIO_METHOD</a> *<dfn class="decl fn" id="BIO_s_fd" title='BIO_s_fd' data-ref="BIO_s_fd">BIO_s_fd</dfn>(<em>void</em>);</td></tr>
+<tr><th id="697">697</th><td><u># <span data-ppcond="697">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_SYS_OS2">OPENSSL_SYS_OS2</span></u></td></tr>
+<tr><th id="698">698</th><td><a class="typedef" href="#BIO_METHOD" title='BIO_METHOD' data-type='struct bio_method_st' data-ref="BIO_METHOD">BIO_METHOD</a> *<dfn class="decl fn" id="BIO_s_log" title='BIO_s_log' data-ref="BIO_s_log">BIO_s_log</dfn>(<em>void</em>);</td></tr>
+<tr><th id="699">699</th><td><u># <span data-ppcond="697">endif</span></u></td></tr>
+<tr><th id="700">700</th><td><a class="typedef" href="#BIO_METHOD" title='BIO_METHOD' data-type='struct bio_method_st' data-ref="BIO_METHOD">BIO_METHOD</a> *<dfn class="decl fn" id="BIO_s_bio" title='BIO_s_bio' data-ref="BIO_s_bio">BIO_s_bio</dfn>(<em>void</em>);</td></tr>
+<tr><th id="701">701</th><td><a class="typedef" href="#BIO_METHOD" title='BIO_METHOD' data-type='struct bio_method_st' data-ref="BIO_METHOD">BIO_METHOD</a> *<dfn class="decl fn" id="BIO_s_null" title='BIO_s_null' data-ref="BIO_s_null">BIO_s_null</dfn>(<em>void</em>);</td></tr>
+<tr><th id="702">702</th><td><a class="typedef" href="#BIO_METHOD" title='BIO_METHOD' data-type='struct bio_method_st' data-ref="BIO_METHOD">BIO_METHOD</a> *<dfn class="decl fn" id="BIO_f_null" title='BIO_f_null' data-ref="BIO_f_null">BIO_f_null</dfn>(<em>void</em>);</td></tr>
+<tr><th id="703">703</th><td><a class="typedef" href="#BIO_METHOD" title='BIO_METHOD' data-type='struct bio_method_st' data-ref="BIO_METHOD">BIO_METHOD</a> *<dfn class="decl fn" id="BIO_f_buffer" title='BIO_f_buffer' data-ref="BIO_f_buffer">BIO_f_buffer</dfn>(<em>void</em>);</td></tr>
+<tr><th id="704">704</th><td><u># <span data-ppcond="704">ifdef</span> <span class="macro" data-ref="_M/OPENSSL_SYS_VMS">OPENSSL_SYS_VMS</span></u></td></tr>
+<tr><th id="705">705</th><td>BIO_METHOD *BIO_f_linebuffer(<em>void</em>);</td></tr>
+<tr><th id="706">706</th><td><u># <span data-ppcond="704">endif</span></u></td></tr>
+<tr><th id="707">707</th><td><a class="typedef" href="#BIO_METHOD" title='BIO_METHOD' data-type='struct bio_method_st' data-ref="BIO_METHOD">BIO_METHOD</a> *<dfn class="decl fn" id="BIO_f_nbio_test" title='BIO_f_nbio_test' data-ref="BIO_f_nbio_test">BIO_f_nbio_test</dfn>(<em>void</em>);</td></tr>
+<tr><th id="708">708</th><td><u># <span data-ppcond="708">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_DGRAM">OPENSSL_NO_DGRAM</span></u></td></tr>
+<tr><th id="709">709</th><td><a class="typedef" href="#BIO_METHOD" title='BIO_METHOD' data-type='struct bio_method_st' data-ref="BIO_METHOD">BIO_METHOD</a> *<dfn class="decl fn" id="BIO_s_datagram" title='BIO_s_datagram' data-ref="BIO_s_datagram">BIO_s_datagram</dfn>(<em>void</em>);</td></tr>
+<tr><th id="710">710</th><td><u>#  <span data-ppcond="710">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_SCTP">OPENSSL_NO_SCTP</span></u></td></tr>
+<tr><th id="711">711</th><td><a class="typedef" href="#BIO_METHOD" title='BIO_METHOD' data-type='struct bio_method_st' data-ref="BIO_METHOD">BIO_METHOD</a> *<dfn class="decl fn" id="BIO_s_datagram_sctp" title='BIO_s_datagram_sctp' data-ref="BIO_s_datagram_sctp">BIO_s_datagram_sctp</dfn>(<em>void</em>);</td></tr>
+<tr><th id="712">712</th><td><u>#  <span data-ppcond="710">endif</span></u></td></tr>
+<tr><th id="713">713</th><td><u># <span data-ppcond="708">endif</span></u></td></tr>
+<tr><th id="714">714</th><td></td></tr>
+<tr><th id="715">715</th><td><i>/* BIO_METHOD *BIO_f_ber(void); */</i></td></tr>
+<tr><th id="716">716</th><td></td></tr>
+<tr><th id="717">717</th><td><em>int</em> <dfn class="decl fn" id="BIO_sock_should_retry" title='BIO_sock_should_retry' data-ref="BIO_sock_should_retry">BIO_sock_should_retry</dfn>(<em>int</em> <dfn class="local col5 decl" id="355i" title='i' data-type='int' data-ref="355i">i</dfn>);</td></tr>
+<tr><th id="718">718</th><td><em>int</em> <dfn class="decl fn" id="BIO_sock_non_fatal_error" title='BIO_sock_non_fatal_error' data-ref="BIO_sock_non_fatal_error">BIO_sock_non_fatal_error</dfn>(<em>int</em> <dfn class="local col6 decl" id="356error" title='error' data-type='int' data-ref="356error">error</dfn>);</td></tr>
+<tr><th id="719">719</th><td><em>int</em> <dfn class="decl fn" id="BIO_dgram_non_fatal_error" title='BIO_dgram_non_fatal_error' data-ref="BIO_dgram_non_fatal_error">BIO_dgram_non_fatal_error</dfn>(<em>int</em> <dfn class="local col7 decl" id="357error" title='error' data-type='int' data-ref="357error">error</dfn>);</td></tr>
+<tr><th id="720">720</th><td></td></tr>
+<tr><th id="721">721</th><td><em>int</em> <dfn class="decl fn" id="BIO_fd_should_retry" title='BIO_fd_should_retry' data-ref="BIO_fd_should_retry">BIO_fd_should_retry</dfn>(<em>int</em> <dfn class="local col8 decl" id="358i" title='i' data-type='int' data-ref="358i">i</dfn>);</td></tr>
+<tr><th id="722">722</th><td><em>int</em> <dfn class="decl fn" id="BIO_fd_non_fatal_error" title='BIO_fd_non_fatal_error' data-ref="BIO_fd_non_fatal_error">BIO_fd_non_fatal_error</dfn>(<em>int</em> <dfn class="local col9 decl" id="359error" title='error' data-type='int' data-ref="359error">error</dfn>);</td></tr>
+<tr><th id="723">723</th><td><em>int</em> <dfn class="decl fn" id="BIO_dump_cb" title='BIO_dump_cb' data-ref="BIO_dump_cb">BIO_dump_cb</dfn>(<em>int</em> (*<dfn class="local col0 decl" id="360cb" title='cb' data-type='int (*)(const void *, size_t, void *)' data-ref="360cb">cb</dfn>) (<em>const</em> <em>void</em> *<dfn class="local col1 decl" id="361data" title='data' data-type='const void *' data-ref="361data">data</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col2 decl" id="362len" title='len' data-type='size_t' data-ref="362len">len</dfn>, <em>void</em> *<dfn class="local col3 decl" id="363u" title='u' data-type='void *' data-ref="363u">u</dfn>),</td></tr>
+<tr><th id="724">724</th><td>                <em>void</em> *<dfn class="local col4 decl" id="364u" title='u' data-type='void *' data-ref="364u">u</dfn>, <em>const</em> <em>char</em> *<dfn class="local col5 decl" id="365s" title='s' data-type='const char *' data-ref="365s">s</dfn>, <em>int</em> <dfn class="local col6 decl" id="366len" title='len' data-type='int' data-ref="366len">len</dfn>);</td></tr>
+<tr><th id="725">725</th><td><em>int</em> <dfn class="decl fn" id="BIO_dump_indent_cb" title='BIO_dump_indent_cb' data-ref="BIO_dump_indent_cb">BIO_dump_indent_cb</dfn>(<em>int</em> (*<dfn class="local col7 decl" id="367cb" title='cb' data-type='int (*)(const void *, size_t, void *)' data-ref="367cb">cb</dfn>) (<em>const</em> <em>void</em> *<dfn class="local col8 decl" id="368data" title='data' data-type='const void *' data-ref="368data">data</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col9 decl" id="369len" title='len' data-type='size_t' data-ref="369len">len</dfn>, <em>void</em> *<dfn class="local col0 decl" id="370u" title='u' data-type='void *' data-ref="370u">u</dfn>),</td></tr>
+<tr><th id="726">726</th><td>                       <em>void</em> *<dfn class="local col1 decl" id="371u" title='u' data-type='void *' data-ref="371u">u</dfn>, <em>const</em> <em>char</em> *<dfn class="local col2 decl" id="372s" title='s' data-type='const char *' data-ref="372s">s</dfn>, <em>int</em> <dfn class="local col3 decl" id="373len" title='len' data-type='int' data-ref="373len">len</dfn>, <em>int</em> <dfn class="local col4 decl" id="374indent" title='indent' data-type='int' data-ref="374indent">indent</dfn>);</td></tr>
+<tr><th id="727">727</th><td><em>int</em> <dfn class="decl fn" id="BIO_dump" title='BIO_dump' data-ref="BIO_dump">BIO_dump</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col5 decl" id="375b" title='b' data-type='BIO *' data-ref="375b">b</dfn>, <em>const</em> <em>char</em> *<dfn class="local col6 decl" id="376bytes" title='bytes' data-type='const char *' data-ref="376bytes">bytes</dfn>, <em>int</em> <dfn class="local col7 decl" id="377len" title='len' data-type='int' data-ref="377len">len</dfn>);</td></tr>
+<tr><th id="728">728</th><td><em>int</em> <dfn class="decl fn" id="BIO_dump_indent" title='BIO_dump_indent' data-ref="BIO_dump_indent">BIO_dump_indent</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col8 decl" id="378b" title='b' data-type='BIO *' data-ref="378b">b</dfn>, <em>const</em> <em>char</em> *<dfn class="local col9 decl" id="379bytes" title='bytes' data-type='const char *' data-ref="379bytes">bytes</dfn>, <em>int</em> <dfn class="local col0 decl" id="380len" title='len' data-type='int' data-ref="380len">len</dfn>, <em>int</em> <dfn class="local col1 decl" id="381indent" title='indent' data-type='int' data-ref="381indent">indent</dfn>);</td></tr>
+<tr><th id="729">729</th><td><u># <span data-ppcond="729">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_FP_API">OPENSSL_NO_FP_API</span></u></td></tr>
+<tr><th id="730">730</th><td><em>int</em> <dfn class="decl fn" id="BIO_dump_fp" title='BIO_dump_fp' data-ref="BIO_dump_fp">BIO_dump_fp</dfn>(<a class="typedef" href="../stdio.h.html#FILE" title='FILE' data-type='struct _IO_FILE' data-ref="FILE">FILE</a> *<dfn class="local col2 decl" id="382fp" title='fp' data-type='FILE *' data-ref="382fp">fp</dfn>, <em>const</em> <em>char</em> *<dfn class="local col3 decl" id="383s" title='s' data-type='const char *' data-ref="383s">s</dfn>, <em>int</em> <dfn class="local col4 decl" id="384len" title='len' data-type='int' data-ref="384len">len</dfn>);</td></tr>
+<tr><th id="731">731</th><td><em>int</em> <dfn class="decl fn" id="BIO_dump_indent_fp" title='BIO_dump_indent_fp' data-ref="BIO_dump_indent_fp">BIO_dump_indent_fp</dfn>(<a class="typedef" href="../stdio.h.html#FILE" title='FILE' data-type='struct _IO_FILE' data-ref="FILE">FILE</a> *<dfn class="local col5 decl" id="385fp" title='fp' data-type='FILE *' data-ref="385fp">fp</dfn>, <em>const</em> <em>char</em> *<dfn class="local col6 decl" id="386s" title='s' data-type='const char *' data-ref="386s">s</dfn>, <em>int</em> <dfn class="local col7 decl" id="387len" title='len' data-type='int' data-ref="387len">len</dfn>, <em>int</em> <dfn class="local col8 decl" id="388indent" title='indent' data-type='int' data-ref="388indent">indent</dfn>);</td></tr>
+<tr><th id="732">732</th><td><u># <span data-ppcond="729">endif</span></u></td></tr>
+<tr><th id="733">733</th><td><em>int</em> <dfn class="decl fn" id="BIO_hex_string" title='BIO_hex_string' data-ref="BIO_hex_string">BIO_hex_string</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col9 decl" id="389out" title='out' data-type='BIO *' data-ref="389out">out</dfn>, <em>int</em> <dfn class="local col0 decl" id="390indent" title='indent' data-type='int' data-ref="390indent">indent</dfn>, <em>int</em> <dfn class="local col1 decl" id="391width" title='width' data-type='int' data-ref="391width">width</dfn>, <em>unsigned</em> <em>char</em> *<dfn class="local col2 decl" id="392data" title='data' data-type='unsigned char *' data-ref="392data">data</dfn>,</td></tr>
+<tr><th id="734">734</th><td>                   <em>int</em> <dfn class="local col3 decl" id="393datalen" title='datalen' data-type='int' data-ref="393datalen">datalen</dfn>);</td></tr>
+<tr><th id="735">735</th><td></td></tr>
+<tr><th id="736">736</th><td><b>struct</b> <dfn class="type" id="hostent" title='hostent' data-ref="hostent"><a class="type" href="#hostent" title='hostent' data-ref="hostent">hostent</a></dfn> *<dfn class="decl fn" id="BIO_gethostbyname" title='BIO_gethostbyname' data-ref="BIO_gethostbyname">BIO_gethostbyname</dfn>(<em>const</em> <em>char</em> *<dfn class="local col4 decl" id="394name" title='name' data-type='const char *' data-ref="394name">name</dfn>);</td></tr>
+<tr><th id="737">737</th><td><i>/*-</i></td></tr>
+<tr><th id="738">738</th><td><i> * We might want a thread-safe interface too:</i></td></tr>
+<tr><th id="739">739</th><td><i> * struct hostent *BIO_gethostbyname_r(const char *name,</i></td></tr>
+<tr><th id="740">740</th><td><i> *     struct hostent *result, void *buffer, size_t buflen);</i></td></tr>
+<tr><th id="741">741</th><td><i> * or something similar (caller allocates a struct hostent,</i></td></tr>
+<tr><th id="742">742</th><td><i> * pointed to by "result", and additional buffer space for the various</i></td></tr>
+<tr><th id="743">743</th><td><i> * substructures; if the buffer does not suffice, NULL is returned</i></td></tr>
+<tr><th id="744">744</th><td><i> * and an appropriate error code is set).</i></td></tr>
+<tr><th id="745">745</th><td><i> */</i></td></tr>
+<tr><th id="746">746</th><td><em>int</em> <dfn class="decl fn" id="BIO_sock_error" title='BIO_sock_error' data-ref="BIO_sock_error">BIO_sock_error</dfn>(<em>int</em> <dfn class="local col5 decl" id="395sock" title='sock' data-type='int' data-ref="395sock">sock</dfn>);</td></tr>
+<tr><th id="747">747</th><td><em>int</em> <dfn class="decl fn" id="BIO_socket_ioctl" title='BIO_socket_ioctl' data-ref="BIO_socket_ioctl">BIO_socket_ioctl</dfn>(<em>int</em> <dfn class="local col6 decl" id="396fd" title='fd' data-type='int' data-ref="396fd">fd</dfn>, <em>long</em> <dfn class="local col7 decl" id="397type" title='type' data-type='long' data-ref="397type">type</dfn>, <em>void</em> *<dfn class="local col8 decl" id="398arg" title='arg' data-type='void *' data-ref="398arg">arg</dfn>);</td></tr>
+<tr><th id="748">748</th><td><em>int</em> <dfn class="decl fn" id="BIO_socket_nbio" title='BIO_socket_nbio' data-ref="BIO_socket_nbio">BIO_socket_nbio</dfn>(<em>int</em> <dfn class="local col9 decl" id="399fd" title='fd' data-type='int' data-ref="399fd">fd</dfn>, <em>int</em> <dfn class="local col0 decl" id="400mode" title='mode' data-type='int' data-ref="400mode">mode</dfn>);</td></tr>
+<tr><th id="749">749</th><td><em>int</em> <dfn class="decl fn" id="BIO_get_port" title='BIO_get_port' data-ref="BIO_get_port">BIO_get_port</dfn>(<em>const</em> <em>char</em> *<dfn class="local col1 decl" id="401str" title='str' data-type='const char *' data-ref="401str">str</dfn>, <em>unsigned</em> <em>short</em> *<dfn class="local col2 decl" id="402port_ptr" title='port_ptr' data-type='unsigned short *' data-ref="402port_ptr">port_ptr</dfn>);</td></tr>
+<tr><th id="750">750</th><td><em>int</em> <dfn class="decl fn" id="BIO_get_host_ip" title='BIO_get_host_ip' data-ref="BIO_get_host_ip">BIO_get_host_ip</dfn>(<em>const</em> <em>char</em> *<dfn class="local col3 decl" id="403str" title='str' data-type='const char *' data-ref="403str">str</dfn>, <em>unsigned</em> <em>char</em> *<dfn class="local col4 decl" id="404ip" title='ip' data-type='unsigned char *' data-ref="404ip">ip</dfn>);</td></tr>
+<tr><th id="751">751</th><td><em>int</em> <dfn class="decl fn" id="BIO_get_accept_socket" title='BIO_get_accept_socket' data-ref="BIO_get_accept_socket">BIO_get_accept_socket</dfn>(<em>char</em> *<dfn class="local col5 decl" id="405host_port" title='host_port' data-type='char *' data-ref="405host_port">host_port</dfn>, <em>int</em> <dfn class="local col6 decl" id="406mode" title='mode' data-type='int' data-ref="406mode">mode</dfn>);</td></tr>
+<tr><th id="752">752</th><td><em>int</em> <dfn class="decl fn" id="BIO_accept" title='BIO_accept' data-ref="BIO_accept">BIO_accept</dfn>(<em>int</em> <dfn class="local col7 decl" id="407sock" title='sock' data-type='int' data-ref="407sock">sock</dfn>, <em>char</em> **<dfn class="local col8 decl" id="408ip_port" title='ip_port' data-type='char **' data-ref="408ip_port">ip_port</dfn>);</td></tr>
+<tr><th id="753">753</th><td><em>int</em> <dfn class="decl fn" id="BIO_sock_init" title='BIO_sock_init' data-ref="BIO_sock_init">BIO_sock_init</dfn>(<em>void</em>);</td></tr>
+<tr><th id="754">754</th><td><em>void</em> <dfn class="decl fn" id="BIO_sock_cleanup" title='BIO_sock_cleanup' data-ref="BIO_sock_cleanup">BIO_sock_cleanup</dfn>(<em>void</em>);</td></tr>
+<tr><th id="755">755</th><td><em>int</em> <dfn class="decl fn" id="BIO_set_tcp_ndelay" title='BIO_set_tcp_ndelay' data-ref="BIO_set_tcp_ndelay">BIO_set_tcp_ndelay</dfn>(<em>int</em> <dfn class="local col9 decl" id="409sock" title='sock' data-type='int' data-ref="409sock">sock</dfn>, <em>int</em> <dfn class="local col0 decl" id="410turn_on" title='turn_on' data-type='int' data-ref="410turn_on">turn_on</dfn>);</td></tr>
+<tr><th id="756">756</th><td></td></tr>
+<tr><th id="757">757</th><td><a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="decl fn" id="BIO_new_socket" title='BIO_new_socket' data-ref="BIO_new_socket">BIO_new_socket</dfn>(<em>int</em> <dfn class="local col1 decl" id="411sock" title='sock' data-type='int' data-ref="411sock">sock</dfn>, <em>int</em> <dfn class="local col2 decl" id="412close_flag" title='close_flag' data-type='int' data-ref="412close_flag">close_flag</dfn>);</td></tr>
+<tr><th id="758">758</th><td><a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="decl fn" id="BIO_new_dgram" title='BIO_new_dgram' data-ref="BIO_new_dgram">BIO_new_dgram</dfn>(<em>int</em> <dfn class="local col3 decl" id="413fd" title='fd' data-type='int' data-ref="413fd">fd</dfn>, <em>int</em> <dfn class="local col4 decl" id="414close_flag" title='close_flag' data-type='int' data-ref="414close_flag">close_flag</dfn>);</td></tr>
+<tr><th id="759">759</th><td><u># <span data-ppcond="759">ifndef</span> <span class="macro" data-ref="_M/OPENSSL_NO_SCTP">OPENSSL_NO_SCTP</span></u></td></tr>
+<tr><th id="760">760</th><td><a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="decl fn" id="BIO_new_dgram_sctp" title='BIO_new_dgram_sctp' data-ref="BIO_new_dgram_sctp">BIO_new_dgram_sctp</dfn>(<em>int</em> <dfn class="local col5 decl" id="415fd" title='fd' data-type='int' data-ref="415fd">fd</dfn>, <em>int</em> <dfn class="local col6 decl" id="416close_flag" title='close_flag' data-type='int' data-ref="416close_flag">close_flag</dfn>);</td></tr>
+<tr><th id="761">761</th><td><em>int</em> <dfn class="decl fn" id="BIO_dgram_is_sctp" title='BIO_dgram_is_sctp' data-ref="BIO_dgram_is_sctp">BIO_dgram_is_sctp</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col7 decl" id="417bio" title='bio' data-type='BIO *' data-ref="417bio">bio</dfn>);</td></tr>
+<tr><th id="762">762</th><td><em>int</em> <dfn class="decl fn" id="BIO_dgram_sctp_notification_cb" title='BIO_dgram_sctp_notification_cb' data-ref="BIO_dgram_sctp_notification_cb">BIO_dgram_sctp_notification_cb</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col8 decl" id="418b" title='b' data-type='BIO *' data-ref="418b">b</dfn>,</td></tr>
+<tr><th id="763">763</th><td>                                   <em>void</em> (*<dfn class="local col9 decl" id="419handle_notifications" title='handle_notifications' data-type='void (*)(BIO *, void *, void *)' data-ref="419handle_notifications">handle_notifications</dfn>) (<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col0 decl" id="420bio" title='bio' data-type='BIO *' data-ref="420bio">bio</dfn>,</td></tr>
+<tr><th id="764">764</th><td>                                                                 <em>void</em></td></tr>
+<tr><th id="765">765</th><td>                                                                 *<dfn class="local col1 decl" id="421context" title='context' data-type='void *' data-ref="421context">context</dfn>,</td></tr>
+<tr><th id="766">766</th><td>                                                                 <em>void</em> *<dfn class="local col2 decl" id="422buf" title='buf' data-type='void *' data-ref="422buf">buf</dfn>),</td></tr>
+<tr><th id="767">767</th><td>                                   <em>void</em> *<dfn class="local col3 decl" id="423context" title='context' data-type='void *' data-ref="423context">context</dfn>);</td></tr>
+<tr><th id="768">768</th><td><em>int</em> <dfn class="decl fn" id="BIO_dgram_sctp_wait_for_dry" title='BIO_dgram_sctp_wait_for_dry' data-ref="BIO_dgram_sctp_wait_for_dry">BIO_dgram_sctp_wait_for_dry</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col4 decl" id="424b" title='b' data-type='BIO *' data-ref="424b">b</dfn>);</td></tr>
+<tr><th id="769">769</th><td><em>int</em> <dfn class="decl fn" id="BIO_dgram_sctp_msg_waiting" title='BIO_dgram_sctp_msg_waiting' data-ref="BIO_dgram_sctp_msg_waiting">BIO_dgram_sctp_msg_waiting</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col5 decl" id="425b" title='b' data-type='BIO *' data-ref="425b">b</dfn>);</td></tr>
+<tr><th id="770">770</th><td><u># <span data-ppcond="759">endif</span></u></td></tr>
+<tr><th id="771">771</th><td><a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="decl fn" id="BIO_new_fd" title='BIO_new_fd' data-ref="BIO_new_fd">BIO_new_fd</dfn>(<em>int</em> <dfn class="local col6 decl" id="426fd" title='fd' data-type='int' data-ref="426fd">fd</dfn>, <em>int</em> <dfn class="local col7 decl" id="427close_flag" title='close_flag' data-type='int' data-ref="427close_flag">close_flag</dfn>);</td></tr>
+<tr><th id="772">772</th><td><a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="decl fn" id="BIO_new_connect" title='BIO_new_connect' data-ref="BIO_new_connect">BIO_new_connect</dfn>(<em>const</em> <em>char</em> *<dfn class="local col8 decl" id="428host_port" title='host_port' data-type='const char *' data-ref="428host_port">host_port</dfn>);</td></tr>
+<tr><th id="773">773</th><td><a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="decl fn" id="BIO_new_accept" title='BIO_new_accept' data-ref="BIO_new_accept">BIO_new_accept</dfn>(<em>const</em> <em>char</em> *<dfn class="local col9 decl" id="429host_port" title='host_port' data-type='const char *' data-ref="429host_port">host_port</dfn>);</td></tr>
+<tr><th id="774">774</th><td></td></tr>
+<tr><th id="775">775</th><td><em>int</em> <dfn class="decl fn" id="BIO_new_bio_pair" title='BIO_new_bio_pair' data-ref="BIO_new_bio_pair">BIO_new_bio_pair</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> **<dfn class="local col0 decl" id="430bio1" title='bio1' data-type='BIO **' data-ref="430bio1">bio1</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col1 decl" id="431writebuf1" title='writebuf1' data-type='size_t' data-ref="431writebuf1">writebuf1</dfn>,</td></tr>
+<tr><th id="776">776</th><td>                     <a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> **<dfn class="local col2 decl" id="432bio2" title='bio2' data-type='BIO **' data-ref="432bio2">bio2</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col3 decl" id="433writebuf2" title='writebuf2' data-type='size_t' data-ref="433writebuf2">writebuf2</dfn>);</td></tr>
+<tr><th id="777">777</th><td><i>/*</i></td></tr>
+<tr><th id="778">778</th><td><i> * If successful, returns 1 and in *bio1, *bio2 two BIO pair endpoints.</i></td></tr>
+<tr><th id="779">779</th><td><i> * Otherwise returns 0 and sets *bio1 and *bio2 to NULL. Size 0 uses default</i></td></tr>
+<tr><th id="780">780</th><td><i> * value.</i></td></tr>
+<tr><th id="781">781</th><td><i> */</i></td></tr>
+<tr><th id="782">782</th><td></td></tr>
+<tr><th id="783">783</th><td><em>void</em> <dfn class="decl fn" id="BIO_copy_next_retry" title='BIO_copy_next_retry' data-ref="BIO_copy_next_retry">BIO_copy_next_retry</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col4 decl" id="434b" title='b' data-type='BIO *' data-ref="434b">b</dfn>);</td></tr>
+<tr><th id="784">784</th><td></td></tr>
+<tr><th id="785">785</th><td><i>/*</i></td></tr>
+<tr><th id="786">786</th><td><i> * long BIO_ghbn_ctrl(int cmd,int iarg,char *parg);</i></td></tr>
+<tr><th id="787">787</th><td><i> */</i></td></tr>
+<tr><th id="788">788</th><td></td></tr>
+<tr><th id="789">789</th><td><u># <span data-ppcond="789">ifdef</span> <span class="macro" data-ref="_M/__GNUC__">__GNUC__</span></u></td></tr>
+<tr><th id="790">790</th><td><u>#  define <dfn class="macro" id="_M/__bio_h__attr__" data-ref="_M/__bio_h__attr__">__bio_h__attr__</dfn> __attribute__</u></td></tr>
+<tr><th id="791">791</th><td><u># <span data-ppcond="789">else</span></u></td></tr>
+<tr><th id="792">792</th><td><u>#  define __bio_h__attr__(x)</u></td></tr>
+<tr><th id="793">793</th><td><u># <span data-ppcond="789">endif</span></u></td></tr>
+<tr><th id="794">794</th><td><em>int</em> <dfn class="decl fn" id="BIO_printf" title='BIO_printf' data-ref="BIO_printf">BIO_printf</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col5 decl" id="435bio" title='bio' data-type='BIO *' data-ref="435bio">bio</dfn>, <em>const</em> <em>char</em> *<dfn class="local col6 decl" id="436format" title='format' data-type='const char *' data-ref="436format">format</dfn>, ...)</td></tr>
+<tr><th id="795">795</th><td><a class="macro" href="#790" title="__attribute__" data-ref="_M/__bio_h__attr__">__bio_h__attr__</a>((__format__(__printf__, <var>2</var>, <var>3</var>)));</td></tr>
+<tr><th id="796">796</th><td><em>int</em> <dfn class="decl fn" id="BIO_vprintf" title='BIO_vprintf' data-ref="BIO_vprintf">BIO_vprintf</dfn>(<a class="typedef" href="#BIO" title='BIO' data-type='struct bio_st' data-ref="BIO">BIO</a> *<dfn class="local col7 decl" id="437bio" title='bio' data-type='BIO *' data-ref="437bio">bio</dfn>, <em>const</em> <em>char</em> *<dfn class="local col8 decl" id="438format" title='format' data-type='const char *' data-ref="438format">format</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> <dfn class="local col9 decl" id="439args" title='args' data-type='struct __va_list_tag *' data-ref="439args">args</dfn>)</td></tr>
+<tr><th id="797">797</th><td><a class="macro" href="#790" title="__attribute__" data-ref="_M/__bio_h__attr__">__bio_h__attr__</a>((__format__(__printf__, <var>2</var>, <var>0</var>)));</td></tr>
+<tr><th id="798">798</th><td><em>int</em> <dfn class="decl fn" id="BIO_snprintf" title='BIO_snprintf' data-ref="BIO_snprintf">BIO_snprintf</dfn>(<em>char</em> *<dfn class="local col0 decl" id="440buf" title='buf' data-type='char *' data-ref="440buf">buf</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col1 decl" id="441n" title='n' data-type='size_t' data-ref="441n">n</dfn>, <em>const</em> <em>char</em> *<dfn class="local col2 decl" id="442format" title='format' data-type='const char *' data-ref="442format">format</dfn>, ...)</td></tr>
+<tr><th id="799">799</th><td><a class="macro" href="#790" title="__attribute__" data-ref="_M/__bio_h__attr__">__bio_h__attr__</a>((__format__(__printf__, <var>3</var>, <var>4</var>)));</td></tr>
+<tr><th id="800">800</th><td><em>int</em> <dfn class="decl fn" id="BIO_vsnprintf" title='BIO_vsnprintf' data-ref="BIO_vsnprintf">BIO_vsnprintf</dfn>(<em>char</em> *<dfn class="local col3 decl" id="443buf" title='buf' data-type='char *' data-ref="443buf">buf</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col4 decl" id="444n" title='n' data-type='size_t' data-ref="444n">n</dfn>, <em>const</em> <em>char</em> *<dfn class="local col5 decl" id="445format" title='format' data-type='const char *' data-ref="445format">format</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> <dfn class="local col6 decl" id="446args" title='args' data-type='struct __va_list_tag *' data-ref="446args">args</dfn>)</td></tr>
+<tr><th id="801">801</th><td><a class="macro" href="#790" title="__attribute__" data-ref="_M/__bio_h__attr__">__bio_h__attr__</a>((__format__(__printf__, <var>3</var>, <var>0</var>)));</td></tr>
+<tr><th id="802">802</th><td><u># undef <a class="macro" href="#790" data-ref="_M/__bio_h__attr__">__bio_h__attr__</a></u></td></tr>
+<tr><th id="803">803</th><td></td></tr>
+<tr><th id="804">804</th><td><i>/* BEGIN ERROR CODES */</i></td></tr>
+<tr><th id="805">805</th><td><i>/*</i></td></tr>
+<tr><th id="806">806</th><td><i> * The following lines are auto generated by the script mkerr.pl. Any changes</i></td></tr>
+<tr><th id="807">807</th><td><i> * made after this point may be overwritten when the script is next run.</i></td></tr>
+<tr><th id="808">808</th><td><i> */</i></td></tr>
+<tr><th id="809">809</th><td><em>void</em> <dfn class="decl fn" id="ERR_load_BIO_strings" title='ERR_load_BIO_strings' data-ref="ERR_load_BIO_strings">ERR_load_BIO_strings</dfn>(<em>void</em>);</td></tr>
+<tr><th id="810">810</th><td></td></tr>
+<tr><th id="811">811</th><td><i>/* Error codes for the BIO functions. */</i></td></tr>
+<tr><th id="812">812</th><td></td></tr>
+<tr><th id="813">813</th><td><i>/* Function codes. */</i></td></tr>
+<tr><th id="814">814</th><td><u># define <dfn class="macro" id="_M/BIO_F_ACPT_STATE" data-ref="_M/BIO_F_ACPT_STATE">BIO_F_ACPT_STATE</dfn>                                 100</u></td></tr>
+<tr><th id="815">815</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_ACCEPT" data-ref="_M/BIO_F_BIO_ACCEPT">BIO_F_BIO_ACCEPT</dfn>                                 101</u></td></tr>
+<tr><th id="816">816</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_BER_GET_HEADER" data-ref="_M/BIO_F_BIO_BER_GET_HEADER">BIO_F_BIO_BER_GET_HEADER</dfn>                         102</u></td></tr>
+<tr><th id="817">817</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_CALLBACK_CTRL" data-ref="_M/BIO_F_BIO_CALLBACK_CTRL">BIO_F_BIO_CALLBACK_CTRL</dfn>                          131</u></td></tr>
+<tr><th id="818">818</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_CTRL" data-ref="_M/BIO_F_BIO_CTRL">BIO_F_BIO_CTRL</dfn>                                   103</u></td></tr>
+<tr><th id="819">819</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_GETHOSTBYNAME" data-ref="_M/BIO_F_BIO_GETHOSTBYNAME">BIO_F_BIO_GETHOSTBYNAME</dfn>                          120</u></td></tr>
+<tr><th id="820">820</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_GETS" data-ref="_M/BIO_F_BIO_GETS">BIO_F_BIO_GETS</dfn>                                   104</u></td></tr>
+<tr><th id="821">821</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_GET_ACCEPT_SOCKET" data-ref="_M/BIO_F_BIO_GET_ACCEPT_SOCKET">BIO_F_BIO_GET_ACCEPT_SOCKET</dfn>                      105</u></td></tr>
+<tr><th id="822">822</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_GET_HOST_IP" data-ref="_M/BIO_F_BIO_GET_HOST_IP">BIO_F_BIO_GET_HOST_IP</dfn>                            106</u></td></tr>
+<tr><th id="823">823</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_GET_PORT" data-ref="_M/BIO_F_BIO_GET_PORT">BIO_F_BIO_GET_PORT</dfn>                               107</u></td></tr>
+<tr><th id="824">824</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_MAKE_PAIR" data-ref="_M/BIO_F_BIO_MAKE_PAIR">BIO_F_BIO_MAKE_PAIR</dfn>                              121</u></td></tr>
+<tr><th id="825">825</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_NEW" data-ref="_M/BIO_F_BIO_NEW">BIO_F_BIO_NEW</dfn>                                    108</u></td></tr>
+<tr><th id="826">826</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_NEW_FILE" data-ref="_M/BIO_F_BIO_NEW_FILE">BIO_F_BIO_NEW_FILE</dfn>                               109</u></td></tr>
+<tr><th id="827">827</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_NEW_MEM_BUF" data-ref="_M/BIO_F_BIO_NEW_MEM_BUF">BIO_F_BIO_NEW_MEM_BUF</dfn>                            126</u></td></tr>
+<tr><th id="828">828</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_NREAD" data-ref="_M/BIO_F_BIO_NREAD">BIO_F_BIO_NREAD</dfn>                                  123</u></td></tr>
+<tr><th id="829">829</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_NREAD0" data-ref="_M/BIO_F_BIO_NREAD0">BIO_F_BIO_NREAD0</dfn>                                 124</u></td></tr>
+<tr><th id="830">830</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_NWRITE" data-ref="_M/BIO_F_BIO_NWRITE">BIO_F_BIO_NWRITE</dfn>                                 125</u></td></tr>
+<tr><th id="831">831</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_NWRITE0" data-ref="_M/BIO_F_BIO_NWRITE0">BIO_F_BIO_NWRITE0</dfn>                                122</u></td></tr>
+<tr><th id="832">832</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_PUTS" data-ref="_M/BIO_F_BIO_PUTS">BIO_F_BIO_PUTS</dfn>                                   110</u></td></tr>
+<tr><th id="833">833</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_READ" data-ref="_M/BIO_F_BIO_READ">BIO_F_BIO_READ</dfn>                                   111</u></td></tr>
+<tr><th id="834">834</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_SOCK_INIT" data-ref="_M/BIO_F_BIO_SOCK_INIT">BIO_F_BIO_SOCK_INIT</dfn>                              112</u></td></tr>
+<tr><th id="835">835</th><td><u># define <dfn class="macro" id="_M/BIO_F_BIO_WRITE" data-ref="_M/BIO_F_BIO_WRITE">BIO_F_BIO_WRITE</dfn>                                  113</u></td></tr>
+<tr><th id="836">836</th><td><u># define <dfn class="macro" id="_M/BIO_F_BUFFER_CTRL" data-ref="_M/BIO_F_BUFFER_CTRL">BIO_F_BUFFER_CTRL</dfn>                                114</u></td></tr>
+<tr><th id="837">837</th><td><u># define <dfn class="macro" id="_M/BIO_F_CONN_CTRL" data-ref="_M/BIO_F_CONN_CTRL">BIO_F_CONN_CTRL</dfn>                                  127</u></td></tr>
+<tr><th id="838">838</th><td><u># define <dfn class="macro" id="_M/BIO_F_CONN_STATE" data-ref="_M/BIO_F_CONN_STATE">BIO_F_CONN_STATE</dfn>                                 115</u></td></tr>
+<tr><th id="839">839</th><td><u># define <dfn class="macro" id="_M/BIO_F_DGRAM_SCTP_READ" data-ref="_M/BIO_F_DGRAM_SCTP_READ">BIO_F_DGRAM_SCTP_READ</dfn>                            132</u></td></tr>
+<tr><th id="840">840</th><td><u># define <dfn class="macro" id="_M/BIO_F_DGRAM_SCTP_WRITE" data-ref="_M/BIO_F_DGRAM_SCTP_WRITE">BIO_F_DGRAM_SCTP_WRITE</dfn>                           133</u></td></tr>
+<tr><th id="841">841</th><td><u># define <dfn class="macro" id="_M/BIO_F_FILE_CTRL" data-ref="_M/BIO_F_FILE_CTRL">BIO_F_FILE_CTRL</dfn>                                  116</u></td></tr>
+<tr><th id="842">842</th><td><u># define <dfn class="macro" id="_M/BIO_F_FILE_READ" data-ref="_M/BIO_F_FILE_READ">BIO_F_FILE_READ</dfn>                                  130</u></td></tr>
+<tr><th id="843">843</th><td><u># define <dfn class="macro" id="_M/BIO_F_LINEBUFFER_CTRL" data-ref="_M/BIO_F_LINEBUFFER_CTRL">BIO_F_LINEBUFFER_CTRL</dfn>                            129</u></td></tr>
+<tr><th id="844">844</th><td><u># define <dfn class="macro" id="_M/BIO_F_MEM_READ" data-ref="_M/BIO_F_MEM_READ">BIO_F_MEM_READ</dfn>                                   128</u></td></tr>
+<tr><th id="845">845</th><td><u># define <dfn class="macro" id="_M/BIO_F_MEM_WRITE" data-ref="_M/BIO_F_MEM_WRITE">BIO_F_MEM_WRITE</dfn>                                  117</u></td></tr>
+<tr><th id="846">846</th><td><u># define <dfn class="macro" id="_M/BIO_F_SSL_NEW" data-ref="_M/BIO_F_SSL_NEW">BIO_F_SSL_NEW</dfn>                                    118</u></td></tr>
+<tr><th id="847">847</th><td><u># define <dfn class="macro" id="_M/BIO_F_WSASTARTUP" data-ref="_M/BIO_F_WSASTARTUP">BIO_F_WSASTARTUP</dfn>                                 119</u></td></tr>
+<tr><th id="848">848</th><td></td></tr>
+<tr><th id="849">849</th><td><i>/* Reason codes. */</i></td></tr>
+<tr><th id="850">850</th><td><u># define <dfn class="macro" id="_M/BIO_R_ACCEPT_ERROR" data-ref="_M/BIO_R_ACCEPT_ERROR">BIO_R_ACCEPT_ERROR</dfn>                               100</u></td></tr>
+<tr><th id="851">851</th><td><u># define <dfn class="macro" id="_M/BIO_R_BAD_FOPEN_MODE" data-ref="_M/BIO_R_BAD_FOPEN_MODE">BIO_R_BAD_FOPEN_MODE</dfn>                             101</u></td></tr>
+<tr><th id="852">852</th><td><u># define <dfn class="macro" id="_M/BIO_R_BAD_HOSTNAME_LOOKUP" data-ref="_M/BIO_R_BAD_HOSTNAME_LOOKUP">BIO_R_BAD_HOSTNAME_LOOKUP</dfn>                        102</u></td></tr>
+<tr><th id="853">853</th><td><u># define <dfn class="macro" id="_M/BIO_R_BROKEN_PIPE" data-ref="_M/BIO_R_BROKEN_PIPE">BIO_R_BROKEN_PIPE</dfn>                                124</u></td></tr>
+<tr><th id="854">854</th><td><u># define <dfn class="macro" id="_M/BIO_R_CONNECT_ERROR" data-ref="_M/BIO_R_CONNECT_ERROR">BIO_R_CONNECT_ERROR</dfn>                              103</u></td></tr>
+<tr><th id="855">855</th><td><u># define <dfn class="macro" id="_M/BIO_R_EOF_ON_MEMORY_BIO" data-ref="_M/BIO_R_EOF_ON_MEMORY_BIO">BIO_R_EOF_ON_MEMORY_BIO</dfn>                          127</u></td></tr>
+<tr><th id="856">856</th><td><u># define <dfn class="macro" id="_M/BIO_R_ERROR_SETTING_NBIO" data-ref="_M/BIO_R_ERROR_SETTING_NBIO">BIO_R_ERROR_SETTING_NBIO</dfn>                         104</u></td></tr>
+<tr><th id="857">857</th><td><u># define <dfn class="macro" id="_M/BIO_R_ERROR_SETTING_NBIO_ON_ACCEPTED_SOCKET" data-ref="_M/BIO_R_ERROR_SETTING_NBIO_ON_ACCEPTED_SOCKET">BIO_R_ERROR_SETTING_NBIO_ON_ACCEPTED_SOCKET</dfn>      105</u></td></tr>
+<tr><th id="858">858</th><td><u># define <dfn class="macro" id="_M/BIO_R_ERROR_SETTING_NBIO_ON_ACCEPT_SOCKET" data-ref="_M/BIO_R_ERROR_SETTING_NBIO_ON_ACCEPT_SOCKET">BIO_R_ERROR_SETTING_NBIO_ON_ACCEPT_SOCKET</dfn>        106</u></td></tr>
+<tr><th id="859">859</th><td><u># define <dfn class="macro" id="_M/BIO_R_GETHOSTBYNAME_ADDR_IS_NOT_AF_INET" data-ref="_M/BIO_R_GETHOSTBYNAME_ADDR_IS_NOT_AF_INET">BIO_R_GETHOSTBYNAME_ADDR_IS_NOT_AF_INET</dfn>          107</u></td></tr>
+<tr><th id="860">860</th><td><u># define <dfn class="macro" id="_M/BIO_R_INVALID_ARGUMENT" data-ref="_M/BIO_R_INVALID_ARGUMENT">BIO_R_INVALID_ARGUMENT</dfn>                           125</u></td></tr>
+<tr><th id="861">861</th><td><u># define <dfn class="macro" id="_M/BIO_R_INVALID_IP_ADDRESS" data-ref="_M/BIO_R_INVALID_IP_ADDRESS">BIO_R_INVALID_IP_ADDRESS</dfn>                         108</u></td></tr>
+<tr><th id="862">862</th><td><u># define <dfn class="macro" id="_M/BIO_R_IN_USE" data-ref="_M/BIO_R_IN_USE">BIO_R_IN_USE</dfn>                                     123</u></td></tr>
+<tr><th id="863">863</th><td><u># define <dfn class="macro" id="_M/BIO_R_KEEPALIVE" data-ref="_M/BIO_R_KEEPALIVE">BIO_R_KEEPALIVE</dfn>                                  109</u></td></tr>
+<tr><th id="864">864</th><td><u># define <dfn class="macro" id="_M/BIO_R_NBIO_CONNECT_ERROR" data-ref="_M/BIO_R_NBIO_CONNECT_ERROR">BIO_R_NBIO_CONNECT_ERROR</dfn>                         110</u></td></tr>
+<tr><th id="865">865</th><td><u># define <dfn class="macro" id="_M/BIO_R_NO_ACCEPT_PORT_SPECIFIED" data-ref="_M/BIO_R_NO_ACCEPT_PORT_SPECIFIED">BIO_R_NO_ACCEPT_PORT_SPECIFIED</dfn>                   111</u></td></tr>
+<tr><th id="866">866</th><td><u># define <dfn class="macro" id="_M/BIO_R_NO_HOSTNAME_SPECIFIED" data-ref="_M/BIO_R_NO_HOSTNAME_SPECIFIED">BIO_R_NO_HOSTNAME_SPECIFIED</dfn>                      112</u></td></tr>
+<tr><th id="867">867</th><td><u># define <dfn class="macro" id="_M/BIO_R_NO_PORT_DEFINED" data-ref="_M/BIO_R_NO_PORT_DEFINED">BIO_R_NO_PORT_DEFINED</dfn>                            113</u></td></tr>
+<tr><th id="868">868</th><td><u># define <dfn class="macro" id="_M/BIO_R_NO_PORT_SPECIFIED" data-ref="_M/BIO_R_NO_PORT_SPECIFIED">BIO_R_NO_PORT_SPECIFIED</dfn>                          114</u></td></tr>
+<tr><th id="869">869</th><td><u># define <dfn class="macro" id="_M/BIO_R_NO_SUCH_FILE" data-ref="_M/BIO_R_NO_SUCH_FILE">BIO_R_NO_SUCH_FILE</dfn>                               128</u></td></tr>
+<tr><th id="870">870</th><td><u># define <dfn class="macro" id="_M/BIO_R_NULL_PARAMETER" data-ref="_M/BIO_R_NULL_PARAMETER">BIO_R_NULL_PARAMETER</dfn>                             115</u></td></tr>
+<tr><th id="871">871</th><td><u># define <dfn class="macro" id="_M/BIO_R_TAG_MISMATCH" data-ref="_M/BIO_R_TAG_MISMATCH">BIO_R_TAG_MISMATCH</dfn>                               116</u></td></tr>
+<tr><th id="872">872</th><td><u># define <dfn class="macro" id="_M/BIO_R_UNABLE_TO_BIND_SOCKET" data-ref="_M/BIO_R_UNABLE_TO_BIND_SOCKET">BIO_R_UNABLE_TO_BIND_SOCKET</dfn>                      117</u></td></tr>
+<tr><th id="873">873</th><td><u># define <dfn class="macro" id="_M/BIO_R_UNABLE_TO_CREATE_SOCKET" data-ref="_M/BIO_R_UNABLE_TO_CREATE_SOCKET">BIO_R_UNABLE_TO_CREATE_SOCKET</dfn>                    118</u></td></tr>
+<tr><th id="874">874</th><td><u># define <dfn class="macro" id="_M/BIO_R_UNABLE_TO_LISTEN_SOCKET" data-ref="_M/BIO_R_UNABLE_TO_LISTEN_SOCKET">BIO_R_UNABLE_TO_LISTEN_SOCKET</dfn>                    119</u></td></tr>
+<tr><th id="875">875</th><td><u># define <dfn class="macro" id="_M/BIO_R_UNINITIALIZED" data-ref="_M/BIO_R_UNINITIALIZED">BIO_R_UNINITIALIZED</dfn>                              120</u></td></tr>
+<tr><th id="876">876</th><td><u># define <dfn class="macro" id="_M/BIO_R_UNSUPPORTED_METHOD" data-ref="_M/BIO_R_UNSUPPORTED_METHOD">BIO_R_UNSUPPORTED_METHOD</dfn>                         121</u></td></tr>
+<tr><th id="877">877</th><td><u># define <dfn class="macro" id="_M/BIO_R_WRITE_TO_READ_ONLY_BIO" data-ref="_M/BIO_R_WRITE_TO_READ_ONLY_BIO">BIO_R_WRITE_TO_READ_ONLY_BIO</dfn>                     126</u></td></tr>
+<tr><th id="878">878</th><td><u># define <dfn class="macro" id="_M/BIO_R_WSASTARTUP" data-ref="_M/BIO_R_WSASTARTUP">BIO_R_WSASTARTUP</dfn>                                 122</u></td></tr>
+<tr><th id="879">879</th><td></td></tr>
+<tr><th id="880">880</th><td><u>#<span data-ppcond="880">ifdef</span>  <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="881">881</th><td>}</td></tr>
+<tr><th id="882">882</th><td><u>#<span data-ppcond="880">endif</span></u></td></tr>
+<tr><th id="883">883</th><td><u>#<span data-ppcond="59">endif</span></u></td></tr>
+<tr><th id="884">884</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../vpp_1804/build-root/build-vpp_debug-native/dpdk/dpdk-stable-18.02.1/drivers/crypto/qat/qat_crypto.c.html'>vpp_1804/build-root/build-vpp_debug-native/dpdk/dpdk-stable-18.02.1/drivers/crypto/qat/qat_crypto.c</a><br/>Generated on <em>2018-Jul-30</em> from project include<br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

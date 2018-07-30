@@ -1,0 +1,414 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>eal_vfio_mp_sync.c source code [vpp_1804/build-root/build-vpp_debug-native/dpdk/dpdk-stable-18.02.1/lib/librte_eal/linuxapp/eal/eal_vfio_mp_sync.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'vpp_1804/build-root/build-vpp_debug-native/dpdk/dpdk-stable-18.02.1/lib/librte_eal/linuxapp/eal/eal_vfio_mp_sync.c'; var root_path = '../../../../../../../../..'; var data_path = '../../../../../../../../../../data';</script>
+<script src='../../../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../../../..'>vpp_1804</a>/<a href='../../../../../../..'>build-root</a>/<a href='../../../../../..'>build-vpp_debug-native</a>/<a href='../../../../..'>dpdk</a>/<a href='../../../..'>dpdk-stable-18.02.1</a>/<a href='../../..'>lib</a>/<a href='../..'>librte_eal</a>/<a href='..'>linuxapp</a>/<a href='./'>eal</a>/<a href='eal_vfio_mp_sync.c.html'>eal_vfio_mp_sync.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright(c) 2010-2014 Intel Corporation</i></td></tr>
+<tr><th id="3">3</th><td><i> */</i></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><u>#include <a href="../../../../../../../../../include/string.h.html">&lt;string.h&gt;</a></u></td></tr>
+<tr><th id="6">6</th><td><u>#include <a href="../../../../../../../../../include/fcntl.h.html">&lt;fcntl.h&gt;</a></u></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="../../../../../../../../../include/sys/socket.h.html">&lt;sys/socket.h&gt;</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="../../../../../../../../../include/pthread.h.html">&lt;pthread.h&gt;</a></u></td></tr>
+<tr><th id="9">9</th><td></td></tr>
+<tr><th id="10">10</th><td><i>/* sys/un.h with __USE_MISC uses strlen, which is unsafe */</i></td></tr>
+<tr><th id="11">11</th><td><u>#<span data-ppcond="11">ifdef</span> <a class="macro" href="../../../../../../../../../include/features.h.html#305" data-ref="_M/__USE_MISC">__USE_MISC</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#define <dfn class="macro" id="_M/REMOVED_USE_MISC" data-ref="_M/REMOVED_USE_MISC">REMOVED_USE_MISC</dfn></u></td></tr>
+<tr><th id="13">13</th><td><u>#undef <a class="macro" href="../../../../../../../../../include/features.h.html#305" data-ref="_M/__USE_MISC">__USE_MISC</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#<span data-ppcond="11">endif</span></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../../../../../../../include/sys/un.h.html">&lt;sys/un.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><i>/* make sure we redefine __USE_MISC only if it was previously undefined */</i></td></tr>
+<tr><th id="17">17</th><td><u>#<span data-ppcond="17">ifdef</span> <a class="macro" href="#12" data-ref="_M/REMOVED_USE_MISC">REMOVED_USE_MISC</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#define <dfn class="macro" id="_M/__USE_MISC" data-ref="_M/__USE_MISC">__USE_MISC</dfn></u></td></tr>
+<tr><th id="19">19</th><td><u>#undef <a class="macro" href="#12" data-ref="_M/REMOVED_USE_MISC">REMOVED_USE_MISC</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#<span data-ppcond="17">endif</span></u></td></tr>
+<tr><th id="21">21</th><td></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../common/include/rte_log.h.html">&lt;rte_log.h&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../common/include/rte_eal_memconfig.h.html">&lt;rte_eal_memconfig.h&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../../common/include/rte_malloc.h.html">&lt;rte_malloc.h&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../common/include/rte_vfio.h.html">&lt;rte_vfio.h&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../../common/eal_filesystem.h.html">"eal_filesystem.h"</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="eal_vfio.h.html">"eal_vfio.h"</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../../common/eal_thread.h.html">"eal_thread.h"</a></u></td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="32">32</th><td><i class="doc"> *<span class="command"> @file</span></i></td></tr>
+<tr><th id="33">33</th><td><i class="doc"> * VFIO socket for communication between primary and secondary processes.</i></td></tr>
+<tr><th id="34">34</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="35">35</th><td><i class="doc"> * This file is only compiled if CONFIG_RTE_EAL_VFIO is set to "y".</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><u>#<span data-ppcond="38">ifdef</span> <a class="macro" href="../../common/include/rte_vfio.h.html#14" data-ref="_M/VFIO_PRESENT">VFIO_PRESENT</a></u></td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><u>#define <dfn class="macro" id="_M/SOCKET_PATH_FMT" data-ref="_M/SOCKET_PATH_FMT">SOCKET_PATH_FMT</dfn> "%s/.%s_mp_socket"</u></td></tr>
+<tr><th id="41">41</th><td><u>#define <dfn class="macro" id="_M/CMSGLEN" data-ref="_M/CMSGLEN">CMSGLEN</dfn> (CMSG_LEN(sizeof(int)))</u></td></tr>
+<tr><th id="42">42</th><td><u>#define <dfn class="macro" id="_M/FD_TO_CMSGHDR" data-ref="_M/FD_TO_CMSGHDR">FD_TO_CMSGHDR</dfn>(fd, chdr) \</u></td></tr>
+<tr><th id="43">43</th><td><u>		do {\</u></td></tr>
+<tr><th id="44">44</th><td><u>			(chdr).<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#cmsghdr::cmsg_len" title='cmsghdr::cmsg_len' data-ref="cmsghdr::cmsg_len">cmsg_len</a> = CMSGLEN;\</u></td></tr>
+<tr><th id="45">45</th><td><u>			(chdr).<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#cmsghdr::cmsg_level" title='cmsghdr::cmsg_level' data-ref="cmsghdr::cmsg_level">cmsg_level</a> = SOL_SOCKET;\</u></td></tr>
+<tr><th id="46">46</th><td><u>			(chdr).<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#cmsghdr::cmsg_type" title='cmsghdr::cmsg_type' data-ref="cmsghdr::cmsg_type">cmsg_type</a> = SCM_RIGHTS;\</u></td></tr>
+<tr><th id="47">47</th><td><u>			<a class="ref fn" href="../../../../../../../../../include/string.h.html#memcpy" title='memcpy' data-ref="memcpy">memcpy</a>((chdr).<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#cmsghdr::__cmsg_data" title='cmsghdr::__cmsg_data' data-ref="cmsghdr::__cmsg_data">__cmsg_data</a>, &amp;(fd), sizeof(fd));\</u></td></tr>
+<tr><th id="48">48</th><td><u>		} while (0)</u></td></tr>
+<tr><th id="49">49</th><td><u>#define <dfn class="macro" id="_M/CMSGHDR_TO_FD" data-ref="_M/CMSGHDR_TO_FD">CMSGHDR_TO_FD</dfn>(chdr, fd) \</u></td></tr>
+<tr><th id="50">50</th><td><u>			<a class="ref fn" href="../../../../../../../../../include/string.h.html#memcpy" title='memcpy' data-ref="memcpy">memcpy</a>(&amp;(fd), (chdr).<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#cmsghdr::__cmsg_data" title='cmsghdr::__cmsg_data' data-ref="cmsghdr::__cmsg_data">__cmsg_data</a>, sizeof(fd))</u></td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td><em>static</em> <a class="typedef" href="../../../../../../../../../include/bits/pthreadtypes.h.html#pthread_t" title='pthread_t' data-type='unsigned long' data-ref="pthread_t">pthread_t</a> <dfn class="tu decl def" id="socket_thread" title='socket_thread' data-type='pthread_t' data-ref="socket_thread">socket_thread</dfn>;</td></tr>
+<tr><th id="53">53</th><td><em>static</em> <em>int</em> <dfn class="tu decl def" id="mp_socket_fd" title='mp_socket_fd' data-type='int' data-ref="mp_socket_fd">mp_socket_fd</dfn>;</td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td><i  data-doc="get_socket_path">/* get socket path (/var/run if root, $HOME otherwise) */</i></td></tr>
+<tr><th id="57">57</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="58">58</th><td><dfn class="tu decl def fn" id="get_socket_path" title='get_socket_path' data-type='void get_socket_path(char * buffer, int bufsz)' data-ref="get_socket_path">get_socket_path</dfn>(<em>char</em> *<dfn class="local col1 decl" id="1buffer" title='buffer' data-type='char *' data-ref="1buffer">buffer</dfn>, <em>int</em> <dfn class="local col2 decl" id="2bufsz" title='bufsz' data-type='int' data-ref="2bufsz">bufsz</dfn>)</td></tr>
+<tr><th id="59">59</th><td>{</td></tr>
+<tr><th id="60">60</th><td>	<em>const</em> <em>char</em> *<dfn class="local col3 decl" id="3dir" title='dir' data-type='const char *' data-ref="3dir">dir</dfn> = <q>"/var/run"</q>;</td></tr>
+<tr><th id="61">61</th><td>	<em>const</em> <em>char</em> *<dfn class="local col4 decl" id="4home_dir" title='home_dir' data-type='const char *' data-ref="4home_dir">home_dir</dfn> = <a class="ref fn" href="../../../../../../../../../include/stdlib.h.html#getenv" title='getenv' data-ref="getenv">getenv</a>(<q>"HOME"</q>);</td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td>	<b>if</b> (<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#getuid" title='getuid' data-ref="getuid">getuid</a>() != <var>0</var> &amp;&amp; <a class="local col4 ref" href="#4home_dir" title='home_dir' data-ref="4home_dir">home_dir</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>)</td></tr>
+<tr><th id="64">64</th><td>		<a class="local col3 ref" href="#3dir" title='dir' data-ref="3dir">dir</a> = <a class="local col4 ref" href="#4home_dir" title='home_dir' data-ref="4home_dir">home_dir</a>;</td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td>	<i>/* use current prefix as file path */</i></td></tr>
+<tr><th id="67">67</th><td>	<a class="ref fn" href="../../../../../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a>(<a class="local col1 ref" href="#1buffer" title='buffer' data-ref="1buffer">buffer</a>, <a class="local col2 ref" href="#2bufsz" title='bufsz' data-ref="2bufsz">bufsz</a>, <a class="macro" href="#40" title="&quot;%s/.%s_mp_socket&quot;" data-ref="_M/SOCKET_PATH_FMT">SOCKET_PATH_FMT</a>, <a class="local col3 ref" href="#3dir" title='dir' data-ref="3dir">dir</a>,</td></tr>
+<tr><th id="68">68</th><td>			<a class="ref" href="../../common/eal_internal_cfg.h.html#internal_config" title='internal_config' data-ref="internal_config">internal_config</a>.<a class="ref field" href="../../common/eal_internal_cfg.h.html#internal_config::hugefile_prefix" title='internal_config::hugefile_prefix' data-ref="internal_config::hugefile_prefix">hugefile_prefix</a>);</td></tr>
+<tr><th id="69">69</th><td>}</td></tr>
+<tr><th id="70">70</th><td></td></tr>
+<tr><th id="71">71</th><td></td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td><i>/*</i></td></tr>
+<tr><th id="74">74</th><td><i> * data flow for socket comm protocol:</i></td></tr>
+<tr><th id="75">75</th><td><i> * 1. client sends SOCKET_REQ_CONTAINER or SOCKET_REQ_GROUP</i></td></tr>
+<tr><th id="76">76</th><td><i> * 1a. in case of SOCKET_REQ_GROUP, client also then sends group number</i></td></tr>
+<tr><th id="77">77</th><td><i> * 2. server receives message</i></td></tr>
+<tr><th id="78">78</th><td><i> * 2a. in case of invalid group, SOCKET_ERR is sent back to client</i></td></tr>
+<tr><th id="79">79</th><td><i> * 2b. in case of unbound group, SOCKET_NO_FD is sent back to client</i></td></tr>
+<tr><th id="80">80</th><td><i> * 2c. in case of valid group, SOCKET_OK is sent and immediately followed by fd</i></td></tr>
+<tr><th id="81">81</th><td><i> *</i></td></tr>
+<tr><th id="82">82</th><td><i> * in case of any error, socket is closed.</i></td></tr>
+<tr><th id="83">83</th><td><i> */</i></td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td><i>/* send a request, return -1 on error */</i></td></tr>
+<tr><th id="86">86</th><td><em>int</em></td></tr>
+<tr><th id="87">87</th><td><dfn class="decl def fn" id="vfio_mp_sync_send_request" title='vfio_mp_sync_send_request' data-ref="vfio_mp_sync_send_request">vfio_mp_sync_send_request</dfn>(<em>int</em> <dfn class="local col5 decl" id="5socket" title='socket' data-type='int' data-ref="5socket">socket</dfn>, <em>int</em> <dfn class="local col6 decl" id="6req" title='req' data-type='int' data-ref="6req">req</dfn>)</td></tr>
+<tr><th id="88">88</th><td>{</td></tr>
+<tr><th id="89">89</th><td>	<b>struct</b> <a class="type" href="../../../../../../../../../include/bits/socket.h.html#msghdr" title='msghdr' data-ref="msghdr">msghdr</a> <dfn class="local col7 decl" id="7hdr" title='hdr' data-type='struct msghdr' data-ref="7hdr">hdr</dfn>;</td></tr>
+<tr><th id="90">90</th><td>	<b>struct</b> <a class="type" href="../../../../../../../../../include/bits/uio.h.html#iovec" title='iovec' data-ref="iovec">iovec</a> <dfn class="local col8 decl" id="8iov" title='iov' data-type='struct iovec' data-ref="8iov">iov</dfn>;</td></tr>
+<tr><th id="91">91</th><td>	<em>int</em> <dfn class="local col9 decl" id="9buf" title='buf' data-type='int' data-ref="9buf">buf</dfn>;</td></tr>
+<tr><th id="92">92</th><td>	<em>int</em> <dfn class="local col0 decl" id="10ret" title='ret' data-type='int' data-ref="10ret">ret</dfn>;</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td>	<a class="ref fn" href="../../../../../../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(&amp;<a class="local col7 ref" href="#7hdr" title='hdr' data-ref="7hdr">hdr</a>, <var>0</var>, <b>sizeof</b>(<a class="local col7 ref" href="#7hdr" title='hdr' data-ref="7hdr">hdr</a>));</td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td>	<a class="local col9 ref" href="#9buf" title='buf' data-ref="9buf">buf</a> = <a class="local col6 ref" href="#6req" title='req' data-ref="6req">req</a>;</td></tr>
+<tr><th id="97">97</th><td></td></tr>
+<tr><th id="98">98</th><td>	<a class="local col7 ref" href="#7hdr" title='hdr' data-ref="7hdr">hdr</a>.<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#msghdr::msg_iov" title='msghdr::msg_iov' data-ref="msghdr::msg_iov">msg_iov</a> = &amp;<a class="local col8 ref" href="#8iov" title='iov' data-ref="8iov">iov</a>;</td></tr>
+<tr><th id="99">99</th><td>	<a class="local col7 ref" href="#7hdr" title='hdr' data-ref="7hdr">hdr</a>.<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#msghdr::msg_iovlen" title='msghdr::msg_iovlen' data-ref="msghdr::msg_iovlen">msg_iovlen</a> = <var>1</var>;</td></tr>
+<tr><th id="100">100</th><td>	<a class="local col8 ref" href="#8iov" title='iov' data-ref="8iov">iov</a>.<a class="ref field" href="../../../../../../../../../include/bits/uio.h.html#iovec::iov_base" title='iovec::iov_base' data-ref="iovec::iov_base">iov_base</a> = (<em>char</em> *) &amp;<a class="local col9 ref" href="#9buf" title='buf' data-ref="9buf">buf</a>;</td></tr>
+<tr><th id="101">101</th><td>	<a class="local col8 ref" href="#8iov" title='iov' data-ref="8iov">iov</a>.<a class="ref field" href="../../../../../../../../../include/bits/uio.h.html#iovec::iov_len" title='iovec::iov_len' data-ref="iovec::iov_len">iov_len</a> = <b>sizeof</b>(<a class="local col9 ref" href="#9buf" title='buf' data-ref="9buf">buf</a>);</td></tr>
+<tr><th id="102">102</th><td></td></tr>
+<tr><th id="103">103</th><td>	<a class="local col0 ref" href="#10ret" title='ret' data-ref="10ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/sys/socket.h.html#sendmsg" title='sendmsg' data-ref="sendmsg">sendmsg</a>(<a class="local col5 ref" href="#5socket" title='socket' data-ref="5socket">socket</a>, &amp;<a class="local col7 ref" href="#7hdr" title='hdr' data-ref="7hdr">hdr</a>, <var>0</var>);</td></tr>
+<tr><th id="104">104</th><td>	<b>if</b> (<a class="local col0 ref" href="#10ret" title='ret' data-ref="10ret">ret</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="105">105</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="106">106</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="107">107</th><td>}</td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td><i>/* receive a request and return it */</i></td></tr>
+<tr><th id="110">110</th><td><em>int</em></td></tr>
+<tr><th id="111">111</th><td><dfn class="decl def fn" id="vfio_mp_sync_receive_request" title='vfio_mp_sync_receive_request' data-ref="vfio_mp_sync_receive_request">vfio_mp_sync_receive_request</dfn>(<em>int</em> <dfn class="local col1 decl" id="11socket" title='socket' data-type='int' data-ref="11socket">socket</dfn>)</td></tr>
+<tr><th id="112">112</th><td>{</td></tr>
+<tr><th id="113">113</th><td>	<em>int</em> <dfn class="local col2 decl" id="12buf" title='buf' data-type='int' data-ref="12buf">buf</dfn>;</td></tr>
+<tr><th id="114">114</th><td>	<b>struct</b> <a class="type" href="../../../../../../../../../include/bits/socket.h.html#msghdr" title='msghdr' data-ref="msghdr">msghdr</a> <dfn class="local col3 decl" id="13hdr" title='hdr' data-type='struct msghdr' data-ref="13hdr">hdr</dfn>;</td></tr>
+<tr><th id="115">115</th><td>	<b>struct</b> <a class="type" href="../../../../../../../../../include/bits/uio.h.html#iovec" title='iovec' data-ref="iovec">iovec</a> <dfn class="local col4 decl" id="14iov" title='iov' data-type='struct iovec' data-ref="14iov">iov</dfn>;</td></tr>
+<tr><th id="116">116</th><td>	<em>int</em> <dfn class="local col5 decl" id="15ret" title='ret' data-type='int' data-ref="15ret">ret</dfn>, <dfn class="local col6 decl" id="16req" title='req' data-type='int' data-ref="16req">req</dfn>;</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td>	<a class="ref fn" href="../../../../../../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(&amp;<a class="local col3 ref" href="#13hdr" title='hdr' data-ref="13hdr">hdr</a>, <var>0</var>, <b>sizeof</b>(<a class="local col3 ref" href="#13hdr" title='hdr' data-ref="13hdr">hdr</a>));</td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td>	<a class="local col2 ref" href="#12buf" title='buf' data-ref="12buf">buf</a> = <a class="macro" href="eal_vfio.h.html#158" title="0xFF" data-ref="_M/SOCKET_ERR">SOCKET_ERR</a>;</td></tr>
+<tr><th id="121">121</th><td></td></tr>
+<tr><th id="122">122</th><td>	<a class="local col3 ref" href="#13hdr" title='hdr' data-ref="13hdr">hdr</a>.<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#msghdr::msg_iov" title='msghdr::msg_iov' data-ref="msghdr::msg_iov">msg_iov</a> = &amp;<a class="local col4 ref" href="#14iov" title='iov' data-ref="14iov">iov</a>;</td></tr>
+<tr><th id="123">123</th><td>	<a class="local col3 ref" href="#13hdr" title='hdr' data-ref="13hdr">hdr</a>.<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#msghdr::msg_iovlen" title='msghdr::msg_iovlen' data-ref="msghdr::msg_iovlen">msg_iovlen</a> = <var>1</var>;</td></tr>
+<tr><th id="124">124</th><td>	<a class="local col4 ref" href="#14iov" title='iov' data-ref="14iov">iov</a>.<a class="ref field" href="../../../../../../../../../include/bits/uio.h.html#iovec::iov_base" title='iovec::iov_base' data-ref="iovec::iov_base">iov_base</a> = (<em>char</em> *) &amp;<a class="local col2 ref" href="#12buf" title='buf' data-ref="12buf">buf</a>;</td></tr>
+<tr><th id="125">125</th><td>	<a class="local col4 ref" href="#14iov" title='iov' data-ref="14iov">iov</a>.<a class="ref field" href="../../../../../../../../../include/bits/uio.h.html#iovec::iov_len" title='iovec::iov_len' data-ref="iovec::iov_len">iov_len</a> = <b>sizeof</b>(<a class="local col2 ref" href="#12buf" title='buf' data-ref="12buf">buf</a>);</td></tr>
+<tr><th id="126">126</th><td></td></tr>
+<tr><th id="127">127</th><td>	<a class="local col5 ref" href="#15ret" title='ret' data-ref="15ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/sys/socket.h.html#recvmsg" title='recvmsg' data-ref="recvmsg">recvmsg</a>(<a class="local col1 ref" href="#11socket" title='socket' data-ref="11socket">socket</a>, &amp;<a class="local col3 ref" href="#13hdr" title='hdr' data-ref="13hdr">hdr</a>, <var>0</var>);</td></tr>
+<tr><th id="128">128</th><td>	<b>if</b> (<a class="local col5 ref" href="#15ret" title='ret' data-ref="15ret">ret</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="129">129</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td>	<a class="local col6 ref" href="#16req" title='req' data-ref="16req">req</a> = <a class="local col2 ref" href="#12buf" title='buf' data-ref="12buf">buf</a>;</td></tr>
+<tr><th id="132">132</th><td></td></tr>
+<tr><th id="133">133</th><td>	<b>return</b> <a class="local col6 ref" href="#16req" title='req' data-ref="16req">req</a>;</td></tr>
+<tr><th id="134">134</th><td>}</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td><i>/* send OK in message, fd in control message */</i></td></tr>
+<tr><th id="137">137</th><td><em>int</em></td></tr>
+<tr><th id="138">138</th><td><dfn class="decl def fn" id="vfio_mp_sync_send_fd" title='vfio_mp_sync_send_fd' data-ref="vfio_mp_sync_send_fd">vfio_mp_sync_send_fd</dfn>(<em>int</em> <dfn class="local col7 decl" id="17socket" title='socket' data-type='int' data-ref="17socket">socket</dfn>, <em>int</em> <dfn class="local col8 decl" id="18fd" title='fd' data-type='int' data-ref="18fd">fd</dfn>)</td></tr>
+<tr><th id="139">139</th><td>{</td></tr>
+<tr><th id="140">140</th><td>	<em>int</em> <dfn class="local col9 decl" id="19buf" title='buf' data-type='int' data-ref="19buf">buf</dfn>;</td></tr>
+<tr><th id="141">141</th><td>	<b>struct</b> <a class="type" href="../../../../../../../../../include/bits/socket.h.html#msghdr" title='msghdr' data-ref="msghdr">msghdr</a> <dfn class="local col0 decl" id="20hdr" title='hdr' data-type='struct msghdr' data-ref="20hdr">hdr</dfn>;</td></tr>
+<tr><th id="142">142</th><td>	<b>struct</b> <a class="type" href="../../../../../../../../../include/bits/socket.h.html#cmsghdr" title='cmsghdr' data-ref="cmsghdr">cmsghdr</a> *<dfn class="local col1 decl" id="21chdr" title='chdr' data-type='struct cmsghdr *' data-ref="21chdr">chdr</dfn>;</td></tr>
+<tr><th id="143">143</th><td>	<em>char</em> <dfn class="local col2 decl" id="22chdr_buf" title='chdr_buf' data-type='char [20]' data-ref="22chdr_buf">chdr_buf</dfn>[<a class="macro" href="#41" title="(((((sizeof (struct cmsghdr)) + sizeof (size_t) - 1) &amp; (size_t) ~(sizeof (size_t) - 1)) + (sizeof(int))))" data-ref="_M/CMSGLEN">CMSGLEN</a>];</td></tr>
+<tr><th id="144">144</th><td>	<b>struct</b> <a class="type" href="../../../../../../../../../include/bits/uio.h.html#iovec" title='iovec' data-ref="iovec">iovec</a> <dfn class="local col3 decl" id="23iov" title='iov' data-type='struct iovec' data-ref="23iov">iov</dfn>;</td></tr>
+<tr><th id="145">145</th><td>	<em>int</em> <dfn class="local col4 decl" id="24ret" title='ret' data-type='int' data-ref="24ret">ret</dfn>;</td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td>	<a class="local col1 ref" href="#21chdr" title='chdr' data-ref="21chdr">chdr</a> = (<b>struct</b> <a class="type" href="../../../../../../../../../include/bits/socket.h.html#cmsghdr" title='cmsghdr' data-ref="cmsghdr">cmsghdr</a> *) <a class="local col2 ref" href="#22chdr_buf" title='chdr_buf' data-ref="22chdr_buf">chdr_buf</a>;</td></tr>
+<tr><th id="148">148</th><td>	<a class="ref fn" href="../../../../../../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(<a class="local col1 ref" href="#21chdr" title='chdr' data-ref="21chdr">chdr</a>, <var>0</var>, <b>sizeof</b>(<a class="local col2 ref" href="#22chdr_buf" title='chdr_buf' data-ref="22chdr_buf">chdr_buf</a>));</td></tr>
+<tr><th id="149">149</th><td>	<a class="ref fn" href="../../../../../../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(&amp;<a class="local col0 ref" href="#20hdr" title='hdr' data-ref="20hdr">hdr</a>, <var>0</var>, <b>sizeof</b>(<a class="local col0 ref" href="#20hdr" title='hdr' data-ref="20hdr">hdr</a>));</td></tr>
+<tr><th id="150">150</th><td></td></tr>
+<tr><th id="151">151</th><td>	<a class="local col0 ref" href="#20hdr" title='hdr' data-ref="20hdr">hdr</a>.<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#msghdr::msg_iov" title='msghdr::msg_iov' data-ref="msghdr::msg_iov">msg_iov</a> = &amp;<a class="local col3 ref" href="#23iov" title='iov' data-ref="23iov">iov</a>;</td></tr>
+<tr><th id="152">152</th><td>	<a class="local col0 ref" href="#20hdr" title='hdr' data-ref="20hdr">hdr</a>.<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#msghdr::msg_iovlen" title='msghdr::msg_iovlen' data-ref="msghdr::msg_iovlen">msg_iovlen</a> = <var>1</var>;</td></tr>
+<tr><th id="153">153</th><td>	<a class="local col3 ref" href="#23iov" title='iov' data-ref="23iov">iov</a>.<a class="ref field" href="../../../../../../../../../include/bits/uio.h.html#iovec::iov_base" title='iovec::iov_base' data-ref="iovec::iov_base">iov_base</a> = (<em>char</em> *) &amp;<a class="local col9 ref" href="#19buf" title='buf' data-ref="19buf">buf</a>;</td></tr>
+<tr><th id="154">154</th><td>	<a class="local col3 ref" href="#23iov" title='iov' data-ref="23iov">iov</a>.<a class="ref field" href="../../../../../../../../../include/bits/uio.h.html#iovec::iov_len" title='iovec::iov_len' data-ref="iovec::iov_len">iov_len</a> = <b>sizeof</b>(<a class="local col9 ref" href="#19buf" title='buf' data-ref="19buf">buf</a>);</td></tr>
+<tr><th id="155">155</th><td>	<a class="local col0 ref" href="#20hdr" title='hdr' data-ref="20hdr">hdr</a>.<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#msghdr::msg_control" title='msghdr::msg_control' data-ref="msghdr::msg_control">msg_control</a> = <a class="local col1 ref" href="#21chdr" title='chdr' data-ref="21chdr">chdr</a>;</td></tr>
+<tr><th id="156">156</th><td>	<a class="local col0 ref" href="#20hdr" title='hdr' data-ref="20hdr">hdr</a>.<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#msghdr::msg_controllen" title='msghdr::msg_controllen' data-ref="msghdr::msg_controllen">msg_controllen</a> = <a class="macro" href="#41" title="(((((sizeof (struct cmsghdr)) + sizeof (size_t) - 1) &amp; (size_t) ~(sizeof (size_t) - 1)) + (sizeof(int))))" data-ref="_M/CMSGLEN">CMSGLEN</a>;</td></tr>
+<tr><th id="157">157</th><td></td></tr>
+<tr><th id="158">158</th><td>	<a class="local col9 ref" href="#19buf" title='buf' data-ref="19buf">buf</a> = <a class="macro" href="eal_vfio.h.html#156" title="0x0" data-ref="_M/SOCKET_OK">SOCKET_OK</a>;</td></tr>
+<tr><th id="159">159</th><td>	<a class="macro" href="#42" title="do { (*chdr).cmsg_len = (((((sizeof (struct cmsghdr)) + sizeof (size_t) - 1) &amp; (size_t) ~(sizeof (size_t) - 1)) + (sizeof(int)))); (*chdr).cmsg_level = 1; (*chdr).cmsg_type = SCM_RIGHTS; memcpy((*chdr).__cmsg_data, &amp;(fd), sizeof(fd)); } while (0)" data-ref="_M/FD_TO_CMSGHDR">FD_TO_CMSGHDR</a>(<a class="local col8 ref" href="#18fd" title='fd' data-ref="18fd">fd</a>, *<a class="local col1 ref" href="#21chdr" title='chdr' data-ref="21chdr">chdr</a>);</td></tr>
+<tr><th id="160">160</th><td></td></tr>
+<tr><th id="161">161</th><td>	<a class="local col4 ref" href="#24ret" title='ret' data-ref="24ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/sys/socket.h.html#sendmsg" title='sendmsg' data-ref="sendmsg">sendmsg</a>(<a class="local col7 ref" href="#17socket" title='socket' data-ref="17socket">socket</a>, &amp;<a class="local col0 ref" href="#20hdr" title='hdr' data-ref="20hdr">hdr</a>, <var>0</var>);</td></tr>
+<tr><th id="162">162</th><td>	<b>if</b> (<a class="local col4 ref" href="#24ret" title='ret' data-ref="24ret">ret</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="163">163</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="164">164</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="165">165</th><td>}</td></tr>
+<tr><th id="166">166</th><td></td></tr>
+<tr><th id="167">167</th><td><i>/* receive OK in message, fd in control message */</i></td></tr>
+<tr><th id="168">168</th><td><em>int</em></td></tr>
+<tr><th id="169">169</th><td><dfn class="decl def fn" id="vfio_mp_sync_receive_fd" title='vfio_mp_sync_receive_fd' data-ref="vfio_mp_sync_receive_fd">vfio_mp_sync_receive_fd</dfn>(<em>int</em> <dfn class="local col5 decl" id="25socket" title='socket' data-type='int' data-ref="25socket">socket</dfn>)</td></tr>
+<tr><th id="170">170</th><td>{</td></tr>
+<tr><th id="171">171</th><td>	<em>int</em> <dfn class="local col6 decl" id="26buf" title='buf' data-type='int' data-ref="26buf">buf</dfn>;</td></tr>
+<tr><th id="172">172</th><td>	<b>struct</b> <a class="type" href="../../../../../../../../../include/bits/socket.h.html#msghdr" title='msghdr' data-ref="msghdr">msghdr</a> <dfn class="local col7 decl" id="27hdr" title='hdr' data-type='struct msghdr' data-ref="27hdr">hdr</dfn>;</td></tr>
+<tr><th id="173">173</th><td>	<b>struct</b> <a class="type" href="../../../../../../../../../include/bits/socket.h.html#cmsghdr" title='cmsghdr' data-ref="cmsghdr">cmsghdr</a> *<dfn class="local col8 decl" id="28chdr" title='chdr' data-type='struct cmsghdr *' data-ref="28chdr">chdr</dfn>;</td></tr>
+<tr><th id="174">174</th><td>	<em>char</em> <dfn class="local col9 decl" id="29chdr_buf" title='chdr_buf' data-type='char [20]' data-ref="29chdr_buf">chdr_buf</dfn>[<a class="macro" href="#41" title="(((((sizeof (struct cmsghdr)) + sizeof (size_t) - 1) &amp; (size_t) ~(sizeof (size_t) - 1)) + (sizeof(int))))" data-ref="_M/CMSGLEN">CMSGLEN</a>];</td></tr>
+<tr><th id="175">175</th><td>	<b>struct</b> <a class="type" href="../../../../../../../../../include/bits/uio.h.html#iovec" title='iovec' data-ref="iovec">iovec</a> <dfn class="local col0 decl" id="30iov" title='iov' data-type='struct iovec' data-ref="30iov">iov</dfn>;</td></tr>
+<tr><th id="176">176</th><td>	<em>int</em> <dfn class="local col1 decl" id="31ret" title='ret' data-type='int' data-ref="31ret">ret</dfn>, <dfn class="local col2 decl" id="32req" title='req' data-type='int' data-ref="32req">req</dfn>, <dfn class="local col3 decl" id="33fd" title='fd' data-type='int' data-ref="33fd">fd</dfn>;</td></tr>
+<tr><th id="177">177</th><td></td></tr>
+<tr><th id="178">178</th><td>	<a class="local col6 ref" href="#26buf" title='buf' data-ref="26buf">buf</a> = <a class="macro" href="eal_vfio.h.html#158" title="0xFF" data-ref="_M/SOCKET_ERR">SOCKET_ERR</a>;</td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td>	<a class="local col8 ref" href="#28chdr" title='chdr' data-ref="28chdr">chdr</a> = (<b>struct</b> <a class="type" href="../../../../../../../../../include/bits/socket.h.html#cmsghdr" title='cmsghdr' data-ref="cmsghdr">cmsghdr</a> *) <a class="local col9 ref" href="#29chdr_buf" title='chdr_buf' data-ref="29chdr_buf">chdr_buf</a>;</td></tr>
+<tr><th id="181">181</th><td>	<a class="ref fn" href="../../../../../../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(<a class="local col8 ref" href="#28chdr" title='chdr' data-ref="28chdr">chdr</a>, <var>0</var>, <b>sizeof</b>(<a class="local col9 ref" href="#29chdr_buf" title='chdr_buf' data-ref="29chdr_buf">chdr_buf</a>));</td></tr>
+<tr><th id="182">182</th><td>	<a class="ref fn" href="../../../../../../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(&amp;<a class="local col7 ref" href="#27hdr" title='hdr' data-ref="27hdr">hdr</a>, <var>0</var>, <b>sizeof</b>(<a class="local col7 ref" href="#27hdr" title='hdr' data-ref="27hdr">hdr</a>));</td></tr>
+<tr><th id="183">183</th><td></td></tr>
+<tr><th id="184">184</th><td>	<a class="local col7 ref" href="#27hdr" title='hdr' data-ref="27hdr">hdr</a>.<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#msghdr::msg_iov" title='msghdr::msg_iov' data-ref="msghdr::msg_iov">msg_iov</a> = &amp;<a class="local col0 ref" href="#30iov" title='iov' data-ref="30iov">iov</a>;</td></tr>
+<tr><th id="185">185</th><td>	<a class="local col7 ref" href="#27hdr" title='hdr' data-ref="27hdr">hdr</a>.<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#msghdr::msg_iovlen" title='msghdr::msg_iovlen' data-ref="msghdr::msg_iovlen">msg_iovlen</a> = <var>1</var>;</td></tr>
+<tr><th id="186">186</th><td>	<a class="local col0 ref" href="#30iov" title='iov' data-ref="30iov">iov</a>.<a class="ref field" href="../../../../../../../../../include/bits/uio.h.html#iovec::iov_base" title='iovec::iov_base' data-ref="iovec::iov_base">iov_base</a> = (<em>char</em> *) &amp;<a class="local col6 ref" href="#26buf" title='buf' data-ref="26buf">buf</a>;</td></tr>
+<tr><th id="187">187</th><td>	<a class="local col0 ref" href="#30iov" title='iov' data-ref="30iov">iov</a>.<a class="ref field" href="../../../../../../../../../include/bits/uio.h.html#iovec::iov_len" title='iovec::iov_len' data-ref="iovec::iov_len">iov_len</a> = <b>sizeof</b>(<a class="local col6 ref" href="#26buf" title='buf' data-ref="26buf">buf</a>);</td></tr>
+<tr><th id="188">188</th><td>	<a class="local col7 ref" href="#27hdr" title='hdr' data-ref="27hdr">hdr</a>.<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#msghdr::msg_control" title='msghdr::msg_control' data-ref="msghdr::msg_control">msg_control</a> = <a class="local col8 ref" href="#28chdr" title='chdr' data-ref="28chdr">chdr</a>;</td></tr>
+<tr><th id="189">189</th><td>	<a class="local col7 ref" href="#27hdr" title='hdr' data-ref="27hdr">hdr</a>.<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#msghdr::msg_controllen" title='msghdr::msg_controllen' data-ref="msghdr::msg_controllen">msg_controllen</a> = <a class="macro" href="#41" title="(((((sizeof (struct cmsghdr)) + sizeof (size_t) - 1) &amp; (size_t) ~(sizeof (size_t) - 1)) + (sizeof(int))))" data-ref="_M/CMSGLEN">CMSGLEN</a>;</td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td>	<a class="local col1 ref" href="#31ret" title='ret' data-ref="31ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/sys/socket.h.html#recvmsg" title='recvmsg' data-ref="recvmsg">recvmsg</a>(<a class="local col5 ref" href="#25socket" title='socket' data-ref="25socket">socket</a>, &amp;<a class="local col7 ref" href="#27hdr" title='hdr' data-ref="27hdr">hdr</a>, <var>0</var>);</td></tr>
+<tr><th id="192">192</th><td>	<b>if</b> (<a class="local col1 ref" href="#31ret" title='ret' data-ref="31ret">ret</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="193">193</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="194">194</th><td></td></tr>
+<tr><th id="195">195</th><td>	<a class="local col2 ref" href="#32req" title='req' data-ref="32req">req</a> = <a class="local col6 ref" href="#26buf" title='buf' data-ref="26buf">buf</a>;</td></tr>
+<tr><th id="196">196</th><td></td></tr>
+<tr><th id="197">197</th><td>	<b>if</b> (<a class="local col2 ref" href="#32req" title='req' data-ref="32req">req</a> != <a class="macro" href="eal_vfio.h.html#156" title="0x0" data-ref="_M/SOCKET_OK">SOCKET_OK</a>)</td></tr>
+<tr><th id="198">198</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="199">199</th><td></td></tr>
+<tr><th id="200">200</th><td>	<a class="macro" href="#49" title="memcpy(&amp;(fd), (*chdr).__cmsg_data, sizeof(fd))" data-ref="_M/CMSGHDR_TO_FD">CMSGHDR_TO_FD</a>(*<a class="local col8 ref" href="#28chdr" title='chdr' data-ref="28chdr">chdr</a>, <a class="local col3 ref" href="#33fd" title='fd' data-ref="33fd">fd</a>);</td></tr>
+<tr><th id="201">201</th><td></td></tr>
+<tr><th id="202">202</th><td>	<b>return</b> <a class="local col3 ref" href="#33fd" title='fd' data-ref="33fd">fd</a>;</td></tr>
+<tr><th id="203">203</th><td>}</td></tr>
+<tr><th id="204">204</th><td></td></tr>
+<tr><th id="205">205</th><td><i>/* connect socket_fd in secondary process to the primary process's socket */</i></td></tr>
+<tr><th id="206">206</th><td><em>int</em></td></tr>
+<tr><th id="207">207</th><td><dfn class="decl def fn" id="vfio_mp_sync_connect_to_primary" title='vfio_mp_sync_connect_to_primary' data-ref="vfio_mp_sync_connect_to_primary">vfio_mp_sync_connect_to_primary</dfn>(<em>void</em>)</td></tr>
+<tr><th id="208">208</th><td>{</td></tr>
+<tr><th id="209">209</th><td>	<b>struct</b> <a class="type" href="../../../../../../../../../include/sys/un.h.html#sockaddr_un" title='sockaddr_un' data-ref="sockaddr_un">sockaddr_un</a> <dfn class="local col4 decl" id="34addr" title='addr' data-type='struct sockaddr_un' data-ref="34addr">addr</dfn>;</td></tr>
+<tr><th id="210">210</th><td>	<a class="typedef" href="../../../../../../../../../include/bits/socket.h.html#socklen_t" title='socklen_t' data-type='__socklen_t' data-ref="socklen_t">socklen_t</a> <dfn class="local col5 decl" id="35sockaddr_len" title='sockaddr_len' data-type='socklen_t' data-ref="35sockaddr_len">sockaddr_len</dfn>;</td></tr>
+<tr><th id="211">211</th><td>	<em>int</em> <dfn class="local col6 decl" id="36socket_fd" title='socket_fd' data-type='int' data-ref="36socket_fd">socket_fd</dfn>;</td></tr>
+<tr><th id="212">212</th><td></td></tr>
+<tr><th id="213">213</th><td>	<i>/* set up a socket */</i></td></tr>
+<tr><th id="214">214</th><td>	<a class="local col6 ref" href="#36socket_fd" title='socket_fd' data-ref="36socket_fd">socket_fd</a> = <a class="ref fn" href="../../../../../../../../../include/sys/socket.h.html#socket" title='socket' data-ref="socket">socket</a>(<a class="macro" href="../../../../../../../../../include/bits/socket.h.html#89" title="1" data-ref="_M/AF_UNIX">AF_UNIX</a>, <a class="macro" href="../../../../../../../../../include/bits/socket_type.h.html#38" title="SOCK_SEQPACKET" data-ref="_M/SOCK_SEQPACKET">SOCK_SEQPACKET</a>, <var>0</var>);</td></tr>
+<tr><th id="215">215</th><td>	<b>if</b> (<a class="local col6 ref" href="#36socket_fd" title='socket_fd' data-ref="36socket_fd">socket_fd</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="216">216</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Failed to create socket!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"Failed to create socket!\n"</q>);</td></tr>
+<tr><th id="217">217</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="218">218</th><td>	}</td></tr>
+<tr><th id="219">219</th><td></td></tr>
+<tr><th id="220">220</th><td>	<a class="tu ref fn" href="#get_socket_path" title='get_socket_path' data-use='c' data-ref="get_socket_path">get_socket_path</a>(<a class="local col4 ref" href="#34addr" title='addr' data-ref="34addr">addr</a>.<a class="ref field" href="../../../../../../../../../include/sys/un.h.html#sockaddr_un::sun_path" title='sockaddr_un::sun_path' data-ref="sockaddr_un::sun_path">sun_path</a>, <b>sizeof</b>(<a class="local col4 ref" href="#34addr" title='addr' data-ref="34addr">addr</a>.<a class="ref field" href="../../../../../../../../../include/sys/un.h.html#sockaddr_un::sun_path" title='sockaddr_un::sun_path' data-ref="sockaddr_un::sun_path">sun_path</a>));</td></tr>
+<tr><th id="221">221</th><td>	<a class="local col4 ref" href="#34addr" title='addr' data-ref="34addr">addr</a>.<a class="ref field" href="../../../../../../../../../include/sys/un.h.html#31" title='sockaddr_un::sun_family' data-ref="sockaddr_un::sun_family">sun_family</a> = <a class="macro" href="../../../../../../../../../include/bits/socket.h.html#89" title="1" data-ref="_M/AF_UNIX">AF_UNIX</a>;</td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td>	<a class="local col5 ref" href="#35sockaddr_len" title='sockaddr_len' data-ref="35sockaddr_len">sockaddr_len</a> = <b>sizeof</b>(<b>struct</b> <a class="type" href="../../../../../../../../../include/sys/un.h.html#sockaddr_un" title='sockaddr_un' data-ref="sockaddr_un">sockaddr_un</a>);</td></tr>
+<tr><th id="224">224</th><td></td></tr>
+<tr><th id="225">225</th><td>	<b>if</b> (<a class="ref fn" href="../../../../../../../../../include/sys/socket.h.html#connect" title='connect' data-ref="connect">connect</a>(<a class="local col6 ref" href="#36socket_fd" title='socket_fd' data-ref="36socket_fd">socket_fd</a>, (<b>struct</b> <a class="type" href="../../../../../../../../../include/bits/socket.h.html#sockaddr" title='sockaddr' data-ref="sockaddr">sockaddr</a> *) &amp;<a class="local col4 ref" href="#34addr" title='addr' data-ref="34addr">addr</a>, <a class="local col5 ref" href="#35sockaddr_len" title='sockaddr_len' data-ref="35sockaddr_len">sockaddr_len</a>) == <var>0</var>)</td></tr>
+<tr><th id="226">226</th><td>		<b>return</b> <a class="local col6 ref" href="#36socket_fd" title='socket_fd' data-ref="36socket_fd">socket_fd</a>;</td></tr>
+<tr><th id="227">227</th><td></td></tr>
+<tr><th id="228">228</th><td>	<i>/* if connect failed */</i></td></tr>
+<tr><th id="229">229</th><td>	<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col6 ref" href="#36socket_fd" title='socket_fd' data-ref="36socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="230">230</th><td>	<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="231">231</th><td>}</td></tr>
+<tr><th id="232">232</th><td></td></tr>
+<tr><th id="233">233</th><td></td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td><i  data-doc="vfio_mp_sync_thread">/*</i></td></tr>
+<tr><th id="236">236</th><td><i  data-doc="vfio_mp_sync_thread"> * socket listening thread for primary process</i></td></tr>
+<tr><th id="237">237</th><td><i  data-doc="vfio_mp_sync_thread"> */</i></td></tr>
+<tr><th id="238">238</th><td><em>static</em> <b>__attribute__</b>((noreturn)) <em>void</em> *</td></tr>
+<tr><th id="239">239</th><td><dfn class="tu decl def fn" id="vfio_mp_sync_thread" title='vfio_mp_sync_thread' data-type='void * vfio_mp_sync_thread(void * arg)' data-ref="vfio_mp_sync_thread">vfio_mp_sync_thread</dfn>(<em>void</em> <a class="macro" href="../../common/include/rte_common.h.html#76" title="__attribute__((__unused__))" data-ref="_M/__rte_unused">__rte_unused</a> * <dfn class="local col7 decl" id="37arg" title='arg' data-type='void *' data-ref="37arg">arg</dfn>)</td></tr>
+<tr><th id="240">240</th><td>{</td></tr>
+<tr><th id="241">241</th><td>	<em>int</em> <dfn class="local col8 decl" id="38ret" title='ret' data-type='int' data-ref="38ret">ret</dfn>, <dfn class="local col9 decl" id="39fd" title='fd' data-type='int' data-ref="39fd">fd</dfn>, <dfn class="local col0 decl" id="40vfio_data" title='vfio_data' data-type='int' data-ref="40vfio_data">vfio_data</dfn>;</td></tr>
+<tr><th id="242">242</th><td></td></tr>
+<tr><th id="243">243</th><td>	<i>/* wait for requests on the socket */</i></td></tr>
+<tr><th id="244">244</th><td>	<b>for</b> (;;) {</td></tr>
+<tr><th id="245">245</th><td>		<em>int</em> <dfn class="local col1 decl" id="41conn_sock" title='conn_sock' data-type='int' data-ref="41conn_sock">conn_sock</dfn>;</td></tr>
+<tr><th id="246">246</th><td>		<b>struct</b> <a class="type" href="../../../../../../../../../include/sys/un.h.html#sockaddr_un" title='sockaddr_un' data-ref="sockaddr_un">sockaddr_un</a> <dfn class="local col2 decl" id="42addr" title='addr' data-type='struct sockaddr_un' data-ref="42addr">addr</dfn>;</td></tr>
+<tr><th id="247">247</th><td>		<a class="typedef" href="../../../../../../../../../include/bits/socket.h.html#socklen_t" title='socklen_t' data-type='__socklen_t' data-ref="socklen_t">socklen_t</a> <dfn class="local col3 decl" id="43sockaddr_len" title='sockaddr_len' data-type='socklen_t' data-ref="43sockaddr_len">sockaddr_len</dfn> = <b>sizeof</b>(<a class="local col2 ref" href="#42addr" title='addr' data-ref="42addr">addr</a>);</td></tr>
+<tr><th id="248">248</th><td></td></tr>
+<tr><th id="249">249</th><td>		<i>/* this is a blocking call */</i></td></tr>
+<tr><th id="250">250</th><td>		<a class="local col1 ref" href="#41conn_sock" title='conn_sock' data-ref="41conn_sock">conn_sock</a> = <a class="ref fn" href="../../../../../../../../../include/sys/socket.h.html#accept" title='accept' data-ref="accept">accept</a>(<a class="tu ref" href="#mp_socket_fd" title='mp_socket_fd' data-use='r' data-ref="mp_socket_fd">mp_socket_fd</a>, (<b>struct</b> <a class="type" href="../../../../../../../../../include/bits/socket.h.html#sockaddr" title='sockaddr' data-ref="sockaddr">sockaddr</a> *) &amp;<a class="local col2 ref" href="#42addr" title='addr' data-ref="42addr">addr</a>,</td></tr>
+<tr><th id="251">251</th><td>				&amp;<a class="local col3 ref" href="#43sockaddr_len" title='sockaddr_len' data-ref="43sockaddr_len">sockaddr_len</a>);</td></tr>
+<tr><th id="252">252</th><td></td></tr>
+<tr><th id="253">253</th><td>		<i>/* just restart on error */</i></td></tr>
+<tr><th id="254">254</th><td>		<b>if</b> (<a class="local col1 ref" href="#41conn_sock" title='conn_sock' data-ref="41conn_sock">conn_sock</a> == -<var>1</var>)</td></tr>
+<tr><th id="255">255</th><td>			<b>continue</b>;</td></tr>
+<tr><th id="256">256</th><td></td></tr>
+<tr><th id="257">257</th><td>		<i>/* set socket to linger after close */</i></td></tr>
+<tr><th id="258">258</th><td>		<b>struct</b> <a class="type" href="../../../../../../../../../include/bits/socket.h.html#linger" title='linger' data-ref="linger">linger</a> <dfn class="local col4 decl" id="44l" title='l' data-type='struct linger' data-ref="44l">l</dfn>;</td></tr>
+<tr><th id="259">259</th><td>		<a class="local col4 ref" href="#44l" title='l' data-ref="44l">l</a>.<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#linger::l_onoff" title='linger::l_onoff' data-ref="linger::l_onoff">l_onoff</a> = <var>1</var>;</td></tr>
+<tr><th id="260">260</th><td>		<a class="local col4 ref" href="#44l" title='l' data-ref="44l">l</a>.<a class="ref field" href="../../../../../../../../../include/bits/socket.h.html#linger::l_linger" title='linger::l_linger' data-ref="linger::l_linger">l_linger</a> = <var>60</var>;</td></tr>
+<tr><th id="261">261</th><td></td></tr>
+<tr><th id="262">262</th><td>		<b>if</b> (<a class="ref fn" href="../../../../../../../../../include/sys/socket.h.html#setsockopt" title='setsockopt' data-ref="setsockopt">setsockopt</a>(<a class="local col1 ref" href="#41conn_sock" title='conn_sock' data-ref="41conn_sock">conn_sock</a>, <a class="macro" href="../../../../../../../../../include/asm-generic/socket.h.html#7" title="1" data-ref="_M/SOL_SOCKET">SOL_SOCKET</a>, <a class="macro" href="../../../../../../../../../include/asm-generic/socket.h.html#23" title="13" data-ref="_M/SO_LINGER">SO_LINGER</a>, &amp;<a class="local col4 ref" href="#44l" title='l' data-ref="44l">l</a>, <b>sizeof</b>(<a class="local col4 ref" href="#44l" title='l' data-ref="44l">l</a>)) &lt; <var>0</var>)</td></tr>
+<tr><th id="263">263</th><td>			<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(5U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Cannot set SO_LINGER option &quot; &quot;on listen socket (%s)\n&quot;, strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(WARNING, EAL, <q>"Cannot set SO_LINGER option "</q></td></tr>
+<tr><th id="264">264</th><td>					<q>"on listen socket (%s)\n"</q>, <a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="265">265</th><td></td></tr>
+<tr><th id="266">266</th><td>		<a class="local col8 ref" href="#38ret" title='ret' data-ref="38ret">ret</a> = <a class="ref fn" href="#vfio_mp_sync_receive_request" title='vfio_mp_sync_receive_request' data-ref="vfio_mp_sync_receive_request">vfio_mp_sync_receive_request</a>(<a class="local col1 ref" href="#41conn_sock" title='conn_sock' data-ref="41conn_sock">conn_sock</a>);</td></tr>
+<tr><th id="267">267</th><td></td></tr>
+<tr><th id="268">268</th><td>		<b>switch</b> (<a class="local col8 ref" href="#38ret" title='ret' data-ref="38ret">ret</a>) {</td></tr>
+<tr><th id="269">269</th><td>		<b>case</b> <a class="macro" href="eal_vfio.h.html#153" title="0x100" data-ref="_M/SOCKET_REQ_CONTAINER">SOCKET_REQ_CONTAINER</a>:</td></tr>
+<tr><th id="270">270</th><td>			<a class="local col9 ref" href="#39fd" title='fd' data-ref="39fd">fd</a> = <a class="ref fn" href="eal_vfio.h.html#vfio_get_container_fd" title='vfio_get_container_fd' data-ref="vfio_get_container_fd">vfio_get_container_fd</a>();</td></tr>
+<tr><th id="271">271</th><td>			<b>if</b> (<a class="local col9 ref" href="#39fd" title='fd' data-ref="39fd">fd</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="272">272</th><td>				<a class="ref fn" href="#vfio_mp_sync_send_request" title='vfio_mp_sync_send_request' data-ref="vfio_mp_sync_send_request">vfio_mp_sync_send_request</a>(<a class="local col1 ref" href="#41conn_sock" title='conn_sock' data-ref="41conn_sock">conn_sock</a>, <a class="macro" href="eal_vfio.h.html#158" title="0xFF" data-ref="_M/SOCKET_ERR">SOCKET_ERR</a>);</td></tr>
+<tr><th id="273">273</th><td>			<b>else</b></td></tr>
+<tr><th id="274">274</th><td>				<a class="ref fn" href="#vfio_mp_sync_send_fd" title='vfio_mp_sync_send_fd' data-ref="vfio_mp_sync_send_fd">vfio_mp_sync_send_fd</a>(<a class="local col1 ref" href="#41conn_sock" title='conn_sock' data-ref="41conn_sock">conn_sock</a>, <a class="local col9 ref" href="#39fd" title='fd' data-ref="39fd">fd</a>);</td></tr>
+<tr><th id="275">275</th><td>			<b>if</b> (<a class="local col9 ref" href="#39fd" title='fd' data-ref="39fd">fd</a> &gt;= <var>0</var>)</td></tr>
+<tr><th id="276">276</th><td>				<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col9 ref" href="#39fd" title='fd' data-ref="39fd">fd</a>);</td></tr>
+<tr><th id="277">277</th><td>			<b>break</b>;</td></tr>
+<tr><th id="278">278</th><td>		<b>case</b> <a class="macro" href="eal_vfio.h.html#154" title="0x200" data-ref="_M/SOCKET_REQ_GROUP">SOCKET_REQ_GROUP</a>:</td></tr>
+<tr><th id="279">279</th><td>			<i>/* wait for group number */</i></td></tr>
+<tr><th id="280">280</th><td>			<a class="local col0 ref" href="#40vfio_data" title='vfio_data' data-ref="40vfio_data">vfio_data</a> = <a class="ref fn" href="#vfio_mp_sync_receive_request" title='vfio_mp_sync_receive_request' data-ref="vfio_mp_sync_receive_request">vfio_mp_sync_receive_request</a>(<a class="local col1 ref" href="#41conn_sock" title='conn_sock' data-ref="41conn_sock">conn_sock</a>);</td></tr>
+<tr><th id="281">281</th><td>			<b>if</b> (<a class="local col0 ref" href="#40vfio_data" title='vfio_data' data-ref="40vfio_data">vfio_data</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="282">282</th><td>				<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col1 ref" href="#41conn_sock" title='conn_sock' data-ref="41conn_sock">conn_sock</a>);</td></tr>
+<tr><th id="283">283</th><td>				<b>continue</b>;</td></tr>
+<tr><th id="284">284</th><td>			}</td></tr>
+<tr><th id="285">285</th><td></td></tr>
+<tr><th id="286">286</th><td>			<a class="local col9 ref" href="#39fd" title='fd' data-ref="39fd">fd</a> = <a class="ref fn" href="eal_vfio.h.html#vfio_get_group_fd" title='vfio_get_group_fd' data-ref="vfio_get_group_fd">vfio_get_group_fd</a>(<a class="local col0 ref" href="#40vfio_data" title='vfio_data' data-ref="40vfio_data">vfio_data</a>);</td></tr>
+<tr><th id="287">287</th><td></td></tr>
+<tr><th id="288">288</th><td>			<b>if</b> (<a class="local col9 ref" href="#39fd" title='fd' data-ref="39fd">fd</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="289">289</th><td>				<a class="ref fn" href="#vfio_mp_sync_send_request" title='vfio_mp_sync_send_request' data-ref="vfio_mp_sync_send_request">vfio_mp_sync_send_request</a>(<a class="local col1 ref" href="#41conn_sock" title='conn_sock' data-ref="41conn_sock">conn_sock</a>, <a class="macro" href="eal_vfio.h.html#158" title="0xFF" data-ref="_M/SOCKET_ERR">SOCKET_ERR</a>);</td></tr>
+<tr><th id="290">290</th><td>			<i>/* if VFIO group exists but isn't bound to VFIO driver */</i></td></tr>
+<tr><th id="291">291</th><td>			<b>else</b> <b>if</b> (<a class="local col9 ref" href="#39fd" title='fd' data-ref="39fd">fd</a> == <var>0</var>)</td></tr>
+<tr><th id="292">292</th><td>				<a class="ref fn" href="#vfio_mp_sync_send_request" title='vfio_mp_sync_send_request' data-ref="vfio_mp_sync_send_request">vfio_mp_sync_send_request</a>(<a class="local col1 ref" href="#41conn_sock" title='conn_sock' data-ref="41conn_sock">conn_sock</a>, <a class="macro" href="eal_vfio.h.html#157" title="0x1" data-ref="_M/SOCKET_NO_FD">SOCKET_NO_FD</a>);</td></tr>
+<tr><th id="293">293</th><td>			<i>/* if group exists and is bound to VFIO driver */</i></td></tr>
+<tr><th id="294">294</th><td>			<b>else</b> {</td></tr>
+<tr><th id="295">295</th><td>				<a class="ref fn" href="#vfio_mp_sync_send_request" title='vfio_mp_sync_send_request' data-ref="vfio_mp_sync_send_request">vfio_mp_sync_send_request</a>(<a class="local col1 ref" href="#41conn_sock" title='conn_sock' data-ref="41conn_sock">conn_sock</a>, <a class="macro" href="eal_vfio.h.html#156" title="0x0" data-ref="_M/SOCKET_OK">SOCKET_OK</a>);</td></tr>
+<tr><th id="296">296</th><td>				<a class="ref fn" href="#vfio_mp_sync_send_fd" title='vfio_mp_sync_send_fd' data-ref="vfio_mp_sync_send_fd">vfio_mp_sync_send_fd</a>(<a class="local col1 ref" href="#41conn_sock" title='conn_sock' data-ref="41conn_sock">conn_sock</a>, <a class="local col9 ref" href="#39fd" title='fd' data-ref="39fd">fd</a>);</td></tr>
+<tr><th id="297">297</th><td>			}</td></tr>
+<tr><th id="298">298</th><td>			<b>break</b>;</td></tr>
+<tr><th id="299">299</th><td>		<b>case</b> <a class="macro" href="eal_vfio.h.html#155" title="0x300" data-ref="_M/SOCKET_CLR_GROUP">SOCKET_CLR_GROUP</a>:</td></tr>
+<tr><th id="300">300</th><td>			<i>/* wait for group fd */</i></td></tr>
+<tr><th id="301">301</th><td>			<a class="local col0 ref" href="#40vfio_data" title='vfio_data' data-ref="40vfio_data">vfio_data</a> = <a class="ref fn" href="#vfio_mp_sync_receive_request" title='vfio_mp_sync_receive_request' data-ref="vfio_mp_sync_receive_request">vfio_mp_sync_receive_request</a>(<a class="local col1 ref" href="#41conn_sock" title='conn_sock' data-ref="41conn_sock">conn_sock</a>);</td></tr>
+<tr><th id="302">302</th><td>			<b>if</b> (<a class="local col0 ref" href="#40vfio_data" title='vfio_data' data-ref="40vfio_data">vfio_data</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="303">303</th><td>				<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col1 ref" href="#41conn_sock" title='conn_sock' data-ref="41conn_sock">conn_sock</a>);</td></tr>
+<tr><th id="304">304</th><td>				<b>continue</b>;</td></tr>
+<tr><th id="305">305</th><td>			}</td></tr>
+<tr><th id="306">306</th><td></td></tr>
+<tr><th id="307">307</th><td>			<a class="local col8 ref" href="#38ret" title='ret' data-ref="38ret">ret</a> = <a class="ref fn" href="../../common/include/rte_vfio.h.html#rte_vfio_clear_group" title='rte_vfio_clear_group' data-ref="rte_vfio_clear_group">rte_vfio_clear_group</a>(<a class="local col0 ref" href="#40vfio_data" title='vfio_data' data-ref="40vfio_data">vfio_data</a>);</td></tr>
+<tr><th id="308">308</th><td></td></tr>
+<tr><th id="309">309</th><td>			<b>if</b> (<a class="local col8 ref" href="#38ret" title='ret' data-ref="38ret">ret</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="310">310</th><td>				<a class="ref fn" href="#vfio_mp_sync_send_request" title='vfio_mp_sync_send_request' data-ref="vfio_mp_sync_send_request">vfio_mp_sync_send_request</a>(<a class="local col1 ref" href="#41conn_sock" title='conn_sock' data-ref="41conn_sock">conn_sock</a>, <a class="macro" href="eal_vfio.h.html#157" title="0x1" data-ref="_M/SOCKET_NO_FD">SOCKET_NO_FD</a>);</td></tr>
+<tr><th id="311">311</th><td>			<b>else</b></td></tr>
+<tr><th id="312">312</th><td>				<a class="ref fn" href="#vfio_mp_sync_send_request" title='vfio_mp_sync_send_request' data-ref="vfio_mp_sync_send_request">vfio_mp_sync_send_request</a>(<a class="local col1 ref" href="#41conn_sock" title='conn_sock' data-ref="41conn_sock">conn_sock</a>, <a class="macro" href="eal_vfio.h.html#156" title="0x0" data-ref="_M/SOCKET_OK">SOCKET_OK</a>);</td></tr>
+<tr><th id="313">313</th><td>			<b>break</b>;</td></tr>
+<tr><th id="314">314</th><td>		<b>default</b>:</td></tr>
+<tr><th id="315">315</th><td>			<a class="ref fn" href="#vfio_mp_sync_send_request" title='vfio_mp_sync_send_request' data-ref="vfio_mp_sync_send_request">vfio_mp_sync_send_request</a>(<a class="local col1 ref" href="#41conn_sock" title='conn_sock' data-ref="41conn_sock">conn_sock</a>, <a class="macro" href="eal_vfio.h.html#158" title="0xFF" data-ref="_M/SOCKET_ERR">SOCKET_ERR</a>);</td></tr>
+<tr><th id="316">316</th><td>			<b>break</b>;</td></tr>
+<tr><th id="317">317</th><td>		}</td></tr>
+<tr><th id="318">318</th><td>		<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col1 ref" href="#41conn_sock" title='conn_sock' data-ref="41conn_sock">conn_sock</a>);</td></tr>
+<tr><th id="319">319</th><td>	}</td></tr>
+<tr><th id="320">320</th><td>}</td></tr>
+<tr><th id="321">321</th><td></td></tr>
+<tr><th id="322">322</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="323">323</th><td><dfn class="tu decl def fn" id="vfio_mp_sync_socket_setup" title='vfio_mp_sync_socket_setup' data-type='int vfio_mp_sync_socket_setup()' data-ref="vfio_mp_sync_socket_setup">vfio_mp_sync_socket_setup</dfn>(<em>void</em>)</td></tr>
+<tr><th id="324">324</th><td>{</td></tr>
+<tr><th id="325">325</th><td>	<em>int</em> <dfn class="local col5 decl" id="45ret" title='ret' data-type='int' data-ref="45ret">ret</dfn>, <dfn class="local col6 decl" id="46socket_fd" title='socket_fd' data-type='int' data-ref="46socket_fd">socket_fd</dfn>;</td></tr>
+<tr><th id="326">326</th><td>	<b>struct</b> <a class="type" href="../../../../../../../../../include/sys/un.h.html#sockaddr_un" title='sockaddr_un' data-ref="sockaddr_un">sockaddr_un</a> <dfn class="local col7 decl" id="47addr" title='addr' data-type='struct sockaddr_un' data-ref="47addr">addr</dfn>;</td></tr>
+<tr><th id="327">327</th><td>	<a class="typedef" href="../../../../../../../../../include/bits/socket.h.html#socklen_t" title='socklen_t' data-type='__socklen_t' data-ref="socklen_t">socklen_t</a> <dfn class="local col8 decl" id="48sockaddr_len" title='sockaddr_len' data-type='socklen_t' data-ref="48sockaddr_len">sockaddr_len</dfn>;</td></tr>
+<tr><th id="328">328</th><td></td></tr>
+<tr><th id="329">329</th><td>	<i>/* set up a socket */</i></td></tr>
+<tr><th id="330">330</th><td>	<a class="local col6 ref" href="#46socket_fd" title='socket_fd' data-ref="46socket_fd">socket_fd</a> = <a class="ref fn" href="../../../../../../../../../include/sys/socket.h.html#socket" title='socket' data-ref="socket">socket</a>(<a class="macro" href="../../../../../../../../../include/bits/socket.h.html#89" title="1" data-ref="_M/AF_UNIX">AF_UNIX</a>, <a class="macro" href="../../../../../../../../../include/bits/socket_type.h.html#38" title="SOCK_SEQPACKET" data-ref="_M/SOCK_SEQPACKET">SOCK_SEQPACKET</a>, <var>0</var>);</td></tr>
+<tr><th id="331">331</th><td>	<b>if</b> (<a class="local col6 ref" href="#46socket_fd" title='socket_fd' data-ref="46socket_fd">socket_fd</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="332">332</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Failed to create socket!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"Failed to create socket!\n"</q>);</td></tr>
+<tr><th id="333">333</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="334">334</th><td>	}</td></tr>
+<tr><th id="335">335</th><td></td></tr>
+<tr><th id="336">336</th><td>	<a class="tu ref fn" href="#get_socket_path" title='get_socket_path' data-use='c' data-ref="get_socket_path">get_socket_path</a>(<a class="local col7 ref" href="#47addr" title='addr' data-ref="47addr">addr</a>.<a class="ref field" href="../../../../../../../../../include/sys/un.h.html#sockaddr_un::sun_path" title='sockaddr_un::sun_path' data-ref="sockaddr_un::sun_path">sun_path</a>, <b>sizeof</b>(<a class="local col7 ref" href="#47addr" title='addr' data-ref="47addr">addr</a>.<a class="ref field" href="../../../../../../../../../include/sys/un.h.html#sockaddr_un::sun_path" title='sockaddr_un::sun_path' data-ref="sockaddr_un::sun_path">sun_path</a>));</td></tr>
+<tr><th id="337">337</th><td>	<a class="local col7 ref" href="#47addr" title='addr' data-ref="47addr">addr</a>.<a class="ref field" href="../../../../../../../../../include/sys/un.h.html#31" title='sockaddr_un::sun_family' data-ref="sockaddr_un::sun_family">sun_family</a> = <a class="macro" href="../../../../../../../../../include/bits/socket.h.html#89" title="1" data-ref="_M/AF_UNIX">AF_UNIX</a>;</td></tr>
+<tr><th id="338">338</th><td></td></tr>
+<tr><th id="339">339</th><td>	<a class="local col8 ref" href="#48sockaddr_len" title='sockaddr_len' data-ref="48sockaddr_len">sockaddr_len</a> = <b>sizeof</b>(<b>struct</b> <a class="type" href="../../../../../../../../../include/sys/un.h.html#sockaddr_un" title='sockaddr_un' data-ref="sockaddr_un">sockaddr_un</a>);</td></tr>
+<tr><th id="340">340</th><td></td></tr>
+<tr><th id="341">341</th><td>	<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#unlink" title='unlink' data-ref="unlink">unlink</a>(<a class="local col7 ref" href="#47addr" title='addr' data-ref="47addr">addr</a>.<a class="ref field" href="../../../../../../../../../include/sys/un.h.html#sockaddr_un::sun_path" title='sockaddr_un::sun_path' data-ref="sockaddr_un::sun_path">sun_path</a>);</td></tr>
+<tr><th id="342">342</th><td></td></tr>
+<tr><th id="343">343</th><td>	<a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/sys/socket.h.html#bind" title='bind' data-ref="bind">bind</a>(<a class="local col6 ref" href="#46socket_fd" title='socket_fd' data-ref="46socket_fd">socket_fd</a>, (<b>struct</b> <a class="type" href="../../../../../../../../../include/bits/socket.h.html#sockaddr" title='sockaddr' data-ref="sockaddr">sockaddr</a> *) &amp;<a class="local col7 ref" href="#47addr" title='addr' data-ref="47addr">addr</a>, <a class="local col8 ref" href="#48sockaddr_len" title='sockaddr_len' data-ref="48sockaddr_len">sockaddr_len</a>);</td></tr>
+<tr><th id="344">344</th><td>	<b>if</b> (<a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a>) {</td></tr>
+<tr><th id="345">345</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Failed to bind socket: %s!\n&quot;, strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"Failed to bind socket: %s!\n"</q>, <a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="346">346</th><td>		<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col6 ref" href="#46socket_fd" title='socket_fd' data-ref="46socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="347">347</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="348">348</th><td>	}</td></tr>
+<tr><th id="349">349</th><td></td></tr>
+<tr><th id="350">350</th><td>	<a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/sys/socket.h.html#listen" title='listen' data-ref="listen">listen</a>(<a class="local col6 ref" href="#46socket_fd" title='socket_fd' data-ref="46socket_fd">socket_fd</a>, <var>50</var>);</td></tr>
+<tr><th id="351">351</th><td>	<b>if</b> (<a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a>) {</td></tr>
+<tr><th id="352">352</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Failed to listen: %s!\n&quot;, strerror((*__errno_location ())))" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"Failed to listen: %s!\n"</q>, <a class="ref fn" href="../../../../../../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(<a class="macro" href="../../../../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>));</td></tr>
+<tr><th id="353">353</th><td>		<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col6 ref" href="#46socket_fd" title='socket_fd' data-ref="46socket_fd">socket_fd</a>);</td></tr>
+<tr><th id="354">354</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="355">355</th><td>	}</td></tr>
+<tr><th id="356">356</th><td></td></tr>
+<tr><th id="357">357</th><td>	<i>/* save the socket in local configuration */</i></td></tr>
+<tr><th id="358">358</th><td>	<a class="tu ref" href="#mp_socket_fd" title='mp_socket_fd' data-use='w' data-ref="mp_socket_fd">mp_socket_fd</a> = <a class="local col6 ref" href="#46socket_fd" title='socket_fd' data-ref="46socket_fd">socket_fd</a>;</td></tr>
+<tr><th id="359">359</th><td></td></tr>
+<tr><th id="360">360</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="361">361</th><td>}</td></tr>
+<tr><th id="362">362</th><td></td></tr>
+<tr><th id="363">363</th><td><i>/*</i></td></tr>
+<tr><th id="364">364</th><td><i> * set up a local socket and tell it to listen for incoming connections</i></td></tr>
+<tr><th id="365">365</th><td><i> */</i></td></tr>
+<tr><th id="366">366</th><td><em>int</em></td></tr>
+<tr><th id="367">367</th><td><dfn class="decl def fn" id="vfio_mp_sync_setup" title='vfio_mp_sync_setup' data-ref="vfio_mp_sync_setup">vfio_mp_sync_setup</dfn>(<em>void</em>)</td></tr>
+<tr><th id="368">368</th><td>{</td></tr>
+<tr><th id="369">369</th><td>	<em>int</em> <dfn class="local col9 decl" id="49ret" title='ret' data-type='int' data-ref="49ret">ret</dfn>;</td></tr>
+<tr><th id="370">370</th><td>	<em>char</em> <dfn class="local col0 decl" id="50thread_name" title='thread_name' data-type='char [16]' data-ref="50thread_name">thread_name</dfn>[<a class="macro" href="../../common/include/rte_eal.h.html#32" title="16" data-ref="_M/RTE_MAX_THREAD_NAME_LEN">RTE_MAX_THREAD_NAME_LEN</a>];</td></tr>
+<tr><th id="371">371</th><td></td></tr>
+<tr><th id="372">372</th><td>	<b>if</b> (<a class="tu ref fn" href="#vfio_mp_sync_socket_setup" title='vfio_mp_sync_socket_setup' data-use='c' data-ref="vfio_mp_sync_socket_setup">vfio_mp_sync_socket_setup</a>() &lt; <var>0</var>) {</td></tr>
+<tr><th id="373">373</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Failed to set up local socket!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL, <q>"Failed to set up local socket!\n"</q>);</td></tr>
+<tr><th id="374">374</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="375">375</th><td>	}</td></tr>
+<tr><th id="376">376</th><td></td></tr>
+<tr><th id="377">377</th><td>	<a class="local col9 ref" href="#49ret" title='ret' data-ref="49ret">ret</a> = <a class="ref fn" href="../../../../../../../../../include/pthread.h.html#pthread_create" title='pthread_create' data-ref="pthread_create">pthread_create</a>(&amp;<a class="tu ref" href="#socket_thread" title='socket_thread' data-use='a' data-ref="socket_thread">socket_thread</a>, <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>,</td></tr>
+<tr><th id="378">378</th><td>			<a class="tu ref fn" href="#vfio_mp_sync_thread" title='vfio_mp_sync_thread' data-use='r' data-ref="vfio_mp_sync_thread">vfio_mp_sync_thread</a>, <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>);</td></tr>
+<tr><th id="379">379</th><td>	<b>if</b> (<a class="local col9 ref" href="#49ret" title='ret' data-ref="49ret">ret</a>) {</td></tr>
+<tr><th id="380">380</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(4U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Failed to create thread for communication with secondary processes!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(ERR, EAL,</td></tr>
+<tr><th id="381">381</th><td>			<q>"Failed to create thread for communication with secondary processes!\n"</q>);</td></tr>
+<tr><th id="382">382</th><td>		<a class="ref fn" href="../../../../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="tu ref" href="#mp_socket_fd" title='mp_socket_fd' data-use='r' data-ref="mp_socket_fd">mp_socket_fd</a>);</td></tr>
+<tr><th id="383">383</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="384">384</th><td>	}</td></tr>
+<tr><th id="385">385</th><td></td></tr>
+<tr><th id="386">386</th><td>	<i>/* Set thread_name for aid in debugging. */</i></td></tr>
+<tr><th id="387">387</th><td>	<a class="ref fn" href="../../../../../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a>(<a class="local col0 ref" href="#50thread_name" title='thread_name' data-ref="50thread_name">thread_name</a>, <a class="macro" href="../../common/include/rte_eal.h.html#32" title="16" data-ref="_M/RTE_MAX_THREAD_NAME_LEN">RTE_MAX_THREAD_NAME_LEN</a>, <q>"vfio-sync"</q>);</td></tr>
+<tr><th id="388">388</th><td>	<a class="local col9 ref" href="#49ret" title='ret' data-ref="49ret">ret</a> = <a class="ref fn" href="../../common/include/rte_lcore.h.html#rte_thread_setname" title='rte_thread_setname' data-ref="rte_thread_setname">rte_thread_setname</a>(<a class="tu ref" href="#socket_thread" title='socket_thread' data-use='r' data-ref="socket_thread">socket_thread</a>, <a class="local col0 ref" href="#50thread_name" title='thread_name' data-ref="50thread_name">thread_name</a>);</td></tr>
+<tr><th id="389">389</th><td>	<b>if</b> (<a class="local col9 ref" href="#49ret" title='ret' data-ref="49ret">ret</a>)</td></tr>
+<tr><th id="390">390</th><td>		<a class="macro" href="../../common/include/rte_log.h.html#286" title="rte_log(8U, 0, &quot;EAL&quot; &quot;: &quot; &quot;Failed to set thread name for secondary processes!\n&quot;)" data-ref="_M/RTE_LOG">RTE_LOG</a>(DEBUG, EAL,</td></tr>
+<tr><th id="391">391</th><td>			<q>"Failed to set thread name for secondary processes!\n"</q>);</td></tr>
+<tr><th id="392">392</th><td></td></tr>
+<tr><th id="393">393</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="394">394</th><td>}</td></tr>
+<tr><th id="395">395</th><td></td></tr>
+<tr><th id="396">396</th><td><u>#<span data-ppcond="38">endif</span></u></td></tr>
+<tr><th id="397">397</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-30</em> from project vpp_1804 revision <em>18.05</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

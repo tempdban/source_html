@@ -1,0 +1,161 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>des_key.c source code [vpp_1804/build-root/build-vpp_debug-native/dpdk/intel-ipsec-mb-0.48/des_key.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'vpp_1804/build-root/build-vpp_debug-native/dpdk/intel-ipsec-mb-0.48/des_key.c'; var root_path = '../../../../..'; var data_path = '../../../../../../data';</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>vpp_1804</a>/<a href='../../..'>build-root</a>/<a href='../..'>build-vpp_debug-native</a>/<a href='..'>dpdk</a>/<a href='./'>intel-ipsec-mb-0.48</a>/<a href='des_key.c.html'>des_key.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*******************************************************************************</i></td></tr>
+<tr><th id="2">2</th><td><i>  Copyright (c) 2017, Intel Corporation</i></td></tr>
+<tr><th id="3">3</th><td><i></i></td></tr>
+<tr><th id="4">4</th><td><i>  Redistribution and use in source and binary forms, with or without</i></td></tr>
+<tr><th id="5">5</th><td><i>  modification, are permitted provided that the following conditions are met:</i></td></tr>
+<tr><th id="6">6</th><td><i></i></td></tr>
+<tr><th id="7">7</th><td><i>      * Redistributions of source code must retain the above copyright notice,</i></td></tr>
+<tr><th id="8">8</th><td><i>        this list of conditions and the following disclaimer.</i></td></tr>
+<tr><th id="9">9</th><td><i>      * Redistributions in binary form must reproduce the above copyright</i></td></tr>
+<tr><th id="10">10</th><td><i>        notice, this list of conditions and the following disclaimer in the</i></td></tr>
+<tr><th id="11">11</th><td><i>        documentation and/or other materials provided with the distribution.</i></td></tr>
+<tr><th id="12">12</th><td><i>      * Neither the name of Intel Corporation nor the names of its contributors</i></td></tr>
+<tr><th id="13">13</th><td><i>        may be used to endorse or promote products derived from this software</i></td></tr>
+<tr><th id="14">14</th><td><i>        without specific prior written permission.</i></td></tr>
+<tr><th id="15">15</th><td><i></i></td></tr>
+<tr><th id="16">16</th><td><i>  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"</i></td></tr>
+<tr><th id="17">17</th><td><i>  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE</i></td></tr>
+<tr><th id="18">18</th><td><i>  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE</i></td></tr>
+<tr><th id="19">19</th><td><i>  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE</i></td></tr>
+<tr><th id="20">20</th><td><i>  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL</i></td></tr>
+<tr><th id="21">21</th><td><i>  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR</i></td></tr>
+<tr><th id="22">22</th><td><i>  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</i></td></tr>
+<tr><th id="23">23</th><td><i>  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,</i></td></tr>
+<tr><th id="24">24</th><td><i>  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</i></td></tr>
+<tr><th id="25">25</th><td><i>  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</i></td></tr>
+<tr><th id="26">26</th><td><i>*******************************************************************************/</i></td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../../../../../include/stdlib.h.html">&lt;stdlib.h&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#include &lt;stdint.h&gt;</u></td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="des.h.html">"des.h"</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="include/des_utils.h.html">"des_utils.h"</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="include/os.h.html">"os.h"</a></u></td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc"> * <span class="command">@brief</span> Rotates 28-bit word</i></td></tr>
+<tr><th id="37">37</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="38">38</th><td><i class="doc"> * Roll right of 28-bit word - used in 28-bit subkey operations</i></td></tr>
+<tr><th id="39">39</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="40">40</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">val</span> 28-bit word to be rotated</i></td></tr>
+<tr><th id="41">41</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">nshift</span> number of bits to rotate by</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc"> * <span class="command">@return</span> val rotated by nshift bits</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="45">45</th><td><a class="macro" href="include/os.h.html#34" title="static inline __attribute__((always_inline))" data-ref="_M/__forceinline">__forceinline</a></td></tr>
+<tr><th id="46">46</th><td><a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl def fn" id="rotate28" title='rotate28' data-ref="rotate28">rotate28</dfn>(<em>const</em> <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="local col1 decl" id="1val" title='val' data-type='const uint32_t' data-ref="1val">val</dfn>, <em>const</em> <em>unsigned</em> <dfn class="local col2 decl" id="2nshift" title='nshift' data-type='const unsigned int' data-ref="2nshift">nshift</dfn>)</td></tr>
+<tr><th id="47">47</th><td>{</td></tr>
+<tr><th id="48">48</th><td>        <em>const</em> <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="local col3 decl" id="3mask" title='mask' data-type='const uint32_t' data-ref="3mask">mask</dfn> = (<a class="macro" href="../../../../../include/stdint.h.html#295" title="1U" data-ref="_M/UINT32_C">UINT32_C</a>(<var>1</var>) &lt;&lt; <var>28</var>) - <a class="macro" href="../../../../../include/stdint.h.html#295" title="1U" data-ref="_M/UINT32_C">UINT32_C</a>(<var>1</var>);</td></tr>
+<tr><th id="49">49</th><td></td></tr>
+<tr><th id="50">50</th><td>        <a class="macro" href="include/os.h.html#62" title="" data-ref="_M/IMB_ASSERT">IMB_ASSERT</a>(nshift &lt;= <var>28</var>);</td></tr>
+<tr><th id="51">51</th><td>        <b>return</b> ((<a class="local col1 ref" href="#1val" title='val' data-ref="1val">val</a> &gt;&gt; <a class="local col2 ref" href="#2nshift" title='nshift' data-ref="2nshift">nshift</a>) &amp; <a class="local col3 ref" href="#3mask" title='mask' data-ref="3mask">mask</a>) |</td></tr>
+<tr><th id="52">52</th><td>                ((<a class="local col1 ref" href="#1val" title='val' data-ref="1val">val</a> &lt;&lt; (<var>28</var> - <a class="local col2 ref" href="#2nshift" title='nshift' data-ref="2nshift">nshift</a>)) &amp; <a class="local col3 ref" href="#3mask" title='mask' data-ref="3mask">mask</a>);</td></tr>
+<tr><th id="53">53</th><td>}</td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc"> * <span class="command">@brief</span> Expands 8 groups of 6bits into 8 groups of 8bits</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="58">58</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">in</span> a 48-bit word including 8 groups of 6bits</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="60">60</th><td><i class="doc"> * <span class="command">@return</span> 64-bit word with 8 groups of 8bits</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="62">62</th><td><a class="macro" href="include/os.h.html#34" title="static inline __attribute__((always_inline))" data-ref="_M/__forceinline">__forceinline</a></td></tr>
+<tr><th id="63">63</th><td><a class="typedef" href="../../../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl def fn" id="expand_8x6_to_8x8" title='expand_8x6_to_8x8' data-ref="expand_8x6_to_8x8">expand_8x6_to_8x8</dfn>(<em>const</em> <a class="typedef" href="../../../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="local col4 decl" id="4in" title='in' data-type='const uint64_t' data-ref="4in">in</dfn>)</td></tr>
+<tr><th id="64">64</th><td>{</td></tr>
+<tr><th id="65">65</th><td>        <b>return</b> (((<a class="local col4 ref" href="#4in" title='in' data-ref="4in">in</a> &gt;&gt; (<var>6</var> * <var>0</var>)) &amp; <a class="macro" href="../../../../../include/stdint.h.html#297" title="63UL" data-ref="_M/UINT64_C">UINT64_C</a>(<var>63</var>)) &lt;&lt; (<var>8</var> * <var>0</var>)) |</td></tr>
+<tr><th id="66">66</th><td>                (((<a class="local col4 ref" href="#4in" title='in' data-ref="4in">in</a> &gt;&gt; (<var>6</var> * <var>1</var>)) &amp; <a class="macro" href="../../../../../include/stdint.h.html#297" title="63UL" data-ref="_M/UINT64_C">UINT64_C</a>(<var>63</var>)) &lt;&lt; (<var>8</var> * <var>1</var>)) |</td></tr>
+<tr><th id="67">67</th><td>                (((<a class="local col4 ref" href="#4in" title='in' data-ref="4in">in</a> &gt;&gt; (<var>6</var> * <var>2</var>)) &amp; <a class="macro" href="../../../../../include/stdint.h.html#297" title="63UL" data-ref="_M/UINT64_C">UINT64_C</a>(<var>63</var>)) &lt;&lt; (<var>8</var> * <var>2</var>)) |</td></tr>
+<tr><th id="68">68</th><td>                (((<a class="local col4 ref" href="#4in" title='in' data-ref="4in">in</a> &gt;&gt; (<var>6</var> * <var>3</var>)) &amp; <a class="macro" href="../../../../../include/stdint.h.html#297" title="63UL" data-ref="_M/UINT64_C">UINT64_C</a>(<var>63</var>)) &lt;&lt; (<var>8</var> * <var>3</var>)) |</td></tr>
+<tr><th id="69">69</th><td>                (((<a class="local col4 ref" href="#4in" title='in' data-ref="4in">in</a> &gt;&gt; (<var>6</var> * <var>4</var>)) &amp; <a class="macro" href="../../../../../include/stdint.h.html#297" title="63UL" data-ref="_M/UINT64_C">UINT64_C</a>(<var>63</var>)) &lt;&lt; (<var>8</var> * <var>4</var>)) |</td></tr>
+<tr><th id="70">70</th><td>                (((<a class="local col4 ref" href="#4in" title='in' data-ref="4in">in</a> &gt;&gt; (<var>6</var> * <var>5</var>)) &amp; <a class="macro" href="../../../../../include/stdint.h.html#297" title="63UL" data-ref="_M/UINT64_C">UINT64_C</a>(<var>63</var>)) &lt;&lt; (<var>8</var> * <var>5</var>)) |</td></tr>
+<tr><th id="71">71</th><td>                (((<a class="local col4 ref" href="#4in" title='in' data-ref="4in">in</a> &gt;&gt; (<var>6</var> * <var>6</var>)) &amp; <a class="macro" href="../../../../../include/stdint.h.html#297" title="63UL" data-ref="_M/UINT64_C">UINT64_C</a>(<var>63</var>)) &lt;&lt; (<var>8</var> * <var>6</var>)) |</td></tr>
+<tr><th id="72">72</th><td>                (((<a class="local col4 ref" href="#4in" title='in' data-ref="4in">in</a> &gt;&gt; (<var>6</var> * <var>7</var>)) &amp; <a class="macro" href="../../../../../include/stdint.h.html#297" title="63UL" data-ref="_M/UINT64_C">UINT64_C</a>(<var>63</var>)) &lt;&lt; (<var>8</var> * <var>7</var>));</td></tr>
+<tr><th id="73">73</th><td>}</td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td><em>static</em> <em>const</em> <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="tu decl def" id="pc1c_table_fips46_3" title='pc1c_table_fips46_3' data-type='const uint8_t [28]' data-ref="pc1c_table_fips46_3">pc1c_table_fips46_3</dfn>[<var>28</var>] = {</td></tr>
+<tr><th id="76">76</th><td>        <var>57</var>, <var>49</var>, <var>41</var>, <var>33</var>, <var>25</var>, <var>17</var>,  <var>9</var>,</td></tr>
+<tr><th id="77">77</th><td>        <var>1</var>,  <var>58</var>, <var>50</var>, <var>42</var>, <var>34</var>, <var>26</var>, <var>18</var>,</td></tr>
+<tr><th id="78">78</th><td>        <var>10</var>,  <var>2</var>, <var>59</var>, <var>51</var>, <var>43</var>, <var>35</var>, <var>27</var>,</td></tr>
+<tr><th id="79">79</th><td>        <var>19</var>, <var>11</var>,  <var>3</var>, <var>60</var>, <var>52</var>, <var>44</var>, <var>36</var></td></tr>
+<tr><th id="80">80</th><td>};</td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td><em>static</em> <em>const</em> <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="tu decl def" id="pc1d_table_fips46_3" title='pc1d_table_fips46_3' data-type='const uint8_t [28]' data-ref="pc1d_table_fips46_3">pc1d_table_fips46_3</dfn>[<var>28</var>] = {</td></tr>
+<tr><th id="83">83</th><td>        <var>63</var>, <var>55</var>, <var>47</var>, <var>39</var>, <var>31</var>, <var>23</var>, <var>15</var>,</td></tr>
+<tr><th id="84">84</th><td>         <var>7</var>, <var>62</var>, <var>54</var>, <var>46</var>, <var>38</var>, <var>30</var>, <var>22</var>,</td></tr>
+<tr><th id="85">85</th><td>        <var>14</var>,  <var>6</var>, <var>61</var>, <var>53</var>, <var>45</var>, <var>37</var>, <var>29</var>,</td></tr>
+<tr><th id="86">86</th><td>        <var>21</var>, <var>13</var>,  <var>5</var>, <var>28</var>, <var>20</var>, <var>12</var>, <var>4</var></td></tr>
+<tr><th id="87">87</th><td>};</td></tr>
+<tr><th id="88">88</th><td></td></tr>
+<tr><th id="89">89</th><td><em>static</em> <em>const</em> <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="tu decl def" id="pc2_table_fips46_3" title='pc2_table_fips46_3' data-type='const uint8_t [48]' data-ref="pc2_table_fips46_3">pc2_table_fips46_3</dfn>[<var>48</var>] = {</td></tr>
+<tr><th id="90">90</th><td>        <var>14</var>, <var>17</var>, <var>11</var>, <var>24</var>,  <var>1</var>,  <var>5</var>,</td></tr>
+<tr><th id="91">91</th><td>         <var>3</var>, <var>28</var>, <var>15</var>,  <var>6</var>, <var>21</var>, <var>10</var>,</td></tr>
+<tr><th id="92">92</th><td>        <var>23</var>, <var>19</var>, <var>12</var>,  <var>4</var>, <var>26</var>,  <var>8</var>,</td></tr>
+<tr><th id="93">93</th><td>        <var>16</var>,  <var>7</var>, <var>27</var>, <var>20</var>, <var>13</var>,  <var>2</var>,</td></tr>
+<tr><th id="94">94</th><td>        <var>41</var>, <var>52</var>, <var>31</var>, <var>37</var>, <var>47</var>, <var>55</var>,</td></tr>
+<tr><th id="95">95</th><td>        <var>30</var>, <var>40</var>, <var>51</var>, <var>45</var>, <var>33</var>, <var>48</var>,</td></tr>
+<tr><th id="96">96</th><td>        <var>44</var>, <var>49</var>, <var>39</var>, <var>56</var>, <var>34</var>, <var>53</var>,</td></tr>
+<tr><th id="97">97</th><td>        <var>46</var>, <var>42</var>, <var>50</var>, <var>36</var>, <var>29</var>, <var>32</var></td></tr>
+<tr><th id="98">98</th><td>};</td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td><em>static</em> <em>const</em> <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="tu decl def" id="shift_tab_fips46_3" title='shift_tab_fips46_3' data-type='const uint8_t [16]' data-ref="shift_tab_fips46_3">shift_tab_fips46_3</dfn>[<var>16</var>] = {</td></tr>
+<tr><th id="101">101</th><td>        <var>1</var>, <var>1</var>, <var>2</var>, <var>2</var>, <var>2</var>, <var>2</var>, <var>2</var>, <var>2</var>,</td></tr>
+<tr><th id="102">102</th><td>        <var>1</var>, <var>2</var>, <var>2</var>, <var>2</var>, <var>2</var>, <var>2</var>, <var>2</var>, <var>1</var></td></tr>
+<tr><th id="103">103</th><td>};</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td><em>int</em> <dfn class="decl def fn" id="des_key_schedule" title='des_key_schedule' data-ref="des_key_schedule">des_key_schedule</dfn>(<a class="typedef" href="../../../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> *<dfn class="local col5 decl" id="5ks" title='ks' data-type='uint64_t *' data-ref="5ks">ks</dfn>, <em>const</em> <em>void</em> *<dfn class="local col6 decl" id="6key" title='key' data-type='const void *' data-ref="6key">key</dfn>)</td></tr>
+<tr><th id="106">106</th><td>{</td></tr>
+<tr><th id="107">107</th><td>        <a class="typedef" href="../../../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="local col7 decl" id="7c" title='c' data-type='uint64_t' data-ref="7c">c</dfn>, <dfn class="local col8 decl" id="8d" title='d' data-type='uint64_t' data-ref="8d">d</dfn>;</td></tr>
+<tr><th id="108">108</th><td>        <a class="typedef" href="../../../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="local col9 decl" id="9t" title='t' data-type='uint64_t' data-ref="9t">t</dfn> = <var>0</var>;</td></tr>
+<tr><th id="109">109</th><td>        <em>int</em> <dfn class="local col0 decl" id="10n" title='n' data-type='int' data-ref="10n">n</dfn>;</td></tr>
+<tr><th id="110">110</th><td></td></tr>
+<tr><th id="111">111</th><td>        <b>if</b> (<a class="local col6 ref" href="#6key" title='key' data-ref="6key">key</a> == <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> || <a class="local col5 ref" href="#5ks" title='ks' data-ref="5ks">ks</a> == <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>)</td></tr>
+<tr><th id="112">112</th><td>                <b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="113">113</th><td></td></tr>
+<tr><th id="114">114</th><td>        <i>/* KEY: 56 bits but spread across 64 bits</i></td></tr>
+<tr><th id="115">115</th><td><i>         * - MSB per byte used for parity</i></td></tr>
+<tr><th id="116">116</th><td><i>         * - load_and_convert loads the key and swaps bits in bytes</i></td></tr>
+<tr><th id="117">117</th><td><i>         *   so that bit numbers are more suitable for LE machine and</i></td></tr>
+<tr><th id="118">118</th><td><i>         *   FIPS46-3 DES tables</i></td></tr>
+<tr><th id="119">119</th><td><i>         */</i></td></tr>
+<tr><th id="120">120</th><td>        <a class="local col9 ref" href="#9t" title='t' data-ref="9t">t</a> = <a class="ref fn" href="include/des_utils.h.html#load64_reflect" title='load64_reflect' data-ref="load64_reflect">load64_reflect</a>(<a class="local col6 ref" href="#6key" title='key' data-ref="6key">key</a>);</td></tr>
+<tr><th id="121">121</th><td></td></tr>
+<tr><th id="122">122</th><td>        <i>/* PC1</i></td></tr>
+<tr><th id="123">123</th><td><i>         * - built from the KEY, PC1 permute tables skip KEY parity bits</i></td></tr>
+<tr><th id="124">124</th><td><i>         * - c &amp; d are both 28 bits</i></td></tr>
+<tr><th id="125">125</th><td><i>         */</i></td></tr>
+<tr><th id="126">126</th><td>        <a class="local col7 ref" href="#7c" title='c' data-ref="7c">c</a> = <a class="ref fn" href="include/des_utils.h.html#permute_64b" title='permute_64b' data-ref="permute_64b">permute_64b</a>(<a class="local col9 ref" href="#9t" title='t' data-ref="9t">t</a>, <a class="tu ref" href="#pc1c_table_fips46_3" title='pc1c_table_fips46_3' data-use='r' data-ref="pc1c_table_fips46_3">pc1c_table_fips46_3</a>, <a class="macro" href="include/os.h.html#66" title="(sizeof(pc1c_table_fips46_3) / sizeof(pc1c_table_fips46_3[0]))" data-ref="_M/IMB_DIM">IMB_DIM</a>(<a class="tu ref" href="#pc1c_table_fips46_3" title='pc1c_table_fips46_3' data-use='r' data-ref="pc1c_table_fips46_3">pc1c_table_fips46_3</a>));</td></tr>
+<tr><th id="127">127</th><td>        <a class="local col8 ref" href="#8d" title='d' data-ref="8d">d</a> = <a class="ref fn" href="include/des_utils.h.html#permute_64b" title='permute_64b' data-ref="permute_64b">permute_64b</a>(<a class="local col9 ref" href="#9t" title='t' data-ref="9t">t</a>, <a class="tu ref" href="#pc1d_table_fips46_3" title='pc1d_table_fips46_3' data-use='r' data-ref="pc1d_table_fips46_3">pc1d_table_fips46_3</a>, <a class="macro" href="include/os.h.html#66" title="(sizeof(pc1d_table_fips46_3) / sizeof(pc1d_table_fips46_3[0]))" data-ref="_M/IMB_DIM">IMB_DIM</a>(<a class="tu ref" href="#pc1d_table_fips46_3" title='pc1d_table_fips46_3' data-use='r' data-ref="pc1d_table_fips46_3">pc1d_table_fips46_3</a>));</td></tr>
+<tr><th id="128">128</th><td></td></tr>
+<tr><th id="129">129</th><td>        <i>/* KS rounds */</i></td></tr>
+<tr><th id="130">130</th><td>        <b>for</b> (<a class="local col0 ref" href="#10n" title='n' data-ref="10n">n</a> = <var>0</var>; <a class="local col0 ref" href="#10n" title='n' data-ref="10n">n</a> &lt; <var>16</var>; <a class="local col0 ref" href="#10n" title='n' data-ref="10n">n</a>++) {</td></tr>
+<tr><th id="131">131</th><td>                <a class="local col7 ref" href="#7c" title='c' data-ref="7c">c</a> = <a class="ref fn" href="#rotate28" title='rotate28' data-ref="rotate28">rotate28</a>((<a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a>)<a class="local col7 ref" href="#7c" title='c' data-ref="7c">c</a>, (<em>unsigned</em>) <a class="tu ref" href="#shift_tab_fips46_3" title='shift_tab_fips46_3' data-use='r' data-ref="shift_tab_fips46_3">shift_tab_fips46_3</a>[<a class="local col0 ref" href="#10n" title='n' data-ref="10n">n</a>]);</td></tr>
+<tr><th id="132">132</th><td>                <a class="local col8 ref" href="#8d" title='d' data-ref="8d">d</a> = <a class="ref fn" href="#rotate28" title='rotate28' data-ref="rotate28">rotate28</a>((<a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a>)<a class="local col8 ref" href="#8d" title='d' data-ref="8d">d</a>, (<em>unsigned</em>) <a class="tu ref" href="#shift_tab_fips46_3" title='shift_tab_fips46_3' data-use='r' data-ref="shift_tab_fips46_3">shift_tab_fips46_3</a>[<a class="local col0 ref" href="#10n" title='n' data-ref="10n">n</a>]);</td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td>                <i>/* PC2 */</i></td></tr>
+<tr><th id="135">135</th><td>                <a class="local col9 ref" href="#9t" title='t' data-ref="9t">t</a> = <a class="ref fn" href="include/des_utils.h.html#permute_64b" title='permute_64b' data-ref="permute_64b">permute_64b</a>(<a class="local col7 ref" href="#7c" title='c' data-ref="7c">c</a> | (<a class="local col8 ref" href="#8d" title='d' data-ref="8d">d</a> &lt;&lt; <var>28</var>), <a class="tu ref" href="#pc2_table_fips46_3" title='pc2_table_fips46_3' data-use='r' data-ref="pc2_table_fips46_3">pc2_table_fips46_3</a>,</td></tr>
+<tr><th id="136">136</th><td>                                <a class="macro" href="include/os.h.html#66" title="(sizeof(pc2_table_fips46_3) / sizeof(pc2_table_fips46_3[0]))" data-ref="_M/IMB_DIM">IMB_DIM</a>(<a class="tu ref" href="#pc2_table_fips46_3" title='pc2_table_fips46_3' data-use='r' data-ref="pc2_table_fips46_3">pc2_table_fips46_3</a>));</td></tr>
+<tr><th id="137">137</th><td></td></tr>
+<tr><th id="138">138</th><td>                <i>/* store KS as 6 bits per byte and keep LE */</i></td></tr>
+<tr><th id="139">139</th><td>                <a class="local col5 ref" href="#5ks" title='ks' data-ref="5ks">ks</a>[<a class="local col0 ref" href="#10n" title='n' data-ref="10n">n</a>] = <a class="ref fn" href="#expand_8x6_to_8x8" title='expand_8x6_to_8x8' data-ref="expand_8x6_to_8x8">expand_8x6_to_8x8</a>(<a class="local col9 ref" href="#9t" title='t' data-ref="9t">t</a>);</td></tr>
+<tr><th id="140">140</th><td>        }</td></tr>
+<tr><th id="141">141</th><td></td></tr>
+<tr><th id="142">142</th><td>        <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="143">143</th><td>}</td></tr>
+<tr><th id="144">144</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-30</em> from project vpp_1804 revision <em>18.05</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

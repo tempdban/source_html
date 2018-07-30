@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>thread.c source code [vpp_1804/src/plugins/dpdk/thread.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'vpp_1804/src/plugins/dpdk/thread.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>vpp_1804</a>/<a href='../..'>src</a>/<a href='..'>plugins</a>/<a href='./'>dpdk</a>/<a href='thread.c.html'>thread.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright (c) 2017 Cisco and/or its affiliates.</i></td></tr>
+<tr><th id="3">3</th><td><i> * Licensed under the Apache License, Version 2.0 (the "License");</i></td></tr>
+<tr><th id="4">4</th><td><i> * you may not use this file except in compliance with the License.</i></td></tr>
+<tr><th id="5">5</th><td><i> * You may obtain a copy of the License at:</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> *     <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></i></td></tr>
+<tr><th id="8">8</th><td><i> *</i></td></tr>
+<tr><th id="9">9</th><td><i> * Unless required by applicable law or agreed to in writing, software</i></td></tr>
+<tr><th id="10">10</th><td><i> * distributed under the License is distributed on an "AS IS" BASIS,</i></td></tr>
+<tr><th id="11">11</th><td><i> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</i></td></tr>
+<tr><th id="12">12</th><td><i> * See the License for the specific language governing permissions and</i></td></tr>
+<tr><th id="13">13</th><td><i> * limitations under the License.</i></td></tr>
+<tr><th id="14">14</th><td><i> */</i></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_config.h.html">&lt;rte_config.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_common.h.html">&lt;rte_common.h&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_log.h.html">&lt;rte_log.h&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_memory.h.html">&lt;rte_memory.h&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_memzone.h.html">&lt;rte_memzone.h&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_tailq.h.html">&lt;rte_tailq.h&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_eal.h.html">&lt;rte_eal.h&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_per_lcore.h.html">&lt;rte_per_lcore.h&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_launch.h.html">&lt;rte_launch.h&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_atomic.h.html">&lt;rte_atomic.h&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_cycles.h.html">&lt;rte_cycles.h&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_prefetch.h.html">&lt;rte_prefetch.h&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_lcore.h.html">&lt;rte_lcore.h&gt;</a></u></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_per_lcore.h.html">&lt;rte_per_lcore.h&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_branch_prediction.h.html">&lt;rte_branch_prediction.h&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_interrupts.h.html">&lt;rte_interrupts.h&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_pci.h.html">&lt;rte_pci.h&gt;</a></u></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_random.h.html">&lt;rte_random.h&gt;</a></u></td></tr>
+<tr><th id="35">35</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_debug.h.html">&lt;rte_debug.h&gt;</a></u></td></tr>
+<tr><th id="36">36</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_ether.h.html">&lt;rte_ether.h&gt;</a></u></td></tr>
+<tr><th id="37">37</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_ethdev.h.html">&lt;rte_ethdev.h&gt;</a></u></td></tr>
+<tr><th id="38">38</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_ring.h.html">&lt;rte_ring.h&gt;</a></u></td></tr>
+<tr><th id="39">39</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_mempool.h.html">&lt;rte_mempool.h&gt;</a></u></td></tr>
+<tr><th id="40">40</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_mbuf.h.html">&lt;rte_mbuf.h&gt;</a></u></td></tr>
+<tr><th id="41">41</th><td><u>#include <a href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_version.h.html">&lt;rte_version.h&gt;</a></u></td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><u>#include <a href="../../vlib/vlib.h.html">&lt;vlib/vlib.h&gt;</a></u></td></tr>
+<tr><th id="44">44</th><td><u>#include <a href="../../vnet/vnet.h.html">&lt;vnet/vnet.h&gt;</a></u></td></tr>
+<tr><th id="45">45</th><td><u>#include <a href="device/dpdk.h.html">&lt;dpdk/device/dpdk.h&gt;</a></u></td></tr>
+<tr><th id="46">46</th><td><u>#include <a href="device/dpdk_priv.h.html">&lt;dpdk/device/dpdk_priv.h&gt;</a></u></td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td><em>static</em> <a class="typedef" href="../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *</td></tr>
+<tr><th id="49">49</th><td><dfn class="tu decl def fn" id="dpdk_launch_thread" title='dpdk_launch_thread' data-type='clib_error_t * dpdk_launch_thread(void * fp, vlib_worker_thread_t * w, unsigned int lcore_id)' data-ref="dpdk_launch_thread">dpdk_launch_thread</dfn> (<em>void</em> *<dfn class="local col1 decl" id="1fp" title='fp' data-type='void *' data-ref="1fp">fp</dfn>, <a class="typedef" href="../../vlib/threads.h.html#vlib_worker_thread_t" title='vlib_worker_thread_t' data-type='struct vlib_worker_thread_t' data-ref="vlib_worker_thread_t">vlib_worker_thread_t</a> * <dfn class="local col2 decl" id="2w" title='w' data-type='vlib_worker_thread_t *' data-ref="2w">w</dfn>, <em>unsigned</em> <dfn class="local col3 decl" id="3lcore_id" title='lcore_id' data-type='unsigned int' data-ref="3lcore_id">lcore_id</dfn>)</td></tr>
+<tr><th id="50">50</th><td>{</td></tr>
+<tr><th id="51">51</th><td>  <em>int</em> <dfn class="local col4 decl" id="4r" title='r' data-type='int' data-ref="4r">r</dfn>;</td></tr>
+<tr><th id="52">52</th><td>  <a class="local col4 ref" href="#4r" title='r' data-ref="4r">r</a> = <a class="ref fn" href="../../../build-root/install-vpp_debug-native/dpdk/include/dpdk/rte_launch.h.html#rte_eal_remote_launch" title='rte_eal_remote_launch' data-ref="rte_eal_remote_launch">rte_eal_remote_launch</a> (<a class="local col1 ref" href="#1fp" title='fp' data-ref="1fp">fp</a>, (<em>void</em> *) <a class="local col2 ref" href="#2w" title='w' data-ref="2w">w</a>, <a class="local col3 ref" href="#3lcore_id" title='lcore_id' data-ref="3lcore_id">lcore_id</a>);</td></tr>
+<tr><th id="53">53</th><td>  <b>if</b> (<a class="local col4 ref" href="#4r" title='r' data-ref="4r">r</a>)</td></tr>
+<tr><th id="54">54</th><td>    <b>return</b> <a class="macro" href="../../vppinfra/error.h.html#99" title="_clib_error_return((0),(0),(0),(char *)((char *) __FUNCTION__),&quot;Failed to launch thread %u&quot;, lcore_id)" data-ref="_M/clib_error_return">clib_error_return</a> (<var>0</var>, <q>"Failed to launch thread %u"</q>, <a class="local col3 ref" href="#3lcore_id" title='lcore_id' data-ref="3lcore_id">lcore_id</a>);</td></tr>
+<tr><th id="55">55</th><td>  <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="56">56</th><td>}</td></tr>
+<tr><th id="57">57</th><td></td></tr>
+<tr><th id="58">58</th><td><em>static</em> <a class="typedef" href="../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *</td></tr>
+<tr><th id="59">59</th><td><dfn class="tu decl def fn" id="dpdk_thread_set_lcore" title='dpdk_thread_set_lcore' data-type='clib_error_t * dpdk_thread_set_lcore(u32 thread, u16 lcore)' data-ref="dpdk_thread_set_lcore">dpdk_thread_set_lcore</dfn> (<a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col5 decl" id="5thread" title='thread' data-type='u32' data-ref="5thread">thread</dfn>, <a class="typedef" href="../../vppinfra/types.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> <dfn class="local col6 decl" id="6lcore" title='lcore' data-type='u16' data-ref="6lcore">lcore</dfn>)</td></tr>
+<tr><th id="60">60</th><td>{</td></tr>
+<tr><th id="61">61</th><td>  <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="62">62</th><td>}</td></tr>
+<tr><th id="63">63</th><td></td></tr>
+<tr><th id="64">64</th><td><em>static</em> <a class="typedef" href="../../vlib/threads.h.html#vlib_thread_callbacks_t" title='vlib_thread_callbacks_t' data-type='struct vlib_thread_callbacks_t' data-ref="vlib_thread_callbacks_t">vlib_thread_callbacks_t</a> <dfn class="tu decl def" id="callbacks" title='callbacks' data-type='vlib_thread_callbacks_t' data-ref="callbacks">callbacks</dfn> = {</td></tr>
+<tr><th id="65">65</th><td>  .<a class="ref field" href="../../vlib/threads.h.html#(anonymous)::vlib_launch_thread_cb" title='(anonymous struct)::vlib_launch_thread_cb' data-ref="(anonymous)::vlib_launch_thread_cb">vlib_launch_thread_cb</a> = &amp;<a class="tu ref fn" href="#dpdk_launch_thread" title='dpdk_launch_thread' data-use='a' data-ref="dpdk_launch_thread">dpdk_launch_thread</a>,</td></tr>
+<tr><th id="66">66</th><td>  .<a class="ref field" href="../../vlib/threads.h.html#(anonymous)::vlib_thread_set_lcore_cb" title='(anonymous struct)::vlib_thread_set_lcore_cb' data-ref="(anonymous)::vlib_thread_set_lcore_cb">vlib_thread_set_lcore_cb</a> = &amp;<a class="tu ref fn" href="#dpdk_thread_set_lcore" title='dpdk_thread_set_lcore' data-use='a' data-ref="dpdk_thread_set_lcore">dpdk_thread_set_lcore</a>,</td></tr>
+<tr><th id="67">67</th><td>};</td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td><em>static</em> <a class="typedef" href="../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *</td></tr>
+<tr><th id="70">70</th><td><dfn class="tu decl def fn" id="dpdk_thread_init" title='dpdk_thread_init' data-type='clib_error_t * dpdk_thread_init(vlib_main_t * vm)' data-ref="dpdk_thread_init">dpdk_thread_init</dfn> (<a class="typedef" href="../../vlib/main.h.html#vlib_main_t" title='vlib_main_t' data-type='struct vlib_main_t' data-ref="vlib_main_t">vlib_main_t</a> * <dfn class="local col7 decl" id="7vm" title='vm' data-type='vlib_main_t *' data-ref="7vm">vm</dfn>)</td></tr>
+<tr><th id="71">71</th><td>{</td></tr>
+<tr><th id="72">72</th><td>  <a class="ref fn" href="../../vlib/threads.h.html#vlib_thread_cb_register" title='vlib_thread_cb_register' data-ref="vlib_thread_cb_register">vlib_thread_cb_register</a> (<a class="local col7 ref" href="#7vm" title='vm' data-ref="7vm">vm</a>, &amp;<a class="tu ref" href="#callbacks" title='callbacks' data-use='a' data-ref="callbacks">callbacks</a>);</td></tr>
+<tr><th id="73">73</th><td>  <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="74">74</th><td>}</td></tr>
+<tr><th id="75">75</th><td></td></tr>
+<tr><th id="76">76</th><td><a class="macro" href="../../vlib/init.h.html#111" title="vlib_init_function_t * _vlib_init_function_dpdk_thread_init = dpdk_thread_init; static void __vlib_add_init_function_dpdk_thread_init (void) __attribute__((__constructor__)) ; static void __vlib_add_init_function_dpdk_thread_init (void) { vlib_main_t * vm = vlib_get_main(); static _vlib_init_function_list_elt_t _vlib_init_function; _vlib_init_function.next_init_function = vm-&gt;init_function_registrations; vm-&gt;init_function_registrations = &amp;_vlib_init_function; _vlib_init_function.f = &amp;dpdk_thread_init; }" data-ref="_M/VLIB_INIT_FUNCTION">VLIB_INIT_FUNCTION</a> (<a class="tu ref fn" href="#dpdk_thread_init" title='dpdk_thread_init' data-ref="dpdk_thread_init"><a class="tu ref fn" href="#dpdk_thread_init" title='dpdk_thread_init' data-use='a' data-ref="dpdk_thread_init">dpdk_thread_init</a></a>);</td></tr>
+<tr><th id="77">77</th><td></td></tr>
+<tr><th id="78">78</th><td><i class="doc">/**<span class="command"> @endcond</span> */</i></td></tr>
+<tr><th id="79">79</th><td><i>/*</i></td></tr>
+<tr><th id="80">80</th><td><i> * fd.io coding-style-patch-verification: ON</i></td></tr>
+<tr><th id="81">81</th><td><i> *</i></td></tr>
+<tr><th id="82">82</th><td><i> * Local Variables:</i></td></tr>
+<tr><th id="83">83</th><td><i> * eval: (c-set-style "gnu")</i></td></tr>
+<tr><th id="84">84</th><td><i> * End:</i></td></tr>
+<tr><th id="85">85</th><td><i> */</i></td></tr>
+<tr><th id="86">86</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-30</em> from project vpp_1804 revision <em>18.05</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,321 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>summary_stats_client.c source code [vpp_1804/src/vpp/api/summary_stats_client.c] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="main "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'vpp_1804/src/vpp/api/summary_stats_client.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>vpp_1804</a>/<a href='../..'>src</a>/<a href='..'>vpp</a>/<a href='./'>api</a>/<a href='summary_stats_client.c.html'>summary_stats_client.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> *------------------------------------------------------------------</i></td></tr>
+<tr><th id="3">3</th><td><i> * summary_stats_client -</i></td></tr>
+<tr><th id="4">4</th><td><i> *</i></td></tr>
+<tr><th id="5">5</th><td><i> * Copyright (c) 2010 Cisco and/or its affiliates.</i></td></tr>
+<tr><th id="6">6</th><td><i> * Licensed under the Apache License, Version 2.0 (the "License");</i></td></tr>
+<tr><th id="7">7</th><td><i> * you may not use this file except in compliance with the License.</i></td></tr>
+<tr><th id="8">8</th><td><i> * You may obtain a copy of the License at:</i></td></tr>
+<tr><th id="9">9</th><td><i> *</i></td></tr>
+<tr><th id="10">10</th><td><i> *     <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></i></td></tr>
+<tr><th id="11">11</th><td><i> *</i></td></tr>
+<tr><th id="12">12</th><td><i> * Unless required by applicable law or agreed to in writing, software</i></td></tr>
+<tr><th id="13">13</th><td><i> * distributed under the License is distributed on an "AS IS" BASIS,</i></td></tr>
+<tr><th id="14">14</th><td><i> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</i></td></tr>
+<tr><th id="15">15</th><td><i> * See the License for the specific language governing permissions and</i></td></tr>
+<tr><th id="16">16</th><td><i> * limitations under the License.</i></td></tr>
+<tr><th id="17">17</th><td><i> *------------------------------------------------------------------</i></td></tr>
+<tr><th id="18">18</th><td><i> */</i></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../../include/stdio.h.html">&lt;stdio.h&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../../include/stdlib.h.html">&lt;stdlib.h&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../../include/sys/types.h.html">&lt;sys/types.h&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../../../include/sys/socket.h.html">&lt;sys/socket.h&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../../../../include/sys/mman.h.html">&lt;sys/mman.h&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../../../include/sys/stat.h.html">&lt;sys/stat.h&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../../../../include/netinet/in.h.html">&lt;netinet/in.h&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../../../../include/netdb.h.html">&lt;netdb.h&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../../../../include/signal.h.html">&lt;signal.h&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../../../../include/pthread.h.html">&lt;pthread.h&gt;</a></u></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="../../../../include/unistd.h.html">&lt;unistd.h&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="../../../../include/time.h.html">&lt;time.h&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="../../../../include/fcntl.h.html">&lt;fcntl.h&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="../../../../include/string.h.html">&lt;string.h&gt;</a></u></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="../../vppinfra/clib.h.html">&lt;vppinfra/clib.h&gt;</a></u></td></tr>
+<tr><th id="35">35</th><td><u>#include <a href="../../vppinfra/vec.h.html">&lt;vppinfra/vec.h&gt;</a></u></td></tr>
+<tr><th id="36">36</th><td><u>#include <a href="../../vppinfra/hash.h.html">&lt;vppinfra/hash.h&gt;</a></u></td></tr>
+<tr><th id="37">37</th><td><u>#include <a href="../../vppinfra/bitmap.h.html">&lt;vppinfra/bitmap.h&gt;</a></u></td></tr>
+<tr><th id="38">38</th><td><u>#include <a href="../../vppinfra/fifo.h.html">&lt;vppinfra/fifo.h&gt;</a></u></td></tr>
+<tr><th id="39">39</th><td><u>#include <a href="../../vppinfra/time.h.html">&lt;vppinfra/time.h&gt;</a></u></td></tr>
+<tr><th id="40">40</th><td><u>#include <a href="../../vppinfra/mheap.h.html">&lt;vppinfra/mheap.h&gt;</a></u></td></tr>
+<tr><th id="41">41</th><td><u>#include <a href="../../vppinfra/heap.h.html">&lt;vppinfra/heap.h&gt;</a></u></td></tr>
+<tr><th id="42">42</th><td><u>#include <a href="../../vppinfra/pool.h.html">&lt;vppinfra/pool.h&gt;</a></u></td></tr>
+<tr><th id="43">43</th><td><u>#include <a href="../../vppinfra/format.h.html">&lt;vppinfra/format.h&gt;</a></u></td></tr>
+<tr><th id="44">44</th><td><u>#include <a href="../../vppinfra/error.h.html">&lt;vppinfra/error.h&gt;</a></u></td></tr>
+<tr><th id="45">45</th><td></td></tr>
+<tr><th id="46">46</th><td><u>#include <a href="../../vnet/vnet.h.html">&lt;vnet/vnet.h&gt;</a></u></td></tr>
+<tr><th id="47">47</th><td><u>#include <a href="../../vlib/vlib.h.html">&lt;vlib/vlib.h&gt;</a></u></td></tr>
+<tr><th id="48">48</th><td><u>#include <a href="../../vlib/unix/unix.h.html">&lt;vlib/unix/unix.h&gt;</a></u></td></tr>
+<tr><th id="49">49</th><td><u>#include <a href="../../vlibapi/api.h.html">&lt;vlibapi/api.h&gt;</a></u></td></tr>
+<tr><th id="50">50</th><td><u>#include <a href="../../vlibmemory/api.h.html">&lt;vlibmemory/api.h&gt;</a></u></td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td><u>#include <a href="vpe_msg_enum.h.html">&lt;vpp/api/vpe_msg_enum.h&gt;</a></u></td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td><u>#include <a href="../../vnet/ip/ip.h.html">&lt;vnet/ip/ip.h&gt;</a></u></td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td><u>#define <dfn class="macro" id="_M/f64_endian" data-ref="_M/f64_endian">f64_endian</dfn>(a)</u></td></tr>
+<tr><th id="57">57</th><td><u>#define <dfn class="macro" id="_M/f64_print" data-ref="_M/f64_print">f64_print</dfn>(a,b)</u></td></tr>
+<tr><th id="58">58</th><td></td></tr>
+<tr><th id="59">59</th><td><u>#define <dfn class="macro" id="_M/vl_typedefs" data-ref="_M/vl_typedefs">vl_typedefs</dfn>		/* define message structures */</u></td></tr>
+<tr><th id="60">60</th><td><u>#include <a href="vpe_all_api_h.h.html">&lt;vpp/api/vpe_all_api_h.h&gt;</a></u></td></tr>
+<tr><th id="61">61</th><td><u>#undef <a class="macro" href="#59" data-ref="_M/vl_typedefs">vl_typedefs</a></u></td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td><u>#define <dfn class="macro" id="_M/vl_endianfun" data-ref="_M/vl_endianfun">vl_endianfun</dfn>		/* define message structures */</u></td></tr>
+<tr><th id="64">64</th><td><u>#include <a href="vpe_all_api_h.h.html">&lt;vpp/api/vpe_all_api_h.h&gt;</a></u></td></tr>
+<tr><th id="65">65</th><td><u>#undef <a class="macro" href="#63" data-ref="_M/vl_endianfun">vl_endianfun</a></u></td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td><i>/* instantiate all the print functions we know about */</i></td></tr>
+<tr><th id="68">68</th><td><u>#define <dfn class="macro" id="_M/vl_print" data-ref="_M/vl_print">vl_print</dfn>(handle, ...)</u></td></tr>
+<tr><th id="69">69</th><td><u>#define <dfn class="macro" id="_M/vl_printfun" data-ref="_M/vl_printfun">vl_printfun</dfn></u></td></tr>
+<tr><th id="70">70</th><td><u>#include <a href="vpe_all_api_h.h.html">&lt;vpp/api/vpe_all_api_h.h&gt;</a></u></td></tr>
+<tr><th id="71">71</th><td><u>#undef <a class="macro" href="#69" data-ref="_M/vl_printfun">vl_printfun</a></u></td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td><a class="typedef" href="../../vlibmemory/memory_shared.h.html#vl_shmem_hdr_t" title='vl_shmem_hdr_t' data-type='struct vl_shmem_hdr_' data-ref="vl_shmem_hdr_t">vl_shmem_hdr_t</a> *<dfn class="decl def" id="shmem_hdr" title='shmem_hdr' data-ref="shmem_hdr">shmem_hdr</dfn>;</td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td><b>typedef</b> <b>struct</b></td></tr>
+<tr><th id="76">76</th><td>{</td></tr>
+<tr><th id="77">77</th><td>  <em>volatile</em> <em>int</em> <dfn class="tu decl field" id="(anonymous)::sigterm_received" title='(anonymous struct)::sigterm_received' data-type='volatile int' data-ref="(anonymous)::sigterm_received">sigterm_received</dfn>;</td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td>  <b>struct</b> <a class="type" href="../../../../include/netinet/in.h.html#sockaddr_in" title='sockaddr_in' data-ref="sockaddr_in">sockaddr_in</a> <dfn class="tu decl field" id="(anonymous)::send_data_addr" title='(anonymous struct)::send_data_addr' data-type='struct sockaddr_in' data-ref="(anonymous)::send_data_addr">send_data_addr</dfn>;</td></tr>
+<tr><th id="80">80</th><td>  <em>int</em> <dfn class="tu decl field" id="(anonymous)::send_data_socket" title='(anonymous struct)::send_data_socket' data-type='int' data-ref="(anonymous)::send_data_socket">send_data_socket</dfn>;</td></tr>
+<tr><th id="81">81</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="tu decl field" id="(anonymous)::display_name" title='(anonymous struct)::display_name' data-type='u8 *' data-ref="(anonymous)::display_name">display_name</dfn>;</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td>  <i  data-doc="(anonymous)::vl_input_queue">/* convenience */</i></td></tr>
+<tr><th id="84">84</th><td>  <a class="typedef" href="../../svm/queue.h.html#svm_queue_t" title='svm_queue_t' data-type='struct _svm_queue' data-ref="svm_queue_t">svm_queue_t</a> *<dfn class="tu decl field" id="(anonymous)::vl_input_queue" title='(anonymous struct)::vl_input_queue' data-type='svm_queue_t *' data-ref="(anonymous)::vl_input_queue">vl_input_queue</dfn>;</td></tr>
+<tr><th id="85">85</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="tu decl field" id="(anonymous)::my_client_index" title='(anonymous struct)::my_client_index' data-type='u32' data-ref="(anonymous)::my_client_index">my_client_index</dfn>;</td></tr>
+<tr><th id="86">86</th><td>} <dfn class="typedef" id="test_main_t" title='test_main_t' data-type='struct test_main_t' data-ref="test_main_t">test_main_t</dfn>;</td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td><a class="typedef" href="#test_main_t" title='test_main_t' data-type='struct test_main_t' data-ref="test_main_t">test_main_t</a> <dfn class="decl def" id="test_main" title='test_main' data-ref="test_main">test_main</dfn>;</td></tr>
+<tr><th id="89">89</th><td></td></tr>
+<tr><th id="90">90</th><td><i>/*</i></td></tr>
+<tr><th id="91">91</th><td><i> * Satisfy external references when -lvlib is not available.</i></td></tr>
+<tr><th id="92">92</th><td><i> */</i></td></tr>
+<tr><th id="93">93</th><td><a class="typedef" href="../../vlib/main.h.html#vlib_main_t" title='vlib_main_t' data-type='struct vlib_main_t' data-ref="vlib_main_t">vlib_main_t</a> <dfn class="decl def" id="vlib_global_main" title='vlib_global_main' data-ref="vlib_global_main">vlib_global_main</dfn>;</td></tr>
+<tr><th id="94">94</th><td><a class="typedef" href="../../vlib/main.h.html#vlib_main_t" title='vlib_main_t' data-type='struct vlib_main_t' data-ref="vlib_main_t">vlib_main_t</a> **<dfn class="decl def" id="vlib_mains" title='vlib_mains' data-ref="vlib_mains">vlib_mains</dfn>;</td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td><em>void</em></td></tr>
+<tr><th id="97">97</th><td><dfn class="decl def fn" id="vlib_cli_output" title='vlib_cli_output' data-ref="vlib_cli_output">vlib_cli_output</dfn> (<b>struct</b> <a class="type" href="../../vlib/main.h.html#vlib_main_t" title='vlib_main_t' data-ref="vlib_main_t">vlib_main_t</a> *<dfn class="local col1 decl" id="1vm" title='vm' data-type='struct vlib_main_t *' data-ref="1vm">vm</dfn>, <em>char</em> *<dfn class="local col2 decl" id="2fmt" title='fmt' data-type='char *' data-ref="2fmt">fmt</dfn>, ...)</td></tr>
+<tr><th id="98">98</th><td>{</td></tr>
+<tr><th id="99">99</th><td>  <a class="macro" href="../../vppinfra/error.h.html#59" title="_clib_error (CLIB_ERROR_WARNING, ((char *) __FUNCTION__), 99, &quot;vlib_cli_output callled...&quot;)" data-ref="_M/clib_warning">clib_warning</a> (<q>"vlib_cli_output callled..."</q>);</td></tr>
+<tr><th id="100">100</th><td>}</td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td></td></tr>
+<tr><th id="103">103</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="104">104</th><td>  <dfn class="tu decl def fn" id="vl_api_vnet_get_summary_stats_reply_t_handler" title='vl_api_vnet_get_summary_stats_reply_t_handler' data-type='void vl_api_vnet_get_summary_stats_reply_t_handler(vl_api_vnet_get_summary_stats_reply_t * mp)' data-ref="vl_api_vnet_get_summary_stats_reply_t_handler">vl_api_vnet_get_summary_stats_reply_t_handler</dfn></td></tr>
+<tr><th id="105">105</th><td>  (<a class="typedef" href="../../../build-root/build-vpp_debug-native/vpp/vpp/stats/stats.api.h.html#vl_api_vnet_get_summary_stats_reply_t" title='vl_api_vnet_get_summary_stats_reply_t' data-type='struct _vl_api_vnet_get_summary_stats_reply' data-ref="vl_api_vnet_get_summary_stats_reply_t">vl_api_vnet_get_summary_stats_reply_t</a> * <dfn class="local col3 decl" id="3mp" title='mp' data-type='vl_api_vnet_get_summary_stats_reply_t *' data-ref="3mp">mp</dfn>)</td></tr>
+<tr><th id="106">106</th><td>{</td></tr>
+<tr><th id="107">107</th><td>  <a class="typedef" href="#test_main_t" title='test_main_t' data-type='struct test_main_t' data-ref="test_main_t">test_main_t</a> *<dfn class="local col4 decl" id="4tm" title='tm' data-type='test_main_t *' data-ref="4tm">tm</dfn> = &amp;<a class="ref" href="#test_main" title='test_main' data-ref="test_main">test_main</a>;</td></tr>
+<tr><th id="108">108</th><td>  <em>static</em> <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col5 decl" id="5sb" title='sb' data-type='u8 *' data-ref="5sb">sb</dfn>;</td></tr>
+<tr><th id="109">109</th><td>  <em>int</em> <dfn class="local col6 decl" id="6n" title='n' data-type='int' data-ref="6n">n</dfn>;</td></tr>
+<tr><th id="110">110</th><td></td></tr>
+<tr><th id="111">111</th><td>  <a class="ref fn" href="../../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"total rx pkts %llu, total rx bytes %llu\n"</q>,</td></tr>
+<tr><th id="112">112</th><td>	  (<em>unsigned</em> <em>long</em> <em>long</em>) <a class="local col3 ref" href="#3mp" title='mp' data-ref="3mp">mp</a>-&gt;<a class="ref field" href="../../../build-root/build-vpp_debug-native/vpp/vpp/stats/stats.api.h.html#612" title='_vl_api_vnet_get_summary_stats_reply::total_pkts' data-ref="_vl_api_vnet_get_summary_stats_reply::total_pkts">total_pkts</a>[<var>0</var>],</td></tr>
+<tr><th id="113">113</th><td>	  (<em>unsigned</em> <em>long</em> <em>long</em>) <a class="local col3 ref" href="#3mp" title='mp' data-ref="3mp">mp</a>-&gt;<a class="ref field" href="../../../build-root/build-vpp_debug-native/vpp/vpp/stats/stats.api.h.html#612" title='_vl_api_vnet_get_summary_stats_reply::total_bytes' data-ref="_vl_api_vnet_get_summary_stats_reply::total_bytes">total_bytes</a>[<var>0</var>]);</td></tr>
+<tr><th id="114">114</th><td>  <a class="ref fn" href="../../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"total tx pkts %llu, total tx bytes %llu\n"</q>,</td></tr>
+<tr><th id="115">115</th><td>	  (<em>unsigned</em> <em>long</em> <em>long</em>) <a class="local col3 ref" href="#3mp" title='mp' data-ref="3mp">mp</a>-&gt;<a class="ref field" href="../../../build-root/build-vpp_debug-native/vpp/vpp/stats/stats.api.h.html#612" title='_vl_api_vnet_get_summary_stats_reply::total_pkts' data-ref="_vl_api_vnet_get_summary_stats_reply::total_pkts">total_pkts</a>[<var>1</var>],</td></tr>
+<tr><th id="116">116</th><td>	  (<em>unsigned</em> <em>long</em> <em>long</em>) <a class="local col3 ref" href="#3mp" title='mp' data-ref="3mp">mp</a>-&gt;<a class="ref field" href="../../../build-root/build-vpp_debug-native/vpp/vpp/stats/stats.api.h.html#612" title='_vl_api_vnet_get_summary_stats_reply::total_bytes' data-ref="_vl_api_vnet_get_summary_stats_reply::total_bytes">total_bytes</a>[<var>1</var>]);</td></tr>
+<tr><th id="117">117</th><td>  <a class="ref fn" href="../../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a> (<q>"vector rate %.2f\n"</q>, <a class="local col3 ref" href="#3mp" title='mp' data-ref="3mp">mp</a>-&gt;<a class="ref field" href="../../../build-root/build-vpp_debug-native/vpp/vpp/stats/stats.api.h.html#612" title='_vl_api_vnet_get_summary_stats_reply::vector_rate' data-ref="_vl_api_vnet_get_summary_stats_reply::vector_rate">vector_rate</a>);</td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td>  <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#148" title="do { if (sb) (((vec_header_t *) (sb) - 1)-&gt;len) = 0; } while (0)" data-ref="_M/vec_reset_length">vec_reset_length</a> (<a class="local col5 ref" href="#5sb" title='sb' data-ref="5sb">sb</a>);</td></tr>
+<tr><th id="120">120</th><td>  <a class="local col5 ref" href="#5sb" title='sb' data-ref="5sb">sb</a> = <a class="ref fn" href="../../vppinfra/format.h.html#format" title='format' data-ref="format">format</a> (<a class="local col5 ref" href="#5sb" title='sb' data-ref="5sb">sb</a>, <q>"%v,%.0f,%llu,%llu,%llu,%llu\n%c"</q>,</td></tr>
+<tr><th id="121">121</th><td>	       <a class="local col4 ref" href="#4tm" title='tm' data-ref="4tm">tm</a>-&gt;<a class="tu ref field" href="#(anonymous)::display_name" title='(anonymous struct)::display_name' data-use='r' data-ref="(anonymous)::display_name">display_name</a>, <a class="local col3 ref" href="#3mp" title='mp' data-ref="3mp">mp</a>-&gt;<a class="ref field" href="../../../build-root/build-vpp_debug-native/vpp/vpp/stats/stats.api.h.html#612" title='_vl_api_vnet_get_summary_stats_reply::vector_rate' data-ref="_vl_api_vnet_get_summary_stats_reply::vector_rate">vector_rate</a>,</td></tr>
+<tr><th id="122">122</th><td>	       (<em>unsigned</em> <em>long</em> <em>long</em>) <a class="local col3 ref" href="#3mp" title='mp' data-ref="3mp">mp</a>-&gt;<a class="ref field" href="../../../build-root/build-vpp_debug-native/vpp/vpp/stats/stats.api.h.html#612" title='_vl_api_vnet_get_summary_stats_reply::total_pkts' data-ref="_vl_api_vnet_get_summary_stats_reply::total_pkts">total_pkts</a>[<var>0</var>],</td></tr>
+<tr><th id="123">123</th><td>	       (<em>unsigned</em> <em>long</em> <em>long</em>) <a class="local col3 ref" href="#3mp" title='mp' data-ref="3mp">mp</a>-&gt;<a class="ref field" href="../../../build-root/build-vpp_debug-native/vpp/vpp/stats/stats.api.h.html#612" title='_vl_api_vnet_get_summary_stats_reply::total_bytes' data-ref="_vl_api_vnet_get_summary_stats_reply::total_bytes">total_bytes</a>[<var>0</var>],</td></tr>
+<tr><th id="124">124</th><td>	       (<em>unsigned</em> <em>long</em> <em>long</em>) <a class="local col3 ref" href="#3mp" title='mp' data-ref="3mp">mp</a>-&gt;<a class="ref field" href="../../../build-root/build-vpp_debug-native/vpp/vpp/stats/stats.api.h.html#612" title='_vl_api_vnet_get_summary_stats_reply::total_pkts' data-ref="_vl_api_vnet_get_summary_stats_reply::total_pkts">total_pkts</a>[<var>1</var>],</td></tr>
+<tr><th id="125">125</th><td>	       (<em>unsigned</em> <em>long</em> <em>long</em>) <a class="local col3 ref" href="#3mp" title='mp' data-ref="3mp">mp</a>-&gt;<a class="ref field" href="../../../build-root/build-vpp_debug-native/vpp/vpp/stats/stats.api.h.html#612" title='_vl_api_vnet_get_summary_stats_reply::total_bytes' data-ref="_vl_api_vnet_get_summary_stats_reply::total_bytes">total_bytes</a>[<var>1</var>], <var>0</var>);</td></tr>
+<tr><th id="126">126</th><td></td></tr>
+<tr><th id="127">127</th><td>  <a class="local col6 ref" href="#6n" title='n' data-ref="6n">n</a> = <a class="ref fn" href="../../../../include/sys/socket.h.html#sendto" title='sendto' data-ref="sendto">sendto</a> (<a class="local col4 ref" href="#4tm" title='tm' data-ref="4tm">tm</a>-&gt;<a class="tu ref field" href="#(anonymous)::send_data_socket" title='(anonymous struct)::send_data_socket' data-use='r' data-ref="(anonymous)::send_data_socket">send_data_socket</a>, <a class="local col5 ref" href="#5sb" title='sb' data-ref="5sb">sb</a>, <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#142" title="((sb) ? (((vec_header_t *) (sb) - 1)-&gt;len) : 0)" data-ref="_M/vec_len">vec_len</a> (<a class="local col5 ref" href="#5sb" title='sb' data-ref="5sb">sb</a>),</td></tr>
+<tr><th id="128">128</th><td>	      <var>0</var>, (<b>struct</b> <a class="type" href="../../../../include/bits/socket.h.html#sockaddr" title='sockaddr' data-ref="sockaddr">sockaddr</a> *) &amp;<a class="local col4 ref" href="#4tm" title='tm' data-ref="4tm">tm</a>-&gt;<a class="tu ref field" href="#(anonymous)::send_data_addr" title='(anonymous struct)::send_data_addr' data-use='a' data-ref="(anonymous)::send_data_addr">send_data_addr</a>,</td></tr>
+<tr><th id="129">129</th><td>	      <b>sizeof</b> (<a class="local col4 ref" href="#4tm" title='tm' data-ref="4tm">tm</a>-&gt;<a class="tu ref field" href="#(anonymous)::send_data_addr" title='(anonymous struct)::send_data_addr' data-use='r' data-ref="(anonymous)::send_data_addr">send_data_addr</a>));</td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td>  <b>if</b> (<a class="local col6 ref" href="#6n" title='n' data-ref="6n">n</a> != <a class="macro" href="../../vppinfra/vec_bootstrap.h.html#142" title="((sb) ? (((vec_header_t *) (sb) - 1)-&gt;len) : 0)" data-ref="_M/vec_len">vec_len</a> (<a class="local col5 ref" href="#5sb" title='sb' data-ref="5sb">sb</a>))</td></tr>
+<tr><th id="132">132</th><td>    <a class="macro" href="../../vppinfra/error.h.html#68" title="_clib_error (CLIB_ERROR_WARNING | CLIB_ERROR_ERRNO_VALID, ((char *) __FUNCTION__), 132, &quot;sendto&quot;)" data-ref="_M/clib_unix_warning">clib_unix_warning</a> (<q>"sendto"</q>);</td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td>}</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td><u>#define <dfn class="macro" id="_M/foreach_api_msg" data-ref="_M/foreach_api_msg">foreach_api_msg</dfn>                                                 \</u></td></tr>
+<tr><th id="137">137</th><td><u>_(VNET_GET_SUMMARY_STATS_REPLY, vnet_get_summary_stats_reply)</u></td></tr>
+<tr><th id="138">138</th><td></td></tr>
+<tr><th id="139">139</th><td><em>int</em></td></tr>
+<tr><th id="140">140</th><td><dfn class="decl def fn" id="connect_to_vpe" title='connect_to_vpe' data-ref="connect_to_vpe">connect_to_vpe</dfn> (<em>char</em> *<dfn class="local col7 decl" id="7name" title='name' data-type='char *' data-ref="7name">name</dfn>)</td></tr>
+<tr><th id="141">141</th><td>{</td></tr>
+<tr><th id="142">142</th><td>  <em>int</em> <dfn class="local col8 decl" id="8rv" title='rv' data-type='int' data-ref="8rv">rv</dfn> = <var>0</var>;</td></tr>
+<tr><th id="143">143</th><td></td></tr>
+<tr><th id="144">144</th><td>  <a class="local col8 ref" href="#8rv" title='rv' data-ref="8rv">rv</a> = <a class="ref fn" href="../../vlibmemory/memory_client.h.html#vl_client_connect_to_vlib" title='vl_client_connect_to_vlib' data-ref="vl_client_connect_to_vlib">vl_client_connect_to_vlib</a> (<q>"/vpe-api"</q>, <a class="local col7 ref" href="#7name" title='name' data-ref="7name">name</a>, <var>32</var>);</td></tr>
+<tr><th id="145">145</th><td></td></tr>
+<tr><th id="146">146</th><td><u>#define <dfn class="macro" id="_M/_" data-ref="_M/_">_</dfn>(N,n)                                                  \</u></td></tr>
+<tr><th id="147">147</th><td><u>    <a class="ref fn" href="../../vlibapi/api_common.h.html#vl_msg_api_set_handlers" title='vl_msg_api_set_handlers' data-ref="vl_msg_api_set_handlers">vl_msg_api_set_handlers</a>(VL_API_##N, #n,                     \</u></td></tr>
+<tr><th id="148">148</th><td><u>                           vl_api_##n##_t_handler,              \</u></td></tr>
+<tr><th id="149">149</th><td><u>                           <a class="ref fn" href="../../vlibapi/api_common.h.html#vl_noop_handler" title='vl_noop_handler' data-ref="vl_noop_handler">vl_noop_handler</a>,                     \</u></td></tr>
+<tr><th id="150">150</th><td><u>                           vl_api_##n##_t_endian,               \</u></td></tr>
+<tr><th id="151">151</th><td><u>                           vl_api_##n##_t_print,                \</u></td></tr>
+<tr><th id="152">152</th><td><u>                           sizeof(vl_api_##n##_t), 1);</u></td></tr>
+<tr><th id="153">153</th><td>  <a class="macro" href="#136" title="vl_msg_api_set_handlers(VL_API_VNET_GET_SUMMARY_STATS_REPLY, &quot;vnet_get_summary_stats_reply&quot;, vl_api_vnet_get_summary_stats_reply_t_handler, vl_noop_handler, vl_api_vnet_get_summary_stats_reply_t_endian, vl_api_vnet_get_summary_stats_reply_t_print, sizeof(vl_api_vnet_get_summary_stats_reply_t), 1);" data-ref="_M/foreach_api_msg">foreach_api_msg</a>;</td></tr>
+<tr><th id="154">154</th><td><u>#undef <a class="macro" href="#146" data-ref="_M/_">_</a></u></td></tr>
+<tr><th id="155">155</th><td></td></tr>
+<tr><th id="156">156</th><td>  <a class="ref" href="#shmem_hdr" title='shmem_hdr' data-ref="shmem_hdr">shmem_hdr</a> = <a class="ref" href="../../vlibapi/api_common.h.html#api_main" title='api_main' data-ref="api_main">api_main</a>.<a class="ref field" href="../../vlibapi/api_common.h.html#(anonymous)::shmem_hdr" title='(anonymous struct)::shmem_hdr' data-ref="(anonymous)::shmem_hdr">shmem_hdr</a>;</td></tr>
+<tr><th id="157">157</th><td></td></tr>
+<tr><th id="158">158</th><td>  <b>return</b> <a class="local col8 ref" href="#8rv" title='rv' data-ref="8rv">rv</a>;</td></tr>
+<tr><th id="159">159</th><td>}</td></tr>
+<tr><th id="160">160</th><td></td></tr>
+<tr><th id="161">161</th><td><em>int</em></td></tr>
+<tr><th id="162">162</th><td><dfn class="decl def fn" id="disconnect_from_vpe" title='disconnect_from_vpe' data-ref="disconnect_from_vpe">disconnect_from_vpe</dfn> (<em>void</em>)</td></tr>
+<tr><th id="163">163</th><td>{</td></tr>
+<tr><th id="164">164</th><td>  <a class="ref fn" href="../../vlibmemory/memory_client.h.html#vl_client_disconnect_from_vlib" title='vl_client_disconnect_from_vlib' data-ref="vl_client_disconnect_from_vlib">vl_client_disconnect_from_vlib</a> ();</td></tr>
+<tr><th id="165">165</th><td>  <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="166">166</th><td>}</td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="169">169</th><td><dfn class="tu decl def fn" id="sigterm_handler" title='sigterm_handler' data-type='void sigterm_handler(int sig)' data-ref="sigterm_handler">sigterm_handler</dfn> (<em>int</em> <dfn class="local col9 decl" id="9sig" title='sig' data-type='int' data-ref="9sig">sig</dfn>)</td></tr>
+<tr><th id="170">170</th><td>{</td></tr>
+<tr><th id="171">171</th><td>  <a class="typedef" href="#test_main_t" title='test_main_t' data-type='struct test_main_t' data-ref="test_main_t">test_main_t</a> *<dfn class="local col0 decl" id="10tm" title='tm' data-type='test_main_t *' data-ref="10tm">tm</dfn> = &amp;<a class="ref" href="#test_main" title='test_main' data-ref="test_main">test_main</a>;</td></tr>
+<tr><th id="172">172</th><td>  <a class="local col0 ref" href="#10tm" title='tm' data-ref="10tm">tm</a>-&gt;<a class="tu ref field" href="#(anonymous)::sigterm_received" title='(anonymous struct)::sigterm_received' data-use='w' data-ref="(anonymous)::sigterm_received">sigterm_received</a> = <var>1</var>;</td></tr>
+<tr><th id="173">173</th><td>}</td></tr>
+<tr><th id="174">174</th><td></td></tr>
+<tr><th id="175">175</th><td><i>/* Parse an IP4 address %d.%d.%d.%d. */</i></td></tr>
+<tr><th id="176">176</th><td><a class="typedef" href="../../vppinfra/types.h.html#uword" title='uword' data-type='u64' data-ref="uword">uword</a></td></tr>
+<tr><th id="177">177</th><td><dfn class="decl def fn" id="unformat_ip4_address" title='unformat_ip4_address' data-ref="unformat_ip4_address">unformat_ip4_address</dfn> (<a class="typedef" href="../../vppinfra/format.h.html#unformat_input_t" title='unformat_input_t' data-type='struct _unformat_input_t' data-ref="unformat_input_t">unformat_input_t</a> * <dfn class="local col1 decl" id="11input" title='input' data-type='unformat_input_t *' data-ref="11input">input</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> * <dfn class="local col2 decl" id="12args" title='args' data-type='va_list *' data-ref="12args">args</dfn>)</td></tr>
+<tr><th id="178">178</th><td>{</td></tr>
+<tr><th id="179">179</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col3 decl" id="13result" title='result' data-type='u8 *' data-ref="13result">result</dfn> = <span class="macro" title="__builtin_va_arg(*args, u8 *)" data-ref="_M/va_arg">va_arg</span> (*<a class="local col2 ref" href="#12args" title='args' data-ref="12args">args</a>, <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *);</td></tr>
+<tr><th id="180">180</th><td>  <em>unsigned</em> <dfn class="local col4 decl" id="14a" title='a' data-type='unsigned int [4]' data-ref="14a">a</dfn>[<var>4</var>];</td></tr>
+<tr><th id="181">181</th><td></td></tr>
+<tr><th id="182">182</th><td>  <b>if</b> (!<a class="ref fn" href="../../vppinfra/format.h.html#unformat" title='unformat' data-ref="unformat">unformat</a> (<a class="local col1 ref" href="#11input" title='input' data-ref="11input">input</a>, <q>"%d.%d.%d.%d"</q>, &amp;<a class="local col4 ref" href="#14a" title='a' data-ref="14a">a</a>[<var>0</var>], &amp;<a class="local col4 ref" href="#14a" title='a' data-ref="14a">a</a>[<var>1</var>], &amp;<a class="local col4 ref" href="#14a" title='a' data-ref="14a">a</a>[<var>2</var>], &amp;<a class="local col4 ref" href="#14a" title='a' data-ref="14a">a</a>[<var>3</var>]))</td></tr>
+<tr><th id="183">183</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="184">184</th><td></td></tr>
+<tr><th id="185">185</th><td>  <b>if</b> (<a class="local col4 ref" href="#14a" title='a' data-ref="14a">a</a>[<var>0</var>] &gt;= <var>256</var> || <a class="local col4 ref" href="#14a" title='a' data-ref="14a">a</a>[<var>1</var>] &gt;= <var>256</var> || <a class="local col4 ref" href="#14a" title='a' data-ref="14a">a</a>[<var>2</var>] &gt;= <var>256</var> || <a class="local col4 ref" href="#14a" title='a' data-ref="14a">a</a>[<var>3</var>] &gt;= <var>256</var>)</td></tr>
+<tr><th id="186">186</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="187">187</th><td></td></tr>
+<tr><th id="188">188</th><td>  <a class="local col3 ref" href="#13result" title='result' data-ref="13result">result</a>[<var>0</var>] = <a class="local col4 ref" href="#14a" title='a' data-ref="14a">a</a>[<var>0</var>];</td></tr>
+<tr><th id="189">189</th><td>  <a class="local col3 ref" href="#13result" title='result' data-ref="13result">result</a>[<var>1</var>] = <a class="local col4 ref" href="#14a" title='a' data-ref="14a">a</a>[<var>1</var>];</td></tr>
+<tr><th id="190">190</th><td>  <a class="local col3 ref" href="#13result" title='result' data-ref="13result">result</a>[<var>2</var>] = <a class="local col4 ref" href="#14a" title='a' data-ref="14a">a</a>[<var>2</var>];</td></tr>
+<tr><th id="191">191</th><td>  <a class="local col3 ref" href="#13result" title='result' data-ref="13result">result</a>[<var>3</var>] = <a class="local col4 ref" href="#14a" title='a' data-ref="14a">a</a>[<var>3</var>];</td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td>  <b>return</b> <var>1</var>;</td></tr>
+<tr><th id="194">194</th><td>}</td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td><em>int</em></td></tr>
+<tr><th id="197">197</th><td><dfn class="decl def fn" id="main" title='main' data-ref="main">main</dfn> (<em>int</em> <dfn class="local col5 decl" id="15argc" title='argc' data-type='int' data-ref="15argc">argc</dfn>, <em>char</em> **<dfn class="local col6 decl" id="16argv" title='argv' data-type='char **' data-ref="16argv">argv</dfn>)</td></tr>
+<tr><th id="198">198</th><td>{</td></tr>
+<tr><th id="199">199</th><td>  <a class="typedef" href="../../vlibapi/api_common.h.html#api_main_t" title='api_main_t' data-type='struct api_main_t' data-ref="api_main_t">api_main_t</a> *<dfn class="local col7 decl" id="17am" title='am' data-type='api_main_t *' data-ref="17am">am</dfn> = &amp;<a class="ref" href="../../vlibapi/api_common.h.html#api_main" title='api_main' data-ref="api_main">api_main</a>;</td></tr>
+<tr><th id="200">200</th><td>  <a class="typedef" href="#test_main_t" title='test_main_t' data-type='struct test_main_t' data-ref="test_main_t">test_main_t</a> *<dfn class="local col8 decl" id="18tm" title='tm' data-type='test_main_t *' data-ref="18tm">tm</dfn> = &amp;<a class="ref" href="#test_main" title='test_main' data-ref="test_main">test_main</a>;</td></tr>
+<tr><th id="201">201</th><td>  <a class="typedef" href="../../../build-root/build-vpp_debug-native/vpp/vpp/stats/stats.api.h.html#vl_api_vnet_get_summary_stats_t" title='vl_api_vnet_get_summary_stats_t' data-type='struct _vl_api_vnet_get_summary_stats' data-ref="vl_api_vnet_get_summary_stats_t">vl_api_vnet_get_summary_stats_t</a> *<dfn class="local col9 decl" id="19mp" title='mp' data-type='vl_api_vnet_get_summary_stats_t *' data-ref="19mp">mp</dfn>;</td></tr>
+<tr><th id="202">202</th><td>  <a class="typedef" href="../../vppinfra/format.h.html#unformat_input_t" title='unformat_input_t' data-type='struct _unformat_input_t' data-ref="unformat_input_t">unformat_input_t</a> <dfn class="local col0 decl" id="20_input" title='_input' data-type='unformat_input_t' data-ref="20_input">_input</dfn>, *<dfn class="local col1 decl" id="21input" title='input' data-type='unformat_input_t *' data-ref="21input">input</dfn> = &amp;<a class="local col0 ref" href="#20_input" title='_input' data-ref="20_input">_input</a>;</td></tr>
+<tr><th id="203">203</th><td>  <a class="typedef" href="../../vppinfra/clib_error.h.html#clib_error_t" title='clib_error_t' data-type='struct clib_error_t' data-ref="clib_error_t">clib_error_t</a> *<dfn class="local col2 decl" id="22error" title='error' data-type='clib_error_t *' data-ref="22error">error</dfn> = <var>0</var>;</td></tr>
+<tr><th id="204">204</th><td>  <a class="typedef" href="../../vnet/ip/ip4_packet.h.html#ip4_address_t" title='ip4_address_t' data-type='union ip4_address_t' data-ref="ip4_address_t">ip4_address_t</a> <dfn class="local col3 decl" id="23collector_ip" title='collector_ip' data-type='ip4_address_t' data-ref="23collector_ip">collector_ip</dfn>;</td></tr>
+<tr><th id="205">205</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col4 decl" id="24display_name" title='display_name' data-type='u8 *' data-ref="24display_name">display_name</dfn> = <var>0</var>;</td></tr>
+<tr><th id="206">206</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> <dfn class="local col5 decl" id="25collector_port" title='collector_port' data-type='u16' data-ref="25collector_port">collector_port</dfn> = <var>7654</var>;</td></tr>
+<tr><th id="207">207</th><td></td></tr>
+<tr><th id="208">208</th><td>  <a class="local col3 ref" href="#23collector_ip" title='collector_ip' data-ref="23collector_ip">collector_ip</a>.<a class="ref field" href="../../vnet/ip/ip4_packet.h.html#(anonymous)::as_u32" title='(anonymous union)::as_u32' data-ref="(anonymous)::as_u32">as_u32</a> = (<a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>) ~ <var>0</var>;</td></tr>
+<tr><th id="209">209</th><td></td></tr>
+<tr><th id="210">210</th><td>  <a class="ref fn" href="../../vppinfra/format.h.html#unformat_init_command_line" title='unformat_init_command_line' data-ref="unformat_init_command_line">unformat_init_command_line</a> (<a class="local col1 ref" href="#21input" title='input' data-ref="21input">input</a>, <a class="local col6 ref" href="#16argv" title='argv' data-ref="16argv">argv</a>);</td></tr>
+<tr><th id="211">211</th><td></td></tr>
+<tr><th id="212">212</th><td>  <b>while</b> (<a class="ref fn" href="../../vppinfra/format.h.html#unformat_check_input" title='unformat_check_input' data-ref="unformat_check_input">unformat_check_input</a> (<a class="local col1 ref" href="#21input" title='input' data-ref="21input">input</a>) != <a class="macro" href="../../vppinfra/format.h.html#143" title="(~0)" data-ref="_M/UNFORMAT_END_OF_INPUT">UNFORMAT_END_OF_INPUT</a>)</td></tr>
+<tr><th id="213">213</th><td>    {</td></tr>
+<tr><th id="214">214</th><td>      <b>if</b> (<a class="ref fn" href="../../vppinfra/format.h.html#unformat" title='unformat' data-ref="unformat">unformat</a> (<a class="local col1 ref" href="#21input" title='input' data-ref="21input">input</a>, <q>"collector-ip %U"</q>,</td></tr>
+<tr><th id="215">215</th><td>		    <a class="ref fn" href="#unformat_ip4_address" title='unformat_ip4_address' data-ref="unformat_ip4_address">unformat_ip4_address</a>, &amp;<a class="local col3 ref" href="#23collector_ip" title='collector_ip' data-ref="23collector_ip">collector_ip</a>))</td></tr>
+<tr><th id="216">216</th><td>	;</td></tr>
+<tr><th id="217">217</th><td>      <b>else</b> <b>if</b> (<a class="ref fn" href="../../vppinfra/format.h.html#unformat" title='unformat' data-ref="unformat">unformat</a> (<a class="local col1 ref" href="#21input" title='input' data-ref="21input">input</a>, <q>"display-name %v"</q>, &amp;<a class="local col4 ref" href="#24display_name" title='display_name' data-ref="24display_name">display_name</a>))</td></tr>
+<tr><th id="218">218</th><td>	;</td></tr>
+<tr><th id="219">219</th><td>      <b>else</b> <b>if</b> (<a class="ref fn" href="../../vppinfra/format.h.html#unformat" title='unformat' data-ref="unformat">unformat</a> (<a class="local col1 ref" href="#21input" title='input' data-ref="21input">input</a>, <q>"collector-port %d"</q>, &amp;<a class="local col5 ref" href="#25collector_port" title='collector_port' data-ref="25collector_port">collector_port</a>))</td></tr>
+<tr><th id="220">220</th><td>	;</td></tr>
+<tr><th id="221">221</th><td>      <b>else</b></td></tr>
+<tr><th id="222">222</th><td>	{</td></tr>
+<tr><th id="223">223</th><td>	  <a class="local col2 ref" href="#22error" title='error' data-ref="22error">error</a> =</td></tr>
+<tr><th id="224">224</th><td>	    <a class="macro" href="../../vppinfra/error.h.html#99" title="_clib_error_return((0),(0),(0),(char *)((char *) __FUNCTION__),&quot;Usage: %s collector-ip &lt;ip&gt;\n&quot; &quot;    [display-name &lt;string&gt;] [collector-port &lt;num&gt;]\n&quot; &quot;    port defaults to 7654&quot;, argv[0])" data-ref="_M/clib_error_return">clib_error_return</a></td></tr>
+<tr><th id="225">225</th><td>	    (<var>0</var>, <q>"Usage: %s collector-ip &lt;ip&gt;\n"</q></td></tr>
+<tr><th id="226">226</th><td>	     <q>"    [display-name &lt;string&gt;] [collector-port &lt;num&gt;]\n"</q></td></tr>
+<tr><th id="227">227</th><td>	     <q>"    port defaults to 7654"</q>, <a class="local col6 ref" href="#16argv" title='argv' data-ref="16argv">argv</a>[<var>0</var>]);</td></tr>
+<tr><th id="228">228</th><td>	  <b>break</b>;</td></tr>
+<tr><th id="229">229</th><td>	}</td></tr>
+<tr><th id="230">230</th><td>    }</td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td>  <b>if</b> (<a class="local col2 ref" href="#22error" title='error' data-ref="22error">error</a> == <var>0</var> &amp;&amp; <a class="local col3 ref" href="#23collector_ip" title='collector_ip' data-ref="23collector_ip">collector_ip</a>.<a class="ref field" href="../../vnet/ip/ip4_packet.h.html#(anonymous)::as_u32" title='(anonymous union)::as_u32' data-ref="(anonymous)::as_u32">as_u32</a> == (<a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>) ~ <var>0</var>)</td></tr>
+<tr><th id="233">233</th><td>    <a class="local col2 ref" href="#22error" title='error' data-ref="22error">error</a> = <a class="macro" href="../../vppinfra/error.h.html#99" title="_clib_error_return((0),(0),(0),(char *)((char *) __FUNCTION__),&quot;collector-ip not set...\n&quot;)" data-ref="_M/clib_error_return">clib_error_return</a> (<var>0</var>, <q>"collector-ip not set...\n"</q>);</td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td></td></tr>
+<tr><th id="236">236</th><td>  <b>if</b> (<a class="local col2 ref" href="#22error" title='error' data-ref="22error">error</a>)</td></tr>
+<tr><th id="237">237</th><td>    {</td></tr>
+<tr><th id="238">238</th><td>      <a class="macro" href="../../vppinfra/error.h.html#113" title="do { (error) = _clib_error_report (error); } while (0)" data-ref="_M/clib_error_report">clib_error_report</a> (<a class="local col2 ref" href="#22error" title='error' data-ref="22error">error</a>);</td></tr>
+<tr><th id="239">239</th><td>      <a class="ref fn" href="../../../../include/stdlib.h.html#exit" title='exit' data-ref="exit">exit</a> (<var>1</var>);</td></tr>
+<tr><th id="240">240</th><td>    }</td></tr>
+<tr><th id="241">241</th><td></td></tr>
+<tr><th id="242">242</th><td>  <b>if</b> (<a class="local col4 ref" href="#24display_name" title='display_name' data-ref="24display_name">display_name</a> == <var>0</var>)</td></tr>
+<tr><th id="243">243</th><td>    {</td></tr>
+<tr><th id="244">244</th><td>      <a class="local col4 ref" href="#24display_name" title='display_name' data-ref="24display_name">display_name</a> = <a class="ref fn" href="../../vppinfra/format.h.html#format" title='format' data-ref="format">format</a> (<var>0</var>, <q>"vpe-to-%d.%d.%d.%d"</q>,</td></tr>
+<tr><th id="245">245</th><td>			     <a class="local col3 ref" href="#23collector_ip" title='collector_ip' data-ref="23collector_ip">collector_ip</a>.<a class="ref field" href="../../vnet/ip/ip4_packet.h.html#(anonymous)::as_u8" title='(anonymous union)::as_u8' data-ref="(anonymous)::as_u8">as_u8</a>[<var>0</var>],</td></tr>
+<tr><th id="246">246</th><td>			     <a class="local col3 ref" href="#23collector_ip" title='collector_ip' data-ref="23collector_ip">collector_ip</a>.<a class="ref field" href="../../vnet/ip/ip4_packet.h.html#(anonymous)::as_u8" title='(anonymous union)::as_u8' data-ref="(anonymous)::as_u8">as_u8</a>[<var>1</var>],</td></tr>
+<tr><th id="247">247</th><td>			     <a class="local col3 ref" href="#23collector_ip" title='collector_ip' data-ref="23collector_ip">collector_ip</a>.<a class="ref field" href="../../vnet/ip/ip4_packet.h.html#(anonymous)::as_u8" title='(anonymous union)::as_u8' data-ref="(anonymous)::as_u8">as_u8</a>[<var>2</var>], <a class="local col3 ref" href="#23collector_ip" title='collector_ip' data-ref="23collector_ip">collector_ip</a>.<a class="ref field" href="../../vnet/ip/ip4_packet.h.html#(anonymous)::as_u8" title='(anonymous union)::as_u8' data-ref="(anonymous)::as_u8">as_u8</a>[<var>3</var>]);</td></tr>
+<tr><th id="248">248</th><td>    }</td></tr>
+<tr><th id="249">249</th><td></td></tr>
+<tr><th id="250">250</th><td></td></tr>
+<tr><th id="251">251</th><td>  <a class="ref fn" href="#connect_to_vpe" title='connect_to_vpe' data-ref="connect_to_vpe">connect_to_vpe</a> (<q>"test_client"</q>);</td></tr>
+<tr><th id="252">252</th><td></td></tr>
+<tr><th id="253">253</th><td>  <a class="local col8 ref" href="#18tm" title='tm' data-ref="18tm">tm</a>-&gt;<a class="tu ref field" href="#(anonymous)::vl_input_queue" title='(anonymous struct)::vl_input_queue' data-use='w' data-ref="(anonymous)::vl_input_queue">vl_input_queue</a> = <a class="ref" href="#shmem_hdr" title='shmem_hdr' data-ref="shmem_hdr">shmem_hdr</a>-&gt;<a class="ref field" href="../../vlibmemory/memory_shared.h.html#vl_shmem_hdr_::vl_input_queue" title='vl_shmem_hdr_::vl_input_queue' data-ref="vl_shmem_hdr_::vl_input_queue">vl_input_queue</a>;</td></tr>
+<tr><th id="254">254</th><td>  <a class="local col8 ref" href="#18tm" title='tm' data-ref="18tm">tm</a>-&gt;<a class="tu ref field" href="#(anonymous)::my_client_index" title='(anonymous struct)::my_client_index' data-use='w' data-ref="(anonymous)::my_client_index">my_client_index</a> = <a class="local col7 ref" href="#17am" title='am' data-ref="17am">am</a>-&gt;<a class="ref field" href="../../vlibapi/api_common.h.html#(anonymous)::my_client_index" title='(anonymous struct)::my_client_index' data-ref="(anonymous)::my_client_index">my_client_index</a>;</td></tr>
+<tr><th id="255">255</th><td>  <a class="local col8 ref" href="#18tm" title='tm' data-ref="18tm">tm</a>-&gt;<a class="tu ref field" href="#(anonymous)::display_name" title='(anonymous struct)::display_name' data-use='w' data-ref="(anonymous)::display_name">display_name</a> = <a class="local col4 ref" href="#24display_name" title='display_name' data-ref="24display_name">display_name</a>;</td></tr>
+<tr><th id="256">256</th><td></td></tr>
+<tr><th id="257">257</th><td>  <a class="ref fn" href="../../../../include/signal.h.html#signal" title='signal' data-ref="signal">signal</a> (<a class="macro" href="../../../../include/bits/signum.h.html#47" title="15" data-ref="_M/SIGTERM">SIGTERM</a>, <a class="tu ref fn" href="#sigterm_handler" title='sigterm_handler' data-use='r' data-ref="sigterm_handler">sigterm_handler</a>);</td></tr>
+<tr><th id="258">258</th><td>  <a class="ref fn" href="../../../../include/signal.h.html#signal" title='signal' data-ref="signal">signal</a> (<a class="macro" href="../../../../include/bits/signum.h.html#33" title="2" data-ref="_M/SIGINT">SIGINT</a>, <a class="tu ref fn" href="#sigterm_handler" title='sigterm_handler' data-use='r' data-ref="sigterm_handler">sigterm_handler</a>);</td></tr>
+<tr><th id="259">259</th><td>  <a class="ref fn" href="../../../../include/signal.h.html#signal" title='signal' data-ref="signal">signal</a> (<a class="macro" href="../../../../include/bits/signum.h.html#34" title="3" data-ref="_M/SIGQUIT">SIGQUIT</a>, <a class="tu ref fn" href="#sigterm_handler" title='sigterm_handler' data-use='r' data-ref="sigterm_handler">sigterm_handler</a>);</td></tr>
+<tr><th id="260">260</th><td></td></tr>
+<tr><th id="261">261</th><td>  <i>/* data (multicast) RX socket */</i></td></tr>
+<tr><th id="262">262</th><td>  <a class="local col8 ref" href="#18tm" title='tm' data-ref="18tm">tm</a>-&gt;<a class="tu ref field" href="#(anonymous)::send_data_socket" title='(anonymous struct)::send_data_socket' data-use='w' data-ref="(anonymous)::send_data_socket">send_data_socket</a> = <a class="ref fn" href="../../../../include/sys/socket.h.html#socket" title='socket' data-ref="socket">socket</a> (<a class="macro" href="../../../../include/bits/socket.h.html#46" title="2" data-ref="_M/PF_INET">PF_INET</a>, <a class="macro" href="../../../../include/bits/socket_type.h.html#31" title="SOCK_DGRAM" data-ref="_M/SOCK_DGRAM">SOCK_DGRAM</a>, <a class="macro" href="../../../../include/netinet/in.h.html#58" title="IPPROTO_UDP" data-ref="_M/IPPROTO_UDP">IPPROTO_UDP</a>);</td></tr>
+<tr><th id="263">263</th><td>  <b>if</b> (<a class="local col8 ref" href="#18tm" title='tm' data-ref="18tm">tm</a>-&gt;<a class="tu ref field" href="#(anonymous)::send_data_socket" title='(anonymous struct)::send_data_socket' data-use='r' data-ref="(anonymous)::send_data_socket">send_data_socket</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="264">264</th><td>    {</td></tr>
+<tr><th id="265">265</th><td>      <a class="macro" href="../../vppinfra/error.h.html#68" title="_clib_error (CLIB_ERROR_WARNING | CLIB_ERROR_ERRNO_VALID, ((char *) __FUNCTION__), 265, 0, &quot;data_rx_socket&quot;)" data-ref="_M/clib_unix_warning">clib_unix_warning</a> (<var>0</var>, <q>"data_rx_socket"</q>);</td></tr>
+<tr><th id="266">266</th><td>      <a class="ref fn" href="../../../../include/stdlib.h.html#exit" title='exit' data-ref="exit">exit</a> (<var>1</var>);</td></tr>
+<tr><th id="267">267</th><td>    }</td></tr>
+<tr><th id="268">268</th><td></td></tr>
+<tr><th id="269">269</th><td>  <a class="ref fn" href="../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a> (&amp;<a class="local col8 ref" href="#18tm" title='tm' data-ref="18tm">tm</a>-&gt;<a class="tu ref field" href="#(anonymous)::send_data_addr" title='(anonymous struct)::send_data_addr' data-use='a' data-ref="(anonymous)::send_data_addr">send_data_addr</a>, <var>0</var>, <b>sizeof</b> (<a class="local col8 ref" href="#18tm" title='tm' data-ref="18tm">tm</a>-&gt;<a class="tu ref field" href="#(anonymous)::send_data_addr" title='(anonymous struct)::send_data_addr' data-use='r' data-ref="(anonymous)::send_data_addr">send_data_addr</a>));</td></tr>
+<tr><th id="270">270</th><td>  <a class="local col8 ref" href="#18tm" title='tm' data-ref="18tm">tm</a>-&gt;<a class="tu ref field" href="#(anonymous)::send_data_addr" title='(anonymous struct)::send_data_addr' data-use='m' data-ref="(anonymous)::send_data_addr">send_data_addr</a>.<a class="ref field" href="../../../../include/netinet/in.h.html#240" title='sockaddr_in::sin_family' data-ref="sockaddr_in::sin_family">sin_family</a> = <a class="macro" href="../../../../include/bits/socket.h.html#91" title="2" data-ref="_M/AF_INET">AF_INET</a>;</td></tr>
+<tr><th id="271">271</th><td>  <a class="local col8 ref" href="#18tm" title='tm' data-ref="18tm">tm</a>-&gt;<a class="tu ref field" href="#(anonymous)::send_data_addr" title='(anonymous struct)::send_data_addr' data-use='m' data-ref="(anonymous)::send_data_addr">send_data_addr</a>.<a class="ref field" href="../../../../include/netinet/in.h.html#sockaddr_in::sin_addr" title='sockaddr_in::sin_addr' data-ref="sockaddr_in::sin_addr">sin_addr</a>.<a class="ref field" href="../../../../include/netinet/in.h.html#in_addr::s_addr" title='in_addr::s_addr' data-ref="in_addr::s_addr">s_addr</a> = <a class="local col3 ref" href="#23collector_ip" title='collector_ip' data-ref="23collector_ip">collector_ip</a>.<a class="ref field" href="../../vnet/ip/ip4_packet.h.html#(anonymous)::as_u32" title='(anonymous union)::as_u32' data-ref="(anonymous)::as_u32">as_u32</a>;</td></tr>
+<tr><th id="272">272</th><td>  <a class="local col8 ref" href="#18tm" title='tm' data-ref="18tm">tm</a>-&gt;<a class="tu ref field" href="#(anonymous)::send_data_addr" title='(anonymous struct)::send_data_addr' data-use='m' data-ref="(anonymous)::send_data_addr">send_data_addr</a>.<a class="ref field" href="../../../../include/netinet/in.h.html#sockaddr_in::sin_port" title='sockaddr_in::sin_port' data-ref="sockaddr_in::sin_port">sin_port</a> = <a class="ref fn" href="../../../../include/netinet/in.h.html#htons" title='htons' data-ref="htons">htons</a> (<a class="local col5 ref" href="#25collector_port" title='collector_port' data-ref="25collector_port">collector_port</a>);</td></tr>
+<tr><th id="273">273</th><td></td></tr>
+<tr><th id="274">274</th><td>  <a class="ref fn" href="../../vppinfra/format.h.html#fformat" title='fformat' data-ref="fformat">fformat</a> (<a class="macro" href="../../../../include/stdio.h.html#173" title="stdout" data-ref="_M/stdout">stdout</a>, <q>"Send SIGINT or SIGTERM to quit...\n"</q>);</td></tr>
+<tr><th id="275">275</th><td></td></tr>
+<tr><th id="276">276</th><td>  <b>while</b> (<var>1</var>)</td></tr>
+<tr><th id="277">277</th><td>    {</td></tr>
+<tr><th id="278">278</th><td>      <a class="ref fn" href="../../../../include/unistd.h.html#sleep" title='sleep' data-ref="sleep">sleep</a> (<var>5</var>);</td></tr>
+<tr><th id="279">279</th><td></td></tr>
+<tr><th id="280">280</th><td>      <b>if</b> (<a class="local col8 ref" href="#18tm" title='tm' data-ref="18tm">tm</a>-&gt;<a class="tu ref field" href="#(anonymous)::sigterm_received" title='(anonymous struct)::sigterm_received' data-use='r' data-ref="(anonymous)::sigterm_received">sigterm_received</a>)</td></tr>
+<tr><th id="281">281</th><td>	<b>break</b>;</td></tr>
+<tr><th id="282">282</th><td>      <i>/* Poll for stats */</i></td></tr>
+<tr><th id="283">283</th><td>      <a class="local col9 ref" href="#19mp" title='mp' data-ref="19mp">mp</a> = <a class="ref fn" href="../../vlibmemory/memory_shared.h.html#vl_msg_api_alloc" title='vl_msg_api_alloc' data-ref="vl_msg_api_alloc">vl_msg_api_alloc</a> (<b>sizeof</b> (*<a class="local col9 ref" href="#19mp" title='mp' data-ref="19mp">mp</a>));</td></tr>
+<tr><th id="284">284</th><td>      <a class="ref fn" href="../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a> (<a class="local col9 ref" href="#19mp" title='mp' data-ref="19mp">mp</a>, <var>0</var>, <b>sizeof</b> (*<a class="local col9 ref" href="#19mp" title='mp' data-ref="19mp">mp</a>));</td></tr>
+<tr><th id="285">285</th><td>      <a class="local col9 ref" href="#19mp" title='mp' data-ref="19mp">mp</a>-&gt;<a class="ref field" href="../../../build-root/build-vpp_debug-native/vpp/vpp/stats/stats.api.h.html#603" title='_vl_api_vnet_get_summary_stats::_vl_msg_id' data-ref="_vl_api_vnet_get_summary_stats::_vl_msg_id">_vl_msg_id</a> = <a class="ref fn" href="../../../../include/netinet/in.h.html#ntohs" title='ntohs' data-ref="ntohs">ntohs</a> (<a class="enum" href="../../../build-root/build-vpp_debug-native/vpp/vpp/stats/stats.api.h.html#54" title='VL_API_VNET_GET_SUMMARY_STATS' data-ref="VL_API_VNET_GET_SUMMARY_STATS">VL_API_VNET_GET_SUMMARY_STATS</a>);</td></tr>
+<tr><th id="286">286</th><td>      <a class="local col9 ref" href="#19mp" title='mp' data-ref="19mp">mp</a>-&gt;<a class="ref field" href="../../../build-root/build-vpp_debug-native/vpp/vpp/stats/stats.api.h.html#603" title='_vl_api_vnet_get_summary_stats::client_index' data-ref="_vl_api_vnet_get_summary_stats::client_index">client_index</a> = <a class="local col8 ref" href="#18tm" title='tm' data-ref="18tm">tm</a>-&gt;<a class="tu ref field" href="#(anonymous)::my_client_index" title='(anonymous struct)::my_client_index' data-use='r' data-ref="(anonymous)::my_client_index">my_client_index</a>;</td></tr>
+<tr><th id="287">287</th><td>      <a class="ref fn" href="../../vlibmemory/memory_shared.h.html#vl_msg_api_send_shmem" title='vl_msg_api_send_shmem' data-ref="vl_msg_api_send_shmem">vl_msg_api_send_shmem</a> (<a class="local col8 ref" href="#18tm" title='tm' data-ref="18tm">tm</a>-&gt;<a class="tu ref field" href="#(anonymous)::vl_input_queue" title='(anonymous struct)::vl_input_queue' data-use='r' data-ref="(anonymous)::vl_input_queue">vl_input_queue</a>, (<a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *) &amp; <a class="local col9 ref" href="#19mp" title='mp' data-ref="19mp">mp</a>);</td></tr>
+<tr><th id="288">288</th><td>    }</td></tr>
+<tr><th id="289">289</th><td></td></tr>
+<tr><th id="290">290</th><td>  <a class="ref fn" href="../../vppinfra/format.h.html#fformat" title='fformat' data-ref="fformat">fformat</a> (<a class="macro" href="../../../../include/stdio.h.html#173" title="stdout" data-ref="_M/stdout">stdout</a>, <q>"Exiting...\n"</q>);</td></tr>
+<tr><th id="291">291</th><td></td></tr>
+<tr><th id="292">292</th><td>  <a class="ref fn" href="#disconnect_from_vpe" title='disconnect_from_vpe' data-ref="disconnect_from_vpe">disconnect_from_vpe</a> ();</td></tr>
+<tr><th id="293">293</th><td>  <a class="ref fn" href="../../../../include/stdlib.h.html#exit" title='exit' data-ref="exit">exit</a> (<var>0</var>);</td></tr>
+<tr><th id="294">294</th><td>}</td></tr>
+<tr><th id="295">295</th><td></td></tr>
+<tr><th id="296">296</th><td><i>/*</i></td></tr>
+<tr><th id="297">297</th><td><i> * fd.io coding-style-patch-verification: ON</i></td></tr>
+<tr><th id="298">298</th><td><i> *</i></td></tr>
+<tr><th id="299">299</th><td><i> * Local Variables:</i></td></tr>
+<tr><th id="300">300</th><td><i> * eval: (c-set-style "gnu")</i></td></tr>
+<tr><th id="301">301</th><td><i> * End:</i></td></tr>
+<tr><th id="302">302</th><td><i> */</i></td></tr>
+<tr><th id="303">303</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-30</em> from project vpp_1804 revision <em>18.05</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

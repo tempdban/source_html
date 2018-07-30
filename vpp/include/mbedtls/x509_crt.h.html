@@ -1,0 +1,689 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>x509_crt.h source code [include/mbedtls/x509_crt.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="mbedtls_x509_crt,mbedtls_x509write_cert "/>
+<link rel="stylesheet" href="../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'include/mbedtls/x509_crt.h'; var root_path = '../..'; var data_path = '../../../data';</script>
+<script src='../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='..'>include</a>/<a href='./'>mbedtls</a>/<a href='x509_crt.h.html'>x509_crt.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="2">2</th><td><i class="doc"> *<span class="command"> \file</span> x509_crt.h</i></td></tr>
+<tr><th id="3">3</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="4">4</th><td><i class="doc"> * <span class="command">\brief</span> X.509 certificate parsing and writing</i></td></tr>
+<tr><th id="5">5</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="6">6</th><td><i>/*</i></td></tr>
+<tr><th id="7">7</th><td><i> *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved</i></td></tr>
+<tr><th id="8">8</th><td><i> *  SPDX-License-Identifier: Apache-2.0</i></td></tr>
+<tr><th id="9">9</th><td><i> *</i></td></tr>
+<tr><th id="10">10</th><td><i> *  Licensed under the Apache License, Version 2.0 (the "License"); you may</i></td></tr>
+<tr><th id="11">11</th><td><i> *  not use this file except in compliance with the License.</i></td></tr>
+<tr><th id="12">12</th><td><i> *  You may obtain a copy of the License at</i></td></tr>
+<tr><th id="13">13</th><td><i> *</i></td></tr>
+<tr><th id="14">14</th><td><i> *  <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></i></td></tr>
+<tr><th id="15">15</th><td><i> *</i></td></tr>
+<tr><th id="16">16</th><td><i> *  Unless required by applicable law or agreed to in writing, software</i></td></tr>
+<tr><th id="17">17</th><td><i> *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT</i></td></tr>
+<tr><th id="18">18</th><td><i> *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</i></td></tr>
+<tr><th id="19">19</th><td><i> *  See the License for the specific language governing permissions and</i></td></tr>
+<tr><th id="20">20</th><td><i> *  limitations under the License.</i></td></tr>
+<tr><th id="21">21</th><td><i> *</i></td></tr>
+<tr><th id="22">22</th><td><i> *  This file is part of mbed TLS (<a href="https://tls.mbed.org">https://tls.mbed.org</a>)</i></td></tr>
+<tr><th id="23">23</th><td><i> */</i></td></tr>
+<tr><th id="24">24</th><td><u>#<span data-ppcond="24">ifndef</span> <span class="macro" data-ref="_M/MBEDTLS_X509_CRT_H">MBEDTLS_X509_CRT_H</span></u></td></tr>
+<tr><th id="25">25</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_X509_CRT_H" data-ref="_M/MBEDTLS_X509_CRT_H">MBEDTLS_X509_CRT_H</dfn></u></td></tr>
+<tr><th id="26">26</th><td></td></tr>
+<tr><th id="27">27</th><td><u>#<span data-ppcond="27">if</span> !defined(<span class="macro" data-ref="_M/MBEDTLS_CONFIG_FILE">MBEDTLS_CONFIG_FILE</span>)</u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="config.h.html">"config.h"</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#<span data-ppcond="27">else</span></u></td></tr>
+<tr><th id="30">30</th><td><u>#include MBEDTLS_CONFIG_FILE</u></td></tr>
+<tr><th id="31">31</th><td><u>#<span data-ppcond="27">endif</span></u></td></tr>
+<tr><th id="32">32</th><td></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="x509.h.html">"x509.h"</a></u></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="x509_crl.h.html">"x509_crl.h"</a></u></td></tr>
+<tr><th id="35">35</th><td></td></tr>
+<tr><th id="36">36</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="37">37</th><td><i class="doc"> * <span class="command">\addtogroup</span> <span class="verb">x509_module</span></i></td></tr>
+<tr><th id="38">38</th><td><i class="doc"> * \{</i></td></tr>
+<tr><th id="39">39</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td><u>#<span data-ppcond="41">ifdef</span> <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="42">42</th><td><b>extern</b> <q>"C"</q> {</td></tr>
+<tr><th id="43">43</th><td><u>#<span data-ppcond="41">endif</span></u></td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc"> * <span class="command">\name</span> <span class="verb">Structures and functions for parsing and writing X.509 certificates</span></i></td></tr>
+<tr><th id="47">47</th><td><i class="doc"> * \{</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="49">49</th><td></td></tr>
+<tr><th id="50">50</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="51">51</th><td><i class="doc"> * Container for an X.509 certificate. The certificate may be chained.</i></td></tr>
+<tr><th id="52">52</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="53">53</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="mbedtls_x509_crt" title='mbedtls_x509_crt' data-ref="mbedtls_x509_crt"><a class="type" href="#mbedtls_x509_crt" title='mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</a></dfn></td></tr>
+<tr><th id="54">54</th><td>{</td></tr>
+<tr><th id="55">55</th><td>    <a class="typedef" href="x509.h.html#mbedtls_x509_buf" title='mbedtls_x509_buf' data-type='mbedtls_asn1_buf' data-ref="mbedtls_x509_buf">mbedtls_x509_buf</a> <dfn class="decl field" id="mbedtls_x509_crt::raw" title='mbedtls_x509_crt::raw' data-ref="mbedtls_x509_crt::raw">raw</dfn>;               <i class="doc">/**&lt; The raw certificate data (DER). */</i></td></tr>
+<tr><th id="56">56</th><td>    <a class="typedef" href="x509.h.html#mbedtls_x509_buf" title='mbedtls_x509_buf' data-type='mbedtls_asn1_buf' data-ref="mbedtls_x509_buf">mbedtls_x509_buf</a> <dfn class="decl field" id="mbedtls_x509_crt::tbs" title='mbedtls_x509_crt::tbs' data-ref="mbedtls_x509_crt::tbs">tbs</dfn>;               <i class="doc">/**&lt; The raw certificate body (DER). The part that is To Be Signed. */</i></td></tr>
+<tr><th id="57">57</th><td></td></tr>
+<tr><th id="58">58</th><td>    <em>int</em> <dfn class="decl field" id="mbedtls_x509_crt::version" title='mbedtls_x509_crt::version' data-ref="mbedtls_x509_crt::version">version</dfn>;                <i class="doc">/**&lt; The X.509 version. (1=v1, 2=v2, 3=v3) */</i></td></tr>
+<tr><th id="59">59</th><td>    <a class="typedef" href="x509.h.html#mbedtls_x509_buf" title='mbedtls_x509_buf' data-type='mbedtls_asn1_buf' data-ref="mbedtls_x509_buf">mbedtls_x509_buf</a> <dfn class="decl field" id="mbedtls_x509_crt::serial" title='mbedtls_x509_crt::serial' data-ref="mbedtls_x509_crt::serial">serial</dfn>;            <i class="doc">/**&lt; Unique id for certificate issued by a specific CA. */</i></td></tr>
+<tr><th id="60">60</th><td>    <a class="typedef" href="x509.h.html#mbedtls_x509_buf" title='mbedtls_x509_buf' data-type='mbedtls_asn1_buf' data-ref="mbedtls_x509_buf">mbedtls_x509_buf</a> <dfn class="decl field" id="mbedtls_x509_crt::sig_oid" title='mbedtls_x509_crt::sig_oid' data-ref="mbedtls_x509_crt::sig_oid">sig_oid</dfn>;           <i class="doc">/**&lt; Signature algorithm, e.g. sha1RSA */</i></td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td>    <a class="typedef" href="x509.h.html#mbedtls_x509_buf" title='mbedtls_x509_buf' data-type='mbedtls_asn1_buf' data-ref="mbedtls_x509_buf">mbedtls_x509_buf</a> <dfn class="decl field" id="mbedtls_x509_crt::issuer_raw" title='mbedtls_x509_crt::issuer_raw' data-ref="mbedtls_x509_crt::issuer_raw">issuer_raw</dfn>;        <i class="doc">/**&lt; The raw issuer data (DER). Used for quick comparison. */</i></td></tr>
+<tr><th id="63">63</th><td>    <a class="typedef" href="x509.h.html#mbedtls_x509_buf" title='mbedtls_x509_buf' data-type='mbedtls_asn1_buf' data-ref="mbedtls_x509_buf">mbedtls_x509_buf</a> <dfn class="decl field" id="mbedtls_x509_crt::subject_raw" title='mbedtls_x509_crt::subject_raw' data-ref="mbedtls_x509_crt::subject_raw">subject_raw</dfn>;       <i class="doc">/**&lt; The raw subject data (DER). Used for quick comparison. */</i></td></tr>
+<tr><th id="64">64</th><td></td></tr>
+<tr><th id="65">65</th><td>    <a class="typedef" href="x509.h.html#mbedtls_x509_name" title='mbedtls_x509_name' data-type='mbedtls_asn1_named_data' data-ref="mbedtls_x509_name">mbedtls_x509_name</a> <dfn class="decl field" id="mbedtls_x509_crt::issuer" title='mbedtls_x509_crt::issuer' data-ref="mbedtls_x509_crt::issuer">issuer</dfn>;           <i class="doc">/**&lt; The parsed issuer data (named information object). */</i></td></tr>
+<tr><th id="66">66</th><td>    <a class="typedef" href="x509.h.html#mbedtls_x509_name" title='mbedtls_x509_name' data-type='mbedtls_asn1_named_data' data-ref="mbedtls_x509_name">mbedtls_x509_name</a> <dfn class="decl field" id="mbedtls_x509_crt::subject" title='mbedtls_x509_crt::subject' data-ref="mbedtls_x509_crt::subject">subject</dfn>;          <i class="doc">/**&lt; The parsed subject data (named information object). */</i></td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td>    <a class="typedef" href="x509.h.html#mbedtls_x509_time" title='mbedtls_x509_time' data-type='struct mbedtls_x509_time' data-ref="mbedtls_x509_time">mbedtls_x509_time</a> <dfn class="decl field" id="mbedtls_x509_crt::valid_from" title='mbedtls_x509_crt::valid_from' data-ref="mbedtls_x509_crt::valid_from">valid_from</dfn>;       <i class="doc">/**&lt; Start time of certificate validity. */</i></td></tr>
+<tr><th id="69">69</th><td>    <a class="typedef" href="x509.h.html#mbedtls_x509_time" title='mbedtls_x509_time' data-type='struct mbedtls_x509_time' data-ref="mbedtls_x509_time">mbedtls_x509_time</a> <dfn class="decl field" id="mbedtls_x509_crt::valid_to" title='mbedtls_x509_crt::valid_to' data-ref="mbedtls_x509_crt::valid_to">valid_to</dfn>;         <i class="doc">/**&lt; End time of certificate validity. */</i></td></tr>
+<tr><th id="70">70</th><td></td></tr>
+<tr><th id="71">71</th><td>    <a class="typedef" href="pk.h.html#mbedtls_pk_context" title='mbedtls_pk_context' data-type='struct mbedtls_pk_context' data-ref="mbedtls_pk_context">mbedtls_pk_context</a> <dfn class="decl field" id="mbedtls_x509_crt::pk" title='mbedtls_x509_crt::pk' data-ref="mbedtls_x509_crt::pk">pk</dfn>;              <i class="doc">/**&lt; Container for the public key context. */</i></td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td>    <a class="typedef" href="x509.h.html#mbedtls_x509_buf" title='mbedtls_x509_buf' data-type='mbedtls_asn1_buf' data-ref="mbedtls_x509_buf">mbedtls_x509_buf</a> <dfn class="decl field" id="mbedtls_x509_crt::issuer_id" title='mbedtls_x509_crt::issuer_id' data-ref="mbedtls_x509_crt::issuer_id">issuer_id</dfn>;         <i class="doc">/**&lt; Optional X.509 v2/v3 issuer unique identifier. */</i></td></tr>
+<tr><th id="74">74</th><td>    <a class="typedef" href="x509.h.html#mbedtls_x509_buf" title='mbedtls_x509_buf' data-type='mbedtls_asn1_buf' data-ref="mbedtls_x509_buf">mbedtls_x509_buf</a> <dfn class="decl field" id="mbedtls_x509_crt::subject_id" title='mbedtls_x509_crt::subject_id' data-ref="mbedtls_x509_crt::subject_id">subject_id</dfn>;        <i class="doc">/**&lt; Optional X.509 v2/v3 subject unique identifier. */</i></td></tr>
+<tr><th id="75">75</th><td>    <a class="typedef" href="x509.h.html#mbedtls_x509_buf" title='mbedtls_x509_buf' data-type='mbedtls_asn1_buf' data-ref="mbedtls_x509_buf">mbedtls_x509_buf</a> <dfn class="decl field" id="mbedtls_x509_crt::v3_ext" title='mbedtls_x509_crt::v3_ext' data-ref="mbedtls_x509_crt::v3_ext">v3_ext</dfn>;            <i class="doc">/**&lt; Optional X.509 v3 extensions.  */</i></td></tr>
+<tr><th id="76">76</th><td>    <a class="typedef" href="x509.h.html#mbedtls_x509_sequence" title='mbedtls_x509_sequence' data-type='mbedtls_asn1_sequence' data-ref="mbedtls_x509_sequence">mbedtls_x509_sequence</a> <dfn class="decl field" id="mbedtls_x509_crt::subject_alt_names" title='mbedtls_x509_crt::subject_alt_names' data-ref="mbedtls_x509_crt::subject_alt_names">subject_alt_names</dfn>;    <i class="doc">/**&lt; Optional list of Subject Alternative Names (Only dNSName supported). */</i></td></tr>
+<tr><th id="77">77</th><td></td></tr>
+<tr><th id="78">78</th><td>    <em>int</em> <dfn class="decl field" id="mbedtls_x509_crt::ext_types" title='mbedtls_x509_crt::ext_types' data-ref="mbedtls_x509_crt::ext_types">ext_types</dfn>;              <i class="doc">/**&lt; Bit string containing detected and parsed extensions */</i></td></tr>
+<tr><th id="79">79</th><td>    <em>int</em> <dfn class="decl field" id="mbedtls_x509_crt::ca_istrue" title='mbedtls_x509_crt::ca_istrue' data-ref="mbedtls_x509_crt::ca_istrue">ca_istrue</dfn>;              <i class="doc">/**&lt; Optional Basic Constraint extension value: 1 if this certificate belongs to a CA, 0 otherwise. */</i></td></tr>
+<tr><th id="80">80</th><td>    <em>int</em> <dfn class="decl field" id="mbedtls_x509_crt::max_pathlen" title='mbedtls_x509_crt::max_pathlen' data-ref="mbedtls_x509_crt::max_pathlen">max_pathlen</dfn>;            <i class="doc">/**&lt; Optional Basic Constraint extension value: The maximum path length to the root certificate. Path length is 1 higher than RFC 5280 'meaning', so 1+ */</i></td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td>    <em>unsigned</em> <em>int</em> <dfn class="decl field" id="mbedtls_x509_crt::key_usage" title='mbedtls_x509_crt::key_usage' data-ref="mbedtls_x509_crt::key_usage">key_usage</dfn>;     <i class="doc">/**&lt; Optional key usage extension value: See the values in x509.h */</i></td></tr>
+<tr><th id="83">83</th><td></td></tr>
+<tr><th id="84">84</th><td>    <a class="typedef" href="x509.h.html#mbedtls_x509_sequence" title='mbedtls_x509_sequence' data-type='mbedtls_asn1_sequence' data-ref="mbedtls_x509_sequence">mbedtls_x509_sequence</a> <dfn class="decl field" id="mbedtls_x509_crt::ext_key_usage" title='mbedtls_x509_crt::ext_key_usage' data-ref="mbedtls_x509_crt::ext_key_usage">ext_key_usage</dfn>; <i class="doc">/**&lt; Optional list of extended key usage OIDs. */</i></td></tr>
+<tr><th id="85">85</th><td></td></tr>
+<tr><th id="86">86</th><td>    <em>unsigned</em> <em>char</em> <dfn class="decl field" id="mbedtls_x509_crt::ns_cert_type" title='mbedtls_x509_crt::ns_cert_type' data-ref="mbedtls_x509_crt::ns_cert_type">ns_cert_type</dfn>; <i class="doc">/**&lt; Optional Netscape certificate type extension value: See the values in x509.h */</i></td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td>    <a class="typedef" href="x509.h.html#mbedtls_x509_buf" title='mbedtls_x509_buf' data-type='mbedtls_asn1_buf' data-ref="mbedtls_x509_buf">mbedtls_x509_buf</a> <dfn class="decl field" id="mbedtls_x509_crt::sig" title='mbedtls_x509_crt::sig' data-ref="mbedtls_x509_crt::sig">sig</dfn>;               <i class="doc">/**&lt; Signature: hash of the tbs part signed with the private key. */</i></td></tr>
+<tr><th id="89">89</th><td>    <a class="typedef" href="md.h.html#mbedtls_md_type_t" title='mbedtls_md_type_t' data-type='enum mbedtls_md_type_t' data-ref="mbedtls_md_type_t">mbedtls_md_type_t</a> <dfn class="decl field" id="mbedtls_x509_crt::sig_md" title='mbedtls_x509_crt::sig_md' data-ref="mbedtls_x509_crt::sig_md">sig_md</dfn>;           <i class="doc">/**&lt; Internal representation of the MD algorithm of the signature algorithm, e.g. MBEDTLS_MD_SHA256 */</i></td></tr>
+<tr><th id="90">90</th><td>    <a class="typedef" href="pk.h.html#mbedtls_pk_type_t" title='mbedtls_pk_type_t' data-type='enum mbedtls_pk_type_t' data-ref="mbedtls_pk_type_t">mbedtls_pk_type_t</a> <dfn class="decl field" id="mbedtls_x509_crt::sig_pk" title='mbedtls_x509_crt::sig_pk' data-ref="mbedtls_x509_crt::sig_pk">sig_pk</dfn>;           <i class="doc">/**&lt; Internal representation of the Public Key algorithm of the signature algorithm, e.g. MBEDTLS_PK_RSA */</i></td></tr>
+<tr><th id="91">91</th><td>    <em>void</em> *<dfn class="decl field" id="mbedtls_x509_crt::sig_opts" title='mbedtls_x509_crt::sig_opts' data-ref="mbedtls_x509_crt::sig_opts">sig_opts</dfn>;             <i class="doc">/**&lt; Signature options to be passed to mbedtls_pk_verify_ext(), e.g. for RSASSA-PSS */</i></td></tr>
+<tr><th id="92">92</th><td></td></tr>
+<tr><th id="93">93</th><td>    <b>struct</b> <a class="type" href="#mbedtls_x509_crt" title='mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</a> *<dfn class="decl field" id="mbedtls_x509_crt::next" title='mbedtls_x509_crt::next' data-ref="mbedtls_x509_crt::next">next</dfn>;     <i class="doc">/**&lt; Next certificate in the CA-chain. */</i></td></tr>
+<tr><th id="94">94</th><td>}</td></tr>
+<tr><th id="95">95</th><td><dfn class="typedef" id="mbedtls_x509_crt" title='mbedtls_x509_crt' data-type='struct mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</dfn>;</td></tr>
+<tr><th id="96">96</th><td></td></tr>
+<tr><th id="97">97</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="98">98</th><td><i class="doc"> * Build flag from an algorithm/curve identifier (pk, md, ecp)</i></td></tr>
+<tr><th id="99">99</th><td><i class="doc"> * Since 0 is always XXX_NONE, ignore it.</i></td></tr>
+<tr><th id="100">100</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="101">101</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_X509_ID_FLAG" data-ref="_M/MBEDTLS_X509_ID_FLAG">MBEDTLS_X509_ID_FLAG</dfn>( id )   ( 1 &lt;&lt; ( id - 1 ) )</u></td></tr>
+<tr><th id="102">102</th><td></td></tr>
+<tr><th id="103">103</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="104">104</th><td><i class="doc"> * Security profile for certificate verification.</i></td></tr>
+<tr><th id="105">105</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="106">106</th><td><i class="doc"> * All lists are bitfields, built by ORing flags from MBEDTLS_X509_ID_FLAG().</i></td></tr>
+<tr><th id="107">107</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="108">108</th><td><b>typedef</b> <b>struct</b></td></tr>
+<tr><th id="109">109</th><td>{</td></tr>
+<tr><th id="110">110</th><td>    <a class="typedef" href="../stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="(anonymous)::allowed_mds" title='(anonymous struct)::allowed_mds' data-ref="(anonymous)::allowed_mds">allowed_mds</dfn>;       <i class="doc">/**&lt; MDs for signatures         */</i></td></tr>
+<tr><th id="111">111</th><td>    <a class="typedef" href="../stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="(anonymous)::allowed_pks" title='(anonymous struct)::allowed_pks' data-ref="(anonymous)::allowed_pks">allowed_pks</dfn>;       <i class="doc">/**&lt; PK algs for signatures     */</i></td></tr>
+<tr><th id="112">112</th><td>    <a class="typedef" href="../stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="(anonymous)::allowed_curves" title='(anonymous struct)::allowed_curves' data-ref="(anonymous)::allowed_curves">allowed_curves</dfn>;    <i class="doc">/**&lt; Elliptic curves for ECDSA  */</i></td></tr>
+<tr><th id="113">113</th><td>    <a class="typedef" href="../stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="(anonymous)::rsa_min_bitlen" title='(anonymous struct)::rsa_min_bitlen' data-ref="(anonymous)::rsa_min_bitlen">rsa_min_bitlen</dfn>;    <i class="doc">/**&lt; Minimum size for RSA keys  */</i></td></tr>
+<tr><th id="114">114</th><td>}</td></tr>
+<tr><th id="115">115</th><td><dfn class="typedef" id="mbedtls_x509_crt_profile" title='mbedtls_x509_crt_profile' data-type='struct mbedtls_x509_crt_profile' data-ref="mbedtls_x509_crt_profile">mbedtls_x509_crt_profile</dfn>;</td></tr>
+<tr><th id="116">116</th><td></td></tr>
+<tr><th id="117">117</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_X509_CRT_VERSION_1" data-ref="_M/MBEDTLS_X509_CRT_VERSION_1">MBEDTLS_X509_CRT_VERSION_1</dfn>              0</u></td></tr>
+<tr><th id="118">118</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_X509_CRT_VERSION_2" data-ref="_M/MBEDTLS_X509_CRT_VERSION_2">MBEDTLS_X509_CRT_VERSION_2</dfn>              1</u></td></tr>
+<tr><th id="119">119</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_X509_CRT_VERSION_3" data-ref="_M/MBEDTLS_X509_CRT_VERSION_3">MBEDTLS_X509_CRT_VERSION_3</dfn>              2</u></td></tr>
+<tr><th id="120">120</th><td></td></tr>
+<tr><th id="121">121</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_X509_RFC5280_MAX_SERIAL_LEN" data-ref="_M/MBEDTLS_X509_RFC5280_MAX_SERIAL_LEN">MBEDTLS_X509_RFC5280_MAX_SERIAL_LEN</dfn> 32</u></td></tr>
+<tr><th id="122">122</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_X509_RFC5280_UTC_TIME_LEN" data-ref="_M/MBEDTLS_X509_RFC5280_UTC_TIME_LEN">MBEDTLS_X509_RFC5280_UTC_TIME_LEN</dfn>   15</u></td></tr>
+<tr><th id="123">123</th><td></td></tr>
+<tr><th id="124">124</th><td><u>#<span data-ppcond="124">if</span> !defined( <span class="macro" data-ref="_M/MBEDTLS_X509_MAX_FILE_PATH_LEN">MBEDTLS_X509_MAX_FILE_PATH_LEN</span> )</u></td></tr>
+<tr><th id="125">125</th><td><u>#define <dfn class="macro" id="_M/MBEDTLS_X509_MAX_FILE_PATH_LEN" data-ref="_M/MBEDTLS_X509_MAX_FILE_PATH_LEN">MBEDTLS_X509_MAX_FILE_PATH_LEN</dfn> 512</u></td></tr>
+<tr><th id="126">126</th><td><u>#<span data-ppcond="124">endif</span></u></td></tr>
+<tr><th id="127">127</th><td></td></tr>
+<tr><th id="128">128</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="129">129</th><td><i class="doc"> * Container for writing a certificate (CRT)</i></td></tr>
+<tr><th id="130">130</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="131">131</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert"><a class="type" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a></dfn></td></tr>
+<tr><th id="132">132</th><td>{</td></tr>
+<tr><th id="133">133</th><td>    <em>int</em> <dfn class="decl field" id="mbedtls_x509write_cert::version" title='mbedtls_x509write_cert::version' data-ref="mbedtls_x509write_cert::version">version</dfn>;</td></tr>
+<tr><th id="134">134</th><td>    <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> <dfn class="decl field" id="mbedtls_x509write_cert::serial" title='mbedtls_x509write_cert::serial' data-ref="mbedtls_x509write_cert::serial">serial</dfn>;</td></tr>
+<tr><th id="135">135</th><td>    <a class="typedef" href="pk.h.html#mbedtls_pk_context" title='mbedtls_pk_context' data-type='struct mbedtls_pk_context' data-ref="mbedtls_pk_context">mbedtls_pk_context</a> *<dfn class="decl field" id="mbedtls_x509write_cert::subject_key" title='mbedtls_x509write_cert::subject_key' data-ref="mbedtls_x509write_cert::subject_key">subject_key</dfn>;</td></tr>
+<tr><th id="136">136</th><td>    <a class="typedef" href="pk.h.html#mbedtls_pk_context" title='mbedtls_pk_context' data-type='struct mbedtls_pk_context' data-ref="mbedtls_pk_context">mbedtls_pk_context</a> *<dfn class="decl field" id="mbedtls_x509write_cert::issuer_key" title='mbedtls_x509write_cert::issuer_key' data-ref="mbedtls_x509write_cert::issuer_key">issuer_key</dfn>;</td></tr>
+<tr><th id="137">137</th><td>    <a class="typedef" href="asn1.h.html#mbedtls_asn1_named_data" title='mbedtls_asn1_named_data' data-type='struct mbedtls_asn1_named_data' data-ref="mbedtls_asn1_named_data">mbedtls_asn1_named_data</a> *<dfn class="decl field" id="mbedtls_x509write_cert::subject" title='mbedtls_x509write_cert::subject' data-ref="mbedtls_x509write_cert::subject">subject</dfn>;</td></tr>
+<tr><th id="138">138</th><td>    <a class="typedef" href="asn1.h.html#mbedtls_asn1_named_data" title='mbedtls_asn1_named_data' data-type='struct mbedtls_asn1_named_data' data-ref="mbedtls_asn1_named_data">mbedtls_asn1_named_data</a> *<dfn class="decl field" id="mbedtls_x509write_cert::issuer" title='mbedtls_x509write_cert::issuer' data-ref="mbedtls_x509write_cert::issuer">issuer</dfn>;</td></tr>
+<tr><th id="139">139</th><td>    <a class="typedef" href="md.h.html#mbedtls_md_type_t" title='mbedtls_md_type_t' data-type='enum mbedtls_md_type_t' data-ref="mbedtls_md_type_t">mbedtls_md_type_t</a> <dfn class="decl field" id="mbedtls_x509write_cert::md_alg" title='mbedtls_x509write_cert::md_alg' data-ref="mbedtls_x509write_cert::md_alg">md_alg</dfn>;</td></tr>
+<tr><th id="140">140</th><td>    <em>char</em> <dfn class="decl field" id="mbedtls_x509write_cert::not_before" title='mbedtls_x509write_cert::not_before' data-ref="mbedtls_x509write_cert::not_before">not_before</dfn>[<a class="macro" href="#122" title="15" data-ref="_M/MBEDTLS_X509_RFC5280_UTC_TIME_LEN">MBEDTLS_X509_RFC5280_UTC_TIME_LEN</a> + <var>1</var>];</td></tr>
+<tr><th id="141">141</th><td>    <em>char</em> <dfn class="decl field" id="mbedtls_x509write_cert::not_after" title='mbedtls_x509write_cert::not_after' data-ref="mbedtls_x509write_cert::not_after">not_after</dfn>[<a class="macro" href="#122" title="15" data-ref="_M/MBEDTLS_X509_RFC5280_UTC_TIME_LEN">MBEDTLS_X509_RFC5280_UTC_TIME_LEN</a> + <var>1</var>];</td></tr>
+<tr><th id="142">142</th><td>    <a class="typedef" href="asn1.h.html#mbedtls_asn1_named_data" title='mbedtls_asn1_named_data' data-type='struct mbedtls_asn1_named_data' data-ref="mbedtls_asn1_named_data">mbedtls_asn1_named_data</a> *<dfn class="decl field" id="mbedtls_x509write_cert::extensions" title='mbedtls_x509write_cert::extensions' data-ref="mbedtls_x509write_cert::extensions">extensions</dfn>;</td></tr>
+<tr><th id="143">143</th><td>}</td></tr>
+<tr><th id="144">144</th><td><dfn class="typedef" id="mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</dfn>;</td></tr>
+<tr><th id="145">145</th><td></td></tr>
+<tr><th id="146">146</th><td><u>#<span data-ppcond="146">if</span> defined(<a class="macro" href="config.h.html#2603" data-ref="_M/MBEDTLS_X509_CRT_PARSE_C">MBEDTLS_X509_CRT_PARSE_C</a>)</u></td></tr>
+<tr><th id="147">147</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="148">148</th><td><i class="doc"> * Default security profile. Should provide a good balance between security</i></td></tr>
+<tr><th id="149">149</th><td><i class="doc"> * and compatibility with current deployments.</i></td></tr>
+<tr><th id="150">150</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="151">151</th><td><b>extern</b> <em>const</em> <a class="typedef" href="#mbedtls_x509_crt_profile" title='mbedtls_x509_crt_profile' data-type='struct mbedtls_x509_crt_profile' data-ref="mbedtls_x509_crt_profile">mbedtls_x509_crt_profile</a> <dfn class="decl" id="mbedtls_x509_crt_profile_default" title='mbedtls_x509_crt_profile_default' data-ref="mbedtls_x509_crt_profile_default">mbedtls_x509_crt_profile_default</dfn>;</td></tr>
+<tr><th id="152">152</th><td></td></tr>
+<tr><th id="153">153</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="154">154</th><td><i class="doc"> * Expected next default profile. Recommended for new deployments.</i></td></tr>
+<tr><th id="155">155</th><td><i class="doc"> * Currently targets a 128-bit security level, except for RSA-2048.</i></td></tr>
+<tr><th id="156">156</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="157">157</th><td><b>extern</b> <em>const</em> <a class="typedef" href="#mbedtls_x509_crt_profile" title='mbedtls_x509_crt_profile' data-type='struct mbedtls_x509_crt_profile' data-ref="mbedtls_x509_crt_profile">mbedtls_x509_crt_profile</a> <dfn class="decl" id="mbedtls_x509_crt_profile_next" title='mbedtls_x509_crt_profile_next' data-ref="mbedtls_x509_crt_profile_next">mbedtls_x509_crt_profile_next</dfn>;</td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="160">160</th><td><i class="doc"> * NSA Suite B profile.</i></td></tr>
+<tr><th id="161">161</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="162">162</th><td><b>extern</b> <em>const</em> <a class="typedef" href="#mbedtls_x509_crt_profile" title='mbedtls_x509_crt_profile' data-type='struct mbedtls_x509_crt_profile' data-ref="mbedtls_x509_crt_profile">mbedtls_x509_crt_profile</a> <dfn class="decl" id="mbedtls_x509_crt_profile_suiteb" title='mbedtls_x509_crt_profile_suiteb' data-ref="mbedtls_x509_crt_profile_suiteb">mbedtls_x509_crt_profile_suiteb</dfn>;</td></tr>
+<tr><th id="163">163</th><td></td></tr>
+<tr><th id="164">164</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc"> * <span class="command">\brief</span>          Parse a single DER formatted certificate and add it</i></td></tr>
+<tr><th id="166">166</th><td><i class="doc"> *                 to the chained list.</i></td></tr>
+<tr><th id="167">167</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="168">168</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">chain</span>    points to the start of the chain</i></td></tr>
+<tr><th id="169">169</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">buf</span>      buffer holding the certificate DER data</i></td></tr>
+<tr><th id="170">170</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">buflen</span>   size of the buffer</i></td></tr>
+<tr><th id="171">171</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc"> * <span class="command">\return</span>         0 if successful, or a specific X509 or PEM error code</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="174">174</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509_crt_parse_der" title='mbedtls_x509_crt_parse_der' data-ref="mbedtls_x509_crt_parse_der">mbedtls_x509_crt_parse_der</dfn>( <a class="typedef" href="#mbedtls_x509_crt" title='mbedtls_x509_crt' data-type='struct mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</a> *<dfn class="local col2 decl" id="792chain" title='chain' data-type='mbedtls_x509_crt *' data-ref="792chain">chain</dfn>, <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col3 decl" id="793buf" title='buf' data-type='const unsigned char *' data-ref="793buf">buf</dfn>,</td></tr>
+<tr><th id="175">175</th><td>                        <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col4 decl" id="794buflen" title='buflen' data-type='size_t' data-ref="794buflen">buflen</dfn> );</td></tr>
+<tr><th id="176">176</th><td></td></tr>
+<tr><th id="177">177</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="178">178</th><td><i class="doc"> * <span class="command">\brief</span>          Parse one or more certificates and add them</i></td></tr>
+<tr><th id="179">179</th><td><i class="doc"> *                 to the chained list. Parses permissively. If some</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc"> *                 certificates can be parsed, the result is the number</i></td></tr>
+<tr><th id="181">181</th><td><i class="doc"> *                 of failed certificates it encountered. If none complete</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc"> *                 correctly, the first error is returned.</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">chain</span>    points to the start of the chain</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">buf</span>      buffer holding the certificate data in PEM or DER format</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">buflen</span>   size of the buffer</i></td></tr>
+<tr><th id="187">187</th><td><i class="doc"> *                 (including the terminating null byte for PEM data)</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="189">189</th><td><i class="doc"> * <span class="command">\return</span>         0 if all certificates parsed successfully, a positive number</i></td></tr>
+<tr><th id="190">190</th><td><i class="doc"> *                 if partly successful or a specific X509 or PEM error code</i></td></tr>
+<tr><th id="191">191</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="192">192</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509_crt_parse" title='mbedtls_x509_crt_parse' data-ref="mbedtls_x509_crt_parse">mbedtls_x509_crt_parse</dfn>( <a class="typedef" href="#mbedtls_x509_crt" title='mbedtls_x509_crt' data-type='struct mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</a> *<dfn class="local col5 decl" id="795chain" title='chain' data-type='mbedtls_x509_crt *' data-ref="795chain">chain</dfn>, <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col6 decl" id="796buf" title='buf' data-type='const unsigned char *' data-ref="796buf">buf</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col7 decl" id="797buflen" title='buflen' data-type='size_t' data-ref="797buflen">buflen</dfn> );</td></tr>
+<tr><th id="193">193</th><td></td></tr>
+<tr><th id="194">194</th><td><u>#<span data-ppcond="194">if</span> defined(<a class="macro" href="config.h.html#923" data-ref="_M/MBEDTLS_FS_IO">MBEDTLS_FS_IO</a>)</u></td></tr>
+<tr><th id="195">195</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc"> * <span class="command">\brief</span>          Load one or more certificates and add them</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc"> *                 to the chained list. Parses permissively. If some</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc"> *                 certificates can be parsed, the result is the number</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc"> *                 of failed certificates it encountered. If none complete</i></td></tr>
+<tr><th id="200">200</th><td><i class="doc"> *                 correctly, the first error is returned.</i></td></tr>
+<tr><th id="201">201</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="202">202</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">chain</span>    points to the start of the chain</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">path</span>     filename to read the certificates from</i></td></tr>
+<tr><th id="204">204</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="205">205</th><td><i class="doc"> * <span class="command">\return</span>         0 if all certificates parsed successfully, a positive number</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc"> *                 if partly successful or a specific X509 or PEM error code</i></td></tr>
+<tr><th id="207">207</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="208">208</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509_crt_parse_file" title='mbedtls_x509_crt_parse_file' data-ref="mbedtls_x509_crt_parse_file">mbedtls_x509_crt_parse_file</dfn>( <a class="typedef" href="#mbedtls_x509_crt" title='mbedtls_x509_crt' data-type='struct mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</a> *<dfn class="local col8 decl" id="798chain" title='chain' data-type='mbedtls_x509_crt *' data-ref="798chain">chain</dfn>, <em>const</em> <em>char</em> *<dfn class="local col9 decl" id="799path" title='path' data-type='const char *' data-ref="799path">path</dfn> );</td></tr>
+<tr><th id="209">209</th><td></td></tr>
+<tr><th id="210">210</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="211">211</th><td><i class="doc"> * <span class="command">\brief</span>          Load one or more certificate files from a path and add them</i></td></tr>
+<tr><th id="212">212</th><td><i class="doc"> *                 to the chained list. Parses permissively. If some</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc"> *                 certificates can be parsed, the result is the number</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc"> *                 of failed certificates it encountered. If none complete</i></td></tr>
+<tr><th id="215">215</th><td><i class="doc"> *                 correctly, the first error is returned.</i></td></tr>
+<tr><th id="216">216</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="217">217</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">chain</span>    points to the start of the chain</i></td></tr>
+<tr><th id="218">218</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">path</span>     directory / folder to read the certificate files from</i></td></tr>
+<tr><th id="219">219</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="220">220</th><td><i class="doc"> * <span class="command">\return</span>         0 if all certificates parsed successfully, a positive number</i></td></tr>
+<tr><th id="221">221</th><td><i class="doc"> *                 if partly successful or a specific X509 or PEM error code</i></td></tr>
+<tr><th id="222">222</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="223">223</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509_crt_parse_path" title='mbedtls_x509_crt_parse_path' data-ref="mbedtls_x509_crt_parse_path">mbedtls_x509_crt_parse_path</dfn>( <a class="typedef" href="#mbedtls_x509_crt" title='mbedtls_x509_crt' data-type='struct mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</a> *<dfn class="local col0 decl" id="800chain" title='chain' data-type='mbedtls_x509_crt *' data-ref="800chain">chain</dfn>, <em>const</em> <em>char</em> *<dfn class="local col1 decl" id="801path" title='path' data-type='const char *' data-ref="801path">path</dfn> );</td></tr>
+<tr><th id="224">224</th><td><u>#<span data-ppcond="194">endif</span> /* MBEDTLS_FS_IO */</u></td></tr>
+<tr><th id="225">225</th><td></td></tr>
+<tr><th id="226">226</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="227">227</th><td><i class="doc"> * <span class="command">\brief</span>          Returns an informational string about the</i></td></tr>
+<tr><th id="228">228</th><td><i class="doc"> *                 certificate.</i></td></tr>
+<tr><th id="229">229</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="230">230</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">buf</span>      Buffer to write to</i></td></tr>
+<tr><th id="231">231</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">size</span>     Maximum size of buffer</i></td></tr>
+<tr><th id="232">232</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">prefix</span>   A line prefix</i></td></tr>
+<tr><th id="233">233</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">crt</span>      The X509 certificate to represent</i></td></tr>
+<tr><th id="234">234</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="235">235</th><td><i class="doc"> * <span class="command">\return</span>         The length of the string written (not including the</i></td></tr>
+<tr><th id="236">236</th><td><i class="doc"> *                 terminated nul byte), or a negative error code.</i></td></tr>
+<tr><th id="237">237</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="238">238</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509_crt_info" title='mbedtls_x509_crt_info' data-ref="mbedtls_x509_crt_info">mbedtls_x509_crt_info</dfn>( <em>char</em> *<dfn class="local col2 decl" id="802buf" title='buf' data-type='char *' data-ref="802buf">buf</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col3 decl" id="803size" title='size' data-type='size_t' data-ref="803size">size</dfn>, <em>const</em> <em>char</em> *<dfn class="local col4 decl" id="804prefix" title='prefix' data-type='const char *' data-ref="804prefix">prefix</dfn>,</td></tr>
+<tr><th id="239">239</th><td>                   <em>const</em> <a class="typedef" href="#mbedtls_x509_crt" title='mbedtls_x509_crt' data-type='struct mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</a> *<dfn class="local col5 decl" id="805crt" title='crt' data-type='const mbedtls_x509_crt *' data-ref="805crt">crt</dfn> );</td></tr>
+<tr><th id="240">240</th><td></td></tr>
+<tr><th id="241">241</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="242">242</th><td><i class="doc"> * <span class="command">\brief</span>          Returns an informational string about the</i></td></tr>
+<tr><th id="243">243</th><td><i class="doc"> *                 verification status of a certificate.</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="245">245</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">buf</span>      Buffer to write to</i></td></tr>
+<tr><th id="246">246</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">size</span>     Maximum size of buffer</i></td></tr>
+<tr><th id="247">247</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">prefix</span>   A line prefix</i></td></tr>
+<tr><th id="248">248</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">flags</span>    Verification flags created by mbedtls_x509_crt_verify()</i></td></tr>
+<tr><th id="249">249</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="250">250</th><td><i class="doc"> * <span class="command">\return</span>         The length of the string written (not including the</i></td></tr>
+<tr><th id="251">251</th><td><i class="doc"> *                 terminated nul byte), or a negative error code.</i></td></tr>
+<tr><th id="252">252</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="253">253</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509_crt_verify_info" title='mbedtls_x509_crt_verify_info' data-ref="mbedtls_x509_crt_verify_info">mbedtls_x509_crt_verify_info</dfn>( <em>char</em> *<dfn class="local col6 decl" id="806buf" title='buf' data-type='char *' data-ref="806buf">buf</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col7 decl" id="807size" title='size' data-type='size_t' data-ref="807size">size</dfn>, <em>const</em> <em>char</em> *<dfn class="local col8 decl" id="808prefix" title='prefix' data-type='const char *' data-ref="808prefix">prefix</dfn>,</td></tr>
+<tr><th id="254">254</th><td>                          <a class="typedef" href="../stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="local col9 decl" id="809flags" title='flags' data-type='uint32_t' data-ref="809flags">flags</dfn> );</td></tr>
+<tr><th id="255">255</th><td></td></tr>
+<tr><th id="256">256</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="257">257</th><td><i class="doc"> * <span class="command">\brief</span>          Verify the certificate signature</i></td></tr>
+<tr><th id="258">258</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="259">259</th><td><i class="doc"> *                 The verify callback is a user-supplied callback that</i></td></tr>
+<tr><th id="260">260</th><td><i class="doc"> *                 can clear / modify / add flags for a certificate. If set,</i></td></tr>
+<tr><th id="261">261</th><td><i class="doc"> *                 the verification callback is called for each</i></td></tr>
+<tr><th id="262">262</th><td><i class="doc"> *                 certificate in the chain (from the trust-ca down to the</i></td></tr>
+<tr><th id="263">263</th><td><i class="doc"> *                 presented crt). The parameters for the callback are:</i></td></tr>
+<tr><th id="264">264</th><td><i class="doc"> *                 (void *parameter, mbedtls_x509_crt *crt, int certificate_depth,</i></td></tr>
+<tr><th id="265">265</th><td><i class="doc"> *                 int *flags). With the flags representing current flags for</i></td></tr>
+<tr><th id="266">266</th><td><i class="doc"> *                 that specific certificate and the certificate depth from</i></td></tr>
+<tr><th id="267">267</th><td><i class="doc"> *                 the bottom (Peer cert depth = 0).</i></td></tr>
+<tr><th id="268">268</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="269">269</th><td><i class="doc"> *                 All flags left after returning from the callback</i></td></tr>
+<tr><th id="270">270</th><td><i class="doc"> *                 are also returned to the application. The function should</i></td></tr>
+<tr><th id="271">271</th><td><i class="doc"> *                 return 0 for anything (including invalid certificates)</i></td></tr>
+<tr><th id="272">272</th><td><i class="doc"> *                 other than fatal error, as a non-zero return code</i></td></tr>
+<tr><th id="273">273</th><td><i class="doc"> *                 immediately aborts the verification process. For fatal</i></td></tr>
+<tr><th id="274">274</th><td><i class="doc"> *                 errors, a specific error code should be used (different</i></td></tr>
+<tr><th id="275">275</th><td><i class="doc"> *                 from MBEDTLS_ERR_X509_CERT_VERIFY_FAILED which should not</i></td></tr>
+<tr><th id="276">276</th><td><i class="doc"> *                 be returned at this point), or MBEDTLS_ERR_X509_FATAL_ERROR</i></td></tr>
+<tr><th id="277">277</th><td><i class="doc"> *                 can be used if no better code is available.</i></td></tr>
+<tr><th id="278">278</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="279">279</th><td><i class="doc"> * <span class="command">\note</span>           In case verification failed, the results can be displayed</i></td></tr>
+<tr><th id="280">280</th><td><i class="doc"> *                 using<span class="command"> \c</span> <span class="arg">mbedtls_x509_crt_verify_info()</span></i></td></tr>
+<tr><th id="281">281</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="282">282</th><td><i class="doc"> * <span class="command">\note</span>           Same as<span class="command"> \c</span> <span class="arg">mbedtls_x509_crt_verify_with_profile()</span> with the</i></td></tr>
+<tr><th id="283">283</th><td><i class="doc"> *                 default security profile.</i></td></tr>
+<tr><th id="284">284</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="285">285</th><td><i class="doc"> * <span class="command">\note</span>           It is your responsibility to provide up-to-date CRLs for</i></td></tr>
+<tr><th id="286">286</th><td><i class="doc"> *                 all trusted CAs. If no CRL is provided for the CA that was</i></td></tr>
+<tr><th id="287">287</th><td><i class="doc"> *                 used to sign the certificate, CRL verification is skipped</i></td></tr>
+<tr><th id="288">288</th><td><i class="doc"> *                 silently, that is *without* setting any flag.</i></td></tr>
+<tr><th id="289">289</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="290">290</th><td><i class="doc"> * <span class="command">\note</span>           The<span class="command"> \c</span> <span class="arg">trust_ca</span> list can contain two types of certificates:</i></td></tr>
+<tr><th id="291">291</th><td><i class="doc"> *                 (1) those of trusted root CAs, so that certificates</i></td></tr>
+<tr><th id="292">292</th><td><i class="doc"> *                 chaining up to those CAs will be trusted, and (2)</i></td></tr>
+<tr><th id="293">293</th><td><i class="doc"> *                 self-signed end-entity certificates to be trusted (for</i></td></tr>
+<tr><th id="294">294</th><td><i class="doc"> *                 specific peers you know) - in that case, the self-signed</i></td></tr>
+<tr><th id="295">295</th><td><i class="doc"> *                 certificate doesn't need to have the CA bit set.</i></td></tr>
+<tr><th id="296">296</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="297">297</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">crt</span>      a certificate (chain) to be verified</i></td></tr>
+<tr><th id="298">298</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">trust_ca</span> the list of trusted CAs (see note above)</i></td></tr>
+<tr><th id="299">299</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ca_crl</span>   the list of CRLs for trusted CAs (see note above)</i></td></tr>
+<tr><th id="300">300</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">cn</span>       expected Common Name (can be set to</i></td></tr>
+<tr><th id="301">301</th><td><i class="doc"> *                 NULL if the CN must not be verified)</i></td></tr>
+<tr><th id="302">302</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">flags</span>    result of the verification</i></td></tr>
+<tr><th id="303">303</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_vrfy</span>   verification function</i></td></tr>
+<tr><th id="304">304</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_vrfy</span>   verification parameter</i></td></tr>
+<tr><th id="305">305</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="306">306</th><td><i class="doc"> * <span class="command">\return</span>         0 (and flags set to 0) if the chain was verified and valid,</i></td></tr>
+<tr><th id="307">307</th><td><i class="doc"> *                 MBEDTLS_ERR_X509_CERT_VERIFY_FAILED if the chain was verified</i></td></tr>
+<tr><th id="308">308</th><td><i class="doc"> *                 but found to be invalid, in which case *flags will have one</i></td></tr>
+<tr><th id="309">309</th><td><i class="doc"> *                 or more MBEDTLS_X509_BADCERT_XXX or MBEDTLS_X509_BADCRL_XXX</i></td></tr>
+<tr><th id="310">310</th><td><i class="doc"> *                 flags set, or another error (and flags set to 0xffffffff)</i></td></tr>
+<tr><th id="311">311</th><td><i class="doc"> *                 in case of a fatal error encountered during the</i></td></tr>
+<tr><th id="312">312</th><td><i class="doc"> *                 verification process.</i></td></tr>
+<tr><th id="313">313</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="314">314</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509_crt_verify" title='mbedtls_x509_crt_verify' data-ref="mbedtls_x509_crt_verify">mbedtls_x509_crt_verify</dfn>( <a class="typedef" href="#mbedtls_x509_crt" title='mbedtls_x509_crt' data-type='struct mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</a> *<dfn class="local col0 decl" id="810crt" title='crt' data-type='mbedtls_x509_crt *' data-ref="810crt">crt</dfn>,</td></tr>
+<tr><th id="315">315</th><td>                     <a class="typedef" href="#mbedtls_x509_crt" title='mbedtls_x509_crt' data-type='struct mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</a> *<dfn class="local col1 decl" id="811trust_ca" title='trust_ca' data-type='mbedtls_x509_crt *' data-ref="811trust_ca">trust_ca</dfn>,</td></tr>
+<tr><th id="316">316</th><td>                     <a class="typedef" href="x509_crl.h.html#mbedtls_x509_crl" title='mbedtls_x509_crl' data-type='struct mbedtls_x509_crl' data-ref="mbedtls_x509_crl">mbedtls_x509_crl</a> *<dfn class="local col2 decl" id="812ca_crl" title='ca_crl' data-type='mbedtls_x509_crl *' data-ref="812ca_crl">ca_crl</dfn>,</td></tr>
+<tr><th id="317">317</th><td>                     <em>const</em> <em>char</em> *<dfn class="local col3 decl" id="813cn" title='cn' data-type='const char *' data-ref="813cn">cn</dfn>, <a class="typedef" href="../stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> *<dfn class="local col4 decl" id="814flags" title='flags' data-type='uint32_t *' data-ref="814flags">flags</dfn>,</td></tr>
+<tr><th id="318">318</th><td>                     <em>int</em> (*<dfn class="local col5 decl" id="815f_vrfy" title='f_vrfy' data-type='int (*)(void *, mbedtls_x509_crt *, int, uint32_t *)' data-ref="815f_vrfy">f_vrfy</dfn>)(<em>void</em> *, <a class="typedef" href="#mbedtls_x509_crt" title='mbedtls_x509_crt' data-type='struct mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</a> *, <em>int</em>, <a class="typedef" href="../stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> *),</td></tr>
+<tr><th id="319">319</th><td>                     <em>void</em> *<dfn class="local col6 decl" id="816p_vrfy" title='p_vrfy' data-type='void *' data-ref="816p_vrfy">p_vrfy</dfn> );</td></tr>
+<tr><th id="320">320</th><td></td></tr>
+<tr><th id="321">321</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="322">322</th><td><i class="doc"> * <span class="command">\brief</span>          Verify the certificate signature according to profile</i></td></tr>
+<tr><th id="323">323</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="324">324</th><td><i class="doc"> * <span class="command">\note</span>           Same as<span class="command"> \c</span> <span class="arg">mbedtls_x509_crt_verify(),</span> but with explicit</i></td></tr>
+<tr><th id="325">325</th><td><i class="doc"> *                 security profile.</i></td></tr>
+<tr><th id="326">326</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="327">327</th><td><i class="doc"> * <span class="command">\note</span>           The restrictions on keys (RSA minimum size, allowed curves</i></td></tr>
+<tr><th id="328">328</th><td><i class="doc"> *                 for ECDSA) apply to all certificates: trusted root,</i></td></tr>
+<tr><th id="329">329</th><td><i class="doc"> *                 intermediate CAs if any, and end entity certificate.</i></td></tr>
+<tr><th id="330">330</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="331">331</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">crt</span>      a certificate (chain) to be verified</i></td></tr>
+<tr><th id="332">332</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">trust_ca</span> the list of trusted CAs</i></td></tr>
+<tr><th id="333">333</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ca_crl</span>   the list of CRLs for trusted CAs</i></td></tr>
+<tr><th id="334">334</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">profile</span>  security profile for verification</i></td></tr>
+<tr><th id="335">335</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">cn</span>       expected Common Name (can be set to</i></td></tr>
+<tr><th id="336">336</th><td><i class="doc"> *                 NULL if the CN must not be verified)</i></td></tr>
+<tr><th id="337">337</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">flags</span>    result of the verification</i></td></tr>
+<tr><th id="338">338</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_vrfy</span>   verification function</i></td></tr>
+<tr><th id="339">339</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_vrfy</span>   verification parameter</i></td></tr>
+<tr><th id="340">340</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="341">341</th><td><i class="doc"> * <span class="command">\return</span>         0 if successful or MBEDTLS_ERR_X509_CERT_VERIFY_FAILED</i></td></tr>
+<tr><th id="342">342</th><td><i class="doc"> *                 in which case *flags will have one or more</i></td></tr>
+<tr><th id="343">343</th><td><i class="doc"> *                 MBEDTLS_X509_BADCERT_XXX or MBEDTLS_X509_BADCRL_XXX flags</i></td></tr>
+<tr><th id="344">344</th><td><i class="doc"> *                 set,</i></td></tr>
+<tr><th id="345">345</th><td><i class="doc"> *                 or another error in case of a fatal error encountered</i></td></tr>
+<tr><th id="346">346</th><td><i class="doc"> *                 during the verification process.</i></td></tr>
+<tr><th id="347">347</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="348">348</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509_crt_verify_with_profile" title='mbedtls_x509_crt_verify_with_profile' data-ref="mbedtls_x509_crt_verify_with_profile">mbedtls_x509_crt_verify_with_profile</dfn>( <a class="typedef" href="#mbedtls_x509_crt" title='mbedtls_x509_crt' data-type='struct mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</a> *<dfn class="local col7 decl" id="817crt" title='crt' data-type='mbedtls_x509_crt *' data-ref="817crt">crt</dfn>,</td></tr>
+<tr><th id="349">349</th><td>                     <a class="typedef" href="#mbedtls_x509_crt" title='mbedtls_x509_crt' data-type='struct mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</a> *<dfn class="local col8 decl" id="818trust_ca" title='trust_ca' data-type='mbedtls_x509_crt *' data-ref="818trust_ca">trust_ca</dfn>,</td></tr>
+<tr><th id="350">350</th><td>                     <a class="typedef" href="x509_crl.h.html#mbedtls_x509_crl" title='mbedtls_x509_crl' data-type='struct mbedtls_x509_crl' data-ref="mbedtls_x509_crl">mbedtls_x509_crl</a> *<dfn class="local col9 decl" id="819ca_crl" title='ca_crl' data-type='mbedtls_x509_crl *' data-ref="819ca_crl">ca_crl</dfn>,</td></tr>
+<tr><th id="351">351</th><td>                     <em>const</em> <a class="typedef" href="#mbedtls_x509_crt_profile" title='mbedtls_x509_crt_profile' data-type='struct mbedtls_x509_crt_profile' data-ref="mbedtls_x509_crt_profile">mbedtls_x509_crt_profile</a> *<dfn class="local col0 decl" id="820profile" title='profile' data-type='const mbedtls_x509_crt_profile *' data-ref="820profile">profile</dfn>,</td></tr>
+<tr><th id="352">352</th><td>                     <em>const</em> <em>char</em> *<dfn class="local col1 decl" id="821cn" title='cn' data-type='const char *' data-ref="821cn">cn</dfn>, <a class="typedef" href="../stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> *<dfn class="local col2 decl" id="822flags" title='flags' data-type='uint32_t *' data-ref="822flags">flags</dfn>,</td></tr>
+<tr><th id="353">353</th><td>                     <em>int</em> (*<dfn class="local col3 decl" id="823f_vrfy" title='f_vrfy' data-type='int (*)(void *, mbedtls_x509_crt *, int, uint32_t *)' data-ref="823f_vrfy">f_vrfy</dfn>)(<em>void</em> *, <a class="typedef" href="#mbedtls_x509_crt" title='mbedtls_x509_crt' data-type='struct mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</a> *, <em>int</em>, <a class="typedef" href="../stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> *),</td></tr>
+<tr><th id="354">354</th><td>                     <em>void</em> *<dfn class="local col4 decl" id="824p_vrfy" title='p_vrfy' data-type='void *' data-ref="824p_vrfy">p_vrfy</dfn> );</td></tr>
+<tr><th id="355">355</th><td></td></tr>
+<tr><th id="356">356</th><td><u>#<span data-ppcond="356">if</span> defined(<a class="macro" href="config.h.html#1508" data-ref="_M/MBEDTLS_X509_CHECK_KEY_USAGE">MBEDTLS_X509_CHECK_KEY_USAGE</a>)</u></td></tr>
+<tr><th id="357">357</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="358">358</th><td><i class="doc"> * <span class="command">\brief</span>          Check usage of certificate against keyUsage extension.</i></td></tr>
+<tr><th id="359">359</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="360">360</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">crt</span>      Leaf certificate used.</i></td></tr>
+<tr><th id="361">361</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">usage</span>    Intended usage(s) (eg MBEDTLS_X509_KU_KEY_ENCIPHERMENT</i></td></tr>
+<tr><th id="362">362</th><td><i class="doc"> *                 before using the certificate to perform an RSA key</i></td></tr>
+<tr><th id="363">363</th><td><i class="doc"> *                 exchange).</i></td></tr>
+<tr><th id="364">364</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="365">365</th><td><i class="doc"> * <span class="command">\note</span>           Except for decipherOnly and encipherOnly, a bit set in the</i></td></tr>
+<tr><th id="366">366</th><td><i class="doc"> *                 usage argument means this bit MUST be set in the</i></td></tr>
+<tr><th id="367">367</th><td><i class="doc"> *                 certificate. For decipherOnly and encipherOnly, it means</i></td></tr>
+<tr><th id="368">368</th><td><i class="doc"> *                 that bit MAY be set.</i></td></tr>
+<tr><th id="369">369</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="370">370</th><td><i class="doc"> * <span class="command">\return</span>         0 is these uses of the certificate are allowed,</i></td></tr>
+<tr><th id="371">371</th><td><i class="doc"> *                 MBEDTLS_ERR_X509_BAD_INPUT_DATA if the keyUsage extension</i></td></tr>
+<tr><th id="372">372</th><td><i class="doc"> *                 is present but does not match the usage argument.</i></td></tr>
+<tr><th id="373">373</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="374">374</th><td><i class="doc"> * <span class="command">\note</span>           You should only call this function on leaf certificates, on</i></td></tr>
+<tr><th id="375">375</th><td><i class="doc"> *                 (intermediate) CAs the keyUsage extension is automatically</i></td></tr>
+<tr><th id="376">376</th><td><i class="doc"> *                 checked by<span class="command"> \c</span> <span class="arg">mbedtls_x509_crt_verify().</span></i></td></tr>
+<tr><th id="377">377</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="378">378</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509_crt_check_key_usage" title='mbedtls_x509_crt_check_key_usage' data-ref="mbedtls_x509_crt_check_key_usage">mbedtls_x509_crt_check_key_usage</dfn>( <em>const</em> <a class="typedef" href="#mbedtls_x509_crt" title='mbedtls_x509_crt' data-type='struct mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</a> *<dfn class="local col5 decl" id="825crt" title='crt' data-type='const mbedtls_x509_crt *' data-ref="825crt">crt</dfn>,</td></tr>
+<tr><th id="379">379</th><td>                                      <em>unsigned</em> <em>int</em> <dfn class="local col6 decl" id="826usage" title='usage' data-type='unsigned int' data-ref="826usage">usage</dfn> );</td></tr>
+<tr><th id="380">380</th><td><u>#<span data-ppcond="356">endif</span> /* MBEDTLS_X509_CHECK_KEY_USAGE) */</u></td></tr>
+<tr><th id="381">381</th><td></td></tr>
+<tr><th id="382">382</th><td><u>#<span data-ppcond="382">if</span> defined(<a class="macro" href="config.h.html#1521" data-ref="_M/MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE">MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE</a>)</u></td></tr>
+<tr><th id="383">383</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="384">384</th><td><i class="doc"> * <span class="command">\brief</span>           Check usage of certificate against extendedKeyUsage.</i></td></tr>
+<tr><th id="385">385</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="386">386</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">crt</span>       Leaf certificate used.</i></td></tr>
+<tr><th id="387">387</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">usage_oid</span> Intended usage (eg MBEDTLS_OID_SERVER_AUTH or</i></td></tr>
+<tr><th id="388">388</th><td><i class="doc"> *                  MBEDTLS_OID_CLIENT_AUTH).</i></td></tr>
+<tr><th id="389">389</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">usage_len</span> Length of usage_oid (eg given by MBEDTLS_OID_SIZE()).</i></td></tr>
+<tr><th id="390">390</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="391">391</th><td><i class="doc"> * <span class="command">\return</span>          0 if this use of the certificate is allowed,</i></td></tr>
+<tr><th id="392">392</th><td><i class="doc"> *                  MBEDTLS_ERR_X509_BAD_INPUT_DATA if not.</i></td></tr>
+<tr><th id="393">393</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="394">394</th><td><i class="doc"> * <span class="command">\note</span>            Usually only makes sense on leaf certificates.</i></td></tr>
+<tr><th id="395">395</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="396">396</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509_crt_check_extended_key_usage" title='mbedtls_x509_crt_check_extended_key_usage' data-ref="mbedtls_x509_crt_check_extended_key_usage">mbedtls_x509_crt_check_extended_key_usage</dfn>( <em>const</em> <a class="typedef" href="#mbedtls_x509_crt" title='mbedtls_x509_crt' data-type='struct mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</a> *<dfn class="local col7 decl" id="827crt" title='crt' data-type='const mbedtls_x509_crt *' data-ref="827crt">crt</dfn>,</td></tr>
+<tr><th id="397">397</th><td>                                               <em>const</em> <em>char</em> *<dfn class="local col8 decl" id="828usage_oid" title='usage_oid' data-type='const char *' data-ref="828usage_oid">usage_oid</dfn>,</td></tr>
+<tr><th id="398">398</th><td>                                               <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col9 decl" id="829usage_len" title='usage_len' data-type='size_t' data-ref="829usage_len">usage_len</dfn> );</td></tr>
+<tr><th id="399">399</th><td><u>#<span data-ppcond="382">endif</span> /* MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE */</u></td></tr>
+<tr><th id="400">400</th><td></td></tr>
+<tr><th id="401">401</th><td><u>#<span data-ppcond="401">if</span> defined(<a class="macro" href="config.h.html#2617" data-ref="_M/MBEDTLS_X509_CRL_PARSE_C">MBEDTLS_X509_CRL_PARSE_C</a>)</u></td></tr>
+<tr><th id="402">402</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="403">403</th><td><i class="doc"> * <span class="command">\brief</span>          Verify the certificate revocation status</i></td></tr>
+<tr><th id="404">404</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="405">405</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">crt</span>      a certificate to be verified</i></td></tr>
+<tr><th id="406">406</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">crl</span>      the CRL to verify against</i></td></tr>
+<tr><th id="407">407</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="408">408</th><td><i class="doc"> * <span class="command">\return</span>         1 if the certificate is revoked, 0 otherwise</i></td></tr>
+<tr><th id="409">409</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="410">410</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="411">411</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509_crt_is_revoked" title='mbedtls_x509_crt_is_revoked' data-ref="mbedtls_x509_crt_is_revoked">mbedtls_x509_crt_is_revoked</dfn>( <em>const</em> <a class="typedef" href="#mbedtls_x509_crt" title='mbedtls_x509_crt' data-type='struct mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</a> *<dfn class="local col0 decl" id="830crt" title='crt' data-type='const mbedtls_x509_crt *' data-ref="830crt">crt</dfn>, <em>const</em> <a class="typedef" href="x509_crl.h.html#mbedtls_x509_crl" title='mbedtls_x509_crl' data-type='struct mbedtls_x509_crl' data-ref="mbedtls_x509_crl">mbedtls_x509_crl</a> *<dfn class="local col1 decl" id="831crl" title='crl' data-type='const mbedtls_x509_crl *' data-ref="831crl">crl</dfn> );</td></tr>
+<tr><th id="412">412</th><td><u>#<span data-ppcond="401">endif</span> /* MBEDTLS_X509_CRL_PARSE_C */</u></td></tr>
+<tr><th id="413">413</th><td></td></tr>
+<tr><th id="414">414</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="415">415</th><td><i class="doc"> * <span class="command">\brief</span>          Initialize a certificate (chain)</i></td></tr>
+<tr><th id="416">416</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="417">417</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">crt</span>      Certificate chain to initialize</i></td></tr>
+<tr><th id="418">418</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="419">419</th><td><em>void</em> <dfn class="decl fn" id="mbedtls_x509_crt_init" title='mbedtls_x509_crt_init' data-ref="mbedtls_x509_crt_init">mbedtls_x509_crt_init</dfn>( <a class="typedef" href="#mbedtls_x509_crt" title='mbedtls_x509_crt' data-type='struct mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</a> *<dfn class="local col2 decl" id="832crt" title='crt' data-type='mbedtls_x509_crt *' data-ref="832crt">crt</dfn> );</td></tr>
+<tr><th id="420">420</th><td></td></tr>
+<tr><th id="421">421</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="422">422</th><td><i class="doc"> * <span class="command">\brief</span>          Unallocate all certificate data</i></td></tr>
+<tr><th id="423">423</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="424">424</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">crt</span>      Certificate chain to free</i></td></tr>
+<tr><th id="425">425</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="426">426</th><td><em>void</em> <dfn class="decl fn" id="mbedtls_x509_crt_free" title='mbedtls_x509_crt_free' data-ref="mbedtls_x509_crt_free">mbedtls_x509_crt_free</dfn>( <a class="typedef" href="#mbedtls_x509_crt" title='mbedtls_x509_crt' data-type='struct mbedtls_x509_crt' data-ref="mbedtls_x509_crt">mbedtls_x509_crt</a> *<dfn class="local col3 decl" id="833crt" title='crt' data-type='mbedtls_x509_crt *' data-ref="833crt">crt</dfn> );</td></tr>
+<tr><th id="427">427</th><td><u>#<span data-ppcond="146">endif</span> /* MBEDTLS_X509_CRT_PARSE_C */</u></td></tr>
+<tr><th id="428">428</th><td></td></tr>
+<tr><th id="429">429</th><td><i>/* \} name */</i></td></tr>
+<tr><th id="430">430</th><td><i>/* \} addtogroup x509_module */</i></td></tr>
+<tr><th id="431">431</th><td></td></tr>
+<tr><th id="432">432</th><td><u>#<span data-ppcond="432">if</span> defined(<a class="macro" href="config.h.html#2657" data-ref="_M/MBEDTLS_X509_CRT_WRITE_C">MBEDTLS_X509_CRT_WRITE_C</a>)</u></td></tr>
+<tr><th id="433">433</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="434">434</th><td><i class="doc"> * <span class="command">\brief</span>           Initialize a CRT writing context</i></td></tr>
+<tr><th id="435">435</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="436">436</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>       CRT context to initialize</i></td></tr>
+<tr><th id="437">437</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="438">438</th><td><em>void</em> <dfn class="decl fn" id="mbedtls_x509write_crt_init" title='mbedtls_x509write_crt_init' data-ref="mbedtls_x509write_crt_init">mbedtls_x509write_crt_init</dfn>( <a class="typedef" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a> *<dfn class="local col4 decl" id="834ctx" title='ctx' data-type='mbedtls_x509write_cert *' data-ref="834ctx">ctx</dfn> );</td></tr>
+<tr><th id="439">439</th><td></td></tr>
+<tr><th id="440">440</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="441">441</th><td><i class="doc"> * <span class="command">\brief</span>           Set the verion for a Certificate</i></td></tr>
+<tr><th id="442">442</th><td><i class="doc"> *                  Default: MBEDTLS_X509_CRT_VERSION_3</i></td></tr>
+<tr><th id="443">443</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="444">444</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>       CRT context to use</i></td></tr>
+<tr><th id="445">445</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">version</span>   version to set (MBEDTLS_X509_CRT_VERSION_1, MBEDTLS_X509_CRT_VERSION_2 or</i></td></tr>
+<tr><th id="446">446</th><td><i class="doc"> *                                  MBEDTLS_X509_CRT_VERSION_3)</i></td></tr>
+<tr><th id="447">447</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="448">448</th><td><em>void</em> <dfn class="decl fn" id="mbedtls_x509write_crt_set_version" title='mbedtls_x509write_crt_set_version' data-ref="mbedtls_x509write_crt_set_version">mbedtls_x509write_crt_set_version</dfn>( <a class="typedef" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a> *<dfn class="local col5 decl" id="835ctx" title='ctx' data-type='mbedtls_x509write_cert *' data-ref="835ctx">ctx</dfn>, <em>int</em> <dfn class="local col6 decl" id="836version" title='version' data-type='int' data-ref="836version">version</dfn> );</td></tr>
+<tr><th id="449">449</th><td></td></tr>
+<tr><th id="450">450</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="451">451</th><td><i class="doc"> * <span class="command">\brief</span>           Set the serial number for a Certificate.</i></td></tr>
+<tr><th id="452">452</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="453">453</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>       CRT context to use</i></td></tr>
+<tr><th id="454">454</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">serial</span>    serial number to set</i></td></tr>
+<tr><th id="455">455</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="456">456</th><td><i class="doc"> * <span class="command">\return</span>          0 if successful</i></td></tr>
+<tr><th id="457">457</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="458">458</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509write_crt_set_serial" title='mbedtls_x509write_crt_set_serial' data-ref="mbedtls_x509write_crt_set_serial">mbedtls_x509write_crt_set_serial</dfn>( <a class="typedef" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a> *<dfn class="local col7 decl" id="837ctx" title='ctx' data-type='mbedtls_x509write_cert *' data-ref="837ctx">ctx</dfn>, <em>const</em> <a class="typedef" href="bignum.h.html#mbedtls_mpi" title='mbedtls_mpi' data-type='struct mbedtls_mpi' data-ref="mbedtls_mpi">mbedtls_mpi</a> *<dfn class="local col8 decl" id="838serial" title='serial' data-type='const mbedtls_mpi *' data-ref="838serial">serial</dfn> );</td></tr>
+<tr><th id="459">459</th><td></td></tr>
+<tr><th id="460">460</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="461">461</th><td><i class="doc"> * <span class="command">\brief</span>           Set the validity period for a Certificate</i></td></tr>
+<tr><th id="462">462</th><td><i class="doc"> *                  Timestamps should be in string format for UTC timezone</i></td></tr>
+<tr><th id="463">463</th><td><i class="doc"> *                  i.e. "YYYYMMDDhhmmss"</i></td></tr>
+<tr><th id="464">464</th><td><i class="doc"> *                  e.g. "20131231235959" for December 31st 2013</i></td></tr>
+<tr><th id="465">465</th><td><i class="doc"> *                       at 23:59:59</i></td></tr>
+<tr><th id="466">466</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="467">467</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>       CRT context to use</i></td></tr>
+<tr><th id="468">468</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">not_before</span>    not_before timestamp</i></td></tr>
+<tr><th id="469">469</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">not_after</span>     not_after timestamp</i></td></tr>
+<tr><th id="470">470</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="471">471</th><td><i class="doc"> * <span class="command">\return</span>          0 if timestamp was parsed successfully, or</i></td></tr>
+<tr><th id="472">472</th><td><i class="doc"> *                  a specific error code</i></td></tr>
+<tr><th id="473">473</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="474">474</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509write_crt_set_validity" title='mbedtls_x509write_crt_set_validity' data-ref="mbedtls_x509write_crt_set_validity">mbedtls_x509write_crt_set_validity</dfn>( <a class="typedef" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a> *<dfn class="local col9 decl" id="839ctx" title='ctx' data-type='mbedtls_x509write_cert *' data-ref="839ctx">ctx</dfn>, <em>const</em> <em>char</em> *<dfn class="local col0 decl" id="840not_before" title='not_before' data-type='const char *' data-ref="840not_before">not_before</dfn>,</td></tr>
+<tr><th id="475">475</th><td>                                <em>const</em> <em>char</em> *<dfn class="local col1 decl" id="841not_after" title='not_after' data-type='const char *' data-ref="841not_after">not_after</dfn> );</td></tr>
+<tr><th id="476">476</th><td></td></tr>
+<tr><th id="477">477</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="478">478</th><td><i class="doc"> * <span class="command">\brief</span>           Set the issuer name for a Certificate</i></td></tr>
+<tr><th id="479">479</th><td><i class="doc"> *                  Issuer names should contain a comma-separated list</i></td></tr>
+<tr><th id="480">480</th><td><i class="doc"> *                  of OID types and values:</i></td></tr>
+<tr><th id="481">481</th><td><i class="doc"> *                  e.g. "C=UK,O=ARM,CN=mbed TLS CA"</i></td></tr>
+<tr><th id="482">482</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="483">483</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>           CRT context to use</i></td></tr>
+<tr><th id="484">484</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">issuer_name</span>   issuer name to set</i></td></tr>
+<tr><th id="485">485</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="486">486</th><td><i class="doc"> * <span class="command">\return</span>          0 if issuer name was parsed successfully, or</i></td></tr>
+<tr><th id="487">487</th><td><i class="doc"> *                  a specific error code</i></td></tr>
+<tr><th id="488">488</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="489">489</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509write_crt_set_issuer_name" title='mbedtls_x509write_crt_set_issuer_name' data-ref="mbedtls_x509write_crt_set_issuer_name">mbedtls_x509write_crt_set_issuer_name</dfn>( <a class="typedef" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a> *<dfn class="local col2 decl" id="842ctx" title='ctx' data-type='mbedtls_x509write_cert *' data-ref="842ctx">ctx</dfn>,</td></tr>
+<tr><th id="490">490</th><td>                                   <em>const</em> <em>char</em> *<dfn class="local col3 decl" id="843issuer_name" title='issuer_name' data-type='const char *' data-ref="843issuer_name">issuer_name</dfn> );</td></tr>
+<tr><th id="491">491</th><td></td></tr>
+<tr><th id="492">492</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="493">493</th><td><i class="doc"> * <span class="command">\brief</span>           Set the subject name for a Certificate</i></td></tr>
+<tr><th id="494">494</th><td><i class="doc"> *                  Subject names should contain a comma-separated list</i></td></tr>
+<tr><th id="495">495</th><td><i class="doc"> *                  of OID types and values:</i></td></tr>
+<tr><th id="496">496</th><td><i class="doc"> *                  e.g. "C=UK,O=ARM,CN=mbed TLS Server 1"</i></td></tr>
+<tr><th id="497">497</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="498">498</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>           CRT context to use</i></td></tr>
+<tr><th id="499">499</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">subject_name</span>  subject name to set</i></td></tr>
+<tr><th id="500">500</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="501">501</th><td><i class="doc"> * <span class="command">\return</span>          0 if subject name was parsed successfully, or</i></td></tr>
+<tr><th id="502">502</th><td><i class="doc"> *                  a specific error code</i></td></tr>
+<tr><th id="503">503</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="504">504</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509write_crt_set_subject_name" title='mbedtls_x509write_crt_set_subject_name' data-ref="mbedtls_x509write_crt_set_subject_name">mbedtls_x509write_crt_set_subject_name</dfn>( <a class="typedef" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a> *<dfn class="local col4 decl" id="844ctx" title='ctx' data-type='mbedtls_x509write_cert *' data-ref="844ctx">ctx</dfn>,</td></tr>
+<tr><th id="505">505</th><td>                                    <em>const</em> <em>char</em> *<dfn class="local col5 decl" id="845subject_name" title='subject_name' data-type='const char *' data-ref="845subject_name">subject_name</dfn> );</td></tr>
+<tr><th id="506">506</th><td></td></tr>
+<tr><th id="507">507</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="508">508</th><td><i class="doc"> * <span class="command">\brief</span>           Set the subject public key for the certificate</i></td></tr>
+<tr><th id="509">509</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="510">510</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>       CRT context to use</i></td></tr>
+<tr><th id="511">511</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">key</span>       public key to include</i></td></tr>
+<tr><th id="512">512</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="513">513</th><td><em>void</em> <dfn class="decl fn" id="mbedtls_x509write_crt_set_subject_key" title='mbedtls_x509write_crt_set_subject_key' data-ref="mbedtls_x509write_crt_set_subject_key">mbedtls_x509write_crt_set_subject_key</dfn>( <a class="typedef" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a> *<dfn class="local col6 decl" id="846ctx" title='ctx' data-type='mbedtls_x509write_cert *' data-ref="846ctx">ctx</dfn>, <a class="typedef" href="pk.h.html#mbedtls_pk_context" title='mbedtls_pk_context' data-type='struct mbedtls_pk_context' data-ref="mbedtls_pk_context">mbedtls_pk_context</a> *<dfn class="local col7 decl" id="847key" title='key' data-type='mbedtls_pk_context *' data-ref="847key">key</dfn> );</td></tr>
+<tr><th id="514">514</th><td></td></tr>
+<tr><th id="515">515</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="516">516</th><td><i class="doc"> * <span class="command">\brief</span>           Set the issuer key used for signing the certificate</i></td></tr>
+<tr><th id="517">517</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="518">518</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>       CRT context to use</i></td></tr>
+<tr><th id="519">519</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">key</span>       private key to sign with</i></td></tr>
+<tr><th id="520">520</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="521">521</th><td><em>void</em> <dfn class="decl fn" id="mbedtls_x509write_crt_set_issuer_key" title='mbedtls_x509write_crt_set_issuer_key' data-ref="mbedtls_x509write_crt_set_issuer_key">mbedtls_x509write_crt_set_issuer_key</dfn>( <a class="typedef" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a> *<dfn class="local col8 decl" id="848ctx" title='ctx' data-type='mbedtls_x509write_cert *' data-ref="848ctx">ctx</dfn>, <a class="typedef" href="pk.h.html#mbedtls_pk_context" title='mbedtls_pk_context' data-type='struct mbedtls_pk_context' data-ref="mbedtls_pk_context">mbedtls_pk_context</a> *<dfn class="local col9 decl" id="849key" title='key' data-type='mbedtls_pk_context *' data-ref="849key">key</dfn> );</td></tr>
+<tr><th id="522">522</th><td></td></tr>
+<tr><th id="523">523</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="524">524</th><td><i class="doc"> * <span class="command">\brief</span>           Set the MD algorithm to use for the signature</i></td></tr>
+<tr><th id="525">525</th><td><i class="doc"> *                  (e.g. MBEDTLS_MD_SHA1)</i></td></tr>
+<tr><th id="526">526</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="527">527</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>       CRT context to use</i></td></tr>
+<tr><th id="528">528</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">md_alg</span>    MD algorithm to use</i></td></tr>
+<tr><th id="529">529</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="530">530</th><td><em>void</em> <dfn class="decl fn" id="mbedtls_x509write_crt_set_md_alg" title='mbedtls_x509write_crt_set_md_alg' data-ref="mbedtls_x509write_crt_set_md_alg">mbedtls_x509write_crt_set_md_alg</dfn>( <a class="typedef" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a> *<dfn class="local col0 decl" id="850ctx" title='ctx' data-type='mbedtls_x509write_cert *' data-ref="850ctx">ctx</dfn>, <a class="typedef" href="md.h.html#mbedtls_md_type_t" title='mbedtls_md_type_t' data-type='enum mbedtls_md_type_t' data-ref="mbedtls_md_type_t">mbedtls_md_type_t</a> <dfn class="local col1 decl" id="851md_alg" title='md_alg' data-type='mbedtls_md_type_t' data-ref="851md_alg">md_alg</dfn> );</td></tr>
+<tr><th id="531">531</th><td></td></tr>
+<tr><th id="532">532</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="533">533</th><td><i class="doc"> * <span class="command">\brief</span>           Generic function to add to or replace an extension in the</i></td></tr>
+<tr><th id="534">534</th><td><i class="doc"> *                  CRT</i></td></tr>
+<tr><th id="535">535</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="536">536</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>       CRT context to use</i></td></tr>
+<tr><th id="537">537</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">oid</span>       OID of the extension</i></td></tr>
+<tr><th id="538">538</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">oid_len</span>   length of the OID</i></td></tr>
+<tr><th id="539">539</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">critical</span>  if the extension is critical (per the RFC's definition)</i></td></tr>
+<tr><th id="540">540</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">val</span>       value of the extension OCTET STRING</i></td></tr>
+<tr><th id="541">541</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">val_len</span>   length of the value data</i></td></tr>
+<tr><th id="542">542</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="543">543</th><td><i class="doc"> * <span class="command">\return</span>          0 if successful, or a MBEDTLS_ERR_X509_ALLOC_FAILED</i></td></tr>
+<tr><th id="544">544</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="545">545</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509write_crt_set_extension" title='mbedtls_x509write_crt_set_extension' data-ref="mbedtls_x509write_crt_set_extension">mbedtls_x509write_crt_set_extension</dfn>( <a class="typedef" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a> *<dfn class="local col2 decl" id="852ctx" title='ctx' data-type='mbedtls_x509write_cert *' data-ref="852ctx">ctx</dfn>,</td></tr>
+<tr><th id="546">546</th><td>                                 <em>const</em> <em>char</em> *<dfn class="local col3 decl" id="853oid" title='oid' data-type='const char *' data-ref="853oid">oid</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col4 decl" id="854oid_len" title='oid_len' data-type='size_t' data-ref="854oid_len">oid_len</dfn>,</td></tr>
+<tr><th id="547">547</th><td>                                 <em>int</em> <dfn class="local col5 decl" id="855critical" title='critical' data-type='int' data-ref="855critical">critical</dfn>,</td></tr>
+<tr><th id="548">548</th><td>                                 <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col6 decl" id="856val" title='val' data-type='const unsigned char *' data-ref="856val">val</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col7 decl" id="857val_len" title='val_len' data-type='size_t' data-ref="857val_len">val_len</dfn> );</td></tr>
+<tr><th id="549">549</th><td></td></tr>
+<tr><th id="550">550</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="551">551</th><td><i class="doc"> * <span class="command">\brief</span>           Set the basicConstraints extension for a CRT</i></td></tr>
+<tr><th id="552">552</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="553">553</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>       CRT context to use</i></td></tr>
+<tr><th id="554">554</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">is_ca</span>     is this a CA certificate</i></td></tr>
+<tr><th id="555">555</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">max_pathlen</span>   maximum length of certificate chains below this</i></td></tr>
+<tr><th id="556">556</th><td><i class="doc"> *                      certificate (only for CA certificates, -1 is</i></td></tr>
+<tr><th id="557">557</th><td><i class="doc"> *                      inlimited)</i></td></tr>
+<tr><th id="558">558</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="559">559</th><td><i class="doc"> * <span class="command">\return</span>          0 if successful, or a MBEDTLS_ERR_X509_ALLOC_FAILED</i></td></tr>
+<tr><th id="560">560</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="561">561</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509write_crt_set_basic_constraints" title='mbedtls_x509write_crt_set_basic_constraints' data-ref="mbedtls_x509write_crt_set_basic_constraints">mbedtls_x509write_crt_set_basic_constraints</dfn>( <a class="typedef" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a> *<dfn class="local col8 decl" id="858ctx" title='ctx' data-type='mbedtls_x509write_cert *' data-ref="858ctx">ctx</dfn>,</td></tr>
+<tr><th id="562">562</th><td>                                         <em>int</em> <dfn class="local col9 decl" id="859is_ca" title='is_ca' data-type='int' data-ref="859is_ca">is_ca</dfn>, <em>int</em> <dfn class="local col0 decl" id="860max_pathlen" title='max_pathlen' data-type='int' data-ref="860max_pathlen">max_pathlen</dfn> );</td></tr>
+<tr><th id="563">563</th><td></td></tr>
+<tr><th id="564">564</th><td><u>#<span data-ppcond="564">if</span> defined(<a class="macro" href="config.h.html#2404" data-ref="_M/MBEDTLS_SHA1_C">MBEDTLS_SHA1_C</a>)</u></td></tr>
+<tr><th id="565">565</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="566">566</th><td><i class="doc"> * <span class="command">\brief</span>           Set the subjectKeyIdentifier extension for a CRT</i></td></tr>
+<tr><th id="567">567</th><td><i class="doc"> *                  Requires that mbedtls_x509write_crt_set_subject_key() has been</i></td></tr>
+<tr><th id="568">568</th><td><i class="doc"> *                  called before</i></td></tr>
+<tr><th id="569">569</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="570">570</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>       CRT context to use</i></td></tr>
+<tr><th id="571">571</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="572">572</th><td><i class="doc"> * <span class="command">\return</span>          0 if successful, or a MBEDTLS_ERR_X509_ALLOC_FAILED</i></td></tr>
+<tr><th id="573">573</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="574">574</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509write_crt_set_subject_key_identifier" title='mbedtls_x509write_crt_set_subject_key_identifier' data-ref="mbedtls_x509write_crt_set_subject_key_identifier">mbedtls_x509write_crt_set_subject_key_identifier</dfn>( <a class="typedef" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a> *<dfn class="local col1 decl" id="861ctx" title='ctx' data-type='mbedtls_x509write_cert *' data-ref="861ctx">ctx</dfn> );</td></tr>
+<tr><th id="575">575</th><td></td></tr>
+<tr><th id="576">576</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="577">577</th><td><i class="doc"> * <span class="command">\brief</span>           Set the authorityKeyIdentifier extension for a CRT</i></td></tr>
+<tr><th id="578">578</th><td><i class="doc"> *                  Requires that mbedtls_x509write_crt_set_issuer_key() has been</i></td></tr>
+<tr><th id="579">579</th><td><i class="doc"> *                  called before</i></td></tr>
+<tr><th id="580">580</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="581">581</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>       CRT context to use</i></td></tr>
+<tr><th id="582">582</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="583">583</th><td><i class="doc"> * <span class="command">\return</span>          0 if successful, or a MBEDTLS_ERR_X509_ALLOC_FAILED</i></td></tr>
+<tr><th id="584">584</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="585">585</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509write_crt_set_authority_key_identifier" title='mbedtls_x509write_crt_set_authority_key_identifier' data-ref="mbedtls_x509write_crt_set_authority_key_identifier">mbedtls_x509write_crt_set_authority_key_identifier</dfn>( <a class="typedef" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a> *<dfn class="local col2 decl" id="862ctx" title='ctx' data-type='mbedtls_x509write_cert *' data-ref="862ctx">ctx</dfn> );</td></tr>
+<tr><th id="586">586</th><td><u>#<span data-ppcond="564">endif</span> /* MBEDTLS_SHA1_C */</u></td></tr>
+<tr><th id="587">587</th><td></td></tr>
+<tr><th id="588">588</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="589">589</th><td><i class="doc"> * <span class="command">\brief</span>           Set the Key Usage Extension flags</i></td></tr>
+<tr><th id="590">590</th><td><i class="doc"> *                  (e.g. MBEDTLS_X509_KU_DIGITAL_SIGNATURE | MBEDTLS_X509_KU_KEY_CERT_SIGN)</i></td></tr>
+<tr><th id="591">591</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="592">592</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>       CRT context to use</i></td></tr>
+<tr><th id="593">593</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">key_usage</span> key usage flags to set</i></td></tr>
+<tr><th id="594">594</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="595">595</th><td><i class="doc"> * <span class="command">\return</span>          0 if successful, or MBEDTLS_ERR_X509_ALLOC_FAILED</i></td></tr>
+<tr><th id="596">596</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="597">597</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509write_crt_set_key_usage" title='mbedtls_x509write_crt_set_key_usage' data-ref="mbedtls_x509write_crt_set_key_usage">mbedtls_x509write_crt_set_key_usage</dfn>( <a class="typedef" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a> *<dfn class="local col3 decl" id="863ctx" title='ctx' data-type='mbedtls_x509write_cert *' data-ref="863ctx">ctx</dfn>,</td></tr>
+<tr><th id="598">598</th><td>                                         <em>unsigned</em> <em>int</em> <dfn class="local col4 decl" id="864key_usage" title='key_usage' data-type='unsigned int' data-ref="864key_usage">key_usage</dfn> );</td></tr>
+<tr><th id="599">599</th><td></td></tr>
+<tr><th id="600">600</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="601">601</th><td><i class="doc"> * <span class="command">\brief</span>           Set the Netscape Cert Type flags</i></td></tr>
+<tr><th id="602">602</th><td><i class="doc"> *                  (e.g. MBEDTLS_X509_NS_CERT_TYPE_SSL_CLIENT | MBEDTLS_X509_NS_CERT_TYPE_EMAIL)</i></td></tr>
+<tr><th id="603">603</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="604">604</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>           CRT context to use</i></td></tr>
+<tr><th id="605">605</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ns_cert_type</span>  Netscape Cert Type flags to set</i></td></tr>
+<tr><th id="606">606</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="607">607</th><td><i class="doc"> * <span class="command">\return</span>          0 if successful, or MBEDTLS_ERR_X509_ALLOC_FAILED</i></td></tr>
+<tr><th id="608">608</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="609">609</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509write_crt_set_ns_cert_type" title='mbedtls_x509write_crt_set_ns_cert_type' data-ref="mbedtls_x509write_crt_set_ns_cert_type">mbedtls_x509write_crt_set_ns_cert_type</dfn>( <a class="typedef" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a> *<dfn class="local col5 decl" id="865ctx" title='ctx' data-type='mbedtls_x509write_cert *' data-ref="865ctx">ctx</dfn>,</td></tr>
+<tr><th id="610">610</th><td>                                    <em>unsigned</em> <em>char</em> <dfn class="local col6 decl" id="866ns_cert_type" title='ns_cert_type' data-type='unsigned char' data-ref="866ns_cert_type">ns_cert_type</dfn> );</td></tr>
+<tr><th id="611">611</th><td></td></tr>
+<tr><th id="612">612</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="613">613</th><td><i class="doc"> * <span class="command">\brief</span>           Free the contents of a CRT write context</i></td></tr>
+<tr><th id="614">614</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="615">615</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>       CRT context to free</i></td></tr>
+<tr><th id="616">616</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="617">617</th><td><em>void</em> <dfn class="decl fn" id="mbedtls_x509write_crt_free" title='mbedtls_x509write_crt_free' data-ref="mbedtls_x509write_crt_free">mbedtls_x509write_crt_free</dfn>( <a class="typedef" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a> *<dfn class="local col7 decl" id="867ctx" title='ctx' data-type='mbedtls_x509write_cert *' data-ref="867ctx">ctx</dfn> );</td></tr>
+<tr><th id="618">618</th><td></td></tr>
+<tr><th id="619">619</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="620">620</th><td><i class="doc"> * <span class="command">\brief</span>           Write a built up certificate to a X509 DER structure</i></td></tr>
+<tr><th id="621">621</th><td><i class="doc"> *                  Note: data is written at the end of the buffer! Use the</i></td></tr>
+<tr><th id="622">622</th><td><i class="doc"> *                        return value to determine where you should start</i></td></tr>
+<tr><th id="623">623</th><td><i class="doc"> *                        using the buffer</i></td></tr>
+<tr><th id="624">624</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="625">625</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>       certificate to write away</i></td></tr>
+<tr><th id="626">626</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">buf</span>       buffer to write to</i></td></tr>
+<tr><th id="627">627</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">size</span>      size of the buffer</i></td></tr>
+<tr><th id="628">628</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_rng</span>     RNG function (for signature, see note)</i></td></tr>
+<tr><th id="629">629</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_rng</span>     RNG parameter</i></td></tr>
+<tr><th id="630">630</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="631">631</th><td><i class="doc"> * <span class="command">\return</span>          length of data written if successful, or a specific</i></td></tr>
+<tr><th id="632">632</th><td><i class="doc"> *                  error code</i></td></tr>
+<tr><th id="633">633</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="634">634</th><td><i class="doc"> * <span class="command">\note</span>            f_rng may be NULL if RSA is used for signature and the</i></td></tr>
+<tr><th id="635">635</th><td><i class="doc"> *                  signature is made offline (otherwise f_rng is desirable</i></td></tr>
+<tr><th id="636">636</th><td><i class="doc"> *                  for countermeasures against timing attacks).</i></td></tr>
+<tr><th id="637">637</th><td><i class="doc"> *                  ECDSA signatures always require a non-NULL f_rng.</i></td></tr>
+<tr><th id="638">638</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="639">639</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509write_crt_der" title='mbedtls_x509write_crt_der' data-ref="mbedtls_x509write_crt_der">mbedtls_x509write_crt_der</dfn>( <a class="typedef" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a> *<dfn class="local col8 decl" id="868ctx" title='ctx' data-type='mbedtls_x509write_cert *' data-ref="868ctx">ctx</dfn>, <em>unsigned</em> <em>char</em> *<dfn class="local col9 decl" id="869buf" title='buf' data-type='unsigned char *' data-ref="869buf">buf</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col0 decl" id="870size" title='size' data-type='size_t' data-ref="870size">size</dfn>,</td></tr>
+<tr><th id="640">640</th><td>                       <em>int</em> (*<dfn class="local col1 decl" id="871f_rng" title='f_rng' data-type='int (*)(void *, unsigned char *, size_t)' data-ref="871f_rng">f_rng</dfn>)(<em>void</em> *, <em>unsigned</em> <em>char</em> *, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>),</td></tr>
+<tr><th id="641">641</th><td>                       <em>void</em> *<dfn class="local col2 decl" id="872p_rng" title='p_rng' data-type='void *' data-ref="872p_rng">p_rng</dfn> );</td></tr>
+<tr><th id="642">642</th><td></td></tr>
+<tr><th id="643">643</th><td><u>#<span data-ppcond="643">if</span> defined(<a class="macro" href="config.h.html#2243" data-ref="_M/MBEDTLS_PEM_WRITE_C">MBEDTLS_PEM_WRITE_C</a>)</u></td></tr>
+<tr><th id="644">644</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="645">645</th><td><i class="doc"> * <span class="command">\brief</span>           Write a built up certificate to a X509 PEM string</i></td></tr>
+<tr><th id="646">646</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="647">647</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">ctx</span>       certificate to write away</i></td></tr>
+<tr><th id="648">648</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">buf</span>       buffer to write to</i></td></tr>
+<tr><th id="649">649</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">size</span>      size of the buffer</i></td></tr>
+<tr><th id="650">650</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">f_rng</span>     RNG function (for signature, see note)</i></td></tr>
+<tr><th id="651">651</th><td><i class="doc"> * <span class="command">\param</span> <span class="arg">p_rng</span>     RNG parameter</i></td></tr>
+<tr><th id="652">652</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="653">653</th><td><i class="doc"> * <span class="command">\return</span>          0 if successful, or a specific error code</i></td></tr>
+<tr><th id="654">654</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="655">655</th><td><i class="doc"> * <span class="command">\note</span>            f_rng may be NULL if RSA is used for signature and the</i></td></tr>
+<tr><th id="656">656</th><td><i class="doc"> *                  signature is made offline (otherwise f_rng is desirable</i></td></tr>
+<tr><th id="657">657</th><td><i class="doc"> *                  for countermeasures against timing attacks).</i></td></tr>
+<tr><th id="658">658</th><td><i class="doc"> *                  ECDSA signatures always require a non-NULL f_rng.</i></td></tr>
+<tr><th id="659">659</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="660">660</th><td><em>int</em> <dfn class="decl fn" id="mbedtls_x509write_crt_pem" title='mbedtls_x509write_crt_pem' data-ref="mbedtls_x509write_crt_pem">mbedtls_x509write_crt_pem</dfn>( <a class="typedef" href="#mbedtls_x509write_cert" title='mbedtls_x509write_cert' data-type='struct mbedtls_x509write_cert' data-ref="mbedtls_x509write_cert">mbedtls_x509write_cert</a> *<dfn class="local col3 decl" id="873ctx" title='ctx' data-type='mbedtls_x509write_cert *' data-ref="873ctx">ctx</dfn>, <em>unsigned</em> <em>char</em> *<dfn class="local col4 decl" id="874buf" title='buf' data-type='unsigned char *' data-ref="874buf">buf</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col5 decl" id="875size" title='size' data-type='size_t' data-ref="875size">size</dfn>,</td></tr>
+<tr><th id="661">661</th><td>                       <em>int</em> (*<dfn class="local col6 decl" id="876f_rng" title='f_rng' data-type='int (*)(void *, unsigned char *, size_t)' data-ref="876f_rng">f_rng</dfn>)(<em>void</em> *, <em>unsigned</em> <em>char</em> *, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>),</td></tr>
+<tr><th id="662">662</th><td>                       <em>void</em> *<dfn class="local col7 decl" id="877p_rng" title='p_rng' data-type='void *' data-ref="877p_rng">p_rng</dfn> );</td></tr>
+<tr><th id="663">663</th><td><u>#<span data-ppcond="643">endif</span> /* MBEDTLS_PEM_WRITE_C */</u></td></tr>
+<tr><th id="664">664</th><td><u>#<span data-ppcond="432">endif</span> /* MBEDTLS_X509_CRT_WRITE_C */</u></td></tr>
+<tr><th id="665">665</th><td></td></tr>
+<tr><th id="666">666</th><td><u>#<span data-ppcond="666">ifdef</span> <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="667">667</th><td>}</td></tr>
+<tr><th id="668">668</th><td><u>#<span data-ppcond="666">endif</span></u></td></tr>
+<tr><th id="669">669</th><td></td></tr>
+<tr><th id="670">670</th><td><u>#<span data-ppcond="24">endif</span> /* mbedtls_x509_crt.h */</u></td></tr>
+<tr><th id="671">671</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../vpp_1804/src/plugins/tlsmbedtls/tls_mbedtls.c.html'>vpp_1804/src/plugins/tlsmbedtls/tls_mbedtls.c</a><br/>Generated on <em>2018-Jul-30</em> from project include<br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

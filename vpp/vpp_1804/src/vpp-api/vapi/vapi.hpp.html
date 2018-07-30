@@ -1,0 +1,923 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>vapi.hpp source code [vpp_1804/src/vpp-api/vapi/vapi.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="vapi::Common_req,vapi::Connection,vapi::Dump,vapi::Event_registration,vapi::Msg,vapi::Msg_not_available_exception,vapi::Request,vapi::Result_set,vapi::Unexpected_msg_id_exception,vapi::vapi_has_payload_trait "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'vpp_1804/src/vpp-api/vapi/vapi.hpp'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>vpp_1804</a>/<a href='../..'>src</a>/<a href='..'>vpp-api</a>/<a href='./'>vapi</a>/<a href='vapi.hpp.html'>vapi.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> *------------------------------------------------------------------</i></td></tr>
+<tr><th id="3">3</th><td><i> * Copyright (c) 2017 Cisco and/or its affiliates.</i></td></tr>
+<tr><th id="4">4</th><td><i> * Licensed under the Apache License, Version 2.0 (the "License");</i></td></tr>
+<tr><th id="5">5</th><td><i> * you may not use this file except in compliance with the License.</i></td></tr>
+<tr><th id="6">6</th><td><i> * You may obtain a copy of the License at:</i></td></tr>
+<tr><th id="7">7</th><td><i> *</i></td></tr>
+<tr><th id="8">8</th><td><i> *     <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></i></td></tr>
+<tr><th id="9">9</th><td><i> *</i></td></tr>
+<tr><th id="10">10</th><td><i> * Unless required by applicable law or agreed to in writing, software</i></td></tr>
+<tr><th id="11">11</th><td><i> * distributed under the License is distributed on an "AS IS" BASIS,</i></td></tr>
+<tr><th id="12">12</th><td><i> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</i></td></tr>
+<tr><th id="13">13</th><td><i> * See the License for the specific language governing permissions and</i></td></tr>
+<tr><th id="14">14</th><td><i> * limitations under the License.</i></td></tr>
+<tr><th id="15">15</th><td><i> *------------------------------------------------------------------</i></td></tr>
+<tr><th id="16">16</th><td><i> */</i></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><u>#<span data-ppcond="18">ifndef</span> <span class="macro" data-ref="_M/vapi_hpp_included">vapi_hpp_included</span></u></td></tr>
+<tr><th id="19">19</th><td><u>#define <dfn class="macro" id="_M/vapi_hpp_included" data-ref="_M/vapi_hpp_included">vapi_hpp_included</dfn></u></td></tr>
+<tr><th id="20">20</th><td></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../../include/c++/4.8.2/cstddef.html">&lt;cstddef&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../../include/c++/4.8.2/vector.html">&lt;vector&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../../../include/c++/4.8.2/mutex.html">&lt;mutex&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../../../../include/c++/4.8.2/queue.html">&lt;queue&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../../../include/c++/4.8.2/cassert.html">&lt;cassert&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../../../../include/c++/4.8.2/functional.html">&lt;functional&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../../../../include/c++/4.8.2/algorithm.html">&lt;algorithm&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../../../../include/c++/4.8.2/atomic.html">&lt;atomic&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../../vppinfra/types.h.html">&lt;vppinfra/types.h&gt;</a></u></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="vapi.h.html">&lt;vapi/vapi.h&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="vapi_internal.h.html">&lt;vapi/vapi_internal.h&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="vapi_dbg.h.html">&lt;vapi/vapi_dbg.h&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="../../../build-root/build-vpp_debug-native/vpp/vpp-api/vapi/vapi/vpe.api.vapi.h.html">&lt;vapi/vpe.api.vapi.h&gt;</a></u></td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td><u>#<span data-ppcond="35">if</span> <a class="macro" href="vapi_dbg.h.html#25" title="(0)" data-ref="_M/VAPI_CPP_DEBUG_LEAKS">VAPI_CPP_DEBUG_LEAKS</a></u></td></tr>
+<tr><th id="36">36</th><td><u>#include &lt;unordered_set&gt;</u></td></tr>
+<tr><th id="37">37</th><td><u>#<span data-ppcond="35">endif</span></u></td></tr>
+<tr><th id="38">38</th><td></td></tr>
+<tr><th id="39">39</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="40">40</th><td><i class="doc"> *<span class="command"> @file</span></i></td></tr>
+<tr><th id="41">41</th><td><i class="doc"> * <span class="command">@brief</span> C++ VPP API</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td><b>namespace</b> <span class="namespace">vapi</span></td></tr>
+<tr><th id="45">45</th><td>{</td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td><b>class</b> <a class="type" href="#vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</a>;</td></tr>
+<tr><th id="48">48</th><td></td></tr>
+<tr><th id="49">49</th><td><b>template</b> &lt;<b>typename</b> Req, <b>typename</b> Resp, <b>typename</b>... Args&gt; <b>class</b> <a class="type" href="#vapi::Request" title='vapi::Request' data-ref="vapi::Request">Request</a>;</td></tr>
+<tr><th id="50">50</th><td><b>template</b> &lt;<b>typename</b> M&gt; <b>class</b> <a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>;</td></tr>
+<tr><th id="51">51</th><td><b>template</b> &lt;<b>typename</b> M&gt; <em>void</em> <dfn class="decl fn" id="_ZN4vapi15vapi_swap_to_beEPT_" title='vapi::vapi_swap_to_be' data-ref="_ZN4vapi15vapi_swap_to_beEPT_">vapi_swap_to_be</dfn> (M *<dfn class="local col4 decl" id="11304msg" title='msg' data-type='M *' data-ref="11304msg">msg</dfn>);</td></tr>
+<tr><th id="52">52</th><td><b>template</b> &lt;<b>typename</b> M&gt; <em>void</em> <dfn class="decl fn" id="_ZN4vapi17vapi_swap_to_hostEPT_" title='vapi::vapi_swap_to_host' data-ref="_ZN4vapi17vapi_swap_to_hostEPT_">vapi_swap_to_host</dfn> (M *<dfn class="local col5 decl" id="11305msg" title='msg' data-type='M *' data-ref="11305msg">msg</dfn>);</td></tr>
+<tr><th id="53">53</th><td><b>template</b> &lt;<b>typename</b> M, <b>typename</b>... Args&gt;</td></tr>
+<tr><th id="54">54</th><td>M *<dfn class="decl fn" id="_ZN4vapi10vapi_allocERNS_10ConnectionEDpT0_" title='vapi::vapi_alloc' data-ref="_ZN4vapi10vapi_allocERNS_10ConnectionEDpT0_">vapi_alloc</dfn> (<a class="type" href="#vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</a> &amp;<dfn class="local col6 decl" id="11306con" title='con' data-type='vapi::Connection &amp;' data-ref="11306con">con</dfn>, Args...);</td></tr>
+<tr><th id="55">55</th><td><b>template</b> &lt;<b>typename</b> M&gt; <a class="typedef" href="vapi_common.h.html#vapi_msg_id_t" title='vapi_msg_id_t' data-type='unsigned int' data-ref="vapi_msg_id_t">vapi_msg_id_t</a> <dfn class="decl fn" id="_ZN4vapi17vapi_get_msg_id_tEv" title='vapi::vapi_get_msg_id_t' data-ref="_ZN4vapi17vapi_get_msg_id_tEv">vapi_get_msg_id_t</dfn> ();</td></tr>
+<tr><th id="56">56</th><td><b>template</b> &lt;<b>typename</b> M&gt; <b>class</b> <a class="type" href="#vapi::Event_registration" title='vapi::Event_registration' data-ref="vapi::Event_registration">Event_registration</a>;</td></tr>
+<tr><th id="57">57</th><td></td></tr>
+<tr><th id="58">58</th><td><b>class</b> <dfn class="type def" id="vapi::Unexpected_msg_id_exception" title='vapi::Unexpected_msg_id_exception' data-ref="vapi::Unexpected_msg_id_exception">Unexpected_msg_id_exception</dfn> : <b>public</b> <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/exception.html#std::exception" title='std::exception' data-ref="std::exception">exception</a></td></tr>
+<tr><th id="59">59</th><td>{</td></tr>
+<tr><th id="60">60</th><td><b>public</b>:</td></tr>
+<tr><th id="61">61</th><td>  <b>virtual</b> <em>const</em> <em>char</em> *<dfn class="virtual decl def fn" id="_ZNK4vapi27Unexpected_msg_id_exception4whatEv" title='vapi::Unexpected_msg_id_exception::what' data-ref="_ZNK4vapi27Unexpected_msg_id_exception4whatEv">what</dfn> () <em>const</em> <b>throw</b> ()</td></tr>
+<tr><th id="62">62</th><td>  {</td></tr>
+<tr><th id="63">63</th><td>    <b>return</b> <q>"unexpected message id"</q>;</td></tr>
+<tr><th id="64">64</th><td>  }</td></tr>
+<tr><th id="65">65</th><td>};</td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td><b>class</b> <dfn class="type def" id="vapi::Msg_not_available_exception" title='vapi::Msg_not_available_exception' data-ref="vapi::Msg_not_available_exception">Msg_not_available_exception</dfn> : <b>public</b> <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/exception.html#std::exception" title='std::exception' data-ref="std::exception">exception</a></td></tr>
+<tr><th id="68">68</th><td>{</td></tr>
+<tr><th id="69">69</th><td><b>public</b>:</td></tr>
+<tr><th id="70">70</th><td>  <b>virtual</b> <em>const</em> <em>char</em> *<dfn class="virtual decl def fn" id="_ZNK4vapi27Msg_not_available_exception4whatEv" title='vapi::Msg_not_available_exception::what' data-ref="_ZNK4vapi27Msg_not_available_exception4whatEv">what</dfn> () <em>const</em> <b>throw</b> ()</td></tr>
+<tr><th id="71">71</th><td>  {</td></tr>
+<tr><th id="72">72</th><td>    <b>return</b> <q>"message unavailable"</q>;</td></tr>
+<tr><th id="73">73</th><td>  }</td></tr>
+<tr><th id="74">74</th><td>};</td></tr>
+<tr><th id="75">75</th><td></td></tr>
+<tr><th id="76">76</th><td><b>typedef</b> <b>enum</b> {</td></tr>
+<tr><th id="77">77</th><td>  <i class="doc">/** response not ready yet */</i></td></tr>
+<tr><th id="78">78</th><td>  <dfn class="enum" id="vapi::RESPONSE_NOT_READY" title='vapi::RESPONSE_NOT_READY' data-ref="vapi::RESPONSE_NOT_READY">RESPONSE_NOT_READY</dfn>,</td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td>  <i class="doc">/** response to request is ready */</i></td></tr>
+<tr><th id="81">81</th><td>  <dfn class="enum" id="vapi::RESPONSE_READY" title='vapi::RESPONSE_READY' data-ref="vapi::RESPONSE_READY">RESPONSE_READY</dfn>,</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td>  <i class="doc">/** no response to request (will never come) */</i></td></tr>
+<tr><th id="84">84</th><td>  <dfn class="enum" id="vapi::RESPONSE_NO_RESPONSE" title='vapi::RESPONSE_NO_RESPONSE' data-ref="vapi::RESPONSE_NO_RESPONSE">RESPONSE_NO_RESPONSE</dfn>,</td></tr>
+<tr><th id="85">85</th><td>} <dfn class="typedef" id="vapi::vapi_response_state_e" title='vapi::vapi_response_state_e' data-type='enum vapi_response_state_e' data-ref="vapi::vapi_response_state_e">vapi_response_state_e</dfn>;</td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc"> * Class representing common functionality of a request - response state</i></td></tr>
+<tr><th id="89">89</th><td><i class="doc"> * and context</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="91">91</th><td><b>class</b> <dfn class="type def" id="vapi::Common_req" title='vapi::Common_req' data-ref="vapi::Common_req">Common_req</dfn></td></tr>
+<tr><th id="92">92</th><td>{</td></tr>
+<tr><th id="93">93</th><td><b>public</b>:</td></tr>
+<tr><th id="94">94</th><td>  <b>virtual</b> <dfn class="virtual decl def fn" id="_ZN4vapi10Common_reqD1Ev" title='vapi::Common_req::~Common_req' data-ref="_ZN4vapi10Common_reqD1Ev">~Common_req</dfn> (){};</td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td>  <a class="type" href="#vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</a> &amp;<dfn class="decl def fn" id="_ZN4vapi10Common_req14get_connectionEv" title='vapi::Common_req::get_connection' data-ref="_ZN4vapi10Common_req14get_connectionEv">get_connection</dfn> ()</td></tr>
+<tr><th id="97">97</th><td>  {</td></tr>
+<tr><th id="98">98</th><td>    <b>return</b> <a class="member field" href="#vapi::Common_req::con" title='vapi::Common_req::con' data-ref="vapi::Common_req::con">con</a>;</td></tr>
+<tr><th id="99">99</th><td>  };</td></tr>
+<tr><th id="100">100</th><td></td></tr>
+<tr><th id="101">101</th><td>  <a class="typedef" href="#vapi::vapi_response_state_e" title='vapi::vapi_response_state_e' data-type='enum vapi_response_state_e' data-ref="vapi::vapi_response_state_e">vapi_response_state_e</a> <dfn class="decl def fn" id="_ZNK4vapi10Common_req18get_response_stateEv" title='vapi::Common_req::get_response_state' data-ref="_ZNK4vapi10Common_req18get_response_stateEv">get_response_state</dfn> (<em>void</em>) <em>const</em></td></tr>
+<tr><th id="102">102</th><td>  {</td></tr>
+<tr><th id="103">103</th><td>    <b>return</b> <a class="member field" href="#vapi::Common_req::response_state" title='vapi::Common_req::response_state' data-ref="vapi::Common_req::response_state">response_state</a>;</td></tr>
+<tr><th id="104">104</th><td>  }</td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td><b>private</b>:</td></tr>
+<tr><th id="107">107</th><td>  <a class="type" href="#vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</a> &amp;<dfn class="decl field" id="vapi::Common_req::con" title='vapi::Common_req::con' data-ref="vapi::Common_req::con">con</dfn>;</td></tr>
+<tr><th id="108">108</th><td>  <dfn class="decl def fn" id="_ZN4vapi10Common_reqC1ERNS_10ConnectionE" title='vapi::Common_req::Common_req' data-ref="_ZN4vapi10Common_reqC1ERNS_10ConnectionE">Common_req</dfn> (<a class="type" href="#vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</a> &amp;<dfn class="local col7 decl" id="11307con" title='con' data-type='vapi::Connection &amp;' data-ref="11307con">con</dfn>)</td></tr>
+<tr><th id="109">109</th><td>      : <a class="member field" href="#vapi::Common_req::con" title='vapi::Common_req::con' data-ref="vapi::Common_req::con">con</a> (<a class="local col7 ref" href="#11307con" title='con' data-ref="11307con">con</a>), <a class="member field" href="#vapi::Common_req::context" title='vapi::Common_req::context' data-ref="vapi::Common_req::context">context</a>{<var>0</var>}, <a class="member field" href="#vapi::Common_req::response_state" title='vapi::Common_req::response_state' data-ref="vapi::Common_req::response_state">response_state</a>{<a class="enum" href="#vapi::RESPONSE_NOT_READY" title='vapi::RESPONSE_NOT_READY' data-ref="vapi::RESPONSE_NOT_READY">RESPONSE_NOT_READY</a>}</td></tr>
+<tr><th id="110">110</th><td>  {</td></tr>
+<tr><th id="111">111</th><td>  }</td></tr>
+<tr><th id="112">112</th><td></td></tr>
+<tr><th id="113">113</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN4vapi10Common_req18set_response_stateENS_21vapi_response_state_eE" title='vapi::Common_req::set_response_state' data-ref="_ZN4vapi10Common_req18set_response_stateENS_21vapi_response_state_eE">set_response_state</dfn> (<a class="typedef" href="#vapi::vapi_response_state_e" title='vapi::vapi_response_state_e' data-type='enum vapi_response_state_e' data-ref="vapi::vapi_response_state_e">vapi_response_state_e</a> <dfn class="local col8 decl" id="11308state" title='state' data-type='vapi::vapi_response_state_e' data-ref="11308state">state</dfn>)</td></tr>
+<tr><th id="114">114</th><td>  {</td></tr>
+<tr><th id="115">115</th><td>    <a class="member field" href="#vapi::Common_req::response_state" title='vapi::Common_req::response_state' data-ref="vapi::Common_req::response_state">response_state</a> = <a class="local col8 ref" href="#11308state" title='state' data-ref="11308state">state</a>;</td></tr>
+<tr><th id="116">116</th><td>  }</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td>  <b>virtual</b> <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/bits/stl_pair.h.html#std::tuple" title='std::tuple' data-ref="std::tuple">tuple</a>&lt;<a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a>, <em>bool</em>&gt; <dfn class="virtual decl fn" id="_ZN4vapi10Common_req15assign_responseEjPv" title='vapi::Common_req::assign_response' data-ref="_ZN4vapi10Common_req15assign_responseEjPv">assign_response</dfn> (<a class="typedef" href="vapi_common.h.html#vapi_msg_id_t" title='vapi_msg_id_t' data-type='unsigned int' data-ref="vapi_msg_id_t">vapi_msg_id_t</a> <dfn class="local col9 decl" id="11309id" title='id' data-type='vapi_msg_id_t' data-ref="11309id">id</dfn>,</td></tr>
+<tr><th id="119">119</th><td>                                                          <em>void</em> *<dfn class="local col0 decl" id="11310shm_data" title='shm_data' data-type='void *' data-ref="11310shm_data">shm_data</dfn>) = <var>0</var>;</td></tr>
+<tr><th id="120">120</th><td></td></tr>
+<tr><th id="121">121</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN4vapi10Common_req11set_contextEj" title='vapi::Common_req::set_context' data-ref="_ZN4vapi10Common_req11set_contextEj">set_context</dfn> (<a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col1 decl" id="11311context" title='context' data-type='u32' data-ref="11311context">context</dfn>)</td></tr>
+<tr><th id="122">122</th><td>  {</td></tr>
+<tr><th id="123">123</th><td>    <b>this</b>-&gt;<a class="member field" href="#vapi::Common_req::context" title='vapi::Common_req::context' data-ref="vapi::Common_req::context">context</a> = <a class="local col1 ref" href="#11311context" title='context' data-ref="11311context">context</a>;</td></tr>
+<tr><th id="124">124</th><td>  }</td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl def fn" id="_ZN4vapi10Common_req11get_contextEv" title='vapi::Common_req::get_context' data-ref="_ZN4vapi10Common_req11get_contextEv">get_context</dfn> ()</td></tr>
+<tr><th id="127">127</th><td>  {</td></tr>
+<tr><th id="128">128</th><td>    <b>return</b> <a class="member field" href="#vapi::Common_req::context" title='vapi::Common_req::context' data-ref="vapi::Common_req::context">context</a>;</td></tr>
+<tr><th id="129">129</th><td>  }</td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td>  <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="vapi::Common_req::context" title='vapi::Common_req::context' data-ref="vapi::Common_req::context">context</dfn>;</td></tr>
+<tr><th id="132">132</th><td>  <a class="typedef" href="#vapi::vapi_response_state_e" title='vapi::vapi_response_state_e' data-type='enum vapi_response_state_e' data-ref="vapi::vapi_response_state_e">vapi_response_state_e</a> <dfn class="decl field" id="vapi::Common_req::response_state" title='vapi::Common_req::response_state' data-ref="vapi::Common_req::response_state">response_state</dfn>;</td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td>  <b>friend</b> <b>class</b> <a class="type" href="#vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</a>;</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td>  <b>template</b> &lt;<b>typename</b> M&gt; <b>friend</b> <b>class</b> <a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>;</td></tr>
+<tr><th id="137">137</th><td></td></tr>
+<tr><th id="138">138</th><td>  <b>template</b> &lt;<b>typename</b> Req, <b>typename</b> Resp, <b>typename</b>... Args&gt;</td></tr>
+<tr><th id="139">139</th><td>  <b>friend</b> <b>class</b> <a class="type" href="#vapi::Request" title='vapi::Request' data-ref="vapi::Request">Request</a>;</td></tr>
+<tr><th id="140">140</th><td></td></tr>
+<tr><th id="141">141</th><td>  <b>template</b> &lt;<b>typename</b> Req, <b>typename</b> Resp, <b>typename</b>... Args&gt; <b>friend</b> <b>class</b> <a class="type" href="#vapi::Dump" title='vapi::Dump' data-ref="vapi::Dump">Dump</a>;</td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td>  <b>template</b> &lt;<b>typename</b> M&gt; <b>friend</b> <b>class</b> <a class="type" href="#vapi::Event_registration" title='vapi::Event_registration' data-ref="vapi::Event_registration">Event_registration</a>;</td></tr>
+<tr><th id="144">144</th><td>};</td></tr>
+<tr><th id="145">145</th><td></td></tr>
+<tr><th id="146">146</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="147">147</th><td><i class="doc"> * Class representing a connection to VPP</i></td></tr>
+<tr><th id="148">148</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="149">149</th><td><i class="doc"> * After creating a Connection object, call connect() to actually connect</i></td></tr>
+<tr><th id="150">150</th><td><i class="doc"> * to VPP. Use is_msg_available to discover whether a specific message is known</i></td></tr>
+<tr><th id="151">151</th><td><i class="doc"> * and supported by the VPP connected to.</i></td></tr>
+<tr><th id="152">152</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="153">153</th><td><b>class</b> <dfn class="type def" id="vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</dfn></td></tr>
+<tr><th id="154">154</th><td>{</td></tr>
+<tr><th id="155">155</th><td><b>public</b>:</td></tr>
+<tr><th id="156">156</th><td>  <dfn class="decl def fn" id="_ZN4vapi10ConnectionC1Ev" title='vapi::Connection::Connection' data-ref="_ZN4vapi10ConnectionC1Ev">Connection</dfn> (<em>void</em>) : <a class="member field" href="#vapi::Connection::vapi_ctx" title='vapi::Connection::vapi_ctx' data-ref="vapi::Connection::vapi_ctx">vapi_ctx</a>{<var>0</var>}, <a class="member field" href="#vapi::Connection::event_count" title='vapi::Connection::event_count' data-ref="vapi::Connection::event_count">event_count</a>{<var>0</var>}</td></tr>
+<tr><th id="157">157</th><td>  {</td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td>    <a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> <dfn class="local col2 decl" id="11312rv" title='rv' data-type='vapi_error_e' data-ref="11312rv">rv</dfn> = <a class="enum" href="vapi_common.h.html#VAPI_OK" title='VAPI_OK' data-ref="VAPI_OK">VAPI_OK</a>;</td></tr>
+<tr><th id="160">160</th><td>    <b>if</b> (!<a class="member field" href="#vapi::Connection::vapi_ctx" title='vapi::Connection::vapi_ctx' data-ref="vapi::Connection::vapi_ctx">vapi_ctx</a>)</td></tr>
+<tr><th id="161">161</th><td>      {</td></tr>
+<tr><th id="162">162</th><td>        <b>if</b> (<a class="enum" href="vapi_common.h.html#VAPI_OK" title='VAPI_OK' data-ref="VAPI_OK">VAPI_OK</a> != (<a class="local col2 ref" href="#11312rv" title='rv' data-ref="11312rv">rv</a> = <a class="ref fn" href="vapi.h.html#vapi_ctx_alloc" title='vapi_ctx_alloc' data-ref="vapi_ctx_alloc">vapi_ctx_alloc</a> (&amp;<a class="member field" href="#vapi::Connection::vapi_ctx" title='vapi::Connection::vapi_ctx' data-ref="vapi::Connection::vapi_ctx">vapi_ctx</a>)))</td></tr>
+<tr><th id="163">163</th><td>          {</td></tr>
+<tr><th id="164">164</th><td>            <b>throw</b> <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/new.html#std::bad_alloc" title='std::bad_alloc' data-ref="std::bad_alloc">bad_alloc</a> <a class="ref fn" href="../../../../include/c++/4.8.2/new.html#_ZNSt9bad_allocC1Ev" title='std::bad_alloc::bad_alloc' data-ref="_ZNSt9bad_allocC1Ev">(</a>);</td></tr>
+<tr><th id="165">165</th><td>          }</td></tr>
+<tr><th id="166">166</th><td>      }</td></tr>
+<tr><th id="167">167</th><td>    <a class="member field" href="#vapi::Connection::events" title='vapi::Connection::events' data-ref="vapi::Connection::events">events</a>.<a class="ref fn" href="../../../../include/c++/4.8.2/bits/stl_vector.h.html#_ZNSt6vector7reserveEm" title='std::vector::reserve' data-ref="_ZNSt6vector7reserveEm">reserve</a> (<a class="ref fn" href="vapi_internal.h.html#vapi_get_message_count" title='vapi_get_message_count' data-ref="vapi_get_message_count">vapi_get_message_count</a> () + <var>1</var>);</td></tr>
+<tr><th id="168">168</th><td>  }</td></tr>
+<tr><th id="169">169</th><td></td></tr>
+<tr><th id="170">170</th><td>  <dfn class="decl def fn" id="_ZN4vapi10ConnectionC1ERKS0_" title='vapi::Connection::Connection' data-ref="_ZN4vapi10ConnectionC1ERKS0_">Connection</dfn> (<em>const</em> <a class="type" href="#vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</a> &amp;) = <b>delete</b>;</td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td>  <dfn class="decl def fn" id="_ZN4vapi10ConnectionD1Ev" title='vapi::Connection::~Connection' data-ref="_ZN4vapi10ConnectionD1Ev">~Connection</dfn> (<em>void</em>)</td></tr>
+<tr><th id="173">173</th><td>  {</td></tr>
+<tr><th id="174">174</th><td>    <a class="ref fn" href="vapi.h.html#vapi_ctx_free" title='vapi_ctx_free' data-ref="vapi_ctx_free">vapi_ctx_free</a> (<a class="member field" href="#vapi::Connection::vapi_ctx" title='vapi::Connection::vapi_ctx' data-ref="vapi::Connection::vapi_ctx">vapi_ctx</a>);</td></tr>
+<tr><th id="175">175</th><td><u>#<span data-ppcond="175">if</span> <a class="macro" href="vapi_dbg.h.html#25" title="(0)" data-ref="_M/VAPI_CPP_DEBUG_LEAKS">VAPI_CPP_DEBUG_LEAKS</a></u></td></tr>
+<tr><th id="176">176</th><td>    <b>for</b> (<em>auto</em> x : shm_data_set)</td></tr>
+<tr><th id="177">177</th><td>      {</td></tr>
+<tr><th id="178">178</th><td>        printf (<q>"Leaked shm_data@%p!\n"</q>, x);</td></tr>
+<tr><th id="179">179</th><td>      }</td></tr>
+<tr><th id="180">180</th><td><u>#<span data-ppcond="175">endif</span></u></td></tr>
+<tr><th id="181">181</th><td>  }</td></tr>
+<tr><th id="182">182</th><td></td></tr>
+<tr><th id="183">183</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc">   * <span class="command">@brief</span> check if message identified by it's message id is known by the</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc">   * vpp to which the connection is open</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="187">187</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZN4vapi10Connection16is_msg_availableEj" title='vapi::Connection::is_msg_available' data-ref="_ZN4vapi10Connection16is_msg_availableEj">is_msg_available</dfn> (<a class="typedef" href="vapi_common.h.html#vapi_msg_id_t" title='vapi_msg_id_t' data-type='unsigned int' data-ref="vapi_msg_id_t">vapi_msg_id_t</a> <dfn class="local col3 decl" id="11313type" title='type' data-type='vapi_msg_id_t' data-ref="11313type">type</dfn>)</td></tr>
+<tr><th id="188">188</th><td>  {</td></tr>
+<tr><th id="189">189</th><td>    <b>return</b> <a class="ref fn" href="vapi.h.html#vapi_is_msg_available" title='vapi_is_msg_available' data-ref="vapi_is_msg_available">vapi_is_msg_available</a> (<a class="member field" href="#vapi::Connection::vapi_ctx" title='vapi::Connection::vapi_ctx' data-ref="vapi::Connection::vapi_ctx">vapi_ctx</a>, <a class="local col3 ref" href="#11313type" title='type' data-ref="11313type">type</a>);</td></tr>
+<tr><th id="190">190</th><td>  }</td></tr>
+<tr><th id="191">191</th><td></td></tr>
+<tr><th id="192">192</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="193">193</th><td><i class="doc">   * <span class="command">@brief</span> connect to vpp</i></td></tr>
+<tr><th id="194">194</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">name</span> application name</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">chroot_prefix</span> shared memory prefix</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">max_queued_request</span> max number of outstanding requests queued</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">   * <span class="command">@return</span> VAPI_OK on success, other error code on error</i></td></tr>
+<tr><th id="200">200</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="201">201</th><td>  <a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> <dfn class="decl def fn" id="_ZN4vapi10Connection7connectEPKcS2_ii" title='vapi::Connection::connect' data-ref="_ZN4vapi10Connection7connectEPKcS2_ii">connect</dfn> (<em>const</em> <em>char</em> *<dfn class="local col4 decl" id="11314name" title='name' data-type='const char *' data-ref="11314name">name</dfn>, <em>const</em> <em>char</em> *<dfn class="local col5 decl" id="11315chroot_prefix" title='chroot_prefix' data-type='const char *' data-ref="11315chroot_prefix">chroot_prefix</dfn>,</td></tr>
+<tr><th id="202">202</th><td>                        <em>int</em> <dfn class="local col6 decl" id="11316max_outstanding_requests" title='max_outstanding_requests' data-type='int' data-ref="11316max_outstanding_requests">max_outstanding_requests</dfn>, <em>int</em> <dfn class="local col7 decl" id="11317response_queue_size" title='response_queue_size' data-type='int' data-ref="11317response_queue_size">response_queue_size</dfn>)</td></tr>
+<tr><th id="203">203</th><td>  {</td></tr>
+<tr><th id="204">204</th><td>    <b>return</b> <a class="ref fn" href="vapi.h.html#vapi_connect" title='vapi_connect' data-ref="vapi_connect">vapi_connect</a> (<a class="member field" href="#vapi::Connection::vapi_ctx" title='vapi::Connection::vapi_ctx' data-ref="vapi::Connection::vapi_ctx">vapi_ctx</a>, <a class="local col4 ref" href="#11314name" title='name' data-ref="11314name">name</a>, <a class="local col5 ref" href="#11315chroot_prefix" title='chroot_prefix' data-ref="11315chroot_prefix">chroot_prefix</a>,</td></tr>
+<tr><th id="205">205</th><td>                         <a class="local col6 ref" href="#11316max_outstanding_requests" title='max_outstanding_requests' data-ref="11316max_outstanding_requests">max_outstanding_requests</a>, <a class="local col7 ref" href="#11317response_queue_size" title='response_queue_size' data-ref="11317response_queue_size">response_queue_size</a>,</td></tr>
+<tr><th id="206">206</th><td>                         <a class="enum" href="vapi_common.h.html#VAPI_MODE_BLOCKING" title='VAPI_MODE_BLOCKING' data-ref="VAPI_MODE_BLOCKING">VAPI_MODE_BLOCKING</a>);</td></tr>
+<tr><th id="207">207</th><td>  }</td></tr>
+<tr><th id="208">208</th><td></td></tr>
+<tr><th id="209">209</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="210">210</th><td><i class="doc">   * <span class="command">@brief</span> disconnect from vpp</i></td></tr>
+<tr><th id="211">211</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="212">212</th><td><i class="doc">   * <span class="command">@return</span> VAPI_OK on success, other error code on error</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="214">214</th><td>  <a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> <dfn class="decl def fn" id="_ZN4vapi10Connection10disconnectEv" title='vapi::Connection::disconnect' data-ref="_ZN4vapi10Connection10disconnectEv">disconnect</dfn> ()</td></tr>
+<tr><th id="215">215</th><td>  {</td></tr>
+<tr><th id="216">216</th><td>    <em>auto</em> <dfn class="local col8 decl" id="11318x" title='x' data-type='unsigned long' data-ref="11318x">x</dfn> = <a class="member field" href="#vapi::Connection::requests" title='vapi::Connection::requests' data-ref="vapi::Connection::requests">requests</a>.<a class="ref fn" href="../../../../include/c++/4.8.2/bits/stl_deque.h.html#_ZNKSt5deque4sizeEv" title='std::deque::size' data-ref="_ZNKSt5deque4sizeEv">size</a> ();</td></tr>
+<tr><th id="217">217</th><td>    <b>while</b> (<a class="local col8 ref" href="#11318x" title='x' data-ref="11318x">x</a> &gt; <var>0</var>)</td></tr>
+<tr><th id="218">218</th><td>      {</td></tr>
+<tr><th id="219">219</th><td>        <a class="macro" href="vapi_dbg.h.html#65" title="" data-ref="_M/VAPI_DBG">VAPI_DBG</a> (<q>"popping request @%p"</q>, requests.front ());</td></tr>
+<tr><th id="220">220</th><td>        <a class="member field" href="#vapi::Connection::requests" title='vapi::Connection::requests' data-ref="vapi::Connection::requests">requests</a>.<a class="ref fn" href="../../../../include/c++/4.8.2/bits/stl_deque.h.html#_ZNSt5deque9pop_frontEv" title='std::deque::pop_front' data-ref="_ZNSt5deque9pop_frontEv">pop_front</a> ();</td></tr>
+<tr><th id="221">221</th><td>        --<a class="local col8 ref" href="#11318x" title='x' data-ref="11318x">x</a>;</td></tr>
+<tr><th id="222">222</th><td>      }</td></tr>
+<tr><th id="223">223</th><td>    <b>return</b> <a class="ref fn" href="vapi.h.html#vapi_disconnect" title='vapi_disconnect' data-ref="vapi_disconnect">vapi_disconnect</a> (<a class="member field" href="#vapi::Connection::vapi_ctx" title='vapi::Connection::vapi_ctx' data-ref="vapi::Connection::vapi_ctx">vapi_ctx</a>);</td></tr>
+<tr><th id="224">224</th><td>  };</td></tr>
+<tr><th id="225">225</th><td></td></tr>
+<tr><th id="226">226</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="227">227</th><td><i class="doc">   * <span class="command">@brief</span> get event file descriptor</i></td></tr>
+<tr><th id="228">228</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="229">229</th><td><i class="doc">   * <span class="command">@note</span> this file descriptor becomes readable when messages (from vpp)</i></td></tr>
+<tr><th id="230">230</th><td><i class="doc">   * are waiting in queue</i></td></tr>
+<tr><th id="231">231</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="232">232</th><td><i class="doc">   * <span class="command">@param</span>[out] <span class="arg">fd</span> pointer to result variable</i></td></tr>
+<tr><th id="233">233</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="234">234</th><td><i class="doc">   * <span class="command">@return</span> VAPI_OK on success, other error code on error</i></td></tr>
+<tr><th id="235">235</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="236">236</th><td>  <a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> <dfn class="decl def fn" id="_ZN4vapi10Connection6get_fdEPi" title='vapi::Connection::get_fd' data-ref="_ZN4vapi10Connection6get_fdEPi">get_fd</dfn> (<em>int</em> *<dfn class="local col9 decl" id="11319fd" title='fd' data-type='int *' data-ref="11319fd">fd</dfn>)</td></tr>
+<tr><th id="237">237</th><td>  {</td></tr>
+<tr><th id="238">238</th><td>    <b>return</b> <a class="ref fn" href="vapi.h.html#vapi_get_fd" title='vapi_get_fd' data-ref="vapi_get_fd">vapi_get_fd</a> (<a class="member field" href="#vapi::Connection::vapi_ctx" title='vapi::Connection::vapi_ctx' data-ref="vapi::Connection::vapi_ctx">vapi_ctx</a>, <a class="local col9 ref" href="#11319fd" title='fd' data-ref="11319fd">fd</a>);</td></tr>
+<tr><th id="239">239</th><td>  }</td></tr>
+<tr><th id="240">240</th><td></td></tr>
+<tr><th id="241">241</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="242">242</th><td><i class="doc">   * <span class="command">@brief</span> wait for responses from vpp and assign them to appropriate objects</i></td></tr>
+<tr><th id="243">243</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">limit</span> stop dispatch after the limit object received it's response</i></td></tr>
+<tr><th id="245">245</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="246">246</th><td><i class="doc">   * <span class="command">@return</span> VAPI_OK on success, other error code on error</i></td></tr>
+<tr><th id="247">247</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="248">248</th><td>  <a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> <dfn class="decl def fn" id="_ZN4vapi10Connection8dispatchEPKNS_10Common_reqEj" title='vapi::Connection::dispatch' data-ref="_ZN4vapi10Connection8dispatchEPKNS_10Common_reqEj">dispatch</dfn> (<em>const</em> <a class="type" href="#vapi::Common_req" title='vapi::Common_req' data-ref="vapi::Common_req">Common_req</a> *<dfn class="local col0 decl" id="11320limit" title='limit' data-type='const vapi::Common_req *' data-ref="11320limit">limit</dfn> = <b>nullptr</b>, <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col1 decl" id="11321time" title='time' data-type='u32' data-ref="11321time">time</dfn> = <var>5</var>)</td></tr>
+<tr><th id="249">249</th><td>  {</td></tr>
+<tr><th id="250">250</th><td>    <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::lock_guard" title='std::lock_guard' data-ref="std::lock_guard">lock_guard</a>&lt;<span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::mutex" title='std::mutex' data-ref="std::mutex">mutex</a>&gt; <dfn class="local col2 decl" id="11322lock" title='lock' data-type='std::lock_guard&lt;std::mutex&gt;' data-ref="11322lock">lock</dfn> <a class="ref fn" href="../../../../include/c++/4.8.2/mutex.html#_ZNSt10lock_guardC1ERT_" title='std::lock_guard::lock_guard&lt;_Mutex&gt;' data-ref="_ZNSt10lock_guardC1ERT_">(</a><a class="member field" href="#vapi::Connection::dispatch_mutex" title='vapi::Connection::dispatch_mutex' data-ref="vapi::Connection::dispatch_mutex">dispatch_mutex</a>);</td></tr>
+<tr><th id="251">251</th><td>    <a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> <dfn class="local col3 decl" id="11323rv" title='rv' data-type='vapi_error_e' data-ref="11323rv">rv</dfn> = <a class="enum" href="vapi_common.h.html#VAPI_OK" title='VAPI_OK' data-ref="VAPI_OK">VAPI_OK</a>;</td></tr>
+<tr><th id="252">252</th><td>    <em>bool</em> <dfn class="local col4 decl" id="11324loop_again" title='loop_again' data-type='bool' data-ref="11324loop_again">loop_again</dfn> = <b>true</b>;</td></tr>
+<tr><th id="253">253</th><td>    <b>while</b> (<a class="local col4 ref" href="#11324loop_again" title='loop_again' data-ref="11324loop_again">loop_again</a>)</td></tr>
+<tr><th id="254">254</th><td>      {</td></tr>
+<tr><th id="255">255</th><td>        <em>void</em> *<dfn class="local col5 decl" id="11325shm_data" title='shm_data' data-type='void *' data-ref="11325shm_data">shm_data</dfn>;</td></tr>
+<tr><th id="256">256</th><td>        <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col6 decl" id="11326shm_data_size" title='shm_data_size' data-type='size_t' data-ref="11326shm_data_size">shm_data_size</dfn>;</td></tr>
+<tr><th id="257">257</th><td>        <a class="local col3 ref" href="#11323rv" title='rv' data-ref="11323rv">rv</a> = <a class="ref fn" href="vapi.h.html#vapi_recv" title='vapi_recv' data-ref="vapi_recv">vapi_recv</a> (<a class="member field" href="#vapi::Connection::vapi_ctx" title='vapi::Connection::vapi_ctx' data-ref="vapi::Connection::vapi_ctx">vapi_ctx</a>, &amp;<a class="local col5 ref" href="#11325shm_data" title='shm_data' data-ref="11325shm_data">shm_data</a>, &amp;<a class="local col6 ref" href="#11326shm_data_size" title='shm_data_size' data-ref="11326shm_data_size">shm_data_size</a>, <a class="enum" href="../../svm/queue.h.html#SVM_Q_TIMEDWAIT" title='SVM_Q_TIMEDWAIT' data-ref="SVM_Q_TIMEDWAIT">SVM_Q_TIMEDWAIT</a>,</td></tr>
+<tr><th id="258">258</th><td>                        <a class="local col1 ref" href="#11321time" title='time' data-ref="11321time">time</a>);</td></tr>
+<tr><th id="259">259</th><td>        <b>if</b> (<a class="enum" href="vapi_common.h.html#VAPI_OK" title='VAPI_OK' data-ref="VAPI_OK">VAPI_OK</a> != <a class="local col3 ref" href="#11323rv" title='rv' data-ref="11323rv">rv</a>)</td></tr>
+<tr><th id="260">260</th><td>          {</td></tr>
+<tr><th id="261">261</th><td>            <b>return</b> <a class="local col3 ref" href="#11323rv" title='rv' data-ref="11323rv">rv</a>;</td></tr>
+<tr><th id="262">262</th><td>          }</td></tr>
+<tr><th id="263">263</th><td><u>#<span data-ppcond="263">if</span> <a class="macro" href="vapi_dbg.h.html#25" title="(0)" data-ref="_M/VAPI_CPP_DEBUG_LEAKS">VAPI_CPP_DEBUG_LEAKS</a></u></td></tr>
+<tr><th id="264">264</th><td>        on_shm_data_alloc (shm_data);</td></tr>
+<tr><th id="265">265</th><td><u>#<span data-ppcond="263">endif</span></u></td></tr>
+<tr><th id="266">266</th><td>        <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::lock_guard" title='std::lock_guard' data-ref="std::lock_guard">lock_guard</a>&lt;<span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::recursive_mutex" title='std::recursive_mutex' data-ref="std::recursive_mutex">recursive_mutex</a>&gt; <dfn class="local col7 decl" id="11327requests_lock" title='requests_lock' data-type='std::lock_guard&lt;std::recursive_mutex&gt;' data-ref="11327requests_lock">requests_lock</dfn> <a class="ref fn" href="../../../../include/c++/4.8.2/mutex.html#_ZNSt10lock_guardC1ERT_" title='std::lock_guard::lock_guard&lt;_Mutex&gt;' data-ref="_ZNSt10lock_guardC1ERT_">(</a><a class="member field" href="#vapi::Connection::requests_mutex" title='vapi::Connection::requests_mutex' data-ref="vapi::Connection::requests_mutex">requests_mutex</a>);</td></tr>
+<tr><th id="267">267</th><td>        <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::lock_guard" title='std::lock_guard' data-ref="std::lock_guard">lock_guard</a>&lt;<span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::recursive_mutex" title='std::recursive_mutex' data-ref="std::recursive_mutex">recursive_mutex</a>&gt; <dfn class="local col8 decl" id="11328events_lock" title='events_lock' data-type='std::lock_guard&lt;std::recursive_mutex&gt;' data-ref="11328events_lock">events_lock</dfn> <a class="ref fn" href="../../../../include/c++/4.8.2/mutex.html#_ZNSt10lock_guardC1ERT_" title='std::lock_guard::lock_guard&lt;_Mutex&gt;' data-ref="_ZNSt10lock_guardC1ERT_">(</a><a class="member field" href="#vapi::Connection::events_mutex" title='vapi::Connection::events_mutex' data-ref="vapi::Connection::events_mutex">events_mutex</a>);</td></tr>
+<tr><th id="268">268</th><td>        <a class="typedef" href="vapi_common.h.html#vapi_msg_id_t" title='vapi_msg_id_t' data-type='unsigned int' data-ref="vapi_msg_id_t">vapi_msg_id_t</a> <dfn class="local col9 decl" id="11329id" title='id' data-type='vapi_msg_id_t' data-ref="11329id">id</dfn> = <a class="ref fn" href="vapi_internal.h.html#vapi_lookup_vapi_msg_id_t" title='vapi_lookup_vapi_msg_id_t' data-ref="vapi_lookup_vapi_msg_id_t">vapi_lookup_vapi_msg_id_t</a> (</td></tr>
+<tr><th id="269">269</th><td>            <a class="member field" href="#vapi::Connection::vapi_ctx" title='vapi::Connection::vapi_ctx' data-ref="vapi::Connection::vapi_ctx">vapi_ctx</a>, <a class="macro" href="../../../../include/endian.h.html#65" title="(__extension__ ({ register unsigned short int __v, __x = (unsigned short int) (*static_cast&lt;u16 *&gt; (shm_data)); if (__builtin_constant_p (__x)) __v = ((unsigned short int) ((((__x) &gt;&gt; 8) &amp; 0xff) | (((__x) &amp; 0xff) &lt;&lt; 8))); else __asm__ (&quot;rorw $8, %w0&quot; : &quot;=r&quot; (__v) : &quot;0&quot; (__x) : &quot;cc&quot;); __v; }))" data-ref="_M/be16toh">be16toh</a> (*<b>static_cast</b>&lt;<a class="typedef" href="../../vppinfra/types.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> *&gt; (<a class="local col5 ref" href="#11325shm_data" title='shm_data' data-ref="11325shm_data">shm_data</a>)));</td></tr>
+<tr><th id="270">270</th><td>        <em>bool</em> <dfn class="local col0 decl" id="11330has_context" title='has_context' data-type='bool' data-ref="11330has_context">has_context</dfn> = <a class="ref fn" href="vapi_internal.h.html#vapi_msg_is_with_context" title='vapi_msg_is_with_context' data-ref="vapi_msg_is_with_context">vapi_msg_is_with_context</a> (<a class="local col9 ref" href="#11329id" title='id' data-ref="11329id">id</a>);</td></tr>
+<tr><th id="271">271</th><td>        <em>bool</em> <dfn class="local col1 decl" id="11331break_dispatch" title='break_dispatch' data-type='bool' data-ref="11331break_dispatch">break_dispatch</dfn> = <b>false</b>;</td></tr>
+<tr><th id="272">272</th><td>        <a class="type" href="#vapi::Common_req" title='vapi::Common_req' data-ref="vapi::Common_req">Common_req</a> *<dfn class="local col2 decl" id="11332matching_req" title='matching_req' data-type='vapi::Common_req *' data-ref="11332matching_req">matching_req</dfn> = <b>nullptr</b>;</td></tr>
+<tr><th id="273">273</th><td>        <b>if</b> (<a class="local col0 ref" href="#11330has_context" title='has_context' data-ref="11330has_context">has_context</a>)</td></tr>
+<tr><th id="274">274</th><td>          {</td></tr>
+<tr><th id="275">275</th><td>            <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col3 decl" id="11333context" title='context' data-type='u32' data-ref="11333context">context</dfn> = *<b>reinterpret_cast</b>&lt;<a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> *&gt; (</td></tr>
+<tr><th id="276">276</th><td>                (<b>static_cast</b>&lt;<a class="typedef" href="../../vppinfra/types.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *&gt; (<a class="local col5 ref" href="#11325shm_data" title='shm_data' data-ref="11325shm_data">shm_data</a>) + <a class="ref fn" href="vapi_internal.h.html#vapi_get_context_offset" title='vapi_get_context_offset' data-ref="vapi_get_context_offset">vapi_get_context_offset</a> (<a class="local col9 ref" href="#11329id" title='id' data-ref="11329id">id</a>)));</td></tr>
+<tr><th id="277">277</th><td>            <em>const</em> <em>auto</em> <dfn class="local col4 decl" id="11334x" title='x' data-type='vapi::Common_req *const' data-ref="11334x">x</dfn> = <a class="member field" href="#vapi::Connection::requests" title='vapi::Connection::requests' data-ref="vapi::Connection::requests">requests</a>.<a class="ref fn" href="../../../../include/c++/4.8.2/bits/stl_deque.h.html#_ZNSt5deque5frontEv" title='std::deque::front' data-ref="_ZNSt5deque5frontEv">front</a> ();</td></tr>
+<tr><th id="278">278</th><td>            <a class="local col2 ref" href="#11332matching_req" title='matching_req' data-ref="11332matching_req">matching_req</a> = <a class="local col4 ref" href="#11334x" title='x' data-ref="11334x">x</a>;</td></tr>
+<tr><th id="279">279</th><td>            <b>if</b> (<a class="local col3 ref" href="#11333context" title='context' data-ref="11333context">context</a> == <a class="local col4 ref" href="#11334x" title='x' data-ref="11334x">x</a>-&gt;<a class="ref field" href="#vapi::Common_req::context" title='vapi::Common_req::context' data-ref="vapi::Common_req::context">context</a>)</td></tr>
+<tr><th id="280">280</th><td>              {</td></tr>
+<tr><th id="281">281</th><td>                <span class="namespace">std::</span><a class="ref fn" href="../../../../include/c++/4.8.2/tuple.html#_ZSt3tieDpRT_" title='std::tie' data-ref="_ZSt3tieDpRT_">tie</a> (<span class='refarg'><a class="local col3 ref" href="#11323rv" title='rv' data-ref="11323rv">rv</a></span>, <span class='refarg'><a class="local col1 ref" href="#11331break_dispatch" title='break_dispatch' data-ref="11331break_dispatch">break_dispatch</a></span>) <a class="ref fn" href="../../../../include/c++/4.8.2/tuple.html#_ZNSt5tupleIJT_T0_EEaSEOS_IJT_T0_EE" title='std::tuple&lt;type-parameter-0-0, type-parameter-0-1&gt;::operator=' data-ref="_ZNSt5tupleIJT_T0_EEaSEOS_IJT_T0_EE">=</a></td></tr>
+<tr><th id="282">282</th><td>                    <a class="local col4 ref" href="#11334x" title='x' data-ref="11334x">x</a>-&gt;<a class="virtual ref fn" href="#_ZN4vapi10Common_req15assign_responseEjPv" title='vapi::Common_req::assign_response' data-ref="_ZN4vapi10Common_req15assign_responseEjPv">assign_response</a> (<a class="local col9 ref" href="#11329id" title='id' data-ref="11329id">id</a>, <a class="local col5 ref" href="#11325shm_data" title='shm_data' data-ref="11325shm_data">shm_data</a>);</td></tr>
+<tr><th id="283">283</th><td>              }</td></tr>
+<tr><th id="284">284</th><td>            <b>else</b></td></tr>
+<tr><th id="285">285</th><td>              {</td></tr>
+<tr><th id="286">286</th><td>                <span class="namespace">std::</span><a class="ref fn" href="../../../../include/c++/4.8.2/tuple.html#_ZSt3tieDpRT_" title='std::tie' data-ref="_ZSt3tieDpRT_">tie</a> (<span class='refarg'><a class="local col3 ref" href="#11323rv" title='rv' data-ref="11323rv">rv</a></span>, <span class='refarg'><a class="local col1 ref" href="#11331break_dispatch" title='break_dispatch' data-ref="11331break_dispatch">break_dispatch</a></span>) <a class="ref fn" href="../../../../include/c++/4.8.2/tuple.html#_ZNSt5tupleIJT_T0_EEaSEOS_IJT_T0_EE" title='std::tuple&lt;type-parameter-0-0, type-parameter-0-1&gt;::operator=' data-ref="_ZNSt5tupleIJT_T0_EEaSEOS_IJT_T0_EE">=</a></td></tr>
+<tr><th id="287">287</th><td>                    <a class="local col4 ref" href="#11334x" title='x' data-ref="11334x">x</a>-&gt;<a class="virtual ref fn" href="#_ZN4vapi10Common_req15assign_responseEjPv" title='vapi::Common_req::assign_response' data-ref="_ZN4vapi10Common_req15assign_responseEjPv">assign_response</a> (<a class="local col9 ref" href="#11329id" title='id' data-ref="11329id">id</a>, <b>nullptr</b>);</td></tr>
+<tr><th id="288">288</th><td>              }</td></tr>
+<tr><th id="289">289</th><td>            <b>if</b> (<a class="local col1 ref" href="#11331break_dispatch" title='break_dispatch' data-ref="11331break_dispatch">break_dispatch</a>)</td></tr>
+<tr><th id="290">290</th><td>              {</td></tr>
+<tr><th id="291">291</th><td>                <a class="member field" href="#vapi::Connection::requests" title='vapi::Connection::requests' data-ref="vapi::Connection::requests">requests</a>.<a class="ref fn" href="../../../../include/c++/4.8.2/bits/stl_deque.h.html#_ZNSt5deque9pop_frontEv" title='std::deque::pop_front' data-ref="_ZNSt5deque9pop_frontEv">pop_front</a> ();</td></tr>
+<tr><th id="292">292</th><td>              }</td></tr>
+<tr><th id="293">293</th><td>          }</td></tr>
+<tr><th id="294">294</th><td>        <b>else</b></td></tr>
+<tr><th id="295">295</th><td>          {</td></tr>
+<tr><th id="296">296</th><td>            <b>if</b> (<a class="member field" href="#vapi::Connection::events" title='vapi::Connection::events' data-ref="vapi::Connection::events">events</a><a class="ref fn" href="../../../../include/c++/4.8.2/bits/stl_vector.h.html#_ZNSt6vectorixEm" title='std::vector::operator[]' data-ref="_ZNSt6vectorixEm">[<a class="local col9 ref" href="#11329id" title='id' data-ref="11329id">id</a>]</a>)</td></tr>
+<tr><th id="297">297</th><td>              {</td></tr>
+<tr><th id="298">298</th><td>                <span class="namespace">std::</span><a class="ref fn" href="../../../../include/c++/4.8.2/tuple.html#_ZSt3tieDpRT_" title='std::tie' data-ref="_ZSt3tieDpRT_">tie</a> (<span class='refarg'><a class="local col3 ref" href="#11323rv" title='rv' data-ref="11323rv">rv</a></span>, <span class='refarg'><a class="local col1 ref" href="#11331break_dispatch" title='break_dispatch' data-ref="11331break_dispatch">break_dispatch</a></span>) <a class="ref fn" href="../../../../include/c++/4.8.2/tuple.html#_ZNSt5tupleIJT_T0_EEaSEOS_IJT_T0_EE" title='std::tuple&lt;type-parameter-0-0, type-parameter-0-1&gt;::operator=' data-ref="_ZNSt5tupleIJT_T0_EEaSEOS_IJT_T0_EE">=</a></td></tr>
+<tr><th id="299">299</th><td>                    <a class="member field" href="#vapi::Connection::events" title='vapi::Connection::events' data-ref="vapi::Connection::events">events</a><a class="ref fn" href="../../../../include/c++/4.8.2/bits/stl_vector.h.html#_ZNSt6vectorixEm" title='std::vector::operator[]' data-ref="_ZNSt6vectorixEm">[<a class="local col9 ref" href="#11329id" title='id' data-ref="11329id">id</a>]</a>-&gt;<a class="virtual ref fn" href="#_ZN4vapi10Common_req15assign_responseEjPv" title='vapi::Common_req::assign_response' data-ref="_ZN4vapi10Common_req15assign_responseEjPv">assign_response</a> (<a class="local col9 ref" href="#11329id" title='id' data-ref="11329id">id</a>, <a class="local col5 ref" href="#11325shm_data" title='shm_data' data-ref="11325shm_data">shm_data</a>);</td></tr>
+<tr><th id="300">300</th><td>                <a class="local col2 ref" href="#11332matching_req" title='matching_req' data-ref="11332matching_req">matching_req</a> = <a class="member field" href="#vapi::Connection::events" title='vapi::Connection::events' data-ref="vapi::Connection::events">events</a><a class="ref fn" href="../../../../include/c++/4.8.2/bits/stl_vector.h.html#_ZNSt6vectorixEm" title='std::vector::operator[]' data-ref="_ZNSt6vectorixEm">[<a class="local col9 ref" href="#11329id" title='id' data-ref="11329id">id</a>]</a>;</td></tr>
+<tr><th id="301">301</th><td>              }</td></tr>
+<tr><th id="302">302</th><td>            <b>else</b></td></tr>
+<tr><th id="303">303</th><td>              {</td></tr>
+<tr><th id="304">304</th><td>                <a class="member fn" href="#_ZN4vapi10Connection8msg_freeEPv" title='vapi::Connection::msg_free' data-ref="_ZN4vapi10Connection8msg_freeEPv">msg_free</a> (<a class="local col5 ref" href="#11325shm_data" title='shm_data' data-ref="11325shm_data">shm_data</a>);</td></tr>
+<tr><th id="305">305</th><td>              }</td></tr>
+<tr><th id="306">306</th><td>          }</td></tr>
+<tr><th id="307">307</th><td>        <b>if</b> ((<a class="local col2 ref" href="#11332matching_req" title='matching_req' data-ref="11332matching_req">matching_req</a> &amp;&amp; <a class="local col2 ref" href="#11332matching_req" title='matching_req' data-ref="11332matching_req">matching_req</a> == <a class="local col0 ref" href="#11320limit" title='limit' data-ref="11320limit">limit</a> &amp;&amp; <a class="local col1 ref" href="#11331break_dispatch" title='break_dispatch' data-ref="11331break_dispatch">break_dispatch</a>) ||</td></tr>
+<tr><th id="308">308</th><td>            <a class="enum" href="vapi_common.h.html#VAPI_OK" title='VAPI_OK' data-ref="VAPI_OK">VAPI_OK</a> != <a class="local col3 ref" href="#11323rv" title='rv' data-ref="11323rv">rv</a>)</td></tr>
+<tr><th id="309">309</th><td>          {</td></tr>
+<tr><th id="310">310</th><td>            <b>return</b> <a class="local col3 ref" href="#11323rv" title='rv' data-ref="11323rv">rv</a>;</td></tr>
+<tr><th id="311">311</th><td>          }</td></tr>
+<tr><th id="312">312</th><td>        <a class="local col4 ref" href="#11324loop_again" title='loop_again' data-ref="11324loop_again">loop_again</a> = !<a class="member field" href="#vapi::Connection::requests" title='vapi::Connection::requests' data-ref="vapi::Connection::requests">requests</a>.<a class="ref fn" href="../../../../include/c++/4.8.2/bits/stl_deque.h.html#_ZNKSt5deque5emptyEv" title='std::deque::empty' data-ref="_ZNKSt5deque5emptyEv">empty</a> () || (<a class="member field" href="#vapi::Connection::event_count" title='vapi::Connection::event_count' data-ref="vapi::Connection::event_count">event_count</a> &gt; <var>0</var>);</td></tr>
+<tr><th id="313">313</th><td>      }</td></tr>
+<tr><th id="314">314</th><td>    <b>return</b> <a class="local col3 ref" href="#11323rv" title='rv' data-ref="11323rv">rv</a>;</td></tr>
+<tr><th id="315">315</th><td>  }</td></tr>
+<tr><th id="316">316</th><td></td></tr>
+<tr><th id="317">317</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="318">318</th><td><i class="doc">   * <span class="command">@brief</span> convenience wrapper function</i></td></tr>
+<tr><th id="319">319</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="320">320</th><td>  <a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> <dfn class="decl def fn" id="_ZN4vapi10Connection8dispatchERKNS_10Common_reqE" title='vapi::Connection::dispatch' data-ref="_ZN4vapi10Connection8dispatchERKNS_10Common_reqE">dispatch</dfn> (<em>const</em> <a class="type" href="#vapi::Common_req" title='vapi::Common_req' data-ref="vapi::Common_req">Common_req</a> &amp;<dfn class="local col5 decl" id="11335limit" title='limit' data-type='const vapi::Common_req &amp;' data-ref="11335limit">limit</dfn>)</td></tr>
+<tr><th id="321">321</th><td>  {</td></tr>
+<tr><th id="322">322</th><td>    <b>return</b> <a class="member fn" href="#_ZN4vapi10Connection8dispatchEPKNS_10Common_reqEj" title='vapi::Connection::dispatch' data-ref="_ZN4vapi10Connection8dispatchEPKNS_10Common_reqEj">dispatch</a> (&amp;<a class="local col5 ref" href="#11335limit" title='limit' data-ref="11335limit">limit</a>);</td></tr>
+<tr><th id="323">323</th><td>  }</td></tr>
+<tr><th id="324">324</th><td></td></tr>
+<tr><th id="325">325</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="326">326</th><td><i class="doc">   * <span class="command">@brief</span> wait for response to a specific request</i></td></tr>
+<tr><th id="327">327</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="328">328</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">req</span> request to wait for response for</i></td></tr>
+<tr><th id="329">329</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="330">330</th><td><i class="doc">   * <span class="command">@return</span> VAPI_OK on success, other error code on error</i></td></tr>
+<tr><th id="331">331</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="332">332</th><td>  <a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> <dfn class="decl def fn" id="_ZN4vapi10Connection17wait_for_responseERKNS_10Common_reqE" title='vapi::Connection::wait_for_response' data-ref="_ZN4vapi10Connection17wait_for_responseERKNS_10Common_reqE">wait_for_response</dfn> (<em>const</em> <a class="type" href="#vapi::Common_req" title='vapi::Common_req' data-ref="vapi::Common_req">Common_req</a> &amp;<dfn class="local col6 decl" id="11336req" title='req' data-type='const vapi::Common_req &amp;' data-ref="11336req">req</dfn>)</td></tr>
+<tr><th id="333">333</th><td>  {</td></tr>
+<tr><th id="334">334</th><td>    <b>if</b> (<a class="enum" href="#vapi::RESPONSE_READY" title='vapi::RESPONSE_READY' data-ref="vapi::RESPONSE_READY">RESPONSE_READY</a> == <a class="local col6 ref" href="#11336req" title='req' data-ref="11336req">req</a>.<a class="ref fn" href="#_ZNK4vapi10Common_req18get_response_stateEv" title='vapi::Common_req::get_response_state' data-ref="_ZNK4vapi10Common_req18get_response_stateEv">get_response_state</a> ())</td></tr>
+<tr><th id="335">335</th><td>      {</td></tr>
+<tr><th id="336">336</th><td>        <b>return</b> <a class="enum" href="vapi_common.h.html#VAPI_OK" title='VAPI_OK' data-ref="VAPI_OK">VAPI_OK</a>;</td></tr>
+<tr><th id="337">337</th><td>      }</td></tr>
+<tr><th id="338">338</th><td>    <b>return</b> <a class="member fn" href="#_ZN4vapi10Connection8dispatchERKNS_10Common_reqE" title='vapi::Connection::dispatch' data-ref="_ZN4vapi10Connection8dispatchERKNS_10Common_reqE">dispatch</a> (<a class="local col6 ref" href="#11336req" title='req' data-ref="11336req">req</a>);</td></tr>
+<tr><th id="339">339</th><td>  }</td></tr>
+<tr><th id="340">340</th><td></td></tr>
+<tr><th id="341">341</th><td><b>private</b>:</td></tr>
+<tr><th id="342">342</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN4vapi10Connection8msg_freeEPv" title='vapi::Connection::msg_free' data-ref="_ZN4vapi10Connection8msg_freeEPv">msg_free</dfn> (<em>void</em> *<dfn class="local col7 decl" id="11337shm_data" title='shm_data' data-type='void *' data-ref="11337shm_data">shm_data</dfn>)</td></tr>
+<tr><th id="343">343</th><td>  {</td></tr>
+<tr><th id="344">344</th><td><u>#<span data-ppcond="344">if</span> <a class="macro" href="vapi_dbg.h.html#25" title="(0)" data-ref="_M/VAPI_CPP_DEBUG_LEAKS">VAPI_CPP_DEBUG_LEAKS</a></u></td></tr>
+<tr><th id="345">345</th><td>    on_shm_data_free (shm_data);</td></tr>
+<tr><th id="346">346</th><td><u>#<span data-ppcond="344">endif</span></u></td></tr>
+<tr><th id="347">347</th><td>    <a class="ref fn" href="vapi.h.html#vapi_msg_free" title='vapi_msg_free' data-ref="vapi_msg_free">vapi_msg_free</a> (<a class="member field" href="#vapi::Connection::vapi_ctx" title='vapi::Connection::vapi_ctx' data-ref="vapi::Connection::vapi_ctx">vapi_ctx</a>, <a class="local col7 ref" href="#11337shm_data" title='shm_data' data-ref="11337shm_data">shm_data</a>);</td></tr>
+<tr><th id="348">348</th><td>  }</td></tr>
+<tr><th id="349">349</th><td></td></tr>
+<tr><th id="350">350</th><td>  <b>template</b> &lt;<b>template</b> &lt;<b>typename</b> XReq, <b>typename</b> XResp, <b>typename</b>... XArgs&gt;</td></tr>
+<tr><th id="351">351</th><td>            <b>class</b> X,</td></tr>
+<tr><th id="352">352</th><td>            <b>typename</b> Req, <b>typename</b> Resp, <b>typename</b>... Args&gt;</td></tr>
+<tr><th id="353">353</th><td>  <a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> <dfn class="decl def fn" id="_ZN4vapi10Connection4sendEPT_IT0_T1_JDpT2_EE" title='vapi::Connection::send' data-ref="_ZN4vapi10Connection4sendEPT_IT0_T1_JDpT2_EE">send</dfn> (<a class="type" href="#X" title='X' data-ref="X">X</a>&lt;Req, Resp, Args...&gt; *<dfn class="local col8 decl" id="11338req" title='req' data-type='X&lt;Req, Resp, Args...&gt; *' data-ref="11338req">req</dfn>)</td></tr>
+<tr><th id="354">354</th><td>  {</td></tr>
+<tr><th id="355">355</th><td>    <b>if</b> (!<a class="local col8 ref" href="#11338req" title='req' data-ref="11338req">req</a>)</td></tr>
+<tr><th id="356">356</th><td>      {</td></tr>
+<tr><th id="357">357</th><td>        <b>return</b> <a class="enum" href="vapi_common.h.html#VAPI_EINVAL" title='VAPI_EINVAL' data-ref="VAPI_EINVAL">VAPI_EINVAL</a>;</td></tr>
+<tr><th id="358">358</th><td>      }</td></tr>
+<tr><th id="359">359</th><td>    <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col9 decl" id="11339req_context" title='req_context' data-type='u32' data-ref="11339req_context">req_context</dfn> =</td></tr>
+<tr><th id="360">360</th><td>        <a class="member field" href="#vapi::Connection::req_context_counter" title='vapi::Connection::req_context_counter' data-ref="vapi::Connection::req_context_counter">req_context_counter</a>.<a class="ref fn" href="../../../../include/c++/4.8.2/bits/atomic_base.h.html#_ZNSt13__atomic_base9fetch_addET_St12memory_order" title='std::__atomic_base::fetch_add' data-ref="_ZNSt13__atomic_base9fetch_addET_St12memory_order">fetch_add</a> (<var>1</var>, <span class="namespace">std::</span><a class="enum" href="../../../../include/c++/4.8.2/bits/atomic_base.h.html#std::memory_order_relaxed" title='std::memory_order_relaxed' data-ref="std::memory_order_relaxed">memory_order_relaxed</a>);</td></tr>
+<tr><th id="361">361</th><td>    <a class="local col8 ref" href="#11338req" title='req' data-ref="11338req">req</a>-&gt;request.shm_data-&gt;header.context = <a class="local col9 ref" href="#11339req_context" title='req_context' data-ref="11339req_context">req_context</a>;</td></tr>
+<tr><th id="362">362</th><td>    vapi_swap_to_be&lt;Req&gt; (<a class="local col8 ref" href="#11338req" title='req' data-ref="11338req">req</a>-&gt;request.shm_data);</td></tr>
+<tr><th id="363">363</th><td>    <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::lock_guard" title='std::lock_guard' data-ref="std::lock_guard">lock_guard</a>&lt;<span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::recursive_mutex" title='std::recursive_mutex' data-ref="std::recursive_mutex">recursive_mutex</a>&gt; <dfn class="local col0 decl" id="11340lock" title='lock' data-type='std::lock_guard&lt;std::recursive_mutex&gt;' data-ref="11340lock">lock</dfn> <a class="ref fn" href="../../../../include/c++/4.8.2/mutex.html#_ZNSt10lock_guardC1ERT_" title='std::lock_guard::lock_guard&lt;_Mutex&gt;' data-ref="_ZNSt10lock_guardC1ERT_">(</a><a class="member field" href="#vapi::Connection::requests_mutex" title='vapi::Connection::requests_mutex' data-ref="vapi::Connection::requests_mutex">requests_mutex</a>);</td></tr>
+<tr><th id="364">364</th><td>    <a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> <dfn class="local col1 decl" id="11341rv" title='rv' data-type='vapi_error_e' data-ref="11341rv">rv</dfn> = vapi_send (<a class="member field" href="#vapi::Connection::vapi_ctx" title='vapi::Connection::vapi_ctx' data-ref="vapi::Connection::vapi_ctx">vapi_ctx</a>, <a class="local col8 ref" href="#11338req" title='req' data-ref="11338req">req</a>-&gt;request.shm_data);</td></tr>
+<tr><th id="365">365</th><td>    <b>if</b> (<a class="enum" href="vapi_common.h.html#VAPI_OK" title='VAPI_OK' data-ref="VAPI_OK">VAPI_OK</a> == <a class="local col1 ref" href="#11341rv" title='rv' data-ref="11341rv">rv</a>)</td></tr>
+<tr><th id="366">366</th><td>      {</td></tr>
+<tr><th id="367">367</th><td>        <a class="macro" href="vapi_dbg.h.html#65" title="" data-ref="_M/VAPI_DBG">VAPI_DBG</a> (<q>"Push %p"</q>, req);</td></tr>
+<tr><th id="368">368</th><td>        <a class="member field" href="#vapi::Connection::requests" title='vapi::Connection::requests' data-ref="vapi::Connection::requests">requests</a>.emplace_back (<a class="local col8 ref" href="#11338req" title='req' data-ref="11338req">req</a>);</td></tr>
+<tr><th id="369">369</th><td>        <a class="local col8 ref" href="#11338req" title='req' data-ref="11338req">req</a>-&gt;set_context (<a class="local col9 ref" href="#11339req_context" title='req_context' data-ref="11339req_context">req_context</a>);</td></tr>
+<tr><th id="370">370</th><td><u>#<span data-ppcond="370">if</span> <a class="macro" href="vapi_dbg.h.html#25" title="(0)" data-ref="_M/VAPI_CPP_DEBUG_LEAKS">VAPI_CPP_DEBUG_LEAKS</a></u></td></tr>
+<tr><th id="371">371</th><td>        on_shm_data_free (req-&gt;request.shm_data);</td></tr>
+<tr><th id="372">372</th><td><u>#<span data-ppcond="370">endif</span></u></td></tr>
+<tr><th id="373">373</th><td>        <a class="local col8 ref" href="#11338req" title='req' data-ref="11338req">req</a>-&gt;request.shm_data = <b>nullptr</b>; <i>/* consumed by vapi_send */</i></td></tr>
+<tr><th id="374">374</th><td>      }</td></tr>
+<tr><th id="375">375</th><td>    <b>else</b></td></tr>
+<tr><th id="376">376</th><td>      {</td></tr>
+<tr><th id="377">377</th><td>        vapi_swap_to_host&lt;Req&gt; (<a class="local col8 ref" href="#11338req" title='req' data-ref="11338req">req</a>-&gt;request.shm_data);</td></tr>
+<tr><th id="378">378</th><td>      }</td></tr>
+<tr><th id="379">379</th><td>    <b>return</b> <a class="local col1 ref" href="#11341rv" title='rv' data-ref="11341rv">rv</a>;</td></tr>
+<tr><th id="380">380</th><td>  }</td></tr>
+<tr><th id="381">381</th><td></td></tr>
+<tr><th id="382">382</th><td>  <b>template</b> &lt;<b>template</b> &lt;<b>typename</b> XReq, <b>typename</b> XResp, <b>typename</b>... XArgs&gt;</td></tr>
+<tr><th id="383">383</th><td>            <b>class</b> X,</td></tr>
+<tr><th id="384">384</th><td>            <b>typename</b> Req, <b>typename</b> Resp, <b>typename</b>... Args&gt;</td></tr>
+<tr><th id="385">385</th><td>  <a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> <dfn class="decl def fn" id="_ZN4vapi10Connection22send_with_control_pingEPT_IT0_T1_JDpT2_EE" title='vapi::Connection::send_with_control_ping' data-ref="_ZN4vapi10Connection22send_with_control_pingEPT_IT0_T1_JDpT2_EE">send_with_control_ping</dfn> (<a class="type" href="#X" title='X' data-ref="X">X</a>&lt;Req, Resp, Args...&gt; *<dfn class="local col2 decl" id="11342req" title='req' data-type='X&lt;Req, Resp, Args...&gt; *' data-ref="11342req">req</dfn>)</td></tr>
+<tr><th id="386">386</th><td>  {</td></tr>
+<tr><th id="387">387</th><td>    <b>if</b> (!<a class="local col2 ref" href="#11342req" title='req' data-ref="11342req">req</a>)</td></tr>
+<tr><th id="388">388</th><td>      {</td></tr>
+<tr><th id="389">389</th><td>        <b>return</b> <a class="enum" href="vapi_common.h.html#VAPI_EINVAL" title='VAPI_EINVAL' data-ref="VAPI_EINVAL">VAPI_EINVAL</a>;</td></tr>
+<tr><th id="390">390</th><td>      }</td></tr>
+<tr><th id="391">391</th><td>    <a class="typedef" href="../../vppinfra/types.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col3 decl" id="11343req_context" title='req_context' data-type='u32' data-ref="11343req_context">req_context</dfn> =</td></tr>
+<tr><th id="392">392</th><td>        <a class="member field" href="#vapi::Connection::req_context_counter" title='vapi::Connection::req_context_counter' data-ref="vapi::Connection::req_context_counter">req_context_counter</a>.<a class="ref fn" href="../../../../include/c++/4.8.2/bits/atomic_base.h.html#_ZNSt13__atomic_base9fetch_addET_St12memory_order" title='std::__atomic_base::fetch_add' data-ref="_ZNSt13__atomic_base9fetch_addET_St12memory_order">fetch_add</a> (<var>1</var>, <span class="namespace">std::</span><a class="enum" href="../../../../include/c++/4.8.2/bits/atomic_base.h.html#std::memory_order_relaxed" title='std::memory_order_relaxed' data-ref="std::memory_order_relaxed">memory_order_relaxed</a>);</td></tr>
+<tr><th id="393">393</th><td>    <a class="local col2 ref" href="#11342req" title='req' data-ref="11342req">req</a>-&gt;request.shm_data-&gt;header.context = <a class="local col3 ref" href="#11343req_context" title='req_context' data-ref="11343req_context">req_context</a>;</td></tr>
+<tr><th id="394">394</th><td>    vapi_swap_to_be&lt;Req&gt; (<a class="local col2 ref" href="#11342req" title='req' data-ref="11342req">req</a>-&gt;request.shm_data);</td></tr>
+<tr><th id="395">395</th><td>    <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::lock_guard" title='std::lock_guard' data-ref="std::lock_guard">lock_guard</a>&lt;<span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::recursive_mutex" title='std::recursive_mutex' data-ref="std::recursive_mutex">recursive_mutex</a>&gt; <dfn class="local col4 decl" id="11344lock" title='lock' data-type='std::lock_guard&lt;std::recursive_mutex&gt;' data-ref="11344lock">lock</dfn> <a class="ref fn" href="../../../../include/c++/4.8.2/mutex.html#_ZNSt10lock_guardC1ERT_" title='std::lock_guard::lock_guard&lt;_Mutex&gt;' data-ref="_ZNSt10lock_guardC1ERT_">(</a><a class="member field" href="#vapi::Connection::requests_mutex" title='vapi::Connection::requests_mutex' data-ref="vapi::Connection::requests_mutex">requests_mutex</a>);</td></tr>
+<tr><th id="396">396</th><td>    <a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> <dfn class="local col5 decl" id="11345rv" title='rv' data-type='vapi_error_e' data-ref="11345rv">rv</dfn> = vapi_send_with_control_ping (</td></tr>
+<tr><th id="397">397</th><td>        <a class="member field" href="#vapi::Connection::vapi_ctx" title='vapi::Connection::vapi_ctx' data-ref="vapi::Connection::vapi_ctx">vapi_ctx</a>, <a class="local col2 ref" href="#11342req" title='req' data-ref="11342req">req</a>-&gt;request.shm_data, <a class="local col3 ref" href="#11343req_context" title='req_context' data-ref="11343req_context">req_context</a>);</td></tr>
+<tr><th id="398">398</th><td>    <b>if</b> (<a class="enum" href="vapi_common.h.html#VAPI_OK" title='VAPI_OK' data-ref="VAPI_OK">VAPI_OK</a> == <a class="local col5 ref" href="#11345rv" title='rv' data-ref="11345rv">rv</a>)</td></tr>
+<tr><th id="399">399</th><td>      {</td></tr>
+<tr><th id="400">400</th><td>        <a class="macro" href="vapi_dbg.h.html#65" title="" data-ref="_M/VAPI_DBG">VAPI_DBG</a> (<q>"Push %p"</q>, req);</td></tr>
+<tr><th id="401">401</th><td>        <a class="member field" href="#vapi::Connection::requests" title='vapi::Connection::requests' data-ref="vapi::Connection::requests">requests</a>.emplace_back (<a class="local col2 ref" href="#11342req" title='req' data-ref="11342req">req</a>);</td></tr>
+<tr><th id="402">402</th><td>        <a class="local col2 ref" href="#11342req" title='req' data-ref="11342req">req</a>-&gt;set_context (<a class="local col3 ref" href="#11343req_context" title='req_context' data-ref="11343req_context">req_context</a>);</td></tr>
+<tr><th id="403">403</th><td><u>#<span data-ppcond="403">if</span> <a class="macro" href="vapi_dbg.h.html#25" title="(0)" data-ref="_M/VAPI_CPP_DEBUG_LEAKS">VAPI_CPP_DEBUG_LEAKS</a></u></td></tr>
+<tr><th id="404">404</th><td>        on_shm_data_free (req-&gt;request.shm_data);</td></tr>
+<tr><th id="405">405</th><td><u>#<span data-ppcond="403">endif</span></u></td></tr>
+<tr><th id="406">406</th><td>        <a class="local col2 ref" href="#11342req" title='req' data-ref="11342req">req</a>-&gt;request.shm_data = <b>nullptr</b>; <i>/* consumed by vapi_send */</i></td></tr>
+<tr><th id="407">407</th><td>      }</td></tr>
+<tr><th id="408">408</th><td>    <b>else</b></td></tr>
+<tr><th id="409">409</th><td>      {</td></tr>
+<tr><th id="410">410</th><td>        vapi_swap_to_host&lt;Req&gt; (<a class="local col2 ref" href="#11342req" title='req' data-ref="11342req">req</a>-&gt;request.shm_data);</td></tr>
+<tr><th id="411">411</th><td>      }</td></tr>
+<tr><th id="412">412</th><td>    <b>return</b> <a class="local col5 ref" href="#11345rv" title='rv' data-ref="11345rv">rv</a>;</td></tr>
+<tr><th id="413">413</th><td>  }</td></tr>
+<tr><th id="414">414</th><td></td></tr>
+<tr><th id="415">415</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN4vapi10Connection18unregister_requestEPNS_10Common_reqE" title='vapi::Connection::unregister_request' data-ref="_ZN4vapi10Connection18unregister_requestEPNS_10Common_reqE">unregister_request</dfn> (<a class="type" href="#vapi::Common_req" title='vapi::Common_req' data-ref="vapi::Common_req">Common_req</a> *<dfn class="local col6 decl" id="11346request" title='request' data-type='vapi::Common_req *' data-ref="11346request">request</dfn>)</td></tr>
+<tr><th id="416">416</th><td>  {</td></tr>
+<tr><th id="417">417</th><td>    <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::lock_guard" title='std::lock_guard' data-ref="std::lock_guard">lock_guard</a>&lt;<span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::recursive_mutex" title='std::recursive_mutex' data-ref="std::recursive_mutex">recursive_mutex</a>&gt; <dfn class="local col7 decl" id="11347lock" title='lock' data-type='std::lock_guard&lt;std::recursive_mutex&gt;' data-ref="11347lock">lock</dfn> <a class="ref fn" href="../../../../include/c++/4.8.2/mutex.html#_ZNSt10lock_guardC1ERT_" title='std::lock_guard::lock_guard&lt;_Mutex&gt;' data-ref="_ZNSt10lock_guardC1ERT_">(</a><a class="member field" href="#vapi::Connection::requests_mutex" title='vapi::Connection::requests_mutex' data-ref="vapi::Connection::requests_mutex">requests_mutex</a>);</td></tr>
+<tr><th id="418">418</th><td>    <span class="namespace">std::</span><a class="ref fn" href="../../../../include/c++/4.8.2/bits/stl_algo.h.html#_ZSt6removeT_S_RKT0_" title='std::remove' data-ref="_ZSt6removeT_S_RKT0_">remove</a> (<a class="member field" href="#vapi::Connection::requests" title='vapi::Connection::requests' data-ref="vapi::Connection::requests">requests</a>.<a class="ref fn" href="../../../../include/c++/4.8.2/bits/stl_deque.h.html#_ZNSt5deque5beginEv" title='std::deque::begin' data-ref="_ZNSt5deque5beginEv">begin</a> (), <a class="member field" href="#vapi::Connection::requests" title='vapi::Connection::requests' data-ref="vapi::Connection::requests">requests</a>.<a class="ref fn" href="../../../../include/c++/4.8.2/bits/stl_deque.h.html#_ZNSt5deque3endEv" title='std::deque::end' data-ref="_ZNSt5deque3endEv">end</a> (), <a class="local col6 ref" href="#11346request" title='request' data-ref="11346request">request</a>);</td></tr>
+<tr><th id="419">419</th><td>  }</td></tr>
+<tr><th id="420">420</th><td></td></tr>
+<tr><th id="421">421</th><td>  <b>template</b> &lt;<b>typename</b> M&gt; <em>void</em> <dfn class="decl def fn" id="_ZN4vapi10Connection14register_eventEPNS_18Event_registrationIT_EE" title='vapi::Connection::register_event' data-ref="_ZN4vapi10Connection14register_eventEPNS_18Event_registrationIT_EE">register_event</dfn> (<a class="type" href="#vapi::Event_registration" title='vapi::Event_registration' data-ref="vapi::Event_registration">Event_registration</a>&lt;M&gt; *<dfn class="local col8 decl" id="11348event" title='event' data-type='Event_registration&lt;M&gt; *' data-ref="11348event">event</dfn>)</td></tr>
+<tr><th id="422">422</th><td>  {</td></tr>
+<tr><th id="423">423</th><td>    <em>const</em> <a class="typedef" href="vapi_common.h.html#vapi_msg_id_t" title='vapi_msg_id_t' data-type='unsigned int' data-ref="vapi_msg_id_t">vapi_msg_id_t</a> <dfn class="local col9 decl" id="11349id" title='id' data-type='const vapi_msg_id_t' data-ref="11349id">id</dfn> = M::get_msg_id ();</td></tr>
+<tr><th id="424">424</th><td>    <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::lock_guard" title='std::lock_guard' data-ref="std::lock_guard">lock_guard</a>&lt;<span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::recursive_mutex" title='std::recursive_mutex' data-ref="std::recursive_mutex">recursive_mutex</a>&gt; <dfn class="local col0 decl" id="11350lock" title='lock' data-type='std::lock_guard&lt;std::recursive_mutex&gt;' data-ref="11350lock">lock</dfn> <a class="ref fn" href="../../../../include/c++/4.8.2/mutex.html#_ZNSt10lock_guardC1ERT_" title='std::lock_guard::lock_guard&lt;_Mutex&gt;' data-ref="_ZNSt10lock_guardC1ERT_">(</a><a class="member field" href="#vapi::Connection::events_mutex" title='vapi::Connection::events_mutex' data-ref="vapi::Connection::events_mutex">events_mutex</a>);</td></tr>
+<tr><th id="425">425</th><td>    <a class="member field" href="#vapi::Connection::events" title='vapi::Connection::events' data-ref="vapi::Connection::events">events</a><a class="ref fn" href="../../../../include/c++/4.8.2/bits/stl_vector.h.html#_ZNSt6vectorixEm" title='std::vector::operator[]' data-ref="_ZNSt6vectorixEm">[<a class="local col9 ref" href="#11349id" title='id' data-ref="11349id">id</a>]</a> = <a class="local col8 ref" href="#11348event" title='event' data-ref="11348event">event</a>;</td></tr>
+<tr><th id="426">426</th><td>    ++<a class="member field" href="#vapi::Connection::event_count" title='vapi::Connection::event_count' data-ref="vapi::Connection::event_count">event_count</a>;</td></tr>
+<tr><th id="427">427</th><td>  }</td></tr>
+<tr><th id="428">428</th><td></td></tr>
+<tr><th id="429">429</th><td>  <b>template</b> &lt;<b>typename</b> M&gt; <em>void</em> <dfn class="decl def fn" id="_ZN4vapi10Connection16unregister_eventEPNS_18Event_registrationIT_EE" title='vapi::Connection::unregister_event' data-ref="_ZN4vapi10Connection16unregister_eventEPNS_18Event_registrationIT_EE">unregister_event</dfn> (<a class="type" href="#vapi::Event_registration" title='vapi::Event_registration' data-ref="vapi::Event_registration">Event_registration</a>&lt;M&gt; *<dfn class="local col1 decl" id="11351event" title='event' data-type='Event_registration&lt;M&gt; *' data-ref="11351event">event</dfn>)</td></tr>
+<tr><th id="430">430</th><td>  {</td></tr>
+<tr><th id="431">431</th><td>    <em>const</em> <a class="typedef" href="vapi_common.h.html#vapi_msg_id_t" title='vapi_msg_id_t' data-type='unsigned int' data-ref="vapi_msg_id_t">vapi_msg_id_t</a> <dfn class="local col2 decl" id="11352id" title='id' data-type='const vapi_msg_id_t' data-ref="11352id">id</dfn> = M::get_msg_id ();</td></tr>
+<tr><th id="432">432</th><td>    <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::lock_guard" title='std::lock_guard' data-ref="std::lock_guard">lock_guard</a>&lt;<span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::recursive_mutex" title='std::recursive_mutex' data-ref="std::recursive_mutex">recursive_mutex</a>&gt; <dfn class="local col3 decl" id="11353lock" title='lock' data-type='std::lock_guard&lt;std::recursive_mutex&gt;' data-ref="11353lock">lock</dfn> <a class="ref fn" href="../../../../include/c++/4.8.2/mutex.html#_ZNSt10lock_guardC1ERT_" title='std::lock_guard::lock_guard&lt;_Mutex&gt;' data-ref="_ZNSt10lock_guardC1ERT_">(</a><a class="member field" href="#vapi::Connection::events_mutex" title='vapi::Connection::events_mutex' data-ref="vapi::Connection::events_mutex">events_mutex</a>);</td></tr>
+<tr><th id="433">433</th><td>    <a class="member field" href="#vapi::Connection::events" title='vapi::Connection::events' data-ref="vapi::Connection::events">events</a><a class="ref fn" href="../../../../include/c++/4.8.2/bits/stl_vector.h.html#_ZNSt6vectorixEm" title='std::vector::operator[]' data-ref="_ZNSt6vectorixEm">[<a class="local col2 ref" href="#11352id" title='id' data-ref="11352id">id</a>]</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="434">434</th><td>    --<a class="member field" href="#vapi::Connection::event_count" title='vapi::Connection::event_count' data-ref="vapi::Connection::event_count">event_count</a>;</td></tr>
+<tr><th id="435">435</th><td>  }</td></tr>
+<tr><th id="436">436</th><td></td></tr>
+<tr><th id="437">437</th><td>  <a class="typedef" href="vapi.h.html#vapi_ctx_t" title='vapi_ctx_t' data-type='struct vapi_ctx_s *' data-ref="vapi_ctx_t">vapi_ctx_t</a> <dfn class="decl field" id="vapi::Connection::vapi_ctx" title='vapi::Connection::vapi_ctx' data-ref="vapi::Connection::vapi_ctx">vapi_ctx</dfn>;</td></tr>
+<tr><th id="438">438</th><td>  <span class="namespace">std::</span><a class="typedef" href="../../../../include/c++/4.8.2/bits/atomic_base.h.html#std::atomic_ulong" title='std::atomic_ulong' data-type='__atomic_base&lt;unsigned long&gt;' data-ref="std::atomic_ulong">atomic_ulong</a> <dfn class="decl field" id="vapi::Connection::req_context_counter" title='vapi::Connection::req_context_counter' data-ref="vapi::Connection::req_context_counter">req_context_counter</dfn>;</td></tr>
+<tr><th id="439">439</th><td>  <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::mutex" title='std::mutex' data-ref="std::mutex">mutex</a> <dfn class="decl field" id="vapi::Connection::dispatch_mutex" title='vapi::Connection::dispatch_mutex' data-ref="vapi::Connection::dispatch_mutex">dispatch_mutex</dfn>;</td></tr>
+<tr><th id="440">440</th><td></td></tr>
+<tr><th id="441">441</th><td>  <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::recursive_mutex" title='std::recursive_mutex' data-ref="std::recursive_mutex">recursive_mutex</a> <dfn class="decl field" id="vapi::Connection::requests_mutex" title='vapi::Connection::requests_mutex' data-ref="vapi::Connection::requests_mutex">requests_mutex</dfn>;</td></tr>
+<tr><th id="442">442</th><td>  <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/mutex.html#std::recursive_mutex" title='std::recursive_mutex' data-ref="std::recursive_mutex">recursive_mutex</a> <dfn class="decl field" id="vapi::Connection::events_mutex" title='vapi::Connection::events_mutex' data-ref="vapi::Connection::events_mutex">events_mutex</dfn>;</td></tr>
+<tr><th id="443">443</th><td>  <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/bits/stl_deque.h.html#std::deque" title='std::deque' data-ref="std::deque">deque</a>&lt;<a class="type" href="#vapi::Common_req" title='vapi::Common_req' data-ref="vapi::Common_req">Common_req</a> *&gt; <dfn class="decl field" id="vapi::Connection::requests" title='vapi::Connection::requests' data-ref="vapi::Connection::requests">requests</dfn>;</td></tr>
+<tr><th id="444">444</th><td>  <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/bits/stl_vector.h.html#std::vector" title='std::vector' data-ref="std::vector">vector</a>&lt;<a class="type" href="#vapi::Common_req" title='vapi::Common_req' data-ref="vapi::Common_req">Common_req</a> *&gt; <dfn class="decl field" id="vapi::Connection::events" title='vapi::Connection::events' data-ref="vapi::Connection::events">events</dfn>;</td></tr>
+<tr><th id="445">445</th><td>  <em>int</em> <dfn class="decl field" id="vapi::Connection::event_count" title='vapi::Connection::event_count' data-ref="vapi::Connection::event_count">event_count</dfn>;</td></tr>
+<tr><th id="446">446</th><td></td></tr>
+<tr><th id="447">447</th><td>  <b>template</b> &lt;<b>typename</b> Req, <b>typename</b> Resp, <b>typename</b>... Args&gt;</td></tr>
+<tr><th id="448">448</th><td>  <b>friend</b> <b>class</b> <a class="type" href="#vapi::Request" title='vapi::Request' data-ref="vapi::Request">Request</a>;</td></tr>
+<tr><th id="449">449</th><td></td></tr>
+<tr><th id="450">450</th><td>  <b>template</b> &lt;<b>typename</b> Req, <b>typename</b> Resp, <b>typename</b>... Args&gt; <b>friend</b> <b>class</b> <a class="type" href="#vapi::Dump" title='vapi::Dump' data-ref="vapi::Dump">Dump</a>;</td></tr>
+<tr><th id="451">451</th><td></td></tr>
+<tr><th id="452">452</th><td>  <b>template</b> &lt;<b>typename</b> M&gt; <b>friend</b> <b>class</b> <a class="type" href="#vapi::Result_set" title='vapi::Result_set' data-ref="vapi::Result_set">Result_set</a>;</td></tr>
+<tr><th id="453">453</th><td></td></tr>
+<tr><th id="454">454</th><td>  <b>template</b> &lt;<b>typename</b> M&gt; <b>friend</b> <b>class</b> <a class="type" href="#vapi::Event_registration" title='vapi::Event_registration' data-ref="vapi::Event_registration">Event_registration</a>;</td></tr>
+<tr><th id="455">455</th><td></td></tr>
+<tr><th id="456">456</th><td>  <b>template</b> &lt;<b>typename</b> M, <b>typename</b>... Args&gt;</td></tr>
+<tr><th id="457">457</th><td>  <b>friend</b> M *<a class="decl fn" href="#_ZN4vapi10vapi_allocERNS_10ConnectionEDpT0_" title='vapi::vapi_alloc' data-ref="_ZN4vapi10vapi_allocERNS_10ConnectionEDpT0_">vapi_alloc</a> (<a class="type" href="#vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</a> &amp;<dfn class="local col4 decl" id="11354con" title='con' data-type='vapi::Connection &amp;' data-ref="11354con">con</dfn>, Args...);</td></tr>
+<tr><th id="458">458</th><td></td></tr>
+<tr><th id="459">459</th><td>  <b>template</b> &lt;<b>typename</b> M&gt; <b>friend</b> <b>class</b> <a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>;</td></tr>
+<tr><th id="460">460</th><td></td></tr>
+<tr><th id="461">461</th><td><u>#<span data-ppcond="461">if</span> <a class="macro" href="vapi_dbg.h.html#25" title="(0)" data-ref="_M/VAPI_CPP_DEBUG_LEAKS">VAPI_CPP_DEBUG_LEAKS</a></u></td></tr>
+<tr><th id="462">462</th><td>  <em>void</em> on_shm_data_alloc (<em>void</em> *shm_data)</td></tr>
+<tr><th id="463">463</th><td>  {</td></tr>
+<tr><th id="464">464</th><td>    <b>if</b> (shm_data)</td></tr>
+<tr><th id="465">465</th><td>      {</td></tr>
+<tr><th id="466">466</th><td>        <em>auto</em> pos = shm_data_set.find (shm_data);</td></tr>
+<tr><th id="467">467</th><td>        <b>if</b> (pos == shm_data_set.end ())</td></tr>
+<tr><th id="468">468</th><td>          {</td></tr>
+<tr><th id="469">469</th><td>            shm_data_set.insert (shm_data);</td></tr>
+<tr><th id="470">470</th><td>          }</td></tr>
+<tr><th id="471">471</th><td>        <b>else</b></td></tr>
+<tr><th id="472">472</th><td>          {</td></tr>
+<tr><th id="473">473</th><td>            printf (<q>"Double-add shm_data @%p!\n"</q>, shm_data);</td></tr>
+<tr><th id="474">474</th><td>          }</td></tr>
+<tr><th id="475">475</th><td>      }</td></tr>
+<tr><th id="476">476</th><td>  }</td></tr>
+<tr><th id="477">477</th><td></td></tr>
+<tr><th id="478">478</th><td>  <em>void</em> on_shm_data_free (<em>void</em> *shm_data)</td></tr>
+<tr><th id="479">479</th><td>  {</td></tr>
+<tr><th id="480">480</th><td>    <em>auto</em> pos = shm_data_set.find (shm_data);</td></tr>
+<tr><th id="481">481</th><td>    <b>if</b> (pos == shm_data_set.end ())</td></tr>
+<tr><th id="482">482</th><td>      {</td></tr>
+<tr><th id="483">483</th><td>        printf (<q>"Freeing untracked shm_data @%p!\n"</q>, shm_data);</td></tr>
+<tr><th id="484">484</th><td>      }</td></tr>
+<tr><th id="485">485</th><td>    <b>else</b></td></tr>
+<tr><th id="486">486</th><td>      {</td></tr>
+<tr><th id="487">487</th><td>        shm_data_set.erase (pos);</td></tr>
+<tr><th id="488">488</th><td>      }</td></tr>
+<tr><th id="489">489</th><td>  }</td></tr>
+<tr><th id="490">490</th><td>  std::unordered_set&lt;<em>void</em> *&gt; shm_data_set;</td></tr>
+<tr><th id="491">491</th><td><u>#<span data-ppcond="461">endif</span></u></td></tr>
+<tr><th id="492">492</th><td>};</td></tr>
+<tr><th id="493">493</th><td></td></tr>
+<tr><th id="494">494</th><td><b>template</b> &lt;<b>typename</b> Req, <b>typename</b> Resp, <b>typename</b>... Args&gt; <b>class</b> <a class="type" href="#vapi::Request" title='vapi::Request' data-ref="vapi::Request">Request</a>;</td></tr>
+<tr><th id="495">495</th><td></td></tr>
+<tr><th id="496">496</th><td><b>template</b> &lt;<b>typename</b> Req, <b>typename</b> Resp, <b>typename</b>... Args&gt; <b>class</b> <a class="type" href="#vapi::Dump" title='vapi::Dump' data-ref="vapi::Dump">Dump</a>;</td></tr>
+<tr><th id="497">497</th><td></td></tr>
+<tr><th id="498">498</th><td><b>template</b> &lt;<b>class</b>, <b>class</b> = <em>void</em>&gt; <b>struct</b> <dfn class="type def" id="vapi::vapi_has_payload_trait" title='vapi::vapi_has_payload_trait' data-ref="vapi::vapi_has_payload_trait">vapi_has_payload_trait</dfn> : <span class="namespace">std::</span><a class="typedef" href="../../../../include/c++/4.8.2/type_traits.html#std::false_type" title='std::false_type' data-type='integral_constant&lt;bool, false&gt;' data-ref="std::false_type">false_type</a></td></tr>
+<tr><th id="499">499</th><td>{</td></tr>
+<tr><th id="500">500</th><td>};</td></tr>
+<tr><th id="501">501</th><td></td></tr>
+<tr><th id="502">502</th><td><b>template</b> &lt;<b>class</b>... T&gt; <b>using</b> <dfn class="typedef" id="vapi::vapi_void_t" title='vapi::vapi_void_t' data-type='void' data-ref="vapi::vapi_void_t">vapi_void_t</dfn> = <em>void</em>;</td></tr>
+<tr><th id="503">503</th><td></td></tr>
+<tr><th id="504">504</th><td><b>template</b> &lt;<b>class</b> T&gt;</td></tr>
+<tr><th id="505">505</th><td><b>struct</b> <dfn class="type def" id="vapi::vapi_has_payload_trait" title='vapi::vapi_has_payload_trait' data-ref="vapi::vapi_has_payload_trait">vapi_has_payload_trait</dfn>&lt;T, <a class="type" href="#vapi::vapi_void_t" title='vapi::vapi_void_t' data-ref="vapi::vapi_void_t">vapi_void_t</a>&lt;<b>decltype</b> (&amp;T::payload)&gt;&gt;</td></tr>
+<tr><th id="506">506</th><td>    : <span class="namespace">std::</span><a class="typedef" href="../../../../include/c++/4.8.2/type_traits.html#std::true_type" title='std::true_type' data-type='integral_constant&lt;bool, true&gt;' data-ref="std::true_type">true_type</a></td></tr>
+<tr><th id="507">507</th><td>{</td></tr>
+<tr><th id="508">508</th><td>};</td></tr>
+<tr><th id="509">509</th><td></td></tr>
+<tr><th id="510">510</th><td><b>template</b> &lt;<b>typename</b> M&gt; <em>void</em> <dfn class="decl def fn" id="_ZN4vapi19vapi_msg_set_msg_idEj" title='vapi::vapi_msg_set_msg_id' data-ref="_ZN4vapi19vapi_msg_set_msg_idEj">vapi_msg_set_msg_id</dfn> (<a class="typedef" href="vapi_common.h.html#vapi_msg_id_t" title='vapi_msg_id_t' data-type='unsigned int' data-ref="vapi_msg_id_t">vapi_msg_id_t</a> <dfn class="local col5 decl" id="11355id" title='id' data-type='vapi_msg_id_t' data-ref="11355id">id</dfn>)</td></tr>
+<tr><th id="511">511</th><td>{</td></tr>
+<tr><th id="512">512</th><td>  <a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>&lt;M&gt;::set_msg_id (<a class="local col5 ref" href="#11355id" title='id' data-ref="11355id">id</a>);</td></tr>
+<tr><th id="513">513</th><td>}</td></tr>
+<tr><th id="514">514</th><td></td></tr>
+<tr><th id="515">515</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="516">516</th><td><i class="doc"> * Class representing a message stored in shared memory</i></td></tr>
+<tr><th id="517">517</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="518">518</th><td><b>template</b> &lt;<b>typename</b> M&gt; <b>class</b> <dfn class="type def" id="vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</dfn></td></tr>
+<tr><th id="519">519</th><td>{</td></tr>
+<tr><th id="520">520</th><td><b>public</b>:</td></tr>
+<tr><th id="521">521</th><td>  <dfn class="decl def fn" id="_ZN4vapi3MsgC1ERKNS_3MsgIT_EE" title='vapi::Msg::Msg&lt;M&gt;' data-ref="_ZN4vapi3MsgC1ERKNS_3MsgIT_EE">Msg</dfn> (<em>const</em> Msg &amp;) = <b>delete</b>;</td></tr>
+<tr><th id="522">522</th><td></td></tr>
+<tr><th id="523">523</th><td>  <dfn class="decl def fn" id="_ZN4vapi3MsgD1Ev" title='vapi::Msg::~Msg&lt;M&gt;' data-ref="_ZN4vapi3MsgD1Ev">~Msg</dfn> ()</td></tr>
+<tr><th id="524">524</th><td>  {</td></tr>
+<tr><th id="525">525</th><td>    <a class="macro" href="vapi_dbg.h.html#65" title="" data-ref="_M/VAPI_DBG">VAPI_DBG</a> (<q>"Destroy Msg&lt;%s&gt;@%p, shm_data@%p"</q>,</td></tr>
+<tr><th id="526">526</th><td>              vapi_get_msg_name (get_msg_id ()), <b>this</b>, shm_data);</td></tr>
+<tr><th id="527">527</th><td>    <b>if</b> (<a class="member field" href="#vapi::Msg::shm_data" title='vapi::Msg::shm_data' data-ref="vapi::Msg::shm_data">shm_data</a>)</td></tr>
+<tr><th id="528">528</th><td>      {</td></tr>
+<tr><th id="529">529</th><td>        <a class="member field" href="#vapi::Msg::con" title='vapi::Msg::con' data-ref="vapi::Msg::con">con</a>.<a class="ref fn" href="../../../../include/c++/4.8.2/functional.html#_ZNKSt17reference_wrapper3getEv" title='std::reference_wrapper::get' data-ref="_ZNKSt17reference_wrapper3getEv">get</a> ().msg_free (<a class="member field" href="#vapi::Msg::shm_data" title='vapi::Msg::shm_data' data-ref="vapi::Msg::shm_data">shm_data</a>);</td></tr>
+<tr><th id="530">530</th><td>        <a class="member field" href="#vapi::Msg::shm_data" title='vapi::Msg::shm_data' data-ref="vapi::Msg::shm_data">shm_data</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="531">531</th><td>      }</td></tr>
+<tr><th id="532">532</th><td>  }</td></tr>
+<tr><th id="533">533</th><td></td></tr>
+<tr><th id="534">534</th><td>  <em>static</em> <a class="typedef" href="vapi_common.h.html#vapi_msg_id_t" title='vapi_msg_id_t' data-type='unsigned int' data-ref="vapi_msg_id_t">vapi_msg_id_t</a> <dfn class="decl def fn" id="_ZN4vapi3Msg10get_msg_idEv" title='vapi::Msg::get_msg_id' data-ref="_ZN4vapi3Msg10get_msg_idEv">get_msg_id</dfn> ()</td></tr>
+<tr><th id="535">535</th><td>  {</td></tr>
+<tr><th id="536">536</th><td>    <b>return</b> *<a class="member fn" href="#_ZN4vapi3Msg13msg_id_holderEv" title='vapi::Msg::msg_id_holder' data-ref="_ZN4vapi3Msg13msg_id_holderEv">msg_id_holder</a> ();</td></tr>
+<tr><th id="537">537</th><td>  }</td></tr>
+<tr><th id="538">538</th><td></td></tr>
+<tr><th id="539">539</th><td>  <b>template</b> &lt;<b>typename</b> X = M&gt;</td></tr>
+<tr><th id="540">540</th><td>  <b>typename</b> <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/type_traits.html#std::enable_if" title='std::enable_if' data-ref="std::enable_if">enable_if</a>&lt;<a class="type" href="#vapi::vapi_has_payload_trait" title='vapi::vapi_has_payload_trait' data-ref="vapi::vapi_has_payload_trait">vapi_has_payload_trait</a>&lt;X&gt;::value,</td></tr>
+<tr><th id="541">541</th><td>                          <b>decltype</b> (X::payload) &amp;&gt;::type</td></tr>
+<tr><th id="542">542</th><td>  <dfn class="decl def fn" id="_ZNK4vapi3Msg11get_payloadEv" title='vapi::Msg::get_payload' data-ref="_ZNK4vapi3Msg11get_payloadEv">get_payload</dfn> () <em>const</em></td></tr>
+<tr><th id="543">543</th><td>  {</td></tr>
+<tr><th id="544">544</th><td>    <b>return</b> <a class="member field" href="#vapi::Msg::shm_data" title='vapi::Msg::shm_data' data-ref="vapi::Msg::shm_data">shm_data</a>-&gt;payload;</td></tr>
+<tr><th id="545">545</th><td>  }</td></tr>
+<tr><th id="546">546</th><td></td></tr>
+<tr><th id="547">547</th><td><b>private</b>:</td></tr>
+<tr><th id="548">548</th><td>  <dfn class="decl def fn" id="_ZN4vapi3MsgC1EONS_3MsgIT_EE" title='vapi::Msg::Msg&lt;M&gt;' data-ref="_ZN4vapi3MsgC1EONS_3MsgIT_EE">Msg</dfn> (<a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>&lt;M&gt; &amp;&amp;<dfn class="local col6 decl" id="11356msg" title='msg' data-type='Msg&lt;M&gt; &amp;&amp;' data-ref="11356msg">msg</dfn>) : <a class="member field" href="#vapi::Msg::con" title='vapi::Msg::con' data-ref="vapi::Msg::con">con</a>{<a class="local col6 ref" href="#11356msg" title='msg' data-ref="11356msg">msg</a>.con}</td></tr>
+<tr><th id="549">549</th><td>  {</td></tr>
+<tr><th id="550">550</th><td>    <a class="macro" href="vapi_dbg.h.html#65" title="" data-ref="_M/VAPI_DBG">VAPI_DBG</a> (<q>"Move construct Msg&lt;%s&gt; from msg@%p to msg@%p, shm_data@%p"</q>,</td></tr>
+<tr><th id="551">551</th><td>              vapi_get_msg_name (get_msg_id ()), &amp;msg, <b>this</b>, msg.shm_data);</td></tr>
+<tr><th id="552">552</th><td>    <a class="member field" href="#vapi::Msg::shm_data" title='vapi::Msg::shm_data' data-ref="vapi::Msg::shm_data">shm_data</a> = <a class="local col6 ref" href="#11356msg" title='msg' data-ref="11356msg">msg</a>.shm_data;</td></tr>
+<tr><th id="553">553</th><td>    <a class="local col6 ref" href="#11356msg" title='msg' data-ref="11356msg">msg</a>.shm_data = <b>nullptr</b>;</td></tr>
+<tr><th id="554">554</th><td>  }</td></tr>
+<tr><th id="555">555</th><td></td></tr>
+<tr><th id="556">556</th><td>  <a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>&lt;M&gt; &amp;<dfn class="decl def fn" id="_ZN4vapi3MsgaSEONS_3MsgIT_EE" title='vapi::Msg::operator=' data-ref="_ZN4vapi3MsgaSEONS_3MsgIT_EE"><b>operator</b>=</dfn> (<a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>&lt;M&gt; &amp;&amp;<dfn class="local col7 decl" id="11357msg" title='msg' data-type='Msg&lt;M&gt; &amp;&amp;' data-ref="11357msg">msg</dfn>)</td></tr>
+<tr><th id="557">557</th><td>  {</td></tr>
+<tr><th id="558">558</th><td>    <a class="macro" href="vapi_dbg.h.html#65" title="" data-ref="_M/VAPI_DBG">VAPI_DBG</a> (<q>"Move assign Msg&lt;%s&gt; from msg@%p to msg@%p, shm_data@%p"</q>,</td></tr>
+<tr><th id="559">559</th><td>              vapi_get_msg_name (get_msg_id ()), &amp;msg, <b>this</b>, msg.shm_data);</td></tr>
+<tr><th id="560">560</th><td>    <a class="member field" href="#vapi::Msg::con" title='vapi::Msg::con' data-ref="vapi::Msg::con">con</a>.<a class="ref fn" href="../../../../include/c++/4.8.2/functional.html#_ZNKSt17reference_wrapper3getEv" title='std::reference_wrapper::get' data-ref="_ZNKSt17reference_wrapper3getEv">get</a> ().msg_free (<a class="member field" href="#vapi::Msg::shm_data" title='vapi::Msg::shm_data' data-ref="vapi::Msg::shm_data">shm_data</a>);</td></tr>
+<tr><th id="561">561</th><td>    <a class="member field" href="#vapi::Msg::con" title='vapi::Msg::con' data-ref="vapi::Msg::con">con</a> = <a class="local col7 ref" href="#11357msg" title='msg' data-ref="11357msg">msg</a>.con;</td></tr>
+<tr><th id="562">562</th><td>    <a class="member field" href="#vapi::Msg::shm_data" title='vapi::Msg::shm_data' data-ref="vapi::Msg::shm_data">shm_data</a> = <a class="local col7 ref" href="#11357msg" title='msg' data-ref="11357msg">msg</a>.shm_data;</td></tr>
+<tr><th id="563">563</th><td>    <a class="local col7 ref" href="#11357msg" title='msg' data-ref="11357msg">msg</a>.shm_data = <b>nullptr</b>;</td></tr>
+<tr><th id="564">564</th><td>    <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="565">565</th><td>  }</td></tr>
+<tr><th id="566">566</th><td></td></tr>
+<tr><th id="567">567</th><td>  <b>struct</b> <dfn class="type def" id="vapi::Msg::Msg_allocator" title='vapi::Msg::Msg_allocator' data-ref="vapi::Msg::Msg_allocator">Msg_allocator</dfn> : <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/bits/memoryfwd.h.html#std::allocator" title='std::allocator' data-ref="std::allocator">allocator</a>&lt;<a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>&lt;M&gt;&gt;</td></tr>
+<tr><th id="568">568</th><td>  {</td></tr>
+<tr><th id="569">569</th><td>    <b>template</b> &lt;<b>class</b> U, <b>class</b>... Args&gt; <em>void</em> <dfn class="decl def fn" id="_ZN4vapi3Msg13Msg_allocator9constructEPT_DpOT0_" title='vapi::Msg::Msg_allocator::construct' data-ref="_ZN4vapi3Msg13Msg_allocator9constructEPT_DpOT0_">construct</dfn> (U *<dfn class="local col8 decl" id="11358p" title='p' data-type='U *' data-ref="11358p">p</dfn>, Args &amp;&amp;... <dfn class="local col9 decl" id="11359args" title='args' data-type='Args &amp;&amp;...' data-ref="11359args">args</dfn>)</td></tr>
+<tr><th id="570">570</th><td>    {</td></tr>
+<tr><th id="571">571</th><td>      ::<b>new</b> ((<em>void</em> *)<a class="local col8 ref" href="#11358p" title='p' data-ref="11358p">p</a>) U (<span class="namespace">std::</span>forward&lt;Args&gt; (<a class="local col9 ref" href="#11359args" title='args' data-ref="11359args">args</a>)...);</td></tr>
+<tr><th id="572">572</th><td>    }</td></tr>
+<tr><th id="573">573</th><td></td></tr>
+<tr><th id="574">574</th><td>    <b>template</b> &lt;<b>class</b> U&gt; <b>struct</b> <dfn class="type def" id="vapi::Msg::Msg_allocator::rebind" title='vapi::Msg::Msg_allocator::rebind' data-ref="vapi::Msg::Msg_allocator::rebind">rebind</dfn></td></tr>
+<tr><th id="575">575</th><td>    {</td></tr>
+<tr><th id="576">576</th><td>      <b>typedef</b> <a class="type" href="#vapi::Msg::Msg_allocator" title='vapi::Msg::Msg_allocator' data-ref="vapi::Msg::Msg_allocator">Msg_allocator</a> <dfn class="typedef" id="vapi::Msg::Msg_allocator::rebind::other" title='vapi::Msg::Msg_allocator::rebind::other' data-type='vapi::Msg::Msg_allocator' data-ref="vapi::Msg::Msg_allocator::rebind::other">other</dfn>;</td></tr>
+<tr><th id="577">577</th><td>    };</td></tr>
+<tr><th id="578">578</th><td>  };</td></tr>
+<tr><th id="579">579</th><td></td></tr>
+<tr><th id="580">580</th><td>  <em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZN4vapi3Msg10set_msg_idEj" title='vapi::Msg::set_msg_id' data-ref="_ZN4vapi3Msg10set_msg_idEj">set_msg_id</dfn> (<a class="typedef" href="vapi_common.h.html#vapi_msg_id_t" title='vapi_msg_id_t' data-type='unsigned int' data-ref="vapi_msg_id_t">vapi_msg_id_t</a> <dfn class="local col0 decl" id="11360id" title='id' data-type='vapi_msg_id_t' data-ref="11360id">id</dfn>)</td></tr>
+<tr><th id="581">581</th><td>  {</td></tr>
+<tr><th id="582">582</th><td>    <a class="macro" href="../../../../include/assert.h.html#86" title="(((((vapi_msg_id_t)(~0)) == *msg_id_holder ()) || (id == *msg_id_holder ())) ? static_cast&lt;void&gt; (0) : __assert_fail (&quot;(((vapi_msg_id_t)(~0)) == *msg_id_holder ()) || (id == *msg_id_holder ())&quot;, &quot;/home/tempdban/vpp/build-data/../src/vpp-api/vapi/vapi.hpp&quot;, 583, __PRETTY_FUNCTION__))" data-ref="_M/assert">assert</a> ((<a class="macro" href="vapi_common.h.html#57" title="((vapi_msg_id_t)(~0))" data-ref="_M/INVALID_MSG_ID">INVALID_MSG_ID</a> == *<a class="member fn" href="#_ZN4vapi3Msg13msg_id_holderEv" title='vapi::Msg::msg_id_holder' data-ref="_ZN4vapi3Msg13msg_id_holderEv">msg_id_holder</a> ()) ||</td></tr>
+<tr><th id="583">583</th><td>            (<a class="local col0 ref" href="#11360id" title='id' data-ref="11360id">id</a> == *<a class="member fn" href="#_ZN4vapi3Msg13msg_id_holderEv" title='vapi::Msg::msg_id_holder' data-ref="_ZN4vapi3Msg13msg_id_holderEv">msg_id_holder</a> ()));</td></tr>
+<tr><th id="584">584</th><td>    *<a class="member fn" href="#_ZN4vapi3Msg13msg_id_holderEv" title='vapi::Msg::msg_id_holder' data-ref="_ZN4vapi3Msg13msg_id_holderEv">msg_id_holder</a> () = <a class="local col0 ref" href="#11360id" title='id' data-ref="11360id">id</a>;</td></tr>
+<tr><th id="585">585</th><td>  }</td></tr>
+<tr><th id="586">586</th><td></td></tr>
+<tr><th id="587">587</th><td>  <em>static</em> <a class="typedef" href="vapi_common.h.html#vapi_msg_id_t" title='vapi_msg_id_t' data-type='unsigned int' data-ref="vapi_msg_id_t">vapi_msg_id_t</a> *<dfn class="decl def fn" id="_ZN4vapi3Msg13msg_id_holderEv" title='vapi::Msg::msg_id_holder' data-ref="_ZN4vapi3Msg13msg_id_holderEv">msg_id_holder</dfn> ()</td></tr>
+<tr><th id="588">588</th><td>  {</td></tr>
+<tr><th id="589">589</th><td>    <em>static</em> <a class="typedef" href="vapi_common.h.html#vapi_msg_id_t" title='vapi_msg_id_t' data-type='unsigned int' data-ref="vapi_msg_id_t">vapi_msg_id_t</a> <dfn class="local col1 decl" id="11361my_id" title='my_id' data-type='vapi_msg_id_t' data-ref="11361my_id">my_id</dfn>{<a class="macro" href="vapi_common.h.html#57" title="((vapi_msg_id_t)(~0))" data-ref="_M/INVALID_MSG_ID">INVALID_MSG_ID</a>};</td></tr>
+<tr><th id="590">590</th><td>    <b>return</b> &amp;<a class="local col1 ref" href="#11361my_id" title='my_id' data-ref="11361my_id">my_id</a>;</td></tr>
+<tr><th id="591">591</th><td>  }</td></tr>
+<tr><th id="592">592</th><td></td></tr>
+<tr><th id="593">593</th><td>  <dfn class="decl def fn" id="_ZN4vapi3MsgC1ERNS_10ConnectionEPv" title='vapi::Msg::Msg&lt;M&gt;' data-ref="_ZN4vapi3MsgC1ERNS_10ConnectionEPv">Msg</dfn> (<a class="type" href="#vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</a> &amp;<dfn class="local col2 decl" id="11362con" title='con' data-type='vapi::Connection &amp;' data-ref="11362con">con</dfn>, <em>void</em> *<dfn class="local col3 decl" id="11363shm_data" title='shm_data' data-type='void *' data-ref="11363shm_data">shm_data</dfn>) : <a class="member field" href="#vapi::Msg::con" title='vapi::Msg::con' data-ref="vapi::Msg::con">con</a><a class="ref fn" href="../../../../include/c++/4.8.2/functional.html#_ZNSt17reference_wrapperC1ERT_" title='std::reference_wrapper::reference_wrapper&lt;_Tp&gt;' data-ref="_ZNSt17reference_wrapperC1ERT_">{</a><a class="local col2 ref" href="#11362con" title='con' data-ref="11362con">con</a>}</td></tr>
+<tr><th id="594">594</th><td>  {</td></tr>
+<tr><th id="595">595</th><td>    <b>if</b> (!<a class="local col2 ref" href="#11362con" title='con' data-ref="11362con">con</a>.<a class="ref fn" href="#_ZN4vapi10Connection16is_msg_availableEj" title='vapi::Connection::is_msg_available' data-ref="_ZN4vapi10Connection16is_msg_availableEj">is_msg_available</a> (<a class="member fn" href="#_ZN4vapi3Msg10get_msg_idEv" title='vapi::Msg::get_msg_id' data-ref="_ZN4vapi3Msg10get_msg_idEv">get_msg_id</a> ()))</td></tr>
+<tr><th id="596">596</th><td>      {</td></tr>
+<tr><th id="597">597</th><td>        <b>throw</b> <a class="type" href="#vapi::Msg_not_available_exception" title='vapi::Msg_not_available_exception' data-ref="vapi::Msg_not_available_exception">Msg_not_available_exception</a> <a class="ref fn" href="#67" title='vapi::Msg_not_available_exception::Msg_not_available_exception' data-ref="_ZN4vapi27Msg_not_available_exceptionC1Ev">(</a>);</td></tr>
+<tr><th id="598">598</th><td>      }</td></tr>
+<tr><th id="599">599</th><td>    <b>this</b>-&gt;shm_data = <b>static_cast</b>&lt;<a class="typedef" href="#vapi::Msg::shm_data_type" title='vapi::Msg::shm_data_type' data-type='M' data-ref="vapi::Msg::shm_data_type">shm_data_type</a> *&gt; (<a class="local col3 ref" href="#11363shm_data" title='shm_data' data-ref="11363shm_data">shm_data</a>);</td></tr>
+<tr><th id="600">600</th><td>    <a class="macro" href="vapi_dbg.h.html#65" title="" data-ref="_M/VAPI_DBG">VAPI_DBG</a> (<q>"New Msg&lt;%s&gt;@%p shm_data@%p"</q>, vapi_get_msg_name (get_msg_id ()),</td></tr>
+<tr><th id="601">601</th><td>              <b>this</b>, shm_data);</td></tr>
+<tr><th id="602">602</th><td>  }</td></tr>
+<tr><th id="603">603</th><td></td></tr>
+<tr><th id="604">604</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN4vapi3Msg15assign_responseEjPv" title='vapi::Msg::assign_response' data-ref="_ZN4vapi3Msg15assign_responseEjPv">assign_response</dfn> (<a class="typedef" href="vapi_common.h.html#vapi_msg_id_t" title='vapi_msg_id_t' data-type='unsigned int' data-ref="vapi_msg_id_t">vapi_msg_id_t</a> <dfn class="local col4 decl" id="11364resp_id" title='resp_id' data-type='vapi_msg_id_t' data-ref="11364resp_id">resp_id</dfn>, <em>void</em> *<dfn class="local col5 decl" id="11365shm_data" title='shm_data' data-type='void *' data-ref="11365shm_data">shm_data</dfn>)</td></tr>
+<tr><th id="605">605</th><td>  {</td></tr>
+<tr><th id="606">606</th><td>    <a class="macro" href="../../../../include/assert.h.html#86" title="((nullptr == this-&gt;shm_data) ? static_cast&lt;void&gt; (0) : __assert_fail (&quot;nullptr == this-&gt;shm_data&quot;, &quot;/home/tempdban/vpp/build-data/../src/vpp-api/vapi/vapi.hpp&quot;, 606, __PRETTY_FUNCTION__))" data-ref="_M/assert">assert</a> (<b>nullptr</b> == <b>this</b>-&gt;shm_data);</td></tr>
+<tr><th id="607">607</th><td>    <b>if</b> (<a class="local col4 ref" href="#11364resp_id" title='resp_id' data-ref="11364resp_id">resp_id</a> != <a class="member fn" href="#_ZN4vapi3Msg10get_msg_idEv" title='vapi::Msg::get_msg_id' data-ref="_ZN4vapi3Msg10get_msg_idEv">get_msg_id</a> ())</td></tr>
+<tr><th id="608">608</th><td>      {</td></tr>
+<tr><th id="609">609</th><td>        <b>throw</b> <a class="type" href="#vapi::Unexpected_msg_id_exception" title='vapi::Unexpected_msg_id_exception' data-ref="vapi::Unexpected_msg_id_exception">Unexpected_msg_id_exception</a> <a class="ref fn" href="#58" title='vapi::Unexpected_msg_id_exception::Unexpected_msg_id_exception' data-ref="_ZN4vapi27Unexpected_msg_id_exceptionC1Ev">(</a>);</td></tr>
+<tr><th id="610">610</th><td>      }</td></tr>
+<tr><th id="611">611</th><td>    <b>this</b>-&gt;shm_data = <b>static_cast</b>&lt;M *&gt; (<a class="local col5 ref" href="#11365shm_data" title='shm_data' data-ref="11365shm_data">shm_data</a>);</td></tr>
+<tr><th id="612">612</th><td>    vapi_swap_to_host&lt;M&gt; (<b>this</b>-&gt;shm_data);</td></tr>
+<tr><th id="613">613</th><td>    <a class="macro" href="vapi_dbg.h.html#65" title="" data-ref="_M/VAPI_DBG">VAPI_DBG</a> (<q>"Assign response to Msg&lt;%s&gt;@%p shm_data@%p"</q>,</td></tr>
+<tr><th id="614">614</th><td>              vapi_get_msg_name (get_msg_id ()), <b>this</b>, shm_data);</td></tr>
+<tr><th id="615">615</th><td>  }</td></tr>
+<tr><th id="616">616</th><td></td></tr>
+<tr><th id="617">617</th><td>  <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/type_traits.html#std::reference_wrapper" title='std::reference_wrapper' data-ref="std::reference_wrapper">reference_wrapper</a>&lt;<a class="type" href="#vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</a>&gt; <dfn class="decl field" id="vapi::Msg::con" title='vapi::Msg::con' data-ref="vapi::Msg::con">con</dfn>;</td></tr>
+<tr><th id="618">618</th><td>  <b>using</b> <dfn class="typedef" id="vapi::Msg::shm_data_type" title='vapi::Msg::shm_data_type' data-type='M' data-ref="vapi::Msg::shm_data_type">shm_data_type</dfn> = M;</td></tr>
+<tr><th id="619">619</th><td>  <a class="typedef" href="#vapi::Msg::shm_data_type" title='vapi::Msg::shm_data_type' data-type='M' data-ref="vapi::Msg::shm_data_type">shm_data_type</a> *<dfn class="decl field" id="vapi::Msg::shm_data" title='vapi::Msg::shm_data' data-ref="vapi::Msg::shm_data">shm_data</dfn>;</td></tr>
+<tr><th id="620">620</th><td></td></tr>
+<tr><th id="621">621</th><td>  <b>friend</b> <b>class</b> <a class="type" href="#vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</a>;</td></tr>
+<tr><th id="622">622</th><td></td></tr>
+<tr><th id="623">623</th><td>  <b>template</b> &lt;<b>typename</b> Req, <b>typename</b> Resp, <b>typename</b>... Args&gt;</td></tr>
+<tr><th id="624">624</th><td>  <b>friend</b> <b>class</b> <dfn class="type" id="vapi::Request" title='vapi::Request' data-ref="vapi::Request">Request</dfn>;</td></tr>
+<tr><th id="625">625</th><td></td></tr>
+<tr><th id="626">626</th><td>  <b>template</b> &lt;<b>typename</b> Req, <b>typename</b> Resp, <b>typename</b>... Args&gt; <b>friend</b> <b>class</b> <dfn class="type" id="vapi::Dump" title='vapi::Dump' data-ref="vapi::Dump">Dump</dfn>;</td></tr>
+<tr><th id="627">627</th><td></td></tr>
+<tr><th id="628">628</th><td>  <b>template</b> &lt;<b>typename</b> X&gt; <b>friend</b> <b>class</b> <dfn class="type" id="vapi::Event_registration" title='vapi::Event_registration' data-ref="vapi::Event_registration">Event_registration</dfn>;</td></tr>
+<tr><th id="629">629</th><td></td></tr>
+<tr><th id="630">630</th><td>  <b>template</b> &lt;<b>typename</b> X&gt; <b>friend</b> <b>class</b> <dfn class="type" id="vapi::Result_set" title='vapi::Result_set' data-ref="vapi::Result_set">Result_set</dfn>;</td></tr>
+<tr><th id="631">631</th><td></td></tr>
+<tr><th id="632">632</th><td>  <b>friend</b> <b>struct</b> <a class="type" href="#vapi::Msg::Msg_allocator" title='vapi::Msg::Msg_allocator' data-ref="vapi::Msg::Msg_allocator">Msg_allocator</a>;</td></tr>
+<tr><th id="633">633</th><td></td></tr>
+<tr><th id="634">634</th><td>  <b>template</b> &lt;<b>typename</b> X&gt; <b>friend</b> <em>void</em> <a class="decl fn" href="#_ZN4vapi19vapi_msg_set_msg_idEj" title='vapi::vapi_msg_set_msg_id' data-ref="_ZN4vapi19vapi_msg_set_msg_idEj">vapi_msg_set_msg_id</a> (<a class="typedef" href="vapi_common.h.html#vapi_msg_id_t" title='vapi_msg_id_t' data-type='unsigned int' data-ref="vapi_msg_id_t">vapi_msg_id_t</a> <dfn class="local col6 decl" id="11366id" title='id' data-type='vapi_msg_id_t' data-ref="11366id">id</dfn>);</td></tr>
+<tr><th id="635">635</th><td>};</td></tr>
+<tr><th id="636">636</th><td></td></tr>
+<tr><th id="637">637</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="638">638</th><td><i class="doc"> * Class representing a simple request - with a single response message</i></td></tr>
+<tr><th id="639">639</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="640">640</th><td><b>template</b> &lt;<b>typename</b> Req, <b>typename</b> Resp, <b>typename</b>... Args&gt;</td></tr>
+<tr><th id="641">641</th><td><b>class</b> <dfn class="type def" id="vapi::Request" title='vapi::Request' data-ref="vapi::Request">Request</dfn> : <b>public</b> <a class="type" href="#vapi::Common_req" title='vapi::Common_req' data-ref="vapi::Common_req">Common_req</a></td></tr>
+<tr><th id="642">642</th><td>{</td></tr>
+<tr><th id="643">643</th><td><b>public</b>:</td></tr>
+<tr><th id="644">644</th><td>  <dfn class="decl def fn" id="_ZN4vapi7RequestC1ERNS_10ConnectionEDpT1_St8functionIF12vapi_error_eRNS_7RequestIT_T0_JS4_EEEEE" title='vapi::Request::Request&lt;Req, Resp, Args...&gt;' data-ref="_ZN4vapi7RequestC1ERNS_10ConnectionEDpT1_St8functionIF12vapi_error_eRNS_7RequestIT_T0_JS4_EEEEE">Request</dfn> (<a class="type" href="#vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</a> &amp;<dfn class="local col7 decl" id="11367con" title='con' data-type='vapi::Connection &amp;' data-ref="11367con">con</dfn>, Args... <dfn class="local col8 decl" id="11368args" title='args' data-type='Args...' data-ref="11368args">args</dfn>,</td></tr>
+<tr><th id="645">645</th><td>           <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/functional.html#std::function" title='std::function' data-ref="std::function">function</a>&lt;<a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> (<a class="type" href="#vapi::Request" title='vapi::Request' data-ref="vapi::Request">Request</a>&lt;Req, Resp, Args...&gt; &amp;)&gt;</td></tr>
+<tr><th id="646">646</th><td>               <dfn class="local col9 decl" id="11369callback" title='callback' data-type='std::function&lt;vapi_error_e (Request&lt;Req, Resp, Args...&gt; &amp;)&gt;' data-ref="11369callback">callback</dfn> = <b>nullptr</b>)</td></tr>
+<tr><th id="647">647</th><td>      : <a class="type" href="#vapi::Common_req" title='vapi::Common_req' data-ref="vapi::Common_req">Common_req</a>{<a class="local col7 ref" href="#11367con" title='con' data-ref="11367con">con</a>}, <a class="member field" href="#vapi::Request::callback" title='vapi::Request::callback' data-ref="vapi::Request::callback">callback</a>{<a class="local col9 ref" href="#11369callback" title='callback' data-ref="11369callback">callback</a>},</td></tr>
+<tr><th id="648">648</th><td>        <a class="member field" href="#vapi::Request::request" title='vapi::Request::request' data-ref="vapi::Request::request">request</a>{<a class="local col7 ref" href="#11367con" title='con' data-ref="11367con">con</a>, vapi_alloc&lt;Req&gt; (<a class="local col7 ref" href="#11367con" title='con' data-ref="11367con">con</a>, <a class="local col8 ref" href="#11368args" title='args' data-ref="11368args">args</a>...)}, <a class="member field" href="#vapi::Request::response" title='vapi::Request::response' data-ref="vapi::Request::response">response</a>{<a class="local col7 ref" href="#11367con" title='con' data-ref="11367con">con</a>, <b>nullptr</b>}</td></tr>
+<tr><th id="649">649</th><td>  {</td></tr>
+<tr><th id="650">650</th><td>  }</td></tr>
+<tr><th id="651">651</th><td></td></tr>
+<tr><th id="652">652</th><td>  <dfn class="decl def fn" id="_ZN4vapi7RequestC1ERKNS_7RequestIT_T0_JDpT1_EEE" title='vapi::Request::Request&lt;Req, Resp, Args...&gt;' data-ref="_ZN4vapi7RequestC1ERKNS_7RequestIT_T0_JDpT1_EEE">Request</dfn> (<em>const</em> Request &amp;) = <b>delete</b>;</td></tr>
+<tr><th id="653">653</th><td></td></tr>
+<tr><th id="654">654</th><td>  <b>virtual</b> <dfn class="virtual decl def fn" id="_ZN4vapi7RequestD1Ev" title='vapi::Request::~Request&lt;Req, Resp, Args...&gt;' data-ref="_ZN4vapi7RequestD1Ev">~Request</dfn> ()</td></tr>
+<tr><th id="655">655</th><td>  {</td></tr>
+<tr><th id="656">656</th><td>    <b>if</b> (<a class="enum" href="#vapi::RESPONSE_NOT_READY" title='vapi::RESPONSE_NOT_READY' data-ref="vapi::RESPONSE_NOT_READY">RESPONSE_NOT_READY</a> == <a class="member fn" href="#_ZNK4vapi10Common_req18get_response_stateEv" title='vapi::Common_req::get_response_state' data-ref="_ZNK4vapi10Common_req18get_response_stateEv">get_response_state</a> ())</td></tr>
+<tr><th id="657">657</th><td>      {</td></tr>
+<tr><th id="658">658</th><td>        <a class="member field" href="#vapi::Common_req::con" title='vapi::Common_req::con' data-ref="vapi::Common_req::con">con</a>.<a class="ref fn" href="#_ZN4vapi10Connection18unregister_requestEPNS_10Common_reqE" title='vapi::Connection::unregister_request' data-ref="_ZN4vapi10Connection18unregister_requestEPNS_10Common_reqE">unregister_request</a> (<b>this</b>);</td></tr>
+<tr><th id="659">659</th><td>      }</td></tr>
+<tr><th id="660">660</th><td>  }</td></tr>
+<tr><th id="661">661</th><td></td></tr>
+<tr><th id="662">662</th><td>  <a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> <dfn class="decl def fn" id="_ZN4vapi7Request7executeEv" title='vapi::Request::execute' data-ref="_ZN4vapi7Request7executeEv">execute</dfn> ()</td></tr>
+<tr><th id="663">663</th><td>  {</td></tr>
+<tr><th id="664">664</th><td>    <b>return</b> <a class="member field" href="#vapi::Common_req::con" title='vapi::Common_req::con' data-ref="vapi::Common_req::con">con</a>.send (<b>this</b>);</td></tr>
+<tr><th id="665">665</th><td>  }</td></tr>
+<tr><th id="666">666</th><td></td></tr>
+<tr><th id="667">667</th><td>  <em>const</em> <a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>&lt;Req&gt; &amp;<dfn class="decl def fn" id="_ZNK4vapi7Request11get_requestEv" title='vapi::Request::get_request' data-ref="_ZNK4vapi7Request11get_requestEv">get_request</dfn> (<em>void</em>) <em>const</em></td></tr>
+<tr><th id="668">668</th><td>  {</td></tr>
+<tr><th id="669">669</th><td>    <b>return</b> <a class="member field" href="#vapi::Request::request" title='vapi::Request::request' data-ref="vapi::Request::request">request</a>;</td></tr>
+<tr><th id="670">670</th><td>  }</td></tr>
+<tr><th id="671">671</th><td></td></tr>
+<tr><th id="672">672</th><td>  <em>const</em> <a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>&lt;Resp&gt; &amp;<dfn class="decl def fn" id="_ZN4vapi7Request12get_responseEv" title='vapi::Request::get_response' data-ref="_ZN4vapi7Request12get_responseEv">get_response</dfn> (<em>void</em>)</td></tr>
+<tr><th id="673">673</th><td>  {</td></tr>
+<tr><th id="674">674</th><td>    <b>return</b> <a class="member field" href="#vapi::Request::response" title='vapi::Request::response' data-ref="vapi::Request::response">response</a>;</td></tr>
+<tr><th id="675">675</th><td>  }</td></tr>
+<tr><th id="676">676</th><td></td></tr>
+<tr><th id="677">677</th><td><b>private</b>:</td></tr>
+<tr><th id="678">678</th><td>  <b>virtual</b> <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/bits/stl_pair.h.html#std::tuple" title='std::tuple' data-ref="std::tuple">tuple</a>&lt;<a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a>, <em>bool</em>&gt; <dfn class="virtual decl def fn" id="_ZN4vapi7Request15assign_responseEjPv" title='vapi::Request::assign_response' data-ref="_ZN4vapi7Request15assign_responseEjPv">assign_response</dfn> (<a class="typedef" href="vapi_common.h.html#vapi_msg_id_t" title='vapi_msg_id_t' data-type='unsigned int' data-ref="vapi_msg_id_t">vapi_msg_id_t</a> <dfn class="local col0 decl" id="11370id" title='id' data-type='vapi_msg_id_t' data-ref="11370id">id</dfn>,</td></tr>
+<tr><th id="679">679</th><td>                                                          <em>void</em> *<dfn class="local col1 decl" id="11371shm_data" title='shm_data' data-type='void *' data-ref="11371shm_data">shm_data</dfn>)</td></tr>
+<tr><th id="680">680</th><td>  {</td></tr>
+<tr><th id="681">681</th><td>    <a class="macro" href="../../../../include/assert.h.html#86" title="((RESPONSE_NOT_READY == get_response_state ()) ? static_cast&lt;void&gt; (0) : __assert_fail (&quot;RESPONSE_NOT_READY == get_response_state ()&quot;, &quot;/home/tempdban/vpp/build-data/../src/vpp-api/vapi/vapi.hpp&quot;, 681, __PRETTY_FUNCTION__))" data-ref="_M/assert">assert</a> (<a class="enum" href="#vapi::RESPONSE_NOT_READY" title='vapi::RESPONSE_NOT_READY' data-ref="vapi::RESPONSE_NOT_READY">RESPONSE_NOT_READY</a> == <a class="member fn" href="#_ZNK4vapi10Common_req18get_response_stateEv" title='vapi::Common_req::get_response_state' data-ref="_ZNK4vapi10Common_req18get_response_stateEv">get_response_state</a> ());</td></tr>
+<tr><th id="682">682</th><td>    <a class="member field" href="#vapi::Request::response" title='vapi::Request::response' data-ref="vapi::Request::response">response</a>.assign_response (<a class="local col0 ref" href="#11370id" title='id' data-ref="11370id">id</a>, <a class="local col1 ref" href="#11371shm_data" title='shm_data' data-ref="11371shm_data">shm_data</a>);</td></tr>
+<tr><th id="683">683</th><td>    <a class="member fn" href="#_ZN4vapi10Common_req18set_response_stateENS_21vapi_response_state_eE" title='vapi::Common_req::set_response_state' data-ref="_ZN4vapi10Common_req18set_response_stateENS_21vapi_response_state_eE">set_response_state</a> (<a class="enum" href="#vapi::RESPONSE_READY" title='vapi::RESPONSE_READY' data-ref="vapi::RESPONSE_READY">RESPONSE_READY</a>);</td></tr>
+<tr><th id="684">684</th><td>    <b>if</b> (<b>nullptr</b> != <a class="member field" href="#vapi::Request::callback" title='vapi::Request::callback' data-ref="vapi::Request::callback">callback</a>)</td></tr>
+<tr><th id="685">685</th><td>      {</td></tr>
+<tr><th id="686">686</th><td>        <b>return</b> <span class="namespace">std::</span>make_pair (<a class="member field" href="#vapi::Request::callback" title='vapi::Request::callback' data-ref="vapi::Request::callback">callback</a> (*<b>this</b>), <b>true</b>);</td></tr>
+<tr><th id="687">687</th><td>      }</td></tr>
+<tr><th id="688">688</th><td>    <b>return</b> <a class="ref fn fake" href="../../../../include/c++/4.8.2/tuple.html#_ZNSt5tupleIJT_T0_EEC1EOSt4pairIT_T0_E" title='std::tuple&lt;type-parameter-0-0, type-parameter-0-1&gt;::tuple&lt;type-parameter-0-0, type-parameter-0-1&gt;' data-ref="_ZNSt5tupleIJT_T0_EEC1EOSt4pairIT_T0_E"></a><span class="namespace">std::</span><a class="ref fn" href="../../../../include/c++/4.8.2/bits/stl_pair.h.html#_ZSt9make_pairOT_OT0_" title='std::make_pair' data-ref="_ZSt9make_pairOT_OT0_">make_pair</a> (<a class="enum" href="vapi_common.h.html#VAPI_OK" title='VAPI_OK' data-ref="VAPI_OK">VAPI_OK</a>, <b>true</b>);</td></tr>
+<tr><th id="689">689</th><td>  }</td></tr>
+<tr><th id="690">690</th><td>  <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/functional.html#std::function" title='std::function' data-ref="std::function">function</a>&lt;<a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> (<a class="type" href="#vapi::Request" title='vapi::Request' data-ref="vapi::Request">Request</a>&lt;Req, Resp, Args...&gt; &amp;)&gt; <dfn class="decl field" id="vapi::Request::callback" title='vapi::Request::callback' data-ref="vapi::Request::callback">callback</dfn>;</td></tr>
+<tr><th id="691">691</th><td>  <a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>&lt;Req&gt; <dfn class="decl field" id="vapi::Request::request" title='vapi::Request::request' data-ref="vapi::Request::request">request</dfn>;</td></tr>
+<tr><th id="692">692</th><td>  <a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>&lt;Resp&gt; <dfn class="decl field" id="vapi::Request::response" title='vapi::Request::response' data-ref="vapi::Request::response">response</dfn>;</td></tr>
+<tr><th id="693">693</th><td></td></tr>
+<tr><th id="694">694</th><td>  <b>friend</b> <b>class</b> <a class="type" href="#vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</a>;</td></tr>
+<tr><th id="695">695</th><td>};</td></tr>
+<tr><th id="696">696</th><td></td></tr>
+<tr><th id="697">697</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="698">698</th><td><i class="doc"> * Class representing iterable set of responses of the same type</i></td></tr>
+<tr><th id="699">699</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="700">700</th><td><b>template</b> &lt;<b>typename</b> M&gt; <b>class</b> <dfn class="type def" id="vapi::Result_set" title='vapi::Result_set' data-ref="vapi::Result_set">Result_set</dfn></td></tr>
+<tr><th id="701">701</th><td>{</td></tr>
+<tr><th id="702">702</th><td><b>public</b>:</td></tr>
+<tr><th id="703">703</th><td>  <dfn class="decl def fn" id="_ZN4vapi10Result_setD1Ev" title='vapi::Result_set::~Result_set&lt;M&gt;' data-ref="_ZN4vapi10Result_setD1Ev">~Result_set</dfn> ()</td></tr>
+<tr><th id="704">704</th><td>  {</td></tr>
+<tr><th id="705">705</th><td>  }</td></tr>
+<tr><th id="706">706</th><td></td></tr>
+<tr><th id="707">707</th><td>  <dfn class="decl def fn" id="_ZN4vapi10Result_setC1ERKNS_10Result_setIT_EE" title='vapi::Result_set::Result_set&lt;M&gt;' data-ref="_ZN4vapi10Result_setC1ERKNS_10Result_setIT_EE">Result_set</dfn> (<em>const</em> Result_set &amp;) = <b>delete</b>;</td></tr>
+<tr><th id="708">708</th><td></td></tr>
+<tr><th id="709">709</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK4vapi10Result_set11is_completeEv" title='vapi::Result_set::is_complete' data-ref="_ZNK4vapi10Result_set11is_completeEv">is_complete</dfn> () <em>const</em></td></tr>
+<tr><th id="710">710</th><td>  {</td></tr>
+<tr><th id="711">711</th><td>    <b>return</b> <a class="member field" href="#vapi::Result_set::complete" title='vapi::Result_set::complete' data-ref="vapi::Result_set::complete">complete</a>;</td></tr>
+<tr><th id="712">712</th><td>  }</td></tr>
+<tr><th id="713">713</th><td></td></tr>
+<tr><th id="714">714</th><td>  <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="decl def fn" id="_ZNK4vapi10Result_set4sizeEv" title='vapi::Result_set::size' data-ref="_ZNK4vapi10Result_set4sizeEv">size</dfn> () <em>const</em></td></tr>
+<tr><th id="715">715</th><td>  {</td></tr>
+<tr><th id="716">716</th><td>    <b>return</b> <a class="member field" href="#vapi::Result_set::set" title='vapi::Result_set::set' data-ref="vapi::Result_set::set">set</a>.size ();</td></tr>
+<tr><th id="717">717</th><td>  }</td></tr>
+<tr><th id="718">718</th><td></td></tr>
+<tr><th id="719">719</th><td>  <b>using</b> <dfn class="typedef" id="vapi::Result_set::const_iterator" title='vapi::Result_set::const_iterator' data-type='typename std::vector&lt;Msg&lt;M&gt;, typename Msg&lt;M&gt;::Msg_allocator&gt;::const_iterator' data-ref="vapi::Result_set::const_iterator">const_iterator</dfn> =</td></tr>
+<tr><th id="720">720</th><td>      <b>typename</b> <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/bits/stl_vector.h.html#std::vector" title='std::vector' data-ref="std::vector">vector</a>&lt;<a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>&lt;M&gt;,</td></tr>
+<tr><th id="721">721</th><td>                           <b>typename</b> <a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>&lt;M&gt;::Msg_allocator&gt;::const_iterator;</td></tr>
+<tr><th id="722">722</th><td></td></tr>
+<tr><th id="723">723</th><td>  <a class="typedef" href="#vapi::Result_set::const_iterator" title='vapi::Result_set::const_iterator' data-type='typename std::vector&lt;Msg&lt;M&gt;, typename Msg&lt;M&gt;::Msg_allocator&gt;::const_iterator' data-ref="vapi::Result_set::const_iterator">const_iterator</a> <dfn class="decl def fn" id="_ZNK4vapi10Result_set5beginEv" title='vapi::Result_set::begin' data-ref="_ZNK4vapi10Result_set5beginEv">begin</dfn> () <em>const</em></td></tr>
+<tr><th id="724">724</th><td>  {</td></tr>
+<tr><th id="725">725</th><td>    <b>return</b> <a class="member field" href="#vapi::Result_set::set" title='vapi::Result_set::set' data-ref="vapi::Result_set::set">set</a>.begin ();</td></tr>
+<tr><th id="726">726</th><td>  }</td></tr>
+<tr><th id="727">727</th><td></td></tr>
+<tr><th id="728">728</th><td>  <a class="typedef" href="#vapi::Result_set::const_iterator" title='vapi::Result_set::const_iterator' data-type='typename std::vector&lt;Msg&lt;M&gt;, typename Msg&lt;M&gt;::Msg_allocator&gt;::const_iterator' data-ref="vapi::Result_set::const_iterator">const_iterator</a> <dfn class="decl def fn" id="_ZNK4vapi10Result_set3endEv" title='vapi::Result_set::end' data-ref="_ZNK4vapi10Result_set3endEv">end</dfn> () <em>const</em></td></tr>
+<tr><th id="729">729</th><td>  {</td></tr>
+<tr><th id="730">730</th><td>    <b>return</b> <a class="member field" href="#vapi::Result_set::set" title='vapi::Result_set::set' data-ref="vapi::Result_set::set">set</a>.end ();</td></tr>
+<tr><th id="731">731</th><td>  }</td></tr>
+<tr><th id="732">732</th><td></td></tr>
+<tr><th id="733">733</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN4vapi10Result_set13free_responseENSt6vectorINS_3MsgIT_EENS4_13Msg_allocatorEE14const_iteratorE" title='vapi::Result_set::free_response' data-ref="_ZN4vapi10Result_set13free_responseENSt6vectorINS_3MsgIT_EENS4_13Msg_allocatorEE14const_iteratorE">free_response</dfn> (<a class="typedef" href="#vapi::Result_set::const_iterator" title='vapi::Result_set::const_iterator' data-type='typename std::vector&lt;Msg&lt;M&gt;, typename Msg&lt;M&gt;::Msg_allocator&gt;::const_iterator' data-ref="vapi::Result_set::const_iterator">const_iterator</a> <dfn class="local col2 decl" id="11372pos" title='pos' data-type='vapi::Result_set::const_iterator' data-ref="11372pos">pos</dfn>)</td></tr>
+<tr><th id="734">734</th><td>  {</td></tr>
+<tr><th id="735">735</th><td>    <a class="member field" href="#vapi::Result_set::set" title='vapi::Result_set::set' data-ref="vapi::Result_set::set">set</a>.erase (<a class="local col2 ref" href="#11372pos" title='pos' data-ref="11372pos">pos</a>);</td></tr>
+<tr><th id="736">736</th><td>  }</td></tr>
+<tr><th id="737">737</th><td></td></tr>
+<tr><th id="738">738</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN4vapi10Result_set18free_all_responsesEv" title='vapi::Result_set::free_all_responses' data-ref="_ZN4vapi10Result_set18free_all_responsesEv">free_all_responses</dfn> ()</td></tr>
+<tr><th id="739">739</th><td>  {</td></tr>
+<tr><th id="740">740</th><td>    <a class="member field" href="#vapi::Result_set::set" title='vapi::Result_set::set' data-ref="vapi::Result_set::set">set</a>.clear ();</td></tr>
+<tr><th id="741">741</th><td>  }</td></tr>
+<tr><th id="742">742</th><td></td></tr>
+<tr><th id="743">743</th><td><b>private</b>:</td></tr>
+<tr><th id="744">744</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN4vapi10Result_set13mark_completeEv" title='vapi::Result_set::mark_complete' data-ref="_ZN4vapi10Result_set13mark_completeEv">mark_complete</dfn> ()</td></tr>
+<tr><th id="745">745</th><td>  {</td></tr>
+<tr><th id="746">746</th><td>    <a class="member field" href="#vapi::Result_set::complete" title='vapi::Result_set::complete' data-ref="vapi::Result_set::complete">complete</a> = <b>true</b>;</td></tr>
+<tr><th id="747">747</th><td>  }</td></tr>
+<tr><th id="748">748</th><td></td></tr>
+<tr><th id="749">749</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN4vapi10Result_set15assign_responseEjPv" title='vapi::Result_set::assign_response' data-ref="_ZN4vapi10Result_set15assign_responseEjPv">assign_response</dfn> (<a class="typedef" href="vapi_common.h.html#vapi_msg_id_t" title='vapi_msg_id_t' data-type='unsigned int' data-ref="vapi_msg_id_t">vapi_msg_id_t</a> <dfn class="local col3 decl" id="11373resp_id" title='resp_id' data-type='vapi_msg_id_t' data-ref="11373resp_id">resp_id</dfn>, <em>void</em> *<dfn class="local col4 decl" id="11374shm_data" title='shm_data' data-type='void *' data-ref="11374shm_data">shm_data</dfn>)</td></tr>
+<tr><th id="750">750</th><td>  {</td></tr>
+<tr><th id="751">751</th><td>    <b>if</b> (<a class="local col3 ref" href="#11373resp_id" title='resp_id' data-ref="11373resp_id">resp_id</a> != <a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>&lt;M&gt;::get_msg_id ())</td></tr>
+<tr><th id="752">752</th><td>      {</td></tr>
+<tr><th id="753">753</th><td>        {</td></tr>
+<tr><th id="754">754</th><td>          <b>throw</b> <a class="type" href="#vapi::Unexpected_msg_id_exception" title='vapi::Unexpected_msg_id_exception' data-ref="vapi::Unexpected_msg_id_exception">Unexpected_msg_id_exception</a> <a class="ref fn" href="#58" title='vapi::Unexpected_msg_id_exception::Unexpected_msg_id_exception' data-ref="_ZN4vapi27Unexpected_msg_id_exceptionC1Ev">(</a>);</td></tr>
+<tr><th id="755">755</th><td>        }</td></tr>
+<tr><th id="756">756</th><td>      }</td></tr>
+<tr><th id="757">757</th><td>    <b>else</b> <b>if</b> (<a class="local col4 ref" href="#11374shm_data" title='shm_data' data-ref="11374shm_data">shm_data</a>)</td></tr>
+<tr><th id="758">758</th><td>      {</td></tr>
+<tr><th id="759">759</th><td>        vapi_swap_to_host&lt;M&gt; (<b>static_cast</b>&lt;M *&gt; (<a class="local col4 ref" href="#11374shm_data" title='shm_data' data-ref="11374shm_data">shm_data</a>));</td></tr>
+<tr><th id="760">760</th><td>        <a class="member field" href="#vapi::Result_set::set" title='vapi::Result_set::set' data-ref="vapi::Result_set::set">set</a>.emplace_back (<a class="member field" href="#vapi::Result_set::con" title='vapi::Result_set::con' data-ref="vapi::Result_set::con">con</a>, <a class="local col4 ref" href="#11374shm_data" title='shm_data' data-ref="11374shm_data">shm_data</a>);</td></tr>
+<tr><th id="761">761</th><td>        <a class="macro" href="vapi_dbg.h.html#65" title="" data-ref="_M/VAPI_DBG">VAPI_DBG</a> (<q>"Result_set@%p emplace_back shm_data@%p"</q>, <b>this</b>, shm_data);</td></tr>
+<tr><th id="762">762</th><td>      }</td></tr>
+<tr><th id="763">763</th><td>  }</td></tr>
+<tr><th id="764">764</th><td></td></tr>
+<tr><th id="765">765</th><td>  <dfn class="decl def fn" id="_ZN4vapi10Result_setC1ERNS_10ConnectionE" title='vapi::Result_set::Result_set&lt;M&gt;' data-ref="_ZN4vapi10Result_setC1ERNS_10ConnectionE">Result_set</dfn> (<a class="type" href="#vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</a> &amp;<dfn class="local col5 decl" id="11375con" title='con' data-type='vapi::Connection &amp;' data-ref="11375con">con</dfn>) : <a class="member field" href="#vapi::Result_set::con" title='vapi::Result_set::con' data-ref="vapi::Result_set::con">con</a> (<a class="local col5 ref" href="#11375con" title='con' data-ref="11375con">con</a>), <a class="member field" href="#vapi::Result_set::complete" title='vapi::Result_set::complete' data-ref="vapi::Result_set::complete">complete</a>{<b>false</b>}</td></tr>
+<tr><th id="766">766</th><td>  {</td></tr>
+<tr><th id="767">767</th><td>  }</td></tr>
+<tr><th id="768">768</th><td></td></tr>
+<tr><th id="769">769</th><td>  <a class="type" href="#vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</a> &amp;<dfn class="decl field" id="vapi::Result_set::con" title='vapi::Result_set::con' data-ref="vapi::Result_set::con">con</dfn>;</td></tr>
+<tr><th id="770">770</th><td>  <em>bool</em> <dfn class="decl field" id="vapi::Result_set::complete" title='vapi::Result_set::complete' data-ref="vapi::Result_set::complete">complete</dfn>;</td></tr>
+<tr><th id="771">771</th><td>  <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/bits/stl_vector.h.html#std::vector" title='std::vector' data-ref="std::vector">vector</a>&lt;<a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>&lt;M&gt;, <b>typename</b> <a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>&lt;M&gt;::Msg_allocator&gt; <dfn class="decl field" id="vapi::Result_set::set" title='vapi::Result_set::set' data-ref="vapi::Result_set::set">set</dfn>;</td></tr>
+<tr><th id="772">772</th><td></td></tr>
+<tr><th id="773">773</th><td>  <b>template</b> &lt;<b>typename</b> Req, <b>typename</b> Resp, <b>typename</b>... Args&gt; <b>friend</b> <b>class</b> <dfn class="type" id="vapi::Dump" title='vapi::Dump' data-ref="vapi::Dump">Dump</dfn>;</td></tr>
+<tr><th id="774">774</th><td></td></tr>
+<tr><th id="775">775</th><td>  <b>template</b> &lt;<b>typename</b> X&gt; <b>friend</b> <b>class</b> <dfn class="type" id="vapi::Event_registration" title='vapi::Event_registration' data-ref="vapi::Event_registration">Event_registration</dfn>;</td></tr>
+<tr><th id="776">776</th><td>};</td></tr>
+<tr><th id="777">777</th><td></td></tr>
+<tr><th id="778">778</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="779">779</th><td><i class="doc"> * Class representing a dump request - zero or more identical responses to a</i></td></tr>
+<tr><th id="780">780</th><td><i class="doc"> * single request message</i></td></tr>
+<tr><th id="781">781</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="782">782</th><td><b>template</b> &lt;<b>typename</b> Req, <b>typename</b> Resp, <b>typename</b>... Args&gt;</td></tr>
+<tr><th id="783">783</th><td><b>class</b> <dfn class="type def" id="vapi::Dump" title='vapi::Dump' data-ref="vapi::Dump">Dump</dfn> : <b>public</b> <a class="type" href="#vapi::Common_req" title='vapi::Common_req' data-ref="vapi::Common_req">Common_req</a></td></tr>
+<tr><th id="784">784</th><td>{</td></tr>
+<tr><th id="785">785</th><td><b>public</b>:</td></tr>
+<tr><th id="786">786</th><td>  <dfn class="decl def fn" id="_ZN4vapi4DumpC1ERNS_10ConnectionEDpT1_St8functionIF12vapi_error_eRNS_4DumpIT_T0_JS4_EEEEE" title='vapi::Dump::Dump&lt;Req, Resp, Args...&gt;' data-ref="_ZN4vapi4DumpC1ERNS_10ConnectionEDpT1_St8functionIF12vapi_error_eRNS_4DumpIT_T0_JS4_EEEEE">Dump</dfn> (<a class="type" href="#vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</a> &amp;<dfn class="local col6 decl" id="11376con" title='con' data-type='vapi::Connection &amp;' data-ref="11376con">con</dfn>, Args... <dfn class="local col7 decl" id="11377args" title='args' data-type='Args...' data-ref="11377args">args</dfn>,</td></tr>
+<tr><th id="787">787</th><td>        <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/functional.html#std::function" title='std::function' data-ref="std::function">function</a>&lt;<a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> (<a class="type" href="#vapi::Dump" title='vapi::Dump' data-ref="vapi::Dump">Dump</a>&lt;Req, Resp, Args...&gt; &amp;)&gt; <dfn class="local col8 decl" id="11378callback" title='callback' data-type='std::function&lt;vapi_error_e (Dump&lt;Req, Resp, Args...&gt; &amp;)&gt;' data-ref="11378callback">callback</dfn> =</td></tr>
+<tr><th id="788">788</th><td>            <b>nullptr</b>)</td></tr>
+<tr><th id="789">789</th><td>      : <a class="type" href="#vapi::Common_req" title='vapi::Common_req' data-ref="vapi::Common_req">Common_req</a>{<a class="local col6 ref" href="#11376con" title='con' data-ref="11376con">con</a>}, <a class="member field" href="#vapi::Dump::request" title='vapi::Dump::request' data-ref="vapi::Dump::request">request</a>{<a class="local col6 ref" href="#11376con" title='con' data-ref="11376con">con</a>, vapi_alloc&lt;Req&gt; (<a class="local col6 ref" href="#11376con" title='con' data-ref="11376con">con</a>, <a class="local col7 ref" href="#11377args" title='args' data-ref="11377args">args</a>...)},</td></tr>
+<tr><th id="790">790</th><td>        <a class="member field" href="#vapi::Dump::result_set" title='vapi::Dump::result_set' data-ref="vapi::Dump::result_set">result_set</a>{<a class="local col6 ref" href="#11376con" title='con' data-ref="11376con">con</a>}, <a class="member field" href="#vapi::Dump::callback" title='vapi::Dump::callback' data-ref="vapi::Dump::callback">callback</a>{<a class="local col8 ref" href="#11378callback" title='callback' data-ref="11378callback">callback</a>}</td></tr>
+<tr><th id="791">791</th><td>  {</td></tr>
+<tr><th id="792">792</th><td>  }</td></tr>
+<tr><th id="793">793</th><td></td></tr>
+<tr><th id="794">794</th><td>  <dfn class="decl def fn" id="_ZN4vapi4DumpC1ERKNS_4DumpIT_T0_JDpT1_EEE" title='vapi::Dump::Dump&lt;Req, Resp, Args...&gt;' data-ref="_ZN4vapi4DumpC1ERKNS_4DumpIT_T0_JDpT1_EEE">Dump</dfn> (<em>const</em> Dump &amp;) = <b>delete</b>;</td></tr>
+<tr><th id="795">795</th><td></td></tr>
+<tr><th id="796">796</th><td>  <b>virtual</b> <dfn class="virtual decl def fn" id="_ZN4vapi4DumpD1Ev" title='vapi::Dump::~Dump&lt;Req, Resp, Args...&gt;' data-ref="_ZN4vapi4DumpD1Ev">~Dump</dfn> ()</td></tr>
+<tr><th id="797">797</th><td>  {</td></tr>
+<tr><th id="798">798</th><td>  }</td></tr>
+<tr><th id="799">799</th><td></td></tr>
+<tr><th id="800">800</th><td>  <b>virtual</b> <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/bits/stl_pair.h.html#std::tuple" title='std::tuple' data-ref="std::tuple">tuple</a>&lt;<a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a>, <em>bool</em>&gt; <dfn class="virtual decl def fn" id="_ZN4vapi4Dump15assign_responseEjPv" title='vapi::Dump::assign_response' data-ref="_ZN4vapi4Dump15assign_responseEjPv">assign_response</dfn> (<a class="typedef" href="vapi_common.h.html#vapi_msg_id_t" title='vapi_msg_id_t' data-type='unsigned int' data-ref="vapi_msg_id_t">vapi_msg_id_t</a> <dfn class="local col9 decl" id="11379id" title='id' data-type='vapi_msg_id_t' data-ref="11379id">id</dfn>,</td></tr>
+<tr><th id="801">801</th><td>                                                          <em>void</em> *<dfn class="local col0 decl" id="11380shm_data" title='shm_data' data-type='void *' data-ref="11380shm_data">shm_data</dfn>)</td></tr>
+<tr><th id="802">802</th><td>  {</td></tr>
+<tr><th id="803">803</th><td>    <b>if</b> (<a class="local col9 ref" href="#11379id" title='id' data-ref="11379id">id</a> == <a class="ref" href="../../../build-root/build-vpp_debug-native/vpp/vpp-api/vapi/vapi/vpe.api.vapi.h.html#vapi_msg_id_control_ping_reply" title='vapi_msg_id_control_ping_reply' data-ref="vapi_msg_id_control_ping_reply">vapi_msg_id_control_ping_reply</a>)</td></tr>
+<tr><th id="804">804</th><td>      {</td></tr>
+<tr><th id="805">805</th><td>        <a class="member field" href="#vapi::Common_req::con" title='vapi::Common_req::con' data-ref="vapi::Common_req::con">con</a>.<a class="ref fn" href="#_ZN4vapi10Connection8msg_freeEPv" title='vapi::Connection::msg_free' data-ref="_ZN4vapi10Connection8msg_freeEPv">msg_free</a> (<a class="local col0 ref" href="#11380shm_data" title='shm_data' data-ref="11380shm_data">shm_data</a>);</td></tr>
+<tr><th id="806">806</th><td>        <a class="member field" href="#vapi::Dump::result_set" title='vapi::Dump::result_set' data-ref="vapi::Dump::result_set">result_set</a>.mark_complete ();</td></tr>
+<tr><th id="807">807</th><td>        <a class="member fn" href="#_ZN4vapi10Common_req18set_response_stateENS_21vapi_response_state_eE" title='vapi::Common_req::set_response_state' data-ref="_ZN4vapi10Common_req18set_response_stateENS_21vapi_response_state_eE">set_response_state</a> (<a class="enum" href="#vapi::RESPONSE_READY" title='vapi::RESPONSE_READY' data-ref="vapi::RESPONSE_READY">RESPONSE_READY</a>);</td></tr>
+<tr><th id="808">808</th><td>        <b>if</b> (<b>nullptr</b> != <a class="member field" href="#vapi::Dump::callback" title='vapi::Dump::callback' data-ref="vapi::Dump::callback">callback</a>)</td></tr>
+<tr><th id="809">809</th><td>          {</td></tr>
+<tr><th id="810">810</th><td>            <b>return</b> <span class="namespace">std::</span>make_pair (<a class="member field" href="#vapi::Dump::callback" title='vapi::Dump::callback' data-ref="vapi::Dump::callback">callback</a> (*<b>this</b>), <b>true</b>);</td></tr>
+<tr><th id="811">811</th><td>          }</td></tr>
+<tr><th id="812">812</th><td>        <b>return</b> <a class="ref fn fake" href="../../../../include/c++/4.8.2/tuple.html#_ZNSt5tupleIJT_T0_EEC1EOSt4pairIT_T0_E" title='std::tuple&lt;type-parameter-0-0, type-parameter-0-1&gt;::tuple&lt;type-parameter-0-0, type-parameter-0-1&gt;' data-ref="_ZNSt5tupleIJT_T0_EEC1EOSt4pairIT_T0_E"></a><span class="namespace">std::</span><a class="ref fn" href="../../../../include/c++/4.8.2/bits/stl_pair.h.html#_ZSt9make_pairOT_OT0_" title='std::make_pair' data-ref="_ZSt9make_pairOT_OT0_">make_pair</a> (<a class="enum" href="vapi_common.h.html#VAPI_OK" title='VAPI_OK' data-ref="VAPI_OK">VAPI_OK</a>, <b>true</b>);</td></tr>
+<tr><th id="813">813</th><td>      }</td></tr>
+<tr><th id="814">814</th><td>    <b>else</b></td></tr>
+<tr><th id="815">815</th><td>      {</td></tr>
+<tr><th id="816">816</th><td>        <a class="member field" href="#vapi::Dump::result_set" title='vapi::Dump::result_set' data-ref="vapi::Dump::result_set">result_set</a>.assign_response (<a class="local col9 ref" href="#11379id" title='id' data-ref="11379id">id</a>, <a class="local col0 ref" href="#11380shm_data" title='shm_data' data-ref="11380shm_data">shm_data</a>);</td></tr>
+<tr><th id="817">817</th><td>      }</td></tr>
+<tr><th id="818">818</th><td>    <b>return</b> <a class="ref fn fake" href="../../../../include/c++/4.8.2/tuple.html#_ZNSt5tupleIJT_T0_EEC1EOSt4pairIT_T0_E" title='std::tuple&lt;type-parameter-0-0, type-parameter-0-1&gt;::tuple&lt;type-parameter-0-0, type-parameter-0-1&gt;' data-ref="_ZNSt5tupleIJT_T0_EEC1EOSt4pairIT_T0_E"></a><span class="namespace">std::</span><a class="ref fn" href="../../../../include/c++/4.8.2/bits/stl_pair.h.html#_ZSt9make_pairOT_OT0_" title='std::make_pair' data-ref="_ZSt9make_pairOT_OT0_">make_pair</a> (<a class="enum" href="vapi_common.h.html#VAPI_OK" title='VAPI_OK' data-ref="VAPI_OK">VAPI_OK</a>, <b>false</b>);</td></tr>
+<tr><th id="819">819</th><td>  }</td></tr>
+<tr><th id="820">820</th><td></td></tr>
+<tr><th id="821">821</th><td>  <a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> <dfn class="decl def fn" id="_ZN4vapi4Dump7executeEv" title='vapi::Dump::execute' data-ref="_ZN4vapi4Dump7executeEv">execute</dfn> ()</td></tr>
+<tr><th id="822">822</th><td>  {</td></tr>
+<tr><th id="823">823</th><td>    <b>return</b> <a class="member field" href="#vapi::Common_req::con" title='vapi::Common_req::con' data-ref="vapi::Common_req::con">con</a>.send_with_control_ping (<b>this</b>);</td></tr>
+<tr><th id="824">824</th><td>  }</td></tr>
+<tr><th id="825">825</th><td></td></tr>
+<tr><th id="826">826</th><td>  <a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>&lt;Req&gt; &amp;<dfn class="decl def fn" id="_ZN4vapi4Dump11get_requestEv" title='vapi::Dump::get_request' data-ref="_ZN4vapi4Dump11get_requestEv">get_request</dfn> (<em>void</em>)</td></tr>
+<tr><th id="827">827</th><td>  {</td></tr>
+<tr><th id="828">828</th><td>    <b>return</b> <a class="member field" href="#vapi::Dump::request" title='vapi::Dump::request' data-ref="vapi::Dump::request">request</a>;</td></tr>
+<tr><th id="829">829</th><td>  }</td></tr>
+<tr><th id="830">830</th><td></td></tr>
+<tr><th id="831">831</th><td>  <b>using</b> <dfn class="typedef" id="vapi::Dump::resp_type" title='vapi::Dump::resp_type' data-type='typename Msg&lt;Resp&gt;::shm_data_type' data-ref="vapi::Dump::resp_type">resp_type</dfn> = <b>typename</b> <a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>&lt;Resp&gt;::shm_data_type;</td></tr>
+<tr><th id="832">832</th><td></td></tr>
+<tr><th id="833">833</th><td>  <em>const</em> <a class="type" href="#vapi::Result_set" title='vapi::Result_set' data-ref="vapi::Result_set">Result_set</a>&lt;Resp&gt; &amp;<dfn class="decl def fn" id="_ZNK4vapi4Dump14get_result_setEv" title='vapi::Dump::get_result_set' data-ref="_ZNK4vapi4Dump14get_result_setEv">get_result_set</dfn> (<em>void</em>) <em>const</em></td></tr>
+<tr><th id="834">834</th><td>  {</td></tr>
+<tr><th id="835">835</th><td>    <b>return</b> <a class="member field" href="#vapi::Dump::result_set" title='vapi::Dump::result_set' data-ref="vapi::Dump::result_set">result_set</a>;</td></tr>
+<tr><th id="836">836</th><td>  }</td></tr>
+<tr><th id="837">837</th><td></td></tr>
+<tr><th id="838">838</th><td><b>private</b>:</td></tr>
+<tr><th id="839">839</th><td>  <a class="type" href="#vapi::Msg" title='vapi::Msg' data-ref="vapi::Msg">Msg</a>&lt;Req&gt; <dfn class="decl field" id="vapi::Dump::request" title='vapi::Dump::request' data-ref="vapi::Dump::request">request</dfn>;</td></tr>
+<tr><th id="840">840</th><td>  <a class="type" href="#vapi::Result_set" title='vapi::Result_set' data-ref="vapi::Result_set">Result_set</a>&lt;<a class="typedef" href="#vapi::Dump::resp_type" title='vapi::Dump::resp_type' data-type='typename Msg&lt;Resp&gt;::shm_data_type' data-ref="vapi::Dump::resp_type">resp_type</a>&gt; <dfn class="decl field" id="vapi::Dump::result_set" title='vapi::Dump::result_set' data-ref="vapi::Dump::result_set">result_set</dfn>;</td></tr>
+<tr><th id="841">841</th><td>  <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/functional.html#std::function" title='std::function' data-ref="std::function">function</a>&lt;<a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> (<a class="type" href="#vapi::Dump" title='vapi::Dump' data-ref="vapi::Dump">Dump</a>&lt;Req, Resp, Args...&gt; &amp;)&gt; <dfn class="decl field" id="vapi::Dump::callback" title='vapi::Dump::callback' data-ref="vapi::Dump::callback">callback</dfn>;</td></tr>
+<tr><th id="842">842</th><td></td></tr>
+<tr><th id="843">843</th><td>  <b>friend</b> <b>class</b> <a class="type" href="#vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</a>;</td></tr>
+<tr><th id="844">844</th><td>};</td></tr>
+<tr><th id="845">845</th><td></td></tr>
+<tr><th id="846">846</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="847">847</th><td><i class="doc"> * Class representing event registration - incoming events (messages) from</i></td></tr>
+<tr><th id="848">848</th><td><i class="doc"> * vpp as a result of a subscription (typically a want_* simple request)</i></td></tr>
+<tr><th id="849">849</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="850">850</th><td><b>template</b> &lt;<b>typename</b> M&gt; <b>class</b> <dfn class="type def" id="vapi::Event_registration" title='vapi::Event_registration' data-ref="vapi::Event_registration">Event_registration</dfn> : <b>public</b> <a class="type" href="#vapi::Common_req" title='vapi::Common_req' data-ref="vapi::Common_req">Common_req</a></td></tr>
+<tr><th id="851">851</th><td>{</td></tr>
+<tr><th id="852">852</th><td><b>public</b>:</td></tr>
+<tr><th id="853">853</th><td>  <dfn class="decl def fn" id="_ZN4vapi18Event_registrationC1ERNS_10ConnectionESt8functionIF12vapi_error_eRNS_18Event_registrationIT_EEEE" title='vapi::Event_registration::Event_registration&lt;M&gt;' data-ref="_ZN4vapi18Event_registrationC1ERNS_10ConnectionESt8functionIF12vapi_error_eRNS_18Event_registrationIT_EEEE">Event_registration</dfn> (</td></tr>
+<tr><th id="854">854</th><td>      <a class="type" href="#vapi::Connection" title='vapi::Connection' data-ref="vapi::Connection">Connection</a> &amp;<dfn class="local col1 decl" id="11381con" title='con' data-type='vapi::Connection &amp;' data-ref="11381con">con</dfn>,</td></tr>
+<tr><th id="855">855</th><td>      <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/functional.html#std::function" title='std::function' data-ref="std::function">function</a>&lt;<a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> (<a class="type" href="#vapi::Event_registration" title='vapi::Event_registration' data-ref="vapi::Event_registration">Event_registration</a>&lt;M&gt; &amp;)&gt; <dfn class="local col2 decl" id="11382callback" title='callback' data-type='std::function&lt;vapi_error_e (Event_registration&lt;M&gt; &amp;)&gt;' data-ref="11382callback">callback</dfn> = <b>nullptr</b>)</td></tr>
+<tr><th id="856">856</th><td>      : <a class="type" href="#vapi::Common_req" title='vapi::Common_req' data-ref="vapi::Common_req">Common_req</a>{<a class="local col1 ref" href="#11381con" title='con' data-ref="11381con">con</a>}, <a class="member field" href="#vapi::Event_registration::result_set" title='vapi::Event_registration::result_set' data-ref="vapi::Event_registration::result_set">result_set</a>{<a class="local col1 ref" href="#11381con" title='con' data-ref="11381con">con</a>}, <a class="member field" href="#vapi::Event_registration::callback" title='vapi::Event_registration::callback' data-ref="vapi::Event_registration::callback">callback</a>{<a class="local col2 ref" href="#11382callback" title='callback' data-ref="11382callback">callback</a>}</td></tr>
+<tr><th id="857">857</th><td>  {</td></tr>
+<tr><th id="858">858</th><td>    <b>if</b> (!<a class="local col1 ref" href="#11381con" title='con' data-ref="11381con">con</a>.<a class="ref fn" href="#_ZN4vapi10Connection16is_msg_availableEj" title='vapi::Connection::is_msg_available' data-ref="_ZN4vapi10Connection16is_msg_availableEj">is_msg_available</a> (M::get_msg_id ()))</td></tr>
+<tr><th id="859">859</th><td>      {</td></tr>
+<tr><th id="860">860</th><td>        <b>throw</b> <a class="type" href="#vapi::Msg_not_available_exception" title='vapi::Msg_not_available_exception' data-ref="vapi::Msg_not_available_exception">Msg_not_available_exception</a> <a class="ref fn" href="#67" title='vapi::Msg_not_available_exception::Msg_not_available_exception' data-ref="_ZN4vapi27Msg_not_available_exceptionC1Ev">(</a>);</td></tr>
+<tr><th id="861">861</th><td>      }</td></tr>
+<tr><th id="862">862</th><td>    <a class="local col1 ref" href="#11381con" title='con' data-ref="11381con">con</a>.register_event (<b>this</b>);</td></tr>
+<tr><th id="863">863</th><td>  }</td></tr>
+<tr><th id="864">864</th><td></td></tr>
+<tr><th id="865">865</th><td>  <dfn class="decl def fn" id="_ZN4vapi18Event_registrationC1ERKNS_18Event_registrationIT_EE" title='vapi::Event_registration::Event_registration&lt;M&gt;' data-ref="_ZN4vapi18Event_registrationC1ERKNS_18Event_registrationIT_EE">Event_registration</dfn> (<em>const</em> Event_registration &amp;) = <b>delete</b>;</td></tr>
+<tr><th id="866">866</th><td></td></tr>
+<tr><th id="867">867</th><td>  <b>virtual</b> <dfn class="virtual decl def fn" id="_ZN4vapi18Event_registrationD1Ev" title='vapi::Event_registration::~Event_registration&lt;M&gt;' data-ref="_ZN4vapi18Event_registrationD1Ev">~Event_registration</dfn> ()</td></tr>
+<tr><th id="868">868</th><td>  {</td></tr>
+<tr><th id="869">869</th><td>    <a class="member field" href="#vapi::Common_req::con" title='vapi::Common_req::con' data-ref="vapi::Common_req::con">con</a>.unregister_event (<b>this</b>);</td></tr>
+<tr><th id="870">870</th><td>  }</td></tr>
+<tr><th id="871">871</th><td></td></tr>
+<tr><th id="872">872</th><td>  <b>virtual</b> <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/bits/stl_pair.h.html#std::tuple" title='std::tuple' data-ref="std::tuple">tuple</a>&lt;<a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a>, <em>bool</em>&gt; <dfn class="virtual decl def fn" id="_ZN4vapi18Event_registration15assign_responseEjPv" title='vapi::Event_registration::assign_response' data-ref="_ZN4vapi18Event_registration15assign_responseEjPv">assign_response</dfn> (<a class="typedef" href="vapi_common.h.html#vapi_msg_id_t" title='vapi_msg_id_t' data-type='unsigned int' data-ref="vapi_msg_id_t">vapi_msg_id_t</a> <dfn class="local col3 decl" id="11383id" title='id' data-type='vapi_msg_id_t' data-ref="11383id">id</dfn>,</td></tr>
+<tr><th id="873">873</th><td>                                                          <em>void</em> *<dfn class="local col4 decl" id="11384shm_data" title='shm_data' data-type='void *' data-ref="11384shm_data">shm_data</dfn>)</td></tr>
+<tr><th id="874">874</th><td>  {</td></tr>
+<tr><th id="875">875</th><td>    <a class="member field" href="#vapi::Event_registration::result_set" title='vapi::Event_registration::result_set' data-ref="vapi::Event_registration::result_set">result_set</a>.assign_response (<a class="local col3 ref" href="#11383id" title='id' data-ref="11383id">id</a>, <a class="local col4 ref" href="#11384shm_data" title='shm_data' data-ref="11384shm_data">shm_data</a>);</td></tr>
+<tr><th id="876">876</th><td>    <b>if</b> (<b>nullptr</b> != <a class="member field" href="#vapi::Event_registration::callback" title='vapi::Event_registration::callback' data-ref="vapi::Event_registration::callback">callback</a>)</td></tr>
+<tr><th id="877">877</th><td>      {</td></tr>
+<tr><th id="878">878</th><td>        <b>return</b> <span class="namespace">std::</span>make_pair (<a class="member field" href="#vapi::Event_registration::callback" title='vapi::Event_registration::callback' data-ref="vapi::Event_registration::callback">callback</a> (*<b>this</b>), <b>true</b>);</td></tr>
+<tr><th id="879">879</th><td>      }</td></tr>
+<tr><th id="880">880</th><td>    <b>return</b> <a class="ref fn fake" href="../../../../include/c++/4.8.2/tuple.html#_ZNSt5tupleIJT_T0_EEC1EOSt4pairIT_T0_E" title='std::tuple&lt;type-parameter-0-0, type-parameter-0-1&gt;::tuple&lt;type-parameter-0-0, type-parameter-0-1&gt;' data-ref="_ZNSt5tupleIJT_T0_EEC1EOSt4pairIT_T0_E"></a><span class="namespace">std::</span><a class="ref fn" href="../../../../include/c++/4.8.2/bits/stl_pair.h.html#_ZSt9make_pairOT_OT0_" title='std::make_pair' data-ref="_ZSt9make_pairOT_OT0_">make_pair</a> (<a class="enum" href="vapi_common.h.html#VAPI_OK" title='VAPI_OK' data-ref="VAPI_OK">VAPI_OK</a>, <b>true</b>);</td></tr>
+<tr><th id="881">881</th><td>  }</td></tr>
+<tr><th id="882">882</th><td></td></tr>
+<tr><th id="883">883</th><td>  <b>using</b> <dfn class="typedef" id="vapi::Event_registration::resp_type" title='vapi::Event_registration::resp_type' data-type='typename M::shm_data_type' data-ref="vapi::Event_registration::resp_type">resp_type</dfn> = <b>typename</b> M::shm_data_type;</td></tr>
+<tr><th id="884">884</th><td></td></tr>
+<tr><th id="885">885</th><td>  <a class="type" href="#vapi::Result_set" title='vapi::Result_set' data-ref="vapi::Result_set">Result_set</a>&lt;<a class="typedef" href="#vapi::Event_registration::resp_type" title='vapi::Event_registration::resp_type' data-type='typename M::shm_data_type' data-ref="vapi::Event_registration::resp_type">resp_type</a>&gt; &amp;<dfn class="decl def fn" id="_ZN4vapi18Event_registration14get_result_setEv" title='vapi::Event_registration::get_result_set' data-ref="_ZN4vapi18Event_registration14get_result_setEv">get_result_set</dfn> (<em>void</em>)</td></tr>
+<tr><th id="886">886</th><td>  {</td></tr>
+<tr><th id="887">887</th><td>    <b>return</b> <a class="member field" href="#vapi::Event_registration::result_set" title='vapi::Event_registration::result_set' data-ref="vapi::Event_registration::result_set">result_set</a>;</td></tr>
+<tr><th id="888">888</th><td>  }</td></tr>
+<tr><th id="889">889</th><td></td></tr>
+<tr><th id="890">890</th><td><b>private</b>:</td></tr>
+<tr><th id="891">891</th><td>  <a class="type" href="#vapi::Result_set" title='vapi::Result_set' data-ref="vapi::Result_set">Result_set</a>&lt;<a class="typedef" href="#vapi::Event_registration::resp_type" title='vapi::Event_registration::resp_type' data-type='typename M::shm_data_type' data-ref="vapi::Event_registration::resp_type">resp_type</a>&gt; <dfn class="decl field" id="vapi::Event_registration::result_set" title='vapi::Event_registration::result_set' data-ref="vapi::Event_registration::result_set">result_set</dfn>;</td></tr>
+<tr><th id="892">892</th><td>  <span class="namespace">std::</span><a class="type" href="../../../../include/c++/4.8.2/functional.html#std::function" title='std::function' data-ref="std::function">function</a>&lt;<a class="typedef" href="vapi_common.h.html#vapi_error_e" title='vapi_error_e' data-type='enum vapi_error_e' data-ref="vapi_error_e">vapi_error_e</a> (<a class="type" href="#vapi::Event_registration" title='vapi::Event_registration' data-ref="vapi::Event_registration">Event_registration</a>&lt;M&gt; &amp;)&gt; <dfn class="decl field" id="vapi::Event_registration::callback" title='vapi::Event_registration::callback' data-ref="vapi::Event_registration::callback">callback</dfn>;</td></tr>
+<tr><th id="893">893</th><td>};</td></tr>
+<tr><th id="894">894</th><td>};</td></tr>
+<tr><th id="895">895</th><td></td></tr>
+<tr><th id="896">896</th><td><u>#<span data-ppcond="18">endif</span></u></td></tr>
+<tr><th id="897">897</th><td></td></tr>
+<tr><th id="898">898</th><td><i>/*</i></td></tr>
+<tr><th id="899">899</th><td><i> * fd.io coding-style-patch-verification: ON</i></td></tr>
+<tr><th id="900">900</th><td><i> *</i></td></tr>
+<tr><th id="901">901</th><td><i> * Local Variables:</i></td></tr>
+<tr><th id="902">902</th><td><i> * eval: (c-set-style "gnu")</i></td></tr>
+<tr><th id="903">903</th><td><i> * End:</i></td></tr>
+<tr><th id="904">904</th><td><i> */</i></td></tr>
+<tr><th id="905">905</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../vom/acl_binding.cpp.html'>vpp_1804/src/vpp-api/vom/acl_binding.cpp</a><br/>Generated on <em>2018-Jul-30</em> from project vpp_1804 revision <em>18.05</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>
