@@ -1,0 +1,1030 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>megaraid.h source code [linux-4.14.y/drivers/scsi/megaraid.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="mbox_in,mbox_out,mcontroller,mega_hbas,notify,private_bios_data,uioctl_t "/>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.14.y/drivers/scsi/megaraid.h'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>linux-4.14.y</a>/<a href='..'>drivers</a>/<a href='./'>scsi</a>/<a href='megaraid.h.html'>megaraid.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: GPL-2.0 */</i></td></tr>
+<tr><th id="2">2</th><td><u>#<span data-ppcond="2">ifndef</span> <span class="macro" data-ref="_M/__MEGARAID_H__">__MEGARAID_H__</span></u></td></tr>
+<tr><th id="3">3</th><td><u>#define <dfn class="macro" id="_M/__MEGARAID_H__" data-ref="_M/__MEGARAID_H__">__MEGARAID_H__</dfn></u></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><u>#include <a href="../../include/linux/spinlock.h.html">&lt;linux/spinlock.h&gt;</a></u></td></tr>
+<tr><th id="6">6</th><td><u>#include <a href="../../include/linux/mutex.h.html">&lt;linux/mutex.h&gt;</a></u></td></tr>
+<tr><th id="7">7</th><td></td></tr>
+<tr><th id="8">8</th><td><u>#define <dfn class="macro" id="_M/MEGARAID_VERSION" data-ref="_M/MEGARAID_VERSION">MEGARAID_VERSION</dfn>	\</u></td></tr>
+<tr><th id="9">9</th><td><u>	"v2.00.4 (Release Date: Thu Feb 9 08:51:30 EST 2006)\n"</u></td></tr>
+<tr><th id="10">10</th><td></td></tr>
+<tr><th id="11">11</th><td><i>/*</i></td></tr>
+<tr><th id="12">12</th><td><i> * Driver features - change the values to enable or disable features in the</i></td></tr>
+<tr><th id="13">13</th><td><i> * driver.</i></td></tr>
+<tr><th id="14">14</th><td><i> */</i></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><i>/*</i></td></tr>
+<tr><th id="17">17</th><td><i> * Command coalescing - This feature allows the driver to be able to combine</i></td></tr>
+<tr><th id="18">18</th><td><i> * two or more commands and issue as one command in order to boost I/O</i></td></tr>
+<tr><th id="19">19</th><td><i> * performance. Useful if the nature of the I/O is sequential. It is not very</i></td></tr>
+<tr><th id="20">20</th><td><i> * useful for random natured I/Os.</i></td></tr>
+<tr><th id="21">21</th><td><i> */</i></td></tr>
+<tr><th id="22">22</th><td><u>#define <dfn class="macro" id="_M/MEGA_HAVE_COALESCING" data-ref="_M/MEGA_HAVE_COALESCING">MEGA_HAVE_COALESCING</dfn>	0</u></td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><i>/*</i></td></tr>
+<tr><th id="25">25</th><td><i> * Clustering support - Set this flag if you are planning to use the</i></td></tr>
+<tr><th id="26">26</th><td><i> * clustering services provided by the megaraid controllers and planning to</i></td></tr>
+<tr><th id="27">27</th><td><i> * setup a cluster</i></td></tr>
+<tr><th id="28">28</th><td><i> */</i></td></tr>
+<tr><th id="29">29</th><td><u>#define <dfn class="macro" id="_M/MEGA_HAVE_CLUSTERING" data-ref="_M/MEGA_HAVE_CLUSTERING">MEGA_HAVE_CLUSTERING</dfn>	1</u></td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><i>/*</i></td></tr>
+<tr><th id="32">32</th><td><i> * Driver statistics - Set this flag if you are interested in statics about</i></td></tr>
+<tr><th id="33">33</th><td><i> * number of I/O completed on each logical drive and how many interrupts</i></td></tr>
+<tr><th id="34">34</th><td><i> * generated. If enabled, this information is available through /proc</i></td></tr>
+<tr><th id="35">35</th><td><i> * interface and through the private ioctl. Setting this flag has a</i></td></tr>
+<tr><th id="36">36</th><td><i> * performance penalty.</i></td></tr>
+<tr><th id="37">37</th><td><i> */</i></td></tr>
+<tr><th id="38">38</th><td><u>#define <dfn class="macro" id="_M/MEGA_HAVE_STATS" data-ref="_M/MEGA_HAVE_STATS">MEGA_HAVE_STATS</dfn>		0</u></td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><i>/*</i></td></tr>
+<tr><th id="41">41</th><td><i> * Enhanced /proc interface - This feature will allow you to have a more</i></td></tr>
+<tr><th id="42">42</th><td><i> * detailed /proc interface for megaraid driver. E.g., a real time update of</i></td></tr>
+<tr><th id="43">43</th><td><i> * the status of the logical drives, battery status, physical drives etc.</i></td></tr>
+<tr><th id="44">44</th><td><i> */</i></td></tr>
+<tr><th id="45">45</th><td><u>#define <dfn class="macro" id="_M/MEGA_HAVE_ENH_PROC" data-ref="_M/MEGA_HAVE_ENH_PROC">MEGA_HAVE_ENH_PROC</dfn>	1</u></td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td><u>#define <dfn class="macro" id="_M/MAX_DEV_TYPE" data-ref="_M/MAX_DEV_TYPE">MAX_DEV_TYPE</dfn>	32</u></td></tr>
+<tr><th id="48">48</th><td></td></tr>
+<tr><th id="49">49</th><td><u>#define <dfn class="macro" id="_M/PCI_DEVICE_ID_DISCOVERY" data-ref="_M/PCI_DEVICE_ID_DISCOVERY">PCI_DEVICE_ID_DISCOVERY</dfn>		0x000E</u></td></tr>
+<tr><th id="50">50</th><td><u>#define <dfn class="macro" id="_M/PCI_DEVICE_ID_PERC4_DI" data-ref="_M/PCI_DEVICE_ID_PERC4_DI">PCI_DEVICE_ID_PERC4_DI</dfn>		0x000F</u></td></tr>
+<tr><th id="51">51</th><td><u>#define <dfn class="macro" id="_M/PCI_DEVICE_ID_PERC4_QC_VERDE" data-ref="_M/PCI_DEVICE_ID_PERC4_QC_VERDE">PCI_DEVICE_ID_PERC4_QC_VERDE</dfn>	0x0407</u></td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td><u>#define <dfn class="macro" id="_M/HBA_SIGNATURE" data-ref="_M/HBA_SIGNATURE">HBA_SIGNATURE</dfn>	      		0x3344</u></td></tr>
+<tr><th id="54">54</th><td><u>#define <dfn class="macro" id="_M/HBA_SIGNATURE_471" data-ref="_M/HBA_SIGNATURE_471">HBA_SIGNATURE_471</dfn>	  	0xCCCC</u></td></tr>
+<tr><th id="55">55</th><td><u>#define <dfn class="macro" id="_M/HBA_SIGNATURE_64BIT" data-ref="_M/HBA_SIGNATURE_64BIT">HBA_SIGNATURE_64BIT</dfn>		0x0299</u></td></tr>
+<tr><th id="56">56</th><td></td></tr>
+<tr><th id="57">57</th><td><u>#define <dfn class="macro" id="_M/MBOX_BUSY_WAIT" data-ref="_M/MBOX_BUSY_WAIT">MBOX_BUSY_WAIT</dfn>			10	/* wait for up to 10 usec for</u></td></tr>
+<tr><th id="58">58</th><td><u>						   mailbox to be free */</u></td></tr>
+<tr><th id="59">59</th><td><u>#define <dfn class="macro" id="_M/DEFAULT_INITIATOR_ID" data-ref="_M/DEFAULT_INITIATOR_ID">DEFAULT_INITIATOR_ID</dfn>	7</u></td></tr>
+<tr><th id="60">60</th><td></td></tr>
+<tr><th id="61">61</th><td><u>#define <dfn class="macro" id="_M/MAX_SGLIST" data-ref="_M/MAX_SGLIST">MAX_SGLIST</dfn>		64	/* max supported in f/w */</u></td></tr>
+<tr><th id="62">62</th><td><u>#define <dfn class="macro" id="_M/MIN_SGLIST" data-ref="_M/MIN_SGLIST">MIN_SGLIST</dfn>		26	/* guaranteed to support these many */</u></td></tr>
+<tr><th id="63">63</th><td><u>#define <dfn class="macro" id="_M/MAX_COMMANDS" data-ref="_M/MAX_COMMANDS">MAX_COMMANDS</dfn>		126</u></td></tr>
+<tr><th id="64">64</th><td><u>#define <dfn class="macro" id="_M/CMDID_INT_CMDS" data-ref="_M/CMDID_INT_CMDS">CMDID_INT_CMDS</dfn>		MAX_COMMANDS+1	/* make sure CMDID_INT_CMDS</u></td></tr>
+<tr><th id="65">65</th><td><u>					 	is less than max commands</u></td></tr>
+<tr><th id="66">66</th><td><u>						supported by any f/w */</u></td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td><u>#define <dfn class="macro" id="_M/MAX_CDB_LEN" data-ref="_M/MAX_CDB_LEN">MAX_CDB_LEN</dfn>	     	10</u></td></tr>
+<tr><th id="69">69</th><td><u>#define <dfn class="macro" id="_M/MAX_EXT_CDB_LEN" data-ref="_M/MAX_EXT_CDB_LEN">MAX_EXT_CDB_LEN</dfn>		16	/* we support cdb length up to 16 */</u></td></tr>
+<tr><th id="70">70</th><td></td></tr>
+<tr><th id="71">71</th><td><u>#define <dfn class="macro" id="_M/DEF_CMD_PER_LUN" data-ref="_M/DEF_CMD_PER_LUN">DEF_CMD_PER_LUN</dfn>		63</u></td></tr>
+<tr><th id="72">72</th><td><u>#define <dfn class="macro" id="_M/MAX_CMD_PER_LUN" data-ref="_M/MAX_CMD_PER_LUN">MAX_CMD_PER_LUN</dfn>		MAX_COMMANDS</u></td></tr>
+<tr><th id="73">73</th><td><u>#define <dfn class="macro" id="_M/MAX_FIRMWARE_STATUS" data-ref="_M/MAX_FIRMWARE_STATUS">MAX_FIRMWARE_STATUS</dfn>	46</u></td></tr>
+<tr><th id="74">74</th><td><u>#define <dfn class="macro" id="_M/MAX_XFER_PER_CMD" data-ref="_M/MAX_XFER_PER_CMD">MAX_XFER_PER_CMD</dfn>	(64*1024)</u></td></tr>
+<tr><th id="75">75</th><td><u>#define <dfn class="macro" id="_M/MAX_SECTORS_PER_IO" data-ref="_M/MAX_SECTORS_PER_IO">MAX_SECTORS_PER_IO</dfn>	128</u></td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td><u>#define <dfn class="macro" id="_M/MAX_LOGICAL_DRIVES_40LD" data-ref="_M/MAX_LOGICAL_DRIVES_40LD">MAX_LOGICAL_DRIVES_40LD</dfn>		40</u></td></tr>
+<tr><th id="78">78</th><td><u>#define <dfn class="macro" id="_M/FC_MAX_PHYSICAL_DEVICES" data-ref="_M/FC_MAX_PHYSICAL_DEVICES">FC_MAX_PHYSICAL_DEVICES</dfn>		256</u></td></tr>
+<tr><th id="79">79</th><td><u>#define <dfn class="macro" id="_M/MAX_LOGICAL_DRIVES_8LD" data-ref="_M/MAX_LOGICAL_DRIVES_8LD">MAX_LOGICAL_DRIVES_8LD</dfn>		8</u></td></tr>
+<tr><th id="80">80</th><td><u>#define <dfn class="macro" id="_M/MAX_CHANNELS" data-ref="_M/MAX_CHANNELS">MAX_CHANNELS</dfn>			5</u></td></tr>
+<tr><th id="81">81</th><td><u>#define <dfn class="macro" id="_M/MAX_TARGET" data-ref="_M/MAX_TARGET">MAX_TARGET</dfn>			15</u></td></tr>
+<tr><th id="82">82</th><td><u>#define <dfn class="macro" id="_M/MAX_PHYSICAL_DRIVES" data-ref="_M/MAX_PHYSICAL_DRIVES">MAX_PHYSICAL_DRIVES</dfn>		MAX_CHANNELS*MAX_TARGET</u></td></tr>
+<tr><th id="83">83</th><td><u>#define <dfn class="macro" id="_M/MAX_ROW_SIZE_40LD" data-ref="_M/MAX_ROW_SIZE_40LD">MAX_ROW_SIZE_40LD</dfn>		32</u></td></tr>
+<tr><th id="84">84</th><td><u>#define <dfn class="macro" id="_M/MAX_ROW_SIZE_8LD" data-ref="_M/MAX_ROW_SIZE_8LD">MAX_ROW_SIZE_8LD</dfn>		8</u></td></tr>
+<tr><th id="85">85</th><td><u>#define <dfn class="macro" id="_M/MAX_SPAN_DEPTH" data-ref="_M/MAX_SPAN_DEPTH">MAX_SPAN_DEPTH</dfn>			8</u></td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td><u>#define <dfn class="macro" id="_M/NVIRT_CHAN" data-ref="_M/NVIRT_CHAN">NVIRT_CHAN</dfn>		4	/* # of virtual channels to represent</u></td></tr>
+<tr><th id="88">88</th><td><u>					   up to 60 logical drives */</u></td></tr>
+<tr><th id="89">89</th><td><b>struct</b> <dfn class="type def" id="mbox_out" title='mbox_out' data-ref="mbox_out">mbox_out</dfn> {</td></tr>
+<tr><th id="90">90</th><td>	<i>/* 0x0 */</i> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="mbox_out::cmd" title='mbox_out::cmd' data-ref="mbox_out::cmd">cmd</dfn>;</td></tr>
+<tr><th id="91">91</th><td>	<i>/* 0x1 */</i> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="mbox_out::cmdid" title='mbox_out::cmdid' data-ref="mbox_out::cmdid">cmdid</dfn>;</td></tr>
+<tr><th id="92">92</th><td>	<i>/* 0x2 */</i> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> <dfn class="decl field" id="mbox_out::numsectors" title='mbox_out::numsectors' data-ref="mbox_out::numsectors">numsectors</dfn>;</td></tr>
+<tr><th id="93">93</th><td>	<i>/* 0x4 */</i> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="mbox_out::lba" title='mbox_out::lba' data-ref="mbox_out::lba">lba</dfn>;</td></tr>
+<tr><th id="94">94</th><td>	<i>/* 0x8 */</i> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="mbox_out::xferaddr" title='mbox_out::xferaddr' data-ref="mbox_out::xferaddr">xferaddr</dfn>;</td></tr>
+<tr><th id="95">95</th><td>	<i>/* 0xC */</i> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="mbox_out::logdrv" title='mbox_out::logdrv' data-ref="mbox_out::logdrv">logdrv</dfn>;</td></tr>
+<tr><th id="96">96</th><td>	<i>/* 0xD */</i> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="mbox_out::numsgelements" title='mbox_out::numsgelements' data-ref="mbox_out::numsgelements">numsgelements</dfn>;</td></tr>
+<tr><th id="97">97</th><td>	<i>/* 0xE */</i> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="mbox_out::resvd" title='mbox_out::resvd' data-ref="mbox_out::resvd">resvd</dfn>;</td></tr>
+<tr><th id="98">98</th><td>} <b>__attribute__</b> ((packed));</td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td><b>struct</b> <dfn class="type def" id="mbox_in" title='mbox_in' data-ref="mbox_in">mbox_in</dfn> {</td></tr>
+<tr><th id="101">101</th><td>	<i>/* 0xF */</i> <em>volatile</em> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="mbox_in::busy" title='mbox_in::busy' data-ref="mbox_in::busy">busy</dfn>;</td></tr>
+<tr><th id="102">102</th><td>	<i>/* 0x10 */</i> <em>volatile</em> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="mbox_in::numstatus" title='mbox_in::numstatus' data-ref="mbox_in::numstatus">numstatus</dfn>;</td></tr>
+<tr><th id="103">103</th><td>	<i>/* 0x11 */</i> <em>volatile</em> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="mbox_in::status" title='mbox_in::status' data-ref="mbox_in::status">status</dfn>;</td></tr>
+<tr><th id="104">104</th><td>	<i>/* 0x12 */</i> <em>volatile</em> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="mbox_in::completed" title='mbox_in::completed' data-ref="mbox_in::completed">completed</dfn>[<a class="macro" href="#73" title="46" data-ref="_M/MAX_FIRMWARE_STATUS">MAX_FIRMWARE_STATUS</a>];</td></tr>
+<tr><th id="105">105</th><td>	<em>volatile</em> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="mbox_in::poll" title='mbox_in::poll' data-ref="mbox_in::poll">poll</dfn>;</td></tr>
+<tr><th id="106">106</th><td>	<em>volatile</em> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="mbox_in::ack" title='mbox_in::ack' data-ref="mbox_in::ack">ack</dfn>;</td></tr>
+<tr><th id="107">107</th><td>} <b>__attribute__</b> ((packed));</td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="110">110</th><td>	<b>struct</b> <a class="type" href="#mbox_out" title='mbox_out' data-ref="mbox_out">mbox_out</a>	<dfn class="decl field" id="(anonymous)::m_out" title='(anonymous struct)::m_out' data-ref="(anonymous)::m_out">m_out</dfn>;</td></tr>
+<tr><th id="111">111</th><td>	<b>struct</b> <a class="type" href="#mbox_in" title='mbox_in' data-ref="mbox_in">mbox_in</a>	<dfn class="decl field" id="(anonymous)::m_in" title='(anonymous struct)::m_in' data-ref="(anonymous)::m_in">m_in</dfn>;</td></tr>
+<tr><th id="112">112</th><td>} <b>__attribute__</b> ((packed)) <dfn class="typedef" id="mbox_t" title='mbox_t' data-type='struct mbox_t' data-ref="mbox_t">mbox_t</dfn>;</td></tr>
+<tr><th id="113">113</th><td></td></tr>
+<tr><th id="114">114</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="115">115</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::xfer_segment_lo" title='(anonymous struct)::xfer_segment_lo' data-ref="(anonymous)::xfer_segment_lo">xfer_segment_lo</dfn>;</td></tr>
+<tr><th id="116">116</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::xfer_segment_hi" title='(anonymous struct)::xfer_segment_hi' data-ref="(anonymous)::xfer_segment_hi">xfer_segment_hi</dfn>;</td></tr>
+<tr><th id="117">117</th><td>	<a class="typedef" href="#mbox_t" title='mbox_t' data-type='struct mbox_t' data-ref="mbox_t">mbox_t</a> <dfn class="decl field" id="(anonymous)::mbox" title='(anonymous struct)::mbox' data-ref="(anonymous)::mbox">mbox</dfn>;</td></tr>
+<tr><th id="118">118</th><td>} <b>__attribute__</b> ((packed)) <dfn class="typedef" id="mbox64_t" title='mbox64_t' data-type='struct mbox64_t' data-ref="mbox64_t">mbox64_t</dfn>;</td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td></td></tr>
+<tr><th id="121">121</th><td><i>/*</i></td></tr>
+<tr><th id="122">122</th><td><i> * Passthru definitions</i></td></tr>
+<tr><th id="123">123</th><td><i> */</i></td></tr>
+<tr><th id="124">124</th><td><u>#define <dfn class="macro" id="_M/MAX_REQ_SENSE_LEN" data-ref="_M/MAX_REQ_SENSE_LEN">MAX_REQ_SENSE_LEN</dfn>       0x20</u></td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="127">127</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::timeout" title='(anonymous struct)::timeout' data-ref="(anonymous)::timeout">timeout</dfn>:<var>3</var>;		<i>/* 0=6sec/1=60sec/2=10min/3=3hrs */</i></td></tr>
+<tr><th id="128">128</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::ars" title='(anonymous struct)::ars' data-ref="(anonymous)::ars">ars</dfn>:<var>1</var>;</td></tr>
+<tr><th id="129">129</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::reserved" title='(anonymous struct)::reserved' data-ref="(anonymous)::reserved">reserved</dfn>:<var>3</var>;</td></tr>
+<tr><th id="130">130</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::islogical" title='(anonymous struct)::islogical' data-ref="(anonymous)::islogical">islogical</dfn>:<var>1</var>;</td></tr>
+<tr><th id="131">131</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::logdrv" title='(anonymous struct)::logdrv' data-ref="(anonymous)::logdrv">logdrv</dfn>;		<i>/* if islogical == 1 */</i></td></tr>
+<tr><th id="132">132</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::channel" title='(anonymous struct)::channel' data-ref="(anonymous)::channel">channel</dfn>;		<i>/* if islogical == 0 */</i></td></tr>
+<tr><th id="133">133</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::target" title='(anonymous struct)::target' data-ref="(anonymous)::target">target</dfn>;		<i>/* if islogical == 0 */</i></td></tr>
+<tr><th id="134">134</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::queuetag" title='(anonymous struct)::queuetag' data-ref="(anonymous)::queuetag">queuetag</dfn>;		<i>/* unused */</i></td></tr>
+<tr><th id="135">135</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::queueaction" title='(anonymous struct)::queueaction' data-ref="(anonymous)::queueaction">queueaction</dfn>;		<i>/* unused */</i></td></tr>
+<tr><th id="136">136</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::cdb" title='(anonymous struct)::cdb' data-ref="(anonymous)::cdb">cdb</dfn>[<a class="macro" href="#68" title="10" data-ref="_M/MAX_CDB_LEN">MAX_CDB_LEN</a>];</td></tr>
+<tr><th id="137">137</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::cdblen" title='(anonymous struct)::cdblen' data-ref="(anonymous)::cdblen">cdblen</dfn>;</td></tr>
+<tr><th id="138">138</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::reqsenselen" title='(anonymous struct)::reqsenselen' data-ref="(anonymous)::reqsenselen">reqsenselen</dfn>;</td></tr>
+<tr><th id="139">139</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::reqsensearea" title='(anonymous struct)::reqsensearea' data-ref="(anonymous)::reqsensearea">reqsensearea</dfn>[<a class="macro" href="#124" title="0x20" data-ref="_M/MAX_REQ_SENSE_LEN">MAX_REQ_SENSE_LEN</a>];</td></tr>
+<tr><th id="140">140</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::numsgelements" title='(anonymous struct)::numsgelements' data-ref="(anonymous)::numsgelements">numsgelements</dfn>;</td></tr>
+<tr><th id="141">141</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::scsistatus" title='(anonymous struct)::scsistatus' data-ref="(anonymous)::scsistatus">scsistatus</dfn>;</td></tr>
+<tr><th id="142">142</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::dataxferaddr" title='(anonymous struct)::dataxferaddr' data-ref="(anonymous)::dataxferaddr">dataxferaddr</dfn>;</td></tr>
+<tr><th id="143">143</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::dataxferlen" title='(anonymous struct)::dataxferlen' data-ref="(anonymous)::dataxferlen">dataxferlen</dfn>;</td></tr>
+<tr><th id="144">144</th><td>} <b>__attribute__</b> ((packed)) <dfn class="typedef" id="mega_passthru" title='mega_passthru' data-type='struct mega_passthru' data-ref="mega_passthru">mega_passthru</dfn>;</td></tr>
+<tr><th id="145">145</th><td></td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td><i>/*</i></td></tr>
+<tr><th id="148">148</th><td><i> * Extended passthru: support CDB &gt; 10 bytes</i></td></tr>
+<tr><th id="149">149</th><td><i> */</i></td></tr>
+<tr><th id="150">150</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="151">151</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::timeout" title='(anonymous struct)::timeout' data-ref="(anonymous)::timeout">timeout</dfn>:<var>3</var>;		<i>/* 0=6sec/1=60sec/2=10min/3=3hrs */</i></td></tr>
+<tr><th id="152">152</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::ars" title='(anonymous struct)::ars' data-ref="(anonymous)::ars">ars</dfn>:<var>1</var>;</td></tr>
+<tr><th id="153">153</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::rsvd1" title='(anonymous struct)::rsvd1' data-ref="(anonymous)::rsvd1">rsvd1</dfn>:<var>1</var>;</td></tr>
+<tr><th id="154">154</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::cd_rom" title='(anonymous struct)::cd_rom' data-ref="(anonymous)::cd_rom">cd_rom</dfn>:<var>1</var>;</td></tr>
+<tr><th id="155">155</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::rsvd2" title='(anonymous struct)::rsvd2' data-ref="(anonymous)::rsvd2">rsvd2</dfn>:<var>1</var>;</td></tr>
+<tr><th id="156">156</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::islogical" title='(anonymous struct)::islogical' data-ref="(anonymous)::islogical">islogical</dfn>:<var>1</var>;</td></tr>
+<tr><th id="157">157</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::logdrv" title='(anonymous struct)::logdrv' data-ref="(anonymous)::logdrv">logdrv</dfn>;		<i>/* if islogical == 1 */</i></td></tr>
+<tr><th id="158">158</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::channel" title='(anonymous struct)::channel' data-ref="(anonymous)::channel">channel</dfn>;		<i>/* if islogical == 0 */</i></td></tr>
+<tr><th id="159">159</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::target" title='(anonymous struct)::target' data-ref="(anonymous)::target">target</dfn>;		<i>/* if islogical == 0 */</i></td></tr>
+<tr><th id="160">160</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::queuetag" title='(anonymous struct)::queuetag' data-ref="(anonymous)::queuetag">queuetag</dfn>;		<i>/* unused */</i></td></tr>
+<tr><th id="161">161</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::queueaction" title='(anonymous struct)::queueaction' data-ref="(anonymous)::queueaction">queueaction</dfn>;		<i>/* unused */</i></td></tr>
+<tr><th id="162">162</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::cdblen" title='(anonymous struct)::cdblen' data-ref="(anonymous)::cdblen">cdblen</dfn>;</td></tr>
+<tr><th id="163">163</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::rsvd3" title='(anonymous struct)::rsvd3' data-ref="(anonymous)::rsvd3">rsvd3</dfn>;</td></tr>
+<tr><th id="164">164</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::cdb" title='(anonymous struct)::cdb' data-ref="(anonymous)::cdb">cdb</dfn>[<a class="macro" href="#69" title="16" data-ref="_M/MAX_EXT_CDB_LEN">MAX_EXT_CDB_LEN</a>];</td></tr>
+<tr><th id="165">165</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::numsgelements" title='(anonymous struct)::numsgelements' data-ref="(anonymous)::numsgelements">numsgelements</dfn>;</td></tr>
+<tr><th id="166">166</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::status" title='(anonymous struct)::status' data-ref="(anonymous)::status">status</dfn>;</td></tr>
+<tr><th id="167">167</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::reqsenselen" title='(anonymous struct)::reqsenselen' data-ref="(anonymous)::reqsenselen">reqsenselen</dfn>;</td></tr>
+<tr><th id="168">168</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::reqsensearea" title='(anonymous struct)::reqsensearea' data-ref="(anonymous)::reqsensearea">reqsensearea</dfn>[<a class="macro" href="#124" title="0x20" data-ref="_M/MAX_REQ_SENSE_LEN">MAX_REQ_SENSE_LEN</a>];</td></tr>
+<tr><th id="169">169</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="(anonymous)::rsvd4" title='(anonymous struct)::rsvd4' data-ref="(anonymous)::rsvd4">rsvd4</dfn>;</td></tr>
+<tr><th id="170">170</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::dataxferaddr" title='(anonymous struct)::dataxferaddr' data-ref="(anonymous)::dataxferaddr">dataxferaddr</dfn>;</td></tr>
+<tr><th id="171">171</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::dataxferlen" title='(anonymous struct)::dataxferlen' data-ref="(anonymous)::dataxferlen">dataxferlen</dfn>;</td></tr>
+<tr><th id="172">172</th><td>} <b>__attribute__</b> ((packed)) <dfn class="typedef" id="mega_ext_passthru" title='mega_ext_passthru' data-type='struct mega_ext_passthru' data-ref="mega_ext_passthru">mega_ext_passthru</dfn>;</td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="175">175</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u64" title='u64' data-type='unsigned long long' data-ref="u64">u64</a> <dfn class="decl field" id="(anonymous)::address" title='(anonymous struct)::address' data-ref="(anonymous)::address">address</dfn>;</td></tr>
+<tr><th id="176">176</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::length" title='(anonymous struct)::length' data-ref="(anonymous)::length">length</dfn>;</td></tr>
+<tr><th id="177">177</th><td>} <b>__attribute__</b> ((packed)) <dfn class="typedef" id="mega_sgl64" title='mega_sgl64' data-type='struct mega_sgl64' data-ref="mega_sgl64">mega_sgl64</dfn>;</td></tr>
+<tr><th id="178">178</th><td></td></tr>
+<tr><th id="179">179</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="180">180</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::address" title='(anonymous struct)::address' data-ref="(anonymous)::address">address</dfn>;</td></tr>
+<tr><th id="181">181</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="(anonymous)::length" title='(anonymous struct)::length' data-ref="(anonymous)::length">length</dfn>;</td></tr>
+<tr><th id="182">182</th><td>} <b>__attribute__</b> ((packed)) <dfn class="typedef" id="mega_sglist" title='mega_sglist' data-type='struct mega_sglist' data-ref="mega_sglist">mega_sglist</dfn>;</td></tr>
+<tr><th id="183">183</th><td></td></tr>
+<tr><th id="184">184</th><td></td></tr>
+<tr><th id="185">185</th><td><i>/* Queued command data */</i></td></tr>
+<tr><th id="186">186</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="187">187</th><td>	<em>int</em>	<dfn class="decl field" id="(anonymous)::idx" title='(anonymous struct)::idx' data-ref="(anonymous)::idx">idx</dfn>;</td></tr>
+<tr><th id="188">188</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::state" title='(anonymous struct)::state' data-ref="(anonymous)::state">state</dfn>;</td></tr>
+<tr><th id="189">189</th><td>	<b>struct</b> <a class="type" href="../../include/linux/types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a>	<dfn class="decl field" id="(anonymous)::list" title='(anonymous struct)::list' data-ref="(anonymous)::list">list</dfn>;</td></tr>
+<tr><th id="190">190</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::raw_mbox" title='(anonymous struct)::raw_mbox' data-ref="(anonymous)::raw_mbox">raw_mbox</dfn>[<var>66</var>];</td></tr>
+<tr><th id="191">191</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::dma_type" title='(anonymous struct)::dma_type' data-ref="(anonymous)::dma_type">dma_type</dfn>;</td></tr>
+<tr><th id="192">192</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::dma_direction" title='(anonymous struct)::dma_direction' data-ref="(anonymous)::dma_direction">dma_direction</dfn>;</td></tr>
+<tr><th id="193">193</th><td></td></tr>
+<tr><th id="194">194</th><td>	<a class="typedef" href="scsi_typedefs.h.html#Scsi_Cmnd" title='Scsi_Cmnd' data-type='struct scsi_cmnd' data-ref="Scsi_Cmnd">Scsi_Cmnd</a>	*<dfn class="decl field" id="(anonymous)::cmd" title='(anonymous struct)::cmd' data-ref="(anonymous)::cmd">cmd</dfn>;</td></tr>
+<tr><th id="195">195</th><td>	<a class="typedef" href="../../include/linux/types.h.html#dma_addr_t" title='dma_addr_t' data-type='u64' data-ref="dma_addr_t">dma_addr_t</a>	<dfn class="decl field" id="(anonymous)::dma_h_bulkdata" title='(anonymous struct)::dma_h_bulkdata' data-ref="(anonymous)::dma_h_bulkdata">dma_h_bulkdata</dfn>;</td></tr>
+<tr><th id="196">196</th><td>	<a class="typedef" href="../../include/linux/types.h.html#dma_addr_t" title='dma_addr_t' data-type='u64' data-ref="dma_addr_t">dma_addr_t</a>	<dfn class="decl field" id="(anonymous)::dma_h_sgdata" title='(anonymous struct)::dma_h_sgdata' data-ref="(anonymous)::dma_h_sgdata">dma_h_sgdata</dfn>;</td></tr>
+<tr><th id="197">197</th><td></td></tr>
+<tr><th id="198">198</th><td>	<a class="typedef" href="#mega_sglist" title='mega_sglist' data-type='struct mega_sglist' data-ref="mega_sglist">mega_sglist</a>	*<dfn class="decl field" id="(anonymous)::sgl" title='(anonymous struct)::sgl' data-ref="(anonymous)::sgl">sgl</dfn>;</td></tr>
+<tr><th id="199">199</th><td>	<a class="typedef" href="#mega_sgl64" title='mega_sgl64' data-type='struct mega_sgl64' data-ref="mega_sgl64">mega_sgl64</a>	*<dfn class="decl field" id="(anonymous)::sgl64" title='(anonymous struct)::sgl64' data-ref="(anonymous)::sgl64">sgl64</dfn>;</td></tr>
+<tr><th id="200">200</th><td>	<a class="typedef" href="../../include/linux/types.h.html#dma_addr_t" title='dma_addr_t' data-type='u64' data-ref="dma_addr_t">dma_addr_t</a>	<dfn class="decl field" id="(anonymous)::sgl_dma_addr" title='(anonymous struct)::sgl_dma_addr' data-ref="(anonymous)::sgl_dma_addr">sgl_dma_addr</dfn>;</td></tr>
+<tr><th id="201">201</th><td></td></tr>
+<tr><th id="202">202</th><td>	<a class="typedef" href="#mega_passthru" title='mega_passthru' data-type='struct mega_passthru' data-ref="mega_passthru">mega_passthru</a>		*<dfn class="decl field" id="(anonymous)::pthru" title='(anonymous struct)::pthru' data-ref="(anonymous)::pthru">pthru</dfn>;</td></tr>
+<tr><th id="203">203</th><td>	<a class="typedef" href="../../include/linux/types.h.html#dma_addr_t" title='dma_addr_t' data-type='u64' data-ref="dma_addr_t">dma_addr_t</a>		<dfn class="decl field" id="(anonymous)::pthru_dma_addr" title='(anonymous struct)::pthru_dma_addr' data-ref="(anonymous)::pthru_dma_addr">pthru_dma_addr</dfn>;</td></tr>
+<tr><th id="204">204</th><td>	<a class="typedef" href="#mega_ext_passthru" title='mega_ext_passthru' data-type='struct mega_ext_passthru' data-ref="mega_ext_passthru">mega_ext_passthru</a>	*<dfn class="decl field" id="(anonymous)::epthru" title='(anonymous struct)::epthru' data-ref="(anonymous)::epthru">epthru</dfn>;</td></tr>
+<tr><th id="205">205</th><td>	<a class="typedef" href="../../include/linux/types.h.html#dma_addr_t" title='dma_addr_t' data-type='u64' data-ref="dma_addr_t">dma_addr_t</a>		<dfn class="decl field" id="(anonymous)::epthru_dma_addr" title='(anonymous struct)::epthru_dma_addr' data-ref="(anonymous)::epthru_dma_addr">epthru_dma_addr</dfn>;</td></tr>
+<tr><th id="206">206</th><td>} <dfn class="typedef" id="scb_t" title='scb_t' data-type='struct scb_t' data-ref="scb_t">scb_t</dfn>;</td></tr>
+<tr><th id="207">207</th><td></td></tr>
+<tr><th id="208">208</th><td><i>/*</i></td></tr>
+<tr><th id="209">209</th><td><i> * Flags to follow the scb as it transitions between various stages</i></td></tr>
+<tr><th id="210">210</th><td><i> */</i></td></tr>
+<tr><th id="211">211</th><td><u>#define <dfn class="macro" id="_M/SCB_FREE" data-ref="_M/SCB_FREE">SCB_FREE</dfn>	0x0000	/* on the free list */</u></td></tr>
+<tr><th id="212">212</th><td><u>#define <dfn class="macro" id="_M/SCB_ACTIVE" data-ref="_M/SCB_ACTIVE">SCB_ACTIVE</dfn>	0x0001	/* off the free list */</u></td></tr>
+<tr><th id="213">213</th><td><u>#define <dfn class="macro" id="_M/SCB_PENDQ" data-ref="_M/SCB_PENDQ">SCB_PENDQ</dfn>	0x0002	/* on the pending queue */</u></td></tr>
+<tr><th id="214">214</th><td><u>#define <dfn class="macro" id="_M/SCB_ISSUED" data-ref="_M/SCB_ISSUED">SCB_ISSUED</dfn>	0x0004	/* issued - owner f/w */</u></td></tr>
+<tr><th id="215">215</th><td><u>#define <dfn class="macro" id="_M/SCB_ABORT" data-ref="_M/SCB_ABORT">SCB_ABORT</dfn>	0x0008	/* Got an abort for this one */</u></td></tr>
+<tr><th id="216">216</th><td><u>#define <dfn class="macro" id="_M/SCB_RESET" data-ref="_M/SCB_RESET">SCB_RESET</dfn>	0x0010	/* Got a reset for this one */</u></td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td><i>/*</i></td></tr>
+<tr><th id="219">219</th><td><i> * Utilities declare this strcture size as 1024 bytes. So more fields can</i></td></tr>
+<tr><th id="220">220</th><td><i> * be added in future.</i></td></tr>
+<tr><th id="221">221</th><td><i> */</i></td></tr>
+<tr><th id="222">222</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="223">223</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::data_size" title='(anonymous struct)::data_size' data-ref="(anonymous)::data_size">data_size</dfn>; <i>/* current size in bytes (not including resvd) */</i></td></tr>
+<tr><th id="224">224</th><td></td></tr>
+<tr><th id="225">225</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::config_signature" title='(anonymous struct)::config_signature' data-ref="(anonymous)::config_signature">config_signature</dfn>;</td></tr>
+<tr><th id="226">226</th><td>		<i>/* Current value is 0x00282008</i></td></tr>
+<tr><th id="227">227</th><td><i>		 * 0x28=MAX_LOGICAL_DRIVES,</i></td></tr>
+<tr><th id="228">228</th><td><i>		 * 0x20=Number of stripes and</i></td></tr>
+<tr><th id="229">229</th><td><i>		 * 0x08=Number of spans */</i></td></tr>
+<tr><th id="230">230</th><td></td></tr>
+<tr><th id="231">231</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::fw_version" title='(anonymous struct)::fw_version' data-ref="(anonymous)::fw_version">fw_version</dfn>[<var>16</var>];		<i>/* printable ASCI string */</i></td></tr>
+<tr><th id="232">232</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::bios_version" title='(anonymous struct)::bios_version' data-ref="(anonymous)::bios_version">bios_version</dfn>[<var>16</var>];	<i>/* printable ASCI string */</i></td></tr>
+<tr><th id="233">233</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::product_name" title='(anonymous struct)::product_name' data-ref="(anonymous)::product_name">product_name</dfn>[<var>80</var>];	<i>/* printable ASCI string */</i></td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::max_commands" title='(anonymous struct)::max_commands' data-ref="(anonymous)::max_commands">max_commands</dfn>;		<i>/* Max. concurrent commands supported */</i></td></tr>
+<tr><th id="236">236</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::nchannels" title='(anonymous struct)::nchannels' data-ref="(anonymous)::nchannels">nchannels</dfn>;		<i>/* Number of SCSI Channels detected */</i></td></tr>
+<tr><th id="237">237</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::fc_loop_present" title='(anonymous struct)::fc_loop_present' data-ref="(anonymous)::fc_loop_present">fc_loop_present</dfn>;	<i>/* Number of Fibre Loops detected */</i></td></tr>
+<tr><th id="238">238</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::mem_type" title='(anonymous struct)::mem_type' data-ref="(anonymous)::mem_type">mem_type</dfn>;		<i>/* EDO, FPM, SDRAM etc */</i></td></tr>
+<tr><th id="239">239</th><td></td></tr>
+<tr><th id="240">240</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::signature" title='(anonymous struct)::signature' data-ref="(anonymous)::signature">signature</dfn>;</td></tr>
+<tr><th id="241">241</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a>	<dfn class="decl field" id="(anonymous)::dram_size" title='(anonymous struct)::dram_size' data-ref="(anonymous)::dram_size">dram_size</dfn>;		<i>/* In terms of MB */</i></td></tr>
+<tr><th id="242">242</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a>	<dfn class="decl field" id="(anonymous)::subsysid" title='(anonymous struct)::subsysid' data-ref="(anonymous)::subsysid">subsysid</dfn>;</td></tr>
+<tr><th id="243">243</th><td></td></tr>
+<tr><th id="244">244</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a>	<dfn class="decl field" id="(anonymous)::subsysvid" title='(anonymous struct)::subsysvid' data-ref="(anonymous)::subsysvid">subsysvid</dfn>;</td></tr>
+<tr><th id="245">245</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::notify_counters" title='(anonymous struct)::notify_counters' data-ref="(anonymous)::notify_counters">notify_counters</dfn>;</td></tr>
+<tr><th id="246">246</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::pad1k" title='(anonymous struct)::pad1k' data-ref="(anonymous)::pad1k">pad1k</dfn>[<var>889</var>];		<i>/* 135 + 889 resvd = 1024 total size */</i></td></tr>
+<tr><th id="247">247</th><td>} <b>__attribute__</b> ((packed)) <dfn class="typedef" id="mega_product_info" title='mega_product_info' data-type='struct mega_product_info' data-ref="mega_product_info">mega_product_info</dfn>;</td></tr>
+<tr><th id="248">248</th><td></td></tr>
+<tr><th id="249">249</th><td><b>struct</b> <dfn class="type def" id="notify" title='notify' data-ref="notify">notify</dfn> {</td></tr>
+<tr><th id="250">250</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="notify::global_counter" title='notify::global_counter' data-ref="notify::global_counter">global_counter</dfn>;	<i>/* Any change increments this counter */</i></td></tr>
+<tr><th id="251">251</th><td></td></tr>
+<tr><th id="252">252</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::param_counter" title='notify::param_counter' data-ref="notify::param_counter">param_counter</dfn>;	<i>/* Indicates any params changed  */</i></td></tr>
+<tr><th id="253">253</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::param_id" title='notify::param_id' data-ref="notify::param_id">param_id</dfn>;		<i>/* Param modified - defined below */</i></td></tr>
+<tr><th id="254">254</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> <dfn class="decl field" id="notify::param_val" title='notify::param_val' data-ref="notify::param_val">param_val</dfn>;		<i>/* New val of last param modified */</i></td></tr>
+<tr><th id="255">255</th><td></td></tr>
+<tr><th id="256">256</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::write_config_counter" title='notify::write_config_counter' data-ref="notify::write_config_counter">write_config_counter</dfn>;	<i>/* write config occurred */</i></td></tr>
+<tr><th id="257">257</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::write_config_rsvd" title='notify::write_config_rsvd' data-ref="notify::write_config_rsvd">write_config_rsvd</dfn>[<var>3</var>];</td></tr>
+<tr><th id="258">258</th><td></td></tr>
+<tr><th id="259">259</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::ldrv_op_counter" title='notify::ldrv_op_counter' data-ref="notify::ldrv_op_counter">ldrv_op_counter</dfn>;	<i>/* Indicates ldrv op started/completed */</i></td></tr>
+<tr><th id="260">260</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::ldrv_opid" title='notify::ldrv_opid' data-ref="notify::ldrv_opid">ldrv_opid</dfn>;		<i>/* ldrv num */</i></td></tr>
+<tr><th id="261">261</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::ldrv_opcmd" title='notify::ldrv_opcmd' data-ref="notify::ldrv_opcmd">ldrv_opcmd</dfn>;		<i>/* ldrv operation - defined below */</i></td></tr>
+<tr><th id="262">262</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::ldrv_opstatus" title='notify::ldrv_opstatus' data-ref="notify::ldrv_opstatus">ldrv_opstatus</dfn>;	<i>/* status of the operation */</i></td></tr>
+<tr><th id="263">263</th><td></td></tr>
+<tr><th id="264">264</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::ldrv_state_counter" title='notify::ldrv_state_counter' data-ref="notify::ldrv_state_counter">ldrv_state_counter</dfn>;	<i>/* Indicates change of ldrv state */</i></td></tr>
+<tr><th id="265">265</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::ldrv_state_id" title='notify::ldrv_state_id' data-ref="notify::ldrv_state_id">ldrv_state_id</dfn>;		<i>/* ldrv num */</i></td></tr>
+<tr><th id="266">266</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::ldrv_state_new" title='notify::ldrv_state_new' data-ref="notify::ldrv_state_new">ldrv_state_new</dfn>;	<i>/* New state */</i></td></tr>
+<tr><th id="267">267</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::ldrv_state_old" title='notify::ldrv_state_old' data-ref="notify::ldrv_state_old">ldrv_state_old</dfn>;	<i>/* old state */</i></td></tr>
+<tr><th id="268">268</th><td></td></tr>
+<tr><th id="269">269</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::pdrv_state_counter" title='notify::pdrv_state_counter' data-ref="notify::pdrv_state_counter">pdrv_state_counter</dfn>;	<i>/* Indicates change of ldrv state */</i></td></tr>
+<tr><th id="270">270</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::pdrv_state_id" title='notify::pdrv_state_id' data-ref="notify::pdrv_state_id">pdrv_state_id</dfn>;		<i>/* pdrv id */</i></td></tr>
+<tr><th id="271">271</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::pdrv_state_new" title='notify::pdrv_state_new' data-ref="notify::pdrv_state_new">pdrv_state_new</dfn>;	<i>/* New state */</i></td></tr>
+<tr><th id="272">272</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::pdrv_state_old" title='notify::pdrv_state_old' data-ref="notify::pdrv_state_old">pdrv_state_old</dfn>;	<i>/* old state */</i></td></tr>
+<tr><th id="273">273</th><td></td></tr>
+<tr><th id="274">274</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::pdrv_fmt_counter" title='notify::pdrv_fmt_counter' data-ref="notify::pdrv_fmt_counter">pdrv_fmt_counter</dfn>;	<i>/* Indicates pdrv format started/over */</i></td></tr>
+<tr><th id="275">275</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::pdrv_fmt_id" title='notify::pdrv_fmt_id' data-ref="notify::pdrv_fmt_id">pdrv_fmt_id</dfn>;		<i>/* pdrv id */</i></td></tr>
+<tr><th id="276">276</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::pdrv_fmt_val" title='notify::pdrv_fmt_val' data-ref="notify::pdrv_fmt_val">pdrv_fmt_val</dfn>;		<i>/* format started/over */</i></td></tr>
+<tr><th id="277">277</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::pdrv_fmt_rsvd" title='notify::pdrv_fmt_rsvd' data-ref="notify::pdrv_fmt_rsvd">pdrv_fmt_rsvd</dfn>;</td></tr>
+<tr><th id="278">278</th><td></td></tr>
+<tr><th id="279">279</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::targ_xfer_counter" title='notify::targ_xfer_counter' data-ref="notify::targ_xfer_counter">targ_xfer_counter</dfn>;	<i>/* Indicates SCSI-2 Xfer rate change */</i></td></tr>
+<tr><th id="280">280</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::targ_xfer_id" title='notify::targ_xfer_id' data-ref="notify::targ_xfer_id">targ_xfer_id</dfn>;	<i>/* pdrv Id  */</i></td></tr>
+<tr><th id="281">281</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::targ_xfer_val" title='notify::targ_xfer_val' data-ref="notify::targ_xfer_val">targ_xfer_val</dfn>;		<i>/* new Xfer params of last pdrv */</i></td></tr>
+<tr><th id="282">282</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::targ_xfer_rsvd" title='notify::targ_xfer_rsvd' data-ref="notify::targ_xfer_rsvd">targ_xfer_rsvd</dfn>;</td></tr>
+<tr><th id="283">283</th><td></td></tr>
+<tr><th id="284">284</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::fcloop_id_chg_counter" title='notify::fcloop_id_chg_counter' data-ref="notify::fcloop_id_chg_counter">fcloop_id_chg_counter</dfn>;	<i>/* Indicates loopid changed */</i></td></tr>
+<tr><th id="285">285</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::fcloopid_pdrvid" title='notify::fcloopid_pdrvid' data-ref="notify::fcloopid_pdrvid">fcloopid_pdrvid</dfn>;		<i>/* pdrv id */</i></td></tr>
+<tr><th id="286">286</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::fcloop_id0" title='notify::fcloop_id0' data-ref="notify::fcloop_id0">fcloop_id0</dfn>;			<i>/* loopid on fc loop 0 */</i></td></tr>
+<tr><th id="287">287</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::fcloop_id1" title='notify::fcloop_id1' data-ref="notify::fcloop_id1">fcloop_id1</dfn>;			<i>/* loopid on fc loop 1 */</i></td></tr>
+<tr><th id="288">288</th><td></td></tr>
+<tr><th id="289">289</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::fcloop_state_counter" title='notify::fcloop_state_counter' data-ref="notify::fcloop_state_counter">fcloop_state_counter</dfn>;	<i>/* Indicates loop state changed */</i></td></tr>
+<tr><th id="290">290</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::fcloop_state0" title='notify::fcloop_state0' data-ref="notify::fcloop_state0">fcloop_state0</dfn>;		<i>/* state of fc loop 0 */</i></td></tr>
+<tr><th id="291">291</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::fcloop_state1" title='notify::fcloop_state1' data-ref="notify::fcloop_state1">fcloop_state1</dfn>;		<i>/* state of fc loop 1 */</i></td></tr>
+<tr><th id="292">292</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="notify::fcloop_state_rsvd" title='notify::fcloop_state_rsvd' data-ref="notify::fcloop_state_rsvd">fcloop_state_rsvd</dfn>;</td></tr>
+<tr><th id="293">293</th><td>} <b>__attribute__</b> ((packed));</td></tr>
+<tr><th id="294">294</th><td></td></tr>
+<tr><th id="295">295</th><td><u>#define <dfn class="macro" id="_M/MAX_NOTIFY_SIZE" data-ref="_M/MAX_NOTIFY_SIZE">MAX_NOTIFY_SIZE</dfn>     0x80</u></td></tr>
+<tr><th id="296">296</th><td><u>#define <dfn class="macro" id="_M/CUR_NOTIFY_SIZE" data-ref="_M/CUR_NOTIFY_SIZE">CUR_NOTIFY_SIZE</dfn>     sizeof(struct <a class="type" href="#notify" title='notify' data-ref="notify">notify</a>)</u></td></tr>
+<tr><th id="297">297</th><td></td></tr>
+<tr><th id="298">298</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="299">299</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::data_size" title='(anonymous struct)::data_size' data-ref="(anonymous)::data_size">data_size</dfn>; <i>/* current size in bytes (not including resvd) */</i></td></tr>
+<tr><th id="300">300</th><td></td></tr>
+<tr><th id="301">301</th><td>	<b>struct</b> <a class="type" href="#notify" title='notify' data-ref="notify">notify</a> <dfn class="decl field" id="(anonymous)::notify" title='(anonymous struct)::notify' data-ref="(anonymous)::notify">notify</dfn>;</td></tr>
+<tr><th id="302">302</th><td></td></tr>
+<tr><th id="303">303</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::notify_rsvd" title='(anonymous struct)::notify_rsvd' data-ref="(anonymous)::notify_rsvd">notify_rsvd</dfn>[<a class="macro" href="#295" title="0x80" data-ref="_M/MAX_NOTIFY_SIZE">MAX_NOTIFY_SIZE</a> - <a class="macro" href="#296" title="sizeof(struct notify)" data-ref="_M/CUR_NOTIFY_SIZE">CUR_NOTIFY_SIZE</a>];</td></tr>
+<tr><th id="304">304</th><td></td></tr>
+<tr><th id="305">305</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::rebuild_rate" title='(anonymous struct)::rebuild_rate' data-ref="(anonymous)::rebuild_rate">rebuild_rate</dfn>;		<i>/* Rebuild rate (0% - 100%) */</i></td></tr>
+<tr><th id="306">306</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::cache_flush_interval" title='(anonymous struct)::cache_flush_interval' data-ref="(anonymous)::cache_flush_interval">cache_flush_interval</dfn>;	<i>/* In terms of Seconds */</i></td></tr>
+<tr><th id="307">307</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::sense_alert" title='(anonymous struct)::sense_alert' data-ref="(anonymous)::sense_alert">sense_alert</dfn>;</td></tr>
+<tr><th id="308">308</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::drive_insert_count" title='(anonymous struct)::drive_insert_count' data-ref="(anonymous)::drive_insert_count">drive_insert_count</dfn>;	<i>/* drive insertion count */</i></td></tr>
+<tr><th id="309">309</th><td></td></tr>
+<tr><th id="310">310</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::battery_status" title='(anonymous struct)::battery_status' data-ref="(anonymous)::battery_status">battery_status</dfn>;</td></tr>
+<tr><th id="311">311</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::num_ldrv" title='(anonymous struct)::num_ldrv' data-ref="(anonymous)::num_ldrv">num_ldrv</dfn>;		<i>/* No. of Log Drives configured */</i></td></tr>
+<tr><th id="312">312</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::recon_state" title='(anonymous struct)::recon_state' data-ref="(anonymous)::recon_state">recon_state</dfn>[<a class="macro" href="#77" title="40" data-ref="_M/MAX_LOGICAL_DRIVES_40LD">MAX_LOGICAL_DRIVES_40LD</a> / <var>8</var>];	<i>/* State of</i></td></tr>
+<tr><th id="313">313</th><td><i>							   reconstruct */</i></td></tr>
+<tr><th id="314">314</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a>	<dfn class="decl field" id="(anonymous)::ldrv_op_status" title='(anonymous struct)::ldrv_op_status' data-ref="(anonymous)::ldrv_op_status">ldrv_op_status</dfn>[<a class="macro" href="#77" title="40" data-ref="_M/MAX_LOGICAL_DRIVES_40LD">MAX_LOGICAL_DRIVES_40LD</a> / <var>8</var>]; <i>/* logdrv</i></td></tr>
+<tr><th id="315">315</th><td><i>								 Status */</i></td></tr>
+<tr><th id="316">316</th><td></td></tr>
+<tr><th id="317">317</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::ldrv_size" title='(anonymous struct)::ldrv_size' data-ref="(anonymous)::ldrv_size">ldrv_size</dfn>[<a class="macro" href="#77" title="40" data-ref="_M/MAX_LOGICAL_DRIVES_40LD">MAX_LOGICAL_DRIVES_40LD</a>];<i>/* Size of each log drv */</i></td></tr>
+<tr><th id="318">318</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::ldrv_prop" title='(anonymous struct)::ldrv_prop' data-ref="(anonymous)::ldrv_prop">ldrv_prop</dfn>[<a class="macro" href="#77" title="40" data-ref="_M/MAX_LOGICAL_DRIVES_40LD">MAX_LOGICAL_DRIVES_40LD</a>];</td></tr>
+<tr><th id="319">319</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::ldrv_state" title='(anonymous struct)::ldrv_state' data-ref="(anonymous)::ldrv_state">ldrv_state</dfn>[<a class="macro" href="#77" title="40" data-ref="_M/MAX_LOGICAL_DRIVES_40LD">MAX_LOGICAL_DRIVES_40LD</a>];<i>/* State of log drives */</i></td></tr>
+<tr><th id="320">320</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::pdrv_state" title='(anonymous struct)::pdrv_state' data-ref="(anonymous)::pdrv_state">pdrv_state</dfn>[<a class="macro" href="#78" title="256" data-ref="_M/FC_MAX_PHYSICAL_DEVICES">FC_MAX_PHYSICAL_DEVICES</a>];<i>/* State of phys drvs. */</i></td></tr>
+<tr><th id="321">321</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a>	<dfn class="decl field" id="(anonymous)::pdrv_format" title='(anonymous struct)::pdrv_format' data-ref="(anonymous)::pdrv_format">pdrv_format</dfn>[<a class="macro" href="#78" title="256" data-ref="_M/FC_MAX_PHYSICAL_DEVICES">FC_MAX_PHYSICAL_DEVICES</a> / <var>16</var>];</td></tr>
+<tr><th id="322">322</th><td></td></tr>
+<tr><th id="323">323</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::targ_xfer" title='(anonymous struct)::targ_xfer' data-ref="(anonymous)::targ_xfer">targ_xfer</dfn>[<var>80</var>];	<i>/* phys device transfer rate */</i></td></tr>
+<tr><th id="324">324</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::pad1k" title='(anonymous struct)::pad1k' data-ref="(anonymous)::pad1k">pad1k</dfn>[<var>263</var>];	<i>/* 761 + 263reserved = 1024 bytes total size */</i></td></tr>
+<tr><th id="325">325</th><td>} <b>__attribute__</b> ((packed)) <dfn class="typedef" id="mega_inquiry3" title='mega_inquiry3' data-type='struct mega_inquiry3' data-ref="mega_inquiry3">mega_inquiry3</dfn>;</td></tr>
+<tr><th id="326">326</th><td></td></tr>
+<tr><th id="327">327</th><td></td></tr>
+<tr><th id="328">328</th><td><i>/* Structures */</i></td></tr>
+<tr><th id="329">329</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="330">330</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::max_commands" title='(anonymous struct)::max_commands' data-ref="(anonymous)::max_commands">max_commands</dfn>;	<i>/* Max concurrent commands supported */</i></td></tr>
+<tr><th id="331">331</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::rebuild_rate" title='(anonymous struct)::rebuild_rate' data-ref="(anonymous)::rebuild_rate">rebuild_rate</dfn>;	<i>/* Rebuild rate - 0% thru 100% */</i></td></tr>
+<tr><th id="332">332</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::max_targ_per_chan" title='(anonymous struct)::max_targ_per_chan' data-ref="(anonymous)::max_targ_per_chan">max_targ_per_chan</dfn>;	<i>/* Max targ per channel */</i></td></tr>
+<tr><th id="333">333</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::nchannels" title='(anonymous struct)::nchannels' data-ref="(anonymous)::nchannels">nchannels</dfn>;	<i>/* Number of channels on HBA */</i></td></tr>
+<tr><th id="334">334</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::fw_version" title='(anonymous struct)::fw_version' data-ref="(anonymous)::fw_version">fw_version</dfn>[<var>4</var>];	<i>/* Firmware version */</i></td></tr>
+<tr><th id="335">335</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a>	<dfn class="decl field" id="(anonymous)::age_of_flash" title='(anonymous struct)::age_of_flash' data-ref="(anonymous)::age_of_flash">age_of_flash</dfn>;	<i>/* Number of times FW has been flashed */</i></td></tr>
+<tr><th id="336">336</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::chip_set_value" title='(anonymous struct)::chip_set_value' data-ref="(anonymous)::chip_set_value">chip_set_value</dfn>;	<i>/* Contents of 0xC0000832 */</i></td></tr>
+<tr><th id="337">337</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::dram_size" title='(anonymous struct)::dram_size' data-ref="(anonymous)::dram_size">dram_size</dfn>;	<i>/* In MB */</i></td></tr>
+<tr><th id="338">338</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::cache_flush_interval" title='(anonymous struct)::cache_flush_interval' data-ref="(anonymous)::cache_flush_interval">cache_flush_interval</dfn>;	<i>/* in seconds */</i></td></tr>
+<tr><th id="339">339</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::bios_version" title='(anonymous struct)::bios_version' data-ref="(anonymous)::bios_version">bios_version</dfn>[<var>4</var>];</td></tr>
+<tr><th id="340">340</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::board_type" title='(anonymous struct)::board_type' data-ref="(anonymous)::board_type">board_type</dfn>;</td></tr>
+<tr><th id="341">341</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::sense_alert" title='(anonymous struct)::sense_alert' data-ref="(anonymous)::sense_alert">sense_alert</dfn>;</td></tr>
+<tr><th id="342">342</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::write_config_count" title='(anonymous struct)::write_config_count' data-ref="(anonymous)::write_config_count">write_config_count</dfn>;	<i>/* Increase with every configuration</i></td></tr>
+<tr><th id="343">343</th><td><i>					   change */</i></td></tr>
+<tr><th id="344">344</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::drive_inserted_count" title='(anonymous struct)::drive_inserted_count' data-ref="(anonymous)::drive_inserted_count">drive_inserted_count</dfn>;	<i>/* Increase with every drive inserted</i></td></tr>
+<tr><th id="345">345</th><td><i>					 */</i></td></tr>
+<tr><th id="346">346</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::inserted_drive" title='(anonymous struct)::inserted_drive' data-ref="(anonymous)::inserted_drive">inserted_drive</dfn>;	<i>/* Channel:Id of inserted drive */</i></td></tr>
+<tr><th id="347">347</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::battery_status" title='(anonymous struct)::battery_status' data-ref="(anonymous)::battery_status">battery_status</dfn>;	<i>/*</i></td></tr>
+<tr><th id="348">348</th><td><i>				 * BIT 0: battery module missing</i></td></tr>
+<tr><th id="349">349</th><td><i>				 * BIT 1: VBAD</i></td></tr>
+<tr><th id="350">350</th><td><i>				 * BIT 2: temperature high</i></td></tr>
+<tr><th id="351">351</th><td><i>				 * BIT 3: battery pack missing</i></td></tr>
+<tr><th id="352">352</th><td><i>				 * BIT 4,5:</i></td></tr>
+<tr><th id="353">353</th><td><i>				 *   00 - charge complete</i></td></tr>
+<tr><th id="354">354</th><td><i>				 *   01 - fast charge in progress</i></td></tr>
+<tr><th id="355">355</th><td><i>				 *   10 - fast charge fail</i></td></tr>
+<tr><th id="356">356</th><td><i>				 *   11 - undefined</i></td></tr>
+<tr><th id="357">357</th><td><i>				 * Bit 6: counter &gt; 1000</i></td></tr>
+<tr><th id="358">358</th><td><i>				 * Bit 7: Undefined</i></td></tr>
+<tr><th id="359">359</th><td><i>				 */</i></td></tr>
+<tr><th id="360">360</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::dec_fault_bus_info" title='(anonymous struct)::dec_fault_bus_info' data-ref="(anonymous)::dec_fault_bus_info">dec_fault_bus_info</dfn>;</td></tr>
+<tr><th id="361">361</th><td>} <b>__attribute__</b> ((packed)) <dfn class="typedef" id="mega_adp_info" title='mega_adp_info' data-type='struct mega_adp_info' data-ref="mega_adp_info">mega_adp_info</dfn>;</td></tr>
+<tr><th id="362">362</th><td></td></tr>
+<tr><th id="363">363</th><td></td></tr>
+<tr><th id="364">364</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="365">365</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::num_ldrv" title='(anonymous struct)::num_ldrv' data-ref="(anonymous)::num_ldrv">num_ldrv</dfn>;	<i>/* Number of logical drives configured */</i></td></tr>
+<tr><th id="366">366</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::rsvd" title='(anonymous struct)::rsvd' data-ref="(anonymous)::rsvd">rsvd</dfn>[<var>3</var>];</td></tr>
+<tr><th id="367">367</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::ldrv_size" title='(anonymous struct)::ldrv_size' data-ref="(anonymous)::ldrv_size">ldrv_size</dfn>[<a class="macro" href="#79" title="8" data-ref="_M/MAX_LOGICAL_DRIVES_8LD">MAX_LOGICAL_DRIVES_8LD</a>];</td></tr>
+<tr><th id="368">368</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::ldrv_prop" title='(anonymous struct)::ldrv_prop' data-ref="(anonymous)::ldrv_prop">ldrv_prop</dfn>[<a class="macro" href="#79" title="8" data-ref="_M/MAX_LOGICAL_DRIVES_8LD">MAX_LOGICAL_DRIVES_8LD</a>];</td></tr>
+<tr><th id="369">369</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::ldrv_state" title='(anonymous struct)::ldrv_state' data-ref="(anonymous)::ldrv_state">ldrv_state</dfn>[<a class="macro" href="#79" title="8" data-ref="_M/MAX_LOGICAL_DRIVES_8LD">MAX_LOGICAL_DRIVES_8LD</a>];</td></tr>
+<tr><th id="370">370</th><td>} <b>__attribute__</b> ((packed)) <dfn class="typedef" id="mega_ldrv_info" title='mega_ldrv_info' data-type='struct mega_ldrv_info' data-ref="mega_ldrv_info">mega_ldrv_info</dfn>;</td></tr>
+<tr><th id="371">371</th><td></td></tr>
+<tr><th id="372">372</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="373">373</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::pdrv_state" title='(anonymous struct)::pdrv_state' data-ref="(anonymous)::pdrv_state">pdrv_state</dfn>[<a class="macro" href="#82" title="5*15" data-ref="_M/MAX_PHYSICAL_DRIVES">MAX_PHYSICAL_DRIVES</a>];</td></tr>
+<tr><th id="374">374</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::rsvd" title='(anonymous struct)::rsvd' data-ref="(anonymous)::rsvd">rsvd</dfn>;</td></tr>
+<tr><th id="375">375</th><td>} <b>__attribute__</b> ((packed)) <dfn class="typedef" id="mega_pdrv_info" title='mega_pdrv_info' data-type='struct mega_pdrv_info' data-ref="mega_pdrv_info">mega_pdrv_info</dfn>;</td></tr>
+<tr><th id="376">376</th><td></td></tr>
+<tr><th id="377">377</th><td><i>/* RAID inquiry: Mailbox command 0x05*/</i></td></tr>
+<tr><th id="378">378</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="379">379</th><td>	<a class="typedef" href="#mega_adp_info" title='mega_adp_info' data-type='struct mega_adp_info' data-ref="mega_adp_info">mega_adp_info</a>	<dfn class="decl field" id="(anonymous)::adapter_info" title='(anonymous struct)::adapter_info' data-ref="(anonymous)::adapter_info">adapter_info</dfn>;</td></tr>
+<tr><th id="380">380</th><td>	<a class="typedef" href="#mega_ldrv_info" title='mega_ldrv_info' data-type='struct mega_ldrv_info' data-ref="mega_ldrv_info">mega_ldrv_info</a>	<dfn class="decl field" id="(anonymous)::logdrv_info" title='(anonymous struct)::logdrv_info' data-ref="(anonymous)::logdrv_info">logdrv_info</dfn>;</td></tr>
+<tr><th id="381">381</th><td>	<a class="typedef" href="#mega_pdrv_info" title='mega_pdrv_info' data-type='struct mega_pdrv_info' data-ref="mega_pdrv_info">mega_pdrv_info</a>	<dfn class="decl field" id="(anonymous)::pdrv_info" title='(anonymous struct)::pdrv_info' data-ref="(anonymous)::pdrv_info">pdrv_info</dfn>;</td></tr>
+<tr><th id="382">382</th><td>} <b>__attribute__</b> ((packed)) <dfn class="typedef" id="mraid_inquiry" title='mraid_inquiry' data-type='struct mraid_inquiry' data-ref="mraid_inquiry">mraid_inquiry</dfn>;</td></tr>
+<tr><th id="383">383</th><td></td></tr>
+<tr><th id="384">384</th><td></td></tr>
+<tr><th id="385">385</th><td><i>/* RAID extended inquiry: Mailbox command 0x04*/</i></td></tr>
+<tr><th id="386">386</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="387">387</th><td>	<a class="typedef" href="#mraid_inquiry" title='mraid_inquiry' data-type='struct mraid_inquiry' data-ref="mraid_inquiry">mraid_inquiry</a>	<dfn class="decl field" id="(anonymous)::raid_inq" title='(anonymous struct)::raid_inq' data-ref="(anonymous)::raid_inq">raid_inq</dfn>;</td></tr>
+<tr><th id="388">388</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a>	<dfn class="decl field" id="(anonymous)::phys_drv_format" title='(anonymous struct)::phys_drv_format' data-ref="(anonymous)::phys_drv_format">phys_drv_format</dfn>[<a class="macro" href="#80" title="5" data-ref="_M/MAX_CHANNELS">MAX_CHANNELS</a>];</td></tr>
+<tr><th id="389">389</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::stack_attn" title='(anonymous struct)::stack_attn' data-ref="(anonymous)::stack_attn">stack_attn</dfn>;</td></tr>
+<tr><th id="390">390</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::modem_status" title='(anonymous struct)::modem_status' data-ref="(anonymous)::modem_status">modem_status</dfn>;</td></tr>
+<tr><th id="391">391</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::rsvd" title='(anonymous struct)::rsvd' data-ref="(anonymous)::rsvd">rsvd</dfn>[<var>2</var>];</td></tr>
+<tr><th id="392">392</th><td>} <b>__attribute__</b> ((packed)) <dfn class="typedef" id="mraid_ext_inquiry" title='mraid_ext_inquiry' data-type='struct mraid_ext_inquiry' data-ref="mraid_ext_inquiry">mraid_ext_inquiry</dfn>;</td></tr>
+<tr><th id="393">393</th><td></td></tr>
+<tr><th id="394">394</th><td></td></tr>
+<tr><th id="395">395</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="396">396</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::channel" title='(anonymous struct)::channel' data-ref="(anonymous)::channel">channel</dfn>;</td></tr>
+<tr><th id="397">397</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::target" title='(anonymous struct)::target' data-ref="(anonymous)::target">target</dfn>;</td></tr>
+<tr><th id="398">398</th><td>}<b>__attribute__</b> ((packed)) <dfn class="typedef" id="adp_device" title='adp_device' data-type='struct adp_device' data-ref="adp_device">adp_device</dfn>;</td></tr>
+<tr><th id="399">399</th><td></td></tr>
+<tr><th id="400">400</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="401">401</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>		<dfn class="decl field" id="(anonymous)::start_blk" title='(anonymous struct)::start_blk' data-ref="(anonymous)::start_blk">start_blk</dfn>;	<i>/* starting block */</i></td></tr>
+<tr><th id="402">402</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>		<dfn class="decl field" id="(anonymous)::num_blks" title='(anonymous struct)::num_blks' data-ref="(anonymous)::num_blks">num_blks</dfn>;	<i>/* # of blocks */</i></td></tr>
+<tr><th id="403">403</th><td>	<a class="typedef" href="#adp_device" title='adp_device' data-type='struct adp_device' data-ref="adp_device">adp_device</a>	<dfn class="decl field" id="(anonymous)::device" title='(anonymous struct)::device' data-ref="(anonymous)::device">device</dfn>[<a class="macro" href="#83" title="32" data-ref="_M/MAX_ROW_SIZE_40LD">MAX_ROW_SIZE_40LD</a>];</td></tr>
+<tr><th id="404">404</th><td>}<b>__attribute__</b> ((packed)) <dfn class="typedef" id="adp_span_40ld" title='adp_span_40ld' data-type='struct adp_span_40ld' data-ref="adp_span_40ld">adp_span_40ld</dfn>;</td></tr>
+<tr><th id="405">405</th><td></td></tr>
+<tr><th id="406">406</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="407">407</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>		<dfn class="decl field" id="(anonymous)::start_blk" title='(anonymous struct)::start_blk' data-ref="(anonymous)::start_blk">start_blk</dfn>;	<i>/* starting block */</i></td></tr>
+<tr><th id="408">408</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>		<dfn class="decl field" id="(anonymous)::num_blks" title='(anonymous struct)::num_blks' data-ref="(anonymous)::num_blks">num_blks</dfn>;	<i>/* # of blocks */</i></td></tr>
+<tr><th id="409">409</th><td>	<a class="typedef" href="#adp_device" title='adp_device' data-type='struct adp_device' data-ref="adp_device">adp_device</a>	<dfn class="decl field" id="(anonymous)::device" title='(anonymous struct)::device' data-ref="(anonymous)::device">device</dfn>[<a class="macro" href="#84" title="8" data-ref="_M/MAX_ROW_SIZE_8LD">MAX_ROW_SIZE_8LD</a>];</td></tr>
+<tr><th id="410">410</th><td>}<b>__attribute__</b> ((packed)) <dfn class="typedef" id="adp_span_8ld" title='adp_span_8ld' data-type='struct adp_span_8ld' data-ref="adp_span_8ld">adp_span_8ld</dfn>;</td></tr>
+<tr><th id="411">411</th><td></td></tr>
+<tr><th id="412">412</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="413">413</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::span_depth" title='(anonymous struct)::span_depth' data-ref="(anonymous)::span_depth">span_depth</dfn>;	<i>/* Total # of spans */</i></td></tr>
+<tr><th id="414">414</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::level" title='(anonymous struct)::level' data-ref="(anonymous)::level">level</dfn>;		<i>/* RAID level */</i></td></tr>
+<tr><th id="415">415</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::read_ahead" title='(anonymous struct)::read_ahead' data-ref="(anonymous)::read_ahead">read_ahead</dfn>;	<i>/* read ahead, no read ahead, adaptive read</i></td></tr>
+<tr><th id="416">416</th><td><i>				   ahead */</i></td></tr>
+<tr><th id="417">417</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::stripe_sz" title='(anonymous struct)::stripe_sz' data-ref="(anonymous)::stripe_sz">stripe_sz</dfn>;	<i>/* Encoded stripe size */</i></td></tr>
+<tr><th id="418">418</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::status" title='(anonymous struct)::status' data-ref="(anonymous)::status">status</dfn>;		<i>/* Status of the logical drive */</i></td></tr>
+<tr><th id="419">419</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::write_mode" title='(anonymous struct)::write_mode' data-ref="(anonymous)::write_mode">write_mode</dfn>;	<i>/* write mode, write_through/write_back */</i></td></tr>
+<tr><th id="420">420</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::direct_io" title='(anonymous struct)::direct_io' data-ref="(anonymous)::direct_io">direct_io</dfn>;	<i>/* direct io or through cache */</i></td></tr>
+<tr><th id="421">421</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::row_size" title='(anonymous struct)::row_size' data-ref="(anonymous)::row_size">row_size</dfn>;	<i>/* Number of stripes in a row */</i></td></tr>
+<tr><th id="422">422</th><td>} <b>__attribute__</b> ((packed)) <dfn class="typedef" id="logdrv_param" title='logdrv_param' data-type='struct logdrv_param' data-ref="logdrv_param">logdrv_param</dfn>;</td></tr>
+<tr><th id="423">423</th><td></td></tr>
+<tr><th id="424">424</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="425">425</th><td>	<a class="typedef" href="#logdrv_param" title='logdrv_param' data-type='struct logdrv_param' data-ref="logdrv_param">logdrv_param</a>	<dfn class="decl field" id="(anonymous)::lparam" title='(anonymous struct)::lparam' data-ref="(anonymous)::lparam">lparam</dfn>;</td></tr>
+<tr><th id="426">426</th><td>	<a class="typedef" href="#adp_span_40ld" title='adp_span_40ld' data-type='struct adp_span_40ld' data-ref="adp_span_40ld">adp_span_40ld</a>	<dfn class="decl field" id="(anonymous)::span" title='(anonymous struct)::span' data-ref="(anonymous)::span">span</dfn>[<a class="macro" href="#85" title="8" data-ref="_M/MAX_SPAN_DEPTH">MAX_SPAN_DEPTH</a>];</td></tr>
+<tr><th id="427">427</th><td>}<b>__attribute__</b> ((packed)) <dfn class="typedef" id="logdrv_40ld" title='logdrv_40ld' data-type='struct logdrv_40ld' data-ref="logdrv_40ld">logdrv_40ld</dfn>;</td></tr>
+<tr><th id="428">428</th><td></td></tr>
+<tr><th id="429">429</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="430">430</th><td>	<a class="typedef" href="#logdrv_param" title='logdrv_param' data-type='struct logdrv_param' data-ref="logdrv_param">logdrv_param</a>	<dfn class="decl field" id="(anonymous)::lparam" title='(anonymous struct)::lparam' data-ref="(anonymous)::lparam">lparam</dfn>;</td></tr>
+<tr><th id="431">431</th><td>	<a class="typedef" href="#adp_span_8ld" title='adp_span_8ld' data-type='struct adp_span_8ld' data-ref="adp_span_8ld">adp_span_8ld</a>	<dfn class="decl field" id="(anonymous)::span" title='(anonymous struct)::span' data-ref="(anonymous)::span">span</dfn>[<a class="macro" href="#85" title="8" data-ref="_M/MAX_SPAN_DEPTH">MAX_SPAN_DEPTH</a>];</td></tr>
+<tr><th id="432">432</th><td>}<b>__attribute__</b> ((packed)) <dfn class="typedef" id="logdrv_8ld" title='logdrv_8ld' data-type='struct logdrv_8ld' data-ref="logdrv_8ld">logdrv_8ld</dfn>;</td></tr>
+<tr><th id="433">433</th><td></td></tr>
+<tr><th id="434">434</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="435">435</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::type" title='(anonymous struct)::type' data-ref="(anonymous)::type">type</dfn>;		<i>/* Type of the device */</i></td></tr>
+<tr><th id="436">436</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::cur_status" title='(anonymous struct)::cur_status' data-ref="(anonymous)::cur_status">cur_status</dfn>;	<i>/* current status of the device */</i></td></tr>
+<tr><th id="437">437</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::tag_depth" title='(anonymous struct)::tag_depth' data-ref="(anonymous)::tag_depth">tag_depth</dfn>;	<i>/* Level of tagging */</i></td></tr>
+<tr><th id="438">438</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::sync_neg" title='(anonymous struct)::sync_neg' data-ref="(anonymous)::sync_neg">sync_neg</dfn>;	<i>/* sync negotiation - ENABLE or DISABLE */</i></td></tr>
+<tr><th id="439">439</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::size" title='(anonymous struct)::size' data-ref="(anonymous)::size">size</dfn>;		<i>/* configurable size in terms of 512 byte</i></td></tr>
+<tr><th id="440">440</th><td><i>				   blocks */</i></td></tr>
+<tr><th id="441">441</th><td>}<b>__attribute__</b> ((packed)) <dfn class="typedef" id="phys_drv" title='phys_drv' data-type='struct phys_drv' data-ref="phys_drv">phys_drv</dfn>;</td></tr>
+<tr><th id="442">442</th><td></td></tr>
+<tr><th id="443">443</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="444">444</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>		<dfn class="decl field" id="(anonymous)::nlog_drives" title='(anonymous struct)::nlog_drives' data-ref="(anonymous)::nlog_drives">nlog_drives</dfn>;		<i>/* number of logical drives */</i></td></tr>
+<tr><th id="445">445</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>		<dfn class="decl field" id="(anonymous)::resvd" title='(anonymous struct)::resvd' data-ref="(anonymous)::resvd">resvd</dfn>[<var>3</var>];</td></tr>
+<tr><th id="446">446</th><td>	<a class="typedef" href="#logdrv_40ld" title='logdrv_40ld' data-type='struct logdrv_40ld' data-ref="logdrv_40ld">logdrv_40ld</a>	<dfn class="decl field" id="(anonymous)::ldrv" title='(anonymous struct)::ldrv' data-ref="(anonymous)::ldrv">ldrv</dfn>[<a class="macro" href="#77" title="40" data-ref="_M/MAX_LOGICAL_DRIVES_40LD">MAX_LOGICAL_DRIVES_40LD</a>];</td></tr>
+<tr><th id="447">447</th><td>	<a class="typedef" href="#phys_drv" title='phys_drv' data-type='struct phys_drv' data-ref="phys_drv">phys_drv</a>	<dfn class="decl field" id="(anonymous)::pdrv" title='(anonymous struct)::pdrv' data-ref="(anonymous)::pdrv">pdrv</dfn>[<a class="macro" href="#82" title="5*15" data-ref="_M/MAX_PHYSICAL_DRIVES">MAX_PHYSICAL_DRIVES</a>];</td></tr>
+<tr><th id="448">448</th><td>}<b>__attribute__</b> ((packed)) <dfn class="typedef" id="disk_array_40ld" title='disk_array_40ld' data-type='struct disk_array_40ld' data-ref="disk_array_40ld">disk_array_40ld</dfn>;</td></tr>
+<tr><th id="449">449</th><td></td></tr>
+<tr><th id="450">450</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="451">451</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>		<dfn class="decl field" id="(anonymous)::nlog_drives" title='(anonymous struct)::nlog_drives' data-ref="(anonymous)::nlog_drives">nlog_drives</dfn>;	<i>/* number of logical drives */</i></td></tr>
+<tr><th id="452">452</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>		<dfn class="decl field" id="(anonymous)::resvd" title='(anonymous struct)::resvd' data-ref="(anonymous)::resvd">resvd</dfn>[<var>3</var>];</td></tr>
+<tr><th id="453">453</th><td>	<a class="typedef" href="#logdrv_8ld" title='logdrv_8ld' data-type='struct logdrv_8ld' data-ref="logdrv_8ld">logdrv_8ld</a>	<dfn class="decl field" id="(anonymous)::ldrv" title='(anonymous struct)::ldrv' data-ref="(anonymous)::ldrv">ldrv</dfn>[<a class="macro" href="#79" title="8" data-ref="_M/MAX_LOGICAL_DRIVES_8LD">MAX_LOGICAL_DRIVES_8LD</a>];</td></tr>
+<tr><th id="454">454</th><td>	<a class="typedef" href="#phys_drv" title='phys_drv' data-type='struct phys_drv' data-ref="phys_drv">phys_drv</a>	<dfn class="decl field" id="(anonymous)::pdrv" title='(anonymous struct)::pdrv' data-ref="(anonymous)::pdrv">pdrv</dfn>[<a class="macro" href="#82" title="5*15" data-ref="_M/MAX_PHYSICAL_DRIVES">MAX_PHYSICAL_DRIVES</a>];</td></tr>
+<tr><th id="455">455</th><td>}<b>__attribute__</b> ((packed)) <dfn class="typedef" id="disk_array_8ld" title='disk_array_8ld' data-type='struct disk_array_8ld' data-ref="disk_array_8ld">disk_array_8ld</dfn>;</td></tr>
+<tr><th id="456">456</th><td></td></tr>
+<tr><th id="457">457</th><td></td></tr>
+<tr><th id="458">458</th><td><i>/*</i></td></tr>
+<tr><th id="459">459</th><td><i> * User ioctl structure.</i></td></tr>
+<tr><th id="460">460</th><td><i> * This structure will be used for Traditional Method ioctl interface</i></td></tr>
+<tr><th id="461">461</th><td><i> * commands (0x80),Alternate Buffer Method (0x81) ioctl commands and the</i></td></tr>
+<tr><th id="462">462</th><td><i> * Driver ioctls.</i></td></tr>
+<tr><th id="463">463</th><td><i> * The Driver ioctl interface handles the commands at the driver level,</i></td></tr>
+<tr><th id="464">464</th><td><i> * without being sent to the card.</i></td></tr>
+<tr><th id="465">465</th><td><i> */</i></td></tr>
+<tr><th id="466">466</th><td><i>/* system call imposed limit. Change accordingly */</i></td></tr>
+<tr><th id="467">467</th><td><u>#define <dfn class="macro" id="_M/IOCTL_MAX_DATALEN" data-ref="_M/IOCTL_MAX_DATALEN">IOCTL_MAX_DATALEN</dfn>       4096</u></td></tr>
+<tr><th id="468">468</th><td></td></tr>
+<tr><th id="469">469</th><td><b>struct</b> <dfn class="type def" id="uioctl_t" title='uioctl_t' data-ref="uioctl_t">uioctl_t</dfn> {</td></tr>
+<tr><th id="470">470</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="uioctl_t::inlen" title='uioctl_t::inlen' data-ref="uioctl_t::inlen">inlen</dfn>;</td></tr>
+<tr><th id="471">471</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="uioctl_t::outlen" title='uioctl_t::outlen' data-ref="uioctl_t::outlen">outlen</dfn>;</td></tr>
+<tr><th id="472">472</th><td>	<b>union</b> {</td></tr>
+<tr><th id="473">473</th><td>		<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="uioctl_t::(anonymous)::fca" title='uioctl_t::(anonymous union)::fca' data-ref="uioctl_t::(anonymous)::fca">fca</dfn>[<var>16</var>];</td></tr>
+<tr><th id="474">474</th><td>		<b>struct</b> {</td></tr>
+<tr><th id="475">475</th><td>			<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="uioctl_t::(anonymousunion)::(anonymous)::opcode" title='uioctl_t::(anonymous union)::(anonymous struct)::opcode' data-ref="uioctl_t::(anonymousunion)::(anonymous)::opcode">opcode</dfn>;</td></tr>
+<tr><th id="476">476</th><td>			<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="uioctl_t::(anonymousunion)::(anonymous)::subopcode" title='uioctl_t::(anonymous union)::(anonymous struct)::subopcode' data-ref="uioctl_t::(anonymousunion)::(anonymous)::subopcode">subopcode</dfn>;</td></tr>
+<tr><th id="477">477</th><td>			<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> <dfn class="decl field" id="uioctl_t::(anonymousunion)::(anonymous)::adapno" title='uioctl_t::(anonymous union)::(anonymous struct)::adapno' data-ref="uioctl_t::(anonymousunion)::(anonymous)::adapno">adapno</dfn>;</td></tr>
+<tr><th id="478">478</th><td><u>#<span data-ppcond="478">if</span> <a class="macro" href="../../include/asm-generic/bitsperlong.h.html#9" title="64" data-ref="_M/BITS_PER_LONG">BITS_PER_LONG</a> == 32</u></td></tr>
+<tr><th id="479">479</th><td>			u8 *buffer;</td></tr>
+<tr><th id="480">480</th><td>			u8 pad[<var>4</var>];</td></tr>
+<tr><th id="481">481</th><td><u>#<span data-ppcond="478">endif</span></u></td></tr>
+<tr><th id="482">482</th><td><u>#<span data-ppcond="482">if</span> <a class="macro" href="../../include/asm-generic/bitsperlong.h.html#9" title="64" data-ref="_M/BITS_PER_LONG">BITS_PER_LONG</a> == 64</u></td></tr>
+<tr><th id="483">483</th><td>			<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="decl field" id="uioctl_t::(anonymousunion)::(anonymous)::buffer" title='uioctl_t::(anonymous union)::(anonymous struct)::buffer' data-ref="uioctl_t::(anonymousunion)::(anonymous)::buffer">buffer</dfn>;</td></tr>
+<tr><th id="484">484</th><td><u>#<span data-ppcond="482">endif</span></u></td></tr>
+<tr><th id="485">485</th><td>			<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="uioctl_t::(anonymousunion)::(anonymous)::length" title='uioctl_t::(anonymous union)::(anonymous struct)::length' data-ref="uioctl_t::(anonymousunion)::(anonymous)::length">length</dfn>;</td></tr>
+<tr><th id="486">486</th><td>		} <b>__attribute__</b> ((packed)) <dfn class="decl field" id="uioctl_t::(anonymous)::fcs" title='uioctl_t::(anonymous union)::fcs' data-ref="uioctl_t::(anonymous)::fcs">fcs</dfn>;</td></tr>
+<tr><th id="487">487</th><td>	} <b>__attribute__</b> ((packed)) <dfn class="decl field" id="uioctl_t::ui" title='uioctl_t::ui' data-ref="uioctl_t::ui">ui</dfn>;</td></tr>
+<tr><th id="488">488</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="uioctl_t::mbox" title='uioctl_t::mbox' data-ref="uioctl_t::mbox">mbox</dfn>[<var>18</var>];		<i>/* 16 bytes + 2 status bytes */</i></td></tr>
+<tr><th id="489">489</th><td>	<a class="typedef" href="#mega_passthru" title='mega_passthru' data-type='struct mega_passthru' data-ref="mega_passthru">mega_passthru</a> <dfn class="decl field" id="uioctl_t::pthru" title='uioctl_t::pthru' data-ref="uioctl_t::pthru">pthru</dfn>;</td></tr>
+<tr><th id="490">490</th><td><u>#<span data-ppcond="490">if</span> <a class="macro" href="../../include/asm-generic/bitsperlong.h.html#9" title="64" data-ref="_M/BITS_PER_LONG">BITS_PER_LONG</a> == 32</u></td></tr>
+<tr><th id="491">491</th><td>	<em>char</em> __user *data;		<i>/* buffer &lt;= 4096 for 0x80 commands */</i></td></tr>
+<tr><th id="492">492</th><td>	<em>char</em> pad[<var>4</var>];</td></tr>
+<tr><th id="493">493</th><td><u>#<span data-ppcond="490">endif</span></u></td></tr>
+<tr><th id="494">494</th><td><u>#<span data-ppcond="494">if</span> <a class="macro" href="../../include/asm-generic/bitsperlong.h.html#9" title="64" data-ref="_M/BITS_PER_LONG">BITS_PER_LONG</a> == 64</u></td></tr>
+<tr><th id="495">495</th><td>	<em>char</em> <a class="macro" href="../../include/linux/compiler_types.h.html#29" title="" data-ref="_M/__user">__user</a> *<dfn class="decl field" id="uioctl_t::data" title='uioctl_t::data' data-ref="uioctl_t::data">data</dfn>;</td></tr>
+<tr><th id="496">496</th><td><u>#<span data-ppcond="494">endif</span></u></td></tr>
+<tr><th id="497">497</th><td>} <b>__attribute__</b> ((packed));</td></tr>
+<tr><th id="498">498</th><td></td></tr>
+<tr><th id="499">499</th><td><i>/*</i></td></tr>
+<tr><th id="500">500</th><td><i> * struct mcontroller is used to pass information about the controllers in the</i></td></tr>
+<tr><th id="501">501</th><td><i> * system. Its up to the application how to use the information. We are passing</i></td></tr>
+<tr><th id="502">502</th><td><i> * as much info about the cards as possible and useful. Before issuing the</i></td></tr>
+<tr><th id="503">503</th><td><i> * call to find information about the cards, the application needs to issue a</i></td></tr>
+<tr><th id="504">504</th><td><i> * ioctl first to find out the number of controllers in the system.</i></td></tr>
+<tr><th id="505">505</th><td><i> */</i></td></tr>
+<tr><th id="506">506</th><td><u>#define <dfn class="macro" id="_M/MAX_CONTROLLERS" data-ref="_M/MAX_CONTROLLERS">MAX_CONTROLLERS</dfn> 32</u></td></tr>
+<tr><th id="507">507</th><td></td></tr>
+<tr><th id="508">508</th><td><b>struct</b> <dfn class="type def" id="mcontroller" title='mcontroller' data-ref="mcontroller">mcontroller</dfn> {</td></tr>
+<tr><th id="509">509</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u64" title='u64' data-type='unsigned long long' data-ref="u64">u64</a> <dfn class="decl field" id="mcontroller::base" title='mcontroller::base' data-ref="mcontroller::base">base</dfn>;</td></tr>
+<tr><th id="510">510</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="mcontroller::irq" title='mcontroller::irq' data-ref="mcontroller::irq">irq</dfn>;</td></tr>
+<tr><th id="511">511</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="mcontroller::numldrv" title='mcontroller::numldrv' data-ref="mcontroller::numldrv">numldrv</dfn>;</td></tr>
+<tr><th id="512">512</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="mcontroller::pcibus" title='mcontroller::pcibus' data-ref="mcontroller::pcibus">pcibus</dfn>;</td></tr>
+<tr><th id="513">513</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> <dfn class="decl field" id="mcontroller::pcidev" title='mcontroller::pcidev' data-ref="mcontroller::pcidev">pcidev</dfn>;</td></tr>
+<tr><th id="514">514</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="mcontroller::pcifun" title='mcontroller::pcifun' data-ref="mcontroller::pcifun">pcifun</dfn>;</td></tr>
+<tr><th id="515">515</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> <dfn class="decl field" id="mcontroller::pciid" title='mcontroller::pciid' data-ref="mcontroller::pciid">pciid</dfn>;</td></tr>
+<tr><th id="516">516</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> <dfn class="decl field" id="mcontroller::pcivendor" title='mcontroller::pcivendor' data-ref="mcontroller::pcivendor">pcivendor</dfn>;</td></tr>
+<tr><th id="517">517</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="decl field" id="mcontroller::pcislot" title='mcontroller::pcislot' data-ref="mcontroller::pcislot">pcislot</dfn>;</td></tr>
+<tr><th id="518">518</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="decl field" id="mcontroller::uid" title='mcontroller::uid' data-ref="mcontroller::uid">uid</dfn>;</td></tr>
+<tr><th id="519">519</th><td>};</td></tr>
+<tr><th id="520">520</th><td></td></tr>
+<tr><th id="521">521</th><td><i>/*</i></td></tr>
+<tr><th id="522">522</th><td><i> * mailbox structure used for internal commands</i></td></tr>
+<tr><th id="523">523</th><td><i> */</i></td></tr>
+<tr><th id="524">524</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="525">525</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::cmd" title='(anonymous struct)::cmd' data-ref="(anonymous)::cmd">cmd</dfn>;</td></tr>
+<tr><th id="526">526</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::cmdid" title='(anonymous struct)::cmdid' data-ref="(anonymous)::cmdid">cmdid</dfn>;</td></tr>
+<tr><th id="527">527</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::opcode" title='(anonymous struct)::opcode' data-ref="(anonymous)::opcode">opcode</dfn>;</td></tr>
+<tr><th id="528">528</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::subopcode" title='(anonymous struct)::subopcode' data-ref="(anonymous)::subopcode">subopcode</dfn>;</td></tr>
+<tr><th id="529">529</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::lba" title='(anonymous struct)::lba' data-ref="(anonymous)::lba">lba</dfn>;</td></tr>
+<tr><th id="530">530</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::xferaddr" title='(anonymous struct)::xferaddr' data-ref="(anonymous)::xferaddr">xferaddr</dfn>;</td></tr>
+<tr><th id="531">531</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::logdrv" title='(anonymous struct)::logdrv' data-ref="(anonymous)::logdrv">logdrv</dfn>;</td></tr>
+<tr><th id="532">532</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::rsvd" title='(anonymous struct)::rsvd' data-ref="(anonymous)::rsvd">rsvd</dfn>[<var>3</var>];</td></tr>
+<tr><th id="533">533</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::numstatus" title='(anonymous struct)::numstatus' data-ref="(anonymous)::numstatus">numstatus</dfn>;</td></tr>
+<tr><th id="534">534</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::status" title='(anonymous struct)::status' data-ref="(anonymous)::status">status</dfn>;</td></tr>
+<tr><th id="535">535</th><td>} <b>__attribute__</b> ((packed)) <dfn class="typedef" id="megacmd_t" title='megacmd_t' data-type='struct megacmd_t' data-ref="megacmd_t">megacmd_t</dfn>;</td></tr>
+<tr><th id="536">536</th><td></td></tr>
+<tr><th id="537">537</th><td><i>/*</i></td></tr>
+<tr><th id="538">538</th><td><i> * Defines for Driver IOCTL interface</i></td></tr>
+<tr><th id="539">539</th><td><i> */</i></td></tr>
+<tr><th id="540">540</th><td><u>#define <dfn class="macro" id="_M/MEGAIOC_MAGIC" data-ref="_M/MEGAIOC_MAGIC">MEGAIOC_MAGIC</dfn>  	'm'</u></td></tr>
+<tr><th id="541">541</th><td></td></tr>
+<tr><th id="542">542</th><td><u>#define <dfn class="macro" id="_M/MEGAIOC_QNADAP" data-ref="_M/MEGAIOC_QNADAP">MEGAIOC_QNADAP</dfn>		'm'	/* Query # of adapters */</u></td></tr>
+<tr><th id="543">543</th><td><u>#define <dfn class="macro" id="_M/MEGAIOC_QDRVRVER" data-ref="_M/MEGAIOC_QDRVRVER">MEGAIOC_QDRVRVER</dfn>	'e'	/* Query driver version */</u></td></tr>
+<tr><th id="544">544</th><td><u>#define <dfn class="macro" id="_M/MEGAIOC_QADAPINFO" data-ref="_M/MEGAIOC_QADAPINFO">MEGAIOC_QADAPINFO</dfn>   	'g'	/* Query adapter information */</u></td></tr>
+<tr><th id="545">545</th><td><u>#define <dfn class="macro" id="_M/MKADAP" data-ref="_M/MKADAP">MKADAP</dfn>(adapno)	  	(MEGAIOC_MAGIC &lt;&lt; 8 | (adapno) )</u></td></tr>
+<tr><th id="546">546</th><td><u>#define <dfn class="macro" id="_M/GETADAP" data-ref="_M/GETADAP">GETADAP</dfn>(mkadap)	 	( (mkadap) ^ MEGAIOC_MAGIC &lt;&lt; 8 )</u></td></tr>
+<tr><th id="547">547</th><td></td></tr>
+<tr><th id="548">548</th><td><i>/*</i></td></tr>
+<tr><th id="549">549</th><td><i> * Definition for the new ioctl interface (NIT)</i></td></tr>
+<tr><th id="550">550</th><td><i> */</i></td></tr>
+<tr><th id="551">551</th><td></td></tr>
+<tr><th id="552">552</th><td><i>/*</i></td></tr>
+<tr><th id="553">553</th><td><i> * Vendor specific Group-7 commands</i></td></tr>
+<tr><th id="554">554</th><td><i> */</i></td></tr>
+<tr><th id="555">555</th><td><u>#define <dfn class="macro" id="_M/VENDOR_SPECIFIC_COMMANDS" data-ref="_M/VENDOR_SPECIFIC_COMMANDS">VENDOR_SPECIFIC_COMMANDS</dfn>	0xE0</u></td></tr>
+<tr><th id="556">556</th><td><u>#define <dfn class="macro" id="_M/MEGA_INTERNAL_CMD" data-ref="_M/MEGA_INTERNAL_CMD">MEGA_INTERNAL_CMD</dfn>		VENDOR_SPECIFIC_COMMANDS + 0x01</u></td></tr>
+<tr><th id="557">557</th><td></td></tr>
+<tr><th id="558">558</th><td><i>/*</i></td></tr>
+<tr><th id="559">559</th><td><i> * The ioctl command. No other command shall be used for this interface</i></td></tr>
+<tr><th id="560">560</th><td><i> */</i></td></tr>
+<tr><th id="561">561</th><td><u>#define <dfn class="macro" id="_M/USCSICMD" data-ref="_M/USCSICMD">USCSICMD</dfn>	VENDOR_SPECIFIC_COMMANDS</u></td></tr>
+<tr><th id="562">562</th><td></td></tr>
+<tr><th id="563">563</th><td><i>/*</i></td></tr>
+<tr><th id="564">564</th><td><i> * Data direction flags</i></td></tr>
+<tr><th id="565">565</th><td><i> */</i></td></tr>
+<tr><th id="566">566</th><td><u>#define <dfn class="macro" id="_M/UIOC_RD" data-ref="_M/UIOC_RD">UIOC_RD</dfn>		0x00001</u></td></tr>
+<tr><th id="567">567</th><td><u>#define <dfn class="macro" id="_M/UIOC_WR" data-ref="_M/UIOC_WR">UIOC_WR</dfn>		0x00002</u></td></tr>
+<tr><th id="568">568</th><td></td></tr>
+<tr><th id="569">569</th><td><i>/*</i></td></tr>
+<tr><th id="570">570</th><td><i> * ioctl opcodes</i></td></tr>
+<tr><th id="571">571</th><td><i> */</i></td></tr>
+<tr><th id="572">572</th><td><u>#define <dfn class="macro" id="_M/MBOX_CMD" data-ref="_M/MBOX_CMD">MBOX_CMD</dfn>	0x00000	/* DCMD or passthru command */</u></td></tr>
+<tr><th id="573">573</th><td><u>#define <dfn class="macro" id="_M/GET_DRIVER_VER" data-ref="_M/GET_DRIVER_VER">GET_DRIVER_VER</dfn>	0x10000	/* Get driver version */</u></td></tr>
+<tr><th id="574">574</th><td><u>#define <dfn class="macro" id="_M/GET_N_ADAP" data-ref="_M/GET_N_ADAP">GET_N_ADAP</dfn>	0x20000	/* Get number of adapters */</u></td></tr>
+<tr><th id="575">575</th><td><u>#define <dfn class="macro" id="_M/GET_ADAP_INFO" data-ref="_M/GET_ADAP_INFO">GET_ADAP_INFO</dfn>	0x30000	/* Get information about a adapter */</u></td></tr>
+<tr><th id="576">576</th><td><u>#define <dfn class="macro" id="_M/GET_CAP" data-ref="_M/GET_CAP">GET_CAP</dfn>		0x40000	/* Get ioctl capabilities */</u></td></tr>
+<tr><th id="577">577</th><td><u>#define <dfn class="macro" id="_M/GET_STATS" data-ref="_M/GET_STATS">GET_STATS</dfn>	0x50000	/* Get statistics, including error info */</u></td></tr>
+<tr><th id="578">578</th><td></td></tr>
+<tr><th id="579">579</th><td></td></tr>
+<tr><th id="580">580</th><td><i>/*</i></td></tr>
+<tr><th id="581">581</th><td><i> * The ioctl structure.</i></td></tr>
+<tr><th id="582">582</th><td><i> * MBOX macro converts a nitioctl_t structure to megacmd_t pointer and</i></td></tr>
+<tr><th id="583">583</th><td><i> * MBOX_P macro converts a nitioctl_t pointer to megacmd_t pointer.</i></td></tr>
+<tr><th id="584">584</th><td><i> */</i></td></tr>
+<tr><th id="585">585</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="586">586</th><td>	<em>char</em>		<dfn class="decl field" id="(anonymous)::signature" title='(anonymous struct)::signature' data-ref="(anonymous)::signature">signature</dfn>[<var>8</var>];	<i>/* Must contain "MEGANIT" */</i></td></tr>
+<tr><th id="587">587</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>		<dfn class="decl field" id="(anonymous)::opcode" title='(anonymous struct)::opcode' data-ref="(anonymous)::opcode">opcode</dfn>;		<i>/* opcode for the command */</i></td></tr>
+<tr><th id="588">588</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>		<dfn class="decl field" id="(anonymous)::adapno" title='(anonymous struct)::adapno' data-ref="(anonymous)::adapno">adapno</dfn>;		<i>/* adapter number */</i></td></tr>
+<tr><th id="589">589</th><td>	<b>union</b> {</td></tr>
+<tr><th id="590">590</th><td>		<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymousstruct)::(anonymous)::__raw_mbox" title='(anonymous struct)::(anonymous union)::__raw_mbox' data-ref="(anonymousstruct)::(anonymous)::__raw_mbox">__raw_mbox</dfn>[<var>18</var>];</td></tr>
+<tr><th id="591">591</th><td>		<em>void</em> <a class="macro" href="../../include/linux/compiler_types.h.html#29" title="" data-ref="_M/__user">__user</a> *<dfn class="decl field" id="(anonymousstruct)::(anonymous)::__uaddr" title='(anonymous struct)::(anonymous union)::__uaddr' data-ref="(anonymousstruct)::(anonymous)::__uaddr">__uaddr</dfn>; <i>/* xferaddr for non-mbox cmds */</i></td></tr>
+<tr><th id="592">592</th><td>	}<dfn class="decl field" id="(anonymous)::__ua" title='(anonymous struct)::__ua' data-ref="(anonymous)::__ua">__ua</dfn>;</td></tr>
+<tr><th id="593">593</th><td></td></tr>
+<tr><th id="594">594</th><td><u>#define <dfn class="macro" id="_M/uioc_rmbox" data-ref="_M/uioc_rmbox">uioc_rmbox</dfn>	__ua.__raw_mbox</u></td></tr>
+<tr><th id="595">595</th><td><u>#define <dfn class="macro" id="_M/MBOX" data-ref="_M/MBOX">MBOX</dfn>(uioc)	((megacmd_t *)&amp;((uioc).__ua.__raw_mbox[0]))</u></td></tr>
+<tr><th id="596">596</th><td><u>#define <dfn class="macro" id="_M/MBOX_P" data-ref="_M/MBOX_P">MBOX_P</dfn>(uioc)	((megacmd_t __user *)&amp;((uioc)-&gt;__ua.__raw_mbox[0]))</u></td></tr>
+<tr><th id="597">597</th><td><u>#define <dfn class="macro" id="_M/uioc_uaddr" data-ref="_M/uioc_uaddr">uioc_uaddr</dfn>	__ua.__uaddr</u></td></tr>
+<tr><th id="598">598</th><td></td></tr>
+<tr><th id="599">599</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>		<dfn class="decl field" id="(anonymous)::xferlen" title='(anonymous struct)::xferlen' data-ref="(anonymous)::xferlen">xferlen</dfn>;	<i>/* xferlen for DCMD and non-mbox</i></td></tr>
+<tr><th id="600">600</th><td><i>					   commands */</i></td></tr>
+<tr><th id="601">601</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>		<dfn class="decl field" id="(anonymous)::flags" title='(anonymous struct)::flags' data-ref="(anonymous)::flags">flags</dfn>;		<i>/* data direction flags */</i></td></tr>
+<tr><th id="602">602</th><td>}<dfn class="typedef" id="nitioctl_t" title='nitioctl_t' data-type='struct nitioctl_t' data-ref="nitioctl_t">nitioctl_t</dfn>;</td></tr>
+<tr><th id="603">603</th><td></td></tr>
+<tr><th id="604">604</th><td></td></tr>
+<tr><th id="605">605</th><td><i>/*</i></td></tr>
+<tr><th id="606">606</th><td><i> * I/O statistics for some applications like SNMP agent. The caller must</i></td></tr>
+<tr><th id="607">607</th><td><i> * provide the number of logical drives for which status should be reported.</i></td></tr>
+<tr><th id="608">608</th><td><i> */</i></td></tr>
+<tr><th id="609">609</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="610">610</th><td>	<em>int</em>	<dfn class="decl field" id="(anonymous)::num_ldrv" title='(anonymous struct)::num_ldrv' data-ref="(anonymous)::num_ldrv">num_ldrv</dfn>;	<i>/* Number for logical drives for which the</i></td></tr>
+<tr><th id="611">611</th><td><i>				   status should be reported. */</i></td></tr>
+<tr><th id="612">612</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::nreads" title='(anonymous struct)::nreads' data-ref="(anonymous)::nreads">nreads</dfn>[<a class="macro" href="#77" title="40" data-ref="_M/MAX_LOGICAL_DRIVES_40LD">MAX_LOGICAL_DRIVES_40LD</a>];	<i>/* number of reads for</i></td></tr>
+<tr><th id="613">613</th><td><i>							each logical drive */</i></td></tr>
+<tr><th id="614">614</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::nreadblocks" title='(anonymous struct)::nreadblocks' data-ref="(anonymous)::nreadblocks">nreadblocks</dfn>[<a class="macro" href="#77" title="40" data-ref="_M/MAX_LOGICAL_DRIVES_40LD">MAX_LOGICAL_DRIVES_40LD</a>];	<i>/* number of blocks</i></td></tr>
+<tr><th id="615">615</th><td><i>							read for each logical</i></td></tr>
+<tr><th id="616">616</th><td><i>							drive */</i></td></tr>
+<tr><th id="617">617</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::nwrites" title='(anonymous struct)::nwrites' data-ref="(anonymous)::nwrites">nwrites</dfn>[<a class="macro" href="#77" title="40" data-ref="_M/MAX_LOGICAL_DRIVES_40LD">MAX_LOGICAL_DRIVES_40LD</a>];	<i>/* number of writes</i></td></tr>
+<tr><th id="618">618</th><td><i>							for each logical</i></td></tr>
+<tr><th id="619">619</th><td><i>							drive */</i></td></tr>
+<tr><th id="620">620</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::nwriteblocks" title='(anonymous struct)::nwriteblocks' data-ref="(anonymous)::nwriteblocks">nwriteblocks</dfn>[<a class="macro" href="#77" title="40" data-ref="_M/MAX_LOGICAL_DRIVES_40LD">MAX_LOGICAL_DRIVES_40LD</a>];	<i>/* number of blocks</i></td></tr>
+<tr><th id="621">621</th><td><i>							writes for each</i></td></tr>
+<tr><th id="622">622</th><td><i>							logical drive */</i></td></tr>
+<tr><th id="623">623</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::rd_errors" title='(anonymous struct)::rd_errors' data-ref="(anonymous)::rd_errors">rd_errors</dfn>[<a class="macro" href="#77" title="40" data-ref="_M/MAX_LOGICAL_DRIVES_40LD">MAX_LOGICAL_DRIVES_40LD</a>];	<i>/* number of read</i></td></tr>
+<tr><th id="624">624</th><td><i>							   errors for each</i></td></tr>
+<tr><th id="625">625</th><td><i>							   logical drive */</i></td></tr>
+<tr><th id="626">626</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::wr_errors" title='(anonymous struct)::wr_errors' data-ref="(anonymous)::wr_errors">wr_errors</dfn>[<a class="macro" href="#77" title="40" data-ref="_M/MAX_LOGICAL_DRIVES_40LD">MAX_LOGICAL_DRIVES_40LD</a>];	<i>/* number of write</i></td></tr>
+<tr><th id="627">627</th><td><i>							   errors for each</i></td></tr>
+<tr><th id="628">628</th><td><i>							   logical drive */</i></td></tr>
+<tr><th id="629">629</th><td>}<dfn class="typedef" id="megastat_t" title='megastat_t' data-type='struct megastat_t' data-ref="megastat_t">megastat_t</dfn>;</td></tr>
+<tr><th id="630">630</th><td></td></tr>
+<tr><th id="631">631</th><td></td></tr>
+<tr><th id="632">632</th><td><b>struct</b> <dfn class="type def" id="private_bios_data" title='private_bios_data' data-ref="private_bios_data">private_bios_data</dfn> {</td></tr>
+<tr><th id="633">633</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="private_bios_data::geometry" title='private_bios_data::geometry' data-ref="private_bios_data::geometry">geometry</dfn>:<var>4</var>;	<i>/*</i></td></tr>
+<tr><th id="634">634</th><td><i>				 * bits 0-3 - BIOS geometry</i></td></tr>
+<tr><th id="635">635</th><td><i>				 * 0x0001 - 1GB</i></td></tr>
+<tr><th id="636">636</th><td><i>				 * 0x0010 - 2GB</i></td></tr>
+<tr><th id="637">637</th><td><i>				 * 0x1000 - 8GB</i></td></tr>
+<tr><th id="638">638</th><td><i>				 * Others values are invalid</i></td></tr>
+<tr><th id="639">639</th><td><i>							 */</i></td></tr>
+<tr><th id="640">640</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="private_bios_data::unused" title='private_bios_data::unused' data-ref="private_bios_data::unused">unused</dfn>:<var>4</var>;	<i>/* bits 4-7 are unused */</i></td></tr>
+<tr><th id="641">641</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="private_bios_data::boot_drv" title='private_bios_data::boot_drv' data-ref="private_bios_data::boot_drv">boot_drv</dfn>;	<i>/*</i></td></tr>
+<tr><th id="642">642</th><td><i>				 * logical drive set as boot drive</i></td></tr>
+<tr><th id="643">643</th><td><i>				 * 0..7 - for 8LD cards</i></td></tr>
+<tr><th id="644">644</th><td><i>				 * 0..39 - for 40LD cards</i></td></tr>
+<tr><th id="645">645</th><td><i>				 */</i></td></tr>
+<tr><th id="646">646</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="private_bios_data::rsvd" title='private_bios_data::rsvd' data-ref="private_bios_data::rsvd">rsvd</dfn>[<var>12</var>];</td></tr>
+<tr><th id="647">647</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a>	<dfn class="decl field" id="private_bios_data::cksum" title='private_bios_data::cksum' data-ref="private_bios_data::cksum">cksum</dfn>;	<i>/* 0-(sum of first 13 bytes of this structure) */</i></td></tr>
+<tr><th id="648">648</th><td>} <b>__attribute__</b> ((packed));</td></tr>
+<tr><th id="649">649</th><td></td></tr>
+<tr><th id="650">650</th><td></td></tr>
+<tr><th id="651">651</th><td></td></tr>
+<tr><th id="652">652</th><td></td></tr>
+<tr><th id="653">653</th><td><i>/*</i></td></tr>
+<tr><th id="654">654</th><td><i> * Mailbox and firmware commands and subopcodes used in this driver.</i></td></tr>
+<tr><th id="655">655</th><td><i> */</i></td></tr>
+<tr><th id="656">656</th><td></td></tr>
+<tr><th id="657">657</th><td><u>#define <dfn class="macro" id="_M/MEGA_MBOXCMD_LREAD" data-ref="_M/MEGA_MBOXCMD_LREAD">MEGA_MBOXCMD_LREAD</dfn>	0x01</u></td></tr>
+<tr><th id="658">658</th><td><u>#define <dfn class="macro" id="_M/MEGA_MBOXCMD_LWRITE" data-ref="_M/MEGA_MBOXCMD_LWRITE">MEGA_MBOXCMD_LWRITE</dfn>	0x02</u></td></tr>
+<tr><th id="659">659</th><td><u>#define <dfn class="macro" id="_M/MEGA_MBOXCMD_PASSTHRU" data-ref="_M/MEGA_MBOXCMD_PASSTHRU">MEGA_MBOXCMD_PASSTHRU</dfn>	0x03</u></td></tr>
+<tr><th id="660">660</th><td><u>#define <dfn class="macro" id="_M/MEGA_MBOXCMD_ADPEXTINQ" data-ref="_M/MEGA_MBOXCMD_ADPEXTINQ">MEGA_MBOXCMD_ADPEXTINQ</dfn>	0x04</u></td></tr>
+<tr><th id="661">661</th><td><u>#define <dfn class="macro" id="_M/MEGA_MBOXCMD_ADAPTERINQ" data-ref="_M/MEGA_MBOXCMD_ADAPTERINQ">MEGA_MBOXCMD_ADAPTERINQ</dfn>	0x05</u></td></tr>
+<tr><th id="662">662</th><td><u>#define <dfn class="macro" id="_M/MEGA_MBOXCMD_LREAD64" data-ref="_M/MEGA_MBOXCMD_LREAD64">MEGA_MBOXCMD_LREAD64</dfn>	0xA7</u></td></tr>
+<tr><th id="663">663</th><td><u>#define <dfn class="macro" id="_M/MEGA_MBOXCMD_LWRITE64" data-ref="_M/MEGA_MBOXCMD_LWRITE64">MEGA_MBOXCMD_LWRITE64</dfn>	0xA8</u></td></tr>
+<tr><th id="664">664</th><td><u>#define <dfn class="macro" id="_M/MEGA_MBOXCMD_PASSTHRU64" data-ref="_M/MEGA_MBOXCMD_PASSTHRU64">MEGA_MBOXCMD_PASSTHRU64</dfn>	0xC3</u></td></tr>
+<tr><th id="665">665</th><td><u>#define <dfn class="macro" id="_M/MEGA_MBOXCMD_EXTPTHRU" data-ref="_M/MEGA_MBOXCMD_EXTPTHRU">MEGA_MBOXCMD_EXTPTHRU</dfn>	0xE3</u></td></tr>
+<tr><th id="666">666</th><td></td></tr>
+<tr><th id="667">667</th><td><u>#define <dfn class="macro" id="_M/MAIN_MISC_OPCODE" data-ref="_M/MAIN_MISC_OPCODE">MAIN_MISC_OPCODE</dfn>	0xA4	/* f/w misc opcode */</u></td></tr>
+<tr><th id="668">668</th><td><u>#define <dfn class="macro" id="_M/GET_MAX_SG_SUPPORT" data-ref="_M/GET_MAX_SG_SUPPORT">GET_MAX_SG_SUPPORT</dfn>	0x01	/* get max sg len supported by f/w */</u></td></tr>
+<tr><th id="669">669</th><td></td></tr>
+<tr><th id="670">670</th><td><u>#define <dfn class="macro" id="_M/FC_NEW_CONFIG" data-ref="_M/FC_NEW_CONFIG">FC_NEW_CONFIG</dfn>		0xA1</u></td></tr>
+<tr><th id="671">671</th><td><u>#define <dfn class="macro" id="_M/NC_SUBOP_PRODUCT_INFO" data-ref="_M/NC_SUBOP_PRODUCT_INFO">NC_SUBOP_PRODUCT_INFO</dfn>	0x0E</u></td></tr>
+<tr><th id="672">672</th><td><u>#define <dfn class="macro" id="_M/NC_SUBOP_ENQUIRY3" data-ref="_M/NC_SUBOP_ENQUIRY3">NC_SUBOP_ENQUIRY3</dfn>	0x0F</u></td></tr>
+<tr><th id="673">673</th><td><u>#define <dfn class="macro" id="_M/ENQ3_GET_SOLICITED_FULL" data-ref="_M/ENQ3_GET_SOLICITED_FULL">ENQ3_GET_SOLICITED_FULL</dfn>	0x02</u></td></tr>
+<tr><th id="674">674</th><td><u>#define <dfn class="macro" id="_M/OP_DCMD_READ_CONFIG" data-ref="_M/OP_DCMD_READ_CONFIG">OP_DCMD_READ_CONFIG</dfn>	0x04</u></td></tr>
+<tr><th id="675">675</th><td><u>#define <dfn class="macro" id="_M/NEW_READ_CONFIG_8LD" data-ref="_M/NEW_READ_CONFIG_8LD">NEW_READ_CONFIG_8LD</dfn>	0x67</u></td></tr>
+<tr><th id="676">676</th><td><u>#define <dfn class="macro" id="_M/READ_CONFIG_8LD" data-ref="_M/READ_CONFIG_8LD">READ_CONFIG_8LD</dfn>		0x07</u></td></tr>
+<tr><th id="677">677</th><td><u>#define <dfn class="macro" id="_M/FLUSH_ADAPTER" data-ref="_M/FLUSH_ADAPTER">FLUSH_ADAPTER</dfn>		0x0A</u></td></tr>
+<tr><th id="678">678</th><td><u>#define <dfn class="macro" id="_M/FLUSH_SYSTEM" data-ref="_M/FLUSH_SYSTEM">FLUSH_SYSTEM</dfn>		0xFE</u></td></tr>
+<tr><th id="679">679</th><td></td></tr>
+<tr><th id="680">680</th><td><i>/*</i></td></tr>
+<tr><th id="681">681</th><td><i> * Command for random deletion of logical drives</i></td></tr>
+<tr><th id="682">682</th><td><i> */</i></td></tr>
+<tr><th id="683">683</th><td><u>#define	<dfn class="macro" id="_M/FC_DEL_LOGDRV" data-ref="_M/FC_DEL_LOGDRV">FC_DEL_LOGDRV</dfn>		0xA4	/* f/w command */</u></td></tr>
+<tr><th id="684">684</th><td><u>#define	<dfn class="macro" id="_M/OP_SUP_DEL_LOGDRV" data-ref="_M/OP_SUP_DEL_LOGDRV">OP_SUP_DEL_LOGDRV</dfn>	0x2A	/* is feature supported */</u></td></tr>
+<tr><th id="685">685</th><td><u>#define <dfn class="macro" id="_M/OP_GET_LDID_MAP" data-ref="_M/OP_GET_LDID_MAP">OP_GET_LDID_MAP</dfn>		0x18	/* get ldid and logdrv number map */</u></td></tr>
+<tr><th id="686">686</th><td><u>#define <dfn class="macro" id="_M/OP_DEL_LOGDRV" data-ref="_M/OP_DEL_LOGDRV">OP_DEL_LOGDRV</dfn>		0x1C	/* delete logical drive */</u></td></tr>
+<tr><th id="687">687</th><td></td></tr>
+<tr><th id="688">688</th><td><i>/*</i></td></tr>
+<tr><th id="689">689</th><td><i> * BIOS commands</i></td></tr>
+<tr><th id="690">690</th><td><i> */</i></td></tr>
+<tr><th id="691">691</th><td><u>#define <dfn class="macro" id="_M/IS_BIOS_ENABLED" data-ref="_M/IS_BIOS_ENABLED">IS_BIOS_ENABLED</dfn>		0x62</u></td></tr>
+<tr><th id="692">692</th><td><u>#define <dfn class="macro" id="_M/GET_BIOS" data-ref="_M/GET_BIOS">GET_BIOS</dfn>		0x01</u></td></tr>
+<tr><th id="693">693</th><td><u>#define <dfn class="macro" id="_M/CHNL_CLASS" data-ref="_M/CHNL_CLASS">CHNL_CLASS</dfn>		0xA9</u></td></tr>
+<tr><th id="694">694</th><td><u>#define <dfn class="macro" id="_M/GET_CHNL_CLASS" data-ref="_M/GET_CHNL_CLASS">GET_CHNL_CLASS</dfn>		0x00</u></td></tr>
+<tr><th id="695">695</th><td><u>#define <dfn class="macro" id="_M/SET_CHNL_CLASS" data-ref="_M/SET_CHNL_CLASS">SET_CHNL_CLASS</dfn>		0x01</u></td></tr>
+<tr><th id="696">696</th><td><u>#define <dfn class="macro" id="_M/CH_RAID" data-ref="_M/CH_RAID">CH_RAID</dfn>			0x01</u></td></tr>
+<tr><th id="697">697</th><td><u>#define <dfn class="macro" id="_M/CH_SCSI" data-ref="_M/CH_SCSI">CH_SCSI</dfn>			0x00</u></td></tr>
+<tr><th id="698">698</th><td><u>#define <dfn class="macro" id="_M/BIOS_PVT_DATA" data-ref="_M/BIOS_PVT_DATA">BIOS_PVT_DATA</dfn>		0x40</u></td></tr>
+<tr><th id="699">699</th><td><u>#define <dfn class="macro" id="_M/GET_BIOS_PVT_DATA" data-ref="_M/GET_BIOS_PVT_DATA">GET_BIOS_PVT_DATA</dfn>	0x00</u></td></tr>
+<tr><th id="700">700</th><td></td></tr>
+<tr><th id="701">701</th><td></td></tr>
+<tr><th id="702">702</th><td><i>/*</i></td></tr>
+<tr><th id="703">703</th><td><i> * Commands to support clustering</i></td></tr>
+<tr><th id="704">704</th><td><i> */</i></td></tr>
+<tr><th id="705">705</th><td><u>#define <dfn class="macro" id="_M/MEGA_GET_TARGET_ID" data-ref="_M/MEGA_GET_TARGET_ID">MEGA_GET_TARGET_ID</dfn>	0x7D</u></td></tr>
+<tr><th id="706">706</th><td><u>#define <dfn class="macro" id="_M/MEGA_CLUSTER_OP" data-ref="_M/MEGA_CLUSTER_OP">MEGA_CLUSTER_OP</dfn>		0x70</u></td></tr>
+<tr><th id="707">707</th><td><u>#define <dfn class="macro" id="_M/MEGA_GET_CLUSTER_MODE" data-ref="_M/MEGA_GET_CLUSTER_MODE">MEGA_GET_CLUSTER_MODE</dfn>	0x02</u></td></tr>
+<tr><th id="708">708</th><td><u>#define <dfn class="macro" id="_M/MEGA_CLUSTER_CMD" data-ref="_M/MEGA_CLUSTER_CMD">MEGA_CLUSTER_CMD</dfn>	0x6E</u></td></tr>
+<tr><th id="709">709</th><td><u>#define <dfn class="macro" id="_M/MEGA_RESERVE_LD" data-ref="_M/MEGA_RESERVE_LD">MEGA_RESERVE_LD</dfn>		0x01</u></td></tr>
+<tr><th id="710">710</th><td><u>#define <dfn class="macro" id="_M/MEGA_RELEASE_LD" data-ref="_M/MEGA_RELEASE_LD">MEGA_RELEASE_LD</dfn>		0x02</u></td></tr>
+<tr><th id="711">711</th><td><u>#define <dfn class="macro" id="_M/MEGA_RESET_RESERVATIONS" data-ref="_M/MEGA_RESET_RESERVATIONS">MEGA_RESET_RESERVATIONS</dfn>	0x03</u></td></tr>
+<tr><th id="712">712</th><td><u>#define <dfn class="macro" id="_M/MEGA_RESERVATION_STATUS" data-ref="_M/MEGA_RESERVATION_STATUS">MEGA_RESERVATION_STATUS</dfn>	0x04</u></td></tr>
+<tr><th id="713">713</th><td><u>#define <dfn class="macro" id="_M/MEGA_RESERVE_PD" data-ref="_M/MEGA_RESERVE_PD">MEGA_RESERVE_PD</dfn>		0x05</u></td></tr>
+<tr><th id="714">714</th><td><u>#define <dfn class="macro" id="_M/MEGA_RELEASE_PD" data-ref="_M/MEGA_RELEASE_PD">MEGA_RELEASE_PD</dfn>		0x06</u></td></tr>
+<tr><th id="715">715</th><td></td></tr>
+<tr><th id="716">716</th><td></td></tr>
+<tr><th id="717">717</th><td><i>/*</i></td></tr>
+<tr><th id="718">718</th><td><i> * Module battery status</i></td></tr>
+<tr><th id="719">719</th><td><i> */</i></td></tr>
+<tr><th id="720">720</th><td><u>#define <dfn class="macro" id="_M/MEGA_BATT_MODULE_MISSING" data-ref="_M/MEGA_BATT_MODULE_MISSING">MEGA_BATT_MODULE_MISSING</dfn>	0x01</u></td></tr>
+<tr><th id="721">721</th><td><u>#define <dfn class="macro" id="_M/MEGA_BATT_LOW_VOLTAGE" data-ref="_M/MEGA_BATT_LOW_VOLTAGE">MEGA_BATT_LOW_VOLTAGE</dfn>		0x02</u></td></tr>
+<tr><th id="722">722</th><td><u>#define <dfn class="macro" id="_M/MEGA_BATT_TEMP_HIGH" data-ref="_M/MEGA_BATT_TEMP_HIGH">MEGA_BATT_TEMP_HIGH</dfn>		0x04</u></td></tr>
+<tr><th id="723">723</th><td><u>#define <dfn class="macro" id="_M/MEGA_BATT_PACK_MISSING" data-ref="_M/MEGA_BATT_PACK_MISSING">MEGA_BATT_PACK_MISSING</dfn>		0x08</u></td></tr>
+<tr><th id="724">724</th><td><u>#define <dfn class="macro" id="_M/MEGA_BATT_CHARGE_MASK" data-ref="_M/MEGA_BATT_CHARGE_MASK">MEGA_BATT_CHARGE_MASK</dfn>		0x30</u></td></tr>
+<tr><th id="725">725</th><td><u>#define <dfn class="macro" id="_M/MEGA_BATT_CHARGE_DONE" data-ref="_M/MEGA_BATT_CHARGE_DONE">MEGA_BATT_CHARGE_DONE</dfn>		0x00</u></td></tr>
+<tr><th id="726">726</th><td><u>#define <dfn class="macro" id="_M/MEGA_BATT_CHARGE_INPROG" data-ref="_M/MEGA_BATT_CHARGE_INPROG">MEGA_BATT_CHARGE_INPROG</dfn>		0x10</u></td></tr>
+<tr><th id="727">727</th><td><u>#define <dfn class="macro" id="_M/MEGA_BATT_CHARGE_FAIL" data-ref="_M/MEGA_BATT_CHARGE_FAIL">MEGA_BATT_CHARGE_FAIL</dfn>		0x20</u></td></tr>
+<tr><th id="728">728</th><td><u>#define <dfn class="macro" id="_M/MEGA_BATT_CYCLES_EXCEEDED" data-ref="_M/MEGA_BATT_CYCLES_EXCEEDED">MEGA_BATT_CYCLES_EXCEEDED</dfn>	0x40</u></td></tr>
+<tr><th id="729">729</th><td></td></tr>
+<tr><th id="730">730</th><td><i>/*</i></td></tr>
+<tr><th id="731">731</th><td><i> * Physical drive states.</i></td></tr>
+<tr><th id="732">732</th><td><i> */</i></td></tr>
+<tr><th id="733">733</th><td><u>#define <dfn class="macro" id="_M/PDRV_UNCNF" data-ref="_M/PDRV_UNCNF">PDRV_UNCNF</dfn>	0</u></td></tr>
+<tr><th id="734">734</th><td><u>#define <dfn class="macro" id="_M/PDRV_ONLINE" data-ref="_M/PDRV_ONLINE">PDRV_ONLINE</dfn>	3</u></td></tr>
+<tr><th id="735">735</th><td><u>#define <dfn class="macro" id="_M/PDRV_FAILED" data-ref="_M/PDRV_FAILED">PDRV_FAILED</dfn>	4</u></td></tr>
+<tr><th id="736">736</th><td><u>#define <dfn class="macro" id="_M/PDRV_RBLD" data-ref="_M/PDRV_RBLD">PDRV_RBLD</dfn>	5</u></td></tr>
+<tr><th id="737">737</th><td><u>#define <dfn class="macro" id="_M/PDRV_HOTSPARE" data-ref="_M/PDRV_HOTSPARE">PDRV_HOTSPARE</dfn>	6</u></td></tr>
+<tr><th id="738">738</th><td></td></tr>
+<tr><th id="739">739</th><td></td></tr>
+<tr><th id="740">740</th><td><i>/*</i></td></tr>
+<tr><th id="741">741</th><td><i> * Raid logical drive states.</i></td></tr>
+<tr><th id="742">742</th><td><i> */</i></td></tr>
+<tr><th id="743">743</th><td><u>#define <dfn class="macro" id="_M/RDRV_OFFLINE" data-ref="_M/RDRV_OFFLINE">RDRV_OFFLINE</dfn>	0</u></td></tr>
+<tr><th id="744">744</th><td><u>#define <dfn class="macro" id="_M/RDRV_DEGRADED" data-ref="_M/RDRV_DEGRADED">RDRV_DEGRADED</dfn>	1</u></td></tr>
+<tr><th id="745">745</th><td><u>#define <dfn class="macro" id="_M/RDRV_OPTIMAL" data-ref="_M/RDRV_OPTIMAL">RDRV_OPTIMAL</dfn>	2</u></td></tr>
+<tr><th id="746">746</th><td><u>#define <dfn class="macro" id="_M/RDRV_DELETED" data-ref="_M/RDRV_DELETED">RDRV_DELETED</dfn>	3</u></td></tr>
+<tr><th id="747">747</th><td></td></tr>
+<tr><th id="748">748</th><td><i>/*</i></td></tr>
+<tr><th id="749">749</th><td><i> * Read, write and cache policies</i></td></tr>
+<tr><th id="750">750</th><td><i> */</i></td></tr>
+<tr><th id="751">751</th><td><u>#define <dfn class="macro" id="_M/NO_READ_AHEAD" data-ref="_M/NO_READ_AHEAD">NO_READ_AHEAD</dfn>		0</u></td></tr>
+<tr><th id="752">752</th><td><u>#define <dfn class="macro" id="_M/READ_AHEAD" data-ref="_M/READ_AHEAD">READ_AHEAD</dfn>		1</u></td></tr>
+<tr><th id="753">753</th><td><u>#define <dfn class="macro" id="_M/ADAP_READ_AHEAD" data-ref="_M/ADAP_READ_AHEAD">ADAP_READ_AHEAD</dfn>		2</u></td></tr>
+<tr><th id="754">754</th><td><u>#define <dfn class="macro" id="_M/WRMODE_WRITE_THRU" data-ref="_M/WRMODE_WRITE_THRU">WRMODE_WRITE_THRU</dfn>	0</u></td></tr>
+<tr><th id="755">755</th><td><u>#define <dfn class="macro" id="_M/WRMODE_WRITE_BACK" data-ref="_M/WRMODE_WRITE_BACK">WRMODE_WRITE_BACK</dfn>	1</u></td></tr>
+<tr><th id="756">756</th><td><u>#define <dfn class="macro" id="_M/CACHED_IO" data-ref="_M/CACHED_IO">CACHED_IO</dfn>		0</u></td></tr>
+<tr><th id="757">757</th><td><u>#define <dfn class="macro" id="_M/DIRECT_IO" data-ref="_M/DIRECT_IO">DIRECT_IO</dfn>		1</u></td></tr>
+<tr><th id="758">758</th><td></td></tr>
+<tr><th id="759">759</th><td></td></tr>
+<tr><th id="760">760</th><td><u>#define <dfn class="macro" id="_M/SCSI_LIST" data-ref="_M/SCSI_LIST">SCSI_LIST</dfn>(scp) ((struct list_head *)(&amp;(scp)-&gt;SCp))</u></td></tr>
+<tr><th id="761">761</th><td></td></tr>
+<tr><th id="762">762</th><td><i>/*</i></td></tr>
+<tr><th id="763">763</th><td><i> * Each controller's soft state</i></td></tr>
+<tr><th id="764">764</th><td><i> */</i></td></tr>
+<tr><th id="765">765</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="766">766</th><td>	<em>int</em>	<dfn class="decl field" id="(anonymous)::this_id" title='(anonymous struct)::this_id' data-ref="(anonymous)::this_id">this_id</dfn>;	<i>/* our id, may set to different than 7 if</i></td></tr>
+<tr><th id="767">767</th><td><i>				   clustering is available */</i></td></tr>
+<tr><th id="768">768</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>	<dfn class="decl field" id="(anonymous)::flag" title='(anonymous struct)::flag' data-ref="(anonymous)::flag">flag</dfn>;</td></tr>
+<tr><th id="769">769</th><td></td></tr>
+<tr><th id="770">770</th><td>	<em>unsigned</em> <em>long</em>		<dfn class="decl field" id="(anonymous)::base" title='(anonymous struct)::base' data-ref="(anonymous)::base">base</dfn>;</td></tr>
+<tr><th id="771">771</th><td>	<em>void</em> <a class="macro" href="../../include/linux/compiler_types.h.html#35" title="" data-ref="_M/__iomem">__iomem</a>		*<dfn class="decl field" id="(anonymous)::mmio_base" title='(anonymous struct)::mmio_base' data-ref="(anonymous)::mmio_base">mmio_base</dfn>;</td></tr>
+<tr><th id="772">772</th><td></td></tr>
+<tr><th id="773">773</th><td>	<i>/* mbox64 with mbox not aligned on 16-byte boundary */</i></td></tr>
+<tr><th id="774">774</th><td>	<a class="typedef" href="#mbox64_t" title='mbox64_t' data-type='struct mbox64_t' data-ref="mbox64_t">mbox64_t</a>	*<dfn class="decl field" id="(anonymous)::una_mbox64" title='(anonymous struct)::una_mbox64' data-ref="(anonymous)::una_mbox64">una_mbox64</dfn>;</td></tr>
+<tr><th id="775">775</th><td>	<a class="typedef" href="../../include/linux/types.h.html#dma_addr_t" title='dma_addr_t' data-type='u64' data-ref="dma_addr_t">dma_addr_t</a>	<dfn class="decl field" id="(anonymous)::una_mbox64_dma" title='(anonymous struct)::una_mbox64_dma' data-ref="(anonymous)::una_mbox64_dma">una_mbox64_dma</dfn>;</td></tr>
+<tr><th id="776">776</th><td></td></tr>
+<tr><th id="777">777</th><td>	<em>volatile</em> <a class="typedef" href="#mbox64_t" title='mbox64_t' data-type='struct mbox64_t' data-ref="mbox64_t">mbox64_t</a>	*<dfn class="decl field" id="(anonymous)::mbox64" title='(anonymous struct)::mbox64' data-ref="(anonymous)::mbox64">mbox64</dfn>;<i>/* ptr to 64-bit mailbox */</i></td></tr>
+<tr><th id="778">778</th><td>	<em>volatile</em> <a class="typedef" href="#mbox_t" title='mbox_t' data-type='struct mbox_t' data-ref="mbox_t">mbox_t</a>		*<dfn class="decl field" id="(anonymous)::mbox" title='(anonymous struct)::mbox' data-ref="(anonymous)::mbox">mbox</dfn>;	<i>/* ptr to standard mailbox */</i></td></tr>
+<tr><th id="779">779</th><td>	<a class="typedef" href="../../include/linux/types.h.html#dma_addr_t" title='dma_addr_t' data-type='u64' data-ref="dma_addr_t">dma_addr_t</a>		<dfn class="decl field" id="(anonymous)::mbox_dma" title='(anonymous struct)::mbox_dma' data-ref="(anonymous)::mbox_dma">mbox_dma</dfn>;</td></tr>
+<tr><th id="780">780</th><td></td></tr>
+<tr><th id="781">781</th><td>	<b>struct</b> <a class="type" href="../../include/linux/pci.h.html#pci_dev" title='pci_dev' data-ref="pci_dev">pci_dev</a>	*<dfn class="decl field" id="(anonymous)::dev" title='(anonymous struct)::dev' data-ref="(anonymous)::dev">dev</dfn>;</td></tr>
+<tr><th id="782">782</th><td></td></tr>
+<tr><th id="783">783</th><td>	<b>struct</b> <a class="type" href="../../include/linux/types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a>	<dfn class="decl field" id="(anonymous)::free_list" title='(anonymous struct)::free_list' data-ref="(anonymous)::free_list">free_list</dfn>;</td></tr>
+<tr><th id="784">784</th><td>	<b>struct</b> <a class="type" href="../../include/linux/types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a>	<dfn class="decl field" id="(anonymous)::pending_list" title='(anonymous struct)::pending_list' data-ref="(anonymous)::pending_list">pending_list</dfn>;</td></tr>
+<tr><th id="785">785</th><td>	<b>struct</b> <a class="type" href="../../include/linux/types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a>	<dfn class="decl field" id="(anonymous)::completed_list" title='(anonymous struct)::completed_list' data-ref="(anonymous)::completed_list">completed_list</dfn>;</td></tr>
+<tr><th id="786">786</th><td></td></tr>
+<tr><th id="787">787</th><td>	<b>struct</b> <a class="type" href="../../include/scsi/scsi_host.h.html#Scsi_Host" title='Scsi_Host' data-ref="Scsi_Host">Scsi_Host</a>	*<dfn class="decl field" id="(anonymous)::host" title='(anonymous struct)::host' data-ref="(anonymous)::host">host</dfn>;</td></tr>
+<tr><th id="788">788</th><td></td></tr>
+<tr><th id="789">789</th><td><u>#define <dfn class="macro" id="_M/MEGA_BUFFER_SIZE" data-ref="_M/MEGA_BUFFER_SIZE">MEGA_BUFFER_SIZE</dfn> (2*1024)</u></td></tr>
+<tr><th id="790">790</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>		*<dfn class="decl field" id="(anonymous)::mega_buffer" title='(anonymous struct)::mega_buffer' data-ref="(anonymous)::mega_buffer">mega_buffer</dfn>;</td></tr>
+<tr><th id="791">791</th><td>	<a class="typedef" href="../../include/linux/types.h.html#dma_addr_t" title='dma_addr_t' data-type='u64' data-ref="dma_addr_t">dma_addr_t</a>	<dfn class="decl field" id="(anonymous)::buf_dma_handle" title='(anonymous struct)::buf_dma_handle' data-ref="(anonymous)::buf_dma_handle">buf_dma_handle</dfn>;</td></tr>
+<tr><th id="792">792</th><td></td></tr>
+<tr><th id="793">793</th><td>	<a class="typedef" href="#mega_product_info" title='mega_product_info' data-type='struct mega_product_info' data-ref="mega_product_info">mega_product_info</a>	<dfn class="decl field" id="(anonymous)::product_info" title='(anonymous struct)::product_info' data-ref="(anonymous)::product_info">product_info</dfn>;</td></tr>
+<tr><th id="794">794</th><td></td></tr>
+<tr><th id="795">795</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>		<dfn class="decl field" id="(anonymous)::max_cmds" title='(anonymous struct)::max_cmds' data-ref="(anonymous)::max_cmds">max_cmds</dfn>;</td></tr>
+<tr><th id="796">796</th><td>	<a class="typedef" href="#scb_t" title='scb_t' data-type='struct scb_t' data-ref="scb_t">scb_t</a>		*<dfn class="decl field" id="(anonymous)::scb_list" title='(anonymous struct)::scb_list' data-ref="(anonymous)::scb_list">scb_list</dfn>;</td></tr>
+<tr><th id="797">797</th><td></td></tr>
+<tr><th id="798">798</th><td>	<a class="typedef" href="../../include/linux/types.h.html#atomic_t" title='atomic_t' data-type='struct atomic_t' data-ref="atomic_t">atomic_t</a>	<dfn class="decl field" id="(anonymous)::pend_cmds" title='(anonymous struct)::pend_cmds' data-ref="(anonymous)::pend_cmds">pend_cmds</dfn>;	<i>/* maintain a counter for pending</i></td></tr>
+<tr><th id="799">799</th><td><i>					   commands in firmware */</i></td></tr>
+<tr><th id="800">800</th><td></td></tr>
+<tr><th id="801">801</th><td><u>#<span data-ppcond="801">if</span> <a class="macro" href="#38" title="0" data-ref="_M/MEGA_HAVE_STATS">MEGA_HAVE_STATS</a></u></td></tr>
+<tr><th id="802">802</th><td>	u32	nreads[MAX_LOGICAL_DRIVES_40LD];</td></tr>
+<tr><th id="803">803</th><td>	u32	nreadblocks[MAX_LOGICAL_DRIVES_40LD];</td></tr>
+<tr><th id="804">804</th><td>	u32	nwrites[MAX_LOGICAL_DRIVES_40LD];</td></tr>
+<tr><th id="805">805</th><td>	u32	nwriteblocks[MAX_LOGICAL_DRIVES_40LD];</td></tr>
+<tr><th id="806">806</th><td>	u32	rd_errors[MAX_LOGICAL_DRIVES_40LD];</td></tr>
+<tr><th id="807">807</th><td>	u32	wr_errors[MAX_LOGICAL_DRIVES_40LD];</td></tr>
+<tr><th id="808">808</th><td><u>#<span data-ppcond="801">endif</span></u></td></tr>
+<tr><th id="809">809</th><td></td></tr>
+<tr><th id="810">810</th><td>	<i>/* Host adapter parameters */</i></td></tr>
+<tr><th id="811">811</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::numldrv" title='(anonymous struct)::numldrv' data-ref="(anonymous)::numldrv">numldrv</dfn>;</td></tr>
+<tr><th id="812">812</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::fw_version" title='(anonymous struct)::fw_version' data-ref="(anonymous)::fw_version">fw_version</dfn>[<var>7</var>];</td></tr>
+<tr><th id="813">813</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::bios_version" title='(anonymous struct)::bios_version' data-ref="(anonymous)::bios_version">bios_version</dfn>[<var>7</var>];</td></tr>
+<tr><th id="814">814</th><td></td></tr>
+<tr><th id="815">815</th><td><u>#<span data-ppcond="815">ifdef</span> <a class="macro" href="../../include/generated/autoconf.h.html#1008" data-ref="_M/CONFIG_PROC_FS">CONFIG_PROC_FS</a></u></td></tr>
+<tr><th id="816">816</th><td>	<b>struct</b> <a class="type" href="../../include/linux/irqdesc.h.html#proc_dir_entry" title='proc_dir_entry' data-ref="proc_dir_entry">proc_dir_entry</a>	*<dfn class="decl field" id="(anonymous)::controller_proc_dir_entry" title='(anonymous struct)::controller_proc_dir_entry' data-ref="(anonymous)::controller_proc_dir_entry">controller_proc_dir_entry</dfn>;</td></tr>
+<tr><th id="817">817</th><td>	<b>struct</b> <a class="type" href="../../include/linux/irqdesc.h.html#proc_dir_entry" title='proc_dir_entry' data-ref="proc_dir_entry">proc_dir_entry</a>	*<dfn class="decl field" id="(anonymous)::proc_read" title='(anonymous struct)::proc_read' data-ref="(anonymous)::proc_read">proc_read</dfn>;</td></tr>
+<tr><th id="818">818</th><td>	<b>struct</b> <a class="type" href="../../include/linux/irqdesc.h.html#proc_dir_entry" title='proc_dir_entry' data-ref="proc_dir_entry">proc_dir_entry</a>	*<dfn class="decl field" id="(anonymous)::proc_stat" title='(anonymous struct)::proc_stat' data-ref="(anonymous)::proc_stat">proc_stat</dfn>;</td></tr>
+<tr><th id="819">819</th><td>	<b>struct</b> <a class="type" href="../../include/linux/irqdesc.h.html#proc_dir_entry" title='proc_dir_entry' data-ref="proc_dir_entry">proc_dir_entry</a>	*<dfn class="decl field" id="(anonymous)::proc_mbox" title='(anonymous struct)::proc_mbox' data-ref="(anonymous)::proc_mbox">proc_mbox</dfn>;</td></tr>
+<tr><th id="820">820</th><td></td></tr>
+<tr><th id="821">821</th><td><u>#<span data-ppcond="821">if</span> <a class="macro" href="#45" title="1" data-ref="_M/MEGA_HAVE_ENH_PROC">MEGA_HAVE_ENH_PROC</a></u></td></tr>
+<tr><th id="822">822</th><td>	<b>struct</b> <a class="type" href="../../include/linux/irqdesc.h.html#proc_dir_entry" title='proc_dir_entry' data-ref="proc_dir_entry">proc_dir_entry</a>	*<dfn class="decl field" id="(anonymous)::proc_rr" title='(anonymous struct)::proc_rr' data-ref="(anonymous)::proc_rr">proc_rr</dfn>;</td></tr>
+<tr><th id="823">823</th><td>	<b>struct</b> <a class="type" href="../../include/linux/irqdesc.h.html#proc_dir_entry" title='proc_dir_entry' data-ref="proc_dir_entry">proc_dir_entry</a>	*<dfn class="decl field" id="(anonymous)::proc_battery" title='(anonymous struct)::proc_battery' data-ref="(anonymous)::proc_battery">proc_battery</dfn>;</td></tr>
+<tr><th id="824">824</th><td><u>#define <dfn class="macro" id="_M/MAX_PROC_CHANNELS" data-ref="_M/MAX_PROC_CHANNELS">MAX_PROC_CHANNELS</dfn>	4</u></td></tr>
+<tr><th id="825">825</th><td>	<b>struct</b> <a class="type" href="../../include/linux/irqdesc.h.html#proc_dir_entry" title='proc_dir_entry' data-ref="proc_dir_entry">proc_dir_entry</a>	*<dfn class="decl field" id="(anonymous)::proc_pdrvstat" title='(anonymous struct)::proc_pdrvstat' data-ref="(anonymous)::proc_pdrvstat">proc_pdrvstat</dfn>[<a class="macro" href="#824" title="4" data-ref="_M/MAX_PROC_CHANNELS">MAX_PROC_CHANNELS</a>];</td></tr>
+<tr><th id="826">826</th><td>	<b>struct</b> <a class="type" href="../../include/linux/irqdesc.h.html#proc_dir_entry" title='proc_dir_entry' data-ref="proc_dir_entry">proc_dir_entry</a>	*<dfn class="decl field" id="(anonymous)::proc_rdrvstat" title='(anonymous struct)::proc_rdrvstat' data-ref="(anonymous)::proc_rdrvstat">proc_rdrvstat</dfn>[<a class="macro" href="#824" title="4" data-ref="_M/MAX_PROC_CHANNELS">MAX_PROC_CHANNELS</a>];</td></tr>
+<tr><th id="827">827</th><td><u>#<span data-ppcond="821">endif</span></u></td></tr>
+<tr><th id="828">828</th><td></td></tr>
+<tr><th id="829">829</th><td><u>#<span data-ppcond="815">endif</span></u></td></tr>
+<tr><th id="830">830</th><td></td></tr>
+<tr><th id="831">831</th><td>	<em>int</em>	<dfn class="decl field" id="(anonymous)::has_64bit_addr" title='(anonymous struct)::has_64bit_addr' data-ref="(anonymous)::has_64bit_addr">has_64bit_addr</dfn>;		<i>/* are we using 64-bit addressing */</i></td></tr>
+<tr><th id="832">832</th><td>	<em>int</em>	<dfn class="decl field" id="(anonymous)::support_ext_cdb" title='(anonymous struct)::support_ext_cdb' data-ref="(anonymous)::support_ext_cdb">support_ext_cdb</dfn>;</td></tr>
+<tr><th id="833">833</th><td>	<em>int</em>	<dfn class="decl field" id="(anonymous)::boot_ldrv_enabled" title='(anonymous struct)::boot_ldrv_enabled' data-ref="(anonymous)::boot_ldrv_enabled">boot_ldrv_enabled</dfn>;</td></tr>
+<tr><th id="834">834</th><td>	<em>int</em>	<dfn class="decl field" id="(anonymous)::boot_ldrv" title='(anonymous struct)::boot_ldrv' data-ref="(anonymous)::boot_ldrv">boot_ldrv</dfn>;</td></tr>
+<tr><th id="835">835</th><td>	<em>int</em>	<dfn class="decl field" id="(anonymous)::boot_pdrv_enabled" title='(anonymous struct)::boot_pdrv_enabled' data-ref="(anonymous)::boot_pdrv_enabled">boot_pdrv_enabled</dfn>;	<i>/* boot from physical drive */</i></td></tr>
+<tr><th id="836">836</th><td>	<em>int</em>	<dfn class="decl field" id="(anonymous)::boot_pdrv_ch" title='(anonymous struct)::boot_pdrv_ch' data-ref="(anonymous)::boot_pdrv_ch">boot_pdrv_ch</dfn>;		<i>/* boot physical drive channel */</i></td></tr>
+<tr><th id="837">837</th><td>	<em>int</em>	<dfn class="decl field" id="(anonymous)::boot_pdrv_tgt" title='(anonymous struct)::boot_pdrv_tgt' data-ref="(anonymous)::boot_pdrv_tgt">boot_pdrv_tgt</dfn>;		<i>/* boot physical drive target */</i></td></tr>
+<tr><th id="838">838</th><td></td></tr>
+<tr><th id="839">839</th><td></td></tr>
+<tr><th id="840">840</th><td>	<em>int</em>	<dfn class="decl field" id="(anonymous)::support_random_del" title='(anonymous struct)::support_random_del' data-ref="(anonymous)::support_random_del">support_random_del</dfn>;	<i>/* Do we support random deletion of</i></td></tr>
+<tr><th id="841">841</th><td><i>					   logdrvs */</i></td></tr>
+<tr><th id="842">842</th><td>	<em>int</em>	<dfn class="decl field" id="(anonymous)::read_ldidmap" title='(anonymous struct)::read_ldidmap' data-ref="(anonymous)::read_ldidmap">read_ldidmap</dfn>;	<i>/* set after logical drive deltion. The</i></td></tr>
+<tr><th id="843">843</th><td><i>				   logical drive number must be read from the</i></td></tr>
+<tr><th id="844">844</th><td><i>				   map */</i></td></tr>
+<tr><th id="845">845</th><td>	<a class="typedef" href="../../include/linux/types.h.html#atomic_t" title='atomic_t' data-type='struct atomic_t' data-ref="atomic_t">atomic_t</a>	<dfn class="decl field" id="(anonymous)::quiescent" title='(anonymous struct)::quiescent' data-ref="(anonymous)::quiescent">quiescent</dfn>;	<i>/* a stage reached when delete logical</i></td></tr>
+<tr><th id="846">846</th><td><i>					   drive needs to be done. Stop</i></td></tr>
+<tr><th id="847">847</th><td><i>					   sending requests to the hba till</i></td></tr>
+<tr><th id="848">848</th><td><i>					   delete operation is completed */</i></td></tr>
+<tr><th id="849">849</th><td>	<a class="typedef" href="../../include/linux/spinlock_types.h.html#spinlock_t" title='spinlock_t' data-type='struct spinlock' data-ref="spinlock_t">spinlock_t</a>	<dfn class="decl field" id="(anonymous)::lock" title='(anonymous struct)::lock' data-ref="(anonymous)::lock">lock</dfn>;</td></tr>
+<tr><th id="850">850</th><td></td></tr>
+<tr><th id="851">851</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::logdrv_chan" title='(anonymous struct)::logdrv_chan' data-ref="(anonymous)::logdrv_chan">logdrv_chan</dfn>[<a class="macro" href="#80" title="5" data-ref="_M/MAX_CHANNELS">MAX_CHANNELS</a>+<a class="macro" href="#87" title="4" data-ref="_M/NVIRT_CHAN">NVIRT_CHAN</a>]; <i>/* logical drive are on</i></td></tr>
+<tr><th id="852">852</th><td><i>							what channels. */</i></td></tr>
+<tr><th id="853">853</th><td>	<em>int</em>	<dfn class="decl field" id="(anonymous)::mega_ch_class" title='(anonymous struct)::mega_ch_class' data-ref="(anonymous)::mega_ch_class">mega_ch_class</dfn>;</td></tr>
+<tr><th id="854">854</th><td></td></tr>
+<tr><th id="855">855</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>	<dfn class="decl field" id="(anonymous)::sglen" title='(anonymous struct)::sglen' data-ref="(anonymous)::sglen">sglen</dfn>;	<i>/* f/w supported scatter-gather list length */</i></td></tr>
+<tr><th id="856">856</th><td></td></tr>
+<tr><th id="857">857</th><td>	<a class="typedef" href="#scb_t" title='scb_t' data-type='struct scb_t' data-ref="scb_t">scb_t</a>			<dfn class="decl field" id="(anonymous)::int_scb" title='(anonymous struct)::int_scb' data-ref="(anonymous)::int_scb">int_scb</dfn>;</td></tr>
+<tr><th id="858">858</th><td>	<b>struct</b> <a class="type" href="../../include/linux/mutex.h.html#mutex" title='mutex' data-ref="mutex">mutex</a>		<dfn class="decl field" id="(anonymous)::int_mtx" title='(anonymous struct)::int_mtx' data-ref="(anonymous)::int_mtx">int_mtx</dfn>;	<i>/* To synchronize the internal</i></td></tr>
+<tr><th id="859">859</th><td><i>						commands */</i></td></tr>
+<tr><th id="860">860</th><td>	<em>int</em>			<dfn class="decl field" id="(anonymous)::int_status" title='(anonymous struct)::int_status' data-ref="(anonymous)::int_status">int_status</dfn>;	<i>/* status of internal cmd */</i></td></tr>
+<tr><th id="861">861</th><td>	<b>struct</b> <a class="type" href="../../include/linux/completion.h.html#completion" title='completion' data-ref="completion">completion</a>	<dfn class="decl field" id="(anonymous)::int_waitq" title='(anonymous struct)::int_waitq' data-ref="(anonymous)::int_waitq">int_waitq</dfn>;	<i>/* wait queue for internal</i></td></tr>
+<tr><th id="862">862</th><td><i>						 cmds */</i></td></tr>
+<tr><th id="863">863</th><td></td></tr>
+<tr><th id="864">864</th><td>	<em>int</em>	<dfn class="decl field" id="(anonymous)::has_cluster" title='(anonymous struct)::has_cluster' data-ref="(anonymous)::has_cluster">has_cluster</dfn>;	<i>/* cluster support on this HBA */</i></td></tr>
+<tr><th id="865">865</th><td>}<dfn class="typedef" id="adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</dfn>;</td></tr>
+<tr><th id="866">866</th><td></td></tr>
+<tr><th id="867">867</th><td></td></tr>
+<tr><th id="868">868</th><td><b>struct</b> <dfn class="type def" id="mega_hbas" title='mega_hbas' data-ref="mega_hbas">mega_hbas</dfn> {</td></tr>
+<tr><th id="869">869</th><td>	<em>int</em> <dfn class="decl field" id="mega_hbas::is_bios_enabled" title='mega_hbas::is_bios_enabled' data-ref="mega_hbas::is_bios_enabled">is_bios_enabled</dfn>;</td></tr>
+<tr><th id="870">870</th><td>	<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *<dfn class="decl field" id="mega_hbas::hostdata_addr" title='mega_hbas::hostdata_addr' data-ref="mega_hbas::hostdata_addr">hostdata_addr</dfn>;</td></tr>
+<tr><th id="871">871</th><td>};</td></tr>
+<tr><th id="872">872</th><td></td></tr>
+<tr><th id="873">873</th><td></td></tr>
+<tr><th id="874">874</th><td><i>/*</i></td></tr>
+<tr><th id="875">875</th><td><i> * For state flag. Do not use LSB(8 bits) which are</i></td></tr>
+<tr><th id="876">876</th><td><i> * reserved for storing info about channels.</i></td></tr>
+<tr><th id="877">877</th><td><i> */</i></td></tr>
+<tr><th id="878">878</th><td><u>#define <dfn class="macro" id="_M/IN_ABORT" data-ref="_M/IN_ABORT">IN_ABORT</dfn>	0x80000000L</u></td></tr>
+<tr><th id="879">879</th><td><u>#define <dfn class="macro" id="_M/IN_RESET" data-ref="_M/IN_RESET">IN_RESET</dfn>	0x40000000L</u></td></tr>
+<tr><th id="880">880</th><td><u>#define <dfn class="macro" id="_M/BOARD_MEMMAP" data-ref="_M/BOARD_MEMMAP">BOARD_MEMMAP</dfn>	0x20000000L</u></td></tr>
+<tr><th id="881">881</th><td><u>#define <dfn class="macro" id="_M/BOARD_IOMAP" data-ref="_M/BOARD_IOMAP">BOARD_IOMAP</dfn>	0x10000000L</u></td></tr>
+<tr><th id="882">882</th><td><u>#define <dfn class="macro" id="_M/BOARD_40LD" data-ref="_M/BOARD_40LD">BOARD_40LD</dfn>   	0x08000000L</u></td></tr>
+<tr><th id="883">883</th><td><u>#define <dfn class="macro" id="_M/BOARD_64BIT" data-ref="_M/BOARD_64BIT">BOARD_64BIT</dfn>	0x04000000L</u></td></tr>
+<tr><th id="884">884</th><td></td></tr>
+<tr><th id="885">885</th><td><u>#define <dfn class="macro" id="_M/INTR_VALID" data-ref="_M/INTR_VALID">INTR_VALID</dfn>			0x40</u></td></tr>
+<tr><th id="886">886</th><td></td></tr>
+<tr><th id="887">887</th><td><u>#define <dfn class="macro" id="_M/PCI_CONF_AMISIG" data-ref="_M/PCI_CONF_AMISIG">PCI_CONF_AMISIG</dfn>			0xa0</u></td></tr>
+<tr><th id="888">888</th><td><u>#define <dfn class="macro" id="_M/PCI_CONF_AMISIG64" data-ref="_M/PCI_CONF_AMISIG64">PCI_CONF_AMISIG64</dfn>		0xa4</u></td></tr>
+<tr><th id="889">889</th><td></td></tr>
+<tr><th id="890">890</th><td></td></tr>
+<tr><th id="891">891</th><td><u>#define <dfn class="macro" id="_M/MEGA_DMA_TYPE_NONE" data-ref="_M/MEGA_DMA_TYPE_NONE">MEGA_DMA_TYPE_NONE</dfn>		0xFFFF</u></td></tr>
+<tr><th id="892">892</th><td><u>#define <dfn class="macro" id="_M/MEGA_BULK_DATA" data-ref="_M/MEGA_BULK_DATA">MEGA_BULK_DATA</dfn>			0x0001</u></td></tr>
+<tr><th id="893">893</th><td><u>#define <dfn class="macro" id="_M/MEGA_SGLIST" data-ref="_M/MEGA_SGLIST">MEGA_SGLIST</dfn>			0x0002</u></td></tr>
+<tr><th id="894">894</th><td></td></tr>
+<tr><th id="895">895</th><td><i>/*</i></td></tr>
+<tr><th id="896">896</th><td><i> * Parameters for the io-mapped controllers</i></td></tr>
+<tr><th id="897">897</th><td><i> */</i></td></tr>
+<tr><th id="898">898</th><td></td></tr>
+<tr><th id="899">899</th><td><i>/* I/O Port offsets */</i></td></tr>
+<tr><th id="900">900</th><td><u>#define <dfn class="macro" id="_M/CMD_PORT" data-ref="_M/CMD_PORT">CMD_PORT</dfn>	 	0x00</u></td></tr>
+<tr><th id="901">901</th><td><u>#define <dfn class="macro" id="_M/ACK_PORT" data-ref="_M/ACK_PORT">ACK_PORT</dfn>	 	0x00</u></td></tr>
+<tr><th id="902">902</th><td><u>#define <dfn class="macro" id="_M/TOGGLE_PORT" data-ref="_M/TOGGLE_PORT">TOGGLE_PORT</dfn>		0x01</u></td></tr>
+<tr><th id="903">903</th><td><u>#define <dfn class="macro" id="_M/INTR_PORT" data-ref="_M/INTR_PORT">INTR_PORT</dfn>	  	0x0a</u></td></tr>
+<tr><th id="904">904</th><td></td></tr>
+<tr><th id="905">905</th><td><u>#define <dfn class="macro" id="_M/MBOX_BUSY_PORT" data-ref="_M/MBOX_BUSY_PORT">MBOX_BUSY_PORT</dfn>     	0x00</u></td></tr>
+<tr><th id="906">906</th><td><u>#define <dfn class="macro" id="_M/MBOX_PORT0" data-ref="_M/MBOX_PORT0">MBOX_PORT0</dfn>	 	0x04</u></td></tr>
+<tr><th id="907">907</th><td><u>#define <dfn class="macro" id="_M/MBOX_PORT1" data-ref="_M/MBOX_PORT1">MBOX_PORT1</dfn>	 	0x05</u></td></tr>
+<tr><th id="908">908</th><td><u>#define <dfn class="macro" id="_M/MBOX_PORT2" data-ref="_M/MBOX_PORT2">MBOX_PORT2</dfn>	 	0x06</u></td></tr>
+<tr><th id="909">909</th><td><u>#define <dfn class="macro" id="_M/MBOX_PORT3" data-ref="_M/MBOX_PORT3">MBOX_PORT3</dfn>	 	0x07</u></td></tr>
+<tr><th id="910">910</th><td><u>#define <dfn class="macro" id="_M/ENABLE_MBOX_REGION" data-ref="_M/ENABLE_MBOX_REGION">ENABLE_MBOX_REGION</dfn> 	0x0B</u></td></tr>
+<tr><th id="911">911</th><td></td></tr>
+<tr><th id="912">912</th><td><i>/* I/O Port Values */</i></td></tr>
+<tr><th id="913">913</th><td><u>#define <dfn class="macro" id="_M/ISSUE_BYTE" data-ref="_M/ISSUE_BYTE">ISSUE_BYTE</dfn>	 	0x10</u></td></tr>
+<tr><th id="914">914</th><td><u>#define <dfn class="macro" id="_M/ACK_BYTE" data-ref="_M/ACK_BYTE">ACK_BYTE</dfn>	   	0x08</u></td></tr>
+<tr><th id="915">915</th><td><u>#define <dfn class="macro" id="_M/ENABLE_INTR_BYTE" data-ref="_M/ENABLE_INTR_BYTE">ENABLE_INTR_BYTE</dfn>   	0xc0</u></td></tr>
+<tr><th id="916">916</th><td><u>#define <dfn class="macro" id="_M/DISABLE_INTR_BYTE" data-ref="_M/DISABLE_INTR_BYTE">DISABLE_INTR_BYTE</dfn>  	0x00</u></td></tr>
+<tr><th id="917">917</th><td><u>#define <dfn class="macro" id="_M/VALID_INTR_BYTE" data-ref="_M/VALID_INTR_BYTE">VALID_INTR_BYTE</dfn>    	0x40</u></td></tr>
+<tr><th id="918">918</th><td><u>#define <dfn class="macro" id="_M/MBOX_BUSY_BYTE" data-ref="_M/MBOX_BUSY_BYTE">MBOX_BUSY_BYTE</dfn>     	0x10</u></td></tr>
+<tr><th id="919">919</th><td><u>#define <dfn class="macro" id="_M/ENABLE_MBOX_BYTE" data-ref="_M/ENABLE_MBOX_BYTE">ENABLE_MBOX_BYTE</dfn>   	0x00</u></td></tr>
+<tr><th id="920">920</th><td></td></tr>
+<tr><th id="921">921</th><td></td></tr>
+<tr><th id="922">922</th><td><i>/* Setup some port macros here */</i></td></tr>
+<tr><th id="923">923</th><td><u>#define <dfn class="macro" id="_M/issue_command" data-ref="_M/issue_command">issue_command</dfn>(adapter)	\</u></td></tr>
+<tr><th id="924">924</th><td><u>		outb_p(ISSUE_BYTE, (adapter)-&gt;base + CMD_PORT)</u></td></tr>
+<tr><th id="925">925</th><td></td></tr>
+<tr><th id="926">926</th><td><u>#define <dfn class="macro" id="_M/irq_state" data-ref="_M/irq_state">irq_state</dfn>(adapter)	inb_p((adapter)-&gt;base + INTR_PORT)</u></td></tr>
+<tr><th id="927">927</th><td></td></tr>
+<tr><th id="928">928</th><td><u>#define <dfn class="macro" id="_M/set_irq_state" data-ref="_M/set_irq_state">set_irq_state</dfn>(adapter, value)	\</u></td></tr>
+<tr><th id="929">929</th><td><u>		outb_p((value), (adapter)-&gt;base + INTR_PORT)</u></td></tr>
+<tr><th id="930">930</th><td></td></tr>
+<tr><th id="931">931</th><td><u>#define <dfn class="macro" id="_M/irq_ack" data-ref="_M/irq_ack">irq_ack</dfn>(adapter)	\</u></td></tr>
+<tr><th id="932">932</th><td><u>		outb_p(ACK_BYTE, (adapter)-&gt;base + ACK_PORT)</u></td></tr>
+<tr><th id="933">933</th><td></td></tr>
+<tr><th id="934">934</th><td><u>#define <dfn class="macro" id="_M/irq_enable" data-ref="_M/irq_enable">irq_enable</dfn>(adapter)	\</u></td></tr>
+<tr><th id="935">935</th><td><u>	outb_p(ENABLE_INTR_BYTE, (adapter)-&gt;base + TOGGLE_PORT)</u></td></tr>
+<tr><th id="936">936</th><td></td></tr>
+<tr><th id="937">937</th><td><u>#define <dfn class="macro" id="_M/irq_disable" data-ref="_M/irq_disable">irq_disable</dfn>(adapter)	\</u></td></tr>
+<tr><th id="938">938</th><td><u>	outb_p(DISABLE_INTR_BYTE, (adapter)-&gt;base + TOGGLE_PORT)</u></td></tr>
+<tr><th id="939">939</th><td></td></tr>
+<tr><th id="940">940</th><td></td></tr>
+<tr><th id="941">941</th><td><i>/*</i></td></tr>
+<tr><th id="942">942</th><td><i> * This is our SYSDEP area. All kernel specific detail should be placed here -</i></td></tr>
+<tr><th id="943">943</th><td><i> * as much as possible</i></td></tr>
+<tr><th id="944">944</th><td><i> */</i></td></tr>
+<tr><th id="945">945</th><td></td></tr>
+<tr><th id="946">946</th><td><i>/*</i></td></tr>
+<tr><th id="947">947</th><td><i> * End of SYSDEP area</i></td></tr>
+<tr><th id="948">948</th><td><i> */</i></td></tr>
+<tr><th id="949">949</th><td></td></tr>
+<tr><th id="950">950</th><td><em>const</em> <em>char</em> *<a class="decl fn" href="megaraid.c.html#megaraid_info" title='megaraid_info' data-ref="megaraid_info" id="megaraid_info">megaraid_info</a> (<b>struct</b> <a class="type" href="../../include/scsi/scsi_host.h.html#Scsi_Host" title='Scsi_Host' data-ref="Scsi_Host">Scsi_Host</a> *);</td></tr>
+<tr><th id="951">951</th><td></td></tr>
+<tr><th id="952">952</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#mega_query_adapter" title='mega_query_adapter' data-ref="mega_query_adapter" id="mega_query_adapter">mega_query_adapter</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *);</td></tr>
+<tr><th id="953">953</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#issue_scb" title='issue_scb' data-ref="issue_scb" id="issue_scb">issue_scb</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *, <a class="typedef" href="#scb_t" title='scb_t' data-type='struct scb_t' data-ref="scb_t">scb_t</a> *);</td></tr>
+<tr><th id="954">954</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#mega_setup_mailbox" title='mega_setup_mailbox' data-ref="mega_setup_mailbox" id="mega_setup_mailbox">mega_setup_mailbox</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *);</td></tr>
+<tr><th id="955">955</th><td></td></tr>
+<tr><th id="956">956</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#417" title='megaraid_queue' data-ref="megaraid_queue" id="megaraid_queue">megaraid_queue</a> (<b>struct</b> <a class="type" href="../../include/scsi/scsi_host.h.html#Scsi_Host" title='Scsi_Host' data-ref="Scsi_Host">Scsi_Host</a> *, <b>struct</b> <a class="type" href="../../include/scsi/scsi_cmnd.h.html#scsi_cmnd" title='scsi_cmnd' data-ref="scsi_cmnd">scsi_cmnd</a> *);</td></tr>
+<tr><th id="957">957</th><td><em>static</em> <a class="typedef" href="#scb_t" title='scb_t' data-type='struct scb_t' data-ref="scb_t">scb_t</a> * <a class="decl fn" href="megaraid.c.html#mega_build_cmd" title='mega_build_cmd' data-ref="mega_build_cmd" id="mega_build_cmd">mega_build_cmd</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *, <a class="typedef" href="scsi_typedefs.h.html#Scsi_Cmnd" title='Scsi_Cmnd' data-type='struct scsi_cmnd' data-ref="Scsi_Cmnd">Scsi_Cmnd</a> *, <em>int</em> *);</td></tr>
+<tr><th id="958">958</th><td><em>static</em> <em>void</em> <a class="decl fn" href="megaraid.c.html#__mega_runpendq" title='__mega_runpendq' data-ref="__mega_runpendq" id="__mega_runpendq">__mega_runpendq</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *);</td></tr>
+<tr><th id="959">959</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#issue_scb_block" title='issue_scb_block' data-ref="issue_scb_block" id="issue_scb_block">issue_scb_block</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *, <a class="typedef" href="../../include/linux/types.h.html#u_char" title='u_char' data-type='unsigned char' data-ref="u_char">u_char</a> *);</td></tr>
+<tr><th id="960">960</th><td></td></tr>
+<tr><th id="961">961</th><td><em>static</em> <a class="typedef" href="../../include/linux/irqreturn.h.html#irqreturn_t" title='irqreturn_t' data-type='enum irqreturn' data-ref="irqreturn_t">irqreturn_t</a> <a class="decl fn" href="megaraid.c.html#megaraid_isr_memmapped" title='megaraid_isr_memmapped' data-ref="megaraid_isr_memmapped" id="megaraid_isr_memmapped">megaraid_isr_memmapped</a>(<em>int</em>, <em>void</em> *);</td></tr>
+<tr><th id="962">962</th><td><em>static</em> <a class="typedef" href="../../include/linux/irqreturn.h.html#irqreturn_t" title='irqreturn_t' data-type='enum irqreturn' data-ref="irqreturn_t">irqreturn_t</a> <a class="decl fn" href="megaraid.c.html#megaraid_isr_iomapped" title='megaraid_isr_iomapped' data-ref="megaraid_isr_iomapped" id="megaraid_isr_iomapped">megaraid_isr_iomapped</a>(<em>int</em>, <em>void</em> *);</td></tr>
+<tr><th id="963">963</th><td></td></tr>
+<tr><th id="964">964</th><td><em>static</em> <em>void</em> <a class="decl fn" href="megaraid.c.html#mega_free_scb" title='mega_free_scb' data-ref="mega_free_scb" id="mega_free_scb">mega_free_scb</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *, <a class="typedef" href="#scb_t" title='scb_t' data-type='struct scb_t' data-ref="scb_t">scb_t</a> *);</td></tr>
+<tr><th id="965">965</th><td></td></tr>
+<tr><th id="966">966</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#megaraid_abort" title='megaraid_abort' data-ref="megaraid_abort" id="megaraid_abort">megaraid_abort</a>(<a class="typedef" href="scsi_typedefs.h.html#Scsi_Cmnd" title='Scsi_Cmnd' data-type='struct scsi_cmnd' data-ref="Scsi_Cmnd">Scsi_Cmnd</a> *);</td></tr>
+<tr><th id="967">967</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#megaraid_reset" title='megaraid_reset' data-ref="megaraid_reset" id="megaraid_reset">megaraid_reset</a>(<a class="typedef" href="scsi_typedefs.h.html#Scsi_Cmnd" title='Scsi_Cmnd' data-type='struct scsi_cmnd' data-ref="Scsi_Cmnd">Scsi_Cmnd</a> *);</td></tr>
+<tr><th id="968">968</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#megaraid_abort_and_reset" title='megaraid_abort_and_reset' data-ref="megaraid_abort_and_reset" id="megaraid_abort_and_reset">megaraid_abort_and_reset</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *, <a class="typedef" href="scsi_typedefs.h.html#Scsi_Cmnd" title='Scsi_Cmnd' data-type='struct scsi_cmnd' data-ref="Scsi_Cmnd">Scsi_Cmnd</a> *, <em>int</em>);</td></tr>
+<tr><th id="969">969</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#megaraid_biosparam" title='megaraid_biosparam' data-ref="megaraid_biosparam" id="megaraid_biosparam">megaraid_biosparam</a>(<b>struct</b> <a class="type" href="../../include/scsi/scsi_device.h.html#scsi_device" title='scsi_device' data-ref="scsi_device">scsi_device</a> *, <b>struct</b> <a class="type" href="../../include/linux/fs.h.html#block_device" title='block_device' data-ref="block_device">block_device</a> *,</td></tr>
+<tr><th id="970">970</th><td>		<a class="typedef" href="../../include/linux/types.h.html#sector_t" title='sector_t' data-type='unsigned long' data-ref="sector_t">sector_t</a>, <em>int</em> []);</td></tr>
+<tr><th id="971">971</th><td></td></tr>
+<tr><th id="972">972</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#mega_build_sglist" title='mega_build_sglist' data-ref="mega_build_sglist" id="mega_build_sglist">mega_build_sglist</a> (<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *<dfn class="local col1 decl" id="1adapter" title='adapter' data-type='adapter_t *' data-ref="1adapter">adapter</dfn>, <a class="typedef" href="#scb_t" title='scb_t' data-type='struct scb_t' data-ref="scb_t">scb_t</a> *<dfn class="local col2 decl" id="2scb" title='scb' data-type='scb_t *' data-ref="2scb">scb</dfn>,</td></tr>
+<tr><th id="973">973</th><td>			      <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> *<dfn class="local col3 decl" id="3buffer" title='buffer' data-type='u32 *' data-ref="3buffer">buffer</dfn>, <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> *<dfn class="local col4 decl" id="4length" title='length' data-type='u32 *' data-ref="4length">length</dfn>);</td></tr>
+<tr><th id="974">974</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#__mega_busywait_mbox" title='__mega_busywait_mbox' data-ref="__mega_busywait_mbox" id="__mega_busywait_mbox">__mega_busywait_mbox</a> (<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *);</td></tr>
+<tr><th id="975">975</th><td><em>static</em> <em>void</em> <a class="decl fn" href="megaraid.c.html#mega_rundoneq" title='mega_rundoneq' data-ref="mega_rundoneq" id="mega_rundoneq">mega_rundoneq</a> (<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *);</td></tr>
+<tr><th id="976">976</th><td><em>static</em> <em>void</em> <a class="decl fn" href="megaraid.c.html#mega_cmd_done" title='mega_cmd_done' data-ref="mega_cmd_done" id="mega_cmd_done">mega_cmd_done</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *, <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> [], <em>int</em>, <em>int</em>);</td></tr>
+<tr><th id="977">977</th><td><em>static</em> <a class="macro" href="../../include/linux/compiler-gcc.h.html#95" title="inline __attribute__((always_inline, unused)) __attribute__((no_instrument_function))" data-ref="_M/inline"><b>inline</b></a> <em>void</em> <a class="decl fn" href="megaraid.c.html#mega_free_sgl" title='mega_free_sgl' data-ref="mega_free_sgl" id="mega_free_sgl">mega_free_sgl</a> (<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *<dfn class="local col5 decl" id="5adapter" title='adapter' data-type='adapter_t *' data-ref="5adapter">adapter</dfn>);</td></tr>
+<tr><th id="978">978</th><td><em>static</em> <em>void</em> <a class="decl fn" href="megaraid.c.html#mega_8_to_40ld" title='mega_8_to_40ld' data-ref="mega_8_to_40ld" id="mega_8_to_40ld">mega_8_to_40ld</a> (<a class="typedef" href="#mraid_inquiry" title='mraid_inquiry' data-type='struct mraid_inquiry' data-ref="mraid_inquiry">mraid_inquiry</a> *<dfn class="local col6 decl" id="6inquiry" title='inquiry' data-type='mraid_inquiry *' data-ref="6inquiry">inquiry</dfn>,</td></tr>
+<tr><th id="979">979</th><td>		<a class="typedef" href="#mega_inquiry3" title='mega_inquiry3' data-type='struct mega_inquiry3' data-ref="mega_inquiry3">mega_inquiry3</a> *<dfn class="local col7 decl" id="7enquiry3" title='enquiry3' data-type='mega_inquiry3 *' data-ref="7enquiry3">enquiry3</dfn>, <a class="typedef" href="#mega_product_info" title='mega_product_info' data-type='struct mega_product_info' data-ref="mega_product_info">mega_product_info</a> *);</td></tr>
+<tr><th id="980">980</th><td></td></tr>
+<tr><th id="981">981</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#megadev_open" title='megadev_open' data-ref="megadev_open" id="megadev_open">megadev_open</a> (<b>struct</b> <a class="type" href="../../include/linux/fs.h.html#inode" title='inode' data-ref="inode">inode</a> *, <b>struct</b> <a class="type" href="../../include/linux/fs.h.html#file" title='file' data-ref="file">file</a> *);</td></tr>
+<tr><th id="982">982</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#megadev_ioctl" title='megadev_ioctl' data-ref="megadev_ioctl" id="megadev_ioctl">megadev_ioctl</a> (<b>struct</b> <a class="type" href="../../include/linux/fs.h.html#file" title='file' data-ref="file">file</a> *, <em>unsigned</em> <em>int</em>, <em>unsigned</em> <em>long</em>);</td></tr>
+<tr><th id="983">983</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#mega_m_to_n" title='mega_m_to_n' data-ref="mega_m_to_n" id="mega_m_to_n">mega_m_to_n</a>(<em>void</em> <a class="macro" href="../../include/linux/compiler_types.h.html#29" title="" data-ref="_M/__user">__user</a> *, <a class="typedef" href="#nitioctl_t" title='nitioctl_t' data-type='struct nitioctl_t' data-ref="nitioctl_t">nitioctl_t</a> *);</td></tr>
+<tr><th id="984">984</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#mega_n_to_m" title='mega_n_to_m' data-ref="mega_n_to_m" id="mega_n_to_m">mega_n_to_m</a>(<em>void</em> <a class="macro" href="../../include/linux/compiler_types.h.html#29" title="" data-ref="_M/__user">__user</a> *, <a class="typedef" href="#megacmd_t" title='megacmd_t' data-type='struct megacmd_t' data-ref="megacmd_t">megacmd_t</a> *);</td></tr>
+<tr><th id="985">985</th><td></td></tr>
+<tr><th id="986">986</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#mega_init_scb" title='mega_init_scb' data-ref="mega_init_scb" id="mega_init_scb">mega_init_scb</a> (<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *);</td></tr>
+<tr><th id="987">987</th><td></td></tr>
+<tr><th id="988">988</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#mega_is_bios_enabled" title='mega_is_bios_enabled' data-ref="mega_is_bios_enabled" id="mega_is_bios_enabled">mega_is_bios_enabled</a> (<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *);</td></tr>
+<tr><th id="989">989</th><td></td></tr>
+<tr><th id="990">990</th><td><u>#<span data-ppcond="990">ifdef</span> <a class="macro" href="../../include/generated/autoconf.h.html#1008" data-ref="_M/CONFIG_PROC_FS">CONFIG_PROC_FS</a></u></td></tr>
+<tr><th id="991">991</th><td><em>static</em> <em>void</em> <a class="decl fn" href="megaraid.c.html#mega_create_proc_entry" title='mega_create_proc_entry' data-ref="mega_create_proc_entry" id="mega_create_proc_entry">mega_create_proc_entry</a>(<em>int</em>, <b>struct</b> <a class="type" href="../../include/linux/irqdesc.h.html#proc_dir_entry" title='proc_dir_entry' data-ref="proc_dir_entry">proc_dir_entry</a> *);</td></tr>
+<tr><th id="992">992</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#mega_adapinq" title='mega_adapinq' data-ref="mega_adapinq" id="mega_adapinq">mega_adapinq</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *, <a class="typedef" href="../../include/linux/types.h.html#dma_addr_t" title='dma_addr_t' data-type='u64' data-ref="dma_addr_t">dma_addr_t</a>);</td></tr>
+<tr><th id="993">993</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#mega_internal_dev_inquiry" title='mega_internal_dev_inquiry' data-ref="mega_internal_dev_inquiry" id="mega_internal_dev_inquiry">mega_internal_dev_inquiry</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *, <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>, <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>, <a class="typedef" href="../../include/linux/types.h.html#dma_addr_t" title='dma_addr_t' data-type='u64' data-ref="dma_addr_t">dma_addr_t</a>);</td></tr>
+<tr><th id="994">994</th><td><u>#<span data-ppcond="990">endif</span></u></td></tr>
+<tr><th id="995">995</th><td></td></tr>
+<tr><th id="996">996</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#mega_support_ext_cdb" title='mega_support_ext_cdb' data-ref="mega_support_ext_cdb" id="mega_support_ext_cdb">mega_support_ext_cdb</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *);</td></tr>
+<tr><th id="997">997</th><td><em>static</em> <a class="typedef" href="#mega_passthru" title='mega_passthru' data-type='struct mega_passthru' data-ref="mega_passthru">mega_passthru</a>* <a class="decl fn" href="megaraid.c.html#mega_prepare_passthru" title='mega_prepare_passthru' data-ref="mega_prepare_passthru" id="mega_prepare_passthru">mega_prepare_passthru</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *, <a class="typedef" href="#scb_t" title='scb_t' data-type='struct scb_t' data-ref="scb_t">scb_t</a> *,</td></tr>
+<tr><th id="998">998</th><td>		<a class="typedef" href="scsi_typedefs.h.html#Scsi_Cmnd" title='Scsi_Cmnd' data-type='struct scsi_cmnd' data-ref="Scsi_Cmnd">Scsi_Cmnd</a> *, <em>int</em>, <em>int</em>);</td></tr>
+<tr><th id="999">999</th><td><em>static</em> <a class="typedef" href="#mega_ext_passthru" title='mega_ext_passthru' data-type='struct mega_ext_passthru' data-ref="mega_ext_passthru">mega_ext_passthru</a>* <a class="decl fn" href="megaraid.c.html#mega_prepare_extpassthru" title='mega_prepare_extpassthru' data-ref="mega_prepare_extpassthru" id="mega_prepare_extpassthru">mega_prepare_extpassthru</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *,</td></tr>
+<tr><th id="1000">1000</th><td>		<a class="typedef" href="#scb_t" title='scb_t' data-type='struct scb_t' data-ref="scb_t">scb_t</a> *, <a class="typedef" href="scsi_typedefs.h.html#Scsi_Cmnd" title='Scsi_Cmnd' data-type='struct scsi_cmnd' data-ref="Scsi_Cmnd">Scsi_Cmnd</a> *, <em>int</em>, <em>int</em>);</td></tr>
+<tr><th id="1001">1001</th><td><em>static</em> <em>void</em> <a class="decl fn" href="megaraid.c.html#mega_enum_raid_scsi" title='mega_enum_raid_scsi' data-ref="mega_enum_raid_scsi" id="mega_enum_raid_scsi">mega_enum_raid_scsi</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *);</td></tr>
+<tr><th id="1002">1002</th><td><em>static</em> <em>void</em> <a class="decl fn" href="megaraid.c.html#mega_get_boot_drv" title='mega_get_boot_drv' data-ref="mega_get_boot_drv" id="mega_get_boot_drv">mega_get_boot_drv</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *);</td></tr>
+<tr><th id="1003">1003</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#mega_support_random_del" title='mega_support_random_del' data-ref="mega_support_random_del" id="mega_support_random_del">mega_support_random_del</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *);</td></tr>
+<tr><th id="1004">1004</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#mega_del_logdrv" title='mega_del_logdrv' data-ref="mega_del_logdrv" id="mega_del_logdrv">mega_del_logdrv</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *, <em>int</em>);</td></tr>
+<tr><th id="1005">1005</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#mega_do_del_logdrv" title='mega_do_del_logdrv' data-ref="mega_do_del_logdrv" id="mega_do_del_logdrv">mega_do_del_logdrv</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *, <em>int</em>);</td></tr>
+<tr><th id="1006">1006</th><td><em>static</em> <em>void</em> <a class="decl fn" href="megaraid.c.html#mega_get_max_sgl" title='mega_get_max_sgl' data-ref="mega_get_max_sgl" id="mega_get_max_sgl">mega_get_max_sgl</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *);</td></tr>
+<tr><th id="1007">1007</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#mega_internal_command" title='mega_internal_command' data-ref="mega_internal_command" id="mega_internal_command">mega_internal_command</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *, <a class="typedef" href="#megacmd_t" title='megacmd_t' data-type='struct megacmd_t' data-ref="megacmd_t">megacmd_t</a> *, <a class="typedef" href="#mega_passthru" title='mega_passthru' data-type='struct mega_passthru' data-ref="mega_passthru">mega_passthru</a> *);</td></tr>
+<tr><th id="1008">1008</th><td><em>static</em> <em>int</em> <a class="decl fn" href="megaraid.c.html#mega_support_cluster" title='mega_support_cluster' data-ref="mega_support_cluster" id="mega_support_cluster">mega_support_cluster</a>(<a class="typedef" href="#adapter_t" title='adapter_t' data-type='struct adapter_t' data-ref="adapter_t">adapter_t</a> *);</td></tr>
+<tr><th id="1009">1009</th><td><u>#<span data-ppcond="2">endif</span></u></td></tr>
+<tr><th id="1010">1010</th><td></td></tr>
+<tr><th id="1011">1011</th><td><i>/* vi: set ts=8 sw=8 tw=78: */</i></td></tr>
+<tr><th id="1012">1012</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='megaraid.c.html'>linux-4.14.y/drivers/scsi/megaraid.c</a><br/>Generated on <em>2018-Jul-30</em> from project linux-4.14.y revision <em>linux-4.14.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

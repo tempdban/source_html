@@ -1,0 +1,47 @@
+<dec f='linux-4.14.y/include/linux/slab.h' l='68'/>
+<doc f='linux-4.14.y/include/linux/slab.h' l='31'>/*
+ * SLAB_TYPESAFE_BY_RCU - **WARNING** READ THIS!
+ *
+ * This delays freeing the SLAB page by a grace period, it does _NOT_
+ * delay object freeing. This means that if you do kmem_cache_free()
+ * that memory location is free to be reused at any time. Thus it may
+ * be possible to see another object there in the same RCU grace period.
+ *
+ * This feature only ensures the memory location backing the object
+ * stays valid, the trick to using this is relying on an independent
+ * object validation pass. Something like:
+ *
+ *  rcu_read_lock()
+ * again:
+ *  obj = lockless_lookup(key);
+ *  if (obj) {
+ *    if (!try_get_ref(obj)) // might fail for free objects
+ *      goto again;
+ *
+ *    if (obj-&gt;key != key) { // not the object we expected
+ *      put_ref(obj);
+ *      goto again;
+ *    }
+ *  }
+ *  rcu_read_unlock();
+ *
+ * This is useful if we need to approach a kernel structure obliquely,
+ * from its address obtained without the usual locking. We can lock
+ * the structure to stabilize it and check it&apos;s still at the given address,
+ * only if we can be sure that the memory has not been meanwhile reused
+ * for some other kind of object (which our subsystem&apos;s lock might corrupt).
+ *
+ * rcu_read_lock before reading the address, then rcu_read_unlock after
+ * taking the spinlock within the structure expected at that address.
+ *
+ * Note that SLAB_TYPESAFE_BY_RCU was originally named SLAB_DESTROY_BY_RCU.
+ */</doc>
+<use f='linux-4.14.y/fs/jbd2/journal.c' l='2382' u='c'/>
+<use f='linux-4.14.y/fs/kernfs/mount.c' l='414' u='c'/>
+<use f='linux-4.14.y/kernel/fork.c' l='2210' u='c'/>
+<use f='linux-4.14.y/mm/rmap.c' l='435' u='c'/>
+<use f='linux-4.14.y/mm/slab.c' l='1717' u='c'/>
+<use f='linux-4.14.y/mm/slab.c' l='1913' u='c'/>
+<use f='linux-4.14.y/mm/slab_common.c' l='548' u='c'/>
+<use f='linux-4.14.y/net/ipv4/tcp_ipv4.c' l='2433' u='c'/>
+<use f='linux-4.14.y/net/netfilter/nf_conntrack_core.c' l='2042' u='c'/>

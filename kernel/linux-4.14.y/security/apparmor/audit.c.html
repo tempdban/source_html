@@ -1,0 +1,183 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>audit.c source code [linux-4.14.y/security/apparmor/audit.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.14.y/security/apparmor/audit.c'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>linux-4.14.y</a>/<a href='..'>security</a>/<a href='./'>apparmor</a>/<a href='audit.c.html'>audit.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * AppArmor security module</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> * This file contains AppArmor auditing functions</i></td></tr>
+<tr><th id="5">5</th><td><i> *</i></td></tr>
+<tr><th id="6">6</th><td><i> * Copyright (C) 1998-2008 Novell/SUSE</i></td></tr>
+<tr><th id="7">7</th><td><i> * Copyright 2009-2010 Canonical Ltd.</i></td></tr>
+<tr><th id="8">8</th><td><i> *</i></td></tr>
+<tr><th id="9">9</th><td><i> * This program is free software; you can redistribute it and/or</i></td></tr>
+<tr><th id="10">10</th><td><i> * modify it under the terms of the GNU General Public License as</i></td></tr>
+<tr><th id="11">11</th><td><i> * published by the Free Software Foundation, version 2 of the</i></td></tr>
+<tr><th id="12">12</th><td><i> * License.</i></td></tr>
+<tr><th id="13">13</th><td><i> */</i></td></tr>
+<tr><th id="14">14</th><td></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../include/linux/audit.h.html">&lt;linux/audit.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../include/linux/socket.h.html">&lt;linux/socket.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="include/apparmor.h.html">"include/apparmor.h"</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="include/audit.h.html">"include/audit.h"</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="include/policy.h.html">"include/policy.h"</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="include/policy_ns.h.html">"include/policy_ns.h"</a></u></td></tr>
+<tr><th id="22">22</th><td></td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><em>const</em> <em>char</em> *<em>const</em> <dfn class="decl def" id="audit_mode_names" title='audit_mode_names' data-ref="audit_mode_names">audit_mode_names</dfn>[] = {</td></tr>
+<tr><th id="25">25</th><td>	<q>"normal"</q>,</td></tr>
+<tr><th id="26">26</th><td>	<q>"quiet_denied"</q>,</td></tr>
+<tr><th id="27">27</th><td>	<q>"quiet"</q>,</td></tr>
+<tr><th id="28">28</th><td>	<q>"noquiet"</q>,</td></tr>
+<tr><th id="29">29</th><td>	<q>"all"</q></td></tr>
+<tr><th id="30">30</th><td>};</td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><em>static</em> <em>const</em> <em>char</em> *<em>const</em> <dfn class="tu decl def" id="aa_audit_type" title='aa_audit_type' data-type='const char *const [8]' data-ref="aa_audit_type">aa_audit_type</dfn>[] = {</td></tr>
+<tr><th id="33">33</th><td>	<q>"AUDIT"</q>,</td></tr>
+<tr><th id="34">34</th><td>	<q>"ALLOWED"</q>,</td></tr>
+<tr><th id="35">35</th><td>	<q>"DENIED"</q>,</td></tr>
+<tr><th id="36">36</th><td>	<q>"HINT"</q>,</td></tr>
+<tr><th id="37">37</th><td>	<q>"STATUS"</q>,</td></tr>
+<tr><th id="38">38</th><td>	<q>"ERROR"</q>,</td></tr>
+<tr><th id="39">39</th><td>	<q>"KILLED"</q>,</td></tr>
+<tr><th id="40">40</th><td>	<q>"AUTO"</q></td></tr>
+<tr><th id="41">41</th><td>};</td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><i>/*</i></td></tr>
+<tr><th id="44">44</th><td><i> * Currently AppArmor auditing is fed straight into the audit framework.</i></td></tr>
+<tr><th id="45">45</th><td><i> *</i></td></tr>
+<tr><th id="46">46</th><td><i> * TODO:</i></td></tr>
+<tr><th id="47">47</th><td><i> * netlink interface for complain mode</i></td></tr>
+<tr><th id="48">48</th><td><i> * user auditing, - send user auditing to netlink interface</i></td></tr>
+<tr><th id="49">49</th><td><i> * system control of whether user audit messages go to system log</i></td></tr>
+<tr><th id="50">50</th><td><i> */</i></td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td><i class="doc" data-doc="audit_pre">/**</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc" data-doc="audit_pre"> * audit_base - core AppArmor function.</i></td></tr>
+<tr><th id="54">54</th><td><i class="doc" data-doc="audit_pre"> *<span class="command"> @ab</span>: audit buffer to fill (NOT NULL)</i></td></tr>
+<tr><th id="55">55</th><td><i class="doc" data-doc="audit_pre"> *<span class="command"> @ca</span>: audit structure containing data to audit (NOT NULL)</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc" data-doc="audit_pre"> *</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc" data-doc="audit_pre"> * Record common AppArmor audit data from <span class="command">@sa</span></i></td></tr>
+<tr><th id="58">58</th><td><i class="doc" data-doc="audit_pre"> */</i></td></tr>
+<tr><th id="59">59</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="audit_pre" title='audit_pre' data-type='void audit_pre(struct audit_buffer * ab, void * ca)' data-ref="audit_pre">audit_pre</dfn>(<b>struct</b> <a class="type" href="../../include/linux/audit.h.html#audit_buffer" title='audit_buffer' data-ref="audit_buffer">audit_buffer</a> *<dfn class="local col1 decl" id="1ab" title='ab' data-type='struct audit_buffer *' data-ref="1ab">ab</dfn>, <em>void</em> *<dfn class="local col2 decl" id="2ca" title='ca' data-type='void *' data-ref="2ca">ca</dfn>)</td></tr>
+<tr><th id="60">60</th><td>{</td></tr>
+<tr><th id="61">61</th><td>	<b>struct</b> <a class="type" href="../../include/linux/lsm_audit.h.html#common_audit_data" title='common_audit_data' data-ref="common_audit_data">common_audit_data</a> *<dfn class="local col3 decl" id="3sa" title='sa' data-type='struct common_audit_data *' data-ref="3sa">sa</dfn> = <a class="local col2 ref" href="#2ca" title='ca' data-ref="2ca">ca</a>;</td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td>	<b>if</b> (<a class="ref" href="include/apparmor.h.html#aa_g_audit_header" title='aa_g_audit_header' data-ref="aa_g_audit_header">aa_g_audit_header</a>) {</td></tr>
+<tr><th id="64">64</th><td>		<a class="ref fn" href="../../include/linux/audit.h.html#audit_log_format" title='audit_log_format' data-ref="audit_log_format">audit_log_format</a>(<a class="local col1 ref" href="#1ab" title='ab' data-ref="1ab">ab</a>, <q>"apparmor="</q>);</td></tr>
+<tr><th id="65">65</th><td>		<a class="ref fn" href="../../include/linux/audit.h.html#audit_log_string" title='audit_log_string' data-ref="audit_log_string">audit_log_string</a>(<a class="local col1 ref" href="#1ab" title='ab' data-ref="1ab">ab</a>, <a class="tu ref" href="#aa_audit_type" title='aa_audit_type' data-use='r' data-ref="aa_audit_type">aa_audit_type</a>[<a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col3 ref" href="#3sa" title='sa' data-ref="3sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::type" title='apparmor_audit_data::type' data-ref="apparmor_audit_data::type">type</a>]);</td></tr>
+<tr><th id="66">66</th><td>	}</td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td>	<b>if</b> (<a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col3 ref" href="#3sa" title='sa' data-ref="3sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::op" title='apparmor_audit_data::op' data-ref="apparmor_audit_data::op">op</a>) {</td></tr>
+<tr><th id="69">69</th><td>		<a class="ref fn" href="../../include/linux/audit.h.html#audit_log_format" title='audit_log_format' data-ref="audit_log_format">audit_log_format</a>(<a class="local col1 ref" href="#1ab" title='ab' data-ref="1ab">ab</a>, <q>" operation="</q>);</td></tr>
+<tr><th id="70">70</th><td>		<a class="ref fn" href="../../include/linux/audit.h.html#audit_log_string" title='audit_log_string' data-ref="audit_log_string">audit_log_string</a>(<a class="local col1 ref" href="#1ab" title='ab' data-ref="1ab">ab</a>, <a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col3 ref" href="#3sa" title='sa' data-ref="3sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::op" title='apparmor_audit_data::op' data-ref="apparmor_audit_data::op">op</a>);</td></tr>
+<tr><th id="71">71</th><td>	}</td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td>	<b>if</b> (<a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col3 ref" href="#3sa" title='sa' data-ref="3sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::info" title='apparmor_audit_data::info' data-ref="apparmor_audit_data::info">info</a>) {</td></tr>
+<tr><th id="74">74</th><td>		<a class="ref fn" href="../../include/linux/audit.h.html#audit_log_format" title='audit_log_format' data-ref="audit_log_format">audit_log_format</a>(<a class="local col1 ref" href="#1ab" title='ab' data-ref="1ab">ab</a>, <q>" info="</q>);</td></tr>
+<tr><th id="75">75</th><td>		<a class="ref fn" href="../../include/linux/audit.h.html#audit_log_string" title='audit_log_string' data-ref="audit_log_string">audit_log_string</a>(<a class="local col1 ref" href="#1ab" title='ab' data-ref="1ab">ab</a>, <a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col3 ref" href="#3sa" title='sa' data-ref="3sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::info" title='apparmor_audit_data::info' data-ref="apparmor_audit_data::info">info</a>);</td></tr>
+<tr><th id="76">76</th><td>		<b>if</b> (<a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col3 ref" href="#3sa" title='sa' data-ref="3sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::error" title='apparmor_audit_data::error' data-ref="apparmor_audit_data::error">error</a>)</td></tr>
+<tr><th id="77">77</th><td>			<a class="ref fn" href="../../include/linux/audit.h.html#audit_log_format" title='audit_log_format' data-ref="audit_log_format">audit_log_format</a>(<a class="local col1 ref" href="#1ab" title='ab' data-ref="1ab">ab</a>, <q>" error=%d"</q>, <a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col3 ref" href="#3sa" title='sa' data-ref="3sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::error" title='apparmor_audit_data::error' data-ref="apparmor_audit_data::error">error</a>);</td></tr>
+<tr><th id="78">78</th><td>	}</td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td>	<b>if</b> (<a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col3 ref" href="#3sa" title='sa' data-ref="3sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::label" title='apparmor_audit_data::label' data-ref="apparmor_audit_data::label">label</a>) {</td></tr>
+<tr><th id="81">81</th><td>		<b>struct</b> <a class="type" href="include/label.h.html#aa_label" title='aa_label' data-ref="aa_label">aa_label</a> *<dfn class="local col4 decl" id="4label" title='label' data-type='struct aa_label *' data-ref="4label">label</dfn> = <a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col3 ref" href="#3sa" title='sa' data-ref="3sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::label" title='apparmor_audit_data::label' data-ref="apparmor_audit_data::label">label</a>;</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td>		<b>if</b> (<a class="macro" href="include/label.h.html#148" title="((label)-&gt;flags &amp; FLAG_PROFILE)" data-ref="_M/label_isprofile">label_isprofile</a>(<a class="local col4 ref" href="#4label" title='label' data-ref="4label">label</a>)) {</td></tr>
+<tr><th id="84">84</th><td>			<b>struct</b> <a class="type" href="include/policy.h.html#aa_profile" title='aa_profile' data-ref="aa_profile">aa_profile</a> *<dfn class="local col5 decl" id="5profile" title='profile' data-type='struct aa_profile *' data-ref="5profile">profile</dfn> = <a class="macro" href="include/label.h.html#155" title="((label)-&gt;vec[(label)-&gt;size - 1])" data-ref="_M/labels_profile">labels_profile</a>(<a class="local col4 ref" href="#4label" title='label' data-ref="4label">label</a>);</td></tr>
+<tr><th id="85">85</th><td></td></tr>
+<tr><th id="86">86</th><td>			<b>if</b> (<a class="local col5 ref" href="#5profile" title='profile' data-ref="5profile">profile</a>-&gt;<a class="ref field" href="include/policy.h.html#aa_profile::ns" title='aa_profile::ns' data-ref="aa_profile::ns">ns</a> != <a class="ref" href="include/policy_ns.h.html#root_ns" title='root_ns' data-ref="root_ns">root_ns</a>) {</td></tr>
+<tr><th id="87">87</th><td>				<a class="ref fn" href="../../include/linux/audit.h.html#audit_log_format" title='audit_log_format' data-ref="audit_log_format">audit_log_format</a>(<a class="local col1 ref" href="#1ab" title='ab' data-ref="1ab">ab</a>, <q>" namespace="</q>);</td></tr>
+<tr><th id="88">88</th><td>				<a class="ref fn" href="../../include/linux/audit.h.html#audit_log_untrustedstring" title='audit_log_untrustedstring' data-ref="audit_log_untrustedstring">audit_log_untrustedstring</a>(<a class="local col1 ref" href="#1ab" title='ab' data-ref="1ab">ab</a>,</td></tr>
+<tr><th id="89">89</th><td>						       <a class="local col5 ref" href="#5profile" title='profile' data-ref="5profile">profile</a>-&gt;<a class="ref field" href="include/policy.h.html#aa_profile::ns" title='aa_profile::ns' data-ref="aa_profile::ns">ns</a>-&gt;<a class="ref field" href="include/policy_ns.h.html#aa_ns::base" title='aa_ns::base' data-ref="aa_ns::base">base</a>.<a class="ref field" href="include/lib.h.html#aa_policy::hname" title='aa_policy::hname' data-ref="aa_policy::hname">hname</a>);</td></tr>
+<tr><th id="90">90</th><td>			}</td></tr>
+<tr><th id="91">91</th><td>			<a class="ref fn" href="../../include/linux/audit.h.html#audit_log_format" title='audit_log_format' data-ref="audit_log_format">audit_log_format</a>(<a class="local col1 ref" href="#1ab" title='ab' data-ref="1ab">ab</a>, <q>" profile="</q>);</td></tr>
+<tr><th id="92">92</th><td>			<a class="ref fn" href="../../include/linux/audit.h.html#audit_log_untrustedstring" title='audit_log_untrustedstring' data-ref="audit_log_untrustedstring">audit_log_untrustedstring</a>(<a class="local col1 ref" href="#1ab" title='ab' data-ref="1ab">ab</a>, <a class="local col5 ref" href="#5profile" title='profile' data-ref="5profile">profile</a>-&gt;<a class="ref field" href="include/policy.h.html#aa_profile::base" title='aa_profile::base' data-ref="aa_profile::base">base</a>.<a class="ref field" href="include/lib.h.html#aa_policy::hname" title='aa_policy::hname' data-ref="aa_policy::hname">hname</a>);</td></tr>
+<tr><th id="93">93</th><td>		} <b>else</b> {</td></tr>
+<tr><th id="94">94</th><td>			<a class="ref fn" href="../../include/linux/audit.h.html#audit_log_format" title='audit_log_format' data-ref="audit_log_format">audit_log_format</a>(<a class="local col1 ref" href="#1ab" title='ab' data-ref="1ab">ab</a>, <q>" label="</q>);</td></tr>
+<tr><th id="95">95</th><td>			<a class="ref fn" href="include/label.h.html#aa_label_xaudit" title='aa_label_xaudit' data-ref="aa_label_xaudit">aa_label_xaudit</a>(<a class="local col1 ref" href="#1ab" title='ab' data-ref="1ab">ab</a>, <a class="ref" href="include/policy_ns.h.html#root_ns" title='root_ns' data-ref="root_ns">root_ns</a>, <a class="local col4 ref" href="#4label" title='label' data-ref="4label">label</a>, <a class="macro" href="include/label.h.html#311" title="2" data-ref="_M/FLAG_VIEW_SUBNS">FLAG_VIEW_SUBNS</a>,</td></tr>
+<tr><th id="96">96</th><td>					<a class="macro" href="../../include/linux/gfp.h.html#277" title="((( gfp_t)0x20u)|(( gfp_t)0x80000u)|(( gfp_t)0x1000000u))" data-ref="_M/GFP_ATOMIC">GFP_ATOMIC</a>);</td></tr>
+<tr><th id="97">97</th><td>		}</td></tr>
+<tr><th id="98">98</th><td>	}</td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td>	<b>if</b> (<a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col3 ref" href="#3sa" title='sa' data-ref="3sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::name" title='apparmor_audit_data::name' data-ref="apparmor_audit_data::name">name</a>) {</td></tr>
+<tr><th id="101">101</th><td>		<a class="ref fn" href="../../include/linux/audit.h.html#audit_log_format" title='audit_log_format' data-ref="audit_log_format">audit_log_format</a>(<a class="local col1 ref" href="#1ab" title='ab' data-ref="1ab">ab</a>, <q>" name="</q>);</td></tr>
+<tr><th id="102">102</th><td>		<a class="ref fn" href="../../include/linux/audit.h.html#audit_log_untrustedstring" title='audit_log_untrustedstring' data-ref="audit_log_untrustedstring">audit_log_untrustedstring</a>(<a class="local col1 ref" href="#1ab" title='ab' data-ref="1ab">ab</a>, <a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col3 ref" href="#3sa" title='sa' data-ref="3sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::name" title='apparmor_audit_data::name' data-ref="apparmor_audit_data::name">name</a>);</td></tr>
+<tr><th id="103">103</th><td>	}</td></tr>
+<tr><th id="104">104</th><td>}</td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="107">107</th><td><i class="doc"> * aa_audit_msg - Log a message to the audit subsystem</i></td></tr>
+<tr><th id="108">108</th><td><i class="doc"> * <span class="command">@sa</span>: audit event structure (NOT NULL)</i></td></tr>
+<tr><th id="109">109</th><td><i class="doc"> *<span class="command"> @cb</span>: optional callback fn for type specific fields (MAYBE NULL)</i></td></tr>
+<tr><th id="110">110</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="111">111</th><td><em>void</em> <dfn class="decl def fn" id="aa_audit_msg" title='aa_audit_msg' data-ref="aa_audit_msg">aa_audit_msg</dfn>(<em>int</em> <dfn class="local col6 decl" id="6type" title='type' data-type='int' data-ref="6type">type</dfn>, <b>struct</b> <a class="type" href="../../include/linux/lsm_audit.h.html#common_audit_data" title='common_audit_data' data-ref="common_audit_data">common_audit_data</a> *<dfn class="local col7 decl" id="7sa" title='sa' data-type='struct common_audit_data *' data-ref="7sa">sa</dfn>,</td></tr>
+<tr><th id="112">112</th><td>		  <em>void</em> (*<dfn class="local col8 decl" id="8cb" title='cb' data-type='void (*)(struct audit_buffer *, void *)' data-ref="8cb">cb</dfn>) (<b>struct</b> <a class="type" href="../../include/linux/audit.h.html#audit_buffer" title='audit_buffer' data-ref="audit_buffer">audit_buffer</a> *, <em>void</em> *))</td></tr>
+<tr><th id="113">113</th><td>{</td></tr>
+<tr><th id="114">114</th><td>	<a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col7 ref" href="#7sa" title='sa' data-ref="7sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::type" title='apparmor_audit_data::type' data-ref="apparmor_audit_data::type">type</a> = <a class="local col6 ref" href="#6type" title='type' data-ref="6type">type</a>;</td></tr>
+<tr><th id="115">115</th><td>	<a class="ref fn" href="../../include/linux/lsm_audit.h.html#common_lsm_audit" title='common_lsm_audit' data-ref="common_lsm_audit">common_lsm_audit</a>(<a class="local col7 ref" href="#7sa" title='sa' data-ref="7sa">sa</a>, <a class="tu ref fn" href="#audit_pre" title='audit_pre' data-use='r' data-ref="audit_pre">audit_pre</a>, <a class="local col8 ref" href="#8cb" title='cb' data-ref="8cb">cb</a>);</td></tr>
+<tr><th id="116">116</th><td>}</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="119">119</th><td><i class="doc"> * aa_audit - Log a profile based audit event to the audit subsystem</i></td></tr>
+<tr><th id="120">120</th><td><i class="doc"> *<span class="command"> @type</span>: audit type for the message</i></td></tr>
+<tr><th id="121">121</th><td><i class="doc"> *<span class="command"> @profile</span>: profile to check against (NOT NULL)</i></td></tr>
+<tr><th id="122">122</th><td><i class="doc"> * <span class="command">@sa</span>: audit event (NOT NULL)</i></td></tr>
+<tr><th id="123">123</th><td><i class="doc"> *<span class="command"> @cb</span>: optional callback fn for type specific fields (MAYBE NULL)</i></td></tr>
+<tr><th id="124">124</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="125">125</th><td><i class="doc"> * Handle default message switching based off of audit mode flags</i></td></tr>
+<tr><th id="126">126</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="127">127</th><td><i class="doc"> * Returns: error on failure</i></td></tr>
+<tr><th id="128">128</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="129">129</th><td><em>int</em> <dfn class="decl def fn" id="aa_audit" title='aa_audit' data-ref="aa_audit">aa_audit</dfn>(<em>int</em> <dfn class="local col9 decl" id="9type" title='type' data-type='int' data-ref="9type">type</dfn>, <b>struct</b> <a class="type" href="include/policy.h.html#aa_profile" title='aa_profile' data-ref="aa_profile">aa_profile</a> *<dfn class="local col0 decl" id="10profile" title='profile' data-type='struct aa_profile *' data-ref="10profile">profile</dfn>, <b>struct</b> <a class="type" href="../../include/linux/lsm_audit.h.html#common_audit_data" title='common_audit_data' data-ref="common_audit_data">common_audit_data</a> *<dfn class="local col1 decl" id="11sa" title='sa' data-type='struct common_audit_data *' data-ref="11sa">sa</dfn>,</td></tr>
+<tr><th id="130">130</th><td>	     <em>void</em> (*<dfn class="local col2 decl" id="12cb" title='cb' data-type='void (*)(struct audit_buffer *, void *)' data-ref="12cb">cb</dfn>) (<b>struct</b> <a class="type" href="../../include/linux/audit.h.html#audit_buffer" title='audit_buffer' data-ref="audit_buffer">audit_buffer</a> *, <em>void</em> *))</td></tr>
+<tr><th id="131">131</th><td>{</td></tr>
+<tr><th id="132">132</th><td>	<a class="macro" href="include/lib.h.html#48" title="" data-ref="_M/AA_BUG">AA_BUG</a>(!profile);</td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td>	<b>if</b> (<a class="local col9 ref" href="#9type" title='type' data-ref="9type">type</a> == <a class="enum" href="include/audit.h.html#AUDIT_APPARMOR_AUTO" title='AUDIT_APPARMOR_AUTO' data-ref="AUDIT_APPARMOR_AUTO">AUDIT_APPARMOR_AUTO</a>) {</td></tr>
+<tr><th id="135">135</th><td>		<b>if</b> (<a class="macro" href="../../include/linux/compiler.h.html#76" title="__builtin_expect(!!(!((sa)-&gt;apparmor_audit_data)-&gt;error), 1)" data-ref="_M/likely">likely</a>(!<a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col1 ref" href="#11sa" title='sa' data-ref="11sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::error" title='apparmor_audit_data::error' data-ref="apparmor_audit_data::error">error</a>)) {</td></tr>
+<tr><th id="136">136</th><td>			<b>if</b> (<a class="ref fn" href="include/policy.h.html#AUDIT_MODE" title='AUDIT_MODE' data-ref="AUDIT_MODE">AUDIT_MODE</a>(<a class="local col0 ref" href="#10profile" title='profile' data-ref="10profile">profile</a>) != <a class="enum" href="include/audit.h.html#AUDIT_ALL" title='AUDIT_ALL' data-ref="AUDIT_ALL">AUDIT_ALL</a>)</td></tr>
+<tr><th id="137">137</th><td>				<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="138">138</th><td>			<a class="local col9 ref" href="#9type" title='type' data-ref="9type">type</a> = <a class="enum" href="include/audit.h.html#AUDIT_APPARMOR_AUDIT" title='AUDIT_APPARMOR_AUDIT' data-ref="AUDIT_APPARMOR_AUDIT">AUDIT_APPARMOR_AUDIT</a>;</td></tr>
+<tr><th id="139">139</th><td>		} <b>else</b> <b>if</b> (<a class="macro" href="include/policy.h.html#48" title="((aa_g_profile_mode == (APPARMOR_COMPLAIN)) || (((profile))-&gt;mode == (APPARMOR_COMPLAIN)))" data-ref="_M/COMPLAIN_MODE">COMPLAIN_MODE</a>(<a class="local col0 ref" href="#10profile" title='profile' data-ref="10profile">profile</a>))</td></tr>
+<tr><th id="140">140</th><td>			<a class="local col9 ref" href="#9type" title='type' data-ref="9type">type</a> = <a class="enum" href="include/audit.h.html#AUDIT_APPARMOR_ALLOWED" title='AUDIT_APPARMOR_ALLOWED' data-ref="AUDIT_APPARMOR_ALLOWED">AUDIT_APPARMOR_ALLOWED</a>;</td></tr>
+<tr><th id="141">141</th><td>		<b>else</b></td></tr>
+<tr><th id="142">142</th><td>			<a class="local col9 ref" href="#9type" title='type' data-ref="9type">type</a> = <a class="enum" href="include/audit.h.html#AUDIT_APPARMOR_DENIED" title='AUDIT_APPARMOR_DENIED' data-ref="AUDIT_APPARMOR_DENIED">AUDIT_APPARMOR_DENIED</a>;</td></tr>
+<tr><th id="143">143</th><td>	}</td></tr>
+<tr><th id="144">144</th><td>	<b>if</b> (<a class="ref fn" href="include/policy.h.html#AUDIT_MODE" title='AUDIT_MODE' data-ref="AUDIT_MODE">AUDIT_MODE</a>(<a class="local col0 ref" href="#10profile" title='profile' data-ref="10profile">profile</a>) == <a class="enum" href="include/audit.h.html#AUDIT_QUIET" title='AUDIT_QUIET' data-ref="AUDIT_QUIET">AUDIT_QUIET</a> ||</td></tr>
+<tr><th id="145">145</th><td>	    (<a class="local col9 ref" href="#9type" title='type' data-ref="9type">type</a> == <a class="enum" href="include/audit.h.html#AUDIT_APPARMOR_DENIED" title='AUDIT_APPARMOR_DENIED' data-ref="AUDIT_APPARMOR_DENIED">AUDIT_APPARMOR_DENIED</a> &amp;&amp;</td></tr>
+<tr><th id="146">146</th><td>	     <a class="ref fn" href="include/policy.h.html#AUDIT_MODE" title='AUDIT_MODE' data-ref="AUDIT_MODE">AUDIT_MODE</a>(<a class="local col0 ref" href="#10profile" title='profile' data-ref="10profile">profile</a>) == <a class="enum" href="include/audit.h.html#AUDIT_QUIET" title='AUDIT_QUIET' data-ref="AUDIT_QUIET">AUDIT_QUIET</a>))</td></tr>
+<tr><th id="147">147</th><td>		<b>return</b> <a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col1 ref" href="#11sa" title='sa' data-ref="11sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::error" title='apparmor_audit_data::error' data-ref="apparmor_audit_data::error">error</a>;</td></tr>
+<tr><th id="148">148</th><td></td></tr>
+<tr><th id="149">149</th><td>	<b>if</b> (<a class="macro" href="include/policy.h.html#50" title="((aa_g_profile_mode == (APPARMOR_KILL)) || (((profile))-&gt;mode == (APPARMOR_KILL)))" data-ref="_M/KILL_MODE">KILL_MODE</a>(<a class="local col0 ref" href="#10profile" title='profile' data-ref="10profile">profile</a>) &amp;&amp; <a class="local col9 ref" href="#9type" title='type' data-ref="9type">type</a> == <a class="enum" href="include/audit.h.html#AUDIT_APPARMOR_DENIED" title='AUDIT_APPARMOR_DENIED' data-ref="AUDIT_APPARMOR_DENIED">AUDIT_APPARMOR_DENIED</a>)</td></tr>
+<tr><th id="150">150</th><td>		<a class="local col9 ref" href="#9type" title='type' data-ref="9type">type</a> = <a class="enum" href="include/audit.h.html#AUDIT_APPARMOR_KILL" title='AUDIT_APPARMOR_KILL' data-ref="AUDIT_APPARMOR_KILL">AUDIT_APPARMOR_KILL</a>;</td></tr>
+<tr><th id="151">151</th><td></td></tr>
+<tr><th id="152">152</th><td>	<a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col1 ref" href="#11sa" title='sa' data-ref="11sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::label" title='apparmor_audit_data::label' data-ref="apparmor_audit_data::label">label</a> = &amp;<a class="local col0 ref" href="#10profile" title='profile' data-ref="10profile">profile</a>-&gt;<a class="ref field" href="include/policy.h.html#aa_profile::label" title='aa_profile::label' data-ref="aa_profile::label">label</a>;</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td>	<a class="ref fn" href="#aa_audit_msg" title='aa_audit_msg' data-ref="aa_audit_msg">aa_audit_msg</a>(<a class="local col9 ref" href="#9type" title='type' data-ref="9type">type</a>, <a class="local col1 ref" href="#11sa" title='sa' data-ref="11sa">sa</a>, <a class="local col2 ref" href="#12cb" title='cb' data-ref="12cb">cb</a>);</td></tr>
+<tr><th id="155">155</th><td></td></tr>
+<tr><th id="156">156</th><td>	<b>if</b> (<a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col1 ref" href="#11sa" title='sa' data-ref="11sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::type" title='apparmor_audit_data::type' data-ref="apparmor_audit_data::type">type</a> == <a class="enum" href="include/audit.h.html#AUDIT_APPARMOR_KILL" title='AUDIT_APPARMOR_KILL' data-ref="AUDIT_APPARMOR_KILL">AUDIT_APPARMOR_KILL</a>)</td></tr>
+<tr><th id="157">157</th><td>		(<em>void</em>)<a class="ref fn" href="../../include/linux/sched/signal.h.html#send_sig_info" title='send_sig_info' data-ref="send_sig_info">send_sig_info</a>(<a class="macro" href="../../arch/x86/include/uapi/asm/signal.h.html#32" title="9" data-ref="_M/SIGKILL">SIGKILL</a>, <a class="macro" href="../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>,</td></tr>
+<tr><th id="158">158</th><td>			<a class="local col1 ref" href="#11sa" title='sa' data-ref="11sa">sa</a>-&gt;<a class="ref field" href="../../include/linux/lsm_audit.h.html#common_audit_data::type" title='common_audit_data::type' data-ref="common_audit_data::type">type</a> == <a class="macro" href="../../include/linux/lsm_audit.h.html#67" title="5" data-ref="_M/LSM_AUDIT_DATA_TASK">LSM_AUDIT_DATA_TASK</a> &amp;&amp; <a class="local col1 ref" href="#11sa" title='sa' data-ref="11sa">sa</a>-&gt;<a class="ref field" href="../../include/linux/lsm_audit.h.html#common_audit_data::u" title='common_audit_data::u' data-ref="common_audit_data::u">u</a>.<a class="ref field" href="../../include/linux/lsm_audit.h.html#common_audit_data::(anonymous)::tsk" title='common_audit_data::(anonymous union)::tsk' data-ref="common_audit_data::(anonymous)::tsk">tsk</a> ?</td></tr>
+<tr><th id="159">159</th><td>				    <a class="local col1 ref" href="#11sa" title='sa' data-ref="11sa">sa</a>-&gt;<a class="ref field" href="../../include/linux/lsm_audit.h.html#common_audit_data::u" title='common_audit_data::u' data-ref="common_audit_data::u">u</a>.<a class="ref field" href="../../include/linux/lsm_audit.h.html#common_audit_data::(anonymous)::tsk" title='common_audit_data::(anonymous union)::tsk' data-ref="common_audit_data::(anonymous)::tsk">tsk</a> : <a class="macro" href="../../arch/x86/include/asm/current.h.html#18" title="get_current()" data-ref="_M/current">current</a>);</td></tr>
+<tr><th id="160">160</th><td></td></tr>
+<tr><th id="161">161</th><td>	<b>if</b> (<a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col1 ref" href="#11sa" title='sa' data-ref="11sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::type" title='apparmor_audit_data::type' data-ref="apparmor_audit_data::type">type</a> == <a class="enum" href="include/audit.h.html#AUDIT_APPARMOR_ALLOWED" title='AUDIT_APPARMOR_ALLOWED' data-ref="AUDIT_APPARMOR_ALLOWED">AUDIT_APPARMOR_ALLOWED</a>)</td></tr>
+<tr><th id="162">162</th><td>		<b>return</b> <a class="ref fn" href="include/audit.h.html#complain_error" title='complain_error' data-ref="complain_error">complain_error</a>(<a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col1 ref" href="#11sa" title='sa' data-ref="11sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::error" title='apparmor_audit_data::error' data-ref="apparmor_audit_data::error">error</a>);</td></tr>
+<tr><th id="163">163</th><td></td></tr>
+<tr><th id="164">164</th><td>	<b>return</b> <a class="macro" href="include/audit.h.html#152" title="((sa)-&gt;apparmor_audit_data)" data-ref="_M/aad">aad</a>(<a class="local col1 ref" href="#11sa" title='sa' data-ref="11sa">sa</a>)-&gt;<a class="ref field" href="include/audit.h.html#apparmor_audit_data::error" title='apparmor_audit_data::error' data-ref="apparmor_audit_data::error">error</a>;</td></tr>
+<tr><th id="165">165</th><td>}</td></tr>
+<tr><th id="166">166</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-30</em> from project linux-4.14.y revision <em>linux-4.14.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

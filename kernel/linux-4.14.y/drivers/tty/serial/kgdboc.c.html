@@ -1,0 +1,357 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>kgdboc.c source code [linux-4.14.y/drivers/tty/serial/kgdboc.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.14.y/drivers/tty/serial/kgdboc.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>linux-4.14.y</a>/<a href='../..'>drivers</a>/<a href='..'>tty</a>/<a href='./'>serial</a>/<a href='kgdboc.c.html'>kgdboc.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Based on the same principle as kgdboe using the NETPOLL api, this</i></td></tr>
+<tr><th id="3">3</th><td><i> * driver uses a console polling api to implement a gdb serial inteface</i></td></tr>
+<tr><th id="4">4</th><td><i> * which is multiplexed on a console port.</i></td></tr>
+<tr><th id="5">5</th><td><i> *</i></td></tr>
+<tr><th id="6">6</th><td><i> * Maintainer: Jason Wessel &lt;jason.wessel@windriver.com&gt;</i></td></tr>
+<tr><th id="7">7</th><td><i> *</i></td></tr>
+<tr><th id="8">8</th><td><i> * 2007-2008 (c) Jason Wessel - Wind River Systems, Inc.</i></td></tr>
+<tr><th id="9">9</th><td><i> *</i></td></tr>
+<tr><th id="10">10</th><td><i> * This file is licensed under the terms of the GNU General Public</i></td></tr>
+<tr><th id="11">11</th><td><i> * License version 2. This program is licensed "as is" without any</i></td></tr>
+<tr><th id="12">12</th><td><i> * warranty of any kind, whether express or implied.</i></td></tr>
+<tr><th id="13">13</th><td><i> */</i></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../include/linux/kernel.h.html">&lt;linux/kernel.h&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../include/linux/ctype.h.html">&lt;linux/ctype.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../include/linux/kgdb.h.html">&lt;linux/kgdb.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../include/linux/kdb.h.html">&lt;linux/kdb.h&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../include/linux/tty.h.html">&lt;linux/tty.h&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../include/linux/console.h.html">&lt;linux/console.h&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../include/linux/vt_kern.h.html">&lt;linux/vt_kern.h&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../include/linux/input.h.html">&lt;linux/input.h&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../include/linux/module.h.html">&lt;linux/module.h&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><u>#define <dfn class="macro" id="_M/MAX_CONFIG_LEN" data-ref="_M/MAX_CONFIG_LEN">MAX_CONFIG_LEN</dfn>		40</u></td></tr>
+<tr><th id="25">25</th><td></td></tr>
+<tr><th id="26">26</th><td><em>static</em> <b>struct</b> <a class="type" href="../../../include/linux/kgdb.h.html#kgdb_io" title='kgdb_io' data-ref="kgdb_io">kgdb_io</a>		<dfn class="tu decl def" id="kgdboc_io_ops" title='kgdboc_io_ops' data-type='struct kgdb_io' data-ref="kgdboc_io_ops">kgdboc_io_ops</dfn>;</td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td><i  data-doc="configured">/* -1 = init not run yet, 0 = unconfigured, 1 = configured. */</i></td></tr>
+<tr><th id="29">29</th><td><em>static</em> <em>int</em> <dfn class="tu decl def" id="configured" title='configured' data-type='int' data-ref="configured">configured</dfn>		= -<var>1</var>;</td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><em>static</em> <em>char</em> <dfn class="tu decl def" id="config" title='config' data-type='char [40]' data-ref="config">config</dfn>[<a class="macro" href="#24" title="40" data-ref="_M/MAX_CONFIG_LEN">MAX_CONFIG_LEN</a>];</td></tr>
+<tr><th id="32">32</th><td><em>static</em> <b>struct</b> <a class="type" href="../../../include/linux/moduleparam.h.html#kparam_string" title='kparam_string' data-ref="kparam_string">kparam_string</a> <dfn class="tu decl def" id="kps" title='kps' data-type='struct kparam_string' data-ref="kps">kps</dfn> = {</td></tr>
+<tr><th id="33">33</th><td>	.<a class="ref field" href="../../../include/linux/moduleparam.h.html#kparam_string::string" title='kparam_string::string' data-ref="kparam_string::string">string</a>			= <a class="tu ref" href="#config" title='config' data-ref="config">config</a>,</td></tr>
+<tr><th id="34">34</th><td>	.<a class="ref field" href="../../../include/linux/moduleparam.h.html#kparam_string::maxlen" title='kparam_string::maxlen' data-ref="kparam_string::maxlen">maxlen</a>			= <a class="macro" href="#24" title="40" data-ref="_M/MAX_CONFIG_LEN">MAX_CONFIG_LEN</a>,</td></tr>
+<tr><th id="35">35</th><td>};</td></tr>
+<tr><th id="36">36</th><td></td></tr>
+<tr><th id="37">37</th><td><em>static</em> <em>int</em> <dfn class="tu decl def" id="kgdboc_use_kms" title='kgdboc_use_kms' data-type='int' data-ref="kgdboc_use_kms">kgdboc_use_kms</dfn>;  <i  data-doc="kgdboc_use_kms">/* 1 if we use kernel mode switching */</i></td></tr>
+<tr><th id="38">38</th><td><em>static</em> <b>struct</b> <a class="type" href="../../../include/linux/tty_driver.h.html#tty_driver" title='tty_driver' data-ref="tty_driver">tty_driver</a>	*<dfn class="tu decl def" id="kgdb_tty_driver" title='kgdb_tty_driver' data-type='struct tty_driver *' data-ref="kgdb_tty_driver">kgdb_tty_driver</dfn>;</td></tr>
+<tr><th id="39">39</th><td><em>static</em> <em>int</em>			<dfn class="tu decl def" id="kgdb_tty_line" title='kgdb_tty_line' data-type='int' data-ref="kgdb_tty_line">kgdb_tty_line</dfn>;</td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td><u>#<span data-ppcond="41">ifdef</span> <a class="macro" href="../../../include/generated/autoconf.h.html#237" data-ref="_M/CONFIG_KDB_KEYBOARD">CONFIG_KDB_KEYBOARD</a></u></td></tr>
+<tr><th id="42">42</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="kgdboc_reset_connect" title='kgdboc_reset_connect' data-type='int kgdboc_reset_connect(struct input_handler * handler, struct input_dev * dev, const struct input_device_id * id)' data-ref="kgdboc_reset_connect">kgdboc_reset_connect</dfn>(<b>struct</b> <a class="type" href="../../../include/linux/input.h.html#input_handler" title='input_handler' data-ref="input_handler">input_handler</a> *<dfn class="local col7 decl" id="117handler" title='handler' data-type='struct input_handler *' data-ref="117handler">handler</dfn>,</td></tr>
+<tr><th id="43">43</th><td>				<b>struct</b> <a class="type" href="../../../include/linux/input.h.html#input_dev" title='input_dev' data-ref="input_dev">input_dev</a> *<dfn class="local col8 decl" id="118dev" title='dev' data-type='struct input_dev *' data-ref="118dev">dev</dfn>,</td></tr>
+<tr><th id="44">44</th><td>				<em>const</em> <b>struct</b> <a class="type" href="../../../include/linux/mod_devicetable.h.html#input_device_id" title='input_device_id' data-ref="input_device_id">input_device_id</a> *<dfn class="local col9 decl" id="119id" title='id' data-type='const struct input_device_id *' data-ref="119id">id</dfn>)</td></tr>
+<tr><th id="45">45</th><td>{</td></tr>
+<tr><th id="46">46</th><td>	<a class="ref fn" href="../../../include/linux/input.h.html#input_reset_device" title='input_reset_device' data-ref="input_reset_device">input_reset_device</a>(<a class="local col8 ref" href="#118dev" title='dev' data-ref="118dev">dev</a>);</td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td>	<i>/* Return an error - we do not want to bind, just to reset */</i></td></tr>
+<tr><th id="49">49</th><td>	<b>return</b> -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#23" title="19" data-ref="_M/ENODEV">ENODEV</a>;</td></tr>
+<tr><th id="50">50</th><td>}</td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="kgdboc_reset_disconnect" title='kgdboc_reset_disconnect' data-type='void kgdboc_reset_disconnect(struct input_handle * handle)' data-ref="kgdboc_reset_disconnect">kgdboc_reset_disconnect</dfn>(<b>struct</b> <a class="type" href="../../../include/linux/input.h.html#input_handle" title='input_handle' data-ref="input_handle">input_handle</a> *<dfn class="local col0 decl" id="120handle" title='handle' data-type='struct input_handle *' data-ref="120handle">handle</dfn>)</td></tr>
+<tr><th id="53">53</th><td>{</td></tr>
+<tr><th id="54">54</th><td>	<i>/* We do not expect anyone to actually bind to us */</i></td></tr>
+<tr><th id="55">55</th><td>	<a class="macro" href="../../../arch/x86/include/asm/bug.h.html#71" title="do { do { asm volatile(&quot;1:\t&quot; &quot;.byte 0x0f, 0x0b&quot; &quot;\n&quot; &quot;.pushsection __bug_table,\&quot;aw\&quot;\n&quot; &quot;2:\t&quot; &quot;.long &quot; &quot;1b&quot; &quot; - 2b&quot; &quot;\t# bug_entry::bug_addr\n&quot; &quot;\t&quot; &quot;.long &quot; &quot;%c0&quot; &quot; - 2b&quot; &quot;\t# bug_entry::file\n&quot; &quot;\t.word %c1&quot; &quot;\t# bug_entry::line\n&quot; &quot;\t.word %c2&quot; &quot;\t# bug_entry::flags\n&quot; &quot;\t.org 2b+%c3\n&quot; &quot;.popsection&quot; : : &quot;i&quot; (&quot;/home/tempdban/kernel/stable/drivers/tty/serial/kgdboc.c&quot;), &quot;i&quot; (55), &quot;i&quot; (0), &quot;i&quot; (sizeof(struct bug_entry))); } while (0); do { ({ asm(&quot;%c0:\n\t&quot; &quot;.pushsection .discard.reachable\n\t&quot; &quot;.long %c0b - .\n\t&quot; &quot;.popsection\n\t&quot; : : &quot;i&quot; (35)); }); do { } while (1); } while (0); } while (0)" data-ref="_M/BUG">BUG</a>();</td></tr>
+<tr><th id="56">56</th><td>}</td></tr>
+<tr><th id="57">57</th><td></td></tr>
+<tr><th id="58">58</th><td><em>static</em> <em>const</em> <b>struct</b> <a class="type" href="../../../include/linux/mod_devicetable.h.html#input_device_id" title='input_device_id' data-ref="input_device_id">input_device_id</a> <dfn class="tu decl def" id="kgdboc_reset_ids" title='kgdboc_reset_ids' data-type='const struct input_device_id [2]' data-ref="kgdboc_reset_ids">kgdboc_reset_ids</dfn>[] = {</td></tr>
+<tr><th id="59">59</th><td>	{</td></tr>
+<tr><th id="60">60</th><td>		.<a class="ref field" href="../../../include/linux/mod_devicetable.h.html#input_device_id::flags" title='input_device_id::flags' data-ref="input_device_id::flags">flags</a> = <a class="macro" href="../../../include/linux/mod_devicetable.h.html#304" title="0x0010" data-ref="_M/INPUT_DEVICE_ID_MATCH_EVBIT">INPUT_DEVICE_ID_MATCH_EVBIT</a>,</td></tr>
+<tr><th id="61">61</th><td>		.<a class="ref field" href="../../../include/linux/mod_devicetable.h.html#input_device_id::evbit" title='input_device_id::evbit' data-ref="input_device_id::evbit">evbit</a> = { <a class="macro" href="../../../include/linux/bitops.h.html#9" title="(1UL &lt;&lt; ((0x01) % 64))" data-ref="_M/BIT_MASK">BIT_MASK</a>(<a class="macro" href="../../../include/uapi/linux/input-event-codes.h.html#39" title="0x01" data-ref="_M/EV_KEY">EV_KEY</a>) },</td></tr>
+<tr><th id="62">62</th><td>	},</td></tr>
+<tr><th id="63">63</th><td>	{ }</td></tr>
+<tr><th id="64">64</th><td>};</td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td><em>static</em> <b>struct</b> <a class="type" href="../../../include/linux/input.h.html#input_handler" title='input_handler' data-ref="input_handler">input_handler</a> <dfn class="tu decl def" id="kgdboc_reset_handler" title='kgdboc_reset_handler' data-type='struct input_handler' data-ref="kgdboc_reset_handler">kgdboc_reset_handler</dfn> = {</td></tr>
+<tr><th id="67">67</th><td>	.<a class="ref field" href="../../../include/linux/input.h.html#input_handler::connect" title='input_handler::connect' data-ref="input_handler::connect">connect</a>	= <a class="tu ref fn" href="#kgdboc_reset_connect" title='kgdboc_reset_connect' data-ref="kgdboc_reset_connect">kgdboc_reset_connect</a>,</td></tr>
+<tr><th id="68">68</th><td>	.<a class="ref field" href="../../../include/linux/input.h.html#input_handler::disconnect" title='input_handler::disconnect' data-ref="input_handler::disconnect">disconnect</a>	= <a class="tu ref fn" href="#kgdboc_reset_disconnect" title='kgdboc_reset_disconnect' data-ref="kgdboc_reset_disconnect">kgdboc_reset_disconnect</a>,</td></tr>
+<tr><th id="69">69</th><td>	.<a class="ref field" href="../../../include/linux/input.h.html#input_handler::name" title='input_handler::name' data-ref="input_handler::name">name</a>		= <q>"kgdboc_reset"</q>,</td></tr>
+<tr><th id="70">70</th><td>	.<a class="ref field" href="../../../include/linux/input.h.html#input_handler::id_table" title='input_handler::id_table' data-ref="input_handler::id_table">id_table</a>	= <a class="tu ref" href="#kgdboc_reset_ids" title='kgdboc_reset_ids' data-ref="kgdboc_reset_ids">kgdboc_reset_ids</a>,</td></tr>
+<tr><th id="71">71</th><td>};</td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td><em>static</em> <a class="macro" href="../../../include/linux/mutex.h.html#131" title="struct mutex kgdboc_reset_mutex = { .owner = { (0) } , .wait_lock = (spinlock_t ) { { .rlock = { .raw_lock = { { (0) } }, } } } , .wait_list = { &amp;(kgdboc_reset_mutex.wait_list), &amp;(kgdboc_reset_mutex.wait_list) } }" data-ref="_M/DEFINE_MUTEX">DEFINE_MUTEX</a>(<dfn class="tu decl def" id="kgdboc_reset_mutex" title='kgdboc_reset_mutex' data-type='struct mutex' data-ref="kgdboc_reset_mutex"><a class="tu ref" href="#73" title='kgdboc_reset_mutex' data-use='m' data-ref="kgdboc_reset_mutex"><a class="tu ref" href="#73" title='kgdboc_reset_mutex' data-use='m' data-ref="kgdboc_reset_mutex"><a class="tu ref" href="#73" title='kgdboc_reset_mutex' data-use='m' data-ref="kgdboc_reset_mutex"><a class="tu ref" href="#73" title='kgdboc_reset_mutex' data-use='m' data-ref="kgdboc_reset_mutex"><a class="tu ref" href="#73" title='kgdboc_reset_mutex' data-use='m' data-ref="kgdboc_reset_mutex"><a class="tu ref" href="#73" title='kgdboc_reset_mutex' data-use='m' data-ref="kgdboc_reset_mutex"><a class="tu ref" href="#73" title='kgdboc_reset_mutex' data-use='m' data-ref="kgdboc_reset_mutex"><a class="tu ref" href="#73" title='kgdboc_reset_mutex' data-use='m' data-ref="kgdboc_reset_mutex">kgdboc_reset_mutex</a></a></a></a></a></a></a></a></dfn>);</td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="kgdboc_restore_input_helper" title='kgdboc_restore_input_helper' data-type='void kgdboc_restore_input_helper(struct work_struct * dummy)' data-ref="kgdboc_restore_input_helper">kgdboc_restore_input_helper</dfn>(<b>struct</b> <a class="type" href="../../../include/linux/workqueue.h.html#work_struct" title='work_struct' data-ref="work_struct">work_struct</a> *<dfn class="local col1 decl" id="121dummy" title='dummy' data-type='struct work_struct *' data-ref="121dummy">dummy</dfn>)</td></tr>
+<tr><th id="76">76</th><td>{</td></tr>
+<tr><th id="77">77</th><td>	<i>/*</i></td></tr>
+<tr><th id="78">78</th><td><i>	 * We need to take a mutex to prevent several instances of</i></td></tr>
+<tr><th id="79">79</th><td><i>	 * this work running on different CPUs so they don't try</i></td></tr>
+<tr><th id="80">80</th><td><i>	 * to register again already registered handler.</i></td></tr>
+<tr><th id="81">81</th><td><i>	 */</i></td></tr>
+<tr><th id="82">82</th><td>	<a class="ref fn" href="../../../include/linux/mutex.h.html#mutex_lock" title='mutex_lock' data-ref="mutex_lock">mutex_lock</a>(&amp;<a class="tu ref" href="#73" title='kgdboc_reset_mutex' data-use='a' data-ref="kgdboc_reset_mutex">kgdboc_reset_mutex</a>);</td></tr>
+<tr><th id="83">83</th><td></td></tr>
+<tr><th id="84">84</th><td>	<b>if</b> (<a class="ref fn" href="../../../include/linux/input.h.html#input_register_handler" title='input_register_handler' data-ref="input_register_handler">input_register_handler</a>(&amp;<a class="tu ref" href="#kgdboc_reset_handler" title='kgdboc_reset_handler' data-use='a' data-ref="kgdboc_reset_handler">kgdboc_reset_handler</a>) == <var>0</var>)</td></tr>
+<tr><th id="85">85</th><td>		<a class="ref fn" href="../../../include/linux/input.h.html#input_unregister_handler" title='input_unregister_handler' data-ref="input_unregister_handler">input_unregister_handler</a>(&amp;<a class="tu ref" href="#kgdboc_reset_handler" title='kgdboc_reset_handler' data-use='a' data-ref="kgdboc_reset_handler">kgdboc_reset_handler</a>);</td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td>	<a class="ref fn" href="../../../include/linux/mutex.h.html#mutex_unlock" title='mutex_unlock' data-ref="mutex_unlock">mutex_unlock</a>(&amp;<a class="tu ref" href="#73" title='kgdboc_reset_mutex' data-use='a' data-ref="kgdboc_reset_mutex">kgdboc_reset_mutex</a>);</td></tr>
+<tr><th id="88">88</th><td>}</td></tr>
+<tr><th id="89">89</th><td></td></tr>
+<tr><th id="90">90</th><td><em>static</em> <a class="macro" href="../../../include/linux/workqueue.h.html#184" title="struct work_struct kgdboc_restore_input_work = { .data = { ((unsigned long)(WORK_STRUCT_NO_POOL | WORK_STRUCT_STATIC)) }, .entry = { &amp;(kgdboc_restore_input_work).entry, &amp;(kgdboc_restore_input_work).entry }, .func = (kgdboc_restore_input_helper), }" data-ref="_M/DECLARE_WORK">DECLARE_WORK</a>(<dfn class="tu decl def" id="kgdboc_restore_input_work" title='kgdboc_restore_input_work' data-type='struct work_struct' data-ref="kgdboc_restore_input_work"><a class="tu ref" href="#90" title='kgdboc_restore_input_work' data-use='m' data-ref="kgdboc_restore_input_work"><a class="tu ref" href="#90" title='kgdboc_restore_input_work' data-use='m' data-ref="kgdboc_restore_input_work"><a class="tu ref" href="#90" title='kgdboc_restore_input_work' data-use='m' data-ref="kgdboc_restore_input_work"><a class="tu ref" href="#90" title='kgdboc_restore_input_work' data-use='m' data-ref="kgdboc_restore_input_work"><a class="tu ref" href="#90" title='kgdboc_restore_input_work' data-use='m' data-ref="kgdboc_restore_input_work"><a class="tu ref" href="#90" title='kgdboc_restore_input_work' data-use='m' data-ref="kgdboc_restore_input_work"><a class="tu ref" href="#90" title='kgdboc_restore_input_work' data-use='m' data-ref="kgdboc_restore_input_work"><a class="tu ref" href="#90" title='kgdboc_restore_input_work' data-use='m' data-ref="kgdboc_restore_input_work">kgdboc_restore_input_work</a></a></a></a></a></a></a></a></dfn>, <a class="tu ref fn" href="#kgdboc_restore_input_helper" title='kgdboc_restore_input_helper' data-ref="kgdboc_restore_input_helper">kgdboc_restore_input_helper</a>);</td></tr>
+<tr><th id="91">91</th><td></td></tr>
+<tr><th id="92">92</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="kgdboc_restore_input" title='kgdboc_restore_input' data-type='void kgdboc_restore_input()' data-ref="kgdboc_restore_input">kgdboc_restore_input</dfn>(<em>void</em>)</td></tr>
+<tr><th id="93">93</th><td>{</td></tr>
+<tr><th id="94">94</th><td>	<b>if</b> (<a class="macro" href="../../../include/linux/compiler.h.html#76" title="__builtin_expect(!!(system_state == SYSTEM_RUNNING), 1)" data-ref="_M/likely">likely</a>(<a class="ref" href="../../../include/linux/kernel.h.html#system_state" title='system_state' data-ref="system_state">system_state</a> == <a class="enum" href="../../../include/linux/kernel.h.html#SYSTEM_RUNNING" title='SYSTEM_RUNNING' data-ref="SYSTEM_RUNNING">SYSTEM_RUNNING</a>))</td></tr>
+<tr><th id="95">95</th><td>		<a class="ref fn" href="../../../include/linux/workqueue.h.html#schedule_work" title='schedule_work' data-ref="schedule_work">schedule_work</a>(&amp;<a class="tu ref" href="#90" title='kgdboc_restore_input_work' data-use='a' data-ref="kgdboc_restore_input_work">kgdboc_restore_input_work</a>);</td></tr>
+<tr><th id="96">96</th><td>}</td></tr>
+<tr><th id="97">97</th><td></td></tr>
+<tr><th id="98">98</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="kgdboc_register_kbd" title='kgdboc_register_kbd' data-type='int kgdboc_register_kbd(char ** cptr)' data-ref="kgdboc_register_kbd">kgdboc_register_kbd</dfn>(<em>char</em> **<dfn class="local col2 decl" id="122cptr" title='cptr' data-type='char **' data-ref="122cptr">cptr</dfn>)</td></tr>
+<tr><th id="99">99</th><td>{</td></tr>
+<tr><th id="100">100</th><td>	<b>if</b> (<a class="ref fn" href="../../../include/linux/string.h.html#strncmp" title='strncmp' data-ref="strncmp">strncmp</a>(*<a class="local col2 ref" href="#122cptr" title='cptr' data-ref="122cptr">cptr</a>, <q>"kbd"</q>, <var>3</var>) == <var>0</var> ||</td></tr>
+<tr><th id="101">101</th><td>		<a class="ref fn" href="../../../include/linux/string.h.html#strncmp" title='strncmp' data-ref="strncmp">strncmp</a>(*<a class="local col2 ref" href="#122cptr" title='cptr' data-ref="122cptr">cptr</a>, <q>"kdb"</q>, <var>3</var>) == <var>0</var>) {</td></tr>
+<tr><th id="102">102</th><td>		<b>if</b> (<a class="ref" href="../../../include/linux/kdb.h.html#kdb_poll_idx" title='kdb_poll_idx' data-ref="kdb_poll_idx">kdb_poll_idx</a> &lt; <a class="macro" href="../../../include/linux/kdb.h.html#72" title="5" data-ref="_M/KDB_POLL_FUNC_MAX">KDB_POLL_FUNC_MAX</a>) {</td></tr>
+<tr><th id="103">103</th><td>			<a class="ref" href="../../../include/linux/kdb.h.html#kdb_poll_funcs" title='kdb_poll_funcs' data-ref="kdb_poll_funcs">kdb_poll_funcs</a>[<a class="ref" href="../../../include/linux/kdb.h.html#kdb_poll_idx" title='kdb_poll_idx' data-ref="kdb_poll_idx">kdb_poll_idx</a>] = <a class="ref fn" href="../../../include/linux/kdb.h.html#kdb_get_kbd_char" title='kdb_get_kbd_char' data-ref="kdb_get_kbd_char">kdb_get_kbd_char</a>;</td></tr>
+<tr><th id="104">104</th><td>			<a class="ref" href="../../../include/linux/kdb.h.html#kdb_poll_idx" title='kdb_poll_idx' data-ref="kdb_poll_idx">kdb_poll_idx</a>++;</td></tr>
+<tr><th id="105">105</th><td>			<b>if</b> (<a class="local col2 ref" href="#122cptr" title='cptr' data-ref="122cptr">cptr</a>[<var>0</var>][<var>3</var>] == <kbd>','</kbd>)</td></tr>
+<tr><th id="106">106</th><td>				*<a class="local col2 ref" href="#122cptr" title='cptr' data-ref="122cptr">cptr</a> += <var>4</var>;</td></tr>
+<tr><th id="107">107</th><td>			<b>else</b></td></tr>
+<tr><th id="108">108</th><td>				<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="109">109</th><td>		}</td></tr>
+<tr><th id="110">110</th><td>	}</td></tr>
+<tr><th id="111">111</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="112">112</th><td>}</td></tr>
+<tr><th id="113">113</th><td></td></tr>
+<tr><th id="114">114</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="kgdboc_unregister_kbd" title='kgdboc_unregister_kbd' data-type='void kgdboc_unregister_kbd()' data-ref="kgdboc_unregister_kbd">kgdboc_unregister_kbd</dfn>(<em>void</em>)</td></tr>
+<tr><th id="115">115</th><td>{</td></tr>
+<tr><th id="116">116</th><td>	<em>int</em> <dfn class="local col3 decl" id="123i" title='i' data-type='int' data-ref="123i">i</dfn>;</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td>	<b>for</b> (<a class="local col3 ref" href="#123i" title='i' data-ref="123i">i</a> = <var>0</var>; <a class="local col3 ref" href="#123i" title='i' data-ref="123i">i</a> &lt; <a class="ref" href="../../../include/linux/kdb.h.html#kdb_poll_idx" title='kdb_poll_idx' data-ref="kdb_poll_idx">kdb_poll_idx</a>; <a class="local col3 ref" href="#123i" title='i' data-ref="123i">i</a>++) {</td></tr>
+<tr><th id="119">119</th><td>		<b>if</b> (<a class="ref" href="../../../include/linux/kdb.h.html#kdb_poll_funcs" title='kdb_poll_funcs' data-ref="kdb_poll_funcs">kdb_poll_funcs</a>[<a class="local col3 ref" href="#123i" title='i' data-ref="123i">i</a>] == <a class="ref fn" href="../../../include/linux/kdb.h.html#kdb_get_kbd_char" title='kdb_get_kbd_char' data-ref="kdb_get_kbd_char">kdb_get_kbd_char</a>) {</td></tr>
+<tr><th id="120">120</th><td>			<a class="ref" href="../../../include/linux/kdb.h.html#kdb_poll_idx" title='kdb_poll_idx' data-ref="kdb_poll_idx">kdb_poll_idx</a>--;</td></tr>
+<tr><th id="121">121</th><td>			<a class="ref" href="../../../include/linux/kdb.h.html#kdb_poll_funcs" title='kdb_poll_funcs' data-ref="kdb_poll_funcs">kdb_poll_funcs</a>[<a class="local col3 ref" href="#123i" title='i' data-ref="123i">i</a>] = <a class="ref" href="../../../include/linux/kdb.h.html#kdb_poll_funcs" title='kdb_poll_funcs' data-ref="kdb_poll_funcs">kdb_poll_funcs</a>[<a class="ref" href="../../../include/linux/kdb.h.html#kdb_poll_idx" title='kdb_poll_idx' data-ref="kdb_poll_idx">kdb_poll_idx</a>];</td></tr>
+<tr><th id="122">122</th><td>			<a class="ref" href="../../../include/linux/kdb.h.html#kdb_poll_funcs" title='kdb_poll_funcs' data-ref="kdb_poll_funcs">kdb_poll_funcs</a>[<a class="ref" href="../../../include/linux/kdb.h.html#kdb_poll_idx" title='kdb_poll_idx' data-ref="kdb_poll_idx">kdb_poll_idx</a>] = <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="123">123</th><td>			<a class="local col3 ref" href="#123i" title='i' data-ref="123i">i</a>--;</td></tr>
+<tr><th id="124">124</th><td>		}</td></tr>
+<tr><th id="125">125</th><td>	}</td></tr>
+<tr><th id="126">126</th><td>	<a class="ref fn" href="../../../include/linux/workqueue.h.html#flush_work" title='flush_work' data-ref="flush_work">flush_work</a>(&amp;<a class="tu ref" href="#90" title='kgdboc_restore_input_work' data-use='a' data-ref="kgdboc_restore_input_work">kgdboc_restore_input_work</a>);</td></tr>
+<tr><th id="127">127</th><td>}</td></tr>
+<tr><th id="128">128</th><td><u>#<span data-ppcond="41">else</span> /* ! CONFIG_KDB_KEYBOARD */</u></td></tr>
+<tr><th id="129">129</th><td><u>#define kgdboc_register_kbd(x) 0</u></td></tr>
+<tr><th id="130">130</th><td><u>#define kgdboc_unregister_kbd()</u></td></tr>
+<tr><th id="131">131</th><td><u>#define kgdboc_restore_input()</u></td></tr>
+<tr><th id="132">132</th><td><u>#<span data-ppcond="41">endif</span> /* ! CONFIG_KDB_KEYBOARD */</u></td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="kgdboc_option_setup" title='kgdboc_option_setup' data-type='int kgdboc_option_setup(char * opt)' data-ref="kgdboc_option_setup">kgdboc_option_setup</dfn>(<em>char</em> *<dfn class="local col4 decl" id="124opt" title='opt' data-type='char *' data-ref="124opt">opt</dfn>)</td></tr>
+<tr><th id="135">135</th><td>{</td></tr>
+<tr><th id="136">136</th><td>	<b>if</b> (<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="local col4 ref" href="#124opt" title='opt' data-ref="124opt">opt</a>) &gt;= <a class="macro" href="#24" title="40" data-ref="_M/MAX_CONFIG_LEN">MAX_CONFIG_LEN</a>) {</td></tr>
+<tr><th id="137">137</th><td>		<a class="ref fn" href="../../../include/linux/printk.h.html#printk" title='printk' data-ref="printk">printk</a>(<a class="macro" href="../../../include/linux/kern_levels.h.html#11" title="&quot;\001&quot; &quot;3&quot;" data-ref="_M/KERN_ERR">KERN_ERR</a> <q>"kgdboc: config string too long\n"</q>);</td></tr>
+<tr><th id="138">138</th><td>		<b>return</b> -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#32" title="28" data-ref="_M/ENOSPC">ENOSPC</a>;</td></tr>
+<tr><th id="139">139</th><td>	}</td></tr>
+<tr><th id="140">140</th><td>	<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strcpy" title='strcpy' data-ref="strcpy">strcpy</a>(<a class="tu ref" href="#config" title='config' data-use='r' data-ref="config">config</a>, <a class="local col4 ref" href="#124opt" title='opt' data-ref="124opt">opt</a>);</td></tr>
+<tr><th id="141">141</th><td></td></tr>
+<tr><th id="142">142</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="143">143</th><td>}</td></tr>
+<tr><th id="144">144</th><td></td></tr>
+<tr><th id="145">145</th><td><a class="macro" href="../../../include/linux/init.h.html#241" title="static const char __setup_str_kgdboc_option_setup[] __attribute__ ((__section__(&quot;.init.rodata&quot;))) __attribute__((aligned(1))) = &quot;kgdboc=&quot;; static struct obs_kernel_param __setup_kgdboc_option_setup __attribute__((__used__)) __attribute__ ((__section__(&quot;.init.setup&quot;))) __attribute__((aligned((sizeof(long))))) = { __setup_str_kgdboc_option_setup, kgdboc_option_setup, 0 }" data-ref="_M/__setup">__setup</a>(<q>"kgdboc="</q>, <a class="tu ref fn" href="#kgdboc_option_setup" title='kgdboc_option_setup' data-ref="kgdboc_option_setup">kgdboc_option_setup</a>);</td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="cleanup_kgdboc" title='cleanup_kgdboc' data-type='void cleanup_kgdboc()' data-ref="cleanup_kgdboc">cleanup_kgdboc</dfn>(<em>void</em>)</td></tr>
+<tr><th id="148">148</th><td>{</td></tr>
+<tr><th id="149">149</th><td>	<b>if</b> (<a class="ref fn" href="../../../include/linux/kgdb.h.html#kgdb_unregister_nmi_console" title='kgdb_unregister_nmi_console' data-ref="kgdb_unregister_nmi_console">kgdb_unregister_nmi_console</a>())</td></tr>
+<tr><th id="150">150</th><td>		<b>return</b>;</td></tr>
+<tr><th id="151">151</th><td>	<a class="tu ref fn" href="#kgdboc_unregister_kbd" title='kgdboc_unregister_kbd' data-use='c' data-ref="kgdboc_unregister_kbd">kgdboc_unregister_kbd</a>();</td></tr>
+<tr><th id="152">152</th><td>	<b>if</b> (<a class="tu ref" href="#configured" title='configured' data-use='r' data-ref="configured">configured</a> == <var>1</var>)</td></tr>
+<tr><th id="153">153</th><td>		<a class="ref fn" href="../../../include/linux/kgdb.h.html#kgdb_unregister_io_module" title='kgdb_unregister_io_module' data-ref="kgdb_unregister_io_module">kgdb_unregister_io_module</a>(&amp;<a class="tu ref" href="#kgdboc_io_ops" title='kgdboc_io_ops' data-use='a' data-ref="kgdboc_io_ops">kgdboc_io_ops</a>);</td></tr>
+<tr><th id="154">154</th><td>}</td></tr>
+<tr><th id="155">155</th><td></td></tr>
+<tr><th id="156">156</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="configure_kgdboc" title='configure_kgdboc' data-type='int configure_kgdboc()' data-ref="configure_kgdboc">configure_kgdboc</dfn>(<em>void</em>)</td></tr>
+<tr><th id="157">157</th><td>{</td></tr>
+<tr><th id="158">158</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/tty_driver.h.html#tty_driver" title='tty_driver' data-ref="tty_driver">tty_driver</a> *<dfn class="local col5 decl" id="125p" title='p' data-type='struct tty_driver *' data-ref="125p">p</dfn>;</td></tr>
+<tr><th id="159">159</th><td>	<em>int</em> <dfn class="local col6 decl" id="126tty_line" title='tty_line' data-type='int' data-ref="126tty_line">tty_line</dfn> = <var>0</var>;</td></tr>
+<tr><th id="160">160</th><td>	<em>int</em> <dfn class="local col7 decl" id="127err" title='err' data-type='int' data-ref="127err">err</dfn>;</td></tr>
+<tr><th id="161">161</th><td>	<em>char</em> *<dfn class="local col8 decl" id="128cptr" title='cptr' data-type='char *' data-ref="128cptr">cptr</dfn> = <a class="tu ref" href="#config" title='config' data-use='r' data-ref="config">config</a>;</td></tr>
+<tr><th id="162">162</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/console.h.html#console" title='console' data-ref="console">console</a> *<dfn class="local col9 decl" id="129cons" title='cons' data-type='struct console *' data-ref="129cons">cons</dfn>;</td></tr>
+<tr><th id="163">163</th><td></td></tr>
+<tr><th id="164">164</th><td>	<a class="local col7 ref" href="#127err" title='err' data-ref="127err">err</a> = <a class="tu ref fn" href="#kgdboc_option_setup" title='kgdboc_option_setup' data-use='c' data-ref="kgdboc_option_setup">kgdboc_option_setup</a>(<a class="tu ref" href="#config" title='config' data-use='r' data-ref="config">config</a>);</td></tr>
+<tr><th id="165">165</th><td>	<b>if</b> (<a class="local col7 ref" href="#127err" title='err' data-ref="127err">err</a> || !<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="tu ref" href="#config" title='config' data-use='r' data-ref="config">config</a>) || <a class="macro" href="../../../include/linux/ctype.h.html#35" title="(((_ctype[(int)(unsigned char)(config[0])])&amp;(0x20)) != 0)" data-ref="_M/isspace">isspace</a>(<a class="tu ref" href="#config" title='config' data-use='r' data-ref="config">config</a>[<var>0</var>]))</td></tr>
+<tr><th id="166">166</th><td>		<b>goto</b> <a class="lbl" href="#130noconfig" data-ref="130noconfig">noconfig</a>;</td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td>	<a class="local col7 ref" href="#127err" title='err' data-ref="127err">err</a> = -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#23" title="19" data-ref="_M/ENODEV">ENODEV</a>;</td></tr>
+<tr><th id="169">169</th><td>	<a class="tu ref" href="#kgdboc_io_ops" title='kgdboc_io_ops' data-use='m' data-ref="kgdboc_io_ops">kgdboc_io_ops</a>.<a class="ref field" href="../../../include/linux/kgdb.h.html#kgdb_io::is_console" title='kgdb_io::is_console' data-ref="kgdb_io::is_console">is_console</a> = <var>0</var>;</td></tr>
+<tr><th id="170">170</th><td>	<a class="tu ref" href="#kgdb_tty_driver" title='kgdb_tty_driver' data-use='w' data-ref="kgdb_tty_driver">kgdb_tty_driver</a> = <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td>	<a class="tu ref" href="#kgdboc_use_kms" title='kgdboc_use_kms' data-use='w' data-ref="kgdboc_use_kms">kgdboc_use_kms</a> = <var>0</var>;</td></tr>
+<tr><th id="173">173</th><td>	<b>if</b> (<a class="ref fn" href="../../../include/linux/string.h.html#strncmp" title='strncmp' data-ref="strncmp">strncmp</a>(<a class="local col8 ref" href="#128cptr" title='cptr' data-ref="128cptr">cptr</a>, <q>"kms,"</q>, <var>4</var>) == <var>0</var>) {</td></tr>
+<tr><th id="174">174</th><td>		<a class="local col8 ref" href="#128cptr" title='cptr' data-ref="128cptr">cptr</a> += <var>4</var>;</td></tr>
+<tr><th id="175">175</th><td>		<a class="tu ref" href="#kgdboc_use_kms" title='kgdboc_use_kms' data-use='w' data-ref="kgdboc_use_kms">kgdboc_use_kms</a> = <var>1</var>;</td></tr>
+<tr><th id="176">176</th><td>	}</td></tr>
+<tr><th id="177">177</th><td></td></tr>
+<tr><th id="178">178</th><td>	<b>if</b> (<a class="tu ref fn" href="#kgdboc_register_kbd" title='kgdboc_register_kbd' data-use='c' data-ref="kgdboc_register_kbd">kgdboc_register_kbd</a>(&amp;<a class="local col8 ref" href="#128cptr" title='cptr' data-ref="128cptr">cptr</a>))</td></tr>
+<tr><th id="179">179</th><td>		<b>goto</b> <a class="lbl" href="#131do_register" data-ref="131do_register">do_register</a>;</td></tr>
+<tr><th id="180">180</th><td></td></tr>
+<tr><th id="181">181</th><td>	<a class="local col5 ref" href="#125p" title='p' data-ref="125p">p</a> = <a class="ref fn" href="../../../include/linux/tty_driver.h.html#tty_find_polling_driver" title='tty_find_polling_driver' data-ref="tty_find_polling_driver">tty_find_polling_driver</a>(<a class="local col8 ref" href="#128cptr" title='cptr' data-ref="128cptr">cptr</a>, &amp;<a class="local col6 ref" href="#126tty_line" title='tty_line' data-ref="126tty_line">tty_line</a>);</td></tr>
+<tr><th id="182">182</th><td>	<b>if</b> (!<a class="local col5 ref" href="#125p" title='p' data-ref="125p">p</a>)</td></tr>
+<tr><th id="183">183</th><td>		<b>goto</b> <a class="lbl" href="#130noconfig" data-ref="130noconfig">noconfig</a>;</td></tr>
+<tr><th id="184">184</th><td></td></tr>
+<tr><th id="185">185</th><td>	<a class="local col9 ref" href="#129cons" title='cons' data-ref="129cons">cons</a> = <a class="ref" href="../../../include/linux/console.h.html#console_drivers" title='console_drivers' data-ref="console_drivers">console_drivers</a>;</td></tr>
+<tr><th id="186">186</th><td>	<b>while</b> (<a class="local col9 ref" href="#129cons" title='cons' data-ref="129cons">cons</a>) {</td></tr>
+<tr><th id="187">187</th><td>		<em>int</em> <dfn class="local col2 decl" id="132idx" title='idx' data-type='int' data-ref="132idx">idx</dfn>;</td></tr>
+<tr><th id="188">188</th><td>		<b>if</b> (<a class="local col9 ref" href="#129cons" title='cons' data-ref="129cons">cons</a>-&gt;<a class="ref field" href="../../../include/linux/console.h.html#console::device" title='console::device' data-ref="console::device">device</a> &amp;&amp; <a class="local col9 ref" href="#129cons" title='cons' data-ref="129cons">cons</a>-&gt;<a class="ref field" href="../../../include/linux/console.h.html#console::device" title='console::device' data-ref="console::device">device</a>(<a class="local col9 ref" href="#129cons" title='cons' data-ref="129cons">cons</a>, &amp;<a class="local col2 ref" href="#132idx" title='idx' data-ref="132idx">idx</a>) == <a class="local col5 ref" href="#125p" title='p' data-ref="125p">p</a> &amp;&amp;</td></tr>
+<tr><th id="189">189</th><td>		    <a class="local col2 ref" href="#132idx" title='idx' data-ref="132idx">idx</a> == <a class="local col6 ref" href="#126tty_line" title='tty_line' data-ref="126tty_line">tty_line</a>) {</td></tr>
+<tr><th id="190">190</th><td>			<a class="tu ref" href="#kgdboc_io_ops" title='kgdboc_io_ops' data-use='m' data-ref="kgdboc_io_ops">kgdboc_io_ops</a>.<a class="ref field" href="../../../include/linux/kgdb.h.html#kgdb_io::is_console" title='kgdb_io::is_console' data-ref="kgdb_io::is_console">is_console</a> = <var>1</var>;</td></tr>
+<tr><th id="191">191</th><td>			<b>break</b>;</td></tr>
+<tr><th id="192">192</th><td>		}</td></tr>
+<tr><th id="193">193</th><td>		<a class="local col9 ref" href="#129cons" title='cons' data-ref="129cons">cons</a> = <a class="local col9 ref" href="#129cons" title='cons' data-ref="129cons">cons</a>-&gt;<a class="ref field" href="../../../include/linux/console.h.html#console::next" title='console::next' data-ref="console::next">next</a>;</td></tr>
+<tr><th id="194">194</th><td>	}</td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td>	<a class="tu ref" href="#kgdb_tty_driver" title='kgdb_tty_driver' data-use='w' data-ref="kgdb_tty_driver">kgdb_tty_driver</a> = <a class="local col5 ref" href="#125p" title='p' data-ref="125p">p</a>;</td></tr>
+<tr><th id="197">197</th><td>	<a class="tu ref" href="#kgdb_tty_line" title='kgdb_tty_line' data-use='w' data-ref="kgdb_tty_line">kgdb_tty_line</a> = <a class="local col6 ref" href="#126tty_line" title='tty_line' data-ref="126tty_line">tty_line</a>;</td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td><dfn class="lbl" id="131do_register" data-ref="131do_register">do_register</dfn>:</td></tr>
+<tr><th id="200">200</th><td>	<a class="local col7 ref" href="#127err" title='err' data-ref="127err">err</a> = <a class="ref fn" href="../../../include/linux/kgdb.h.html#kgdb_register_io_module" title='kgdb_register_io_module' data-ref="kgdb_register_io_module">kgdb_register_io_module</a>(&amp;<a class="tu ref" href="#kgdboc_io_ops" title='kgdboc_io_ops' data-use='a' data-ref="kgdboc_io_ops">kgdboc_io_ops</a>);</td></tr>
+<tr><th id="201">201</th><td>	<b>if</b> (<a class="local col7 ref" href="#127err" title='err' data-ref="127err">err</a>)</td></tr>
+<tr><th id="202">202</th><td>		<b>goto</b> <a class="lbl" href="#130noconfig" data-ref="130noconfig">noconfig</a>;</td></tr>
+<tr><th id="203">203</th><td></td></tr>
+<tr><th id="204">204</th><td>	<a class="local col7 ref" href="#127err" title='err' data-ref="127err">err</a> = <a class="ref fn" href="../../../include/linux/kgdb.h.html#kgdb_register_nmi_console" title='kgdb_register_nmi_console' data-ref="kgdb_register_nmi_console">kgdb_register_nmi_console</a>();</td></tr>
+<tr><th id="205">205</th><td>	<b>if</b> (<a class="local col7 ref" href="#127err" title='err' data-ref="127err">err</a>)</td></tr>
+<tr><th id="206">206</th><td>		<b>goto</b> <a class="lbl" href="#133nmi_con_failed" data-ref="133nmi_con_failed">nmi_con_failed</a>;</td></tr>
+<tr><th id="207">207</th><td></td></tr>
+<tr><th id="208">208</th><td>	<a class="tu ref" href="#configured" title='configured' data-use='w' data-ref="configured">configured</a> = <var>1</var>;</td></tr>
+<tr><th id="209">209</th><td></td></tr>
+<tr><th id="210">210</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="211">211</th><td></td></tr>
+<tr><th id="212">212</th><td><dfn class="lbl" id="133nmi_con_failed" data-ref="133nmi_con_failed">nmi_con_failed</dfn>:</td></tr>
+<tr><th id="213">213</th><td>	<a class="ref fn" href="../../../include/linux/kgdb.h.html#kgdb_unregister_io_module" title='kgdb_unregister_io_module' data-ref="kgdb_unregister_io_module">kgdb_unregister_io_module</a>(&amp;<a class="tu ref" href="#kgdboc_io_ops" title='kgdboc_io_ops' data-use='a' data-ref="kgdboc_io_ops">kgdboc_io_ops</a>);</td></tr>
+<tr><th id="214">214</th><td><dfn class="lbl" id="130noconfig" data-ref="130noconfig">noconfig</dfn>:</td></tr>
+<tr><th id="215">215</th><td>	<a class="tu ref fn" href="#kgdboc_unregister_kbd" title='kgdboc_unregister_kbd' data-use='c' data-ref="kgdboc_unregister_kbd">kgdboc_unregister_kbd</a>();</td></tr>
+<tr><th id="216">216</th><td>	<a class="tu ref" href="#config" title='config' data-use='w' data-ref="config">config</a>[<var>0</var>] = <var>0</var>;</td></tr>
+<tr><th id="217">217</th><td>	<a class="tu ref" href="#configured" title='configured' data-use='w' data-ref="configured">configured</a> = <var>0</var>;</td></tr>
+<tr><th id="218">218</th><td>	<a class="tu ref fn" href="#cleanup_kgdboc" title='cleanup_kgdboc' data-use='c' data-ref="cleanup_kgdboc">cleanup_kgdboc</a>();</td></tr>
+<tr><th id="219">219</th><td></td></tr>
+<tr><th id="220">220</th><td>	<b>return</b> <a class="local col7 ref" href="#127err" title='err' data-ref="127err">err</a>;</td></tr>
+<tr><th id="221">221</th><td>}</td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td><em>static</em> <em>int</em> <a class="macro" href="../../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <dfn class="tu decl def fn" id="init_kgdboc" title='init_kgdboc' data-type='int init_kgdboc()' data-ref="init_kgdboc">init_kgdboc</dfn>(<em>void</em>)</td></tr>
+<tr><th id="224">224</th><td>{</td></tr>
+<tr><th id="225">225</th><td>	<i>/* Already configured? */</i></td></tr>
+<tr><th id="226">226</th><td>	<b>if</b> (<a class="tu ref" href="#configured" title='configured' data-use='r' data-ref="configured">configured</a> == <var>1</var>)</td></tr>
+<tr><th id="227">227</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="228">228</th><td></td></tr>
+<tr><th id="229">229</th><td>	<b>return</b> <a class="tu ref fn" href="#configure_kgdboc" title='configure_kgdboc' data-use='c' data-ref="configure_kgdboc">configure_kgdboc</a>();</td></tr>
+<tr><th id="230">230</th><td>}</td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="kgdboc_get_char" title='kgdboc_get_char' data-type='int kgdboc_get_char()' data-ref="kgdboc_get_char">kgdboc_get_char</dfn>(<em>void</em>)</td></tr>
+<tr><th id="233">233</th><td>{</td></tr>
+<tr><th id="234">234</th><td>	<b>if</b> (!<a class="tu ref" href="#kgdb_tty_driver" title='kgdb_tty_driver' data-use='r' data-ref="kgdb_tty_driver">kgdb_tty_driver</a>)</td></tr>
+<tr><th id="235">235</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="236">236</th><td>	<b>return</b> <a class="tu ref" href="#kgdb_tty_driver" title='kgdb_tty_driver' data-use='r' data-ref="kgdb_tty_driver">kgdb_tty_driver</a>-&gt;<a class="ref field" href="../../../include/linux/tty_driver.h.html#tty_driver::ops" title='tty_driver::ops' data-ref="tty_driver::ops">ops</a>-&gt;<a class="ref field" href="../../../include/linux/tty_driver.h.html#tty_operations::poll_get_char" title='tty_operations::poll_get_char' data-ref="tty_operations::poll_get_char">poll_get_char</a>(<a class="tu ref" href="#kgdb_tty_driver" title='kgdb_tty_driver' data-use='r' data-ref="kgdb_tty_driver">kgdb_tty_driver</a>,</td></tr>
+<tr><th id="237">237</th><td>						<a class="tu ref" href="#kgdb_tty_line" title='kgdb_tty_line' data-use='r' data-ref="kgdb_tty_line">kgdb_tty_line</a>);</td></tr>
+<tr><th id="238">238</th><td>}</td></tr>
+<tr><th id="239">239</th><td></td></tr>
+<tr><th id="240">240</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="kgdboc_put_char" title='kgdboc_put_char' data-type='void kgdboc_put_char(u8 chr)' data-ref="kgdboc_put_char">kgdboc_put_char</dfn>(<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="local col4 decl" id="134chr" title='chr' data-type='u8' data-ref="134chr">chr</dfn>)</td></tr>
+<tr><th id="241">241</th><td>{</td></tr>
+<tr><th id="242">242</th><td>	<b>if</b> (!<a class="tu ref" href="#kgdb_tty_driver" title='kgdb_tty_driver' data-use='r' data-ref="kgdb_tty_driver">kgdb_tty_driver</a>)</td></tr>
+<tr><th id="243">243</th><td>		<b>return</b>;</td></tr>
+<tr><th id="244">244</th><td>	<a class="tu ref" href="#kgdb_tty_driver" title='kgdb_tty_driver' data-use='r' data-ref="kgdb_tty_driver">kgdb_tty_driver</a>-&gt;<a class="ref field" href="../../../include/linux/tty_driver.h.html#tty_driver::ops" title='tty_driver::ops' data-ref="tty_driver::ops">ops</a>-&gt;<a class="ref field" href="../../../include/linux/tty_driver.h.html#tty_operations::poll_put_char" title='tty_operations::poll_put_char' data-ref="tty_operations::poll_put_char">poll_put_char</a>(<a class="tu ref" href="#kgdb_tty_driver" title='kgdb_tty_driver' data-use='r' data-ref="kgdb_tty_driver">kgdb_tty_driver</a>,</td></tr>
+<tr><th id="245">245</th><td>					<a class="tu ref" href="#kgdb_tty_line" title='kgdb_tty_line' data-use='r' data-ref="kgdb_tty_line">kgdb_tty_line</a>, <a class="local col4 ref" href="#134chr" title='chr' data-ref="134chr">chr</a>);</td></tr>
+<tr><th id="246">246</th><td>}</td></tr>
+<tr><th id="247">247</th><td></td></tr>
+<tr><th id="248">248</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="param_set_kgdboc_var" title='param_set_kgdboc_var' data-type='int param_set_kgdboc_var(const char * kmessage, struct kernel_param * kp)' data-ref="param_set_kgdboc_var">param_set_kgdboc_var</dfn>(<em>const</em> <em>char</em> *<dfn class="local col5 decl" id="135kmessage" title='kmessage' data-type='const char *' data-ref="135kmessage">kmessage</dfn>, <b>struct</b> <a class="type" href="../../../include/linux/moduleparam.h.html#kernel_param" title='kernel_param' data-ref="kernel_param">kernel_param</a> *<dfn class="local col6 decl" id="136kp" title='kp' data-type='struct kernel_param *' data-ref="136kp">kp</dfn>)</td></tr>
+<tr><th id="249">249</th><td>{</td></tr>
+<tr><th id="250">250</th><td>	<em>int</em> <dfn class="local col7 decl" id="137len" title='len' data-type='int' data-ref="137len">len</dfn> = <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="local col5 ref" href="#135kmessage" title='kmessage' data-ref="135kmessage">kmessage</a>);</td></tr>
+<tr><th id="251">251</th><td></td></tr>
+<tr><th id="252">252</th><td>	<b>if</b> (<a class="local col7 ref" href="#137len" title='len' data-ref="137len">len</a> &gt;= <a class="macro" href="#24" title="40" data-ref="_M/MAX_CONFIG_LEN">MAX_CONFIG_LEN</a>) {</td></tr>
+<tr><th id="253">253</th><td>		<a class="ref fn" href="../../../include/linux/printk.h.html#printk" title='printk' data-ref="printk">printk</a>(<a class="macro" href="../../../include/linux/kern_levels.h.html#11" title="&quot;\001&quot; &quot;3&quot;" data-ref="_M/KERN_ERR">KERN_ERR</a> <q>"kgdboc: config string too long\n"</q>);</td></tr>
+<tr><th id="254">254</th><td>		<b>return</b> -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#32" title="28" data-ref="_M/ENOSPC">ENOSPC</a>;</td></tr>
+<tr><th id="255">255</th><td>	}</td></tr>
+<tr><th id="256">256</th><td></td></tr>
+<tr><th id="257">257</th><td>	<i>/* Only copy in the string if the init function has not run yet */</i></td></tr>
+<tr><th id="258">258</th><td>	<b>if</b> (<a class="tu ref" href="#configured" title='configured' data-use='r' data-ref="configured">configured</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="259">259</th><td>		<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strcpy" title='strcpy' data-ref="strcpy">strcpy</a>(<a class="tu ref" href="#config" title='config' data-use='r' data-ref="config">config</a>, <a class="local col5 ref" href="#135kmessage" title='kmessage' data-ref="135kmessage">kmessage</a>);</td></tr>
+<tr><th id="260">260</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="261">261</th><td>	}</td></tr>
+<tr><th id="262">262</th><td></td></tr>
+<tr><th id="263">263</th><td>	<b>if</b> (<a class="ref" href="../../../include/linux/kgdb.h.html#kgdb_connected" title='kgdb_connected' data-ref="kgdb_connected">kgdb_connected</a>) {</td></tr>
+<tr><th id="264">264</th><td>		<a class="ref fn" href="../../../include/linux/printk.h.html#printk" title='printk' data-ref="printk">printk</a>(<a class="macro" href="../../../include/linux/kern_levels.h.html#11" title="&quot;\001&quot; &quot;3&quot;" data-ref="_M/KERN_ERR">KERN_ERR</a></td></tr>
+<tr><th id="265">265</th><td>		       <q>"kgdboc: Cannot reconfigure while KGDB is connected.\n"</q>);</td></tr>
+<tr><th id="266">266</th><td></td></tr>
+<tr><th id="267">267</th><td>		<b>return</b> -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#20" title="16" data-ref="_M/EBUSY">EBUSY</a>;</td></tr>
+<tr><th id="268">268</th><td>	}</td></tr>
+<tr><th id="269">269</th><td></td></tr>
+<tr><th id="270">270</th><td>	<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strcpy" title='strcpy' data-ref="strcpy">strcpy</a>(<a class="tu ref" href="#config" title='config' data-use='r' data-ref="config">config</a>, <a class="local col5 ref" href="#135kmessage" title='kmessage' data-ref="135kmessage">kmessage</a>);</td></tr>
+<tr><th id="271">271</th><td>	<i>/* Chop out \n char as a result of echo */</i></td></tr>
+<tr><th id="272">272</th><td>	<b>if</b> (<a class="tu ref" href="#config" title='config' data-use='r' data-ref="config">config</a>[<a class="local col7 ref" href="#137len" title='len' data-ref="137len">len</a> - <var>1</var>] == <kbd>'\n'</kbd>)</td></tr>
+<tr><th id="273">273</th><td>		<a class="tu ref" href="#config" title='config' data-use='w' data-ref="config">config</a>[<a class="local col7 ref" href="#137len" title='len' data-ref="137len">len</a> - <var>1</var>] = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="274">274</th><td></td></tr>
+<tr><th id="275">275</th><td>	<b>if</b> (<a class="tu ref" href="#configured" title='configured' data-use='r' data-ref="configured">configured</a> == <var>1</var>)</td></tr>
+<tr><th id="276">276</th><td>		<a class="tu ref fn" href="#cleanup_kgdboc" title='cleanup_kgdboc' data-use='c' data-ref="cleanup_kgdboc">cleanup_kgdboc</a>();</td></tr>
+<tr><th id="277">277</th><td></td></tr>
+<tr><th id="278">278</th><td>	<i>/* Go and configure with the new params. */</i></td></tr>
+<tr><th id="279">279</th><td>	<b>return</b> <a class="tu ref fn" href="#configure_kgdboc" title='configure_kgdboc' data-use='c' data-ref="configure_kgdboc">configure_kgdboc</a>();</td></tr>
+<tr><th id="280">280</th><td>}</td></tr>
+<tr><th id="281">281</th><td></td></tr>
+<tr><th id="282">282</th><td><em>static</em> <em>int</em> <dfn class="tu decl def" id="dbg_restore_graphics" title='dbg_restore_graphics' data-type='int' data-ref="dbg_restore_graphics">dbg_restore_graphics</dfn>;</td></tr>
+<tr><th id="283">283</th><td></td></tr>
+<tr><th id="284">284</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="kgdboc_pre_exp_handler" title='kgdboc_pre_exp_handler' data-type='void kgdboc_pre_exp_handler()' data-ref="kgdboc_pre_exp_handler">kgdboc_pre_exp_handler</dfn>(<em>void</em>)</td></tr>
+<tr><th id="285">285</th><td>{</td></tr>
+<tr><th id="286">286</th><td>	<b>if</b> (!<a class="tu ref" href="#dbg_restore_graphics" title='dbg_restore_graphics' data-use='r' data-ref="dbg_restore_graphics">dbg_restore_graphics</a> &amp;&amp; <a class="tu ref" href="#kgdboc_use_kms" title='kgdboc_use_kms' data-use='r' data-ref="kgdboc_use_kms">kgdboc_use_kms</a>) {</td></tr>
+<tr><th id="287">287</th><td>		<a class="tu ref" href="#dbg_restore_graphics" title='dbg_restore_graphics' data-use='w' data-ref="dbg_restore_graphics">dbg_restore_graphics</a> = <var>1</var>;</td></tr>
+<tr><th id="288">288</th><td>		<a class="ref fn" href="../../../include/linux/console.h.html#con_debug_enter" title='con_debug_enter' data-ref="con_debug_enter">con_debug_enter</a>(<a class="ref" href="../../../include/linux/console_struct.h.html#vc_cons" title='vc_cons' data-ref="vc_cons">vc_cons</a>[<a class="ref" href="../../../include/linux/vt_kern.h.html#fg_console" title='fg_console' data-ref="fg_console">fg_console</a>].<a class="ref field" href="../../../include/linux/console_struct.h.html#vc::d" title='vc::d' data-ref="vc::d">d</a>);</td></tr>
+<tr><th id="289">289</th><td>	}</td></tr>
+<tr><th id="290">290</th><td>	<i>/* Increment the module count when the debugger is active */</i></td></tr>
+<tr><th id="291">291</th><td>	<b>if</b> (!<a class="ref" href="../../../include/linux/kgdb.h.html#kgdb_connected" title='kgdb_connected' data-ref="kgdb_connected">kgdb_connected</a>)</td></tr>
+<tr><th id="292">292</th><td>		<a class="ref fn" href="../../../include/linux/module.h.html#try_module_get" title='try_module_get' data-ref="try_module_get">try_module_get</a>(<a class="macro" href="../../../include/linux/export.h.html#37" title="((struct module *)0)" data-ref="_M/THIS_MODULE">THIS_MODULE</a>);</td></tr>
+<tr><th id="293">293</th><td>}</td></tr>
+<tr><th id="294">294</th><td></td></tr>
+<tr><th id="295">295</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="kgdboc_post_exp_handler" title='kgdboc_post_exp_handler' data-type='void kgdboc_post_exp_handler()' data-ref="kgdboc_post_exp_handler">kgdboc_post_exp_handler</dfn>(<em>void</em>)</td></tr>
+<tr><th id="296">296</th><td>{</td></tr>
+<tr><th id="297">297</th><td>	<i>/* decrement the module count when the debugger detaches */</i></td></tr>
+<tr><th id="298">298</th><td>	<b>if</b> (!<a class="ref" href="../../../include/linux/kgdb.h.html#kgdb_connected" title='kgdb_connected' data-ref="kgdb_connected">kgdb_connected</a>)</td></tr>
+<tr><th id="299">299</th><td>		<a class="ref fn" href="../../../include/linux/module.h.html#module_put" title='module_put' data-ref="module_put">module_put</a>(<a class="macro" href="../../../include/linux/export.h.html#37" title="((struct module *)0)" data-ref="_M/THIS_MODULE">THIS_MODULE</a>);</td></tr>
+<tr><th id="300">300</th><td>	<b>if</b> (<a class="tu ref" href="#kgdboc_use_kms" title='kgdboc_use_kms' data-use='r' data-ref="kgdboc_use_kms">kgdboc_use_kms</a> &amp;&amp; <a class="tu ref" href="#dbg_restore_graphics" title='dbg_restore_graphics' data-use='r' data-ref="dbg_restore_graphics">dbg_restore_graphics</a>) {</td></tr>
+<tr><th id="301">301</th><td>		<a class="tu ref" href="#dbg_restore_graphics" title='dbg_restore_graphics' data-use='w' data-ref="dbg_restore_graphics">dbg_restore_graphics</a> = <var>0</var>;</td></tr>
+<tr><th id="302">302</th><td>		<a class="ref fn" href="../../../include/linux/console.h.html#con_debug_leave" title='con_debug_leave' data-ref="con_debug_leave">con_debug_leave</a>();</td></tr>
+<tr><th id="303">303</th><td>	}</td></tr>
+<tr><th id="304">304</th><td>	<a class="tu ref fn" href="#kgdboc_restore_input" title='kgdboc_restore_input' data-use='c' data-ref="kgdboc_restore_input">kgdboc_restore_input</a>();</td></tr>
+<tr><th id="305">305</th><td>}</td></tr>
+<tr><th id="306">306</th><td></td></tr>
+<tr><th id="307">307</th><td><em>static</em> <b>struct</b> <a class="type" href="../../../include/linux/kgdb.h.html#kgdb_io" title='kgdb_io' data-ref="kgdb_io">kgdb_io</a> <dfn class="tu decl def" id="kgdboc_io_ops" title='kgdboc_io_ops' data-type='struct kgdb_io' data-ref="kgdboc_io_ops">kgdboc_io_ops</dfn> = {</td></tr>
+<tr><th id="308">308</th><td>	.<a class="ref field" href="../../../include/linux/kgdb.h.html#kgdb_io::name" title='kgdb_io::name' data-ref="kgdb_io::name">name</a>			= <q>"kgdboc"</q>,</td></tr>
+<tr><th id="309">309</th><td>	.<a class="ref field" href="../../../include/linux/kgdb.h.html#kgdb_io::read_char" title='kgdb_io::read_char' data-ref="kgdb_io::read_char">read_char</a>		= <a class="tu ref fn" href="#kgdboc_get_char" title='kgdboc_get_char' data-ref="kgdboc_get_char">kgdboc_get_char</a>,</td></tr>
+<tr><th id="310">310</th><td>	.<a class="ref field" href="../../../include/linux/kgdb.h.html#kgdb_io::write_char" title='kgdb_io::write_char' data-ref="kgdb_io::write_char">write_char</a>		= <a class="tu ref fn" href="#kgdboc_put_char" title='kgdboc_put_char' data-ref="kgdboc_put_char">kgdboc_put_char</a>,</td></tr>
+<tr><th id="311">311</th><td>	.<a class="ref field" href="../../../include/linux/kgdb.h.html#kgdb_io::pre_exception" title='kgdb_io::pre_exception' data-ref="kgdb_io::pre_exception">pre_exception</a>		= <a class="tu ref fn" href="#kgdboc_pre_exp_handler" title='kgdboc_pre_exp_handler' data-ref="kgdboc_pre_exp_handler">kgdboc_pre_exp_handler</a>,</td></tr>
+<tr><th id="312">312</th><td>	.<a class="ref field" href="../../../include/linux/kgdb.h.html#kgdb_io::post_exception" title='kgdb_io::post_exception' data-ref="kgdb_io::post_exception">post_exception</a>		= <a class="tu ref fn" href="#kgdboc_post_exp_handler" title='kgdboc_post_exp_handler' data-ref="kgdboc_post_exp_handler">kgdboc_post_exp_handler</a>,</td></tr>
+<tr><th id="313">313</th><td>};</td></tr>
+<tr><th id="314">314</th><td></td></tr>
+<tr><th id="315">315</th><td><u>#<span data-ppcond="315">ifdef</span> <a class="macro" href="../../../include/generated/autoconf.h.html#98" data-ref="_M/CONFIG_KGDB_SERIAL_CONSOLE">CONFIG_KGDB_SERIAL_CONSOLE</a></u></td></tr>
+<tr><th id="316">316</th><td><i  data-doc="kgdboc_early_init">/* This is only available if kgdboc is a built in for early debugging */</i></td></tr>
+<tr><th id="317">317</th><td><em>static</em> <em>int</em> <a class="macro" href="../../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <dfn class="tu decl def fn" id="kgdboc_early_init" title='kgdboc_early_init' data-type='int kgdboc_early_init(char * opt)' data-ref="kgdboc_early_init">kgdboc_early_init</dfn>(<em>char</em> *<dfn class="local col8 decl" id="138opt" title='opt' data-type='char *' data-ref="138opt">opt</dfn>)</td></tr>
+<tr><th id="318">318</th><td>{</td></tr>
+<tr><th id="319">319</th><td>	<i>/* save the first character of the config string because the</i></td></tr>
+<tr><th id="320">320</th><td><i>	 * init routine can destroy it.</i></td></tr>
+<tr><th id="321">321</th><td><i>	 */</i></td></tr>
+<tr><th id="322">322</th><td>	<em>char</em> <dfn class="local col9 decl" id="139save_ch" title='save_ch' data-type='char' data-ref="139save_ch">save_ch</dfn>;</td></tr>
+<tr><th id="323">323</th><td></td></tr>
+<tr><th id="324">324</th><td>	<a class="tu ref fn" href="#kgdboc_option_setup" title='kgdboc_option_setup' data-use='c' data-ref="kgdboc_option_setup">kgdboc_option_setup</a>(<a class="local col8 ref" href="#138opt" title='opt' data-ref="138opt">opt</a>);</td></tr>
+<tr><th id="325">325</th><td>	<a class="local col9 ref" href="#139save_ch" title='save_ch' data-ref="139save_ch">save_ch</a> = <a class="tu ref" href="#config" title='config' data-use='r' data-ref="config">config</a>[<var>0</var>];</td></tr>
+<tr><th id="326">326</th><td>	<a class="tu ref fn" href="#init_kgdboc" title='init_kgdboc' data-use='c' data-ref="init_kgdboc">init_kgdboc</a>();</td></tr>
+<tr><th id="327">327</th><td>	<a class="tu ref" href="#config" title='config' data-use='w' data-ref="config">config</a>[<var>0</var>] = <a class="local col9 ref" href="#139save_ch" title='save_ch' data-ref="139save_ch">save_ch</a>;</td></tr>
+<tr><th id="328">328</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="329">329</th><td>}</td></tr>
+<tr><th id="330">330</th><td></td></tr>
+<tr><th id="331">331</th><td><a class="macro" href="../../../include/linux/init.h.html#248" title="static const char __setup_str_kgdboc_early_init[] __attribute__ ((__section__(&quot;.init.rodata&quot;))) __attribute__((aligned(1))) = &quot;ekgdboc&quot;; static struct obs_kernel_param __setup_kgdboc_early_init __attribute__((__used__)) __attribute__ ((__section__(&quot;.init.setup&quot;))) __attribute__((aligned((sizeof(long))))) = { __setup_str_kgdboc_early_init, kgdboc_early_init, 1 }" data-ref="_M/early_param">early_param</a>(<q>"ekgdboc"</q>, <a class="tu ref fn" href="#kgdboc_early_init" title='kgdboc_early_init' data-ref="kgdboc_early_init">kgdboc_early_init</a>);</td></tr>
+<tr><th id="332">332</th><td><u>#<span data-ppcond="315">endif</span> /* CONFIG_KGDB_SERIAL_CONSOLE */</u></td></tr>
+<tr><th id="333">333</th><td></td></tr>
+<tr><th id="334">334</th><td><a class="macro" href="../../../include/linux/module.h.html#85" title="static initcall_t __initcall_init_kgdboc6 __attribute__((__used__)) __attribute__((__section__(&quot;.initcall&quot; &quot;6&quot; &quot;.init&quot;))) = init_kgdboc;;" data-ref="_M/module_init">module_init</a>(<a class="tu ref fn" href="#init_kgdboc" title='init_kgdboc' data-ref="init_kgdboc">init_kgdboc</a>);</td></tr>
+<tr><th id="335">335</th><td><a class="macro" href="../../../include/linux/module.h.html#97" title="static exitcall_t __exitcall_cleanup_kgdboc __attribute__((__used__)) __attribute__ ((__section__(&quot;.exitcall.exit&quot;))) = cleanup_kgdboc;" data-ref="_M/module_exit">module_exit</a>(<a class="tu ref fn" href="#cleanup_kgdboc" title='cleanup_kgdboc' data-ref="cleanup_kgdboc">cleanup_kgdboc</a>);</td></tr>
+<tr><th id="336">336</th><td><a class="macro" href="../../../include/linux/moduleparam.h.html#231" title="static const struct kernel_param_ops __param_ops_kgdboc = { .flags = 0, (void *)param_set_kgdboc_var, (void *)param_get_string }; static const char __param_str_kgdboc[] = &quot;kgdboc&quot; &quot;.&quot; &quot;kgdboc&quot;; static struct kernel_param const __param_kgdboc __attribute__((__used__)) __attribute__ ((unused,__section__ (&quot;__param&quot;),aligned(sizeof(void *)))) = { __param_str_kgdboc, ((struct module *)0), &amp;__param_ops_kgdboc, ((sizeof(struct { int:(-!!(((0644) + sizeof(__check_old_set_param(param_set_kgdboc_var))*0) &lt; 0)); })) + (sizeof(struct { int:(-!!(((0644) + sizeof(__check_old_set_param(param_set_kgdboc_var))*0) &gt; 0777)); })) + (sizeof(struct { int:(-!!(((((0644) + sizeof(__check_old_set_param(param_set_kgdboc_var))*0) &gt;&gt; 6) &amp; 4) &lt; ((((0644) + sizeof(__check_old_set_param(param_set_kgdboc_var))*0) &gt;&gt; 3) &amp; 4))); })) + (sizeof(struct { int:(-!!(((((0644) + sizeof(__check_old_set_param(param_set_kgdboc_var))*0) &gt;&gt; 3) &amp; 4) &lt; (((0644) + sizeof(__check_old_set_param(param_set_kgdboc_var))*0) &amp; 4))); })) + (sizeof(struct { int:(-!!(((((0644) + sizeof(__check_old_set_param(param_set_kgdboc_var))*0) &gt;&gt; 6) &amp; 2) &lt; ((((0644) + sizeof(__check_old_set_param(param_set_kgdboc_var))*0) &gt;&gt; 3) &amp; 2))); })) + (sizeof(struct { int:(-!!(((0644) + sizeof(__check_old_set_param(param_set_kgdboc_var))*0) &amp; 2)); })) + ((0644) + sizeof(__check_old_set_param(param_set_kgdboc_var))*0)), -1, 0, { &amp;kps } }" data-ref="_M/module_param_call">module_param_call</a>(kgdboc, <a class="tu ref fn" href="#param_set_kgdboc_var" title='param_set_kgdboc_var' data-ref="param_set_kgdboc_var"><a class="tu ref fn" href="#param_set_kgdboc_var" title='param_set_kgdboc_var' data-use='r' data-ref="param_set_kgdboc_var"><a class="tu ref fn" href="#param_set_kgdboc_var" title='param_set_kgdboc_var' data-use='r' data-ref="param_set_kgdboc_var"><a class="tu ref fn" href="#param_set_kgdboc_var" title='param_set_kgdboc_var' data-use='r' data-ref="param_set_kgdboc_var"><a class="tu ref fn" href="#param_set_kgdboc_var" title='param_set_kgdboc_var' data-use='r' data-ref="param_set_kgdboc_var"><a class="tu ref fn" href="#param_set_kgdboc_var" title='param_set_kgdboc_var' data-use='r' data-ref="param_set_kgdboc_var"><a class="tu ref fn" href="#param_set_kgdboc_var" title='param_set_kgdboc_var' data-use='r' data-ref="param_set_kgdboc_var"><a class="tu ref fn" href="#param_set_kgdboc_var" title='param_set_kgdboc_var' data-use='r' data-ref="param_set_kgdboc_var"><a class="tu ref fn" href="#param_set_kgdboc_var" title='param_set_kgdboc_var' data-use='r' data-ref="param_set_kgdboc_var"><a class="tu ref fn" href="#param_set_kgdboc_var" title='param_set_kgdboc_var' data-use='r' data-ref="param_set_kgdboc_var"><a class="tu ref fn" href="#param_set_kgdboc_var" title='param_set_kgdboc_var' data-use='r' data-ref="param_set_kgdboc_var"><a class="tu ref fn" href="#param_set_kgdboc_var" title='param_set_kgdboc_var' data-use='r' data-ref="param_set_kgdboc_var">param_set_kgdboc_var</a></a></a></a></a></a></a></a></a></a></a></a>, <a class="ref fn" href="../../../include/linux/moduleparam.h.html#param_get_string" title='param_get_string' data-ref="param_get_string">param_get_string</a>, &amp;<a class="tu ref" href="#kps" title='kps' data-use='a' data-ref="kps">kps</a>, <var>0644</var>);</td></tr>
+<tr><th id="337">337</th><td><a class="macro" href="../../../include/linux/moduleparam.h.html#35" title="struct __UNIQUE_ID_kgdboc37 {}" data-ref="_M/MODULE_PARM_DESC">MODULE_PARM_DESC</a>(kgdboc, <q>"&lt;serial_device&gt;[,baud]"</q>);</td></tr>
+<tr><th id="338">338</th><td><a class="macro" href="../../../include/linux/module.h.html#207" title="struct __UNIQUE_ID_description39 {}" data-ref="_M/MODULE_DESCRIPTION">MODULE_DESCRIPTION</a>(<q>"KGDB Console TTY Driver"</q>);</td></tr>
+<tr><th id="339">339</th><td><a class="macro" href="../../../include/linux/module.h.html#198" title="struct __UNIQUE_ID_license41 {}" data-ref="_M/MODULE_LICENSE">MODULE_LICENSE</a>(<q>"GPL"</q>);</td></tr>
+<tr><th id="340">340</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-30</em> from project linux-4.14.y revision <em>linux-4.14.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

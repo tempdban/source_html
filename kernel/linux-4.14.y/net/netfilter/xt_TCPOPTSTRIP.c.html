@@ -1,0 +1,176 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>xt_TCPOPTSTRIP.c source code [linux-4.14.y/net/netfilter/xt_TCPOPTSTRIP.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.14.y/net/netfilter/xt_TCPOPTSTRIP.c'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>linux-4.14.y</a>/<a href='..'>net</a>/<a href='./'>netfilter</a>/<a href='xt_TCPOPTSTRIP.c.html'>xt_TCPOPTSTRIP.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * A module for stripping a specific TCP option from TCP packets.</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> * Copyright (C) 2007 Sven Schnelle &lt;svens@bitebene.org&gt;</i></td></tr>
+<tr><th id="5">5</th><td><i> * Copyright © CC Computer Consultants GmbH, 2007</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> * This program is free software; you can redistribute it and/or modify</i></td></tr>
+<tr><th id="8">8</th><td><i> * it under the terms of the GNU General Public License version 2 as</i></td></tr>
+<tr><th id="9">9</th><td><i> * published by the Free Software Foundation.</i></td></tr>
+<tr><th id="10">10</th><td><i> */</i></td></tr>
+<tr><th id="11">11</th><td></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../include/linux/module.h.html">&lt;linux/module.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../include/linux/skbuff.h.html">&lt;linux/skbuff.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../include/linux/ip.h.html">&lt;linux/ip.h&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../include/linux/ipv6.h.html">&lt;linux/ipv6.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../include/linux/tcp.h.html">&lt;linux/tcp.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../include/net/ipv6.h.html">&lt;net/ipv6.h&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../include/net/tcp.h.html">&lt;net/tcp.h&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../include/linux/netfilter/x_tables.h.html">&lt;linux/netfilter/x_tables.h&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../include/uapi/linux/netfilter/xt_TCPOPTSTRIP.h.html">&lt;linux/netfilter/xt_TCPOPTSTRIP.h&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td></td></tr>
+<tr><th id="22">22</th><td><em>static</em> <a class="macro" href="../../include/linux/compiler-gcc.h.html#95" title="inline __attribute__((always_inline, unused)) __attribute__((no_instrument_function))" data-ref="_M/inline"><b>inline</b></a> <em>unsigned</em> <em>int</em> <dfn class="tu decl def fn" id="optlen" title='optlen' data-type='unsigned int optlen(const u_int8_t * opt, unsigned int offset)' data-ref="optlen">optlen</dfn>(<em>const</em> <a class="typedef" href="../../include/linux/types.h.html#u_int8_t" title='u_int8_t' data-type='__u8' data-ref="u_int8_t">u_int8_t</a> *<dfn class="local col1 decl" id="1opt" title='opt' data-type='const u_int8_t *' data-ref="1opt">opt</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col2 decl" id="2offset" title='offset' data-type='unsigned int' data-ref="2offset">offset</dfn>)</td></tr>
+<tr><th id="23">23</th><td>{</td></tr>
+<tr><th id="24">24</th><td>	<i>/* Beware zero-length options: make finite progress */</i></td></tr>
+<tr><th id="25">25</th><td>	<b>if</b> (<a class="local col1 ref" href="#1opt" title='opt' data-ref="1opt">opt</a>[<a class="local col2 ref" href="#2offset" title='offset' data-ref="2offset">offset</a>] &lt;= <a class="macro" href="../../include/net/tcp.h.html#180" title="1" data-ref="_M/TCPOPT_NOP">TCPOPT_NOP</a> || <a class="local col1 ref" href="#1opt" title='opt' data-ref="1opt">opt</a>[<a class="local col2 ref" href="#2offset" title='offset' data-ref="2offset">offset</a>+<var>1</var>] == <var>0</var>)</td></tr>
+<tr><th id="26">26</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="27">27</th><td>	<b>else</b></td></tr>
+<tr><th id="28">28</th><td>		<b>return</b> <a class="local col1 ref" href="#1opt" title='opt' data-ref="1opt">opt</a>[<a class="local col2 ref" href="#2offset" title='offset' data-ref="2offset">offset</a>+<var>1</var>];</td></tr>
+<tr><th id="29">29</th><td>}</td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><em>static</em> <em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="32">32</th><td><dfn class="tu decl def fn" id="tcpoptstrip_mangle_packet" title='tcpoptstrip_mangle_packet' data-type='unsigned int tcpoptstrip_mangle_packet(struct sk_buff * skb, const struct xt_action_param * par, unsigned int tcphoff, unsigned int minlen)' data-ref="tcpoptstrip_mangle_packet">tcpoptstrip_mangle_packet</dfn>(<b>struct</b> <a class="type" href="../../include/linux/skbuff.h.html#sk_buff" title='sk_buff' data-ref="sk_buff">sk_buff</a> *<dfn class="local col3 decl" id="3skb" title='skb' data-type='struct sk_buff *' data-ref="3skb">skb</dfn>,</td></tr>
+<tr><th id="33">33</th><td>			  <em>const</em> <b>struct</b> <a class="type" href="../../include/linux/netfilter/x_tables.h.html#xt_action_param" title='xt_action_param' data-ref="xt_action_param">xt_action_param</a> *<dfn class="local col4 decl" id="4par" title='par' data-type='const struct xt_action_param *' data-ref="4par">par</dfn>,</td></tr>
+<tr><th id="34">34</th><td>			  <em>unsigned</em> <em>int</em> <dfn class="local col5 decl" id="5tcphoff" title='tcphoff' data-type='unsigned int' data-ref="5tcphoff">tcphoff</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col6 decl" id="6minlen" title='minlen' data-type='unsigned int' data-ref="6minlen">minlen</dfn>)</td></tr>
+<tr><th id="35">35</th><td>{</td></tr>
+<tr><th id="36">36</th><td>	<em>const</em> <b>struct</b> <a class="type" href="../../include/uapi/linux/netfilter/xt_TCPOPTSTRIP.h.html#xt_tcpoptstrip_target_info" title='xt_tcpoptstrip_target_info' data-ref="xt_tcpoptstrip_target_info">xt_tcpoptstrip_target_info</a> *<dfn class="local col7 decl" id="7info" title='info' data-type='const struct xt_tcpoptstrip_target_info *' data-ref="7info">info</dfn> = <a class="local col4 ref" href="#4par" title='par' data-ref="4par">par</a>-&gt;<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_action_param::(anonymous)::targinfo" title='xt_action_param::(anonymous union)::targinfo' data-ref="xt_action_param::(anonymous)::targinfo">targinfo</a>;</td></tr>
+<tr><th id="37">37</th><td>	<em>unsigned</em> <em>int</em> <dfn class="local col8 decl" id="8optl" title='optl' data-type='unsigned int' data-ref="8optl">optl</dfn>, <dfn class="local col9 decl" id="9i" title='i' data-type='unsigned int' data-ref="9i">i</dfn>, <dfn class="local col0 decl" id="10j" title='j' data-type='unsigned int' data-ref="10j">j</dfn>;</td></tr>
+<tr><th id="38">38</th><td>	<b>struct</b> <a class="type" href="../../include/uapi/linux/tcp.h.html#tcphdr" title='tcphdr' data-ref="tcphdr">tcphdr</a> *<dfn class="local col1 decl" id="11tcph" title='tcph' data-type='struct tcphdr *' data-ref="11tcph">tcph</dfn>;</td></tr>
+<tr><th id="39">39</th><td>	<a class="typedef" href="../../include/linux/types.h.html#u_int16_t" title='u_int16_t' data-type='__u16' data-ref="u_int16_t">u_int16_t</a> <dfn class="local col2 decl" id="12n" title='n' data-type='u_int16_t' data-ref="12n">n</dfn>, <dfn class="local col3 decl" id="13o" title='o' data-type='u_int16_t' data-ref="13o">o</dfn>;</td></tr>
+<tr><th id="40">40</th><td>	<a class="typedef" href="../../include/linux/types.h.html#u_int8_t" title='u_int8_t' data-type='__u8' data-ref="u_int8_t">u_int8_t</a> *<dfn class="local col4 decl" id="14opt" title='opt' data-type='u_int8_t *' data-ref="14opt">opt</dfn>;</td></tr>
+<tr><th id="41">41</th><td>	<em>int</em> <dfn class="local col5 decl" id="15len" title='len' data-type='int' data-ref="15len">len</dfn>, <dfn class="local col6 decl" id="16tcp_hdrlen" title='tcp_hdrlen' data-type='int' data-ref="16tcp_hdrlen">tcp_hdrlen</dfn>;</td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td>	<i>/* This is a fragment, no TCP header is available */</i></td></tr>
+<tr><th id="44">44</th><td>	<b>if</b> (<a class="local col4 ref" href="#4par" title='par' data-ref="4par">par</a>-&gt;<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_action_param::fragoff" title='xt_action_param::fragoff' data-ref="xt_action_param::fragoff">fragoff</a> != <var>0</var>)</td></tr>
+<tr><th id="45">45</th><td>		<b>return</b> <a class="macro" href="../../include/uapi/linux/netfilter/x_tables.h.html#83" title="0xFFFFFFFF" data-ref="_M/XT_CONTINUE">XT_CONTINUE</a>;</td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td>	<b>if</b> (!<a class="ref fn" href="../../include/linux/netfilter.h.html#skb_make_writable" title='skb_make_writable' data-ref="skb_make_writable">skb_make_writable</a>(<a class="local col3 ref" href="#3skb" title='skb' data-ref="3skb">skb</a>, <a class="local col3 ref" href="#3skb" title='skb' data-ref="3skb">skb</a>-&gt;<a class="ref field" href="../../include/linux/skbuff.h.html#sk_buff::len" title='sk_buff::len' data-ref="sk_buff::len">len</a>))</td></tr>
+<tr><th id="48">48</th><td>		<b>return</b> <a class="macro" href="../../include/uapi/linux/netfilter.h.html#11" title="0" data-ref="_M/NF_DROP">NF_DROP</a>;</td></tr>
+<tr><th id="49">49</th><td></td></tr>
+<tr><th id="50">50</th><td>	<a class="local col5 ref" href="#15len" title='len' data-ref="15len">len</a> = <a class="local col3 ref" href="#3skb" title='skb' data-ref="3skb">skb</a>-&gt;<a class="ref field" href="../../include/linux/skbuff.h.html#sk_buff::len" title='sk_buff::len' data-ref="sk_buff::len">len</a> - <a class="local col5 ref" href="#5tcphoff" title='tcphoff' data-ref="5tcphoff">tcphoff</a>;</td></tr>
+<tr><th id="51">51</th><td>	<b>if</b> (<a class="local col5 ref" href="#15len" title='len' data-ref="15len">len</a> &lt; (<em>int</em>)<b>sizeof</b>(<b>struct</b> <a class="type" href="../../include/uapi/linux/tcp.h.html#tcphdr" title='tcphdr' data-ref="tcphdr">tcphdr</a>))</td></tr>
+<tr><th id="52">52</th><td>		<b>return</b> <a class="macro" href="../../include/uapi/linux/netfilter.h.html#11" title="0" data-ref="_M/NF_DROP">NF_DROP</a>;</td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td>	<a class="local col1 ref" href="#11tcph" title='tcph' data-ref="11tcph">tcph</a> = (<b>struct</b> <a class="type" href="../../include/uapi/linux/tcp.h.html#tcphdr" title='tcphdr' data-ref="tcphdr">tcphdr</a> *)(<a class="ref fn" href="../../include/linux/skbuff.h.html#skb_network_header" title='skb_network_header' data-ref="skb_network_header">skb_network_header</a>(<a class="local col3 ref" href="#3skb" title='skb' data-ref="3skb">skb</a>) + <a class="local col5 ref" href="#5tcphoff" title='tcphoff' data-ref="5tcphoff">tcphoff</a>);</td></tr>
+<tr><th id="55">55</th><td>	<a class="local col6 ref" href="#16tcp_hdrlen" title='tcp_hdrlen' data-ref="16tcp_hdrlen">tcp_hdrlen</a> = <a class="local col1 ref" href="#11tcph" title='tcph' data-ref="11tcph">tcph</a>-&gt;<a class="ref field" href="../../include/uapi/linux/tcp.h.html#tcphdr::doff" title='tcphdr::doff' data-ref="tcphdr::doff">doff</a> * <var>4</var>;</td></tr>
+<tr><th id="56">56</th><td></td></tr>
+<tr><th id="57">57</th><td>	<b>if</b> (<a class="local col5 ref" href="#15len" title='len' data-ref="15len">len</a> &lt; <a class="local col6 ref" href="#16tcp_hdrlen" title='tcp_hdrlen' data-ref="16tcp_hdrlen">tcp_hdrlen</a>)</td></tr>
+<tr><th id="58">58</th><td>		<b>return</b> <a class="macro" href="../../include/uapi/linux/netfilter.h.html#11" title="0" data-ref="_M/NF_DROP">NF_DROP</a>;</td></tr>
+<tr><th id="59">59</th><td></td></tr>
+<tr><th id="60">60</th><td>	<a class="local col4 ref" href="#14opt" title='opt' data-ref="14opt">opt</a>  = (<a class="typedef" href="../../include/linux/types.h.html#u_int8_t" title='u_int8_t' data-type='__u8' data-ref="u_int8_t">u_int8_t</a> *)<a class="local col1 ref" href="#11tcph" title='tcph' data-ref="11tcph">tcph</a>;</td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td>	<i>/*</i></td></tr>
+<tr><th id="63">63</th><td><i>	 * Walk through all TCP options - if we find some option to remove,</i></td></tr>
+<tr><th id="64">64</th><td><i>	 * set all octets to %TCPOPT_NOP and adjust checksum.</i></td></tr>
+<tr><th id="65">65</th><td><i>	 */</i></td></tr>
+<tr><th id="66">66</th><td>	<b>for</b> (<a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a> = <b>sizeof</b>(<b>struct</b> <a class="type" href="../../include/uapi/linux/tcp.h.html#tcphdr" title='tcphdr' data-ref="tcphdr">tcphdr</a>); <a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a> &lt; <a class="local col6 ref" href="#16tcp_hdrlen" title='tcp_hdrlen' data-ref="16tcp_hdrlen">tcp_hdrlen</a> - <var>1</var>; <a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a> += <a class="local col8 ref" href="#8optl" title='optl' data-ref="8optl">optl</a>) {</td></tr>
+<tr><th id="67">67</th><td>		<a class="local col8 ref" href="#8optl" title='optl' data-ref="8optl">optl</a> = <a class="tu ref fn" href="#optlen" title='optlen' data-use='c' data-ref="optlen">optlen</a>(<a class="local col4 ref" href="#14opt" title='opt' data-ref="14opt">opt</a>, <a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a>);</td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td>		<b>if</b> (<a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a> + <a class="local col8 ref" href="#8optl" title='optl' data-ref="8optl">optl</a> &gt; <a class="local col6 ref" href="#16tcp_hdrlen" title='tcp_hdrlen' data-ref="16tcp_hdrlen">tcp_hdrlen</a>)</td></tr>
+<tr><th id="70">70</th><td>			<b>break</b>;</td></tr>
+<tr><th id="71">71</th><td></td></tr>
+<tr><th id="72">72</th><td>		<b>if</b> (!<a class="macro" href="../../include/uapi/linux/netfilter/xt_TCPOPTSTRIP.h.html#9" title="(((1U &lt;&lt; (opt[i] &amp; 31)) &amp; info-&gt;strip_bmap[(opt[i]) &gt;&gt; 5]) != 0)" data-ref="_M/tcpoptstrip_test_bit">tcpoptstrip_test_bit</a>(<a class="local col7 ref" href="#7info" title='info' data-ref="7info">info</a>-&gt;<a class="ref field" href="../../include/uapi/linux/netfilter/xt_TCPOPTSTRIP.h.html#xt_tcpoptstrip_target_info::strip_bmap" title='xt_tcpoptstrip_target_info::strip_bmap' data-ref="xt_tcpoptstrip_target_info::strip_bmap">strip_bmap</a>, <a class="local col4 ref" href="#14opt" title='opt' data-ref="14opt">opt</a>[<a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a>]))</td></tr>
+<tr><th id="73">73</th><td>			<b>continue</b>;</td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td>		<b>for</b> (<a class="local col0 ref" href="#10j" title='j' data-ref="10j">j</a> = <var>0</var>; <a class="local col0 ref" href="#10j" title='j' data-ref="10j">j</a> &lt; <a class="local col8 ref" href="#8optl" title='optl' data-ref="8optl">optl</a>; ++<a class="local col0 ref" href="#10j" title='j' data-ref="10j">j</a>) {</td></tr>
+<tr><th id="76">76</th><td>			<a class="local col3 ref" href="#13o" title='o' data-ref="13o">o</a> = <a class="local col4 ref" href="#14opt" title='opt' data-ref="14opt">opt</a>[<a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a>+<a class="local col0 ref" href="#10j" title='j' data-ref="10j">j</a>];</td></tr>
+<tr><th id="77">77</th><td>			<a class="local col2 ref" href="#12n" title='n' data-ref="12n">n</a> = <a class="macro" href="../../include/net/tcp.h.html#180" title="1" data-ref="_M/TCPOPT_NOP">TCPOPT_NOP</a>;</td></tr>
+<tr><th id="78">78</th><td>			<b>if</b> ((<a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a> + <a class="local col0 ref" href="#10j" title='j' data-ref="10j">j</a>) % <var>2</var> == <var>0</var>) {</td></tr>
+<tr><th id="79">79</th><td>				<a class="local col3 ref" href="#13o" title='o' data-ref="13o">o</a> &lt;&lt;= <var>8</var>;</td></tr>
+<tr><th id="80">80</th><td>				<a class="local col2 ref" href="#12n" title='n' data-ref="12n">n</a> &lt;&lt;= <var>8</var>;</td></tr>
+<tr><th id="81">81</th><td>			}</td></tr>
+<tr><th id="82">82</th><td>			<a class="ref fn" href="../../include/net/checksum.h.html#inet_proto_csum_replace2" title='inet_proto_csum_replace2' data-ref="inet_proto_csum_replace2">inet_proto_csum_replace2</a>(&amp;<a class="local col1 ref" href="#11tcph" title='tcph' data-ref="11tcph">tcph</a>-&gt;<a class="ref field" href="../../include/uapi/linux/tcp.h.html#tcphdr::check" title='tcphdr::check' data-ref="tcphdr::check">check</a>, <a class="local col3 ref" href="#3skb" title='skb' data-ref="3skb">skb</a>, <a class="macro" href="../../include/linux/byteorder/generic.h.html#141" title="(( __be16)(__builtin_constant_p((__u16)((o))) ? ((__u16)( (((__u16)((o)) &amp; (__u16)0x00ffU) &lt;&lt; 8) | (((__u16)((o)) &amp; (__u16)0xff00U) &gt;&gt; 8))) : __fswab16((o))))" data-ref="_M/htons">htons</a>(<a class="local col3 ref" href="#13o" title='o' data-ref="13o">o</a>),</td></tr>
+<tr><th id="83">83</th><td>						 <a class="macro" href="../../include/linux/byteorder/generic.h.html#141" title="(( __be16)(__builtin_constant_p((__u16)((n))) ? ((__u16)( (((__u16)((n)) &amp; (__u16)0x00ffU) &lt;&lt; 8) | (((__u16)((n)) &amp; (__u16)0xff00U) &gt;&gt; 8))) : __fswab16((n))))" data-ref="_M/htons">htons</a>(<a class="local col2 ref" href="#12n" title='n' data-ref="12n">n</a>), <a class="enum" href="../../include/linux/stddef.h.html#false" title='false' data-ref="false">false</a>);</td></tr>
+<tr><th id="84">84</th><td>		}</td></tr>
+<tr><th id="85">85</th><td>		<a class="ref fn" href="../../arch/x86/include/asm/string_64.h.html#memset" title='memset' data-ref="memset">memset</a>(<a class="local col4 ref" href="#14opt" title='opt' data-ref="14opt">opt</a> + <a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a>, <a class="macro" href="../../include/net/tcp.h.html#180" title="1" data-ref="_M/TCPOPT_NOP">TCPOPT_NOP</a>, <a class="local col8 ref" href="#8optl" title='optl' data-ref="8optl">optl</a>);</td></tr>
+<tr><th id="86">86</th><td>	}</td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td>	<b>return</b> <a class="macro" href="../../include/uapi/linux/netfilter/x_tables.h.html#83" title="0xFFFFFFFF" data-ref="_M/XT_CONTINUE">XT_CONTINUE</a>;</td></tr>
+<tr><th id="89">89</th><td>}</td></tr>
+<tr><th id="90">90</th><td></td></tr>
+<tr><th id="91">91</th><td><em>static</em> <em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="92">92</th><td><dfn class="tu decl def fn" id="tcpoptstrip_tg4" title='tcpoptstrip_tg4' data-type='unsigned int tcpoptstrip_tg4(struct sk_buff * skb, const struct xt_action_param * par)' data-ref="tcpoptstrip_tg4">tcpoptstrip_tg4</dfn>(<b>struct</b> <a class="type" href="../../include/linux/skbuff.h.html#sk_buff" title='sk_buff' data-ref="sk_buff">sk_buff</a> *<dfn class="local col7 decl" id="17skb" title='skb' data-type='struct sk_buff *' data-ref="17skb">skb</dfn>, <em>const</em> <b>struct</b> <a class="type" href="../../include/linux/netfilter/x_tables.h.html#xt_action_param" title='xt_action_param' data-ref="xt_action_param">xt_action_param</a> *<dfn class="local col8 decl" id="18par" title='par' data-type='const struct xt_action_param *' data-ref="18par">par</dfn>)</td></tr>
+<tr><th id="93">93</th><td>{</td></tr>
+<tr><th id="94">94</th><td>	<b>return</b> <a class="tu ref fn" href="#tcpoptstrip_mangle_packet" title='tcpoptstrip_mangle_packet' data-use='c' data-ref="tcpoptstrip_mangle_packet">tcpoptstrip_mangle_packet</a>(<a class="local col7 ref" href="#17skb" title='skb' data-ref="17skb">skb</a>, <a class="local col8 ref" href="#18par" title='par' data-ref="18par">par</a>, <a class="ref fn" href="../../include/net/ip.h.html#ip_hdrlen" title='ip_hdrlen' data-ref="ip_hdrlen">ip_hdrlen</a>(<a class="local col7 ref" href="#17skb" title='skb' data-ref="17skb">skb</a>),</td></tr>
+<tr><th id="95">95</th><td>	       <b>sizeof</b>(<b>struct</b> <a class="type" href="../../include/uapi/linux/ip.h.html#iphdr" title='iphdr' data-ref="iphdr">iphdr</a>) + <b>sizeof</b>(<b>struct</b> <a class="type" href="../../include/uapi/linux/tcp.h.html#tcphdr" title='tcphdr' data-ref="tcphdr">tcphdr</a>));</td></tr>
+<tr><th id="96">96</th><td>}</td></tr>
+<tr><th id="97">97</th><td></td></tr>
+<tr><th id="98">98</th><td><u>#<span data-ppcond="98">if</span> <a class="macro" href="../../include/linux/kconfig.h.html#71" title="0" data-ref="_M/IS_ENABLED">IS_ENABLED</a>(CONFIG_IP6_NF_MANGLE)</u></td></tr>
+<tr><th id="99">99</th><td><em>static</em> <em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="100">100</th><td>tcpoptstrip_tg6(<b>struct</b> sk_buff *skb, <em>const</em> <b>struct</b> xt_action_param *par)</td></tr>
+<tr><th id="101">101</th><td>{</td></tr>
+<tr><th id="102">102</th><td>	<b>struct</b> ipv6hdr *ipv6h = ipv6_hdr(skb);</td></tr>
+<tr><th id="103">103</th><td>	<em>int</em> tcphoff;</td></tr>
+<tr><th id="104">104</th><td>	u_int8_t nexthdr;</td></tr>
+<tr><th id="105">105</th><td>	__be16 frag_off;</td></tr>
+<tr><th id="106">106</th><td></td></tr>
+<tr><th id="107">107</th><td>	nexthdr = ipv6h-&gt;nexthdr;</td></tr>
+<tr><th id="108">108</th><td>	tcphoff = ipv6_skip_exthdr(skb, <b>sizeof</b>(*ipv6h), &amp;nexthdr, &amp;frag_off);</td></tr>
+<tr><th id="109">109</th><td>	<b>if</b> (tcphoff &lt; <var>0</var>)</td></tr>
+<tr><th id="110">110</th><td>		<b>return</b> NF_DROP;</td></tr>
+<tr><th id="111">111</th><td></td></tr>
+<tr><th id="112">112</th><td>	<b>return</b> tcpoptstrip_mangle_packet(skb, par, tcphoff,</td></tr>
+<tr><th id="113">113</th><td>	       <b>sizeof</b>(*ipv6h) + <b>sizeof</b>(<b>struct</b> tcphdr));</td></tr>
+<tr><th id="114">114</th><td>}</td></tr>
+<tr><th id="115">115</th><td><u>#<span data-ppcond="98">endif</span></u></td></tr>
+<tr><th id="116">116</th><td></td></tr>
+<tr><th id="117">117</th><td><em>static</em> <b>struct</b> <a class="type" href="../../include/linux/netfilter/x_tables.h.html#xt_target" title='xt_target' data-ref="xt_target">xt_target</a> <dfn class="tu decl def" id="tcpoptstrip_tg_reg" title='tcpoptstrip_tg_reg' data-type='struct xt_target [1]' data-ref="tcpoptstrip_tg_reg">tcpoptstrip_tg_reg</dfn>[] <a class="macro" href="../../arch/x86/include/asm/cache.h.html#11" title="__attribute__((__section__(&quot;.data..read_mostly&quot;)))" data-ref="_M/__read_mostly">__read_mostly</a> = {</td></tr>
+<tr><th id="118">118</th><td>	{</td></tr>
+<tr><th id="119">119</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::name" title='xt_target::name' data-ref="xt_target::name">name</a>       = <q>"TCPOPTSTRIP"</q>,</td></tr>
+<tr><th id="120">120</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::family" title='xt_target::family' data-ref="xt_target::family">family</a>     = <a class="enum" href="../../include/uapi/linux/netfilter.h.html#NFPROTO_IPV4" title='NFPROTO_IPV4' data-ref="NFPROTO_IPV4">NFPROTO_IPV4</a>,</td></tr>
+<tr><th id="121">121</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::table" title='xt_target::table' data-ref="xt_target::table">table</a>      = <q>"mangle"</q>,</td></tr>
+<tr><th id="122">122</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::proto" title='xt_target::proto' data-ref="xt_target::proto">proto</a>      = <a class="macro" href="../../include/uapi/linux/in.h.html#38" title="IPPROTO_TCP" data-ref="_M/IPPROTO_TCP">IPPROTO_TCP</a>,</td></tr>
+<tr><th id="123">123</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::target" title='xt_target::target' data-ref="xt_target::target">target</a>     = <a class="tu ref fn" href="#tcpoptstrip_tg4" title='tcpoptstrip_tg4' data-ref="tcpoptstrip_tg4">tcpoptstrip_tg4</a>,</td></tr>
+<tr><th id="124">124</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::targetsize" title='xt_target::targetsize' data-ref="xt_target::targetsize">targetsize</a> = <b>sizeof</b>(<b>struct</b> <a class="type" href="../../include/uapi/linux/netfilter/xt_TCPOPTSTRIP.h.html#xt_tcpoptstrip_target_info" title='xt_tcpoptstrip_target_info' data-ref="xt_tcpoptstrip_target_info">xt_tcpoptstrip_target_info</a>),</td></tr>
+<tr><th id="125">125</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::me" title='xt_target::me' data-ref="xt_target::me">me</a>         = <a class="macro" href="../../include/linux/export.h.html#37" title="((struct module *)0)" data-ref="_M/THIS_MODULE">THIS_MODULE</a>,</td></tr>
+<tr><th id="126">126</th><td>	},</td></tr>
+<tr><th id="127">127</th><td><u>#<span data-ppcond="127">if</span> <a class="macro" href="../../include/linux/kconfig.h.html#71" title="0" data-ref="_M/IS_ENABLED">IS_ENABLED</a>(CONFIG_IP6_NF_MANGLE)</u></td></tr>
+<tr><th id="128">128</th><td>	{</td></tr>
+<tr><th id="129">129</th><td>		.name       = <q>"TCPOPTSTRIP"</q>,</td></tr>
+<tr><th id="130">130</th><td>		.family     = NFPROTO_IPV6,</td></tr>
+<tr><th id="131">131</th><td>		.table      = <q>"mangle"</q>,</td></tr>
+<tr><th id="132">132</th><td>		.proto      = IPPROTO_TCP,</td></tr>
+<tr><th id="133">133</th><td>		.target     = tcpoptstrip_tg6,</td></tr>
+<tr><th id="134">134</th><td>		.targetsize = <b>sizeof</b>(<b>struct</b> xt_tcpoptstrip_target_info),</td></tr>
+<tr><th id="135">135</th><td>		.me         = THIS_MODULE,</td></tr>
+<tr><th id="136">136</th><td>	},</td></tr>
+<tr><th id="137">137</th><td><u>#<span data-ppcond="127">endif</span></u></td></tr>
+<tr><th id="138">138</th><td>};</td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td><em>static</em> <em>int</em> <a class="macro" href="../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <dfn class="tu decl def fn" id="tcpoptstrip_tg_init" title='tcpoptstrip_tg_init' data-type='int tcpoptstrip_tg_init()' data-ref="tcpoptstrip_tg_init">tcpoptstrip_tg_init</dfn>(<em>void</em>)</td></tr>
+<tr><th id="141">141</th><td>{</td></tr>
+<tr><th id="142">142</th><td>	<b>return</b> <a class="ref fn" href="../../include/linux/netfilter/x_tables.h.html#xt_register_targets" title='xt_register_targets' data-ref="xt_register_targets">xt_register_targets</a>(<a class="tu ref" href="#tcpoptstrip_tg_reg" title='tcpoptstrip_tg_reg' data-use='r' data-ref="tcpoptstrip_tg_reg">tcpoptstrip_tg_reg</a>,</td></tr>
+<tr><th id="143">143</th><td>				   <a class="macro" href="../../include/linux/kernel.h.html#71" title="(sizeof(tcpoptstrip_tg_reg) / sizeof((tcpoptstrip_tg_reg)[0]) + (sizeof(struct { int:(-!!(__builtin_types_compatible_p(typeof((tcpoptstrip_tg_reg)), typeof(&amp;(tcpoptstrip_tg_reg)[0])))); })))" data-ref="_M/ARRAY_SIZE">ARRAY_SIZE</a>(<a class="tu ref" href="#tcpoptstrip_tg_reg" title='tcpoptstrip_tg_reg' data-use='r' data-ref="tcpoptstrip_tg_reg">tcpoptstrip_tg_reg</a>));</td></tr>
+<tr><th id="144">144</th><td>}</td></tr>
+<tr><th id="145">145</th><td></td></tr>
+<tr><th id="146">146</th><td><em>static</em> <em>void</em> <a class="macro" href="../../include/linux/init.h.html#85" title="__attribute__ ((__section__(&quot;.exit.text&quot;))) __attribute__((__used__)) __attribute__((no_instrument_function))" data-ref="_M/__exit">__exit</a> <dfn class="tu decl def fn" id="tcpoptstrip_tg_exit" title='tcpoptstrip_tg_exit' data-type='void tcpoptstrip_tg_exit()' data-ref="tcpoptstrip_tg_exit">tcpoptstrip_tg_exit</dfn>(<em>void</em>)</td></tr>
+<tr><th id="147">147</th><td>{</td></tr>
+<tr><th id="148">148</th><td>	<a class="ref fn" href="../../include/linux/netfilter/x_tables.h.html#xt_unregister_targets" title='xt_unregister_targets' data-ref="xt_unregister_targets">xt_unregister_targets</a>(<a class="tu ref" href="#tcpoptstrip_tg_reg" title='tcpoptstrip_tg_reg' data-use='r' data-ref="tcpoptstrip_tg_reg">tcpoptstrip_tg_reg</a>,</td></tr>
+<tr><th id="149">149</th><td>			      <a class="macro" href="../../include/linux/kernel.h.html#71" title="(sizeof(tcpoptstrip_tg_reg) / sizeof((tcpoptstrip_tg_reg)[0]) + (sizeof(struct { int:(-!!(__builtin_types_compatible_p(typeof((tcpoptstrip_tg_reg)), typeof(&amp;(tcpoptstrip_tg_reg)[0])))); })))" data-ref="_M/ARRAY_SIZE">ARRAY_SIZE</a>(<a class="tu ref" href="#tcpoptstrip_tg_reg" title='tcpoptstrip_tg_reg' data-use='r' data-ref="tcpoptstrip_tg_reg">tcpoptstrip_tg_reg</a>));</td></tr>
+<tr><th id="150">150</th><td>}</td></tr>
+<tr><th id="151">151</th><td></td></tr>
+<tr><th id="152">152</th><td><a class="macro" href="../../include/linux/module.h.html#85" title="static initcall_t __initcall_tcpoptstrip_tg_init6 __attribute__((__used__)) __attribute__((__section__(&quot;.initcall&quot; &quot;6&quot; &quot;.init&quot;))) = tcpoptstrip_tg_init;;" data-ref="_M/module_init">module_init</a>(<a class="tu ref fn" href="#tcpoptstrip_tg_init" title='tcpoptstrip_tg_init' data-ref="tcpoptstrip_tg_init">tcpoptstrip_tg_init</a>);</td></tr>
+<tr><th id="153">153</th><td><a class="macro" href="../../include/linux/module.h.html#97" title="static exitcall_t __exitcall_tcpoptstrip_tg_exit __attribute__((__used__)) __attribute__ ((__section__(&quot;.exitcall.exit&quot;))) = tcpoptstrip_tg_exit;" data-ref="_M/module_exit">module_exit</a>(<a class="tu ref fn" href="#tcpoptstrip_tg_exit" title='tcpoptstrip_tg_exit' data-ref="tcpoptstrip_tg_exit">tcpoptstrip_tg_exit</a>);</td></tr>
+<tr><th id="154">154</th><td><a class="macro" href="../../include/linux/module.h.html#204" title="struct __UNIQUE_ID_author139 {}" data-ref="_M/MODULE_AUTHOR">MODULE_AUTHOR</a>(<q>"Sven Schnelle &lt;svens@bitebene.org&gt;, Jan Engelhardt &lt;jengelh@medozas.de&gt;"</q>);</td></tr>
+<tr><th id="155">155</th><td><a class="macro" href="../../include/linux/module.h.html#207" title="struct __UNIQUE_ID_description141 {}" data-ref="_M/MODULE_DESCRIPTION">MODULE_DESCRIPTION</a>(<q>"Xtables: TCP option stripping"</q>);</td></tr>
+<tr><th id="156">156</th><td><a class="macro" href="../../include/linux/module.h.html#198" title="struct __UNIQUE_ID_license143 {}" data-ref="_M/MODULE_LICENSE">MODULE_LICENSE</a>(<q>"GPL"</q>);</td></tr>
+<tr><th id="157">157</th><td><a class="macro" href="../../include/linux/module.h.html#163" title="struct __UNIQUE_ID_alias145 {}" data-ref="_M/MODULE_ALIAS">MODULE_ALIAS</a>(<q>"ipt_TCPOPTSTRIP"</q>);</td></tr>
+<tr><th id="158">158</th><td><a class="macro" href="../../include/linux/module.h.html#163" title="struct __UNIQUE_ID_alias147 {}" data-ref="_M/MODULE_ALIAS">MODULE_ALIAS</a>(<q>"ip6t_TCPOPTSTRIP"</q>);</td></tr>
+<tr><th id="159">159</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-30</em> from project linux-4.14.y revision <em>linux-4.14.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

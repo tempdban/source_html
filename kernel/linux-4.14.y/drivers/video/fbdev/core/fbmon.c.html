@@ -1,0 +1,1631 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>fbmon.c source code [linux-4.14.y/drivers/video/fbdev/core/fbmon.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.14.y/drivers/video/fbdev/core/fbmon.c'; var root_path = '../../../../..'; var data_path = '../../../../../../data';</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>linux-4.14.y</a>/<a href='../../..'>drivers</a>/<a href='../..'>video</a>/<a href='..'>fbdev</a>/<a href='./'>core</a>/<a href='fbmon.c.html'>fbmon.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * linux/drivers/video/fbmon.c</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> * Copyright (C) 2002 James Simmons &lt;jsimmons@users.sf.net&gt;</i></td></tr>
+<tr><th id="5">5</th><td><i> *</i></td></tr>
+<tr><th id="6">6</th><td><i> * Credits:</i></td></tr>
+<tr><th id="7">7</th><td><i> *</i></td></tr>
+<tr><th id="8">8</th><td><i> * The EDID Parser is a conglomeration from the following sources:</i></td></tr>
+<tr><th id="9">9</th><td><i> *</i></td></tr>
+<tr><th id="10">10</th><td><i> *   1. SciTech SNAP Graphics Architecture</i></td></tr>
+<tr><th id="11">11</th><td><i> *      Copyright (C) 1991-2002 SciTech Software, Inc. All rights reserved.</i></td></tr>
+<tr><th id="12">12</th><td><i> *</i></td></tr>
+<tr><th id="13">13</th><td><i> *   2. XFree86 4.3.0, interpret_edid.c</i></td></tr>
+<tr><th id="14">14</th><td><i> *      Copyright 1998 by Egbert Eich &lt;Egbert.Eich@Physik.TU-Darmstadt.DE&gt;</i></td></tr>
+<tr><th id="15">15</th><td><i> *</i></td></tr>
+<tr><th id="16">16</th><td><i> *   3. John Fremlin &lt;vii@users.sourceforge.net&gt; and</i></td></tr>
+<tr><th id="17">17</th><td><i> *      Ani Joshi &lt;ajoshi@unixbox.com&gt;</i></td></tr>
+<tr><th id="18">18</th><td><i> *</i></td></tr>
+<tr><th id="19">19</th><td><i> * Generalized Timing Formula is derived from:</i></td></tr>
+<tr><th id="20">20</th><td><i> *</i></td></tr>
+<tr><th id="21">21</th><td><i> *      GTF Spreadsheet by Andy Morrish (1/5/97)</i></td></tr>
+<tr><th id="22">22</th><td><i> *      available at <a href="http://www.vesa.org">http://www.vesa.org</a></i></td></tr>
+<tr><th id="23">23</th><td><i> *</i></td></tr>
+<tr><th id="24">24</th><td><i> * This file is subject to the terms and conditions of the GNU General Public</i></td></tr>
+<tr><th id="25">25</th><td><i> * License.  See the file COPYING in the main directory of this archive</i></td></tr>
+<tr><th id="26">26</th><td><i> * for more details.</i></td></tr>
+<tr><th id="27">27</th><td><i> *</i></td></tr>
+<tr><th id="28">28</th><td><i> */</i></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../../../../include/linux/fb.h.html">&lt;linux/fb.h&gt;</a></u></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="../../../../include/linux/module.h.html">&lt;linux/module.h&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="../../../../include/linux/pci.h.html">&lt;linux/pci.h&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="../../../../include/linux/slab.h.html">&lt;linux/slab.h&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="../../../../include/video/edid.h.html">&lt;video/edid.h&gt;</a></u></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="../../../../include/video/of_videomode.h.html">&lt;video/of_videomode.h&gt;</a></u></td></tr>
+<tr><th id="35">35</th><td><u>#include <a href="../../../../include/video/videomode.h.html">&lt;video/videomode.h&gt;</a></u></td></tr>
+<tr><th id="36">36</th><td><u>#include <a href="../edid.h.html">"../edid.h"</a></u></td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><i>/*</i></td></tr>
+<tr><th id="39">39</th><td><i> * EDID parser</i></td></tr>
+<tr><th id="40">40</th><td><i> */</i></td></tr>
+<tr><th id="41">41</th><td></td></tr>
+<tr><th id="42">42</th><td><u>#undef <span class="macro" data-ref="_M/DEBUG">DEBUG</span>  /* define this for verbose EDID parsing output */</u></td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td><u>#<span data-ppcond="44">ifdef</span> <span class="macro" data-ref="_M/DEBUG">DEBUG</span></u></td></tr>
+<tr><th id="45">45</th><td><u>#define DPRINTK(fmt, args...) printk(fmt,## args)</u></td></tr>
+<tr><th id="46">46</th><td><u>#<span data-ppcond="44">else</span></u></td></tr>
+<tr><th id="47">47</th><td><u>#define <dfn class="macro" id="_M/DPRINTK" data-ref="_M/DPRINTK">DPRINTK</dfn>(fmt, args...)</u></td></tr>
+<tr><th id="48">48</th><td><u>#<span data-ppcond="44">endif</span></u></td></tr>
+<tr><th id="49">49</th><td></td></tr>
+<tr><th id="50">50</th><td><u>#define <dfn class="macro" id="_M/FBMON_FIX_HEADER" data-ref="_M/FBMON_FIX_HEADER">FBMON_FIX_HEADER</dfn>  1</u></td></tr>
+<tr><th id="51">51</th><td><u>#define <dfn class="macro" id="_M/FBMON_FIX_INPUT" data-ref="_M/FBMON_FIX_INPUT">FBMON_FIX_INPUT</dfn>   2</u></td></tr>
+<tr><th id="52">52</th><td><u>#define <dfn class="macro" id="_M/FBMON_FIX_TIMINGS" data-ref="_M/FBMON_FIX_TIMINGS">FBMON_FIX_TIMINGS</dfn> 3</u></td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td><u>#<span data-ppcond="54">ifdef</span> <span class="macro" data-ref="_M/CONFIG_FB_MODE_HELPERS">CONFIG_FB_MODE_HELPERS</span></u></td></tr>
+<tr><th id="55">55</th><td><b>struct</b> broken_edid {</td></tr>
+<tr><th id="56">56</th><td>	u8  manufacturer[<var>4</var>];</td></tr>
+<tr><th id="57">57</th><td>	u32 model;</td></tr>
+<tr><th id="58">58</th><td>	u32 fix;</td></tr>
+<tr><th id="59">59</th><td>};</td></tr>
+<tr><th id="60">60</th><td></td></tr>
+<tr><th id="61">61</th><td><em>static</em> <em>const</em> <b>struct</b> broken_edid brokendb[] = {</td></tr>
+<tr><th id="62">62</th><td>	<i>/* DEC FR-PCXAV-YZ */</i></td></tr>
+<tr><th id="63">63</th><td>	{</td></tr>
+<tr><th id="64">64</th><td>		.manufacturer = <q>"DEC"</q>,</td></tr>
+<tr><th id="65">65</th><td>		.model        = <var>0x073a</var>,</td></tr>
+<tr><th id="66">66</th><td>		.fix          = FBMON_FIX_HEADER,</td></tr>
+<tr><th id="67">67</th><td>	},</td></tr>
+<tr><th id="68">68</th><td>	<i>/* ViewSonic PF775a */</i></td></tr>
+<tr><th id="69">69</th><td>	{</td></tr>
+<tr><th id="70">70</th><td>		.manufacturer = <q>"VSC"</q>,</td></tr>
+<tr><th id="71">71</th><td>		.model        = <var>0x5a44</var>,</td></tr>
+<tr><th id="72">72</th><td>		.fix          = FBMON_FIX_INPUT,</td></tr>
+<tr><th id="73">73</th><td>	},</td></tr>
+<tr><th id="74">74</th><td>	<i>/* Sharp UXGA? */</i></td></tr>
+<tr><th id="75">75</th><td>	{</td></tr>
+<tr><th id="76">76</th><td>		.manufacturer = <q>"SHP"</q>,</td></tr>
+<tr><th id="77">77</th><td>		.model        = <var>0x138e</var>,</td></tr>
+<tr><th id="78">78</th><td>		.fix          = FBMON_FIX_TIMINGS,</td></tr>
+<tr><th id="79">79</th><td>	},</td></tr>
+<tr><th id="80">80</th><td>};</td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td><em>static</em> <em>const</em> <em>unsigned</em> <em>char</em> edid_v1_header[] = { <var>0x00</var>, <var>0xff</var>, <var>0xff</var>, <var>0xff</var>,</td></tr>
+<tr><th id="83">83</th><td>	<var>0xff</var>, <var>0xff</var>, <var>0xff</var>, <var>0x00</var></td></tr>
+<tr><th id="84">84</th><td>};</td></tr>
+<tr><th id="85">85</th><td></td></tr>
+<tr><th id="86">86</th><td><em>static</em> <em>void</em> copy_string(<em>unsigned</em> <em>char</em> *c, <em>unsigned</em> <em>char</em> *s)</td></tr>
+<tr><th id="87">87</th><td>{</td></tr>
+<tr><th id="88">88</th><td>  <em>int</em> i;</td></tr>
+<tr><th id="89">89</th><td>  c = c + <var>5</var>;</td></tr>
+<tr><th id="90">90</th><td>  <b>for</b> (i = <var>0</var>; (i &lt; <var>13</var> &amp;&amp; *c != <var>0x0A</var>); i++)</td></tr>
+<tr><th id="91">91</th><td>    *(s++) = *(c++);</td></tr>
+<tr><th id="92">92</th><td>  *s = <var>0</var>;</td></tr>
+<tr><th id="93">93</th><td>  <b>while</b> (i-- &amp;&amp; (*--s == <var>0x20</var>)) *s = <var>0</var>;</td></tr>
+<tr><th id="94">94</th><td>}</td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td><em>static</em> <em>int</em> edid_is_serial_block(<em>unsigned</em> <em>char</em> *block)</td></tr>
+<tr><th id="97">97</th><td>{</td></tr>
+<tr><th id="98">98</th><td>	<b>if</b> ((block[<var>0</var>] == <var>0x00</var>) &amp;&amp; (block[<var>1</var>] == <var>0x00</var>) &amp;&amp;</td></tr>
+<tr><th id="99">99</th><td>	    (block[<var>2</var>] == <var>0x00</var>) &amp;&amp; (block[<var>3</var>] == <var>0xff</var>) &amp;&amp;</td></tr>
+<tr><th id="100">100</th><td>	    (block[<var>4</var>] == <var>0x00</var>))</td></tr>
+<tr><th id="101">101</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="102">102</th><td>	<b>else</b></td></tr>
+<tr><th id="103">103</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="104">104</th><td>}</td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td><em>static</em> <em>int</em> edid_is_ascii_block(<em>unsigned</em> <em>char</em> *block)</td></tr>
+<tr><th id="107">107</th><td>{</td></tr>
+<tr><th id="108">108</th><td>	<b>if</b> ((block[<var>0</var>] == <var>0x00</var>) &amp;&amp; (block[<var>1</var>] == <var>0x00</var>) &amp;&amp;</td></tr>
+<tr><th id="109">109</th><td>	    (block[<var>2</var>] == <var>0x00</var>) &amp;&amp; (block[<var>3</var>] == <var>0xfe</var>) &amp;&amp;</td></tr>
+<tr><th id="110">110</th><td>	    (block[<var>4</var>] == <var>0x00</var>))</td></tr>
+<tr><th id="111">111</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="112">112</th><td>	<b>else</b></td></tr>
+<tr><th id="113">113</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="114">114</th><td>}</td></tr>
+<tr><th id="115">115</th><td></td></tr>
+<tr><th id="116">116</th><td><em>static</em> <em>int</em> edid_is_limits_block(<em>unsigned</em> <em>char</em> *block)</td></tr>
+<tr><th id="117">117</th><td>{</td></tr>
+<tr><th id="118">118</th><td>	<b>if</b> ((block[<var>0</var>] == <var>0x00</var>) &amp;&amp; (block[<var>1</var>] == <var>0x00</var>) &amp;&amp;</td></tr>
+<tr><th id="119">119</th><td>	    (block[<var>2</var>] == <var>0x00</var>) &amp;&amp; (block[<var>3</var>] == <var>0xfd</var>) &amp;&amp;</td></tr>
+<tr><th id="120">120</th><td>	    (block[<var>4</var>] == <var>0x00</var>))</td></tr>
+<tr><th id="121">121</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="122">122</th><td>	<b>else</b></td></tr>
+<tr><th id="123">123</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="124">124</th><td>}</td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td><em>static</em> <em>int</em> edid_is_monitor_block(<em>unsigned</em> <em>char</em> *block)</td></tr>
+<tr><th id="127">127</th><td>{</td></tr>
+<tr><th id="128">128</th><td>	<b>if</b> ((block[<var>0</var>] == <var>0x00</var>) &amp;&amp; (block[<var>1</var>] == <var>0x00</var>) &amp;&amp;</td></tr>
+<tr><th id="129">129</th><td>	    (block[<var>2</var>] == <var>0x00</var>) &amp;&amp; (block[<var>3</var>] == <var>0xfc</var>) &amp;&amp;</td></tr>
+<tr><th id="130">130</th><td>	    (block[<var>4</var>] == <var>0x00</var>))</td></tr>
+<tr><th id="131">131</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="132">132</th><td>	<b>else</b></td></tr>
+<tr><th id="133">133</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="134">134</th><td>}</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td><em>static</em> <em>int</em> edid_is_timing_block(<em>unsigned</em> <em>char</em> *block)</td></tr>
+<tr><th id="137">137</th><td>{</td></tr>
+<tr><th id="138">138</th><td>	<b>if</b> ((block[<var>0</var>] != <var>0x00</var>) || (block[<var>1</var>] != <var>0x00</var>) ||</td></tr>
+<tr><th id="139">139</th><td>	    (block[<var>2</var>] != <var>0x00</var>) || (block[<var>4</var>] != <var>0x00</var>))</td></tr>
+<tr><th id="140">140</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="141">141</th><td>	<b>else</b></td></tr>
+<tr><th id="142">142</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="143">143</th><td>}</td></tr>
+<tr><th id="144">144</th><td></td></tr>
+<tr><th id="145">145</th><td><em>static</em> <em>int</em> check_edid(<em>unsigned</em> <em>char</em> *edid)</td></tr>
+<tr><th id="146">146</th><td>{</td></tr>
+<tr><th id="147">147</th><td>	<em>unsigned</em> <em>char</em> *block = edid + ID_MANUFACTURER_NAME, manufacturer[<var>4</var>];</td></tr>
+<tr><th id="148">148</th><td>	<em>unsigned</em> <em>char</em> *b;</td></tr>
+<tr><th id="149">149</th><td>	u32 model;</td></tr>
+<tr><th id="150">150</th><td>	<em>int</em> i, fix = <var>0</var>, ret = <var>0</var>;</td></tr>
+<tr><th id="151">151</th><td></td></tr>
+<tr><th id="152">152</th><td>	manufacturer[<var>0</var>] = ((block[<var>0</var>] &amp; <var>0x7c</var>) &gt;&gt; <var>2</var>) + <kbd>'@'</kbd>;</td></tr>
+<tr><th id="153">153</th><td>	manufacturer[<var>1</var>] = ((block[<var>0</var>] &amp; <var>0x03</var>) &lt;&lt; <var>3</var>) +</td></tr>
+<tr><th id="154">154</th><td>		((block[<var>1</var>] &amp; <var>0xe0</var>) &gt;&gt; <var>5</var>) + <kbd>'@'</kbd>;</td></tr>
+<tr><th id="155">155</th><td>	manufacturer[<var>2</var>] = (block[<var>1</var>] &amp; <var>0x1f</var>) + <kbd>'@'</kbd>;</td></tr>
+<tr><th id="156">156</th><td>	manufacturer[<var>3</var>] = <var>0</var>;</td></tr>
+<tr><th id="157">157</th><td>	model = block[<var>2</var>] + (block[<var>3</var>] &lt;&lt; <var>8</var>);</td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td>	<b>for</b> (i = <var>0</var>; i &lt; ARRAY_SIZE(brokendb); i++) {</td></tr>
+<tr><th id="160">160</th><td>		<b>if</b> (!strncmp(manufacturer, brokendb[i].manufacturer, <var>4</var>) &amp;&amp;</td></tr>
+<tr><th id="161">161</th><td>			brokendb[i].model == model) {</td></tr>
+<tr><th id="162">162</th><td>			fix = brokendb[i].fix;</td></tr>
+<tr><th id="163">163</th><td>			<b>break</b>;</td></tr>
+<tr><th id="164">164</th><td>		}</td></tr>
+<tr><th id="165">165</th><td>	}</td></tr>
+<tr><th id="166">166</th><td></td></tr>
+<tr><th id="167">167</th><td>	<b>switch</b> (fix) {</td></tr>
+<tr><th id="168">168</th><td>	<b>case</b> FBMON_FIX_HEADER:</td></tr>
+<tr><th id="169">169</th><td>		<b>for</b> (i = <var>0</var>; i &lt; <var>8</var>; i++) {</td></tr>
+<tr><th id="170">170</th><td>			<b>if</b> (edid[i] != edid_v1_header[i]) {</td></tr>
+<tr><th id="171">171</th><td>				ret = fix;</td></tr>
+<tr><th id="172">172</th><td>				<b>break</b>;</td></tr>
+<tr><th id="173">173</th><td>			}</td></tr>
+<tr><th id="174">174</th><td>		}</td></tr>
+<tr><th id="175">175</th><td>		<b>break</b>;</td></tr>
+<tr><th id="176">176</th><td>	<b>case</b> FBMON_FIX_INPUT:</td></tr>
+<tr><th id="177">177</th><td>		b = edid + EDID_STRUCT_DISPLAY;</td></tr>
+<tr><th id="178">178</th><td>		<i>/* Only if display is GTF capable will</i></td></tr>
+<tr><th id="179">179</th><td><i>		   the input type be reset to analog */</i></td></tr>
+<tr><th id="180">180</th><td>		<b>if</b> (b[<var>4</var>] &amp; <var>0x01</var> &amp;&amp; b[<var>0</var>] &amp; <var>0x80</var>)</td></tr>
+<tr><th id="181">181</th><td>			ret = fix;</td></tr>
+<tr><th id="182">182</th><td>		<b>break</b>;</td></tr>
+<tr><th id="183">183</th><td>	<b>case</b> FBMON_FIX_TIMINGS:</td></tr>
+<tr><th id="184">184</th><td>		b = edid + DETAILED_TIMING_DESCRIPTIONS_START;</td></tr>
+<tr><th id="185">185</th><td>		ret = fix;</td></tr>
+<tr><th id="186">186</th><td></td></tr>
+<tr><th id="187">187</th><td>		<b>for</b> (i = <var>0</var>; i &lt; <var>4</var>; i++) {</td></tr>
+<tr><th id="188">188</th><td>			<b>if</b> (edid_is_limits_block(b)) {</td></tr>
+<tr><th id="189">189</th><td>				ret = <var>0</var>;</td></tr>
+<tr><th id="190">190</th><td>				<b>break</b>;</td></tr>
+<tr><th id="191">191</th><td>			}</td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td>			b += DETAILED_TIMING_DESCRIPTION_SIZE;</td></tr>
+<tr><th id="194">194</th><td>		}</td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td>		<b>break</b>;</td></tr>
+<tr><th id="197">197</th><td>	}</td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td>	<b>if</b> (ret)</td></tr>
+<tr><th id="200">200</th><td>		printk(<q>"fbmon: The EDID Block of "</q></td></tr>
+<tr><th id="201">201</th><td>		       <q>"Manufacturer: %s Model: 0x%x is known to "</q></td></tr>
+<tr><th id="202">202</th><td>		       <q>"be broken,\n"</q>,  manufacturer, model);</td></tr>
+<tr><th id="203">203</th><td></td></tr>
+<tr><th id="204">204</th><td>	<b>return</b> ret;</td></tr>
+<tr><th id="205">205</th><td>}</td></tr>
+<tr><th id="206">206</th><td></td></tr>
+<tr><th id="207">207</th><td><em>static</em> <em>void</em> fix_edid(<em>unsigned</em> <em>char</em> *edid, <em>int</em> fix)</td></tr>
+<tr><th id="208">208</th><td>{</td></tr>
+<tr><th id="209">209</th><td>	<em>int</em> i;</td></tr>
+<tr><th id="210">210</th><td>	<em>unsigned</em> <em>char</em> *b, csum = <var>0</var>;</td></tr>
+<tr><th id="211">211</th><td></td></tr>
+<tr><th id="212">212</th><td>	<b>switch</b> (fix) {</td></tr>
+<tr><th id="213">213</th><td>	<b>case</b> FBMON_FIX_HEADER:</td></tr>
+<tr><th id="214">214</th><td>		printk(<q>"fbmon: trying a header reconstruct\n"</q>);</td></tr>
+<tr><th id="215">215</th><td>		memcpy(edid, edid_v1_header, <var>8</var>);</td></tr>
+<tr><th id="216">216</th><td>		<b>break</b>;</td></tr>
+<tr><th id="217">217</th><td>	<b>case</b> FBMON_FIX_INPUT:</td></tr>
+<tr><th id="218">218</th><td>		printk(<q>"fbmon: trying to fix input type\n"</q>);</td></tr>
+<tr><th id="219">219</th><td>		b = edid + EDID_STRUCT_DISPLAY;</td></tr>
+<tr><th id="220">220</th><td>		b[<var>0</var>] &amp;= ~<var>0x80</var>;</td></tr>
+<tr><th id="221">221</th><td>		edid[<var>127</var>] += <var>0x80</var>;</td></tr>
+<tr><th id="222">222</th><td>		<b>break</b>;</td></tr>
+<tr><th id="223">223</th><td>	<b>case</b> FBMON_FIX_TIMINGS:</td></tr>
+<tr><th id="224">224</th><td>		printk(<q>"fbmon: trying to fix monitor timings\n"</q>);</td></tr>
+<tr><th id="225">225</th><td>		b = edid + DETAILED_TIMING_DESCRIPTIONS_START;</td></tr>
+<tr><th id="226">226</th><td>		<b>for</b> (i = <var>0</var>; i &lt; <var>4</var>; i++) {</td></tr>
+<tr><th id="227">227</th><td>			<b>if</b> (!(edid_is_serial_block(b) ||</td></tr>
+<tr><th id="228">228</th><td>			      edid_is_ascii_block(b) ||</td></tr>
+<tr><th id="229">229</th><td>			      edid_is_monitor_block(b) ||</td></tr>
+<tr><th id="230">230</th><td>			      edid_is_timing_block(b))) {</td></tr>
+<tr><th id="231">231</th><td>				b[<var>0</var>] = <var>0x00</var>;</td></tr>
+<tr><th id="232">232</th><td>				b[<var>1</var>] = <var>0x00</var>;</td></tr>
+<tr><th id="233">233</th><td>				b[<var>2</var>] = <var>0x00</var>;</td></tr>
+<tr><th id="234">234</th><td>				b[<var>3</var>] = <var>0xfd</var>;</td></tr>
+<tr><th id="235">235</th><td>				b[<var>4</var>] = <var>0x00</var>;</td></tr>
+<tr><th id="236">236</th><td>				b[<var>5</var>] = <var>60</var>;   <i>/* vfmin */</i></td></tr>
+<tr><th id="237">237</th><td>				b[<var>6</var>] = <var>60</var>;   <i>/* vfmax */</i></td></tr>
+<tr><th id="238">238</th><td>				b[<var>7</var>] = <var>30</var>;   <i>/* hfmin */</i></td></tr>
+<tr><th id="239">239</th><td>				b[<var>8</var>] = <var>75</var>;   <i>/* hfmax */</i></td></tr>
+<tr><th id="240">240</th><td>				b[<var>9</var>] = <var>17</var>;   <i>/* pixclock - 170 MHz*/</i></td></tr>
+<tr><th id="241">241</th><td>				b[<var>10</var>] = <var>0</var>;   <i>/* GTF */</i></td></tr>
+<tr><th id="242">242</th><td>				<b>break</b>;</td></tr>
+<tr><th id="243">243</th><td>			}</td></tr>
+<tr><th id="244">244</th><td></td></tr>
+<tr><th id="245">245</th><td>			b += DETAILED_TIMING_DESCRIPTION_SIZE;</td></tr>
+<tr><th id="246">246</th><td>		}</td></tr>
+<tr><th id="247">247</th><td></td></tr>
+<tr><th id="248">248</th><td>		<b>for</b> (i = <var>0</var>; i &lt; EDID_LENGTH - <var>1</var>; i++)</td></tr>
+<tr><th id="249">249</th><td>			csum += edid[i];</td></tr>
+<tr><th id="250">250</th><td></td></tr>
+<tr><th id="251">251</th><td>		edid[<var>127</var>] = <var>256</var> - csum;</td></tr>
+<tr><th id="252">252</th><td>		<b>break</b>;</td></tr>
+<tr><th id="253">253</th><td>	}</td></tr>
+<tr><th id="254">254</th><td>}</td></tr>
+<tr><th id="255">255</th><td></td></tr>
+<tr><th id="256">256</th><td><em>static</em> <em>int</em> edid_checksum(<em>unsigned</em> <em>char</em> *edid)</td></tr>
+<tr><th id="257">257</th><td>{</td></tr>
+<tr><th id="258">258</th><td>	<em>unsigned</em> <em>char</em> csum = <var>0</var>, all_null = <var>0</var>;</td></tr>
+<tr><th id="259">259</th><td>	<em>int</em> i, err = <var>0</var>, fix = check_edid(edid);</td></tr>
+<tr><th id="260">260</th><td></td></tr>
+<tr><th id="261">261</th><td>	<b>if</b> (fix)</td></tr>
+<tr><th id="262">262</th><td>		fix_edid(edid, fix);</td></tr>
+<tr><th id="263">263</th><td></td></tr>
+<tr><th id="264">264</th><td>	<b>for</b> (i = <var>0</var>; i &lt; EDID_LENGTH; i++) {</td></tr>
+<tr><th id="265">265</th><td>		csum += edid[i];</td></tr>
+<tr><th id="266">266</th><td>		all_null |= edid[i];</td></tr>
+<tr><th id="267">267</th><td>	}</td></tr>
+<tr><th id="268">268</th><td></td></tr>
+<tr><th id="269">269</th><td>	<b>if</b> (csum == <var>0x00</var> &amp;&amp; all_null) {</td></tr>
+<tr><th id="270">270</th><td>		<i>/* checksum passed, everything's good */</i></td></tr>
+<tr><th id="271">271</th><td>		err = <var>1</var>;</td></tr>
+<tr><th id="272">272</th><td>	}</td></tr>
+<tr><th id="273">273</th><td></td></tr>
+<tr><th id="274">274</th><td>	<b>return</b> err;</td></tr>
+<tr><th id="275">275</th><td>}</td></tr>
+<tr><th id="276">276</th><td></td></tr>
+<tr><th id="277">277</th><td><em>static</em> <em>int</em> edid_check_header(<em>unsigned</em> <em>char</em> *edid)</td></tr>
+<tr><th id="278">278</th><td>{</td></tr>
+<tr><th id="279">279</th><td>	<em>int</em> i, err = <var>1</var>, fix = check_edid(edid);</td></tr>
+<tr><th id="280">280</th><td></td></tr>
+<tr><th id="281">281</th><td>	<b>if</b> (fix)</td></tr>
+<tr><th id="282">282</th><td>		fix_edid(edid, fix);</td></tr>
+<tr><th id="283">283</th><td></td></tr>
+<tr><th id="284">284</th><td>	<b>for</b> (i = <var>0</var>; i &lt; <var>8</var>; i++) {</td></tr>
+<tr><th id="285">285</th><td>		<b>if</b> (edid[i] != edid_v1_header[i])</td></tr>
+<tr><th id="286">286</th><td>			err = <var>0</var>;</td></tr>
+<tr><th id="287">287</th><td>	}</td></tr>
+<tr><th id="288">288</th><td></td></tr>
+<tr><th id="289">289</th><td>	<b>return</b> err;</td></tr>
+<tr><th id="290">290</th><td>}</td></tr>
+<tr><th id="291">291</th><td></td></tr>
+<tr><th id="292">292</th><td><em>static</em> <em>void</em> parse_vendor_block(<em>unsigned</em> <em>char</em> *block, <b>struct</b> fb_monspecs *specs)</td></tr>
+<tr><th id="293">293</th><td>{</td></tr>
+<tr><th id="294">294</th><td>	specs-&gt;manufacturer[<var>0</var>] = ((block[<var>0</var>] &amp; <var>0x7c</var>) &gt;&gt; <var>2</var>) + <kbd>'@'</kbd>;</td></tr>
+<tr><th id="295">295</th><td>	specs-&gt;manufacturer[<var>1</var>] = ((block[<var>0</var>] &amp; <var>0x03</var>) &lt;&lt; <var>3</var>) +</td></tr>
+<tr><th id="296">296</th><td>		((block[<var>1</var>] &amp; <var>0xe0</var>) &gt;&gt; <var>5</var>) + <kbd>'@'</kbd>;</td></tr>
+<tr><th id="297">297</th><td>	specs-&gt;manufacturer[<var>2</var>] = (block[<var>1</var>] &amp; <var>0x1f</var>) + <kbd>'@'</kbd>;</td></tr>
+<tr><th id="298">298</th><td>	specs-&gt;manufacturer[<var>3</var>] = <var>0</var>;</td></tr>
+<tr><th id="299">299</th><td>	specs-&gt;model = block[<var>2</var>] + (block[<var>3</var>] &lt;&lt; <var>8</var>);</td></tr>
+<tr><th id="300">300</th><td>	specs-&gt;serial = block[<var>4</var>] + (block[<var>5</var>] &lt;&lt; <var>8</var>) +</td></tr>
+<tr><th id="301">301</th><td>	       (block[<var>6</var>] &lt;&lt; <var>16</var>) + (block[<var>7</var>] &lt;&lt; <var>24</var>);</td></tr>
+<tr><th id="302">302</th><td>	specs-&gt;year = block[<var>9</var>] + <var>1990</var>;</td></tr>
+<tr><th id="303">303</th><td>	specs-&gt;week = block[<var>8</var>];</td></tr>
+<tr><th id="304">304</th><td>	DPRINTK(<q>"   Manufacturer: %s\n"</q>, specs-&gt;manufacturer);</td></tr>
+<tr><th id="305">305</th><td>	DPRINTK(<q>"   Model: %x\n"</q>, specs-&gt;model);</td></tr>
+<tr><th id="306">306</th><td>	DPRINTK(<q>"   Serial#: %u\n"</q>, specs-&gt;serial);</td></tr>
+<tr><th id="307">307</th><td>	DPRINTK(<q>"   Year: %u Week %u\n"</q>, specs-&gt;year, specs-&gt;week);</td></tr>
+<tr><th id="308">308</th><td>}</td></tr>
+<tr><th id="309">309</th><td></td></tr>
+<tr><th id="310">310</th><td><em>static</em> <em>void</em> get_dpms_capabilities(<em>unsigned</em> <em>char</em> flags,</td></tr>
+<tr><th id="311">311</th><td>				  <b>struct</b> fb_monspecs *specs)</td></tr>
+<tr><th id="312">312</th><td>{</td></tr>
+<tr><th id="313">313</th><td>	specs-&gt;dpms = <var>0</var>;</td></tr>
+<tr><th id="314">314</th><td>	<b>if</b> (flags &amp; DPMS_ACTIVE_OFF)</td></tr>
+<tr><th id="315">315</th><td>		specs-&gt;dpms |= FB_DPMS_ACTIVE_OFF;</td></tr>
+<tr><th id="316">316</th><td>	<b>if</b> (flags &amp; DPMS_SUSPEND)</td></tr>
+<tr><th id="317">317</th><td>		specs-&gt;dpms |= FB_DPMS_SUSPEND;</td></tr>
+<tr><th id="318">318</th><td>	<b>if</b> (flags &amp; DPMS_STANDBY)</td></tr>
+<tr><th id="319">319</th><td>		specs-&gt;dpms |= FB_DPMS_STANDBY;</td></tr>
+<tr><th id="320">320</th><td>	DPRINTK(<q>"      DPMS: Active %s, Suspend %s, Standby %s\n"</q>,</td></tr>
+<tr><th id="321">321</th><td>	       (flags &amp; DPMS_ACTIVE_OFF) ? <q>"yes"</q> : <q>"no"</q>,</td></tr>
+<tr><th id="322">322</th><td>	       (flags &amp; DPMS_SUSPEND)    ? <q>"yes"</q> : <q>"no"</q>,</td></tr>
+<tr><th id="323">323</th><td>	       (flags &amp; DPMS_STANDBY)    ? <q>"yes"</q> : <q>"no"</q>);</td></tr>
+<tr><th id="324">324</th><td>}</td></tr>
+<tr><th id="325">325</th><td></td></tr>
+<tr><th id="326">326</th><td><em>static</em> <em>void</em> get_chroma(<em>unsigned</em> <em>char</em> *block, <b>struct</b> fb_monspecs *specs)</td></tr>
+<tr><th id="327">327</th><td>{</td></tr>
+<tr><th id="328">328</th><td>	<em>int</em> tmp;</td></tr>
+<tr><th id="329">329</th><td></td></tr>
+<tr><th id="330">330</th><td>	DPRINTK(<q>"      Chroma\n"</q>);</td></tr>
+<tr><th id="331">331</th><td>	<i>/* Chromaticity data */</i></td></tr>
+<tr><th id="332">332</th><td>	tmp = ((block[<var>5</var>] &amp; (<var>3</var> &lt;&lt; <var>6</var>)) &gt;&gt; <var>6</var>) | (block[<var>0x7</var>] &lt;&lt; <var>2</var>);</td></tr>
+<tr><th id="333">333</th><td>	tmp *= <var>1000</var>;</td></tr>
+<tr><th id="334">334</th><td>	tmp += <var>512</var>;</td></tr>
+<tr><th id="335">335</th><td>	specs-&gt;chroma.redx = tmp/<var>1024</var>;</td></tr>
+<tr><th id="336">336</th><td>	DPRINTK(<q>"         RedX:     0.%03d "</q>, specs-&gt;chroma.redx);</td></tr>
+<tr><th id="337">337</th><td></td></tr>
+<tr><th id="338">338</th><td>	tmp = ((block[<var>5</var>] &amp; (<var>3</var> &lt;&lt; <var>4</var>)) &gt;&gt; <var>4</var>) | (block[<var>0x8</var>] &lt;&lt; <var>2</var>);</td></tr>
+<tr><th id="339">339</th><td>	tmp *= <var>1000</var>;</td></tr>
+<tr><th id="340">340</th><td>	tmp += <var>512</var>;</td></tr>
+<tr><th id="341">341</th><td>	specs-&gt;chroma.redy = tmp/<var>1024</var>;</td></tr>
+<tr><th id="342">342</th><td>	DPRINTK(<q>"RedY:     0.%03d\n"</q>, specs-&gt;chroma.redy);</td></tr>
+<tr><th id="343">343</th><td></td></tr>
+<tr><th id="344">344</th><td>	tmp = ((block[<var>5</var>] &amp; (<var>3</var> &lt;&lt; <var>2</var>)) &gt;&gt; <var>2</var>) | (block[<var>0x9</var>] &lt;&lt; <var>2</var>);</td></tr>
+<tr><th id="345">345</th><td>	tmp *= <var>1000</var>;</td></tr>
+<tr><th id="346">346</th><td>	tmp += <var>512</var>;</td></tr>
+<tr><th id="347">347</th><td>	specs-&gt;chroma.greenx = tmp/<var>1024</var>;</td></tr>
+<tr><th id="348">348</th><td>	DPRINTK(<q>"         GreenX:   0.%03d "</q>, specs-&gt;chroma.greenx);</td></tr>
+<tr><th id="349">349</th><td></td></tr>
+<tr><th id="350">350</th><td>	tmp = (block[<var>5</var>] &amp; <var>3</var>) | (block[<var>0xa</var>] &lt;&lt; <var>2</var>);</td></tr>
+<tr><th id="351">351</th><td>	tmp *= <var>1000</var>;</td></tr>
+<tr><th id="352">352</th><td>	tmp += <var>512</var>;</td></tr>
+<tr><th id="353">353</th><td>	specs-&gt;chroma.greeny = tmp/<var>1024</var>;</td></tr>
+<tr><th id="354">354</th><td>	DPRINTK(<q>"GreenY:   0.%03d\n"</q>, specs-&gt;chroma.greeny);</td></tr>
+<tr><th id="355">355</th><td></td></tr>
+<tr><th id="356">356</th><td>	tmp = ((block[<var>6</var>] &amp; (<var>3</var> &lt;&lt; <var>6</var>)) &gt;&gt; <var>6</var>) | (block[<var>0xb</var>] &lt;&lt; <var>2</var>);</td></tr>
+<tr><th id="357">357</th><td>	tmp *= <var>1000</var>;</td></tr>
+<tr><th id="358">358</th><td>	tmp += <var>512</var>;</td></tr>
+<tr><th id="359">359</th><td>	specs-&gt;chroma.bluex = tmp/<var>1024</var>;</td></tr>
+<tr><th id="360">360</th><td>	DPRINTK(<q>"         BlueX:    0.%03d "</q>, specs-&gt;chroma.bluex);</td></tr>
+<tr><th id="361">361</th><td></td></tr>
+<tr><th id="362">362</th><td>	tmp = ((block[<var>6</var>] &amp; (<var>3</var> &lt;&lt; <var>4</var>)) &gt;&gt; <var>4</var>) | (block[<var>0xc</var>] &lt;&lt; <var>2</var>);</td></tr>
+<tr><th id="363">363</th><td>	tmp *= <var>1000</var>;</td></tr>
+<tr><th id="364">364</th><td>	tmp += <var>512</var>;</td></tr>
+<tr><th id="365">365</th><td>	specs-&gt;chroma.bluey = tmp/<var>1024</var>;</td></tr>
+<tr><th id="366">366</th><td>	DPRINTK(<q>"BlueY:    0.%03d\n"</q>, specs-&gt;chroma.bluey);</td></tr>
+<tr><th id="367">367</th><td></td></tr>
+<tr><th id="368">368</th><td>	tmp = ((block[<var>6</var>] &amp; (<var>3</var> &lt;&lt; <var>2</var>)) &gt;&gt; <var>2</var>) | (block[<var>0xd</var>] &lt;&lt; <var>2</var>);</td></tr>
+<tr><th id="369">369</th><td>	tmp *= <var>1000</var>;</td></tr>
+<tr><th id="370">370</th><td>	tmp += <var>512</var>;</td></tr>
+<tr><th id="371">371</th><td>	specs-&gt;chroma.whitex = tmp/<var>1024</var>;</td></tr>
+<tr><th id="372">372</th><td>	DPRINTK(<q>"         WhiteX:   0.%03d "</q>, specs-&gt;chroma.whitex);</td></tr>
+<tr><th id="373">373</th><td></td></tr>
+<tr><th id="374">374</th><td>	tmp = (block[<var>6</var>] &amp; <var>3</var>) | (block[<var>0xe</var>] &lt;&lt; <var>2</var>);</td></tr>
+<tr><th id="375">375</th><td>	tmp *= <var>1000</var>;</td></tr>
+<tr><th id="376">376</th><td>	tmp += <var>512</var>;</td></tr>
+<tr><th id="377">377</th><td>	specs-&gt;chroma.whitey = tmp/<var>1024</var>;</td></tr>
+<tr><th id="378">378</th><td>	DPRINTK(<q>"WhiteY:   0.%03d\n"</q>, specs-&gt;chroma.whitey);</td></tr>
+<tr><th id="379">379</th><td>}</td></tr>
+<tr><th id="380">380</th><td></td></tr>
+<tr><th id="381">381</th><td><em>static</em> <em>void</em> calc_mode_timings(<em>int</em> xres, <em>int</em> yres, <em>int</em> refresh,</td></tr>
+<tr><th id="382">382</th><td>			      <b>struct</b> fb_videomode *mode)</td></tr>
+<tr><th id="383">383</th><td>{</td></tr>
+<tr><th id="384">384</th><td>	<b>struct</b> fb_var_screeninfo *var;</td></tr>
+<tr><th id="385">385</th><td></td></tr>
+<tr><th id="386">386</th><td>	var = kzalloc(<b>sizeof</b>(<b>struct</b> fb_var_screeninfo), GFP_KERNEL);</td></tr>
+<tr><th id="387">387</th><td></td></tr>
+<tr><th id="388">388</th><td>	<b>if</b> (var) {</td></tr>
+<tr><th id="389">389</th><td>		var-&gt;xres = xres;</td></tr>
+<tr><th id="390">390</th><td>		var-&gt;yres = yres;</td></tr>
+<tr><th id="391">391</th><td>		fb_get_mode(FB_VSYNCTIMINGS | FB_IGNOREMON,</td></tr>
+<tr><th id="392">392</th><td>			    refresh, var, NULL);</td></tr>
+<tr><th id="393">393</th><td>		mode-&gt;xres = xres;</td></tr>
+<tr><th id="394">394</th><td>		mode-&gt;yres = yres;</td></tr>
+<tr><th id="395">395</th><td>		mode-&gt;pixclock = var-&gt;pixclock;</td></tr>
+<tr><th id="396">396</th><td>		mode-&gt;refresh = refresh;</td></tr>
+<tr><th id="397">397</th><td>		mode-&gt;left_margin = var-&gt;left_margin;</td></tr>
+<tr><th id="398">398</th><td>		mode-&gt;right_margin = var-&gt;right_margin;</td></tr>
+<tr><th id="399">399</th><td>		mode-&gt;upper_margin = var-&gt;upper_margin;</td></tr>
+<tr><th id="400">400</th><td>		mode-&gt;lower_margin = var-&gt;lower_margin;</td></tr>
+<tr><th id="401">401</th><td>		mode-&gt;hsync_len = var-&gt;hsync_len;</td></tr>
+<tr><th id="402">402</th><td>		mode-&gt;vsync_len = var-&gt;vsync_len;</td></tr>
+<tr><th id="403">403</th><td>		mode-&gt;vmode = <var>0</var>;</td></tr>
+<tr><th id="404">404</th><td>		mode-&gt;sync = <var>0</var>;</td></tr>
+<tr><th id="405">405</th><td>		kfree(var);</td></tr>
+<tr><th id="406">406</th><td>	}</td></tr>
+<tr><th id="407">407</th><td>}</td></tr>
+<tr><th id="408">408</th><td></td></tr>
+<tr><th id="409">409</th><td><em>static</em> <em>int</em> get_est_timing(<em>unsigned</em> <em>char</em> *block, <b>struct</b> fb_videomode *mode)</td></tr>
+<tr><th id="410">410</th><td>{</td></tr>
+<tr><th id="411">411</th><td>	<em>int</em> num = <var>0</var>;</td></tr>
+<tr><th id="412">412</th><td>	<em>unsigned</em> <em>char</em> c;</td></tr>
+<tr><th id="413">413</th><td></td></tr>
+<tr><th id="414">414</th><td>	c = block[<var>0</var>];</td></tr>
+<tr><th id="415">415</th><td>	<b>if</b> (c&amp;<var>0x80</var>) {</td></tr>
+<tr><th id="416">416</th><td>		calc_mode_timings(<var>720</var>, <var>400</var>, <var>70</var>, &amp;mode[num]);</td></tr>
+<tr><th id="417">417</th><td>		mode[num++].flag = FB_MODE_IS_CALCULATED;</td></tr>
+<tr><th id="418">418</th><td>		DPRINTK(<q>"      720x400@70Hz\n"</q>);</td></tr>
+<tr><th id="419">419</th><td>	}</td></tr>
+<tr><th id="420">420</th><td>	<b>if</b> (c&amp;<var>0x40</var>) {</td></tr>
+<tr><th id="421">421</th><td>		calc_mode_timings(<var>720</var>, <var>400</var>, <var>88</var>, &amp;mode[num]);</td></tr>
+<tr><th id="422">422</th><td>		mode[num++].flag = FB_MODE_IS_CALCULATED;</td></tr>
+<tr><th id="423">423</th><td>		DPRINTK(<q>"      720x400@88Hz\n"</q>);</td></tr>
+<tr><th id="424">424</th><td>	}</td></tr>
+<tr><th id="425">425</th><td>	<b>if</b> (c&amp;<var>0x20</var>) {</td></tr>
+<tr><th id="426">426</th><td>		mode[num++] = vesa_modes[<var>3</var>];</td></tr>
+<tr><th id="427">427</th><td>		DPRINTK(<q>"      640x480@60Hz\n"</q>);</td></tr>
+<tr><th id="428">428</th><td>	}</td></tr>
+<tr><th id="429">429</th><td>	<b>if</b> (c&amp;<var>0x10</var>) {</td></tr>
+<tr><th id="430">430</th><td>		calc_mode_timings(<var>640</var>, <var>480</var>, <var>67</var>, &amp;mode[num]);</td></tr>
+<tr><th id="431">431</th><td>		mode[num++].flag = FB_MODE_IS_CALCULATED;</td></tr>
+<tr><th id="432">432</th><td>		DPRINTK(<q>"      640x480@67Hz\n"</q>);</td></tr>
+<tr><th id="433">433</th><td>	}</td></tr>
+<tr><th id="434">434</th><td>	<b>if</b> (c&amp;<var>0x08</var>) {</td></tr>
+<tr><th id="435">435</th><td>		mode[num++] = vesa_modes[<var>4</var>];</td></tr>
+<tr><th id="436">436</th><td>		DPRINTK(<q>"      640x480@72Hz\n"</q>);</td></tr>
+<tr><th id="437">437</th><td>	}</td></tr>
+<tr><th id="438">438</th><td>	<b>if</b> (c&amp;<var>0x04</var>) {</td></tr>
+<tr><th id="439">439</th><td>		mode[num++] = vesa_modes[<var>5</var>];</td></tr>
+<tr><th id="440">440</th><td>		DPRINTK(<q>"      640x480@75Hz\n"</q>);</td></tr>
+<tr><th id="441">441</th><td>	}</td></tr>
+<tr><th id="442">442</th><td>	<b>if</b> (c&amp;<var>0x02</var>) {</td></tr>
+<tr><th id="443">443</th><td>		mode[num++] = vesa_modes[<var>7</var>];</td></tr>
+<tr><th id="444">444</th><td>		DPRINTK(<q>"      800x600@56Hz\n"</q>);</td></tr>
+<tr><th id="445">445</th><td>	}</td></tr>
+<tr><th id="446">446</th><td>	<b>if</b> (c&amp;<var>0x01</var>) {</td></tr>
+<tr><th id="447">447</th><td>		mode[num++] = vesa_modes[<var>8</var>];</td></tr>
+<tr><th id="448">448</th><td>		DPRINTK(<q>"      800x600@60Hz\n"</q>);</td></tr>
+<tr><th id="449">449</th><td>	}</td></tr>
+<tr><th id="450">450</th><td></td></tr>
+<tr><th id="451">451</th><td>	c = block[<var>1</var>];</td></tr>
+<tr><th id="452">452</th><td>	<b>if</b> (c&amp;<var>0x80</var>) {</td></tr>
+<tr><th id="453">453</th><td>		mode[num++] = vesa_modes[<var>9</var>];</td></tr>
+<tr><th id="454">454</th><td>		DPRINTK(<q>"      800x600@72Hz\n"</q>);</td></tr>
+<tr><th id="455">455</th><td>	}</td></tr>
+<tr><th id="456">456</th><td>	<b>if</b> (c&amp;<var>0x40</var>) {</td></tr>
+<tr><th id="457">457</th><td>		mode[num++] = vesa_modes[<var>10</var>];</td></tr>
+<tr><th id="458">458</th><td>		DPRINTK(<q>"      800x600@75Hz\n"</q>);</td></tr>
+<tr><th id="459">459</th><td>	}</td></tr>
+<tr><th id="460">460</th><td>	<b>if</b> (c&amp;<var>0x20</var>) {</td></tr>
+<tr><th id="461">461</th><td>		calc_mode_timings(<var>832</var>, <var>624</var>, <var>75</var>, &amp;mode[num]);</td></tr>
+<tr><th id="462">462</th><td>		mode[num++].flag = FB_MODE_IS_CALCULATED;</td></tr>
+<tr><th id="463">463</th><td>		DPRINTK(<q>"      832x624@75Hz\n"</q>);</td></tr>
+<tr><th id="464">464</th><td>	}</td></tr>
+<tr><th id="465">465</th><td>	<b>if</b> (c&amp;<var>0x10</var>) {</td></tr>
+<tr><th id="466">466</th><td>		mode[num++] = vesa_modes[<var>12</var>];</td></tr>
+<tr><th id="467">467</th><td>		DPRINTK(<q>"      1024x768@87Hz Interlaced\n"</q>);</td></tr>
+<tr><th id="468">468</th><td>	}</td></tr>
+<tr><th id="469">469</th><td>	<b>if</b> (c&amp;<var>0x08</var>) {</td></tr>
+<tr><th id="470">470</th><td>		mode[num++] = vesa_modes[<var>13</var>];</td></tr>
+<tr><th id="471">471</th><td>		DPRINTK(<q>"      1024x768@60Hz\n"</q>);</td></tr>
+<tr><th id="472">472</th><td>	}</td></tr>
+<tr><th id="473">473</th><td>	<b>if</b> (c&amp;<var>0x04</var>) {</td></tr>
+<tr><th id="474">474</th><td>		mode[num++] = vesa_modes[<var>14</var>];</td></tr>
+<tr><th id="475">475</th><td>		DPRINTK(<q>"      1024x768@70Hz\n"</q>);</td></tr>
+<tr><th id="476">476</th><td>	}</td></tr>
+<tr><th id="477">477</th><td>	<b>if</b> (c&amp;<var>0x02</var>) {</td></tr>
+<tr><th id="478">478</th><td>		mode[num++] = vesa_modes[<var>15</var>];</td></tr>
+<tr><th id="479">479</th><td>		DPRINTK(<q>"      1024x768@75Hz\n"</q>);</td></tr>
+<tr><th id="480">480</th><td>	}</td></tr>
+<tr><th id="481">481</th><td>	<b>if</b> (c&amp;<var>0x01</var>) {</td></tr>
+<tr><th id="482">482</th><td>		mode[num++] = vesa_modes[<var>21</var>];</td></tr>
+<tr><th id="483">483</th><td>		DPRINTK(<q>"      1280x1024@75Hz\n"</q>);</td></tr>
+<tr><th id="484">484</th><td>	}</td></tr>
+<tr><th id="485">485</th><td>	c = block[<var>2</var>];</td></tr>
+<tr><th id="486">486</th><td>	<b>if</b> (c&amp;<var>0x80</var>) {</td></tr>
+<tr><th id="487">487</th><td>		mode[num++] = vesa_modes[<var>17</var>];</td></tr>
+<tr><th id="488">488</th><td>		DPRINTK(<q>"      1152x870@75Hz\n"</q>);</td></tr>
+<tr><th id="489">489</th><td>	}</td></tr>
+<tr><th id="490">490</th><td>	DPRINTK(<q>"      Manufacturer's mask: %x\n"</q>,c&amp;<var>0x7F</var>);</td></tr>
+<tr><th id="491">491</th><td>	<b>return</b> num;</td></tr>
+<tr><th id="492">492</th><td>}</td></tr>
+<tr><th id="493">493</th><td></td></tr>
+<tr><th id="494">494</th><td><em>static</em> <em>int</em> get_std_timing(<em>unsigned</em> <em>char</em> *block, <b>struct</b> fb_videomode *mode,</td></tr>
+<tr><th id="495">495</th><td>			  <em>int</em> ver, <em>int</em> rev, <em>const</em> <b>struct</b> fb_monspecs *specs)</td></tr>
+<tr><th id="496">496</th><td>{</td></tr>
+<tr><th id="497">497</th><td>	<em>int</em> i;</td></tr>
+<tr><th id="498">498</th><td></td></tr>
+<tr><th id="499">499</th><td>	<b>for</b> (i = <var>0</var>; i &lt; DMT_SIZE; i++) {</td></tr>
+<tr><th id="500">500</th><td>		u32 std_2byte_code = block[<var>0</var>] &lt;&lt; <var>8</var> | block[<var>1</var>];</td></tr>
+<tr><th id="501">501</th><td>		<b>if</b> (std_2byte_code == dmt_modes[i].std_2byte_code)</td></tr>
+<tr><th id="502">502</th><td>			<b>break</b>;</td></tr>
+<tr><th id="503">503</th><td>	}</td></tr>
+<tr><th id="504">504</th><td></td></tr>
+<tr><th id="505">505</th><td>	<b>if</b> (i &lt; DMT_SIZE &amp;&amp; dmt_modes[i].mode) {</td></tr>
+<tr><th id="506">506</th><td>		<i>/* DMT mode found */</i></td></tr>
+<tr><th id="507">507</th><td>		*mode = *dmt_modes[i].mode;</td></tr>
+<tr><th id="508">508</th><td>		mode-&gt;flag |= FB_MODE_IS_STANDARD;</td></tr>
+<tr><th id="509">509</th><td>		DPRINTK(<q>"        DMT id=%d\n"</q>, dmt_modes[i].dmt_id);</td></tr>
+<tr><th id="510">510</th><td></td></tr>
+<tr><th id="511">511</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="512">512</th><td>		<em>int</em> xres, yres = <var>0</var>, refresh, ratio;</td></tr>
+<tr><th id="513">513</th><td></td></tr>
+<tr><th id="514">514</th><td>		xres = (block[<var>0</var>] + <var>31</var>) * <var>8</var>;</td></tr>
+<tr><th id="515">515</th><td>		<b>if</b> (xres &lt;= <var>256</var>)</td></tr>
+<tr><th id="516">516</th><td>			<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="517">517</th><td></td></tr>
+<tr><th id="518">518</th><td>		ratio = (block[<var>1</var>] &amp; <var>0xc0</var>) &gt;&gt; <var>6</var>;</td></tr>
+<tr><th id="519">519</th><td>		<b>switch</b> (ratio) {</td></tr>
+<tr><th id="520">520</th><td>		<b>case</b> <var>0</var>:</td></tr>
+<tr><th id="521">521</th><td>			<i>/* in EDID 1.3 the meaning of 0 changed to 16:10 (prior 1:1) */</i></td></tr>
+<tr><th id="522">522</th><td>			<b>if</b> (ver &lt; <var>1</var> || (ver == <var>1</var> &amp;&amp; rev &lt; <var>3</var>))</td></tr>
+<tr><th id="523">523</th><td>				yres = xres;</td></tr>
+<tr><th id="524">524</th><td>			<b>else</b></td></tr>
+<tr><th id="525">525</th><td>				yres = (xres * <var>10</var>)/<var>16</var>;</td></tr>
+<tr><th id="526">526</th><td>			<b>break</b>;</td></tr>
+<tr><th id="527">527</th><td>		<b>case</b> <var>1</var>:</td></tr>
+<tr><th id="528">528</th><td>			yres = (xres * <var>3</var>)/<var>4</var>;</td></tr>
+<tr><th id="529">529</th><td>			<b>break</b>;</td></tr>
+<tr><th id="530">530</th><td>		<b>case</b> <var>2</var>:</td></tr>
+<tr><th id="531">531</th><td>			yres = (xres * <var>4</var>)/<var>5</var>;</td></tr>
+<tr><th id="532">532</th><td>			<b>break</b>;</td></tr>
+<tr><th id="533">533</th><td>		<b>case</b> <var>3</var>:</td></tr>
+<tr><th id="534">534</th><td>			yres = (xres * <var>9</var>)/<var>16</var>;</td></tr>
+<tr><th id="535">535</th><td>			<b>break</b>;</td></tr>
+<tr><th id="536">536</th><td>		}</td></tr>
+<tr><th id="537">537</th><td>		refresh = (block[<var>1</var>] &amp; <var>0x3f</var>) + <var>60</var>;</td></tr>
+<tr><th id="538">538</th><td>		DPRINTK(<q>"      %dx%d@%dHz\n"</q>, xres, yres, refresh);</td></tr>
+<tr><th id="539">539</th><td></td></tr>
+<tr><th id="540">540</th><td>		calc_mode_timings(xres, yres, refresh, mode);</td></tr>
+<tr><th id="541">541</th><td>	}</td></tr>
+<tr><th id="542">542</th><td></td></tr>
+<tr><th id="543">543</th><td>	<i>/* Check the mode we got is within valid spec of the monitor */</i></td></tr>
+<tr><th id="544">544</th><td>	<b>if</b> (specs &amp;&amp; specs-&gt;dclkmax</td></tr>
+<tr><th id="545">545</th><td>	    &amp;&amp; PICOS2KHZ(mode-&gt;pixclock) * <var>1000</var> &gt; specs-&gt;dclkmax) {</td></tr>
+<tr><th id="546">546</th><td>		DPRINTK(<q>"        mode exceed max DCLK\n"</q>);</td></tr>
+<tr><th id="547">547</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="548">548</th><td>	}</td></tr>
+<tr><th id="549">549</th><td></td></tr>
+<tr><th id="550">550</th><td>	<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="551">551</th><td>}</td></tr>
+<tr><th id="552">552</th><td></td></tr>
+<tr><th id="553">553</th><td><em>static</em> <em>int</em> get_dst_timing(<em>unsigned</em> <em>char</em> *block, <b>struct</b> fb_videomode *mode,</td></tr>
+<tr><th id="554">554</th><td>			  <em>int</em> ver, <em>int</em> rev, <em>const</em> <b>struct</b> fb_monspecs *specs)</td></tr>
+<tr><th id="555">555</th><td>{</td></tr>
+<tr><th id="556">556</th><td>	<em>int</em> j, num = <var>0</var>;</td></tr>
+<tr><th id="557">557</th><td></td></tr>
+<tr><th id="558">558</th><td>	<b>for</b> (j = <var>0</var>; j &lt; <var>6</var>; j++, block += STD_TIMING_DESCRIPTION_SIZE)</td></tr>
+<tr><th id="559">559</th><td>		num += get_std_timing(block, &amp;mode[num], ver, rev, specs);</td></tr>
+<tr><th id="560">560</th><td></td></tr>
+<tr><th id="561">561</th><td>	<b>return</b> num;</td></tr>
+<tr><th id="562">562</th><td>}</td></tr>
+<tr><th id="563">563</th><td></td></tr>
+<tr><th id="564">564</th><td><em>static</em> <em>void</em> get_detailed_timing(<em>unsigned</em> <em>char</em> *block,</td></tr>
+<tr><th id="565">565</th><td>				<b>struct</b> fb_videomode *mode)</td></tr>
+<tr><th id="566">566</th><td>{</td></tr>
+<tr><th id="567">567</th><td>	mode-&gt;xres = H_ACTIVE;</td></tr>
+<tr><th id="568">568</th><td>	mode-&gt;yres = V_ACTIVE;</td></tr>
+<tr><th id="569">569</th><td>	mode-&gt;pixclock = PIXEL_CLOCK;</td></tr>
+<tr><th id="570">570</th><td>	mode-&gt;pixclock /= <var>1000</var>;</td></tr>
+<tr><th id="571">571</th><td>	mode-&gt;pixclock = KHZ2PICOS(mode-&gt;pixclock);</td></tr>
+<tr><th id="572">572</th><td>	mode-&gt;right_margin = H_SYNC_OFFSET;</td></tr>
+<tr><th id="573">573</th><td>	mode-&gt;left_margin = (H_ACTIVE + H_BLANKING) -</td></tr>
+<tr><th id="574">574</th><td>		(H_ACTIVE + H_SYNC_OFFSET + H_SYNC_WIDTH);</td></tr>
+<tr><th id="575">575</th><td>	mode-&gt;upper_margin = V_BLANKING - V_SYNC_OFFSET -</td></tr>
+<tr><th id="576">576</th><td>		V_SYNC_WIDTH;</td></tr>
+<tr><th id="577">577</th><td>	mode-&gt;lower_margin = V_SYNC_OFFSET;</td></tr>
+<tr><th id="578">578</th><td>	mode-&gt;hsync_len = H_SYNC_WIDTH;</td></tr>
+<tr><th id="579">579</th><td>	mode-&gt;vsync_len = V_SYNC_WIDTH;</td></tr>
+<tr><th id="580">580</th><td>	<b>if</b> (HSYNC_POSITIVE)</td></tr>
+<tr><th id="581">581</th><td>		mode-&gt;sync |= FB_SYNC_HOR_HIGH_ACT;</td></tr>
+<tr><th id="582">582</th><td>	<b>if</b> (VSYNC_POSITIVE)</td></tr>
+<tr><th id="583">583</th><td>		mode-&gt;sync |= FB_SYNC_VERT_HIGH_ACT;</td></tr>
+<tr><th id="584">584</th><td>	mode-&gt;refresh = PIXEL_CLOCK/((H_ACTIVE + H_BLANKING) *</td></tr>
+<tr><th id="585">585</th><td>				     (V_ACTIVE + V_BLANKING));</td></tr>
+<tr><th id="586">586</th><td>	<b>if</b> (INTERLACED) {</td></tr>
+<tr><th id="587">587</th><td>		mode-&gt;yres *= <var>2</var>;</td></tr>
+<tr><th id="588">588</th><td>		mode-&gt;upper_margin *= <var>2</var>;</td></tr>
+<tr><th id="589">589</th><td>		mode-&gt;lower_margin *= <var>2</var>;</td></tr>
+<tr><th id="590">590</th><td>		mode-&gt;vsync_len *= <var>2</var>;</td></tr>
+<tr><th id="591">591</th><td>		mode-&gt;vmode |= FB_VMODE_INTERLACED;</td></tr>
+<tr><th id="592">592</th><td>	}</td></tr>
+<tr><th id="593">593</th><td>	mode-&gt;flag = FB_MODE_IS_DETAILED;</td></tr>
+<tr><th id="594">594</th><td></td></tr>
+<tr><th id="595">595</th><td>	DPRINTK(<q>"      %d MHz "</q>,  PIXEL_CLOCK/<var>1000000</var>);</td></tr>
+<tr><th id="596">596</th><td>	DPRINTK(<q>"%d %d %d %d "</q>, H_ACTIVE, H_ACTIVE + H_SYNC_OFFSET,</td></tr>
+<tr><th id="597">597</th><td>	       H_ACTIVE + H_SYNC_OFFSET + H_SYNC_WIDTH, H_ACTIVE + H_BLANKING);</td></tr>
+<tr><th id="598">598</th><td>	DPRINTK(<q>"%d %d %d %d "</q>, V_ACTIVE, V_ACTIVE + V_SYNC_OFFSET,</td></tr>
+<tr><th id="599">599</th><td>	       V_ACTIVE + V_SYNC_OFFSET + V_SYNC_WIDTH, V_ACTIVE + V_BLANKING);</td></tr>
+<tr><th id="600">600</th><td>	DPRINTK(<q>"%sHSync %sVSync\n\n"</q>, (HSYNC_POSITIVE) ? <q>"+"</q> : <q>"-"</q>,</td></tr>
+<tr><th id="601">601</th><td>	       (VSYNC_POSITIVE) ? <q>"+"</q> : <q>"-"</q>);</td></tr>
+<tr><th id="602">602</th><td>}</td></tr>
+<tr><th id="603">603</th><td></td></tr>
+<tr><th id="604">604</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="605">605</th><td><i class="doc"> * fb_create_modedb - create video mode database</i></td></tr>
+<tr><th id="606">606</th><td><i class="doc"> *<span class="command"> @edid</span>: EDID data</i></td></tr>
+<tr><th id="607">607</th><td><i class="doc"> *<span class="command"> @dbsize</span>: database size</i></td></tr>
+<tr><th id="608">608</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="609">609</th><td><i class="doc"> * RETURNS: struct fb_videomode,<span class="command"> @dbsize</span> contains length of database</i></td></tr>
+<tr><th id="610">610</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="611">611</th><td><i class="doc"> * DESCRIPTION:</i></td></tr>
+<tr><th id="612">612</th><td><i class="doc"> * This function builds a mode database using the contents of the EDID</i></td></tr>
+<tr><th id="613">613</th><td><i class="doc"> * data</i></td></tr>
+<tr><th id="614">614</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="615">615</th><td><em>static</em> <b>struct</b> fb_videomode *fb_create_modedb(<em>unsigned</em> <em>char</em> *edid, <em>int</em> *dbsize,</td></tr>
+<tr><th id="616">616</th><td>					     <em>const</em> <b>struct</b> fb_monspecs *specs)</td></tr>
+<tr><th id="617">617</th><td>{</td></tr>
+<tr><th id="618">618</th><td>	<b>struct</b> fb_videomode *mode, *m;</td></tr>
+<tr><th id="619">619</th><td>	<em>unsigned</em> <em>char</em> *block;</td></tr>
+<tr><th id="620">620</th><td>	<em>int</em> num = <var>0</var>, i, first = <var>1</var>;</td></tr>
+<tr><th id="621">621</th><td>	<em>int</em> ver, rev;</td></tr>
+<tr><th id="622">622</th><td></td></tr>
+<tr><th id="623">623</th><td>	mode = kzalloc(<var>50</var> * <b>sizeof</b>(<b>struct</b> fb_videomode), GFP_KERNEL);</td></tr>
+<tr><th id="624">624</th><td>	<b>if</b> (mode == NULL)</td></tr>
+<tr><th id="625">625</th><td>		<b>return</b> NULL;</td></tr>
+<tr><th id="626">626</th><td></td></tr>
+<tr><th id="627">627</th><td>	<b>if</b> (edid == NULL || !edid_checksum(edid) ||</td></tr>
+<tr><th id="628">628</th><td>	    !edid_check_header(edid)) {</td></tr>
+<tr><th id="629">629</th><td>		kfree(mode);</td></tr>
+<tr><th id="630">630</th><td>		<b>return</b> NULL;</td></tr>
+<tr><th id="631">631</th><td>	}</td></tr>
+<tr><th id="632">632</th><td></td></tr>
+<tr><th id="633">633</th><td>	ver = edid[EDID_STRUCT_VERSION];</td></tr>
+<tr><th id="634">634</th><td>	rev = edid[EDID_STRUCT_REVISION];</td></tr>
+<tr><th id="635">635</th><td></td></tr>
+<tr><th id="636">636</th><td>	*dbsize = <var>0</var>;</td></tr>
+<tr><th id="637">637</th><td></td></tr>
+<tr><th id="638">638</th><td>	DPRINTK(<q>"   Detailed Timings\n"</q>);</td></tr>
+<tr><th id="639">639</th><td>	block = edid + DETAILED_TIMING_DESCRIPTIONS_START;</td></tr>
+<tr><th id="640">640</th><td>	<b>for</b> (i = <var>0</var>; i &lt; <var>4</var>; i++, block+= DETAILED_TIMING_DESCRIPTION_SIZE) {</td></tr>
+<tr><th id="641">641</th><td>		<b>if</b> (!(block[<var>0</var>] == <var>0x00</var> &amp;&amp; block[<var>1</var>] == <var>0x00</var>)) {</td></tr>
+<tr><th id="642">642</th><td>			get_detailed_timing(block, &amp;mode[num]);</td></tr>
+<tr><th id="643">643</th><td>			<b>if</b> (first) {</td></tr>
+<tr><th id="644">644</th><td>			        mode[num].flag |= FB_MODE_IS_FIRST;</td></tr>
+<tr><th id="645">645</th><td>				first = <var>0</var>;</td></tr>
+<tr><th id="646">646</th><td>			}</td></tr>
+<tr><th id="647">647</th><td>			num++;</td></tr>
+<tr><th id="648">648</th><td>		}</td></tr>
+<tr><th id="649">649</th><td>	}</td></tr>
+<tr><th id="650">650</th><td></td></tr>
+<tr><th id="651">651</th><td>	DPRINTK(<q>"   Supported VESA Modes\n"</q>);</td></tr>
+<tr><th id="652">652</th><td>	block = edid + ESTABLISHED_TIMING_1;</td></tr>
+<tr><th id="653">653</th><td>	num += get_est_timing(block, &amp;mode[num]);</td></tr>
+<tr><th id="654">654</th><td></td></tr>
+<tr><th id="655">655</th><td>	DPRINTK(<q>"   Standard Timings\n"</q>);</td></tr>
+<tr><th id="656">656</th><td>	block = edid + STD_TIMING_DESCRIPTIONS_START;</td></tr>
+<tr><th id="657">657</th><td>	<b>for</b> (i = <var>0</var>; i &lt; STD_TIMING; i++, block += STD_TIMING_DESCRIPTION_SIZE)</td></tr>
+<tr><th id="658">658</th><td>		num += get_std_timing(block, &amp;mode[num], ver, rev, specs);</td></tr>
+<tr><th id="659">659</th><td></td></tr>
+<tr><th id="660">660</th><td>	block = edid + DETAILED_TIMING_DESCRIPTIONS_START;</td></tr>
+<tr><th id="661">661</th><td>	<b>for</b> (i = <var>0</var>; i &lt; <var>4</var>; i++, block+= DETAILED_TIMING_DESCRIPTION_SIZE) {</td></tr>
+<tr><th id="662">662</th><td>		<b>if</b> (block[<var>0</var>] == <var>0x00</var> &amp;&amp; block[<var>1</var>] == <var>0x00</var> &amp;&amp; block[<var>3</var>] == <var>0xfa</var>)</td></tr>
+<tr><th id="663">663</th><td>			num += get_dst_timing(block + <var>5</var>, &amp;mode[num],</td></tr>
+<tr><th id="664">664</th><td>					      ver, rev, specs);</td></tr>
+<tr><th id="665">665</th><td>	}</td></tr>
+<tr><th id="666">666</th><td></td></tr>
+<tr><th id="667">667</th><td>	<i>/* Yikes, EDID data is totally useless */</i></td></tr>
+<tr><th id="668">668</th><td>	<b>if</b> (!num) {</td></tr>
+<tr><th id="669">669</th><td>		kfree(mode);</td></tr>
+<tr><th id="670">670</th><td>		<b>return</b> NULL;</td></tr>
+<tr><th id="671">671</th><td>	}</td></tr>
+<tr><th id="672">672</th><td></td></tr>
+<tr><th id="673">673</th><td>	*dbsize = num;</td></tr>
+<tr><th id="674">674</th><td>	m = kmalloc(num * <b>sizeof</b>(<b>struct</b> fb_videomode), GFP_KERNEL);</td></tr>
+<tr><th id="675">675</th><td>	<b>if</b> (!m)</td></tr>
+<tr><th id="676">676</th><td>		<b>return</b> mode;</td></tr>
+<tr><th id="677">677</th><td>	memmove(m, mode, num * <b>sizeof</b>(<b>struct</b> fb_videomode));</td></tr>
+<tr><th id="678">678</th><td>	kfree(mode);</td></tr>
+<tr><th id="679">679</th><td>	<b>return</b> m;</td></tr>
+<tr><th id="680">680</th><td>}</td></tr>
+<tr><th id="681">681</th><td></td></tr>
+<tr><th id="682">682</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="683">683</th><td><i class="doc"> * fb_destroy_modedb - destroys mode database</i></td></tr>
+<tr><th id="684">684</th><td><i class="doc"> *<span class="command"> @modedb</span>: mode database to destroy</i></td></tr>
+<tr><th id="685">685</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="686">686</th><td><i class="doc"> * DESCRIPTION:</i></td></tr>
+<tr><th id="687">687</th><td><i class="doc"> * Destroy mode database created by fb_create_modedb</i></td></tr>
+<tr><th id="688">688</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="689">689</th><td><em>void</em> fb_destroy_modedb(<b>struct</b> fb_videomode *modedb)</td></tr>
+<tr><th id="690">690</th><td>{</td></tr>
+<tr><th id="691">691</th><td>	kfree(modedb);</td></tr>
+<tr><th id="692">692</th><td>}</td></tr>
+<tr><th id="693">693</th><td></td></tr>
+<tr><th id="694">694</th><td><em>static</em> <em>int</em> fb_get_monitor_limits(<em>unsigned</em> <em>char</em> *edid, <b>struct</b> fb_monspecs *specs)</td></tr>
+<tr><th id="695">695</th><td>{</td></tr>
+<tr><th id="696">696</th><td>	<em>int</em> i, retval = <var>1</var>;</td></tr>
+<tr><th id="697">697</th><td>	<em>unsigned</em> <em>char</em> *block;</td></tr>
+<tr><th id="698">698</th><td></td></tr>
+<tr><th id="699">699</th><td>	block = edid + DETAILED_TIMING_DESCRIPTIONS_START;</td></tr>
+<tr><th id="700">700</th><td></td></tr>
+<tr><th id="701">701</th><td>	DPRINTK(<q>"      Monitor Operating Limits: "</q>);</td></tr>
+<tr><th id="702">702</th><td></td></tr>
+<tr><th id="703">703</th><td>	<b>for</b> (i = <var>0</var>; i &lt; <var>4</var>; i++, block += DETAILED_TIMING_DESCRIPTION_SIZE) {</td></tr>
+<tr><th id="704">704</th><td>		<b>if</b> (edid_is_limits_block(block)) {</td></tr>
+<tr><th id="705">705</th><td>			specs-&gt;hfmin = H_MIN_RATE * <var>1000</var>;</td></tr>
+<tr><th id="706">706</th><td>			specs-&gt;hfmax = H_MAX_RATE * <var>1000</var>;</td></tr>
+<tr><th id="707">707</th><td>			specs-&gt;vfmin = V_MIN_RATE;</td></tr>
+<tr><th id="708">708</th><td>			specs-&gt;vfmax = V_MAX_RATE;</td></tr>
+<tr><th id="709">709</th><td>			specs-&gt;dclkmax = MAX_PIXEL_CLOCK * <var>1000000</var>;</td></tr>
+<tr><th id="710">710</th><td>			specs-&gt;gtf = (GTF_SUPPORT) ? <var>1</var> : <var>0</var>;</td></tr>
+<tr><th id="711">711</th><td>			retval = <var>0</var>;</td></tr>
+<tr><th id="712">712</th><td>			DPRINTK(<q>"From EDID\n"</q>);</td></tr>
+<tr><th id="713">713</th><td>			<b>break</b>;</td></tr>
+<tr><th id="714">714</th><td>		}</td></tr>
+<tr><th id="715">715</th><td>	}</td></tr>
+<tr><th id="716">716</th><td></td></tr>
+<tr><th id="717">717</th><td>	<i>/* estimate monitor limits based on modes supported */</i></td></tr>
+<tr><th id="718">718</th><td>	<b>if</b> (retval) {</td></tr>
+<tr><th id="719">719</th><td>		<b>struct</b> fb_videomode *modes, *mode;</td></tr>
+<tr><th id="720">720</th><td>		<em>int</em> num_modes, hz, hscan, pixclock;</td></tr>
+<tr><th id="721">721</th><td>		<em>int</em> vtotal, htotal;</td></tr>
+<tr><th id="722">722</th><td></td></tr>
+<tr><th id="723">723</th><td>		modes = fb_create_modedb(edid, &amp;num_modes, specs);</td></tr>
+<tr><th id="724">724</th><td>		<b>if</b> (!modes) {</td></tr>
+<tr><th id="725">725</th><td>			DPRINTK(<q>"None Available\n"</q>);</td></tr>
+<tr><th id="726">726</th><td>			<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="727">727</th><td>		}</td></tr>
+<tr><th id="728">728</th><td></td></tr>
+<tr><th id="729">729</th><td>		retval = <var>0</var>;</td></tr>
+<tr><th id="730">730</th><td>		<b>for</b> (i = <var>0</var>; i &lt; num_modes; i++) {</td></tr>
+<tr><th id="731">731</th><td>			mode = &amp;modes[i];</td></tr>
+<tr><th id="732">732</th><td>			pixclock = PICOS2KHZ(modes[i].pixclock) * <var>1000</var>;</td></tr>
+<tr><th id="733">733</th><td>			htotal = mode-&gt;xres + mode-&gt;right_margin + mode-&gt;hsync_len</td></tr>
+<tr><th id="734">734</th><td>				+ mode-&gt;left_margin;</td></tr>
+<tr><th id="735">735</th><td>			vtotal = mode-&gt;yres + mode-&gt;lower_margin + mode-&gt;vsync_len</td></tr>
+<tr><th id="736">736</th><td>				+ mode-&gt;upper_margin;</td></tr>
+<tr><th id="737">737</th><td></td></tr>
+<tr><th id="738">738</th><td>			<b>if</b> (mode-&gt;vmode &amp; FB_VMODE_INTERLACED)</td></tr>
+<tr><th id="739">739</th><td>				vtotal /= <var>2</var>;</td></tr>
+<tr><th id="740">740</th><td></td></tr>
+<tr><th id="741">741</th><td>			<b>if</b> (mode-&gt;vmode &amp; FB_VMODE_DOUBLE)</td></tr>
+<tr><th id="742">742</th><td>				vtotal *= <var>2</var>;</td></tr>
+<tr><th id="743">743</th><td></td></tr>
+<tr><th id="744">744</th><td>			hscan = (pixclock + htotal / <var>2</var>) / htotal;</td></tr>
+<tr><th id="745">745</th><td>			hscan = (hscan + <var>500</var>) / <var>1000</var> * <var>1000</var>;</td></tr>
+<tr><th id="746">746</th><td>			hz = (hscan + vtotal / <var>2</var>) / vtotal;</td></tr>
+<tr><th id="747">747</th><td></td></tr>
+<tr><th id="748">748</th><td>			<b>if</b> (specs-&gt;dclkmax == <var>0</var> || specs-&gt;dclkmax &lt; pixclock)</td></tr>
+<tr><th id="749">749</th><td>				specs-&gt;dclkmax = pixclock;</td></tr>
+<tr><th id="750">750</th><td></td></tr>
+<tr><th id="751">751</th><td>			<b>if</b> (specs-&gt;dclkmin == <var>0</var> || specs-&gt;dclkmin &gt; pixclock)</td></tr>
+<tr><th id="752">752</th><td>				specs-&gt;dclkmin = pixclock;</td></tr>
+<tr><th id="753">753</th><td></td></tr>
+<tr><th id="754">754</th><td>			<b>if</b> (specs-&gt;hfmax == <var>0</var> || specs-&gt;hfmax &lt; hscan)</td></tr>
+<tr><th id="755">755</th><td>				specs-&gt;hfmax = hscan;</td></tr>
+<tr><th id="756">756</th><td></td></tr>
+<tr><th id="757">757</th><td>			<b>if</b> (specs-&gt;hfmin == <var>0</var> || specs-&gt;hfmin &gt; hscan)</td></tr>
+<tr><th id="758">758</th><td>				specs-&gt;hfmin = hscan;</td></tr>
+<tr><th id="759">759</th><td></td></tr>
+<tr><th id="760">760</th><td>			<b>if</b> (specs-&gt;vfmax == <var>0</var> || specs-&gt;vfmax &lt; hz)</td></tr>
+<tr><th id="761">761</th><td>				specs-&gt;vfmax = hz;</td></tr>
+<tr><th id="762">762</th><td></td></tr>
+<tr><th id="763">763</th><td>			<b>if</b> (specs-&gt;vfmin == <var>0</var> || specs-&gt;vfmin &gt; hz)</td></tr>
+<tr><th id="764">764</th><td>				specs-&gt;vfmin = hz;</td></tr>
+<tr><th id="765">765</th><td>		}</td></tr>
+<tr><th id="766">766</th><td>		DPRINTK(<q>"Extrapolated\n"</q>);</td></tr>
+<tr><th id="767">767</th><td>		fb_destroy_modedb(modes);</td></tr>
+<tr><th id="768">768</th><td>	}</td></tr>
+<tr><th id="769">769</th><td>	DPRINTK(<q>"           H: %d-%dKHz V: %d-%dHz DCLK: %dMHz\n"</q>,</td></tr>
+<tr><th id="770">770</th><td>		specs-&gt;hfmin/<var>1000</var>, specs-&gt;hfmax/<var>1000</var>, specs-&gt;vfmin,</td></tr>
+<tr><th id="771">771</th><td>		specs-&gt;vfmax, specs-&gt;dclkmax/<var>1000000</var>);</td></tr>
+<tr><th id="772">772</th><td>	<b>return</b> retval;</td></tr>
+<tr><th id="773">773</th><td>}</td></tr>
+<tr><th id="774">774</th><td></td></tr>
+<tr><th id="775">775</th><td><em>static</em> <em>void</em> get_monspecs(<em>unsigned</em> <em>char</em> *edid, <b>struct</b> fb_monspecs *specs)</td></tr>
+<tr><th id="776">776</th><td>{</td></tr>
+<tr><th id="777">777</th><td>	<em>unsigned</em> <em>char</em> c, *block;</td></tr>
+<tr><th id="778">778</th><td></td></tr>
+<tr><th id="779">779</th><td>	block = edid + EDID_STRUCT_DISPLAY;</td></tr>
+<tr><th id="780">780</th><td></td></tr>
+<tr><th id="781">781</th><td>	fb_get_monitor_limits(edid, specs);</td></tr>
+<tr><th id="782">782</th><td></td></tr>
+<tr><th id="783">783</th><td>	c = block[<var>0</var>] &amp; <var>0x80</var>;</td></tr>
+<tr><th id="784">784</th><td>	specs-&gt;input = <var>0</var>;</td></tr>
+<tr><th id="785">785</th><td>	<b>if</b> (c) {</td></tr>
+<tr><th id="786">786</th><td>		specs-&gt;input |= FB_DISP_DDI;</td></tr>
+<tr><th id="787">787</th><td>		DPRINTK(<q>"      Digital Display Input"</q>);</td></tr>
+<tr><th id="788">788</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="789">789</th><td>		DPRINTK(<q>"      Analog Display Input: Input Voltage - "</q>);</td></tr>
+<tr><th id="790">790</th><td>		<b>switch</b> ((block[<var>0</var>] &amp; <var>0x60</var>) &gt;&gt; <var>5</var>) {</td></tr>
+<tr><th id="791">791</th><td>		<b>case</b> <var>0</var>:</td></tr>
+<tr><th id="792">792</th><td>			DPRINTK(<q>"0.700V/0.300V"</q>);</td></tr>
+<tr><th id="793">793</th><td>			specs-&gt;input |= FB_DISP_ANA_700_300;</td></tr>
+<tr><th id="794">794</th><td>			<b>break</b>;</td></tr>
+<tr><th id="795">795</th><td>		<b>case</b> <var>1</var>:</td></tr>
+<tr><th id="796">796</th><td>			DPRINTK(<q>"0.714V/0.286V"</q>);</td></tr>
+<tr><th id="797">797</th><td>			specs-&gt;input |= FB_DISP_ANA_714_286;</td></tr>
+<tr><th id="798">798</th><td>			<b>break</b>;</td></tr>
+<tr><th id="799">799</th><td>		<b>case</b> <var>2</var>:</td></tr>
+<tr><th id="800">800</th><td>			DPRINTK(<q>"1.000V/0.400V"</q>);</td></tr>
+<tr><th id="801">801</th><td>			specs-&gt;input |= FB_DISP_ANA_1000_400;</td></tr>
+<tr><th id="802">802</th><td>			<b>break</b>;</td></tr>
+<tr><th id="803">803</th><td>		<b>case</b> <var>3</var>:</td></tr>
+<tr><th id="804">804</th><td>			DPRINTK(<q>"0.700V/0.000V"</q>);</td></tr>
+<tr><th id="805">805</th><td>			specs-&gt;input |= FB_DISP_ANA_700_000;</td></tr>
+<tr><th id="806">806</th><td>			<b>break</b>;</td></tr>
+<tr><th id="807">807</th><td>		}</td></tr>
+<tr><th id="808">808</th><td>	}</td></tr>
+<tr><th id="809">809</th><td>	DPRINTK(<q>"\n      Sync: "</q>);</td></tr>
+<tr><th id="810">810</th><td>	c = block[<var>0</var>] &amp; <var>0x10</var>;</td></tr>
+<tr><th id="811">811</th><td>	<b>if</b> (c)</td></tr>
+<tr><th id="812">812</th><td>		DPRINTK(<q>"      Configurable signal level\n"</q>);</td></tr>
+<tr><th id="813">813</th><td>	c = block[<var>0</var>] &amp; <var>0x0f</var>;</td></tr>
+<tr><th id="814">814</th><td>	specs-&gt;signal = <var>0</var>;</td></tr>
+<tr><th id="815">815</th><td>	<b>if</b> (c &amp; <var>0x10</var>) {</td></tr>
+<tr><th id="816">816</th><td>		DPRINTK(<q>"Blank to Blank "</q>);</td></tr>
+<tr><th id="817">817</th><td>		specs-&gt;signal |= FB_SIGNAL_BLANK_BLANK;</td></tr>
+<tr><th id="818">818</th><td>	}</td></tr>
+<tr><th id="819">819</th><td>	<b>if</b> (c &amp; <var>0x08</var>) {</td></tr>
+<tr><th id="820">820</th><td>		DPRINTK(<q>"Separate "</q>);</td></tr>
+<tr><th id="821">821</th><td>		specs-&gt;signal |= FB_SIGNAL_SEPARATE;</td></tr>
+<tr><th id="822">822</th><td>	}</td></tr>
+<tr><th id="823">823</th><td>	<b>if</b> (c &amp; <var>0x04</var>) {</td></tr>
+<tr><th id="824">824</th><td>		DPRINTK(<q>"Composite "</q>);</td></tr>
+<tr><th id="825">825</th><td>		specs-&gt;signal |= FB_SIGNAL_COMPOSITE;</td></tr>
+<tr><th id="826">826</th><td>	}</td></tr>
+<tr><th id="827">827</th><td>	<b>if</b> (c &amp; <var>0x02</var>) {</td></tr>
+<tr><th id="828">828</th><td>		DPRINTK(<q>"Sync on Green "</q>);</td></tr>
+<tr><th id="829">829</th><td>		specs-&gt;signal |= FB_SIGNAL_SYNC_ON_GREEN;</td></tr>
+<tr><th id="830">830</th><td>	}</td></tr>
+<tr><th id="831">831</th><td>	<b>if</b> (c &amp; <var>0x01</var>) {</td></tr>
+<tr><th id="832">832</th><td>		DPRINTK(<q>"Serration on "</q>);</td></tr>
+<tr><th id="833">833</th><td>		specs-&gt;signal |= FB_SIGNAL_SERRATION_ON;</td></tr>
+<tr><th id="834">834</th><td>	}</td></tr>
+<tr><th id="835">835</th><td>	DPRINTK(<q>"\n"</q>);</td></tr>
+<tr><th id="836">836</th><td>	specs-&gt;max_x = block[<var>1</var>];</td></tr>
+<tr><th id="837">837</th><td>	specs-&gt;max_y = block[<var>2</var>];</td></tr>
+<tr><th id="838">838</th><td>	DPRINTK(<q>"      Max H-size in cm: "</q>);</td></tr>
+<tr><th id="839">839</th><td>	<b>if</b> (specs-&gt;max_x)</td></tr>
+<tr><th id="840">840</th><td>		DPRINTK(<q>"%d\n"</q>, specs-&gt;max_x);</td></tr>
+<tr><th id="841">841</th><td>	<b>else</b></td></tr>
+<tr><th id="842">842</th><td>		DPRINTK(<q>"variable\n"</q>);</td></tr>
+<tr><th id="843">843</th><td>	DPRINTK(<q>"      Max V-size in cm: "</q>);</td></tr>
+<tr><th id="844">844</th><td>	<b>if</b> (specs-&gt;max_y)</td></tr>
+<tr><th id="845">845</th><td>		DPRINTK(<q>"%d\n"</q>, specs-&gt;max_y);</td></tr>
+<tr><th id="846">846</th><td>	<b>else</b></td></tr>
+<tr><th id="847">847</th><td>		DPRINTK(<q>"variable\n"</q>);</td></tr>
+<tr><th id="848">848</th><td></td></tr>
+<tr><th id="849">849</th><td>	c = block[<var>3</var>];</td></tr>
+<tr><th id="850">850</th><td>	specs-&gt;gamma = c+<var>100</var>;</td></tr>
+<tr><th id="851">851</th><td>	DPRINTK(<q>"      Gamma: "</q>);</td></tr>
+<tr><th id="852">852</th><td>	DPRINTK(<q>"%d.%d\n"</q>, specs-&gt;gamma/<var>100</var>, specs-&gt;gamma % <var>100</var>);</td></tr>
+<tr><th id="853">853</th><td></td></tr>
+<tr><th id="854">854</th><td>	get_dpms_capabilities(block[<var>4</var>], specs);</td></tr>
+<tr><th id="855">855</th><td></td></tr>
+<tr><th id="856">856</th><td>	<b>switch</b> ((block[<var>4</var>] &amp; <var>0x18</var>) &gt;&gt; <var>3</var>) {</td></tr>
+<tr><th id="857">857</th><td>	<b>case</b> <var>0</var>:</td></tr>
+<tr><th id="858">858</th><td>		DPRINTK(<q>"      Monochrome/Grayscale\n"</q>);</td></tr>
+<tr><th id="859">859</th><td>		specs-&gt;input |= FB_DISP_MONO;</td></tr>
+<tr><th id="860">860</th><td>		<b>break</b>;</td></tr>
+<tr><th id="861">861</th><td>	<b>case</b> <var>1</var>:</td></tr>
+<tr><th id="862">862</th><td>		DPRINTK(<q>"      RGB Color Display\n"</q>);</td></tr>
+<tr><th id="863">863</th><td>		specs-&gt;input |= FB_DISP_RGB;</td></tr>
+<tr><th id="864">864</th><td>		<b>break</b>;</td></tr>
+<tr><th id="865">865</th><td>	<b>case</b> <var>2</var>:</td></tr>
+<tr><th id="866">866</th><td>		DPRINTK(<q>"      Non-RGB Multicolor Display\n"</q>);</td></tr>
+<tr><th id="867">867</th><td>		specs-&gt;input |= FB_DISP_MULTI;</td></tr>
+<tr><th id="868">868</th><td>		<b>break</b>;</td></tr>
+<tr><th id="869">869</th><td>	<b>default</b>:</td></tr>
+<tr><th id="870">870</th><td>		DPRINTK(<q>"      Unknown\n"</q>);</td></tr>
+<tr><th id="871">871</th><td>		specs-&gt;input |= FB_DISP_UNKNOWN;</td></tr>
+<tr><th id="872">872</th><td>		<b>break</b>;</td></tr>
+<tr><th id="873">873</th><td>	}</td></tr>
+<tr><th id="874">874</th><td></td></tr>
+<tr><th id="875">875</th><td>	get_chroma(block, specs);</td></tr>
+<tr><th id="876">876</th><td></td></tr>
+<tr><th id="877">877</th><td>	specs-&gt;misc = <var>0</var>;</td></tr>
+<tr><th id="878">878</th><td>	c = block[<var>4</var>] &amp; <var>0x7</var>;</td></tr>
+<tr><th id="879">879</th><td>	<b>if</b> (c &amp; <var>0x04</var>) {</td></tr>
+<tr><th id="880">880</th><td>		DPRINTK(<q>"      Default color format is primary\n"</q>);</td></tr>
+<tr><th id="881">881</th><td>		specs-&gt;misc |= FB_MISC_PRIM_COLOR;</td></tr>
+<tr><th id="882">882</th><td>	}</td></tr>
+<tr><th id="883">883</th><td>	<b>if</b> (c &amp; <var>0x02</var>) {</td></tr>
+<tr><th id="884">884</th><td>		DPRINTK(<q>"      First DETAILED Timing is preferred\n"</q>);</td></tr>
+<tr><th id="885">885</th><td>		specs-&gt;misc |= FB_MISC_1ST_DETAIL;</td></tr>
+<tr><th id="886">886</th><td>	}</td></tr>
+<tr><th id="887">887</th><td>	<b>if</b> (c &amp; <var>0x01</var>) {</td></tr>
+<tr><th id="888">888</th><td>		printk(<q>"      Display is GTF capable\n"</q>);</td></tr>
+<tr><th id="889">889</th><td>		specs-&gt;gtf = <var>1</var>;</td></tr>
+<tr><th id="890">890</th><td>	}</td></tr>
+<tr><th id="891">891</th><td>}</td></tr>
+<tr><th id="892">892</th><td></td></tr>
+<tr><th id="893">893</th><td><em>int</em> fb_parse_edid(<em>unsigned</em> <em>char</em> *edid, <b>struct</b> fb_var_screeninfo *var)</td></tr>
+<tr><th id="894">894</th><td>{</td></tr>
+<tr><th id="895">895</th><td>	<em>int</em> i;</td></tr>
+<tr><th id="896">896</th><td>	<em>unsigned</em> <em>char</em> *block;</td></tr>
+<tr><th id="897">897</th><td></td></tr>
+<tr><th id="898">898</th><td>	<b>if</b> (edid == NULL || var == NULL)</td></tr>
+<tr><th id="899">899</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="900">900</th><td></td></tr>
+<tr><th id="901">901</th><td>	<b>if</b> (!(edid_checksum(edid)))</td></tr>
+<tr><th id="902">902</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="903">903</th><td></td></tr>
+<tr><th id="904">904</th><td>	<b>if</b> (!(edid_check_header(edid)))</td></tr>
+<tr><th id="905">905</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="906">906</th><td></td></tr>
+<tr><th id="907">907</th><td>	block = edid + DETAILED_TIMING_DESCRIPTIONS_START;</td></tr>
+<tr><th id="908">908</th><td></td></tr>
+<tr><th id="909">909</th><td>	<b>for</b> (i = <var>0</var>; i &lt; <var>4</var>; i++, block += DETAILED_TIMING_DESCRIPTION_SIZE) {</td></tr>
+<tr><th id="910">910</th><td>		<b>if</b> (edid_is_timing_block(block)) {</td></tr>
+<tr><th id="911">911</th><td>			var-&gt;xres = var-&gt;xres_virtual = H_ACTIVE;</td></tr>
+<tr><th id="912">912</th><td>			var-&gt;yres = var-&gt;yres_virtual = V_ACTIVE;</td></tr>
+<tr><th id="913">913</th><td>			var-&gt;height = var-&gt;width = <var>0</var>;</td></tr>
+<tr><th id="914">914</th><td>			var-&gt;right_margin = H_SYNC_OFFSET;</td></tr>
+<tr><th id="915">915</th><td>			var-&gt;left_margin = (H_ACTIVE + H_BLANKING) -</td></tr>
+<tr><th id="916">916</th><td>				(H_ACTIVE + H_SYNC_OFFSET + H_SYNC_WIDTH);</td></tr>
+<tr><th id="917">917</th><td>			var-&gt;upper_margin = V_BLANKING - V_SYNC_OFFSET -</td></tr>
+<tr><th id="918">918</th><td>				V_SYNC_WIDTH;</td></tr>
+<tr><th id="919">919</th><td>			var-&gt;lower_margin = V_SYNC_OFFSET;</td></tr>
+<tr><th id="920">920</th><td>			var-&gt;hsync_len = H_SYNC_WIDTH;</td></tr>
+<tr><th id="921">921</th><td>			var-&gt;vsync_len = V_SYNC_WIDTH;</td></tr>
+<tr><th id="922">922</th><td>			var-&gt;pixclock = PIXEL_CLOCK;</td></tr>
+<tr><th id="923">923</th><td>			var-&gt;pixclock /= <var>1000</var>;</td></tr>
+<tr><th id="924">924</th><td>			var-&gt;pixclock = KHZ2PICOS(var-&gt;pixclock);</td></tr>
+<tr><th id="925">925</th><td></td></tr>
+<tr><th id="926">926</th><td>			<b>if</b> (HSYNC_POSITIVE)</td></tr>
+<tr><th id="927">927</th><td>				var-&gt;sync |= FB_SYNC_HOR_HIGH_ACT;</td></tr>
+<tr><th id="928">928</th><td>			<b>if</b> (VSYNC_POSITIVE)</td></tr>
+<tr><th id="929">929</th><td>				var-&gt;sync |= FB_SYNC_VERT_HIGH_ACT;</td></tr>
+<tr><th id="930">930</th><td>			<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="931">931</th><td>		}</td></tr>
+<tr><th id="932">932</th><td>	}</td></tr>
+<tr><th id="933">933</th><td>	<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="934">934</th><td>}</td></tr>
+<tr><th id="935">935</th><td></td></tr>
+<tr><th id="936">936</th><td><em>void</em> fb_edid_to_monspecs(<em>unsigned</em> <em>char</em> *edid, <b>struct</b> fb_monspecs *specs)</td></tr>
+<tr><th id="937">937</th><td>{</td></tr>
+<tr><th id="938">938</th><td>	<em>unsigned</em> <em>char</em> *block;</td></tr>
+<tr><th id="939">939</th><td>	<em>int</em> i, found = <var>0</var>;</td></tr>
+<tr><th id="940">940</th><td></td></tr>
+<tr><th id="941">941</th><td>	<b>if</b> (edid == NULL)</td></tr>
+<tr><th id="942">942</th><td>		<b>return</b>;</td></tr>
+<tr><th id="943">943</th><td></td></tr>
+<tr><th id="944">944</th><td>	<b>if</b> (!(edid_checksum(edid)))</td></tr>
+<tr><th id="945">945</th><td>		<b>return</b>;</td></tr>
+<tr><th id="946">946</th><td></td></tr>
+<tr><th id="947">947</th><td>	<b>if</b> (!(edid_check_header(edid)))</td></tr>
+<tr><th id="948">948</th><td>		<b>return</b>;</td></tr>
+<tr><th id="949">949</th><td></td></tr>
+<tr><th id="950">950</th><td>	memset(specs, <var>0</var>, <b>sizeof</b>(<b>struct</b> fb_monspecs));</td></tr>
+<tr><th id="951">951</th><td></td></tr>
+<tr><th id="952">952</th><td>	specs-&gt;version = edid[EDID_STRUCT_VERSION];</td></tr>
+<tr><th id="953">953</th><td>	specs-&gt;revision = edid[EDID_STRUCT_REVISION];</td></tr>
+<tr><th id="954">954</th><td></td></tr>
+<tr><th id="955">955</th><td>	DPRINTK(<q>"========================================\n"</q>);</td></tr>
+<tr><th id="956">956</th><td>	DPRINTK(<q>"Display Information (EDID)\n"</q>);</td></tr>
+<tr><th id="957">957</th><td>	DPRINTK(<q>"========================================\n"</q>);</td></tr>
+<tr><th id="958">958</th><td>	DPRINTK(<q>"   EDID Version %d.%d\n"</q>, (<em>int</em>) specs-&gt;version,</td></tr>
+<tr><th id="959">959</th><td>	       (<em>int</em>) specs-&gt;revision);</td></tr>
+<tr><th id="960">960</th><td></td></tr>
+<tr><th id="961">961</th><td>	parse_vendor_block(edid + ID_MANUFACTURER_NAME, specs);</td></tr>
+<tr><th id="962">962</th><td></td></tr>
+<tr><th id="963">963</th><td>	block = edid + DETAILED_TIMING_DESCRIPTIONS_START;</td></tr>
+<tr><th id="964">964</th><td>	<b>for</b> (i = <var>0</var>; i &lt; <var>4</var>; i++, block += DETAILED_TIMING_DESCRIPTION_SIZE) {</td></tr>
+<tr><th id="965">965</th><td>		<b>if</b> (edid_is_serial_block(block)) {</td></tr>
+<tr><th id="966">966</th><td>			copy_string(block, specs-&gt;serial_no);</td></tr>
+<tr><th id="967">967</th><td>			DPRINTK(<q>"   Serial Number: %s\n"</q>, specs-&gt;serial_no);</td></tr>
+<tr><th id="968">968</th><td>		} <b>else</b> <b>if</b> (edid_is_ascii_block(block)) {</td></tr>
+<tr><th id="969">969</th><td>			copy_string(block, specs-&gt;ascii);</td></tr>
+<tr><th id="970">970</th><td>			DPRINTK(<q>"   ASCII Block: %s\n"</q>, specs-&gt;ascii);</td></tr>
+<tr><th id="971">971</th><td>		} <b>else</b> <b>if</b> (edid_is_monitor_block(block)) {</td></tr>
+<tr><th id="972">972</th><td>			copy_string(block, specs-&gt;monitor);</td></tr>
+<tr><th id="973">973</th><td>			DPRINTK(<q>"   Monitor Name: %s\n"</q>, specs-&gt;monitor);</td></tr>
+<tr><th id="974">974</th><td>		}</td></tr>
+<tr><th id="975">975</th><td>	}</td></tr>
+<tr><th id="976">976</th><td></td></tr>
+<tr><th id="977">977</th><td>	DPRINTK(<q>"   Display Characteristics:\n"</q>);</td></tr>
+<tr><th id="978">978</th><td>	get_monspecs(edid, specs);</td></tr>
+<tr><th id="979">979</th><td></td></tr>
+<tr><th id="980">980</th><td>	specs-&gt;modedb = fb_create_modedb(edid, &amp;specs-&gt;modedb_len, specs);</td></tr>
+<tr><th id="981">981</th><td></td></tr>
+<tr><th id="982">982</th><td>	<i>/*</i></td></tr>
+<tr><th id="983">983</th><td><i>	 * Workaround for buggy EDIDs that sets that the first</i></td></tr>
+<tr><th id="984">984</th><td><i>	 * detailed timing is preferred but has not detailed</i></td></tr>
+<tr><th id="985">985</th><td><i>	 * timing specified</i></td></tr>
+<tr><th id="986">986</th><td><i>	 */</i></td></tr>
+<tr><th id="987">987</th><td>	<b>for</b> (i = <var>0</var>; i &lt; specs-&gt;modedb_len; i++) {</td></tr>
+<tr><th id="988">988</th><td>		<b>if</b> (specs-&gt;modedb[i].flag &amp; FB_MODE_IS_DETAILED) {</td></tr>
+<tr><th id="989">989</th><td>			found = <var>1</var>;</td></tr>
+<tr><th id="990">990</th><td>			<b>break</b>;</td></tr>
+<tr><th id="991">991</th><td>		}</td></tr>
+<tr><th id="992">992</th><td>	}</td></tr>
+<tr><th id="993">993</th><td></td></tr>
+<tr><th id="994">994</th><td>	<b>if</b> (!found)</td></tr>
+<tr><th id="995">995</th><td>		specs-&gt;misc &amp;= ~FB_MISC_1ST_DETAIL;</td></tr>
+<tr><th id="996">996</th><td></td></tr>
+<tr><th id="997">997</th><td>	DPRINTK(<q>"========================================\n"</q>);</td></tr>
+<tr><th id="998">998</th><td>}</td></tr>
+<tr><th id="999">999</th><td></td></tr>
+<tr><th id="1000">1000</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="1001">1001</th><td><i class="doc"> * fb_edid_add_monspecs() - add monitor video modes from E-EDID data</i></td></tr>
+<tr><th id="1002">1002</th><td><i class="doc"> *<span class="command"> @edid</span>:	128 byte array with an E-EDID block</i></td></tr>
+<tr><th id="1003">1003</th><td><i class="doc"> *<span class="command"> @spacs</span>:	monitor specs to be extended</i></td></tr>
+<tr><th id="1004">1004</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="1005">1005</th><td><em>void</em> fb_edid_add_monspecs(<em>unsigned</em> <em>char</em> *edid, <b>struct</b> fb_monspecs *specs)</td></tr>
+<tr><th id="1006">1006</th><td>{</td></tr>
+<tr><th id="1007">1007</th><td>	<em>unsigned</em> <em>char</em> *block;</td></tr>
+<tr><th id="1008">1008</th><td>	<b>struct</b> fb_videomode *m;</td></tr>
+<tr><th id="1009">1009</th><td>	<em>int</em> num = <var>0</var>, i;</td></tr>
+<tr><th id="1010">1010</th><td>	u8 svd[<var>64</var>], edt[(<var>128</var> - <var>4</var>) / DETAILED_TIMING_DESCRIPTION_SIZE];</td></tr>
+<tr><th id="1011">1011</th><td>	u8 pos = <var>4</var>, svd_n = <var>0</var>;</td></tr>
+<tr><th id="1012">1012</th><td></td></tr>
+<tr><th id="1013">1013</th><td>	<b>if</b> (!edid)</td></tr>
+<tr><th id="1014">1014</th><td>		<b>return</b>;</td></tr>
+<tr><th id="1015">1015</th><td></td></tr>
+<tr><th id="1016">1016</th><td>	<b>if</b> (!edid_checksum(edid))</td></tr>
+<tr><th id="1017">1017</th><td>		<b>return</b>;</td></tr>
+<tr><th id="1018">1018</th><td></td></tr>
+<tr><th id="1019">1019</th><td>	<b>if</b> (edid[<var>0</var>] != <var>0x2</var> ||</td></tr>
+<tr><th id="1020">1020</th><td>	    edid[<var>2</var>] &lt; <var>4</var> || edid[<var>2</var>] &gt; <var>128</var> - DETAILED_TIMING_DESCRIPTION_SIZE)</td></tr>
+<tr><th id="1021">1021</th><td>		<b>return</b>;</td></tr>
+<tr><th id="1022">1022</th><td></td></tr>
+<tr><th id="1023">1023</th><td>	DPRINTK(<q>"  Short Video Descriptors\n"</q>);</td></tr>
+<tr><th id="1024">1024</th><td></td></tr>
+<tr><th id="1025">1025</th><td>	<b>while</b> (pos &lt; edid[<var>2</var>]) {</td></tr>
+<tr><th id="1026">1026</th><td>		u8 len = edid[pos] &amp; <var>0x1f</var>, type = (edid[pos] &gt;&gt; <var>5</var>) &amp; <var>7</var>;</td></tr>
+<tr><th id="1027">1027</th><td>		pr_debug(<q>"Data block %u of %u bytes\n"</q>, type, len);</td></tr>
+<tr><th id="1028">1028</th><td>		<b>if</b> (type == <var>2</var>) {</td></tr>
+<tr><th id="1029">1029</th><td>			<b>for</b> (i = pos; i &lt; pos + len; i++) {</td></tr>
+<tr><th id="1030">1030</th><td>				u8 idx = edid[pos + i] &amp; <var>0x7f</var>;</td></tr>
+<tr><th id="1031">1031</th><td>				svd[svd_n++] = idx;</td></tr>
+<tr><th id="1032">1032</th><td>				pr_debug(<q>"N%sative mode #%d\n"</q>,</td></tr>
+<tr><th id="1033">1033</th><td>					 edid[pos + i] &amp; <var>0x80</var> ? <q>""</q> : <q>"on-n"</q>, idx);</td></tr>
+<tr><th id="1034">1034</th><td>			}</td></tr>
+<tr><th id="1035">1035</th><td>		} <b>else</b> <b>if</b> (type == <var>3</var> &amp;&amp; len &gt;= <var>3</var>) {</td></tr>
+<tr><th id="1036">1036</th><td>			<i>/* Check Vendor Specific Data Block.  For HDMI,</i></td></tr>
+<tr><th id="1037">1037</th><td><i>			   it is always 00-0C-03 for HDMI Licensing, LLC. */</i></td></tr>
+<tr><th id="1038">1038</th><td>			<b>if</b> (edid[pos + <var>1</var>] == <var>3</var> &amp;&amp; edid[pos + <var>2</var>] == <var>0xc</var> &amp;&amp;</td></tr>
+<tr><th id="1039">1039</th><td>			    edid[pos + <var>3</var>] == <var>0</var>)</td></tr>
+<tr><th id="1040">1040</th><td>				specs-&gt;misc |= FB_MISC_HDMI;</td></tr>
+<tr><th id="1041">1041</th><td>		}</td></tr>
+<tr><th id="1042">1042</th><td>		pos += len + <var>1</var>;</td></tr>
+<tr><th id="1043">1043</th><td>	}</td></tr>
+<tr><th id="1044">1044</th><td></td></tr>
+<tr><th id="1045">1045</th><td>	block = edid + edid[<var>2</var>];</td></tr>
+<tr><th id="1046">1046</th><td></td></tr>
+<tr><th id="1047">1047</th><td>	DPRINTK(<q>"  Extended Detailed Timings\n"</q>);</td></tr>
+<tr><th id="1048">1048</th><td></td></tr>
+<tr><th id="1049">1049</th><td>	<b>for</b> (i = <var>0</var>; i &lt; (<var>128</var> - edid[<var>2</var>]) / DETAILED_TIMING_DESCRIPTION_SIZE;</td></tr>
+<tr><th id="1050">1050</th><td>	     i++, block += DETAILED_TIMING_DESCRIPTION_SIZE)</td></tr>
+<tr><th id="1051">1051</th><td>		<b>if</b> (PIXEL_CLOCK != <var>0</var>)</td></tr>
+<tr><th id="1052">1052</th><td>			edt[num++] = block - edid;</td></tr>
+<tr><th id="1053">1053</th><td></td></tr>
+<tr><th id="1054">1054</th><td>	<i>/* Yikes, EDID data is totally useless */</i></td></tr>
+<tr><th id="1055">1055</th><td>	<b>if</b> (!(num + svd_n))</td></tr>
+<tr><th id="1056">1056</th><td>		<b>return</b>;</td></tr>
+<tr><th id="1057">1057</th><td></td></tr>
+<tr><th id="1058">1058</th><td>	m = kzalloc((specs-&gt;modedb_len + num + svd_n) *</td></tr>
+<tr><th id="1059">1059</th><td>		       <b>sizeof</b>(<b>struct</b> fb_videomode), GFP_KERNEL);</td></tr>
+<tr><th id="1060">1060</th><td></td></tr>
+<tr><th id="1061">1061</th><td>	<b>if</b> (!m)</td></tr>
+<tr><th id="1062">1062</th><td>		<b>return</b>;</td></tr>
+<tr><th id="1063">1063</th><td></td></tr>
+<tr><th id="1064">1064</th><td>	memcpy(m, specs-&gt;modedb, specs-&gt;modedb_len * <b>sizeof</b>(<b>struct</b> fb_videomode));</td></tr>
+<tr><th id="1065">1065</th><td></td></tr>
+<tr><th id="1066">1066</th><td>	<b>for</b> (i = specs-&gt;modedb_len; i &lt; specs-&gt;modedb_len + num; i++) {</td></tr>
+<tr><th id="1067">1067</th><td>		get_detailed_timing(edid + edt[i - specs-&gt;modedb_len], &amp;m[i]);</td></tr>
+<tr><th id="1068">1068</th><td>		<b>if</b> (i == specs-&gt;modedb_len)</td></tr>
+<tr><th id="1069">1069</th><td>			m[i].flag |= FB_MODE_IS_FIRST;</td></tr>
+<tr><th id="1070">1070</th><td>		pr_debug(<q>"Adding %ux%u@%u\n"</q>, m[i].xres, m[i].yres, m[i].refresh);</td></tr>
+<tr><th id="1071">1071</th><td>	}</td></tr>
+<tr><th id="1072">1072</th><td></td></tr>
+<tr><th id="1073">1073</th><td>	<b>for</b> (i = specs-&gt;modedb_len + num; i &lt; specs-&gt;modedb_len + num + svd_n; i++) {</td></tr>
+<tr><th id="1074">1074</th><td>		<em>int</em> idx = svd[i - specs-&gt;modedb_len - num];</td></tr>
+<tr><th id="1075">1075</th><td>		<b>if</b> (!idx || idx &gt;= ARRAY_SIZE(cea_modes)) {</td></tr>
+<tr><th id="1076">1076</th><td>			pr_warn(<q>"Reserved SVD code %d\n"</q>, idx);</td></tr>
+<tr><th id="1077">1077</th><td>		} <b>else</b> <b>if</b> (!cea_modes[idx].xres) {</td></tr>
+<tr><th id="1078">1078</th><td>			pr_warn(<q>"Unimplemented SVD code %d\n"</q>, idx);</td></tr>
+<tr><th id="1079">1079</th><td>		} <b>else</b> {</td></tr>
+<tr><th id="1080">1080</th><td>			memcpy(&amp;m[i], cea_modes + idx, <b>sizeof</b>(m[i]));</td></tr>
+<tr><th id="1081">1081</th><td>			pr_debug(<q>"Adding SVD #%d: %ux%u@%u\n"</q>, idx,</td></tr>
+<tr><th id="1082">1082</th><td>				 m[i].xres, m[i].yres, m[i].refresh);</td></tr>
+<tr><th id="1083">1083</th><td>		}</td></tr>
+<tr><th id="1084">1084</th><td>	}</td></tr>
+<tr><th id="1085">1085</th><td></td></tr>
+<tr><th id="1086">1086</th><td>	kfree(specs-&gt;modedb);</td></tr>
+<tr><th id="1087">1087</th><td>	specs-&gt;modedb = m;</td></tr>
+<tr><th id="1088">1088</th><td>	specs-&gt;modedb_len = specs-&gt;modedb_len + num + svd_n;</td></tr>
+<tr><th id="1089">1089</th><td>}</td></tr>
+<tr><th id="1090">1090</th><td></td></tr>
+<tr><th id="1091">1091</th><td><i>/*</i></td></tr>
+<tr><th id="1092">1092</th><td><i> * VESA Generalized Timing Formula (GTF)</i></td></tr>
+<tr><th id="1093">1093</th><td><i> */</i></td></tr>
+<tr><th id="1094">1094</th><td></td></tr>
+<tr><th id="1095">1095</th><td><u>#define FLYBACK                     550</u></td></tr>
+<tr><th id="1096">1096</th><td><u>#define V_FRONTPORCH                1</u></td></tr>
+<tr><th id="1097">1097</th><td><u>#define H_OFFSET                    40</u></td></tr>
+<tr><th id="1098">1098</th><td><u>#define H_SCALEFACTOR               20</u></td></tr>
+<tr><th id="1099">1099</th><td><u>#define H_BLANKSCALE                128</u></td></tr>
+<tr><th id="1100">1100</th><td><u>#define H_GRADIENT                  600</u></td></tr>
+<tr><th id="1101">1101</th><td><u>#define C_VAL                       30</u></td></tr>
+<tr><th id="1102">1102</th><td><u>#define M_VAL                       300</u></td></tr>
+<tr><th id="1103">1103</th><td></td></tr>
+<tr><th id="1104">1104</th><td><b>struct</b> __fb_timings {</td></tr>
+<tr><th id="1105">1105</th><td>	u32 dclk;</td></tr>
+<tr><th id="1106">1106</th><td>	u32 hfreq;</td></tr>
+<tr><th id="1107">1107</th><td>	u32 vfreq;</td></tr>
+<tr><th id="1108">1108</th><td>	u32 hactive;</td></tr>
+<tr><th id="1109">1109</th><td>	u32 vactive;</td></tr>
+<tr><th id="1110">1110</th><td>	u32 hblank;</td></tr>
+<tr><th id="1111">1111</th><td>	u32 vblank;</td></tr>
+<tr><th id="1112">1112</th><td>	u32 htotal;</td></tr>
+<tr><th id="1113">1113</th><td>	u32 vtotal;</td></tr>
+<tr><th id="1114">1114</th><td>};</td></tr>
+<tr><th id="1115">1115</th><td></td></tr>
+<tr><th id="1116">1116</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="1117">1117</th><td><i class="doc"> * fb_get_vblank - get vertical blank time</i></td></tr>
+<tr><th id="1118">1118</th><td><i class="doc"> *<span class="command"> @hfreq</span>: horizontal freq</i></td></tr>
+<tr><th id="1119">1119</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1120">1120</th><td><i class="doc"> * DESCRIPTION:</i></td></tr>
+<tr><th id="1121">1121</th><td><i class="doc"> * vblank = right_margin + vsync_len + left_margin</i></td></tr>
+<tr><th id="1122">1122</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1123">1123</th><td><i class="doc"> *    given: right_margin = 1 (V_FRONTPORCH)</i></td></tr>
+<tr><th id="1124">1124</th><td><i class="doc"> *           vsync_len    = 3</i></td></tr>
+<tr><th id="1125">1125</th><td><i class="doc"> *           flyback      = 550</i></td></tr>
+<tr><th id="1126">1126</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1127">1127</th><td><i class="doc"> *                          flyback * hfreq</i></td></tr>
+<tr><th id="1128">1128</th><td><i class="doc"> *           left_margin  = --------------- - vsync_len</i></td></tr>
+<tr><th id="1129">1129</th><td><i class="doc"> *                           1000000</i></td></tr>
+<tr><th id="1130">1130</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="1131">1131</th><td><em>static</em> u32 fb_get_vblank(u32 hfreq)</td></tr>
+<tr><th id="1132">1132</th><td>{</td></tr>
+<tr><th id="1133">1133</th><td>	u32 vblank;</td></tr>
+<tr><th id="1134">1134</th><td></td></tr>
+<tr><th id="1135">1135</th><td>	vblank = (hfreq * FLYBACK)/<var>1000</var>;</td></tr>
+<tr><th id="1136">1136</th><td>	vblank = (vblank + <var>500</var>)/<var>1000</var>;</td></tr>
+<tr><th id="1137">1137</th><td>	<b>return</b> (vblank + V_FRONTPORCH);</td></tr>
+<tr><th id="1138">1138</th><td>}</td></tr>
+<tr><th id="1139">1139</th><td></td></tr>
+<tr><th id="1140">1140</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="1141">1141</th><td><i class="doc"> * fb_get_hblank_by_freq - get horizontal blank time given hfreq</i></td></tr>
+<tr><th id="1142">1142</th><td><i class="doc"> *<span class="command"> @hfreq</span>: horizontal freq</i></td></tr>
+<tr><th id="1143">1143</th><td><i class="doc"> *<span class="command"> @xres</span>: horizontal resolution in pixels</i></td></tr>
+<tr><th id="1144">1144</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1145">1145</th><td><i class="doc"> * DESCRIPTION:</i></td></tr>
+<tr><th id="1146">1146</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1147">1147</th><td><i class="doc"> *           xres * duty_cycle</i></td></tr>
+<tr><th id="1148">1148</th><td><i class="doc"> * hblank = ------------------</i></td></tr>
+<tr><th id="1149">1149</th><td><i class="doc"> *           100 - duty_cycle</i></td></tr>
+<tr><th id="1150">1150</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1151">1151</th><td><i class="doc"> * duty cycle = percent of htotal assigned to inactive display</i></td></tr>
+<tr><th id="1152">1152</th><td><i class="doc"> * duty cycle = C - (M/Hfreq)</i></td></tr>
+<tr><th id="1153">1153</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1154">1154</th><td><i class="doc"> * where: C = ((offset - scale factor) * blank_scale)</i></td></tr>
+<tr><th id="1155">1155</th><td><i class="doc"> *            -------------------------------------- + scale factor</i></td></tr>
+<tr><th id="1156">1156</th><td><i class="doc"> *                        256</i></td></tr>
+<tr><th id="1157">1157</th><td><i class="doc"> *        M = blank_scale * gradient</i></td></tr>
+<tr><th id="1158">1158</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1159">1159</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="1160">1160</th><td><em>static</em> u32 fb_get_hblank_by_hfreq(u32 hfreq, u32 xres)</td></tr>
+<tr><th id="1161">1161</th><td>{</td></tr>
+<tr><th id="1162">1162</th><td>	u32 c_val, m_val, duty_cycle, hblank;</td></tr>
+<tr><th id="1163">1163</th><td></td></tr>
+<tr><th id="1164">1164</th><td>	c_val = (((H_OFFSET - H_SCALEFACTOR) * H_BLANKSCALE)/<var>256</var> +</td></tr>
+<tr><th id="1165">1165</th><td>		 H_SCALEFACTOR) * <var>1000</var>;</td></tr>
+<tr><th id="1166">1166</th><td>	m_val = (H_BLANKSCALE * H_GRADIENT)/<var>256</var>;</td></tr>
+<tr><th id="1167">1167</th><td>	m_val = (m_val * <var>1000000</var>)/hfreq;</td></tr>
+<tr><th id="1168">1168</th><td>	duty_cycle = c_val - m_val;</td></tr>
+<tr><th id="1169">1169</th><td>	hblank = (xres * duty_cycle)/(<var>100000</var> - duty_cycle);</td></tr>
+<tr><th id="1170">1170</th><td>	<b>return</b> (hblank);</td></tr>
+<tr><th id="1171">1171</th><td>}</td></tr>
+<tr><th id="1172">1172</th><td></td></tr>
+<tr><th id="1173">1173</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="1174">1174</th><td><i class="doc"> * fb_get_hblank_by_dclk - get horizontal blank time given pixelclock</i></td></tr>
+<tr><th id="1175">1175</th><td><i class="doc"> *<span class="command"> @dclk</span>: pixelclock in Hz</i></td></tr>
+<tr><th id="1176">1176</th><td><i class="doc"> *<span class="command"> @xres</span>: horizontal resolution in pixels</i></td></tr>
+<tr><th id="1177">1177</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1178">1178</th><td><i class="doc"> * DESCRIPTION:</i></td></tr>
+<tr><th id="1179">1179</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1180">1180</th><td><i class="doc"> *           xres * duty_cycle</i></td></tr>
+<tr><th id="1181">1181</th><td><i class="doc"> * hblank = ------------------</i></td></tr>
+<tr><th id="1182">1182</th><td><i class="doc"> *           100 - duty_cycle</i></td></tr>
+<tr><th id="1183">1183</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1184">1184</th><td><i class="doc"> * duty cycle = percent of htotal assigned to inactive display</i></td></tr>
+<tr><th id="1185">1185</th><td><i class="doc"> * duty cycle = C - (M * h_period)</i></td></tr>
+<tr><th id="1186">1186</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1187">1187</th><td><i class="doc"> * where: h_period = SQRT(100 - C + (0.4 * xres * M)/dclk) + C - 100</i></td></tr>
+<tr><th id="1188">1188</th><td><i class="doc"> *                   -----------------------------------------------</i></td></tr>
+<tr><th id="1189">1189</th><td><i class="doc"> *                                    2 * M</i></td></tr>
+<tr><th id="1190">1190</th><td><i class="doc"> *        M = 300;</i></td></tr>
+<tr><th id="1191">1191</th><td><i class="doc"> *        C = 30;</i></td></tr>
+<tr><th id="1192">1192</th><td><i class="doc"></i></td></tr>
+<tr><th id="1193">1193</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="1194">1194</th><td><em>static</em> u32 fb_get_hblank_by_dclk(u32 dclk, u32 xres)</td></tr>
+<tr><th id="1195">1195</th><td>{</td></tr>
+<tr><th id="1196">1196</th><td>	u32 duty_cycle, h_period, hblank;</td></tr>
+<tr><th id="1197">1197</th><td></td></tr>
+<tr><th id="1198">1198</th><td>	dclk /= <var>1000</var>;</td></tr>
+<tr><th id="1199">1199</th><td>	h_period = <var>100</var> - C_VAL;</td></tr>
+<tr><th id="1200">1200</th><td>	h_period *= h_period;</td></tr>
+<tr><th id="1201">1201</th><td>	h_period += (M_VAL * xres * <var>2</var> * <var>1000</var>)/(<var>5</var> * dclk);</td></tr>
+<tr><th id="1202">1202</th><td>	h_period *= <var>10000</var>;</td></tr>
+<tr><th id="1203">1203</th><td></td></tr>
+<tr><th id="1204">1204</th><td>	h_period = int_sqrt(h_period);</td></tr>
+<tr><th id="1205">1205</th><td>	h_period -= (<var>100</var> - C_VAL) * <var>100</var>;</td></tr>
+<tr><th id="1206">1206</th><td>	h_period *= <var>1000</var>;</td></tr>
+<tr><th id="1207">1207</th><td>	h_period /= <var>2</var> * M_VAL;</td></tr>
+<tr><th id="1208">1208</th><td></td></tr>
+<tr><th id="1209">1209</th><td>	duty_cycle = C_VAL * <var>1000</var> - (M_VAL * h_period)/<var>100</var>;</td></tr>
+<tr><th id="1210">1210</th><td>	hblank = (xres * duty_cycle)/(<var>100000</var> - duty_cycle) + <var>8</var>;</td></tr>
+<tr><th id="1211">1211</th><td>	hblank &amp;= ~<var>15</var>;</td></tr>
+<tr><th id="1212">1212</th><td>	<b>return</b> (hblank);</td></tr>
+<tr><th id="1213">1213</th><td>}</td></tr>
+<tr><th id="1214">1214</th><td></td></tr>
+<tr><th id="1215">1215</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="1216">1216</th><td><i class="doc"> * fb_get_hfreq - estimate hsync</i></td></tr>
+<tr><th id="1217">1217</th><td><i class="doc"> *<span class="command"> @vfreq</span>: vertical refresh rate</i></td></tr>
+<tr><th id="1218">1218</th><td><i class="doc"> *<span class="command"> @yres</span>: vertical resolution</i></td></tr>
+<tr><th id="1219">1219</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1220">1220</th><td><i class="doc"> * DESCRIPTION:</i></td></tr>
+<tr><th id="1221">1221</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1222">1222</th><td><i class="doc"> *          (yres + front_port) * vfreq * 1000000</i></td></tr>
+<tr><th id="1223">1223</th><td><i class="doc"> * hfreq = -------------------------------------</i></td></tr>
+<tr><th id="1224">1224</th><td><i class="doc"> *          (1000000 - (vfreq * FLYBACK)</i></td></tr>
+<tr><th id="1225">1225</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1226">1226</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="1227">1227</th><td></td></tr>
+<tr><th id="1228">1228</th><td><em>static</em> u32 fb_get_hfreq(u32 vfreq, u32 yres)</td></tr>
+<tr><th id="1229">1229</th><td>{</td></tr>
+<tr><th id="1230">1230</th><td>	u32 divisor, hfreq;</td></tr>
+<tr><th id="1231">1231</th><td></td></tr>
+<tr><th id="1232">1232</th><td>	divisor = (<var>1000000</var> - (vfreq * FLYBACK))/<var>1000</var>;</td></tr>
+<tr><th id="1233">1233</th><td>	hfreq = (yres + V_FRONTPORCH) * vfreq  * <var>1000</var>;</td></tr>
+<tr><th id="1234">1234</th><td>	<b>return</b> (hfreq/divisor);</td></tr>
+<tr><th id="1235">1235</th><td>}</td></tr>
+<tr><th id="1236">1236</th><td></td></tr>
+<tr><th id="1237">1237</th><td><em>static</em> <em>void</em> fb_timings_vfreq(<b>struct</b> __fb_timings *timings)</td></tr>
+<tr><th id="1238">1238</th><td>{</td></tr>
+<tr><th id="1239">1239</th><td>	timings-&gt;hfreq = fb_get_hfreq(timings-&gt;vfreq, timings-&gt;vactive);</td></tr>
+<tr><th id="1240">1240</th><td>	timings-&gt;vblank = fb_get_vblank(timings-&gt;hfreq);</td></tr>
+<tr><th id="1241">1241</th><td>	timings-&gt;vtotal = timings-&gt;vactive + timings-&gt;vblank;</td></tr>
+<tr><th id="1242">1242</th><td>	timings-&gt;hblank = fb_get_hblank_by_hfreq(timings-&gt;hfreq,</td></tr>
+<tr><th id="1243">1243</th><td>						 timings-&gt;hactive);</td></tr>
+<tr><th id="1244">1244</th><td>	timings-&gt;htotal = timings-&gt;hactive + timings-&gt;hblank;</td></tr>
+<tr><th id="1245">1245</th><td>	timings-&gt;dclk = timings-&gt;htotal * timings-&gt;hfreq;</td></tr>
+<tr><th id="1246">1246</th><td>}</td></tr>
+<tr><th id="1247">1247</th><td></td></tr>
+<tr><th id="1248">1248</th><td><em>static</em> <em>void</em> fb_timings_hfreq(<b>struct</b> __fb_timings *timings)</td></tr>
+<tr><th id="1249">1249</th><td>{</td></tr>
+<tr><th id="1250">1250</th><td>	timings-&gt;vblank = fb_get_vblank(timings-&gt;hfreq);</td></tr>
+<tr><th id="1251">1251</th><td>	timings-&gt;vtotal = timings-&gt;vactive + timings-&gt;vblank;</td></tr>
+<tr><th id="1252">1252</th><td>	timings-&gt;vfreq = timings-&gt;hfreq/timings-&gt;vtotal;</td></tr>
+<tr><th id="1253">1253</th><td>	timings-&gt;hblank = fb_get_hblank_by_hfreq(timings-&gt;hfreq,</td></tr>
+<tr><th id="1254">1254</th><td>						 timings-&gt;hactive);</td></tr>
+<tr><th id="1255">1255</th><td>	timings-&gt;htotal = timings-&gt;hactive + timings-&gt;hblank;</td></tr>
+<tr><th id="1256">1256</th><td>	timings-&gt;dclk = timings-&gt;htotal * timings-&gt;hfreq;</td></tr>
+<tr><th id="1257">1257</th><td>}</td></tr>
+<tr><th id="1258">1258</th><td></td></tr>
+<tr><th id="1259">1259</th><td><em>static</em> <em>void</em> fb_timings_dclk(<b>struct</b> __fb_timings *timings)</td></tr>
+<tr><th id="1260">1260</th><td>{</td></tr>
+<tr><th id="1261">1261</th><td>	timings-&gt;hblank = fb_get_hblank_by_dclk(timings-&gt;dclk,</td></tr>
+<tr><th id="1262">1262</th><td>						timings-&gt;hactive);</td></tr>
+<tr><th id="1263">1263</th><td>	timings-&gt;htotal = timings-&gt;hactive + timings-&gt;hblank;</td></tr>
+<tr><th id="1264">1264</th><td>	timings-&gt;hfreq = timings-&gt;dclk/timings-&gt;htotal;</td></tr>
+<tr><th id="1265">1265</th><td>	timings-&gt;vblank = fb_get_vblank(timings-&gt;hfreq);</td></tr>
+<tr><th id="1266">1266</th><td>	timings-&gt;vtotal = timings-&gt;vactive + timings-&gt;vblank;</td></tr>
+<tr><th id="1267">1267</th><td>	timings-&gt;vfreq = timings-&gt;hfreq/timings-&gt;vtotal;</td></tr>
+<tr><th id="1268">1268</th><td>}</td></tr>
+<tr><th id="1269">1269</th><td></td></tr>
+<tr><th id="1270">1270</th><td><i>/*</i></td></tr>
+<tr><th id="1271">1271</th><td><i> * fb_get_mode - calculates video mode using VESA GTF</i></td></tr>
+<tr><th id="1272">1272</th><td><i> * @flags: if: 0 - maximize vertical refresh rate</i></td></tr>
+<tr><th id="1273">1273</th><td><i> *             1 - vrefresh-driven calculation;</i></td></tr>
+<tr><th id="1274">1274</th><td><i> *             2 - hscan-driven calculation;</i></td></tr>
+<tr><th id="1275">1275</th><td><i> *             3 - pixelclock-driven calculation;</i></td></tr>
+<tr><th id="1276">1276</th><td><i> * @val: depending on @flags, ignored, vrefresh, hsync or pixelclock</i></td></tr>
+<tr><th id="1277">1277</th><td><i> * @var: pointer to fb_var_screeninfo</i></td></tr>
+<tr><th id="1278">1278</th><td><i> * @info: pointer to fb_info</i></td></tr>
+<tr><th id="1279">1279</th><td><i> *</i></td></tr>
+<tr><th id="1280">1280</th><td><i> * DESCRIPTION:</i></td></tr>
+<tr><th id="1281">1281</th><td><i> * Calculates video mode based on monitor specs using VESA GTF.</i></td></tr>
+<tr><th id="1282">1282</th><td><i> * The GTF is best for VESA GTF compliant monitors but is</i></td></tr>
+<tr><th id="1283">1283</th><td><i> * specifically formulated to work for older monitors as well.</i></td></tr>
+<tr><th id="1284">1284</th><td><i> *</i></td></tr>
+<tr><th id="1285">1285</th><td><i> * If @flag==0, the function will attempt to maximize the</i></td></tr>
+<tr><th id="1286">1286</th><td><i> * refresh rate.  Otherwise, it will calculate timings based on</i></td></tr>
+<tr><th id="1287">1287</th><td><i> * the flag and accompanying value.</i></td></tr>
+<tr><th id="1288">1288</th><td><i> *</i></td></tr>
+<tr><th id="1289">1289</th><td><i> * If FB_IGNOREMON bit is set in @flags, monitor specs will be</i></td></tr>
+<tr><th id="1290">1290</th><td><i> * ignored and @var will be filled with the calculated timings.</i></td></tr>
+<tr><th id="1291">1291</th><td><i> *</i></td></tr>
+<tr><th id="1292">1292</th><td><i> * All calculations are based on the VESA GTF Spreadsheet</i></td></tr>
+<tr><th id="1293">1293</th><td><i> * available at VESA's public ftp (<a href="http://www.vesa.org">http://www.vesa.org</a>).</i></td></tr>
+<tr><th id="1294">1294</th><td><i> *</i></td></tr>
+<tr><th id="1295">1295</th><td><i> * NOTES:</i></td></tr>
+<tr><th id="1296">1296</th><td><i> * The timings generated by the GTF will be different from VESA</i></td></tr>
+<tr><th id="1297">1297</th><td><i> * DMT.  It might be a good idea to keep a table of standard</i></td></tr>
+<tr><th id="1298">1298</th><td><i> * VESA modes as well.  The GTF may also not work for some displays,</i></td></tr>
+<tr><th id="1299">1299</th><td><i> * such as, and especially, analog TV.</i></td></tr>
+<tr><th id="1300">1300</th><td><i> *</i></td></tr>
+<tr><th id="1301">1301</th><td><i> * REQUIRES:</i></td></tr>
+<tr><th id="1302">1302</th><td><i> * A valid info-&gt;monspecs, otherwise 'safe numbers' will be used.</i></td></tr>
+<tr><th id="1303">1303</th><td><i> */</i></td></tr>
+<tr><th id="1304">1304</th><td><em>int</em> fb_get_mode(<em>int</em> flags, u32 val, <b>struct</b> fb_var_screeninfo *var, <b>struct</b> fb_info *info)</td></tr>
+<tr><th id="1305">1305</th><td>{</td></tr>
+<tr><th id="1306">1306</th><td>	<b>struct</b> __fb_timings *timings;</td></tr>
+<tr><th id="1307">1307</th><td>	u32 interlace = <var>1</var>, dscan = <var>1</var>;</td></tr>
+<tr><th id="1308">1308</th><td>	u32 hfmin, hfmax, vfmin, vfmax, dclkmin, dclkmax, err = <var>0</var>;</td></tr>
+<tr><th id="1309">1309</th><td></td></tr>
+<tr><th id="1310">1310</th><td></td></tr>
+<tr><th id="1311">1311</th><td>	timings = kzalloc(<b>sizeof</b>(<b>struct</b> __fb_timings), GFP_KERNEL);</td></tr>
+<tr><th id="1312">1312</th><td></td></tr>
+<tr><th id="1313">1313</th><td>	<b>if</b> (!timings)</td></tr>
+<tr><th id="1314">1314</th><td>		<b>return</b> -ENOMEM;</td></tr>
+<tr><th id="1315">1315</th><td></td></tr>
+<tr><th id="1316">1316</th><td>	<i>/*</i></td></tr>
+<tr><th id="1317">1317</th><td><i>	 * If monspecs are invalid, use values that are enough</i></td></tr>
+<tr><th id="1318">1318</th><td><i>	 * for 640x480@60</i></td></tr>
+<tr><th id="1319">1319</th><td><i>	 */</i></td></tr>
+<tr><th id="1320">1320</th><td>	<b>if</b> (!info || !info-&gt;monspecs.hfmax || !info-&gt;monspecs.vfmax ||</td></tr>
+<tr><th id="1321">1321</th><td>	    !info-&gt;monspecs.dclkmax ||</td></tr>
+<tr><th id="1322">1322</th><td>	    info-&gt;monspecs.hfmax &lt; info-&gt;monspecs.hfmin ||</td></tr>
+<tr><th id="1323">1323</th><td>	    info-&gt;monspecs.vfmax &lt; info-&gt;monspecs.vfmin ||</td></tr>
+<tr><th id="1324">1324</th><td>	    info-&gt;monspecs.dclkmax &lt; info-&gt;monspecs.dclkmin) {</td></tr>
+<tr><th id="1325">1325</th><td>		hfmin = <var>29000</var>; hfmax = <var>30000</var>;</td></tr>
+<tr><th id="1326">1326</th><td>		vfmin = <var>60</var>; vfmax = <var>60</var>;</td></tr>
+<tr><th id="1327">1327</th><td>		dclkmin = <var>0</var>; dclkmax = <var>25000000</var>;</td></tr>
+<tr><th id="1328">1328</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="1329">1329</th><td>		hfmin = info-&gt;monspecs.hfmin;</td></tr>
+<tr><th id="1330">1330</th><td>		hfmax = info-&gt;monspecs.hfmax;</td></tr>
+<tr><th id="1331">1331</th><td>		vfmin = info-&gt;monspecs.vfmin;</td></tr>
+<tr><th id="1332">1332</th><td>		vfmax = info-&gt;monspecs.vfmax;</td></tr>
+<tr><th id="1333">1333</th><td>		dclkmin = info-&gt;monspecs.dclkmin;</td></tr>
+<tr><th id="1334">1334</th><td>		dclkmax = info-&gt;monspecs.dclkmax;</td></tr>
+<tr><th id="1335">1335</th><td>	}</td></tr>
+<tr><th id="1336">1336</th><td></td></tr>
+<tr><th id="1337">1337</th><td>	timings-&gt;hactive = var-&gt;xres;</td></tr>
+<tr><th id="1338">1338</th><td>	timings-&gt;vactive = var-&gt;yres;</td></tr>
+<tr><th id="1339">1339</th><td>	<b>if</b> (var-&gt;vmode &amp; FB_VMODE_INTERLACED) {</td></tr>
+<tr><th id="1340">1340</th><td>		timings-&gt;vactive /= <var>2</var>;</td></tr>
+<tr><th id="1341">1341</th><td>		interlace = <var>2</var>;</td></tr>
+<tr><th id="1342">1342</th><td>	}</td></tr>
+<tr><th id="1343">1343</th><td>	<b>if</b> (var-&gt;vmode &amp; FB_VMODE_DOUBLE) {</td></tr>
+<tr><th id="1344">1344</th><td>		timings-&gt;vactive *= <var>2</var>;</td></tr>
+<tr><th id="1345">1345</th><td>		dscan = <var>2</var>;</td></tr>
+<tr><th id="1346">1346</th><td>	}</td></tr>
+<tr><th id="1347">1347</th><td></td></tr>
+<tr><th id="1348">1348</th><td>	<b>switch</b> (flags &amp; ~FB_IGNOREMON) {</td></tr>
+<tr><th id="1349">1349</th><td>	<b>case</b> FB_MAXTIMINGS: <i>/* maximize refresh rate */</i></td></tr>
+<tr><th id="1350">1350</th><td>		timings-&gt;hfreq = hfmax;</td></tr>
+<tr><th id="1351">1351</th><td>		fb_timings_hfreq(timings);</td></tr>
+<tr><th id="1352">1352</th><td>		<b>if</b> (timings-&gt;vfreq &gt; vfmax) {</td></tr>
+<tr><th id="1353">1353</th><td>			timings-&gt;vfreq = vfmax;</td></tr>
+<tr><th id="1354">1354</th><td>			fb_timings_vfreq(timings);</td></tr>
+<tr><th id="1355">1355</th><td>		}</td></tr>
+<tr><th id="1356">1356</th><td>		<b>if</b> (timings-&gt;dclk &gt; dclkmax) {</td></tr>
+<tr><th id="1357">1357</th><td>			timings-&gt;dclk = dclkmax;</td></tr>
+<tr><th id="1358">1358</th><td>			fb_timings_dclk(timings);</td></tr>
+<tr><th id="1359">1359</th><td>		}</td></tr>
+<tr><th id="1360">1360</th><td>		<b>break</b>;</td></tr>
+<tr><th id="1361">1361</th><td>	<b>case</b> FB_VSYNCTIMINGS: <i>/* vrefresh driven */</i></td></tr>
+<tr><th id="1362">1362</th><td>		timings-&gt;vfreq = val;</td></tr>
+<tr><th id="1363">1363</th><td>		fb_timings_vfreq(timings);</td></tr>
+<tr><th id="1364">1364</th><td>		<b>break</b>;</td></tr>
+<tr><th id="1365">1365</th><td>	<b>case</b> FB_HSYNCTIMINGS: <i>/* hsync driven */</i></td></tr>
+<tr><th id="1366">1366</th><td>		timings-&gt;hfreq = val;</td></tr>
+<tr><th id="1367">1367</th><td>		fb_timings_hfreq(timings);</td></tr>
+<tr><th id="1368">1368</th><td>		<b>break</b>;</td></tr>
+<tr><th id="1369">1369</th><td>	<b>case</b> FB_DCLKTIMINGS: <i>/* pixelclock driven */</i></td></tr>
+<tr><th id="1370">1370</th><td>		timings-&gt;dclk = PICOS2KHZ(val) * <var>1000</var>;</td></tr>
+<tr><th id="1371">1371</th><td>		fb_timings_dclk(timings);</td></tr>
+<tr><th id="1372">1372</th><td>		<b>break</b>;</td></tr>
+<tr><th id="1373">1373</th><td>	<b>default</b>:</td></tr>
+<tr><th id="1374">1374</th><td>		err = -EINVAL;</td></tr>
+<tr><th id="1375">1375</th><td></td></tr>
+<tr><th id="1376">1376</th><td>	}</td></tr>
+<tr><th id="1377">1377</th><td></td></tr>
+<tr><th id="1378">1378</th><td>	<b>if</b> (err || (!(flags &amp; FB_IGNOREMON) &amp;&amp;</td></tr>
+<tr><th id="1379">1379</th><td>	    (timings-&gt;vfreq &lt; vfmin || timings-&gt;vfreq &gt; vfmax ||</td></tr>
+<tr><th id="1380">1380</th><td>	     timings-&gt;hfreq &lt; hfmin || timings-&gt;hfreq &gt; hfmax ||</td></tr>
+<tr><th id="1381">1381</th><td>	     timings-&gt;dclk &lt; dclkmin || timings-&gt;dclk &gt; dclkmax))) {</td></tr>
+<tr><th id="1382">1382</th><td>		err = -EINVAL;</td></tr>
+<tr><th id="1383">1383</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="1384">1384</th><td>		var-&gt;pixclock = KHZ2PICOS(timings-&gt;dclk/<var>1000</var>);</td></tr>
+<tr><th id="1385">1385</th><td>		var-&gt;hsync_len = (timings-&gt;htotal * <var>8</var>)/<var>100</var>;</td></tr>
+<tr><th id="1386">1386</th><td>		var-&gt;right_margin = (timings-&gt;hblank/<var>2</var>) - var-&gt;hsync_len;</td></tr>
+<tr><th id="1387">1387</th><td>		var-&gt;left_margin = timings-&gt;hblank - var-&gt;right_margin -</td></tr>
+<tr><th id="1388">1388</th><td>			var-&gt;hsync_len;</td></tr>
+<tr><th id="1389">1389</th><td>		var-&gt;vsync_len = (<var>3</var> * interlace)/dscan;</td></tr>
+<tr><th id="1390">1390</th><td>		var-&gt;lower_margin = (<var>1</var> * interlace)/dscan;</td></tr>
+<tr><th id="1391">1391</th><td>		var-&gt;upper_margin = (timings-&gt;vblank * interlace)/dscan -</td></tr>
+<tr><th id="1392">1392</th><td>			(var-&gt;vsync_len + var-&gt;lower_margin);</td></tr>
+<tr><th id="1393">1393</th><td>	}</td></tr>
+<tr><th id="1394">1394</th><td></td></tr>
+<tr><th id="1395">1395</th><td>	kfree(timings);</td></tr>
+<tr><th id="1396">1396</th><td>	<b>return</b> err;</td></tr>
+<tr><th id="1397">1397</th><td>}</td></tr>
+<tr><th id="1398">1398</th><td></td></tr>
+<tr><th id="1399">1399</th><td><u>#ifdef CONFIG_VIDEOMODE_HELPERS</u></td></tr>
+<tr><th id="1400">1400</th><td><em>int</em> fb_videomode_from_videomode(<em>const</em> <b>struct</b> videomode *vm,</td></tr>
+<tr><th id="1401">1401</th><td>				<b>struct</b> fb_videomode *fbmode)</td></tr>
+<tr><th id="1402">1402</th><td>{</td></tr>
+<tr><th id="1403">1403</th><td>	<em>unsigned</em> <em>int</em> htotal, vtotal;</td></tr>
+<tr><th id="1404">1404</th><td></td></tr>
+<tr><th id="1405">1405</th><td>	fbmode-&gt;xres = vm-&gt;hactive;</td></tr>
+<tr><th id="1406">1406</th><td>	fbmode-&gt;left_margin = vm-&gt;hback_porch;</td></tr>
+<tr><th id="1407">1407</th><td>	fbmode-&gt;right_margin = vm-&gt;hfront_porch;</td></tr>
+<tr><th id="1408">1408</th><td>	fbmode-&gt;hsync_len = vm-&gt;hsync_len;</td></tr>
+<tr><th id="1409">1409</th><td></td></tr>
+<tr><th id="1410">1410</th><td>	fbmode-&gt;yres = vm-&gt;vactive;</td></tr>
+<tr><th id="1411">1411</th><td>	fbmode-&gt;upper_margin = vm-&gt;vback_porch;</td></tr>
+<tr><th id="1412">1412</th><td>	fbmode-&gt;lower_margin = vm-&gt;vfront_porch;</td></tr>
+<tr><th id="1413">1413</th><td>	fbmode-&gt;vsync_len = vm-&gt;vsync_len;</td></tr>
+<tr><th id="1414">1414</th><td></td></tr>
+<tr><th id="1415">1415</th><td>	<i>/* prevent division by zero in KHZ2PICOS macro */</i></td></tr>
+<tr><th id="1416">1416</th><td>	fbmode-&gt;pixclock = vm-&gt;pixelclock ?</td></tr>
+<tr><th id="1417">1417</th><td>			KHZ2PICOS(vm-&gt;pixelclock / <var>1000</var>) : <var>0</var>;</td></tr>
+<tr><th id="1418">1418</th><td></td></tr>
+<tr><th id="1419">1419</th><td>	fbmode-&gt;sync = <var>0</var>;</td></tr>
+<tr><th id="1420">1420</th><td>	fbmode-&gt;vmode = <var>0</var>;</td></tr>
+<tr><th id="1421">1421</th><td>	<b>if</b> (vm-&gt;flags &amp; DISPLAY_FLAGS_HSYNC_HIGH)</td></tr>
+<tr><th id="1422">1422</th><td>		fbmode-&gt;sync |= FB_SYNC_HOR_HIGH_ACT;</td></tr>
+<tr><th id="1423">1423</th><td>	<b>if</b> (vm-&gt;flags &amp; DISPLAY_FLAGS_VSYNC_HIGH)</td></tr>
+<tr><th id="1424">1424</th><td>		fbmode-&gt;sync |= FB_SYNC_VERT_HIGH_ACT;</td></tr>
+<tr><th id="1425">1425</th><td>	<b>if</b> (vm-&gt;flags &amp; DISPLAY_FLAGS_INTERLACED)</td></tr>
+<tr><th id="1426">1426</th><td>		fbmode-&gt;vmode |= FB_VMODE_INTERLACED;</td></tr>
+<tr><th id="1427">1427</th><td>	<b>if</b> (vm-&gt;flags &amp; DISPLAY_FLAGS_DOUBLESCAN)</td></tr>
+<tr><th id="1428">1428</th><td>		fbmode-&gt;vmode |= FB_VMODE_DOUBLE;</td></tr>
+<tr><th id="1429">1429</th><td>	fbmode-&gt;flag = <var>0</var>;</td></tr>
+<tr><th id="1430">1430</th><td></td></tr>
+<tr><th id="1431">1431</th><td>	htotal = vm-&gt;hactive + vm-&gt;hfront_porch + vm-&gt;hback_porch +</td></tr>
+<tr><th id="1432">1432</th><td>		 vm-&gt;hsync_len;</td></tr>
+<tr><th id="1433">1433</th><td>	vtotal = vm-&gt;vactive + vm-&gt;vfront_porch + vm-&gt;vback_porch +</td></tr>
+<tr><th id="1434">1434</th><td>		 vm-&gt;vsync_len;</td></tr>
+<tr><th id="1435">1435</th><td>	<i>/* prevent division by zero */</i></td></tr>
+<tr><th id="1436">1436</th><td>	<b>if</b> (htotal &amp;&amp; vtotal) {</td></tr>
+<tr><th id="1437">1437</th><td>		fbmode-&gt;refresh = vm-&gt;pixelclock / (htotal * vtotal);</td></tr>
+<tr><th id="1438">1438</th><td>	<i>/* a mode must have htotal and vtotal != 0 or it is invalid */</i></td></tr>
+<tr><th id="1439">1439</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="1440">1440</th><td>		fbmode-&gt;refresh = <var>0</var>;</td></tr>
+<tr><th id="1441">1441</th><td>		<b>return</b> -EINVAL;</td></tr>
+<tr><th id="1442">1442</th><td>	}</td></tr>
+<tr><th id="1443">1443</th><td></td></tr>
+<tr><th id="1444">1444</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="1445">1445</th><td>}</td></tr>
+<tr><th id="1446">1446</th><td>EXPORT_SYMBOL_GPL(fb_videomode_from_videomode);</td></tr>
+<tr><th id="1447">1447</th><td></td></tr>
+<tr><th id="1448">1448</th><td><u>#ifdef CONFIG_OF</u></td></tr>
+<tr><th id="1449">1449</th><td><em>static</em> <b>inline</b> <em>void</em> dump_fb_videomode(<em>const</em> <b>struct</b> fb_videomode *m)</td></tr>
+<tr><th id="1450">1450</th><td>{</td></tr>
+<tr><th id="1451">1451</th><td>	pr_debug(<q>"fb_videomode = %ux%u@%uHz (%ukHz) %u %u %u %u %u %u %u %u %u\n"</q>,</td></tr>
+<tr><th id="1452">1452</th><td>		 m-&gt;xres, m-&gt;yres, m-&gt;refresh, m-&gt;pixclock, m-&gt;left_margin,</td></tr>
+<tr><th id="1453">1453</th><td>		 m-&gt;right_margin, m-&gt;upper_margin, m-&gt;lower_margin,</td></tr>
+<tr><th id="1454">1454</th><td>		 m-&gt;hsync_len, m-&gt;vsync_len, m-&gt;sync, m-&gt;vmode, m-&gt;flag);</td></tr>
+<tr><th id="1455">1455</th><td>}</td></tr>
+<tr><th id="1456">1456</th><td></td></tr>
+<tr><th id="1457">1457</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="1458">1458</th><td><i class="doc"> * of_get_fb_videomode - get a fb_videomode from devicetree</i></td></tr>
+<tr><th id="1459">1459</th><td><i class="doc"> *<span class="command"> @np</span><span class="arg">:</span> device_node with the timing specification</i></td></tr>
+<tr><th id="1460">1460</th><td><i class="doc"> *<span class="command"> @fb</span>: will be set to the return value</i></td></tr>
+<tr><th id="1461">1461</th><td><i class="doc"> *<span class="command"> @index</span>: index into the list of display timings in devicetree</i></td></tr>
+<tr><th id="1462">1462</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1463">1463</th><td><i class="doc"> * DESCRIPTION:</i></td></tr>
+<tr><th id="1464">1464</th><td><i class="doc"> * This function is expensive and should only be used, if only one mode is to be</i></td></tr>
+<tr><th id="1465">1465</th><td><i class="doc"> * read from DT. To get multiple modes start with of_get_display_timings ond</i></td></tr>
+<tr><th id="1466">1466</th><td><i class="doc"> * work with that instead.</i></td></tr>
+<tr><th id="1467">1467</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="1468">1468</th><td><em>int</em> of_get_fb_videomode(<b>struct</b> device_node *np, <b>struct</b> fb_videomode *fb,</td></tr>
+<tr><th id="1469">1469</th><td>			<em>int</em> index)</td></tr>
+<tr><th id="1470">1470</th><td>{</td></tr>
+<tr><th id="1471">1471</th><td>	<b>struct</b> videomode vm;</td></tr>
+<tr><th id="1472">1472</th><td>	<em>int</em> ret;</td></tr>
+<tr><th id="1473">1473</th><td></td></tr>
+<tr><th id="1474">1474</th><td>	ret = of_get_videomode(np, &amp;vm, index);</td></tr>
+<tr><th id="1475">1475</th><td>	<b>if</b> (ret)</td></tr>
+<tr><th id="1476">1476</th><td>		<b>return</b> ret;</td></tr>
+<tr><th id="1477">1477</th><td></td></tr>
+<tr><th id="1478">1478</th><td>	ret = fb_videomode_from_videomode(&amp;vm, fb);</td></tr>
+<tr><th id="1479">1479</th><td>	<b>if</b> (ret)</td></tr>
+<tr><th id="1480">1480</th><td>		<b>return</b> ret;</td></tr>
+<tr><th id="1481">1481</th><td></td></tr>
+<tr><th id="1482">1482</th><td>	pr_debug(<q>"%pOF: got %dx%d display mode from %s\n"</q>,</td></tr>
+<tr><th id="1483">1483</th><td>		np, vm.hactive, vm.vactive, np-&gt;name);</td></tr>
+<tr><th id="1484">1484</th><td>	dump_fb_videomode(fb);</td></tr>
+<tr><th id="1485">1485</th><td></td></tr>
+<tr><th id="1486">1486</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="1487">1487</th><td>}</td></tr>
+<tr><th id="1488">1488</th><td>EXPORT_SYMBOL_GPL(of_get_fb_videomode);</td></tr>
+<tr><th id="1489">1489</th><td><u>#endif /* CONFIG_OF */</u></td></tr>
+<tr><th id="1490">1490</th><td><u>#endif /* CONFIG_VIDEOMODE_HELPERS */</u></td></tr>
+<tr><th id="1491">1491</th><td></td></tr>
+<tr><th id="1492">1492</th><td><u>#<span data-ppcond="54">else</span></u></td></tr>
+<tr><th id="1493">1493</th><td><em>int</em> <dfn class="decl def fn" id="fb_parse_edid" title='fb_parse_edid' data-ref="fb_parse_edid">fb_parse_edid</dfn>(<em>unsigned</em> <em>char</em> *<dfn class="local col1 decl" id="1edid" title='edid' data-type='unsigned char *' data-ref="1edid">edid</dfn>, <b>struct</b> <a class="type" href="../../../../include/uapi/linux/fb.h.html#fb_var_screeninfo" title='fb_var_screeninfo' data-ref="fb_var_screeninfo">fb_var_screeninfo</a> *<dfn class="local col2 decl" id="2var" title='var' data-type='struct fb_var_screeninfo *' data-ref="2var">var</dfn>)</td></tr>
+<tr><th id="1494">1494</th><td>{</td></tr>
+<tr><th id="1495">1495</th><td>	<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="1496">1496</th><td>}</td></tr>
+<tr><th id="1497">1497</th><td><em>void</em> <dfn class="decl def fn" id="fb_edid_to_monspecs" title='fb_edid_to_monspecs' data-ref="fb_edid_to_monspecs">fb_edid_to_monspecs</dfn>(<em>unsigned</em> <em>char</em> *<dfn class="local col3 decl" id="3edid" title='edid' data-type='unsigned char *' data-ref="3edid">edid</dfn>, <b>struct</b> <a class="type" href="../../../../include/linux/fb.h.html#fb_monspecs" title='fb_monspecs' data-ref="fb_monspecs">fb_monspecs</a> *<dfn class="local col4 decl" id="4specs" title='specs' data-type='struct fb_monspecs *' data-ref="4specs">specs</dfn>)</td></tr>
+<tr><th id="1498">1498</th><td>{</td></tr>
+<tr><th id="1499">1499</th><td>}</td></tr>
+<tr><th id="1500">1500</th><td><em>void</em> <dfn class="decl def fn" id="fb_edid_add_monspecs" title='fb_edid_add_monspecs' data-ref="fb_edid_add_monspecs">fb_edid_add_monspecs</dfn>(<em>unsigned</em> <em>char</em> *<dfn class="local col5 decl" id="5edid" title='edid' data-type='unsigned char *' data-ref="5edid">edid</dfn>, <b>struct</b> <a class="type" href="../../../../include/linux/fb.h.html#fb_monspecs" title='fb_monspecs' data-ref="fb_monspecs">fb_monspecs</a> *<dfn class="local col6 decl" id="6specs" title='specs' data-type='struct fb_monspecs *' data-ref="6specs">specs</dfn>)</td></tr>
+<tr><th id="1501">1501</th><td>{</td></tr>
+<tr><th id="1502">1502</th><td>}</td></tr>
+<tr><th id="1503">1503</th><td><em>void</em> <dfn class="decl def fn" id="fb_destroy_modedb" title='fb_destroy_modedb' data-ref="fb_destroy_modedb">fb_destroy_modedb</dfn>(<b>struct</b> <a class="type" href="../../../../include/linux/fb.h.html#fb_videomode" title='fb_videomode' data-ref="fb_videomode">fb_videomode</a> *<dfn class="local col7 decl" id="7modedb" title='modedb' data-type='struct fb_videomode *' data-ref="7modedb">modedb</dfn>)</td></tr>
+<tr><th id="1504">1504</th><td>{</td></tr>
+<tr><th id="1505">1505</th><td>}</td></tr>
+<tr><th id="1506">1506</th><td><em>int</em> <dfn class="decl def fn" id="fb_get_mode" title='fb_get_mode' data-ref="fb_get_mode">fb_get_mode</dfn>(<em>int</em> <dfn class="local col8 decl" id="8flags" title='flags' data-type='int' data-ref="8flags">flags</dfn>, <a class="typedef" href="../../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col9 decl" id="9val" title='val' data-type='u32' data-ref="9val">val</dfn>, <b>struct</b> <a class="type" href="../../../../include/uapi/linux/fb.h.html#fb_var_screeninfo" title='fb_var_screeninfo' data-ref="fb_var_screeninfo">fb_var_screeninfo</a> *<dfn class="local col0 decl" id="10var" title='var' data-type='struct fb_var_screeninfo *' data-ref="10var">var</dfn>,</td></tr>
+<tr><th id="1507">1507</th><td>		<b>struct</b> <a class="type" href="../../../../include/linux/fb.h.html#fb_info" title='fb_info' data-ref="fb_info">fb_info</a> *<dfn class="local col1 decl" id="11info" title='info' data-type='struct fb_info *' data-ref="11info">info</dfn>)</td></tr>
+<tr><th id="1508">1508</th><td>{</td></tr>
+<tr><th id="1509">1509</th><td>	<b>return</b> -<a class="macro" href="../../../../include/uapi/asm-generic/errno-base.h.html#26" title="22" data-ref="_M/EINVAL">EINVAL</a>;</td></tr>
+<tr><th id="1510">1510</th><td>}</td></tr>
+<tr><th id="1511">1511</th><td><u>#<span data-ppcond="54">endif</span> /* CONFIG_FB_MODE_HELPERS */</u></td></tr>
+<tr><th id="1512">1512</th><td></td></tr>
+<tr><th id="1513">1513</th><td><i>/*</i></td></tr>
+<tr><th id="1514">1514</th><td><i> * fb_validate_mode - validates var against monitor capabilities</i></td></tr>
+<tr><th id="1515">1515</th><td><i> * @var: pointer to fb_var_screeninfo</i></td></tr>
+<tr><th id="1516">1516</th><td><i> * @info: pointer to fb_info</i></td></tr>
+<tr><th id="1517">1517</th><td><i> *</i></td></tr>
+<tr><th id="1518">1518</th><td><i> * DESCRIPTION:</i></td></tr>
+<tr><th id="1519">1519</th><td><i> * Validates video mode against monitor capabilities specified in</i></td></tr>
+<tr><th id="1520">1520</th><td><i> * info-&gt;monspecs.</i></td></tr>
+<tr><th id="1521">1521</th><td><i> *</i></td></tr>
+<tr><th id="1522">1522</th><td><i> * REQUIRES:</i></td></tr>
+<tr><th id="1523">1523</th><td><i> * A valid info-&gt;monspecs.</i></td></tr>
+<tr><th id="1524">1524</th><td><i> */</i></td></tr>
+<tr><th id="1525">1525</th><td><em>int</em> <dfn class="decl def fn" id="fb_validate_mode" title='fb_validate_mode' data-ref="fb_validate_mode">fb_validate_mode</dfn>(<em>const</em> <b>struct</b> <a class="type" href="../../../../include/uapi/linux/fb.h.html#fb_var_screeninfo" title='fb_var_screeninfo' data-ref="fb_var_screeninfo">fb_var_screeninfo</a> *<dfn class="local col2 decl" id="12var" title='var' data-type='const struct fb_var_screeninfo *' data-ref="12var">var</dfn>, <b>struct</b> <a class="type" href="../../../../include/linux/fb.h.html#fb_info" title='fb_info' data-ref="fb_info">fb_info</a> *<dfn class="local col3 decl" id="13info" title='info' data-type='struct fb_info *' data-ref="13info">info</dfn>)</td></tr>
+<tr><th id="1526">1526</th><td>{</td></tr>
+<tr><th id="1527">1527</th><td>	<a class="typedef" href="../../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col4 decl" id="14hfreq" title='hfreq' data-type='u32' data-ref="14hfreq">hfreq</dfn>, <dfn class="local col5 decl" id="15vfreq" title='vfreq' data-type='u32' data-ref="15vfreq">vfreq</dfn>, <dfn class="local col6 decl" id="16htotal" title='htotal' data-type='u32' data-ref="16htotal">htotal</dfn>, <dfn class="local col7 decl" id="17vtotal" title='vtotal' data-type='u32' data-ref="17vtotal">vtotal</dfn>, <dfn class="local col8 decl" id="18pixclock" title='pixclock' data-type='u32' data-ref="18pixclock">pixclock</dfn>;</td></tr>
+<tr><th id="1528">1528</th><td>	<a class="typedef" href="../../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col9 decl" id="19hfmin" title='hfmin' data-type='u32' data-ref="19hfmin">hfmin</dfn>, <dfn class="local col0 decl" id="20hfmax" title='hfmax' data-type='u32' data-ref="20hfmax">hfmax</dfn>, <dfn class="local col1 decl" id="21vfmin" title='vfmin' data-type='u32' data-ref="21vfmin">vfmin</dfn>, <dfn class="local col2 decl" id="22vfmax" title='vfmax' data-type='u32' data-ref="22vfmax">vfmax</dfn>, <dfn class="local col3 decl" id="23dclkmin" title='dclkmin' data-type='u32' data-ref="23dclkmin">dclkmin</dfn>, <dfn class="local col4 decl" id="24dclkmax" title='dclkmax' data-type='u32' data-ref="24dclkmax">dclkmax</dfn>;</td></tr>
+<tr><th id="1529">1529</th><td></td></tr>
+<tr><th id="1530">1530</th><td>	<i>/*</i></td></tr>
+<tr><th id="1531">1531</th><td><i>	 * If monspecs are invalid, use values that are enough</i></td></tr>
+<tr><th id="1532">1532</th><td><i>	 * for 640x480@60</i></td></tr>
+<tr><th id="1533">1533</th><td><i>	 */</i></td></tr>
+<tr><th id="1534">1534</th><td>	<b>if</b> (!<a class="local col3 ref" href="#13info" title='info' data-ref="13info">info</a>-&gt;<a class="ref field" href="../../../../include/linux/fb.h.html#fb_info::monspecs" title='fb_info::monspecs' data-ref="fb_info::monspecs">monspecs</a>.<a class="ref field" href="../../../../include/linux/fb.h.html#fb_monspecs::hfmax" title='fb_monspecs::hfmax' data-ref="fb_monspecs::hfmax">hfmax</a> || !<a class="local col3 ref" href="#13info" title='info' data-ref="13info">info</a>-&gt;<a class="ref field" href="../../../../include/linux/fb.h.html#fb_info::monspecs" title='fb_info::monspecs' data-ref="fb_info::monspecs">monspecs</a>.<a class="ref field" href="../../../../include/linux/fb.h.html#fb_monspecs::vfmax" title='fb_monspecs::vfmax' data-ref="fb_monspecs::vfmax">vfmax</a> ||</td></tr>
+<tr><th id="1535">1535</th><td>	    !<a class="local col3 ref" href="#13info" title='info' data-ref="13info">info</a>-&gt;<a class="ref field" href="../../../../include/linux/fb.h.html#fb_info::monspecs" title='fb_info::monspecs' data-ref="fb_info::monspecs">monspecs</a>.<a class="ref field" href="../../../../include/linux/fb.h.html#fb_monspecs::dclkmax" title='fb_monspecs::dclkmax' data-ref="fb_monspecs::dclkmax">dclkmax</a> ||</td></tr>
+<tr><th id="1536">1536</th><td>	    <a class="local col3 ref" href="#13info" title='info' data-ref="13info">info</a>-&gt;<a class="ref field" href="../../../../include/linux/fb.h.html#fb_info::monspecs" title='fb_info::monspecs' data-ref="fb_info::monspecs">monspecs</a>.<a class="ref field" href="../../../../include/linux/fb.h.html#fb_monspecs::hfmax" title='fb_monspecs::hfmax' data-ref="fb_monspecs::hfmax">hfmax</a> &lt; <a class="local col3 ref" href="#13info" title='info' data-ref="13info">info</a>-&gt;<a class="ref field" href="../../../../include/linux/fb.h.html#fb_info::monspecs" title='fb_info::monspecs' data-ref="fb_info::monspecs">monspecs</a>.<a class="ref field" href="../../../../include/linux/fb.h.html#fb_monspecs::hfmin" title='fb_monspecs::hfmin' data-ref="fb_monspecs::hfmin">hfmin</a> ||</td></tr>
+<tr><th id="1537">1537</th><td>	    <a class="local col3 ref" href="#13info" title='info' data-ref="13info">info</a>-&gt;<a class="ref field" href="../../../../include/linux/fb.h.html#fb_info::monspecs" title='fb_info::monspecs' data-ref="fb_info::monspecs">monspecs</a>.<a class="ref field" href="../../../../include/linux/fb.h.html#fb_monspecs::vfmax" title='fb_monspecs::vfmax' data-ref="fb_monspecs::vfmax">vfmax</a> &lt; <a class="local col3 ref" href="#13info" title='info' data-ref="13info">info</a>-&gt;<a class="ref field" href="../../../../include/linux/fb.h.html#fb_info::monspecs" title='fb_info::monspecs' data-ref="fb_info::monspecs">monspecs</a>.<a class="ref field" href="../../../../include/linux/fb.h.html#fb_monspecs::vfmin" title='fb_monspecs::vfmin' data-ref="fb_monspecs::vfmin">vfmin</a> ||</td></tr>
+<tr><th id="1538">1538</th><td>	    <a class="local col3 ref" href="#13info" title='info' data-ref="13info">info</a>-&gt;<a class="ref field" href="../../../../include/linux/fb.h.html#fb_info::monspecs" title='fb_info::monspecs' data-ref="fb_info::monspecs">monspecs</a>.<a class="ref field" href="../../../../include/linux/fb.h.html#fb_monspecs::dclkmax" title='fb_monspecs::dclkmax' data-ref="fb_monspecs::dclkmax">dclkmax</a> &lt; <a class="local col3 ref" href="#13info" title='info' data-ref="13info">info</a>-&gt;<a class="ref field" href="../../../../include/linux/fb.h.html#fb_info::monspecs" title='fb_info::monspecs' data-ref="fb_info::monspecs">monspecs</a>.<a class="ref field" href="../../../../include/linux/fb.h.html#fb_monspecs::dclkmin" title='fb_monspecs::dclkmin' data-ref="fb_monspecs::dclkmin">dclkmin</a>) {</td></tr>
+<tr><th id="1539">1539</th><td>		<a class="local col9 ref" href="#19hfmin" title='hfmin' data-ref="19hfmin">hfmin</a> = <var>29000</var>; <a class="local col0 ref" href="#20hfmax" title='hfmax' data-ref="20hfmax">hfmax</a> = <var>30000</var>;</td></tr>
+<tr><th id="1540">1540</th><td>		<a class="local col1 ref" href="#21vfmin" title='vfmin' data-ref="21vfmin">vfmin</a> = <var>60</var>; <a class="local col2 ref" href="#22vfmax" title='vfmax' data-ref="22vfmax">vfmax</a> = <var>60</var>;</td></tr>
+<tr><th id="1541">1541</th><td>		<a class="local col3 ref" href="#23dclkmin" title='dclkmin' data-ref="23dclkmin">dclkmin</a> = <var>0</var>; <a class="local col4 ref" href="#24dclkmax" title='dclkmax' data-ref="24dclkmax">dclkmax</a> = <var>25000000</var>;</td></tr>
+<tr><th id="1542">1542</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="1543">1543</th><td>		<a class="local col9 ref" href="#19hfmin" title='hfmin' data-ref="19hfmin">hfmin</a> = <a class="local col3 ref" href="#13info" title='info' data-ref="13info">info</a>-&gt;<a class="ref field" href="../../../../include/linux/fb.h.html#fb_info::monspecs" title='fb_info::monspecs' data-ref="fb_info::monspecs">monspecs</a>.<a class="ref field" href="../../../../include/linux/fb.h.html#fb_monspecs::hfmin" title='fb_monspecs::hfmin' data-ref="fb_monspecs::hfmin">hfmin</a>;</td></tr>
+<tr><th id="1544">1544</th><td>		<a class="local col0 ref" href="#20hfmax" title='hfmax' data-ref="20hfmax">hfmax</a> = <a class="local col3 ref" href="#13info" title='info' data-ref="13info">info</a>-&gt;<a class="ref field" href="../../../../include/linux/fb.h.html#fb_info::monspecs" title='fb_info::monspecs' data-ref="fb_info::monspecs">monspecs</a>.<a class="ref field" href="../../../../include/linux/fb.h.html#fb_monspecs::hfmax" title='fb_monspecs::hfmax' data-ref="fb_monspecs::hfmax">hfmax</a>;</td></tr>
+<tr><th id="1545">1545</th><td>		<a class="local col1 ref" href="#21vfmin" title='vfmin' data-ref="21vfmin">vfmin</a> = <a class="local col3 ref" href="#13info" title='info' data-ref="13info">info</a>-&gt;<a class="ref field" href="../../../../include/linux/fb.h.html#fb_info::monspecs" title='fb_info::monspecs' data-ref="fb_info::monspecs">monspecs</a>.<a class="ref field" href="../../../../include/linux/fb.h.html#fb_monspecs::vfmin" title='fb_monspecs::vfmin' data-ref="fb_monspecs::vfmin">vfmin</a>;</td></tr>
+<tr><th id="1546">1546</th><td>		<a class="local col2 ref" href="#22vfmax" title='vfmax' data-ref="22vfmax">vfmax</a> = <a class="local col3 ref" href="#13info" title='info' data-ref="13info">info</a>-&gt;<a class="ref field" href="../../../../include/linux/fb.h.html#fb_info::monspecs" title='fb_info::monspecs' data-ref="fb_info::monspecs">monspecs</a>.<a class="ref field" href="../../../../include/linux/fb.h.html#fb_monspecs::vfmax" title='fb_monspecs::vfmax' data-ref="fb_monspecs::vfmax">vfmax</a>;</td></tr>
+<tr><th id="1547">1547</th><td>		<a class="local col3 ref" href="#23dclkmin" title='dclkmin' data-ref="23dclkmin">dclkmin</a> = <a class="local col3 ref" href="#13info" title='info' data-ref="13info">info</a>-&gt;<a class="ref field" href="../../../../include/linux/fb.h.html#fb_info::monspecs" title='fb_info::monspecs' data-ref="fb_info::monspecs">monspecs</a>.<a class="ref field" href="../../../../include/linux/fb.h.html#fb_monspecs::dclkmin" title='fb_monspecs::dclkmin' data-ref="fb_monspecs::dclkmin">dclkmin</a>;</td></tr>
+<tr><th id="1548">1548</th><td>		<a class="local col4 ref" href="#24dclkmax" title='dclkmax' data-ref="24dclkmax">dclkmax</a> = <a class="local col3 ref" href="#13info" title='info' data-ref="13info">info</a>-&gt;<a class="ref field" href="../../../../include/linux/fb.h.html#fb_info::monspecs" title='fb_info::monspecs' data-ref="fb_info::monspecs">monspecs</a>.<a class="ref field" href="../../../../include/linux/fb.h.html#fb_monspecs::dclkmax" title='fb_monspecs::dclkmax' data-ref="fb_monspecs::dclkmax">dclkmax</a>;</td></tr>
+<tr><th id="1549">1549</th><td>	}</td></tr>
+<tr><th id="1550">1550</th><td></td></tr>
+<tr><th id="1551">1551</th><td>	<b>if</b> (!<a class="local col2 ref" href="#12var" title='var' data-ref="12var">var</a>-&gt;<a class="ref field" href="../../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::pixclock" title='fb_var_screeninfo::pixclock' data-ref="fb_var_screeninfo::pixclock">pixclock</a>)</td></tr>
+<tr><th id="1552">1552</th><td>		<b>return</b> -<a class="macro" href="../../../../include/uapi/asm-generic/errno-base.h.html#26" title="22" data-ref="_M/EINVAL">EINVAL</a>;</td></tr>
+<tr><th id="1553">1553</th><td>	<a class="local col8 ref" href="#18pixclock" title='pixclock' data-ref="18pixclock">pixclock</a> = <a class="macro" href="../../../../include/uapi/linux/fb.h.html#238" title="(1000000000UL/(var-&gt;pixclock))" data-ref="_M/PICOS2KHZ">PICOS2KHZ</a>(<a class="local col2 ref" href="#12var" title='var' data-ref="12var">var</a>-&gt;<a class="ref field" href="../../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::pixclock" title='fb_var_screeninfo::pixclock' data-ref="fb_var_screeninfo::pixclock">pixclock</a>) * <var>1000</var>;</td></tr>
+<tr><th id="1554">1554</th><td></td></tr>
+<tr><th id="1555">1555</th><td>	<a class="local col6 ref" href="#16htotal" title='htotal' data-ref="16htotal">htotal</a> = <a class="local col2 ref" href="#12var" title='var' data-ref="12var">var</a>-&gt;<a class="ref field" href="../../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::xres" title='fb_var_screeninfo::xres' data-ref="fb_var_screeninfo::xres">xres</a> + <a class="local col2 ref" href="#12var" title='var' data-ref="12var">var</a>-&gt;<a class="ref field" href="../../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::right_margin" title='fb_var_screeninfo::right_margin' data-ref="fb_var_screeninfo::right_margin">right_margin</a> + <a class="local col2 ref" href="#12var" title='var' data-ref="12var">var</a>-&gt;<a class="ref field" href="../../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::hsync_len" title='fb_var_screeninfo::hsync_len' data-ref="fb_var_screeninfo::hsync_len">hsync_len</a> +</td></tr>
+<tr><th id="1556">1556</th><td>		<a class="local col2 ref" href="#12var" title='var' data-ref="12var">var</a>-&gt;<a class="ref field" href="../../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::left_margin" title='fb_var_screeninfo::left_margin' data-ref="fb_var_screeninfo::left_margin">left_margin</a>;</td></tr>
+<tr><th id="1557">1557</th><td>	<a class="local col7 ref" href="#17vtotal" title='vtotal' data-ref="17vtotal">vtotal</a> = <a class="local col2 ref" href="#12var" title='var' data-ref="12var">var</a>-&gt;<a class="ref field" href="../../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::yres" title='fb_var_screeninfo::yres' data-ref="fb_var_screeninfo::yres">yres</a> + <a class="local col2 ref" href="#12var" title='var' data-ref="12var">var</a>-&gt;<a class="ref field" href="../../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::lower_margin" title='fb_var_screeninfo::lower_margin' data-ref="fb_var_screeninfo::lower_margin">lower_margin</a> + <a class="local col2 ref" href="#12var" title='var' data-ref="12var">var</a>-&gt;<a class="ref field" href="../../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::vsync_len" title='fb_var_screeninfo::vsync_len' data-ref="fb_var_screeninfo::vsync_len">vsync_len</a> +</td></tr>
+<tr><th id="1558">1558</th><td>		<a class="local col2 ref" href="#12var" title='var' data-ref="12var">var</a>-&gt;<a class="ref field" href="../../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::upper_margin" title='fb_var_screeninfo::upper_margin' data-ref="fb_var_screeninfo::upper_margin">upper_margin</a>;</td></tr>
+<tr><th id="1559">1559</th><td></td></tr>
+<tr><th id="1560">1560</th><td>	<b>if</b> (<a class="local col2 ref" href="#12var" title='var' data-ref="12var">var</a>-&gt;<a class="ref field" href="../../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::vmode" title='fb_var_screeninfo::vmode' data-ref="fb_var_screeninfo::vmode">vmode</a> &amp; <a class="macro" href="../../../../include/uapi/linux/fb.h.html#221" title="1" data-ref="_M/FB_VMODE_INTERLACED">FB_VMODE_INTERLACED</a>)</td></tr>
+<tr><th id="1561">1561</th><td>		<a class="local col7 ref" href="#17vtotal" title='vtotal' data-ref="17vtotal">vtotal</a> /= <var>2</var>;</td></tr>
+<tr><th id="1562">1562</th><td>	<b>if</b> (<a class="local col2 ref" href="#12var" title='var' data-ref="12var">var</a>-&gt;<a class="ref field" href="../../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::vmode" title='fb_var_screeninfo::vmode' data-ref="fb_var_screeninfo::vmode">vmode</a> &amp; <a class="macro" href="../../../../include/uapi/linux/fb.h.html#222" title="2" data-ref="_M/FB_VMODE_DOUBLE">FB_VMODE_DOUBLE</a>)</td></tr>
+<tr><th id="1563">1563</th><td>		<a class="local col7 ref" href="#17vtotal" title='vtotal' data-ref="17vtotal">vtotal</a> *= <var>2</var>;</td></tr>
+<tr><th id="1564">1564</th><td></td></tr>
+<tr><th id="1565">1565</th><td>	<a class="local col4 ref" href="#14hfreq" title='hfreq' data-ref="14hfreq">hfreq</a> = <a class="local col8 ref" href="#18pixclock" title='pixclock' data-ref="18pixclock">pixclock</a>/<a class="local col6 ref" href="#16htotal" title='htotal' data-ref="16htotal">htotal</a>;</td></tr>
+<tr><th id="1566">1566</th><td>	<a class="local col4 ref" href="#14hfreq" title='hfreq' data-ref="14hfreq">hfreq</a> = (<a class="local col4 ref" href="#14hfreq" title='hfreq' data-ref="14hfreq">hfreq</a> + <var>500</var>) / <var>1000</var> * <var>1000</var>;</td></tr>
+<tr><th id="1567">1567</th><td></td></tr>
+<tr><th id="1568">1568</th><td>	<a class="local col5 ref" href="#15vfreq" title='vfreq' data-ref="15vfreq">vfreq</a> = <a class="local col4 ref" href="#14hfreq" title='hfreq' data-ref="14hfreq">hfreq</a>/<a class="local col7 ref" href="#17vtotal" title='vtotal' data-ref="17vtotal">vtotal</a>;</td></tr>
+<tr><th id="1569">1569</th><td></td></tr>
+<tr><th id="1570">1570</th><td>	<b>return</b> (<a class="local col5 ref" href="#15vfreq" title='vfreq' data-ref="15vfreq">vfreq</a> &lt; <a class="local col1 ref" href="#21vfmin" title='vfmin' data-ref="21vfmin">vfmin</a> || <a class="local col5 ref" href="#15vfreq" title='vfreq' data-ref="15vfreq">vfreq</a> &gt; <a class="local col2 ref" href="#22vfmax" title='vfmax' data-ref="22vfmax">vfmax</a> ||</td></tr>
+<tr><th id="1571">1571</th><td>		<a class="local col4 ref" href="#14hfreq" title='hfreq' data-ref="14hfreq">hfreq</a> &lt; <a class="local col9 ref" href="#19hfmin" title='hfmin' data-ref="19hfmin">hfmin</a> || <a class="local col4 ref" href="#14hfreq" title='hfreq' data-ref="14hfreq">hfreq</a> &gt; <a class="local col0 ref" href="#20hfmax" title='hfmax' data-ref="20hfmax">hfmax</a> ||</td></tr>
+<tr><th id="1572">1572</th><td>		<a class="local col8 ref" href="#18pixclock" title='pixclock' data-ref="18pixclock">pixclock</a> &lt; <a class="local col3 ref" href="#23dclkmin" title='dclkmin' data-ref="23dclkmin">dclkmin</a> || <a class="local col8 ref" href="#18pixclock" title='pixclock' data-ref="18pixclock">pixclock</a> &gt; <a class="local col4 ref" href="#24dclkmax" title='dclkmax' data-ref="24dclkmax">dclkmax</a>) ?</td></tr>
+<tr><th id="1573">1573</th><td>		-<a class="macro" href="../../../../include/uapi/asm-generic/errno-base.h.html#26" title="22" data-ref="_M/EINVAL">EINVAL</a> : <var>0</var>;</td></tr>
+<tr><th id="1574">1574</th><td>}</td></tr>
+<tr><th id="1575">1575</th><td></td></tr>
+<tr><th id="1576">1576</th><td><u>#<span data-ppcond="1576">if</span> defined(<span class="macro" data-ref="_M/CONFIG_FIRMWARE_EDID">CONFIG_FIRMWARE_EDID</span>) &amp;&amp; defined(<a class="macro" href="../../../../include/generated/autoconf.h.html#168" data-ref="_M/CONFIG_X86">CONFIG_X86</a>)</u></td></tr>
+<tr><th id="1577">1577</th><td></td></tr>
+<tr><th id="1578">1578</th><td><i>/*</i></td></tr>
+<tr><th id="1579">1579</th><td><i> * We need to ensure that the EDID block is only returned for</i></td></tr>
+<tr><th id="1580">1580</th><td><i> * the primary graphics adapter.</i></td></tr>
+<tr><th id="1581">1581</th><td><i> */</i></td></tr>
+<tr><th id="1582">1582</th><td></td></tr>
+<tr><th id="1583">1583</th><td><em>const</em> <em>unsigned</em> <em>char</em> *fb_firmware_edid(<b>struct</b> device *device)</td></tr>
+<tr><th id="1584">1584</th><td>{</td></tr>
+<tr><th id="1585">1585</th><td>	<b>struct</b> pci_dev *dev = NULL;</td></tr>
+<tr><th id="1586">1586</th><td>	<b>struct</b> resource *res = NULL;</td></tr>
+<tr><th id="1587">1587</th><td>	<em>unsigned</em> <em>char</em> *edid = NULL;</td></tr>
+<tr><th id="1588">1588</th><td></td></tr>
+<tr><th id="1589">1589</th><td>	<b>if</b> (device)</td></tr>
+<tr><th id="1590">1590</th><td>		dev = to_pci_dev(device);</td></tr>
+<tr><th id="1591">1591</th><td></td></tr>
+<tr><th id="1592">1592</th><td>	<b>if</b> (dev)</td></tr>
+<tr><th id="1593">1593</th><td>		res = &amp;dev-&gt;resource[PCI_ROM_RESOURCE];</td></tr>
+<tr><th id="1594">1594</th><td></td></tr>
+<tr><th id="1595">1595</th><td>	<b>if</b> (res &amp;&amp; res-&gt;flags &amp; IORESOURCE_ROM_SHADOW)</td></tr>
+<tr><th id="1596">1596</th><td>		edid = edid_info.dummy;</td></tr>
+<tr><th id="1597">1597</th><td></td></tr>
+<tr><th id="1598">1598</th><td>	<b>return</b> edid;</td></tr>
+<tr><th id="1599">1599</th><td>}</td></tr>
+<tr><th id="1600">1600</th><td><u>#<span data-ppcond="1576">else</span></u></td></tr>
+<tr><th id="1601">1601</th><td><em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="decl def fn" id="fb_firmware_edid" title='fb_firmware_edid' data-ref="fb_firmware_edid">fb_firmware_edid</dfn>(<b>struct</b> <a class="type" href="../../../../include/linux/device.h.html#device" title='device' data-ref="device">device</a> *<dfn class="local col5 decl" id="25device" title='device' data-type='struct device *' data-ref="25device">device</dfn>)</td></tr>
+<tr><th id="1602">1602</th><td>{</td></tr>
+<tr><th id="1603">1603</th><td>	<b>return</b> <a class="macro" href="../../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="1604">1604</th><td>}</td></tr>
+<tr><th id="1605">1605</th><td><u>#<span data-ppcond="1576">endif</span></u></td></tr>
+<tr><th id="1606">1606</th><td><a class="macro" href="../../../../include/linux/export.h.html#103" title="extern typeof(fb_firmware_edid) fb_firmware_edid; static const char __kstrtab_fb_firmware_edid[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;fb_firmware_edid&quot;; static const struct kernel_symbol __ksymtab_fb_firmware_edid __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;&quot; &quot;+&quot; &quot;fb_firmware_edid&quot;), used)) = { (unsigned long)&amp;fb_firmware_edid, __kstrtab_fb_firmware_edid }" data-ref="_M/EXPORT_SYMBOL">EXPORT_SYMBOL</a>(<a class="decl fn" href="#fb_firmware_edid" title='fb_firmware_edid' data-ref="fb_firmware_edid"><a class="ref fn" href="#fb_firmware_edid" title='fb_firmware_edid' data-ref="fb_firmware_edid"><a class="ref fn" href="#fb_firmware_edid" title='fb_firmware_edid' data-ref="fb_firmware_edid"><a class="ref fn" href="#fb_firmware_edid" title='fb_firmware_edid' data-ref="fb_firmware_edid">fb_firmware_edid</a></a></a></a>);</td></tr>
+<tr><th id="1607">1607</th><td></td></tr>
+<tr><th id="1608">1608</th><td><a class="macro" href="../../../../include/linux/export.h.html#103" title="extern typeof(fb_parse_edid) fb_parse_edid; static const char __kstrtab_fb_parse_edid[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;fb_parse_edid&quot;; static const struct kernel_symbol __ksymtab_fb_parse_edid __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;&quot; &quot;+&quot; &quot;fb_parse_edid&quot;), used)) = { (unsigned long)&amp;fb_parse_edid, __kstrtab_fb_parse_edid }" data-ref="_M/EXPORT_SYMBOL">EXPORT_SYMBOL</a>(<a class="decl fn" href="#fb_parse_edid" title='fb_parse_edid' data-ref="fb_parse_edid"><a class="ref fn" href="#fb_parse_edid" title='fb_parse_edid' data-ref="fb_parse_edid"><a class="ref fn" href="#fb_parse_edid" title='fb_parse_edid' data-ref="fb_parse_edid"><a class="ref fn" href="#fb_parse_edid" title='fb_parse_edid' data-ref="fb_parse_edid">fb_parse_edid</a></a></a></a>);</td></tr>
+<tr><th id="1609">1609</th><td><a class="macro" href="../../../../include/linux/export.h.html#103" title="extern typeof(fb_edid_to_monspecs) fb_edid_to_monspecs; static const char __kstrtab_fb_edid_to_monspecs[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;fb_edid_to_monspecs&quot;; static const struct kernel_symbol __ksymtab_fb_edid_to_monspecs __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;&quot; &quot;+&quot; &quot;fb_edid_to_monspecs&quot;), used)) = { (unsigned long)&amp;fb_edid_to_monspecs, __kstrtab_fb_edid_to_monspecs }" data-ref="_M/EXPORT_SYMBOL">EXPORT_SYMBOL</a>(<a class="decl fn" href="#fb_edid_to_monspecs" title='fb_edid_to_monspecs' data-ref="fb_edid_to_monspecs"><a class="ref fn" href="#fb_edid_to_monspecs" title='fb_edid_to_monspecs' data-ref="fb_edid_to_monspecs"><a class="ref fn" href="#fb_edid_to_monspecs" title='fb_edid_to_monspecs' data-ref="fb_edid_to_monspecs"><a class="ref fn" href="#fb_edid_to_monspecs" title='fb_edid_to_monspecs' data-ref="fb_edid_to_monspecs">fb_edid_to_monspecs</a></a></a></a>);</td></tr>
+<tr><th id="1610">1610</th><td><a class="macro" href="../../../../include/linux/export.h.html#103" title="extern typeof(fb_edid_add_monspecs) fb_edid_add_monspecs; static const char __kstrtab_fb_edid_add_monspecs[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;fb_edid_add_monspecs&quot;; static const struct kernel_symbol __ksymtab_fb_edid_add_monspecs __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;&quot; &quot;+&quot; &quot;fb_edid_add_monspecs&quot;), used)) = { (unsigned long)&amp;fb_edid_add_monspecs, __kstrtab_fb_edid_add_monspecs }" data-ref="_M/EXPORT_SYMBOL">EXPORT_SYMBOL</a>(<a class="decl fn" href="#fb_edid_add_monspecs" title='fb_edid_add_monspecs' data-ref="fb_edid_add_monspecs"><a class="ref fn" href="#fb_edid_add_monspecs" title='fb_edid_add_monspecs' data-ref="fb_edid_add_monspecs"><a class="ref fn" href="#fb_edid_add_monspecs" title='fb_edid_add_monspecs' data-ref="fb_edid_add_monspecs"><a class="ref fn" href="#fb_edid_add_monspecs" title='fb_edid_add_monspecs' data-ref="fb_edid_add_monspecs">fb_edid_add_monspecs</a></a></a></a>);</td></tr>
+<tr><th id="1611">1611</th><td><a class="macro" href="../../../../include/linux/export.h.html#103" title="extern typeof(fb_get_mode) fb_get_mode; static const char __kstrtab_fb_get_mode[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;fb_get_mode&quot;; static const struct kernel_symbol __ksymtab_fb_get_mode __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;&quot; &quot;+&quot; &quot;fb_get_mode&quot;), used)) = { (unsigned long)&amp;fb_get_mode, __kstrtab_fb_get_mode }" data-ref="_M/EXPORT_SYMBOL">EXPORT_SYMBOL</a>(<a class="decl fn" href="#fb_get_mode" title='fb_get_mode' data-ref="fb_get_mode"><a class="ref fn" href="#fb_get_mode" title='fb_get_mode' data-ref="fb_get_mode"><a class="ref fn" href="#fb_get_mode" title='fb_get_mode' data-ref="fb_get_mode"><a class="ref fn" href="#fb_get_mode" title='fb_get_mode' data-ref="fb_get_mode">fb_get_mode</a></a></a></a>);</td></tr>
+<tr><th id="1612">1612</th><td><a class="macro" href="../../../../include/linux/export.h.html#103" title="extern typeof(fb_validate_mode) fb_validate_mode; static const char __kstrtab_fb_validate_mode[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;fb_validate_mode&quot;; static const struct kernel_symbol __ksymtab_fb_validate_mode __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;&quot; &quot;+&quot; &quot;fb_validate_mode&quot;), used)) = { (unsigned long)&amp;fb_validate_mode, __kstrtab_fb_validate_mode }" data-ref="_M/EXPORT_SYMBOL">EXPORT_SYMBOL</a>(<a class="decl fn" href="#fb_validate_mode" title='fb_validate_mode' data-ref="fb_validate_mode"><a class="ref fn" href="#fb_validate_mode" title='fb_validate_mode' data-ref="fb_validate_mode"><a class="ref fn" href="#fb_validate_mode" title='fb_validate_mode' data-ref="fb_validate_mode"><a class="ref fn" href="#fb_validate_mode" title='fb_validate_mode' data-ref="fb_validate_mode">fb_validate_mode</a></a></a></a>);</td></tr>
+<tr><th id="1613">1613</th><td><a class="macro" href="../../../../include/linux/export.h.html#103" title="extern typeof(fb_destroy_modedb) fb_destroy_modedb; static const char __kstrtab_fb_destroy_modedb[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;fb_destroy_modedb&quot;; static const struct kernel_symbol __ksymtab_fb_destroy_modedb __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;&quot; &quot;+&quot; &quot;fb_destroy_modedb&quot;), used)) = { (unsigned long)&amp;fb_destroy_modedb, __kstrtab_fb_destroy_modedb }" data-ref="_M/EXPORT_SYMBOL">EXPORT_SYMBOL</a>(<a class="decl fn" href="#fb_destroy_modedb" title='fb_destroy_modedb' data-ref="fb_destroy_modedb"><a class="ref fn" href="#fb_destroy_modedb" title='fb_destroy_modedb' data-ref="fb_destroy_modedb"><a class="ref fn" href="#fb_destroy_modedb" title='fb_destroy_modedb' data-ref="fb_destroy_modedb"><a class="ref fn" href="#fb_destroy_modedb" title='fb_destroy_modedb' data-ref="fb_destroy_modedb">fb_destroy_modedb</a></a></a></a>);</td></tr>
+<tr><th id="1614">1614</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-30</em> from project linux-4.14.y revision <em>linux-4.14.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

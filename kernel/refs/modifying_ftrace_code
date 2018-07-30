@@ -1,0 +1,38 @@
+<dec f='linux-4.14.y/arch/x86/include/asm/ftrace.h' l='22' type='atomic_t'/>
+<def f='linux-4.14.y/arch/x86/kernel/ftrace.c' l='208' type='atomic_t'/>
+<use f='linux-4.14.y/arch/x86/kernel/ftrace.c' l='244' u='a' c='update_ftrace_func'/>
+<use f='linux-4.14.y/arch/x86/kernel/ftrace.c' l='248' u='a' c='update_ftrace_func'/>
+<use f='linux-4.14.y/arch/x86/kernel/ftrace.c' l='655' u='a' c='arch_ftrace_update_code'/>
+<use f='linux-4.14.y/arch/x86/kernel/ftrace.c' l='659' u='a' c='arch_ftrace_update_code'/>
+<doc f='linux-4.14.y/arch/x86/kernel/ftrace.c' l='177'>/*
+ * The modifying_ftrace_code is used to tell the breakpoint
+ * handler to call ftrace_int3_handler(). If it fails to
+ * call this handler for a breakpoint added by ftrace, then
+ * the kernel may crash.
+ *
+ * As atomic_writes on x86 do not need a barrier, we do not
+ * need to add smp_mb()s for this to work. It is also considered
+ * that we can not read the modifying_ftrace_code before
+ * executing the breakpoint. That would be quite remarkable if
+ * it could do that. Here&apos;s the flow that is required:
+ *
+ *   CPU-0                          CPU-1
+ *
+ * atomic_inc(mfc);
+ * write int3s
+ *				&lt;trap-int3&gt; // implicit (r)mb
+ *				if (atomic_read(mfc))
+ *					call ftrace_int3_handler()
+ *
+ * Then when we are finished:
+ *
+ * atomic_dec(mfc);
+ *
+ * If we hit a breakpoint that was not set by ftrace, it does not
+ * matter if ftrace_int3_handler() is called or not. It will
+ * simply be ignored. But it is crucial that a ftrace nop/caller
+ * breakpoint is handled. No other user should ever place a
+ * breakpoint on an ftrace nop/caller location. It must only
+ * be done by this code.
+ */</doc>
+<use f='linux-4.14.y/arch/x86/kernel/traps.c' l='581' u='a' c='do_int3'/>

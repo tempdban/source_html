@@ -1,0 +1,365 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>utstrtoul64.c source code [linux-4.14.y/drivers/acpi/acpica/utstrtoul64.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.14.y/drivers/acpi/acpica/utstrtoul64.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>linux-4.14.y</a>/<a href='../..'>drivers</a>/<a href='..'>acpi</a>/<a href='./'>acpica</a>/<a href='utstrtoul64.c.html'>utstrtoul64.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*******************************************************************************</i></td></tr>
+<tr><th id="2">2</th><td><i> *</i></td></tr>
+<tr><th id="3">3</th><td><i> * Module Name: utstrtoul64 - string to 64-bit integer support</i></td></tr>
+<tr><th id="4">4</th><td><i> *</i></td></tr>
+<tr><th id="5">5</th><td><i> ******************************************************************************/</i></td></tr>
+<tr><th id="6">6</th><td></td></tr>
+<tr><th id="7">7</th><td><i>/*</i></td></tr>
+<tr><th id="8">8</th><td><i> * Copyright (C) 2000 - 2017, Intel Corp.</i></td></tr>
+<tr><th id="9">9</th><td><i> * All rights reserved.</i></td></tr>
+<tr><th id="10">10</th><td><i> *</i></td></tr>
+<tr><th id="11">11</th><td><i> * Redistribution and use in source and binary forms, with or without</i></td></tr>
+<tr><th id="12">12</th><td><i> * modification, are permitted provided that the following conditions</i></td></tr>
+<tr><th id="13">13</th><td><i> * are met:</i></td></tr>
+<tr><th id="14">14</th><td><i> * 1. Redistributions of source code must retain the above copyright</i></td></tr>
+<tr><th id="15">15</th><td><i> *    notice, this list of conditions, and the following disclaimer,</i></td></tr>
+<tr><th id="16">16</th><td><i> *    without modification.</i></td></tr>
+<tr><th id="17">17</th><td><i> * 2. Redistributions in binary form must reproduce at minimum a disclaimer</i></td></tr>
+<tr><th id="18">18</th><td><i> *    substantially similar to the "NO WARRANTY" disclaimer below</i></td></tr>
+<tr><th id="19">19</th><td><i> *    ("Disclaimer") and any redistribution must be conditioned upon</i></td></tr>
+<tr><th id="20">20</th><td><i> *    including a substantially similar Disclaimer requirement for further</i></td></tr>
+<tr><th id="21">21</th><td><i> *    binary redistribution.</i></td></tr>
+<tr><th id="22">22</th><td><i> * 3. Neither the names of the above-listed copyright holders nor the names</i></td></tr>
+<tr><th id="23">23</th><td><i> *    of any contributors may be used to endorse or promote products derived</i></td></tr>
+<tr><th id="24">24</th><td><i> *    from this software without specific prior written permission.</i></td></tr>
+<tr><th id="25">25</th><td><i> *</i></td></tr>
+<tr><th id="26">26</th><td><i> * Alternatively, this software may be distributed under the terms of the</i></td></tr>
+<tr><th id="27">27</th><td><i> * GNU General Public License ("GPL") version 2 as published by the Free</i></td></tr>
+<tr><th id="28">28</th><td><i> * Software Foundation.</i></td></tr>
+<tr><th id="29">29</th><td><i> *</i></td></tr>
+<tr><th id="30">30</th><td><i> * NO WARRANTY</i></td></tr>
+<tr><th id="31">31</th><td><i> * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</i></td></tr>
+<tr><th id="32">32</th><td><i> * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</i></td></tr>
+<tr><th id="33">33</th><td><i> * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR</i></td></tr>
+<tr><th id="34">34</th><td><i> * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</i></td></tr>
+<tr><th id="35">35</th><td><i> * HOLDERS OR CONTRIBUTORS BE LIABLE FOR SPECIAL, EXEMPLARY, OR CONSEQUENTIAL</i></td></tr>
+<tr><th id="36">36</th><td><i> * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS</i></td></tr>
+<tr><th id="37">37</th><td><i> * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)</i></td></tr>
+<tr><th id="38">38</th><td><i> * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,</i></td></tr>
+<tr><th id="39">39</th><td><i> * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING</i></td></tr>
+<tr><th id="40">40</th><td><i> * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</i></td></tr>
+<tr><th id="41">41</th><td><i> * POSSIBILITY OF SUCH DAMAGES.</i></td></tr>
+<tr><th id="42">42</th><td><i> */</i></td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td><u>#include <a href="../../../include/acpi/acpi.h.html">&lt;acpi/acpi.h&gt;</a></u></td></tr>
+<tr><th id="45">45</th><td><u>#include <a href="accommon.h.html">"accommon.h"</a></u></td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td><i>/*******************************************************************************</i></td></tr>
+<tr><th id="48">48</th><td><i> *</i></td></tr>
+<tr><th id="49">49</th><td><i> * The functions in this module satisfy the need for 64-bit string-to-integer</i></td></tr>
+<tr><th id="50">50</th><td><i> * conversions on both 32-bit and 64-bit platforms.</i></td></tr>
+<tr><th id="51">51</th><td><i> *</i></td></tr>
+<tr><th id="52">52</th><td><i> ******************************************************************************/</i></td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td><u>#define <dfn class="macro" id="_M/_COMPONENT" data-ref="_M/_COMPONENT">_COMPONENT</dfn>          ACPI_UTILITIES</u></td></tr>
+<tr><th id="55">55</th><td><a class="macro" href="../../../include/acpi/acoutput.h.html#208" title="static const char __attribute__ ((unused)) _acpi_module_name[] = &quot;utstrtoul64&quot;;" data-ref="_M/ACPI_MODULE_NAME">ACPI_MODULE_NAME</a>(<q>"utstrtoul64"</q>)</td></tr>
+<tr><th id="56">56</th><td></td></tr>
+<tr><th id="57">57</th><td><i  data-doc="acpi_ut_strtoul_base10">/* Local prototypes */</i></td></tr>
+<tr><th id="58">58</th><td><em>static</em> <a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u64" title='u64' data-type='unsigned long long' data-ref="u64">u64</a> <a class="tu decl fn" href="#acpi_ut_strtoul_base10" title='acpi_ut_strtoul_base10' data-type='u64 acpi_ut_strtoul_base10(char * string, u32 flags)' data-ref="acpi_ut_strtoul_base10">acpi_ut_strtoul_base10</a>(<em>char</em> *<dfn class="local col1 decl" id="1string" title='string' data-type='char *' data-ref="1string">string</dfn>, <a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col2 decl" id="2flags" title='flags' data-type='u32' data-ref="2flags">flags</dfn>);</td></tr>
+<tr><th id="59">59</th><td></td></tr>
+<tr><th id="60">60</th><td><em>static</em> <a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u64" title='u64' data-type='unsigned long long' data-ref="u64">u64</a> <a class="tu decl fn" href="#acpi_ut_strtoul_base16" title='acpi_ut_strtoul_base16' data-type='u64 acpi_ut_strtoul_base16(char * string, u32 flags)' data-ref="acpi_ut_strtoul_base16">acpi_ut_strtoul_base16</a>(<em>char</em> *<dfn class="local col3 decl" id="3string" title='string' data-type='char *' data-ref="3string">string</dfn>, <a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col4 decl" id="4flags" title='flags' data-type='u32' data-ref="4flags">flags</dfn>);</td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td><i>/*******************************************************************************</i></td></tr>
+<tr><th id="63">63</th><td><i> *</i></td></tr>
+<tr><th id="64">64</th><td><i> * String conversion rules as written in the ACPI specification. The error</i></td></tr>
+<tr><th id="65">65</th><td><i> * conditions and behavior are different depending on the type of conversion.</i></td></tr>
+<tr><th id="66">66</th><td><i> *</i></td></tr>
+<tr><th id="67">67</th><td><i> *</i></td></tr>
+<tr><th id="68">68</th><td><i> * Implicit data type conversion: string-to-integer</i></td></tr>
+<tr><th id="69">69</th><td><i> * --------------------------------------------------</i></td></tr>
+<tr><th id="70">70</th><td><i> *</i></td></tr>
+<tr><th id="71">71</th><td><i> * Base is always 16. This is the ACPI_STRTOUL_BASE16 case.</i></td></tr>
+<tr><th id="72">72</th><td><i> *</i></td></tr>
+<tr><th id="73">73</th><td><i> * Example:</i></td></tr>
+<tr><th id="74">74</th><td><i> *      Add ("BA98", Arg0, Local0)</i></td></tr>
+<tr><th id="75">75</th><td><i> *</i></td></tr>
+<tr><th id="76">76</th><td><i> * The integer is initialized to the value zero.</i></td></tr>
+<tr><th id="77">77</th><td><i> * The ASCII string is interpreted as a hexadecimal constant.</i></td></tr>
+<tr><th id="78">78</th><td><i> *</i></td></tr>
+<tr><th id="79">79</th><td><i> *  1)  A "0x" prefix is not allowed. However, ACPICA allows this for</i></td></tr>
+<tr><th id="80">80</th><td><i> *      compatibility with previous ACPICA. (NO ERROR)</i></td></tr>
+<tr><th id="81">81</th><td><i> *</i></td></tr>
+<tr><th id="82">82</th><td><i> *  2)  Terminates when the size of an integer is reached (32 or 64 bits).</i></td></tr>
+<tr><th id="83">83</th><td><i> *      (NO ERROR)</i></td></tr>
+<tr><th id="84">84</th><td><i> *</i></td></tr>
+<tr><th id="85">85</th><td><i> *  3)  The first non-hex character terminates the conversion without error.</i></td></tr>
+<tr><th id="86">86</th><td><i> *      (NO ERROR)</i></td></tr>
+<tr><th id="87">87</th><td><i> *</i></td></tr>
+<tr><th id="88">88</th><td><i> *  4)  Conversion of a null (zero-length) string to an integer is not</i></td></tr>
+<tr><th id="89">89</th><td><i> *      allowed. However, ACPICA allows this for compatibility with previous</i></td></tr>
+<tr><th id="90">90</th><td><i> *      ACPICA. This conversion returns the value 0. (NO ERROR)</i></td></tr>
+<tr><th id="91">91</th><td><i> *</i></td></tr>
+<tr><th id="92">92</th><td><i> *</i></td></tr>
+<tr><th id="93">93</th><td><i> * Explicit data type conversion:  to_integer() with string operand</i></td></tr>
+<tr><th id="94">94</th><td><i> * ---------------------------------------------------------------</i></td></tr>
+<tr><th id="95">95</th><td><i> *</i></td></tr>
+<tr><th id="96">96</th><td><i> * Base is either 10 (default) or 16 (with 0x prefix)</i></td></tr>
+<tr><th id="97">97</th><td><i> *</i></td></tr>
+<tr><th id="98">98</th><td><i> * Examples:</i></td></tr>
+<tr><th id="99">99</th><td><i> *      to_integer ("1000")</i></td></tr>
+<tr><th id="100">100</th><td><i> *      to_integer ("0xABCD")</i></td></tr>
+<tr><th id="101">101</th><td><i> *</i></td></tr>
+<tr><th id="102">102</th><td><i> *  1)  Can be (must be) either a decimal or hexadecimal numeric string.</i></td></tr>
+<tr><th id="103">103</th><td><i> *      A hex value must be prefixed by "0x" or it is interpreted as a decimal.</i></td></tr>
+<tr><th id="104">104</th><td><i> *</i></td></tr>
+<tr><th id="105">105</th><td><i> *  2)  The value must not exceed the maximum of an integer value. ACPI spec</i></td></tr>
+<tr><th id="106">106</th><td><i> *      states the behavior is "unpredictable", so ACPICA matches the behavior</i></td></tr>
+<tr><th id="107">107</th><td><i> *      of the implicit conversion case.(NO ERROR)</i></td></tr>
+<tr><th id="108">108</th><td><i> *</i></td></tr>
+<tr><th id="109">109</th><td><i> *  3)  Behavior on the first non-hex character is not specified by the ACPI</i></td></tr>
+<tr><th id="110">110</th><td><i> *      spec, so ACPICA matches the behavior of the implicit conversion case</i></td></tr>
+<tr><th id="111">111</th><td><i> *      and terminates. (NO ERROR)</i></td></tr>
+<tr><th id="112">112</th><td><i> *</i></td></tr>
+<tr><th id="113">113</th><td><i> *  4)  A null (zero-length) string is illegal.</i></td></tr>
+<tr><th id="114">114</th><td><i> *      However, ACPICA allows this for compatibility with previous ACPICA.</i></td></tr>
+<tr><th id="115">115</th><td><i> *      This conversion returns the value 0. (NO ERROR)</i></td></tr>
+<tr><th id="116">116</th><td><i> *</i></td></tr>
+<tr><th id="117">117</th><td><i> ******************************************************************************/</i></td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td><i>/*******************************************************************************</i></td></tr>
+<tr><th id="120">120</th><td><i> *</i></td></tr>
+<tr><th id="121">121</th><td><i> * FUNCTION:    acpi_ut_strtoul64</i></td></tr>
+<tr><th id="122">122</th><td><i> *</i></td></tr>
+<tr><th id="123">123</th><td><i> * PARAMETERS:  string                  - Null terminated input string</i></td></tr>
+<tr><th id="124">124</th><td><i> *              flags                   - Conversion info, see below</i></td></tr>
+<tr><th id="125">125</th><td><i> *              return_value            - Where the converted integer is</i></td></tr>
+<tr><th id="126">126</th><td><i> *                                        returned</i></td></tr>
+<tr><th id="127">127</th><td><i> *</i></td></tr>
+<tr><th id="128">128</th><td><i> * RETURN:      Status and Converted value</i></td></tr>
+<tr><th id="129">129</th><td><i> *</i></td></tr>
+<tr><th id="130">130</th><td><i> * DESCRIPTION: Convert a string into an unsigned value. Performs either a</i></td></tr>
+<tr><th id="131">131</th><td><i> *              32-bit or 64-bit conversion, depending on the input integer</i></td></tr>
+<tr><th id="132">132</th><td><i> *              size in Flags (often the current mode of the interpreter).</i></td></tr>
+<tr><th id="133">133</th><td><i> *</i></td></tr>
+<tr><th id="134">134</th><td><i> * Values for Flags:</i></td></tr>
+<tr><th id="135">135</th><td><i> *      ACPI_STRTOUL_32BIT      - Max integer value is 32 bits</i></td></tr>
+<tr><th id="136">136</th><td><i> *      ACPI_STRTOUL_64BIT      - Max integer value is 64 bits</i></td></tr>
+<tr><th id="137">137</th><td><i> *      ACPI_STRTOUL_BASE16     - Input string is hexadecimal. Default</i></td></tr>
+<tr><th id="138">138</th><td><i> *                                is 10/16 based on string prefix (0x).</i></td></tr>
+<tr><th id="139">139</th><td><i> *</i></td></tr>
+<tr><th id="140">140</th><td><i> * NOTES:</i></td></tr>
+<tr><th id="141">141</th><td><i> *   Negative numbers are not supported, as they are not supported by ACPI.</i></td></tr>
+<tr><th id="142">142</th><td><i> *</i></td></tr>
+<tr><th id="143">143</th><td><i> *   Supports only base 16 or base 10 strings/values. Does not</i></td></tr>
+<tr><th id="144">144</th><td><i> *   support Octal strings, as these are not supported by ACPI.</i></td></tr>
+<tr><th id="145">145</th><td><i> *</i></td></tr>
+<tr><th id="146">146</th><td><i> * Current users of this support:</i></td></tr>
+<tr><th id="147">147</th><td><i> *</i></td></tr>
+<tr><th id="148">148</th><td><i> *  interpreter - Implicit and explicit conversions, GPE method names</i></td></tr>
+<tr><th id="149">149</th><td><i> *  debugger    - Command line input string conversion</i></td></tr>
+<tr><th id="150">150</th><td><i> *  iASL        - Main parser, conversion of constants to integers</i></td></tr>
+<tr><th id="151">151</th><td><i> *  iASL        - Data Table Compiler parser (constant math expressions)</i></td></tr>
+<tr><th id="152">152</th><td><i> *  iASL        - Preprocessor (constant math expressions)</i></td></tr>
+<tr><th id="153">153</th><td><i> *  acpi_dump   - Input table addresses</i></td></tr>
+<tr><th id="154">154</th><td><i> *  acpi_exec   - Testing of the acpi_ut_strtoul64 function</i></td></tr>
+<tr><th id="155">155</th><td><i> *</i></td></tr>
+<tr><th id="156">156</th><td><i> * Note concerning callers:</i></td></tr>
+<tr><th id="157">157</th><td><i> *   acpi_gbl_integer_byte_width can be used to set the 32/64 limit. If used,</i></td></tr>
+<tr><th id="158">158</th><td><i> *   this global should be set to the proper width. For the core ACPICA code,</i></td></tr>
+<tr><th id="159">159</th><td><i> *   this width depends on the DSDT version. For iASL, the default byte</i></td></tr>
+<tr><th id="160">160</th><td><i> *   width is always 8 for the parser, but error checking is performed later</i></td></tr>
+<tr><th id="161">161</th><td><i> *   to flag cases where a 64-bit constant is defined in a 32-bit DSDT/SSDT.</i></td></tr>
+<tr><th id="162">162</th><td><i> *</i></td></tr>
+<tr><th id="163">163</th><td><i> ******************************************************************************/</i></td></tr>
+<tr><th id="164">164</th><td></td></tr>
+<tr><th id="165">165</th><td><a class="typedef" href="../../../include/acpi/actypes.h.html#acpi_status" title='acpi_status' data-type='u32' data-ref="acpi_status">acpi_status</a> <dfn class="decl def fn" id="acpi_ut_strtoul64" title='acpi_ut_strtoul64' data-ref="acpi_ut_strtoul64">acpi_ut_strtoul64</dfn>(<em>char</em> *<dfn class="local col5 decl" id="5string" title='string' data-type='char *' data-ref="5string">string</dfn>, <a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col6 decl" id="6flags" title='flags' data-type='u32' data-ref="6flags">flags</dfn>, <a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u64" title='u64' data-type='unsigned long long' data-ref="u64">u64</a> *<dfn class="local col7 decl" id="7return_value" title='return_value' data-type='u64 *' data-ref="7return_value">return_value</dfn>)</td></tr>
+<tr><th id="166">166</th><td>{</td></tr>
+<tr><th id="167">167</th><td>	<a class="typedef" href="../../../include/acpi/actypes.h.html#acpi_status" title='acpi_status' data-type='u32' data-ref="acpi_status">acpi_status</a> <dfn class="local col8 decl" id="8status" title='status' data-type='acpi_status' data-ref="8status">status</dfn> = <a class="macro" href="../../../include/acpi/acexcep.h.html#94" title="(acpi_status) 0x0000" data-ref="_M/AE_OK">AE_OK</a>;</td></tr>
+<tr><th id="168">168</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col9 decl" id="9base" title='base' data-type='u32' data-ref="9base">base</dfn>;</td></tr>
+<tr><th id="169">169</th><td></td></tr>
+<tr><th id="170">170</th><td>	<a class="macro" href="../../../include/acpi/acoutput.h.html#469" title="" data-ref="_M/ACPI_FUNCTION_TRACE_STR">ACPI_FUNCTION_TRACE_STR</a>(ut_strtoul64, string);</td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td>	<i>/* Parameter validation */</i></td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td>	<b>if</b> (!<a class="local col5 ref" href="#5string" title='string' data-ref="5string">string</a> || !<a class="local col7 ref" href="#7return_value" title='return_value' data-ref="7return_value">return_value</a>) {</td></tr>
+<tr><th id="175">175</th><td>		<a class="macro" href="../../../include/acpi/acoutput.h.html#482" title="return(((acpi_status) (0x0001 | 0x1000)))" data-ref="_M/return_ACPI_STATUS">return_ACPI_STATUS</a>(<a class="macro" href="../../../include/acpi/acexcep.h.html#135" title="((acpi_status) (0x0001 | 0x1000))" data-ref="_M/AE_BAD_PARAMETER">AE_BAD_PARAMETER</a>);</td></tr>
+<tr><th id="176">176</th><td>	}</td></tr>
+<tr><th id="177">177</th><td></td></tr>
+<tr><th id="178">178</th><td>	*<a class="local col7 ref" href="#7return_value" title='return_value' data-ref="7return_value">return_value</a> = <var>0</var>;</td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td>	<i>/* Check for zero-length string, returns 0 */</i></td></tr>
+<tr><th id="181">181</th><td></td></tr>
+<tr><th id="182">182</th><td>	<b>if</b> (*<a class="local col5 ref" href="#5string" title='string' data-ref="5string">string</a> == <var>0</var>) {</td></tr>
+<tr><th id="183">183</th><td>		<a class="macro" href="../../../include/acpi/acoutput.h.html#482" title="return((acpi_status) 0x0000)" data-ref="_M/return_ACPI_STATUS">return_ACPI_STATUS</a>(<a class="macro" href="../../../include/acpi/acexcep.h.html#94" title="(acpi_status) 0x0000" data-ref="_M/AE_OK">AE_OK</a>);</td></tr>
+<tr><th id="184">184</th><td>	}</td></tr>
+<tr><th id="185">185</th><td></td></tr>
+<tr><th id="186">186</th><td>	<i>/* Skip over any white space at start of string */</i></td></tr>
+<tr><th id="187">187</th><td></td></tr>
+<tr><th id="188">188</th><td>	<b>while</b> (<a class="macro" href="../../../include/linux/ctype.h.html#35" title="(((_ctype[(int)(unsigned char)((int)*string)])&amp;(0x20)) != 0)" data-ref="_M/isspace">isspace</a>((<em>int</em>)*<a class="local col5 ref" href="#5string" title='string' data-ref="5string">string</a>)) {</td></tr>
+<tr><th id="189">189</th><td>		<a class="local col5 ref" href="#5string" title='string' data-ref="5string">string</a>++;</td></tr>
+<tr><th id="190">190</th><td>	}</td></tr>
+<tr><th id="191">191</th><td></td></tr>
+<tr><th id="192">192</th><td>	<i>/* End of string? return 0 */</i></td></tr>
+<tr><th id="193">193</th><td></td></tr>
+<tr><th id="194">194</th><td>	<b>if</b> (*<a class="local col5 ref" href="#5string" title='string' data-ref="5string">string</a> == <var>0</var>) {</td></tr>
+<tr><th id="195">195</th><td>		<a class="macro" href="../../../include/acpi/acoutput.h.html#482" title="return((acpi_status) 0x0000)" data-ref="_M/return_ACPI_STATUS">return_ACPI_STATUS</a>(<a class="macro" href="../../../include/acpi/acexcep.h.html#94" title="(acpi_status) 0x0000" data-ref="_M/AE_OK">AE_OK</a>);</td></tr>
+<tr><th id="196">196</th><td>	}</td></tr>
+<tr><th id="197">197</th><td></td></tr>
+<tr><th id="198">198</th><td>	<i>/*</i></td></tr>
+<tr><th id="199">199</th><td><i>	 * 1) The "0x" prefix indicates base 16. Per the ACPI specification,</i></td></tr>
+<tr><th id="200">200</th><td><i>	 * the "0x" prefix is only allowed for implicit (non-strict) conversions.</i></td></tr>
+<tr><th id="201">201</th><td><i>	 * However, we always allow it for compatibility with older ACPICA.</i></td></tr>
+<tr><th id="202">202</th><td><i>	 */</i></td></tr>
+<tr><th id="203">203</th><td>	<b>if</b> ((*<a class="local col5 ref" href="#5string" title='string' data-ref="5string">string</a> == <a class="macro" href="aclocal.h.html#1160" title="0x30" data-ref="_M/ACPI_ASCII_ZERO">ACPI_ASCII_ZERO</a>) &amp;&amp;</td></tr>
+<tr><th id="204">204</th><td>	    (<a class="macro" href="../../../include/linux/ctype.h.html#56" title="__tolower((int)*(string + 1))" data-ref="_M/tolower">tolower</a>((<em>int</em>)*(<a class="local col5 ref" href="#5string" title='string' data-ref="5string">string</a> + <var>1</var>)) == <kbd>'x'</kbd>)) {</td></tr>
+<tr><th id="205">205</th><td>		<a class="local col5 ref" href="#5string" title='string' data-ref="5string">string</a> += <var>2</var>;	<i>/* Go past the 0x */</i></td></tr>
+<tr><th id="206">206</th><td>		<b>if</b> (*<a class="local col5 ref" href="#5string" title='string' data-ref="5string">string</a> == <var>0</var>) {</td></tr>
+<tr><th id="207">207</th><td>			<a class="macro" href="../../../include/acpi/acoutput.h.html#482" title="return((acpi_status) 0x0000)" data-ref="_M/return_ACPI_STATUS">return_ACPI_STATUS</a>(<a class="macro" href="../../../include/acpi/acexcep.h.html#94" title="(acpi_status) 0x0000" data-ref="_M/AE_OK">AE_OK</a>);	<i>/* Return value 0 */</i></td></tr>
+<tr><th id="208">208</th><td>		}</td></tr>
+<tr><th id="209">209</th><td></td></tr>
+<tr><th id="210">210</th><td>		<a class="local col9 ref" href="#9base" title='base' data-ref="9base">base</a> = <var>16</var>;</td></tr>
+<tr><th id="211">211</th><td>	}</td></tr>
+<tr><th id="212">212</th><td></td></tr>
+<tr><th id="213">213</th><td>	<i>/* 2) Force to base 16 (implicit conversion case) */</i></td></tr>
+<tr><th id="214">214</th><td></td></tr>
+<tr><th id="215">215</th><td>	<b>else</b> <b>if</b> (<a class="local col6 ref" href="#6flags" title='flags' data-ref="6flags">flags</a> &amp; <a class="macro" href="acutils.h.html#208" title="0x10" data-ref="_M/ACPI_STRTOUL_BASE16">ACPI_STRTOUL_BASE16</a>) {</td></tr>
+<tr><th id="216">216</th><td>		<a class="local col9 ref" href="#9base" title='base' data-ref="9base">base</a> = <var>16</var>;</td></tr>
+<tr><th id="217">217</th><td>	}</td></tr>
+<tr><th id="218">218</th><td></td></tr>
+<tr><th id="219">219</th><td>	<i>/* 3) Default fallback is to Base 10 */</i></td></tr>
+<tr><th id="220">220</th><td></td></tr>
+<tr><th id="221">221</th><td>	<b>else</b> {</td></tr>
+<tr><th id="222">222</th><td>		<a class="local col9 ref" href="#9base" title='base' data-ref="9base">base</a> = <var>10</var>;</td></tr>
+<tr><th id="223">223</th><td>	}</td></tr>
+<tr><th id="224">224</th><td></td></tr>
+<tr><th id="225">225</th><td>	<i>/* Skip all leading zeros */</i></td></tr>
+<tr><th id="226">226</th><td></td></tr>
+<tr><th id="227">227</th><td>	<b>while</b> (*<a class="local col5 ref" href="#5string" title='string' data-ref="5string">string</a> == <a class="macro" href="aclocal.h.html#1160" title="0x30" data-ref="_M/ACPI_ASCII_ZERO">ACPI_ASCII_ZERO</a>) {</td></tr>
+<tr><th id="228">228</th><td>		<a class="local col5 ref" href="#5string" title='string' data-ref="5string">string</a>++;</td></tr>
+<tr><th id="229">229</th><td>		<b>if</b> (*<a class="local col5 ref" href="#5string" title='string' data-ref="5string">string</a> == <var>0</var>) {</td></tr>
+<tr><th id="230">230</th><td>			<a class="macro" href="../../../include/acpi/acoutput.h.html#482" title="return((acpi_status) 0x0000)" data-ref="_M/return_ACPI_STATUS">return_ACPI_STATUS</a>(<a class="macro" href="../../../include/acpi/acexcep.h.html#94" title="(acpi_status) 0x0000" data-ref="_M/AE_OK">AE_OK</a>);	<i>/* Return value 0 */</i></td></tr>
+<tr><th id="231">231</th><td>		}</td></tr>
+<tr><th id="232">232</th><td>	}</td></tr>
+<tr><th id="233">233</th><td></td></tr>
+<tr><th id="234">234</th><td>	<i>/* Perform the base 16 or 10 conversion */</i></td></tr>
+<tr><th id="235">235</th><td></td></tr>
+<tr><th id="236">236</th><td>	<b>if</b> (<a class="local col9 ref" href="#9base" title='base' data-ref="9base">base</a> == <var>16</var>) {</td></tr>
+<tr><th id="237">237</th><td>		*<a class="local col7 ref" href="#7return_value" title='return_value' data-ref="7return_value">return_value</a> = <a class="tu ref fn" href="#acpi_ut_strtoul_base16" title='acpi_ut_strtoul_base16' data-use='c' data-ref="acpi_ut_strtoul_base16">acpi_ut_strtoul_base16</a>(<a class="local col5 ref" href="#5string" title='string' data-ref="5string">string</a>, <a class="local col6 ref" href="#6flags" title='flags' data-ref="6flags">flags</a>);</td></tr>
+<tr><th id="238">238</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="239">239</th><td>		*<a class="local col7 ref" href="#7return_value" title='return_value' data-ref="7return_value">return_value</a> = <a class="tu ref fn" href="#acpi_ut_strtoul_base10" title='acpi_ut_strtoul_base10' data-use='c' data-ref="acpi_ut_strtoul_base10">acpi_ut_strtoul_base10</a>(<a class="local col5 ref" href="#5string" title='string' data-ref="5string">string</a>, <a class="local col6 ref" href="#6flags" title='flags' data-ref="6flags">flags</a>);</td></tr>
+<tr><th id="240">240</th><td>	}</td></tr>
+<tr><th id="241">241</th><td></td></tr>
+<tr><th id="242">242</th><td>	<a class="macro" href="../../../include/acpi/acoutput.h.html#482" title="return(status)" data-ref="_M/return_ACPI_STATUS">return_ACPI_STATUS</a>(<a class="local col8 ref" href="#8status" title='status' data-ref="8status">status</a>);</td></tr>
+<tr><th id="243">243</th><td>}</td></tr>
+<tr><th id="244">244</th><td></td></tr>
+<tr><th id="245">245</th><td><i  data-doc="acpi_ut_strtoul_base10">/*******************************************************************************</i></td></tr>
+<tr><th id="246">246</th><td><i  data-doc="acpi_ut_strtoul_base10"> *</i></td></tr>
+<tr><th id="247">247</th><td><i  data-doc="acpi_ut_strtoul_base10"> * FUNCTION:    acpi_ut_strtoul_base10</i></td></tr>
+<tr><th id="248">248</th><td><i  data-doc="acpi_ut_strtoul_base10"> *</i></td></tr>
+<tr><th id="249">249</th><td><i  data-doc="acpi_ut_strtoul_base10"> * PARAMETERS:  string                  - Null terminated input string</i></td></tr>
+<tr><th id="250">250</th><td><i  data-doc="acpi_ut_strtoul_base10"> *              flags                   - Conversion info</i></td></tr>
+<tr><th id="251">251</th><td><i  data-doc="acpi_ut_strtoul_base10"> *</i></td></tr>
+<tr><th id="252">252</th><td><i  data-doc="acpi_ut_strtoul_base10"> * RETURN:      64-bit converted integer</i></td></tr>
+<tr><th id="253">253</th><td><i  data-doc="acpi_ut_strtoul_base10"> *</i></td></tr>
+<tr><th id="254">254</th><td><i  data-doc="acpi_ut_strtoul_base10"> * DESCRIPTION: Performs a base 10 conversion of the input string to an</i></td></tr>
+<tr><th id="255">255</th><td><i  data-doc="acpi_ut_strtoul_base10"> *              integer value, either 32 or 64 bits.</i></td></tr>
+<tr><th id="256">256</th><td><i  data-doc="acpi_ut_strtoul_base10"> *              Note: String must be valid and non-null.</i></td></tr>
+<tr><th id="257">257</th><td><i  data-doc="acpi_ut_strtoul_base10"> *</i></td></tr>
+<tr><th id="258">258</th><td><i  data-doc="acpi_ut_strtoul_base10"> ******************************************************************************/</i></td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td><em>static</em> <a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u64" title='u64' data-type='unsigned long long' data-ref="u64">u64</a> <dfn class="tu decl def fn" id="acpi_ut_strtoul_base10" title='acpi_ut_strtoul_base10' data-type='u64 acpi_ut_strtoul_base10(char * string, u32 flags)' data-ref="acpi_ut_strtoul_base10">acpi_ut_strtoul_base10</dfn>(<em>char</em> *<dfn class="local col0 decl" id="10string" title='string' data-type='char *' data-ref="10string">string</dfn>, <a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col1 decl" id="11flags" title='flags' data-type='u32' data-ref="11flags">flags</dfn>)</td></tr>
+<tr><th id="261">261</th><td>{</td></tr>
+<tr><th id="262">262</th><td>	<em>int</em> <dfn class="local col2 decl" id="12ascii_digit" title='ascii_digit' data-type='int' data-ref="12ascii_digit">ascii_digit</dfn>;</td></tr>
+<tr><th id="263">263</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u64" title='u64' data-type='unsigned long long' data-ref="u64">u64</a> <dfn class="local col3 decl" id="13next_value" title='next_value' data-type='u64' data-ref="13next_value">next_value</dfn>;</td></tr>
+<tr><th id="264">264</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u64" title='u64' data-type='unsigned long long' data-ref="u64">u64</a> <dfn class="local col4 decl" id="14return_value" title='return_value' data-type='u64' data-ref="14return_value">return_value</dfn> = <var>0</var>;</td></tr>
+<tr><th id="265">265</th><td></td></tr>
+<tr><th id="266">266</th><td>	<i>/* Main loop: convert each ASCII byte in the input string */</i></td></tr>
+<tr><th id="267">267</th><td></td></tr>
+<tr><th id="268">268</th><td>	<b>while</b> (*<a class="local col0 ref" href="#10string" title='string' data-ref="10string">string</a>) {</td></tr>
+<tr><th id="269">269</th><td>		<a class="local col2 ref" href="#12ascii_digit" title='ascii_digit' data-ref="12ascii_digit">ascii_digit</a> = *<a class="local col0 ref" href="#10string" title='string' data-ref="10string">string</a>;</td></tr>
+<tr><th id="270">270</th><td>		<b>if</b> (!<a class="ref fn" href="../../../include/linux/ctype.h.html#isdigit" title='isdigit' data-ref="isdigit">isdigit</a>(<a class="local col2 ref" href="#12ascii_digit" title='ascii_digit' data-ref="12ascii_digit">ascii_digit</a>)) {</td></tr>
+<tr><th id="271">271</th><td></td></tr>
+<tr><th id="272">272</th><td>			<i>/* Not ASCII 0-9, terminate */</i></td></tr>
+<tr><th id="273">273</th><td></td></tr>
+<tr><th id="274">274</th><td>			<b>goto</b> <a class="lbl" href="#15exit" data-ref="15exit">exit</a>;</td></tr>
+<tr><th id="275">275</th><td>		}</td></tr>
+<tr><th id="276">276</th><td></td></tr>
+<tr><th id="277">277</th><td>		<i>/* Convert and insert (add) the decimal digit */</i></td></tr>
+<tr><th id="278">278</th><td></td></tr>
+<tr><th id="279">279</th><td>		<a class="ref fn" href="acutils.h.html#acpi_ut_short_multiply" title='acpi_ut_short_multiply' data-ref="acpi_ut_short_multiply">acpi_ut_short_multiply</a>(<a class="local col4 ref" href="#14return_value" title='return_value' data-ref="14return_value">return_value</a>, <var>10</var>, &amp;<a class="local col3 ref" href="#13next_value" title='next_value' data-ref="13next_value">next_value</a>);</td></tr>
+<tr><th id="280">280</th><td>		<a class="local col3 ref" href="#13next_value" title='next_value' data-ref="13next_value">next_value</a> += (<a class="local col2 ref" href="#12ascii_digit" title='ascii_digit' data-ref="12ascii_digit">ascii_digit</a> - <a class="macro" href="aclocal.h.html#1160" title="0x30" data-ref="_M/ACPI_ASCII_ZERO">ACPI_ASCII_ZERO</a>);</td></tr>
+<tr><th id="281">281</th><td></td></tr>
+<tr><th id="282">282</th><td>		<i>/* Check for overflow (32 or 64 bit) - return current converted value */</i></td></tr>
+<tr><th id="283">283</th><td></td></tr>
+<tr><th id="284">284</th><td>		<b>if</b> (((<a class="local col1 ref" href="#11flags" title='flags' data-ref="11flags">flags</a> &amp; <a class="macro" href="acutils.h.html#206" title="0x04" data-ref="_M/ACPI_STRTOUL_32BIT">ACPI_STRTOUL_32BIT</a>) &amp;&amp; (<a class="local col3 ref" href="#13next_value" title='next_value' data-ref="13next_value">next_value</a> &gt; <a class="macro" href="../../../include/acpi/actypes.h.html#66" title="(u32)(~((u32) 0))" data-ref="_M/ACPI_UINT32_MAX">ACPI_UINT32_MAX</a>)) || (<a class="local col3 ref" href="#13next_value" title='next_value' data-ref="13next_value">next_value</a> &lt; <a class="local col4 ref" href="#14return_value" title='return_value' data-ref="14return_value">return_value</a>)) {	<i>/* 64-bit overflow case */</i></td></tr>
+<tr><th id="285">285</th><td>			<b>goto</b> <a class="lbl" href="#15exit" data-ref="15exit">exit</a>;</td></tr>
+<tr><th id="286">286</th><td>		}</td></tr>
+<tr><th id="287">287</th><td></td></tr>
+<tr><th id="288">288</th><td>		<a class="local col4 ref" href="#14return_value" title='return_value' data-ref="14return_value">return_value</a> = <a class="local col3 ref" href="#13next_value" title='next_value' data-ref="13next_value">next_value</a>;</td></tr>
+<tr><th id="289">289</th><td>		<a class="local col0 ref" href="#10string" title='string' data-ref="10string">string</a>++;</td></tr>
+<tr><th id="290">290</th><td>	}</td></tr>
+<tr><th id="291">291</th><td></td></tr>
+<tr><th id="292">292</th><td><dfn class="lbl" id="15exit" data-ref="15exit">exit</dfn>:</td></tr>
+<tr><th id="293">293</th><td>	<b>return</b> (<a class="local col4 ref" href="#14return_value" title='return_value' data-ref="14return_value">return_value</a>);</td></tr>
+<tr><th id="294">294</th><td>}</td></tr>
+<tr><th id="295">295</th><td></td></tr>
+<tr><th id="296">296</th><td><i  data-doc="acpi_ut_strtoul_base16">/*******************************************************************************</i></td></tr>
+<tr><th id="297">297</th><td><i  data-doc="acpi_ut_strtoul_base16"> *</i></td></tr>
+<tr><th id="298">298</th><td><i  data-doc="acpi_ut_strtoul_base16"> * FUNCTION:    acpi_ut_strtoul_base16</i></td></tr>
+<tr><th id="299">299</th><td><i  data-doc="acpi_ut_strtoul_base16"> *</i></td></tr>
+<tr><th id="300">300</th><td><i  data-doc="acpi_ut_strtoul_base16"> * PARAMETERS:  string                  - Null terminated input string</i></td></tr>
+<tr><th id="301">301</th><td><i  data-doc="acpi_ut_strtoul_base16"> *              flags                   - conversion info</i></td></tr>
+<tr><th id="302">302</th><td><i  data-doc="acpi_ut_strtoul_base16"> *</i></td></tr>
+<tr><th id="303">303</th><td><i  data-doc="acpi_ut_strtoul_base16"> * RETURN:      64-bit converted integer</i></td></tr>
+<tr><th id="304">304</th><td><i  data-doc="acpi_ut_strtoul_base16"> *</i></td></tr>
+<tr><th id="305">305</th><td><i  data-doc="acpi_ut_strtoul_base16"> * DESCRIPTION: Performs a base 16 conversion of the input string to an</i></td></tr>
+<tr><th id="306">306</th><td><i  data-doc="acpi_ut_strtoul_base16"> *              integer value, either 32 or 64 bits.</i></td></tr>
+<tr><th id="307">307</th><td><i  data-doc="acpi_ut_strtoul_base16"> *              Note: String must be valid and non-null.</i></td></tr>
+<tr><th id="308">308</th><td><i  data-doc="acpi_ut_strtoul_base16"> *</i></td></tr>
+<tr><th id="309">309</th><td><i  data-doc="acpi_ut_strtoul_base16"> ******************************************************************************/</i></td></tr>
+<tr><th id="310">310</th><td></td></tr>
+<tr><th id="311">311</th><td><em>static</em> <a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u64" title='u64' data-type='unsigned long long' data-ref="u64">u64</a> <dfn class="tu decl def fn" id="acpi_ut_strtoul_base16" title='acpi_ut_strtoul_base16' data-type='u64 acpi_ut_strtoul_base16(char * string, u32 flags)' data-ref="acpi_ut_strtoul_base16">acpi_ut_strtoul_base16</dfn>(<em>char</em> *<dfn class="local col6 decl" id="16string" title='string' data-type='char *' data-ref="16string">string</dfn>, <a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col7 decl" id="17flags" title='flags' data-type='u32' data-ref="17flags">flags</dfn>)</td></tr>
+<tr><th id="312">312</th><td>{</td></tr>
+<tr><th id="313">313</th><td>	<em>int</em> <dfn class="local col8 decl" id="18ascii_digit" title='ascii_digit' data-type='int' data-ref="18ascii_digit">ascii_digit</dfn>;</td></tr>
+<tr><th id="314">314</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col9 decl" id="19valid_digits" title='valid_digits' data-type='u32' data-ref="19valid_digits">valid_digits</dfn> = <var>1</var>;</td></tr>
+<tr><th id="315">315</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u64" title='u64' data-type='unsigned long long' data-ref="u64">u64</a> <dfn class="local col0 decl" id="20return_value" title='return_value' data-type='u64' data-ref="20return_value">return_value</dfn> = <var>0</var>;</td></tr>
+<tr><th id="316">316</th><td></td></tr>
+<tr><th id="317">317</th><td>	<i>/* Main loop: convert each ASCII byte in the input string */</i></td></tr>
+<tr><th id="318">318</th><td></td></tr>
+<tr><th id="319">319</th><td>	<b>while</b> (*<a class="local col6 ref" href="#16string" title='string' data-ref="16string">string</a>) {</td></tr>
+<tr><th id="320">320</th><td></td></tr>
+<tr><th id="321">321</th><td>		<i>/* Check for overflow (32 or 64 bit) - return current converted value */</i></td></tr>
+<tr><th id="322">322</th><td></td></tr>
+<tr><th id="323">323</th><td>		<b>if</b> ((<a class="local col9 ref" href="#19valid_digits" title='valid_digits' data-ref="19valid_digits">valid_digits</a> &gt; <var>16</var>) ||</td></tr>
+<tr><th id="324">324</th><td>		    ((<a class="local col9 ref" href="#19valid_digits" title='valid_digits' data-ref="19valid_digits">valid_digits</a> &gt; <var>8</var>) &amp;&amp; (<a class="local col7 ref" href="#17flags" title='flags' data-ref="17flags">flags</a> &amp; <a class="macro" href="acutils.h.html#206" title="0x04" data-ref="_M/ACPI_STRTOUL_32BIT">ACPI_STRTOUL_32BIT</a>))) {</td></tr>
+<tr><th id="325">325</th><td>			<b>goto</b> <a class="lbl" href="#21exit" data-ref="21exit">exit</a>;</td></tr>
+<tr><th id="326">326</th><td>		}</td></tr>
+<tr><th id="327">327</th><td></td></tr>
+<tr><th id="328">328</th><td>		<a class="local col8 ref" href="#18ascii_digit" title='ascii_digit' data-ref="18ascii_digit">ascii_digit</a> = *<a class="local col6 ref" href="#16string" title='string' data-ref="16string">string</a>;</td></tr>
+<tr><th id="329">329</th><td>		<b>if</b> (!<a class="macro" href="../../../include/linux/ctype.h.html#37" title="(((_ctype[(int)(unsigned char)(ascii_digit)])&amp;(0x04|0x40)) != 0)" data-ref="_M/isxdigit">isxdigit</a>(<a class="local col8 ref" href="#18ascii_digit" title='ascii_digit' data-ref="18ascii_digit">ascii_digit</a>)) {</td></tr>
+<tr><th id="330">330</th><td></td></tr>
+<tr><th id="331">331</th><td>			<i>/* Not Hex ASCII A-F, a-f, or 0-9, terminate */</i></td></tr>
+<tr><th id="332">332</th><td></td></tr>
+<tr><th id="333">333</th><td>			<b>goto</b> <a class="lbl" href="#21exit" data-ref="21exit">exit</a>;</td></tr>
+<tr><th id="334">334</th><td>		}</td></tr>
+<tr><th id="335">335</th><td></td></tr>
+<tr><th id="336">336</th><td>		<i>/* Convert and insert the hex digit */</i></td></tr>
+<tr><th id="337">337</th><td></td></tr>
+<tr><th id="338">338</th><td>		<a class="ref fn" href="acutils.h.html#acpi_ut_short_shift_left" title='acpi_ut_short_shift_left' data-ref="acpi_ut_short_shift_left">acpi_ut_short_shift_left</a>(<a class="local col0 ref" href="#20return_value" title='return_value' data-ref="20return_value">return_value</a>, <var>4</var>, &amp;<a class="local col0 ref" href="#20return_value" title='return_value' data-ref="20return_value">return_value</a>);</td></tr>
+<tr><th id="339">339</th><td>		<a class="local col0 ref" href="#20return_value" title='return_value' data-ref="20return_value">return_value</a> |= <a class="ref fn" href="acutils.h.html#acpi_ut_ascii_char_to_hex" title='acpi_ut_ascii_char_to_hex' data-ref="acpi_ut_ascii_char_to_hex">acpi_ut_ascii_char_to_hex</a>(<a class="local col8 ref" href="#18ascii_digit" title='ascii_digit' data-ref="18ascii_digit">ascii_digit</a>);</td></tr>
+<tr><th id="340">340</th><td></td></tr>
+<tr><th id="341">341</th><td>		<a class="local col6 ref" href="#16string" title='string' data-ref="16string">string</a>++;</td></tr>
+<tr><th id="342">342</th><td>		<a class="local col9 ref" href="#19valid_digits" title='valid_digits' data-ref="19valid_digits">valid_digits</a>++;</td></tr>
+<tr><th id="343">343</th><td>	}</td></tr>
+<tr><th id="344">344</th><td></td></tr>
+<tr><th id="345">345</th><td><dfn class="lbl" id="21exit" data-ref="21exit">exit</dfn>:</td></tr>
+<tr><th id="346">346</th><td>	<b>return</b> (<a class="local col0 ref" href="#20return_value" title='return_value' data-ref="20return_value">return_value</a>);</td></tr>
+<tr><th id="347">347</th><td>}</td></tr>
+<tr><th id="348">348</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-30</em> from project linux-4.14.y revision <em>linux-4.14.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>
