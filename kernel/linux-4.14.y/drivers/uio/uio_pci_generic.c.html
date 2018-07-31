@@ -1,0 +1,145 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>uio_pci_generic.c source code [linux-4.14.y/drivers/uio/uio_pci_generic.c] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="uio_pci_generic_dev "/>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.14.y/drivers/uio/uio_pci_generic.c'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>linux-4.14.y</a>/<a href='..'>drivers</a>/<a href='./'>uio</a>/<a href='uio_pci_generic.c.html'>uio_pci_generic.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* uio_pci_generic - generic UIO driver for PCI 2.3 devices</i></td></tr>
+<tr><th id="2">2</th><td><i> *</i></td></tr>
+<tr><th id="3">3</th><td><i> * Copyright (C) 2009 Red Hat, Inc.</i></td></tr>
+<tr><th id="4">4</th><td><i> * Author: Michael S. Tsirkin &lt;mst@redhat.com&gt;</i></td></tr>
+<tr><th id="5">5</th><td><i> *</i></td></tr>
+<tr><th id="6">6</th><td><i> * This work is licensed under the terms of the GNU GPL, version 2.</i></td></tr>
+<tr><th id="7">7</th><td><i> *</i></td></tr>
+<tr><th id="8">8</th><td><i> * Since the driver does not declare any device ids, you must allocate</i></td></tr>
+<tr><th id="9">9</th><td><i> * id and bind the device to the driver yourself.  For example:</i></td></tr>
+<tr><th id="10">10</th><td><i> *</i></td></tr>
+<tr><th id="11">11</th><td><i> * # echo "8086 10f5" &gt; /sys/bus/pci/drivers/uio_pci_generic/new_id</i></td></tr>
+<tr><th id="12">12</th><td><i> * # echo -n 0000:00:19.0 &gt; /sys/bus/pci/drivers/e1000e/unbind</i></td></tr>
+<tr><th id="13">13</th><td><i> * # echo -n 0000:00:19.0 &gt; /sys/bus/pci/drivers/uio_pci_generic/bind</i></td></tr>
+<tr><th id="14">14</th><td><i> * # ls -l /sys/bus/pci/devices/0000:00:19.0/driver</i></td></tr>
+<tr><th id="15">15</th><td><i> * .../0000:00:19.0/driver -&gt; ../../../bus/pci/drivers/uio_pci_generic</i></td></tr>
+<tr><th id="16">16</th><td><i> *</i></td></tr>
+<tr><th id="17">17</th><td><i> * Driver won't bind to devices which do not support the Interrupt Disable Bit</i></td></tr>
+<tr><th id="18">18</th><td><i> * in the command register. All devices compliant to PCI 2.3 (circa 2002) and</i></td></tr>
+<tr><th id="19">19</th><td><i> * all compliant PCI Express devices should support this bit.</i></td></tr>
+<tr><th id="20">20</th><td><i> */</i></td></tr>
+<tr><th id="21">21</th><td></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../include/linux/device.h.html">&lt;linux/device.h&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../include/linux/module.h.html">&lt;linux/module.h&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../../include/linux/pci.h.html">&lt;linux/pci.h&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../include/linux/slab.h.html">&lt;linux/slab.h&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../../include/linux/uio_driver.h.html">&lt;linux/uio_driver.h&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td><u>#define <dfn class="macro" id="_M/DRIVER_VERSION" data-ref="_M/DRIVER_VERSION">DRIVER_VERSION</dfn>	"0.01.0"</u></td></tr>
+<tr><th id="29">29</th><td><u>#define <dfn class="macro" id="_M/DRIVER_AUTHOR" data-ref="_M/DRIVER_AUTHOR">DRIVER_AUTHOR</dfn>	"Michael S. Tsirkin &lt;mst@redhat.com&gt;"</u></td></tr>
+<tr><th id="30">30</th><td><u>#define <dfn class="macro" id="_M/DRIVER_DESC" data-ref="_M/DRIVER_DESC">DRIVER_DESC</dfn>	"Generic UIO driver for PCI 2.3 devices"</u></td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><b>struct</b> <dfn class="type def" id="uio_pci_generic_dev" title='uio_pci_generic_dev' data-ref="uio_pci_generic_dev">uio_pci_generic_dev</dfn> {</td></tr>
+<tr><th id="33">33</th><td>	<b>struct</b> <a class="type" href="../../include/linux/uio_driver.h.html#uio_info" title='uio_info' data-ref="uio_info">uio_info</a> <dfn class="tu decl field" id="uio_pci_generic_dev::info" title='uio_pci_generic_dev::info' data-type='struct uio_info' data-ref="uio_pci_generic_dev::info">info</dfn>;</td></tr>
+<tr><th id="34">34</th><td>	<b>struct</b> <a class="type" href="../../include/linux/pci.h.html#pci_dev" title='pci_dev' data-ref="pci_dev">pci_dev</a> *<dfn class="tu decl field" id="uio_pci_generic_dev::pdev" title='uio_pci_generic_dev::pdev' data-type='struct pci_dev *' data-ref="uio_pci_generic_dev::pdev">pdev</dfn>;</td></tr>
+<tr><th id="35">35</th><td>};</td></tr>
+<tr><th id="36">36</th><td></td></tr>
+<tr><th id="37">37</th><td><em>static</em> <a class="macro" href="../../include/linux/compiler-gcc.h.html#95" title="inline __attribute__((always_inline, unused)) __attribute__((no_instrument_function))" data-ref="_M/inline"><b>inline</b></a> <b>struct</b> <a class="type" href="#uio_pci_generic_dev" title='uio_pci_generic_dev' data-ref="uio_pci_generic_dev">uio_pci_generic_dev</a> *</td></tr>
+<tr><th id="38">38</th><td><dfn class="tu decl def fn" id="to_uio_pci_generic_dev" title='to_uio_pci_generic_dev' data-type='struct uio_pci_generic_dev * to_uio_pci_generic_dev(struct uio_info * info)' data-ref="to_uio_pci_generic_dev">to_uio_pci_generic_dev</dfn>(<b>struct</b> <a class="type" href="../../include/linux/uio_driver.h.html#uio_info" title='uio_info' data-ref="uio_info">uio_info</a> *<dfn class="local col1 decl" id="1info" title='info' data-type='struct uio_info *' data-ref="1info">info</dfn>)</td></tr>
+<tr><th id="39">39</th><td>{</td></tr>
+<tr><th id="40">40</th><td>	<b>return</b> <a class="macro" href="../../include/linux/kernel.h.html#927" title="({ void *__mptr = (void *)(info); do { bool __cond = !(!(!__builtin_types_compatible_p(typeof(*(info)), typeof(((struct uio_pci_generic_dev *)0)-&gt;info)) &amp;&amp; !__builtin_types_compatible_p(typeof(*(info)), typeof(void)))); extern void __compiletime_assert_40(void) ; if (__cond) __compiletime_assert_40(); do { ((void)sizeof(char[1 - 2 * __cond])); } while (0); } while (0); ((struct uio_pci_generic_dev *)(__mptr - __builtin_offsetof(struct uio_pci_generic_dev, info))); })" data-ref="_M/container_of">container_of</a>(<a class="local col1 ref" href="#1info" title='info' data-ref="1info">info</a>, <b>struct</b> <a class="type" href="#uio_pci_generic_dev" title='uio_pci_generic_dev' data-ref="uio_pci_generic_dev">uio_pci_generic_dev</a>, <a class="tu ref field" href="#uio_pci_generic_dev::info" title='uio_pci_generic_dev::info' data-use='r' data-ref="uio_pci_generic_dev::info">info</a>);</td></tr>
+<tr><th id="41">41</th><td>}</td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><i  data-doc="irqhandler">/* Interrupt handler. Read/modify/write the command register to disable</i></td></tr>
+<tr><th id="44">44</th><td><i  data-doc="irqhandler"> * the interrupt. */</i></td></tr>
+<tr><th id="45">45</th><td><em>static</em> <a class="typedef" href="../../include/linux/irqreturn.h.html#irqreturn_t" title='irqreturn_t' data-type='enum irqreturn' data-ref="irqreturn_t">irqreturn_t</a> <dfn class="tu decl def fn" id="irqhandler" title='irqhandler' data-type='irqreturn_t irqhandler(int irq, struct uio_info * info)' data-ref="irqhandler">irqhandler</dfn>(<em>int</em> <dfn class="local col2 decl" id="2irq" title='irq' data-type='int' data-ref="2irq">irq</dfn>, <b>struct</b> <a class="type" href="../../include/linux/uio_driver.h.html#uio_info" title='uio_info' data-ref="uio_info">uio_info</a> *<dfn class="local col3 decl" id="3info" title='info' data-type='struct uio_info *' data-ref="3info">info</dfn>)</td></tr>
+<tr><th id="46">46</th><td>{</td></tr>
+<tr><th id="47">47</th><td>	<b>struct</b> <a class="type" href="#uio_pci_generic_dev" title='uio_pci_generic_dev' data-ref="uio_pci_generic_dev">uio_pci_generic_dev</a> *<dfn class="local col4 decl" id="4gdev" title='gdev' data-type='struct uio_pci_generic_dev *' data-ref="4gdev">gdev</dfn> = <a class="tu ref fn" href="#to_uio_pci_generic_dev" title='to_uio_pci_generic_dev' data-use='c' data-ref="to_uio_pci_generic_dev">to_uio_pci_generic_dev</a>(<a class="local col3 ref" href="#3info" title='info' data-ref="3info">info</a>);</td></tr>
+<tr><th id="48">48</th><td></td></tr>
+<tr><th id="49">49</th><td>	<b>if</b> (!<a class="ref fn" href="../../include/linux/pci.h.html#pci_check_and_mask_intx" title='pci_check_and_mask_intx' data-ref="pci_check_and_mask_intx">pci_check_and_mask_intx</a>(<a class="local col4 ref" href="#4gdev" title='gdev' data-ref="4gdev">gdev</a>-&gt;<a class="tu ref field" href="#uio_pci_generic_dev::pdev" title='uio_pci_generic_dev::pdev' data-use='r' data-ref="uio_pci_generic_dev::pdev">pdev</a>))</td></tr>
+<tr><th id="50">50</th><td>		<b>return</b> <a class="enum" href="../../include/linux/irqreturn.h.html#IRQ_NONE" title='IRQ_NONE' data-ref="IRQ_NONE">IRQ_NONE</a>;</td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td>	<i>/* UIO core will signal the user process. */</i></td></tr>
+<tr><th id="53">53</th><td>	<b>return</b> <a class="enum" href="../../include/linux/irqreturn.h.html#IRQ_HANDLED" title='IRQ_HANDLED' data-ref="IRQ_HANDLED">IRQ_HANDLED</a>;</td></tr>
+<tr><th id="54">54</th><td>}</td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="probe" title='probe' data-type='int probe(struct pci_dev * pdev, const struct pci_device_id * id)' data-ref="probe">probe</dfn>(<b>struct</b> <a class="type" href="../../include/linux/pci.h.html#pci_dev" title='pci_dev' data-ref="pci_dev">pci_dev</a> *<dfn class="local col5 decl" id="5pdev" title='pdev' data-type='struct pci_dev *' data-ref="5pdev">pdev</dfn>,</td></tr>
+<tr><th id="57">57</th><td>			   <em>const</em> <b>struct</b> <a class="type" href="../../include/linux/mod_devicetable.h.html#pci_device_id" title='pci_device_id' data-ref="pci_device_id">pci_device_id</a> *<dfn class="local col6 decl" id="6id" title='id' data-type='const struct pci_device_id *' data-ref="6id">id</dfn>)</td></tr>
+<tr><th id="58">58</th><td>{</td></tr>
+<tr><th id="59">59</th><td>	<b>struct</b> <a class="type" href="#uio_pci_generic_dev" title='uio_pci_generic_dev' data-ref="uio_pci_generic_dev">uio_pci_generic_dev</a> *<dfn class="local col7 decl" id="7gdev" title='gdev' data-type='struct uio_pci_generic_dev *' data-ref="7gdev">gdev</dfn>;</td></tr>
+<tr><th id="60">60</th><td>	<em>int</em> <dfn class="local col8 decl" id="8err" title='err' data-type='int' data-ref="8err">err</dfn>;</td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td>	<a class="local col8 ref" href="#8err" title='err' data-ref="8err">err</a> = <a class="ref fn" href="../../include/linux/pci.h.html#pci_enable_device" title='pci_enable_device' data-ref="pci_enable_device">pci_enable_device</a>(<a class="local col5 ref" href="#5pdev" title='pdev' data-ref="5pdev">pdev</a>);</td></tr>
+<tr><th id="63">63</th><td>	<b>if</b> (<a class="local col8 ref" href="#8err" title='err' data-ref="8err">err</a>) {</td></tr>
+<tr><th id="64">64</th><td>		<a class="ref fn" href="../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(&amp;<a class="local col5 ref" href="#5pdev" title='pdev' data-ref="5pdev">pdev</a>-&gt;<a class="ref field" href="../../include/linux/pci.h.html#pci_dev::dev" title='pci_dev::dev' data-ref="pci_dev::dev">dev</a>, <q>"%s: pci_enable_device failed: %d\n"</q>,</td></tr>
+<tr><th id="65">65</th><td>			<b>__func__</b>, <a class="local col8 ref" href="#8err" title='err' data-ref="8err">err</a>);</td></tr>
+<tr><th id="66">66</th><td>		<b>return</b> <a class="local col8 ref" href="#8err" title='err' data-ref="8err">err</a>;</td></tr>
+<tr><th id="67">67</th><td>	}</td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td>	<b>if</b> (<a class="local col5 ref" href="#5pdev" title='pdev' data-ref="5pdev">pdev</a>-&gt;<a class="ref field" href="../../include/linux/pci.h.html#pci_dev::irq" title='pci_dev::irq' data-ref="pci_dev::irq">irq</a> &amp;&amp; !<a class="ref fn" href="../../include/linux/pci.h.html#pci_intx_mask_supported" title='pci_intx_mask_supported' data-ref="pci_intx_mask_supported">pci_intx_mask_supported</a>(<a class="local col5 ref" href="#5pdev" title='pdev' data-ref="5pdev">pdev</a>)) {</td></tr>
+<tr><th id="70">70</th><td>		<a class="local col8 ref" href="#8err" title='err' data-ref="8err">err</a> = -<a class="macro" href="../../include/uapi/asm-generic/errno-base.h.html#23" title="19" data-ref="_M/ENODEV">ENODEV</a>;</td></tr>
+<tr><th id="71">71</th><td>		<b>goto</b> <a class="lbl" href="#9err_verify" data-ref="9err_verify">err_verify</a>;</td></tr>
+<tr><th id="72">72</th><td>	}</td></tr>
+<tr><th id="73">73</th><td></td></tr>
+<tr><th id="74">74</th><td>	<a class="local col7 ref" href="#7gdev" title='gdev' data-ref="7gdev">gdev</a> = <a class="ref fn" href="../../include/linux/slab.h.html#kzalloc" title='kzalloc' data-ref="kzalloc">kzalloc</a>(<b>sizeof</b>(<b>struct</b> <a class="type" href="#uio_pci_generic_dev" title='uio_pci_generic_dev' data-ref="uio_pci_generic_dev">uio_pci_generic_dev</a>), <a class="macro" href="../../include/linux/gfp.h.html#278" title="((( gfp_t)(0x400000u|0x1000000u)) | (( gfp_t)0x40u) | (( gfp_t)0x80u))" data-ref="_M/GFP_KERNEL">GFP_KERNEL</a>);</td></tr>
+<tr><th id="75">75</th><td>	<b>if</b> (!<a class="local col7 ref" href="#7gdev" title='gdev' data-ref="7gdev">gdev</a>) {</td></tr>
+<tr><th id="76">76</th><td>		<a class="local col8 ref" href="#8err" title='err' data-ref="8err">err</a> = -<a class="macro" href="../../include/uapi/asm-generic/errno-base.h.html#16" title="12" data-ref="_M/ENOMEM">ENOMEM</a>;</td></tr>
+<tr><th id="77">77</th><td>		<b>goto</b> <a class="lbl" href="#10err_alloc" data-ref="10err_alloc">err_alloc</a>;</td></tr>
+<tr><th id="78">78</th><td>	}</td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td>	<a class="local col7 ref" href="#7gdev" title='gdev' data-ref="7gdev">gdev</a>-&gt;<a class="tu ref field" href="#uio_pci_generic_dev::info" title='uio_pci_generic_dev::info' data-use='m' data-ref="uio_pci_generic_dev::info">info</a>.<a class="ref field" href="../../include/linux/uio_driver.h.html#uio_info::name" title='uio_info::name' data-ref="uio_info::name">name</a> = <q>"uio_pci_generic"</q>;</td></tr>
+<tr><th id="81">81</th><td>	<a class="local col7 ref" href="#7gdev" title='gdev' data-ref="7gdev">gdev</a>-&gt;<a class="tu ref field" href="#uio_pci_generic_dev::info" title='uio_pci_generic_dev::info' data-use='m' data-ref="uio_pci_generic_dev::info">info</a>.<a class="ref field" href="../../include/linux/uio_driver.h.html#uio_info::version" title='uio_info::version' data-ref="uio_info::version">version</a> = <a class="macro" href="#28" title="&quot;0.01.0&quot;" data-ref="_M/DRIVER_VERSION">DRIVER_VERSION</a>;</td></tr>
+<tr><th id="82">82</th><td>	<a class="local col7 ref" href="#7gdev" title='gdev' data-ref="7gdev">gdev</a>-&gt;<a class="tu ref field" href="#uio_pci_generic_dev::pdev" title='uio_pci_generic_dev::pdev' data-use='w' data-ref="uio_pci_generic_dev::pdev">pdev</a> = <a class="local col5 ref" href="#5pdev" title='pdev' data-ref="5pdev">pdev</a>;</td></tr>
+<tr><th id="83">83</th><td>	<b>if</b> (<a class="local col5 ref" href="#5pdev" title='pdev' data-ref="5pdev">pdev</a>-&gt;<a class="ref field" href="../../include/linux/pci.h.html#pci_dev::irq" title='pci_dev::irq' data-ref="pci_dev::irq">irq</a>) {</td></tr>
+<tr><th id="84">84</th><td>		<a class="local col7 ref" href="#7gdev" title='gdev' data-ref="7gdev">gdev</a>-&gt;<a class="tu ref field" href="#uio_pci_generic_dev::info" title='uio_pci_generic_dev::info' data-use='m' data-ref="uio_pci_generic_dev::info">info</a>.<a class="ref field" href="../../include/linux/uio_driver.h.html#uio_info::irq" title='uio_info::irq' data-ref="uio_info::irq">irq</a> = <a class="local col5 ref" href="#5pdev" title='pdev' data-ref="5pdev">pdev</a>-&gt;<a class="ref field" href="../../include/linux/pci.h.html#pci_dev::irq" title='pci_dev::irq' data-ref="pci_dev::irq">irq</a>;</td></tr>
+<tr><th id="85">85</th><td>		<a class="local col7 ref" href="#7gdev" title='gdev' data-ref="7gdev">gdev</a>-&gt;<a class="tu ref field" href="#uio_pci_generic_dev::info" title='uio_pci_generic_dev::info' data-use='m' data-ref="uio_pci_generic_dev::info">info</a>.<a class="ref field" href="../../include/linux/uio_driver.h.html#uio_info::irq_flags" title='uio_info::irq_flags' data-ref="uio_info::irq_flags">irq_flags</a> = <a class="macro" href="../../include/linux/interrupt.h.html#67" title="0x00000080" data-ref="_M/IRQF_SHARED">IRQF_SHARED</a>;</td></tr>
+<tr><th id="86">86</th><td>		<a class="local col7 ref" href="#7gdev" title='gdev' data-ref="7gdev">gdev</a>-&gt;<a class="tu ref field" href="#uio_pci_generic_dev::info" title='uio_pci_generic_dev::info' data-use='m' data-ref="uio_pci_generic_dev::info">info</a>.<a class="ref field" href="../../include/linux/uio_driver.h.html#uio_info::handler" title='uio_info::handler' data-ref="uio_info::handler">handler</a> = <a class="tu ref fn" href="#irqhandler" title='irqhandler' data-use='r' data-ref="irqhandler">irqhandler</a>;</td></tr>
+<tr><th id="87">87</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="88">88</th><td>		<a class="ref fn" href="../../include/linux/device.h.html#dev_warn" title='dev_warn' data-ref="dev_warn">dev_warn</a>(&amp;<a class="local col5 ref" href="#5pdev" title='pdev' data-ref="5pdev">pdev</a>-&gt;<a class="ref field" href="../../include/linux/pci.h.html#pci_dev::dev" title='pci_dev::dev' data-ref="pci_dev::dev">dev</a>, <q>"No IRQ assigned to device: "</q></td></tr>
+<tr><th id="89">89</th><td>			 <q>"no support for interrupts?\n"</q>);</td></tr>
+<tr><th id="90">90</th><td>	}</td></tr>
+<tr><th id="91">91</th><td></td></tr>
+<tr><th id="92">92</th><td>	<a class="local col8 ref" href="#8err" title='err' data-ref="8err">err</a> = <a class="macro" href="../../include/linux/uio_driver.h.html#119" title="__uio_register_device(((struct module *)0), &amp;pdev-&gt;dev, &amp;gdev-&gt;info)" data-ref="_M/uio_register_device">uio_register_device</a>(&amp;<a class="local col5 ref" href="#5pdev" title='pdev' data-ref="5pdev">pdev</a>-&gt;<a class="ref field" href="../../include/linux/pci.h.html#pci_dev::dev" title='pci_dev::dev' data-ref="pci_dev::dev">dev</a>, &amp;<a class="local col7 ref" href="#7gdev" title='gdev' data-ref="7gdev">gdev</a>-&gt;<a class="tu ref field" href="#uio_pci_generic_dev::info" title='uio_pci_generic_dev::info' data-use='a' data-ref="uio_pci_generic_dev::info">info</a>);</td></tr>
+<tr><th id="93">93</th><td>	<b>if</b> (<a class="local col8 ref" href="#8err" title='err' data-ref="8err">err</a>)</td></tr>
+<tr><th id="94">94</th><td>		<b>goto</b> <a class="lbl" href="#11err_register" data-ref="11err_register">err_register</a>;</td></tr>
+<tr><th id="95">95</th><td>	<a class="ref fn" href="../../include/linux/pci.h.html#pci_set_drvdata" title='pci_set_drvdata' data-ref="pci_set_drvdata">pci_set_drvdata</a>(<a class="local col5 ref" href="#5pdev" title='pdev' data-ref="5pdev">pdev</a>, <a class="local col7 ref" href="#7gdev" title='gdev' data-ref="7gdev">gdev</a>);</td></tr>
+<tr><th id="96">96</th><td></td></tr>
+<tr><th id="97">97</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="98">98</th><td><dfn class="lbl" id="11err_register" data-ref="11err_register">err_register</dfn>:</td></tr>
+<tr><th id="99">99</th><td>	<a class="ref fn" href="../../include/linux/slab.h.html#kfree" title='kfree' data-ref="kfree">kfree</a>(<a class="local col7 ref" href="#7gdev" title='gdev' data-ref="7gdev">gdev</a>);</td></tr>
+<tr><th id="100">100</th><td><dfn class="lbl" id="10err_alloc" data-ref="10err_alloc">err_alloc</dfn>:</td></tr>
+<tr><th id="101">101</th><td><dfn class="lbl" id="9err_verify" data-ref="9err_verify">err_verify</dfn>:</td></tr>
+<tr><th id="102">102</th><td>	<a class="ref fn" href="../../include/linux/pci.h.html#pci_disable_device" title='pci_disable_device' data-ref="pci_disable_device">pci_disable_device</a>(<a class="local col5 ref" href="#5pdev" title='pdev' data-ref="5pdev">pdev</a>);</td></tr>
+<tr><th id="103">103</th><td>	<b>return</b> <a class="local col8 ref" href="#8err" title='err' data-ref="8err">err</a>;</td></tr>
+<tr><th id="104">104</th><td>}</td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="remove" title='remove' data-type='void remove(struct pci_dev * pdev)' data-ref="remove">remove</dfn>(<b>struct</b> <a class="type" href="../../include/linux/pci.h.html#pci_dev" title='pci_dev' data-ref="pci_dev">pci_dev</a> *<dfn class="local col2 decl" id="12pdev" title='pdev' data-type='struct pci_dev *' data-ref="12pdev">pdev</dfn>)</td></tr>
+<tr><th id="107">107</th><td>{</td></tr>
+<tr><th id="108">108</th><td>	<b>struct</b> <a class="type" href="#uio_pci_generic_dev" title='uio_pci_generic_dev' data-ref="uio_pci_generic_dev">uio_pci_generic_dev</a> *<dfn class="local col3 decl" id="13gdev" title='gdev' data-type='struct uio_pci_generic_dev *' data-ref="13gdev">gdev</dfn> = <a class="ref fn" href="../../include/linux/pci.h.html#pci_get_drvdata" title='pci_get_drvdata' data-ref="pci_get_drvdata">pci_get_drvdata</a>(<a class="local col2 ref" href="#12pdev" title='pdev' data-ref="12pdev">pdev</a>);</td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td>	<a class="ref fn" href="../../include/linux/uio_driver.h.html#uio_unregister_device" title='uio_unregister_device' data-ref="uio_unregister_device">uio_unregister_device</a>(&amp;<a class="local col3 ref" href="#13gdev" title='gdev' data-ref="13gdev">gdev</a>-&gt;<a class="tu ref field" href="#uio_pci_generic_dev::info" title='uio_pci_generic_dev::info' data-use='a' data-ref="uio_pci_generic_dev::info">info</a>);</td></tr>
+<tr><th id="111">111</th><td>	<a class="ref fn" href="../../include/linux/pci.h.html#pci_disable_device" title='pci_disable_device' data-ref="pci_disable_device">pci_disable_device</a>(<a class="local col2 ref" href="#12pdev" title='pdev' data-ref="12pdev">pdev</a>);</td></tr>
+<tr><th id="112">112</th><td>	<a class="ref fn" href="../../include/linux/slab.h.html#kfree" title='kfree' data-ref="kfree">kfree</a>(<a class="local col3 ref" href="#13gdev" title='gdev' data-ref="13gdev">gdev</a>);</td></tr>
+<tr><th id="113">113</th><td>}</td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td><em>static</em> <b>struct</b> <a class="type" href="../../include/linux/pci.h.html#pci_driver" title='pci_driver' data-ref="pci_driver">pci_driver</a> <dfn class="tu decl def" id="uio_pci_driver" title='uio_pci_driver' data-type='struct pci_driver' data-ref="uio_pci_driver">uio_pci_driver</dfn> = {</td></tr>
+<tr><th id="116">116</th><td>	.<a class="ref field" href="../../include/linux/pci.h.html#pci_driver::name" title='pci_driver::name' data-ref="pci_driver::name">name</a> = <q>"uio_pci_generic"</q>,</td></tr>
+<tr><th id="117">117</th><td>	.<a class="ref field" href="../../include/linux/pci.h.html#pci_driver::id_table" title='pci_driver::id_table' data-ref="pci_driver::id_table">id_table</a> = <a class="macro" href="../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>, <i>/* only dynamic id's */</i></td></tr>
+<tr><th id="118">118</th><td>	.<a class="ref field" href="../../include/linux/pci.h.html#pci_driver::probe" title='pci_driver::probe' data-ref="pci_driver::probe">probe</a> = <a class="tu ref fn" href="#probe" title='probe' data-ref="probe">probe</a>,</td></tr>
+<tr><th id="119">119</th><td>	.<a class="ref field" href="../../include/linux/pci.h.html#pci_driver::remove" title='pci_driver::remove' data-ref="pci_driver::remove">remove</a> = <a class="tu ref fn" href="#remove" title='remove' data-ref="remove">remove</a>,</td></tr>
+<tr><th id="120">120</th><td>};</td></tr>
+<tr><th id="121">121</th><td></td></tr>
+<tr><th id="122">122</th><td><a class="macro" href="../../include/linux/pci.h.html#1273" title="static int __attribute__ ((__section__(&quot;.init.text&quot;))) uio_pci_driver_init(void) { return __pci_register_driver(&amp;(uio_pci_driver), ((struct module *)0), &quot;uio_pci_generic&quot;); } static initcall_t __initcall_uio_pci_driver_init6 __attribute__((__used__)) __attribute__((__section__(&quot;.initcall&quot; &quot;6&quot; &quot;.init&quot;))) = uio_pci_driver_init;;; static void __attribute__ ((__section__(&quot;.exit.text&quot;))) __attribute__((__used__)) __attribute__((no_instrument_function)) uio_pci_driver_exit(void) { pci_unregister_driver(&amp;(uio_pci_driver)); } static exitcall_t __exitcall_uio_pci_driver_exit __attribute__((__used__)) __attribute__ ((__section__(&quot;.exitcall.exit&quot;))) = uio_pci_driver_exit;;" data-ref="_M/module_pci_driver">module_pci_driver</a>(<a class="tu ref" href="#uio_pci_driver" title='uio_pci_driver' data-use='a' data-ref="uio_pci_driver">uio_pci_driver</a>);</td></tr>
+<tr><th id="123">123</th><td><a class="macro" href="../../include/linux/module.h.html#238" title="static struct module_version_attribute ___modver_attr = { .mattr = { .attr = { .name = &quot;version&quot;, .mode = (00400|00040|00004), }, .show = __modver_version_show, }, .module_name = &quot;uio_pci_generic&quot;, .version = &quot;0.01.0&quot;, }; static const struct module_version_attribute __attribute__((__used__)) __attribute__ ((__section__ (&quot;__modver&quot;))) * const __modver_attr = &amp;___modver_attr" data-ref="_M/MODULE_VERSION">MODULE_VERSION</a>(<a class="macro" href="#28" title="&quot;0.01.0&quot;" data-ref="_M/DRIVER_VERSION">DRIVER_VERSION</a>);</td></tr>
+<tr><th id="124">124</th><td><a class="macro" href="../../include/linux/module.h.html#198" title="struct __UNIQUE_ID_license56 {}" data-ref="_M/MODULE_LICENSE">MODULE_LICENSE</a>(<q>"GPL v2"</q>);</td></tr>
+<tr><th id="125">125</th><td><a class="macro" href="../../include/linux/module.h.html#204" title="struct __UNIQUE_ID_author58 {}" data-ref="_M/MODULE_AUTHOR">MODULE_AUTHOR</a>(<a class="macro" href="#29" title="&quot;Michael S. Tsirkin &lt;mst@redhat.com&gt;&quot;" data-ref="_M/DRIVER_AUTHOR">DRIVER_AUTHOR</a>);</td></tr>
+<tr><th id="126">126</th><td><a class="macro" href="../../include/linux/module.h.html#207" title="struct __UNIQUE_ID_description60 {}" data-ref="_M/MODULE_DESCRIPTION">MODULE_DESCRIPTION</a>(<a class="macro" href="#30" title="&quot;Generic UIO driver for PCI 2.3 devices&quot;" data-ref="_M/DRIVER_DESC">DRIVER_DESC</a>);</td></tr>
+<tr><th id="127">127</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Jul-31</em> from project linux-4.14.y revision <em>linux-4.14.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>
