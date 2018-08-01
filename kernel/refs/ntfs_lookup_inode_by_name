@@ -1,0 +1,47 @@
+<dec f='linux-4.14.y/fs/ntfs/dir.h' l='45' type='MFT_REF ntfs_lookup_inode_by_name(ntfs_inode * dir_ni, const ntfschar * uname, const int uname_len, ntfs_name ** res)'/>
+<def f='linux-4.14.y/fs/ntfs/dir.c' l='80' ll='604' type='MFT_REF ntfs_lookup_inode_by_name(ntfs_inode * dir_ni, const ntfschar * uname, const int uname_len, ntfs_name ** res)'/>
+<doc f='linux-4.14.y/fs/ntfs/dir.c' l='39'>/**
+ * ntfs_lookup_inode_by_name - find an inode in a directory given its name
+ * @dir_ni:	ntfs inode of the directory in which to search for the name
+ * @uname:	Unicode name for which to search in the directory
+ * @uname_len:	length of the name @uname in Unicode characters
+ * @res:	return the found file name if necessary (see below)
+ *
+ * Look for an inode with name @uname in the directory with inode @dir_ni.
+ * ntfs_lookup_inode_by_name() walks the contents of the directory looking for
+ * the Unicode name. If the name is found in the directory, the corresponding
+ * inode number (&gt;= 0) is returned as a mft reference in cpu format, i.e. it
+ * is a 64-bit number containing the sequence number.
+ *
+ * On error, a negative value is returned corresponding to the error code. In
+ * particular if the inode is not found -ENOENT is returned. Note that you
+ * can&apos;t just check the return value for being negative, you have to check the
+ * inode number for being negative which you can extract using MREC(return
+ * value).
+ *
+ * Note, @uname_len does not include the (optional) terminating NULL character.
+ *
+ * Note, we look for a case sensitive match first but we also look for a case
+ * insensitive match at the same time. If we find a case insensitive match, we
+ * save that for the case that we don&apos;t find an exact match, where we return
+ * the case insensitive match and setup @res (which we allocate!) with the mft
+ * reference, the file name type, length and with a copy of the little endian
+ * Unicode file name itself. If we match a file name which is in the DOS name
+ * space, we only return the mft reference and file name type in @res.
+ * ntfs_lookup() then uses this to find the long file name in the inode itself.
+ * This is to avoid polluting the dcache with short file names. We want them to
+ * work but we don&apos;t care for how quickly one can access them. This also fixes
+ * the dcache aliasing issues.
+ *
+ * Locking:  - Caller must hold i_mutex on the directory.
+ *	     - Each page cache page in the index allocation mapping must be
+ *	       locked whilst being accessed otherwise we may find a corrupt
+ *	       page due to it being under -&gt;writepage at the moment which
+ *	       applies the mst protection fixups before writing out and then
+ *	       removes them again after the write is complete after which it 
+ *	       unlocks the page.
+ */</doc>
+<use f='linux-4.14.y/fs/ntfs/namei.c' l='125' u='c' c='ntfs_lookup'/>
+<use f='linux-4.14.y/fs/ntfs/super.c' l='1288' u='c' c='check_windows_hibernation_status'/>
+<use f='linux-4.14.y/fs/ntfs/super.c' l='1381' u='c' c='load_and_init_quota'/>
+<use f='linux-4.14.y/fs/ntfs/super.c' l='1464' u='c' c='load_and_init_usnjrnl'/>

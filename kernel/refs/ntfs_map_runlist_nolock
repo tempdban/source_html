@@ -1,0 +1,53 @@
+<dec f='linux-4.14.y/fs/ntfs/attrib.h' l='63' type='int ntfs_map_runlist_nolock(ntfs_inode * ni, VCN vcn, ntfs_attr_search_ctx * ctx)'/>
+<def f='linux-4.14.y/fs/ntfs/attrib.c' l='84' ll='281' type='int ntfs_map_runlist_nolock(ntfs_inode * ni, VCN vcn, ntfs_attr_search_ctx * ctx)'/>
+<use f='linux-4.14.y/fs/ntfs/attrib.c' l='306' u='c' c='ntfs_map_runlist'/>
+<use f='linux-4.14.y/fs/ntfs/attrib.c' l='385' u='c' c='ntfs_attr_vcn_to_lcn_nolock'/>
+<use f='linux-4.14.y/fs/ntfs/attrib.c' l='517' u='c' c='ntfs_attr_find_vcn_nolock'/>
+<doc f='linux-4.14.y/fs/ntfs/attrib.c' l='38'>/**
+ * ntfs_map_runlist_nolock - map (a part of) a runlist of an ntfs inode
+ * @ni:		ntfs inode for which to map (part of) a runlist
+ * @vcn:	map runlist part containing this vcn
+ * @ctx:	active attribute search context if present or NULL if not
+ *
+ * Map the part of a runlist containing the @vcn of the ntfs inode @ni.
+ *
+ * If @ctx is specified, it is an active search context of @ni and its base mft
+ * record.  This is needed when ntfs_map_runlist_nolock() encounters unmapped
+ * runlist fragments and allows their mapping.  If you do not have the mft
+ * record mapped, you can specify @ctx as NULL and ntfs_map_runlist_nolock()
+ * will perform the necessary mapping and unmapping.
+ *
+ * Note, ntfs_map_runlist_nolock() saves the state of @ctx on entry and
+ * restores it before returning.  Thus, @ctx will be left pointing to the same
+ * attribute on return as on entry.  However, the actual pointers in @ctx may
+ * point to different memory locations on return, so you must remember to reset
+ * any cached pointers from the @ctx, i.e. after the call to
+ * ntfs_map_runlist_nolock(), you will probably want to do:
+ *	m = ctx-&gt;mrec;
+ *	a = ctx-&gt;attr;
+ * Assuming you cache ctx-&gt;attr in a variable @a of type ATTR_RECORD * and that
+ * you cache ctx-&gt;mrec in a variable @m of type MFT_RECORD *.
+ *
+ * Return 0 on success and -errno on error.  There is one special error code
+ * which is not an error as such.  This is -ENOENT.  It means that @vcn is out
+ * of bounds of the runlist.
+ *
+ * Note the runlist can be NULL after this function returns if @vcn is zero and
+ * the attribute has zero allocated size, i.e. there simply is no runlist.
+ *
+ * WARNING: If @ctx is supplied, regardless of whether success or failure is
+ *	    returned, you need to check IS_ERR(@ctx-&gt;mrec) and if &apos;true&apos; the @ctx
+ *	    is no longer valid, i.e. you need to either call
+ *	    ntfs_attr_reinit_search_ctx() or ntfs_attr_put_search_ctx() on it.
+ *	    In that case PTR_ERR(@ctx-&gt;mrec) will give you the error code for
+ *	    why the mapping of the old inode failed.
+ *
+ * Locking: - The runlist described by @ni must be locked for writing on entry
+ *	      and is locked on return.  Note the runlist will be modified.
+ *	    - If @ctx is NULL, the base mft record of @ni must not be mapped on
+ *	      entry and it will be left unmapped on return.
+ *	    - If @ctx is not NULL, the base mft record must be mapped on entry
+ *	      and it will be left mapped on return.
+ */</doc>
+<use f='linux-4.14.y/fs/ntfs/file.c' l='903' u='c' c='ntfs_prepare_pages_for_non_resident_write'/>
+<use f='linux-4.14.y/fs/ntfs/logfile.c' l='763' u='c' c='ntfs_empty_logfile'/>

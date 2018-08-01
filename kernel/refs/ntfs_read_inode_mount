@@ -1,0 +1,29 @@
+<dec f='linux-4.14.y/fs/ntfs/inode.h' l='299' type='int ntfs_read_inode_mount(struct inode * vi)'/>
+<def f='linux-4.14.y/fs/ntfs/inode.c' l='1775' ll='2195' type='int ntfs_read_inode_mount(struct inode * vi)'/>
+<doc f='linux-4.14.y/fs/ntfs/inode.c' l='1749'>/**
+ * ntfs_read_inode_mount - special read_inode for mount time use only
+ * @vi:		inode to read
+ *
+ * Read inode FILE_MFT at mount time, only called with super_block lock
+ * held from within the read_super() code path.
+ *
+ * This function exists because when it is called the page cache for $MFT/$DATA
+ * is not initialized and hence we cannot get at the contents of mft records
+ * by calling map_mft_record*().
+ *
+ * Further it needs to cope with the circular references problem, i.e. cannot
+ * load any attributes other than $ATTRIBUTE_LIST until $DATA is loaded, because
+ * we do not know where the other extent mft records are yet and again, because
+ * we cannot call map_mft_record*() yet.  Obviously this applies only when an
+ * attribute list is actually present in $MFT inode.
+ *
+ * We solve these problems by starting with the $DATA attribute before anything
+ * else and iterating using ntfs_attr_lookup($DATA) over all extents.  As each
+ * extent is found, we ntfs_mapping_pairs_decompress() including the implied
+ * ntfs_runlists_merge().  Each step of the iteration necessarily provides
+ * sufficient information for the next step to complete.
+ *
+ * This should work but there are two possible pit falls (see inline comments
+ * below), but only time will tell if they are real pits or just smoke...
+ */</doc>
+<use f='linux-4.14.y/fs/ntfs/super.c' l='2871' u='c' c='ntfs_fill_super'/>
