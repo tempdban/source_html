@@ -1,0 +1,387 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>ixgbe_dcb_82599.c source code [linux-4.14.y/drivers/net/ethernet/intel/ixgbe/ixgbe_dcb_82599.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.14.y/drivers/net/ethernet/intel/ixgbe/ixgbe_dcb_82599.c'; var root_path = '../../../../../..'; var data_path = '../../../../../../../data';</script>
+<script src='../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../..'>linux-4.14.y</a>/<a href='../../../..'>drivers</a>/<a href='../../..'>net</a>/<a href='../..'>ethernet</a>/<a href='..'>intel</a>/<a href='./'>ixgbe</a>/<a href='ixgbe_dcb_82599.c.html'>ixgbe_dcb_82599.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*******************************************************************************</i></td></tr>
+<tr><th id="2">2</th><td><i></i></td></tr>
+<tr><th id="3">3</th><td><i>  Intel 10 Gigabit PCI Express Linux driver</i></td></tr>
+<tr><th id="4">4</th><td><i>  Copyright(c) 1999 - 2013 Intel Corporation.</i></td></tr>
+<tr><th id="5">5</th><td><i></i></td></tr>
+<tr><th id="6">6</th><td><i>  This program is free software; you can redistribute it and/or modify it</i></td></tr>
+<tr><th id="7">7</th><td><i>  under the terms and conditions of the GNU General Public License,</i></td></tr>
+<tr><th id="8">8</th><td><i>  version 2, as published by the Free Software Foundation.</i></td></tr>
+<tr><th id="9">9</th><td><i></i></td></tr>
+<tr><th id="10">10</th><td><i>  This program is distributed in the hope it will be useful, but WITHOUT</i></td></tr>
+<tr><th id="11">11</th><td><i>  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or</i></td></tr>
+<tr><th id="12">12</th><td><i>  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for</i></td></tr>
+<tr><th id="13">13</th><td><i>  more details.</i></td></tr>
+<tr><th id="14">14</th><td><i></i></td></tr>
+<tr><th id="15">15</th><td><i>  You should have received a copy of the GNU General Public License along with</i></td></tr>
+<tr><th id="16">16</th><td><i>  this program; if not, write to the Free Software Foundation, Inc.,</i></td></tr>
+<tr><th id="17">17</th><td><i>  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.</i></td></tr>
+<tr><th id="18">18</th><td><i></i></td></tr>
+<tr><th id="19">19</th><td><i>  The full GNU General Public License is included in this distribution in</i></td></tr>
+<tr><th id="20">20</th><td><i>  the file called "COPYING".</i></td></tr>
+<tr><th id="21">21</th><td><i></i></td></tr>
+<tr><th id="22">22</th><td><i>  Contact Information:</i></td></tr>
+<tr><th id="23">23</th><td><i>  Linux NICS &lt;linux.nics@intel.com&gt;</i></td></tr>
+<tr><th id="24">24</th><td><i>  e1000-devel Mailing List &lt;e1000-devel@lists.sourceforge.net&gt;</i></td></tr>
+<tr><th id="25">25</th><td><i>  Intel Corporation, 5200 N.E. Elam Young Parkway, Hillsboro, OR 97124-6497</i></td></tr>
+<tr><th id="26">26</th><td><i></i></td></tr>
+<tr><th id="27">27</th><td><i>*******************************************************************************/</i></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="ixgbe.h.html">"ixgbe.h"</a></u></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="ixgbe_type.h.html">"ixgbe_type.h"</a></u></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="ixgbe_dcb.h.html">"ixgbe_dcb.h"</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="ixgbe_dcb_82599.h.html">"ixgbe_dcb_82599.h"</a></u></td></tr>
+<tr><th id="33">33</th><td></td></tr>
+<tr><th id="34">34</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="35">35</th><td><i class="doc"> * ixgbe_dcb_config_rx_arbiter_82599 - Config Rx Data arbiter</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc"> *<span class="command"> @hw</span>: pointer to hardware structure</i></td></tr>
+<tr><th id="37">37</th><td><i class="doc"> *<span class="command"> @refill</span>: refill credits index by traffic class</i></td></tr>
+<tr><th id="38">38</th><td><i class="doc"> *<span class="command"> @max</span>: max credits index by traffic class</i></td></tr>
+<tr><th id="39">39</th><td><i class="doc"> * <span class="command">@bwg</span>_id: bandwidth grouping indexed by traffic class</i></td></tr>
+<tr><th id="40">40</th><td><i class="doc"> *<span class="command"> @prio</span>_type: priority type indexed by traffic class</i></td></tr>
+<tr><th id="41">41</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc"> * Configure Rx Packet Arbiter and credits for each traffic class.</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="44">44</th><td><a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#s32" title='s32' data-type='int' data-ref="s32">s32</a> <dfn class="decl def fn" id="ixgbe_dcb_config_rx_arbiter_82599" title='ixgbe_dcb_config_rx_arbiter_82599' data-ref="ixgbe_dcb_config_rx_arbiter_82599">ixgbe_dcb_config_rx_arbiter_82599</dfn>(<b>struct</b> <a class="type" href="ixgbe_type.h.html#ixgbe_hw" title='ixgbe_hw' data-ref="ixgbe_hw">ixgbe_hw</a> *<dfn class="local col1 decl" id="1hw" title='hw' data-type='struct ixgbe_hw *' data-ref="1hw">hw</dfn>,</td></tr>
+<tr><th id="45">45</th><td>				      <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> *<dfn class="local col2 decl" id="2refill" title='refill' data-type='u16 *' data-ref="2refill">refill</dfn>,</td></tr>
+<tr><th id="46">46</th><td>				      <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> *<dfn class="local col3 decl" id="3max" title='max' data-type='u16 *' data-ref="3max">max</dfn>,</td></tr>
+<tr><th id="47">47</th><td>				      <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col4 decl" id="4bwg_id" title='bwg_id' data-type='u8 *' data-ref="4bwg_id">bwg_id</dfn>,</td></tr>
+<tr><th id="48">48</th><td>				      <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col5 decl" id="5prio_type" title='prio_type' data-type='u8 *' data-ref="5prio_type">prio_type</dfn>,</td></tr>
+<tr><th id="49">49</th><td>				      <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col6 decl" id="6prio_tc" title='prio_tc' data-type='u8 *' data-ref="6prio_tc">prio_tc</dfn>)</td></tr>
+<tr><th id="50">50</th><td>{</td></tr>
+<tr><th id="51">51</th><td>	<a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>    <dfn class="local col7 decl" id="7reg" title='reg' data-type='u32' data-ref="7reg">reg</dfn>           = <var>0</var>;</td></tr>
+<tr><th id="52">52</th><td>	<a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>    <dfn class="local col8 decl" id="8credit_refill" title='credit_refill' data-type='u32' data-ref="8credit_refill">credit_refill</dfn> = <var>0</var>;</td></tr>
+<tr><th id="53">53</th><td>	<a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>    <dfn class="local col9 decl" id="9credit_max" title='credit_max' data-type='u32' data-ref="9credit_max">credit_max</dfn>    = <var>0</var>;</td></tr>
+<tr><th id="54">54</th><td>	<a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>     <dfn class="local col0 decl" id="10i" title='i' data-type='u8' data-ref="10i">i</dfn>             = <var>0</var>;</td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td>	<i>/*</i></td></tr>
+<tr><th id="57">57</th><td><i>	 * Disable the arbiter before changing parameters</i></td></tr>
+<tr><th id="58">58</th><td><i>	 * (always enable recycle mode; WSP)</i></td></tr>
+<tr><th id="59">59</th><td><i>	 */</i></td></tr>
+<tr><th id="60">60</th><td>	<a class="local col7 ref" href="#7reg" title='reg' data-ref="7reg">reg</a> = <a class="macro" href="ixgbe_dcb_82599.h.html#66" title="0x00000002" data-ref="_M/IXGBE_RTRPCS_RRM">IXGBE_RTRPCS_RRM</a> | <a class="macro" href="ixgbe_dcb_82599.h.html#68" title="0x00000004" data-ref="_M/IXGBE_RTRPCS_RAC">IXGBE_RTRPCS_RAC</a> | <a class="macro" href="ixgbe_dcb_82599.h.html#69" title="0x00000040" data-ref="_M/IXGBE_RTRPCS_ARBDIS">IXGBE_RTRPCS_ARBDIS</a>;</td></tr>
+<tr><th id="61">61</th><td>	<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), (0x02430), (reg))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col1 ref" href="#1hw" title='hw' data-ref="1hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#672" title="0x02430" data-ref="_M/IXGBE_RTRPCS">IXGBE_RTRPCS</a>, <a class="local col7 ref" href="#7reg" title='reg' data-ref="7reg">reg</a>);</td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td>	<i>/* Map all traffic classes to their UP */</i></td></tr>
+<tr><th id="64">64</th><td>	<a class="local col7 ref" href="#7reg" title='reg' data-ref="7reg">reg</a> = <var>0</var>;</td></tr>
+<tr><th id="65">65</th><td>	<b>for</b> (<a class="local col0 ref" href="#10i" title='i' data-ref="10i">i</a> = <var>0</var>; <a class="local col0 ref" href="#10i" title='i' data-ref="10i">i</a> &lt; <a class="macro" href="ixgbe_dcb.h.html#38" title="8" data-ref="_M/MAX_USER_PRIORITY">MAX_USER_PRIORITY</a>; <a class="local col0 ref" href="#10i" title='i' data-ref="10i">i</a>++)</td></tr>
+<tr><th id="66">66</th><td>		<a class="local col7 ref" href="#7reg" title='reg' data-ref="7reg">reg</a> |= (<a class="local col6 ref" href="#6prio_tc" title='prio_tc' data-ref="6prio_tc">prio_tc</a>[<a class="local col0 ref" href="#10i" title='i' data-ref="10i">i</a>] &lt;&lt; (<a class="local col0 ref" href="#10i" title='i' data-ref="10i">i</a> * <a class="macro" href="ixgbe_dcb_82599.h.html#48" title="3" data-ref="_M/IXGBE_RTRUP2TC_UP_SHIFT">IXGBE_RTRUP2TC_UP_SHIFT</a>));</td></tr>
+<tr><th id="67">67</th><td>	<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), (0x03020), (reg))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col1 ref" href="#1hw" title='hw' data-ref="1hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#676" title="0x03020" data-ref="_M/IXGBE_RTRUP2TC">IXGBE_RTRUP2TC</a>, <a class="local col7 ref" href="#7reg" title='reg' data-ref="7reg">reg</a>);</td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td>	<i>/* Configure traffic class credits and priority */</i></td></tr>
+<tr><th id="70">70</th><td>	<b>for</b> (<a class="local col0 ref" href="#10i" title='i' data-ref="10i">i</a> = <var>0</var>; <a class="local col0 ref" href="#10i" title='i' data-ref="10i">i</a> &lt; <a class="macro" href="ixgbe_type.h.html#560" title="8" data-ref="_M/MAX_TRAFFIC_CLASS">MAX_TRAFFIC_CLASS</a>; <a class="local col0 ref" href="#10i" title='i' data-ref="10i">i</a>++) {</td></tr>
+<tr><th id="71">71</th><td>		<a class="local col8 ref" href="#8credit_refill" title='credit_refill' data-ref="8credit_refill">credit_refill</a> = <a class="local col2 ref" href="#2refill" title='refill' data-ref="2refill">refill</a>[<a class="local col0 ref" href="#10i" title='i' data-ref="10i">i</a>];</td></tr>
+<tr><th id="72">72</th><td>		<a class="local col9 ref" href="#9credit_max" title='credit_max' data-ref="9credit_max">credit_max</a>    = <a class="local col3 ref" href="#3max" title='max' data-ref="3max">max</a>[<a class="local col0 ref" href="#10i" title='i' data-ref="10i">i</a>];</td></tr>
+<tr><th id="73">73</th><td>		<a class="local col7 ref" href="#7reg" title='reg' data-ref="7reg">reg</a> = <a class="local col8 ref" href="#8credit_refill" title='credit_refill' data-ref="8credit_refill">credit_refill</a> | (<a class="local col9 ref" href="#9credit_max" title='credit_max' data-ref="9credit_max">credit_max</a> &lt;&lt; <a class="macro" href="ixgbe_dcb_82599.h.html#53" title="12" data-ref="_M/IXGBE_RTRPT4C_MCL_SHIFT">IXGBE_RTRPT4C_MCL_SHIFT</a>);</td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td>		<a class="local col7 ref" href="#7reg" title='reg' data-ref="7reg">reg</a> |= (<a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>)(<a class="local col4 ref" href="#4bwg_id" title='bwg_id' data-ref="4bwg_id">bwg_id</a>[<a class="local col0 ref" href="#10i" title='i' data-ref="10i">i</a>]) &lt;&lt; <a class="macro" href="ixgbe_dcb_82599.h.html#54" title="9" data-ref="_M/IXGBE_RTRPT4C_BWG_SHIFT">IXGBE_RTRPT4C_BWG_SHIFT</a>;</td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td>		<b>if</b> (<a class="local col5 ref" href="#5prio_type" title='prio_type' data-ref="5prio_type">prio_type</a>[<a class="local col0 ref" href="#10i" title='i' data-ref="10i">i</a>] == <a class="enum" href="ixgbe_dcb.h.html#prio_link" title='prio_link' data-ref="prio_link">prio_link</a>)</td></tr>
+<tr><th id="78">78</th><td>			<a class="local col7 ref" href="#7reg" title='reg' data-ref="7reg">reg</a> |= <a class="macro" href="ixgbe_dcb_82599.h.html#56" title="0x80000000" data-ref="_M/IXGBE_RTRPT4C_LSP">IXGBE_RTRPT4C_LSP</a>;</td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td>		<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), ((0x02140 + ((i) * 4))), (reg))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col1 ref" href="#1hw" title='hw' data-ref="1hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#678" title="(0x02140 + ((i) * 4))" data-ref="_M/IXGBE_RTRPT4C">IXGBE_RTRPT4C</a>(<a class="local col0 ref" href="#10i" title='i' data-ref="10i">i</a>), <a class="local col7 ref" href="#7reg" title='reg' data-ref="7reg">reg</a>);</td></tr>
+<tr><th id="81">81</th><td>	}</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td>	<i>/*</i></td></tr>
+<tr><th id="84">84</th><td><i>	 * Configure Rx packet plane (recycle mode; WSP) and</i></td></tr>
+<tr><th id="85">85</th><td><i>	 * enable arbiter</i></td></tr>
+<tr><th id="86">86</th><td><i>	 */</i></td></tr>
+<tr><th id="87">87</th><td>	<a class="local col7 ref" href="#7reg" title='reg' data-ref="7reg">reg</a> = <a class="macro" href="ixgbe_dcb_82599.h.html#66" title="0x00000002" data-ref="_M/IXGBE_RTRPCS_RRM">IXGBE_RTRPCS_RRM</a> | <a class="macro" href="ixgbe_dcb_82599.h.html#68" title="0x00000004" data-ref="_M/IXGBE_RTRPCS_RAC">IXGBE_RTRPCS_RAC</a>;</td></tr>
+<tr><th id="88">88</th><td>	<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), (0x02430), (reg))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col1 ref" href="#1hw" title='hw' data-ref="1hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#672" title="0x02430" data-ref="_M/IXGBE_RTRPCS">IXGBE_RTRPCS</a>, <a class="local col7 ref" href="#7reg" title='reg' data-ref="7reg">reg</a>);</td></tr>
+<tr><th id="89">89</th><td></td></tr>
+<tr><th id="90">90</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="91">91</th><td>}</td></tr>
+<tr><th id="92">92</th><td></td></tr>
+<tr><th id="93">93</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="94">94</th><td><i class="doc"> * ixgbe_dcb_config_tx_desc_arbiter_82599 - Config Tx Desc. arbiter</i></td></tr>
+<tr><th id="95">95</th><td><i class="doc"> *<span class="command"> @hw</span>: pointer to hardware structure</i></td></tr>
+<tr><th id="96">96</th><td><i class="doc"> *<span class="command"> @refill</span>: refill credits index by traffic class</i></td></tr>
+<tr><th id="97">97</th><td><i class="doc"> *<span class="command"> @max</span>: max credits index by traffic class</i></td></tr>
+<tr><th id="98">98</th><td><i class="doc"> * <span class="command">@bwg</span>_id: bandwidth grouping indexed by traffic class</i></td></tr>
+<tr><th id="99">99</th><td><i class="doc"> *<span class="command"> @prio</span>_type: priority type indexed by traffic class</i></td></tr>
+<tr><th id="100">100</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="101">101</th><td><i class="doc"> * Configure Tx Descriptor Arbiter and credits for each traffic class.</i></td></tr>
+<tr><th id="102">102</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="103">103</th><td><a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#s32" title='s32' data-type='int' data-ref="s32">s32</a> <dfn class="decl def fn" id="ixgbe_dcb_config_tx_desc_arbiter_82599" title='ixgbe_dcb_config_tx_desc_arbiter_82599' data-ref="ixgbe_dcb_config_tx_desc_arbiter_82599">ixgbe_dcb_config_tx_desc_arbiter_82599</dfn>(<b>struct</b> <a class="type" href="ixgbe_type.h.html#ixgbe_hw" title='ixgbe_hw' data-ref="ixgbe_hw">ixgbe_hw</a> *<dfn class="local col1 decl" id="11hw" title='hw' data-type='struct ixgbe_hw *' data-ref="11hw">hw</dfn>,</td></tr>
+<tr><th id="104">104</th><td>					   <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> *<dfn class="local col2 decl" id="12refill" title='refill' data-type='u16 *' data-ref="12refill">refill</dfn>,</td></tr>
+<tr><th id="105">105</th><td>					   <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> *<dfn class="local col3 decl" id="13max" title='max' data-type='u16 *' data-ref="13max">max</dfn>,</td></tr>
+<tr><th id="106">106</th><td>					   <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col4 decl" id="14bwg_id" title='bwg_id' data-type='u8 *' data-ref="14bwg_id">bwg_id</dfn>,</td></tr>
+<tr><th id="107">107</th><td>					   <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col5 decl" id="15prio_type" title='prio_type' data-type='u8 *' data-ref="15prio_type">prio_type</dfn>)</td></tr>
+<tr><th id="108">108</th><td>{</td></tr>
+<tr><th id="109">109</th><td>	<a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>    <dfn class="local col6 decl" id="16reg" title='reg' data-type='u32' data-ref="16reg">reg</dfn>, <dfn class="local col7 decl" id="17max_credits" title='max_credits' data-type='u32' data-ref="17max_credits">max_credits</dfn>;</td></tr>
+<tr><th id="110">110</th><td>	<a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>     <dfn class="local col8 decl" id="18i" title='i' data-type='u8' data-ref="18i">i</dfn>;</td></tr>
+<tr><th id="111">111</th><td></td></tr>
+<tr><th id="112">112</th><td>	<i>/* Clear the per-Tx queue credits; we use per-TC instead */</i></td></tr>
+<tr><th id="113">113</th><td>	<b>for</b> (<a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a> = <var>0</var>; <a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a> &lt; <var>128</var>; <a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>++) {</td></tr>
+<tr><th id="114">114</th><td>		<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), (0x04904), (i))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col1 ref" href="#11hw" title='hw' data-ref="11hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#685" title="0x04904" data-ref="_M/IXGBE_RTTDQSEL">IXGBE_RTTDQSEL</a>, <a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>);</td></tr>
+<tr><th id="115">115</th><td>		<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), (0x04908), (0))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col1 ref" href="#11hw" title='hw' data-ref="11hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#686" title="0x04908" data-ref="_M/IXGBE_RTTDT1C">IXGBE_RTTDT1C</a>, <var>0</var>);</td></tr>
+<tr><th id="116">116</th><td>	}</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td>	<i>/* Configure traffic class credits and priority */</i></td></tr>
+<tr><th id="119">119</th><td>	<b>for</b> (<a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a> = <var>0</var>; <a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a> &lt; <a class="macro" href="ixgbe_type.h.html#560" title="8" data-ref="_M/MAX_TRAFFIC_CLASS">MAX_TRAFFIC_CLASS</a>; <a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>++) {</td></tr>
+<tr><th id="120">120</th><td>		<a class="local col7 ref" href="#17max_credits" title='max_credits' data-ref="17max_credits">max_credits</a> = <a class="local col3 ref" href="#13max" title='max' data-ref="13max">max</a>[<a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>];</td></tr>
+<tr><th id="121">121</th><td>		<a class="local col6 ref" href="#16reg" title='reg' data-ref="16reg">reg</a> = <a class="local col7 ref" href="#17max_credits" title='max_credits' data-ref="17max_credits">max_credits</a> &lt;&lt; <a class="macro" href="ixgbe_dcb_82599.h.html#72" title="12" data-ref="_M/IXGBE_RTTDT2C_MCL_SHIFT">IXGBE_RTTDT2C_MCL_SHIFT</a>;</td></tr>
+<tr><th id="122">122</th><td>		<a class="local col6 ref" href="#16reg" title='reg' data-ref="16reg">reg</a> |= <a class="local col2 ref" href="#12refill" title='refill' data-ref="12refill">refill</a>[<a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>];</td></tr>
+<tr><th id="123">123</th><td>		<a class="local col6 ref" href="#16reg" title='reg' data-ref="16reg">reg</a> |= (<a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>)(<a class="local col4 ref" href="#14bwg_id" title='bwg_id' data-ref="14bwg_id">bwg_id</a>[<a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>]) &lt;&lt; <a class="macro" href="ixgbe_dcb_82599.h.html#73" title="9" data-ref="_M/IXGBE_RTTDT2C_BWG_SHIFT">IXGBE_RTTDT2C_BWG_SHIFT</a>;</td></tr>
+<tr><th id="124">124</th><td></td></tr>
+<tr><th id="125">125</th><td>		<b>if</b> (<a class="local col5 ref" href="#15prio_type" title='prio_type' data-ref="15prio_type">prio_type</a>[<a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>] == <a class="enum" href="ixgbe_dcb.h.html#prio_group" title='prio_group' data-ref="prio_group">prio_group</a>)</td></tr>
+<tr><th id="126">126</th><td>			<a class="local col6 ref" href="#16reg" title='reg' data-ref="16reg">reg</a> |= <a class="macro" href="ixgbe_dcb_82599.h.html#74" title="0x40000000" data-ref="_M/IXGBE_RTTDT2C_GSP">IXGBE_RTTDT2C_GSP</a>;</td></tr>
+<tr><th id="127">127</th><td></td></tr>
+<tr><th id="128">128</th><td>		<b>if</b> (<a class="local col5 ref" href="#15prio_type" title='prio_type' data-ref="15prio_type">prio_type</a>[<a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>] == <a class="enum" href="ixgbe_dcb.h.html#prio_link" title='prio_link' data-ref="prio_link">prio_link</a>)</td></tr>
+<tr><th id="129">129</th><td>			<a class="local col6 ref" href="#16reg" title='reg' data-ref="16reg">reg</a> |= <a class="macro" href="ixgbe_dcb_82599.h.html#75" title="0x80000000" data-ref="_M/IXGBE_RTTDT2C_LSP">IXGBE_RTTDT2C_LSP</a>;</td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td>		<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), ((0x04910 + ((i) * 4))), (reg))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col1 ref" href="#11hw" title='hw' data-ref="11hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#681" title="(0x04910 + ((i) * 4))" data-ref="_M/IXGBE_RTTDT2C">IXGBE_RTTDT2C</a>(<a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>), <a class="local col6 ref" href="#16reg" title='reg' data-ref="16reg">reg</a>);</td></tr>
+<tr><th id="132">132</th><td>	}</td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td>	<i>/*</i></td></tr>
+<tr><th id="135">135</th><td><i>	 * Configure Tx descriptor plane (recycle mode; WSP) and</i></td></tr>
+<tr><th id="136">136</th><td><i>	 * enable arbiter</i></td></tr>
+<tr><th id="137">137</th><td><i>	 */</i></td></tr>
+<tr><th id="138">138</th><td>	<a class="local col6 ref" href="#16reg" title='reg' data-ref="16reg">reg</a> = <a class="macro" href="ixgbe_dcb_82599.h.html#33" title="0x00000001" data-ref="_M/IXGBE_RTTDCS_TDPAC">IXGBE_RTTDCS_TDPAC</a> | <a class="macro" href="ixgbe_dcb_82599.h.html#39" title="0x00000010" data-ref="_M/IXGBE_RTTDCS_TDRM">IXGBE_RTTDCS_TDRM</a>;</td></tr>
+<tr><th id="139">139</th><td>	<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), (0x04900), (reg))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col1 ref" href="#11hw" title='hw' data-ref="11hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#673" title="0x04900" data-ref="_M/IXGBE_RTTDCS">IXGBE_RTTDCS</a>, <a class="local col6 ref" href="#16reg" title='reg' data-ref="16reg">reg</a>);</td></tr>
+<tr><th id="140">140</th><td></td></tr>
+<tr><th id="141">141</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="142">142</th><td>}</td></tr>
+<tr><th id="143">143</th><td></td></tr>
+<tr><th id="144">144</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="145">145</th><td><i class="doc"> * ixgbe_dcb_config_tx_data_arbiter_82599 - Config Tx Data arbiter</i></td></tr>
+<tr><th id="146">146</th><td><i class="doc"> *<span class="command"> @hw</span>: pointer to hardware structure</i></td></tr>
+<tr><th id="147">147</th><td><i class="doc"> *<span class="command"> @refill</span>: refill credits index by traffic class</i></td></tr>
+<tr><th id="148">148</th><td><i class="doc"> *<span class="command"> @max</span>: max credits index by traffic class</i></td></tr>
+<tr><th id="149">149</th><td><i class="doc"> * <span class="command">@bwg</span>_id: bandwidth grouping indexed by traffic class</i></td></tr>
+<tr><th id="150">150</th><td><i class="doc"> *<span class="command"> @prio</span>_type: priority type indexed by traffic class</i></td></tr>
+<tr><th id="151">151</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="152">152</th><td><i class="doc"> * Configure Tx Packet Arbiter and credits for each traffic class.</i></td></tr>
+<tr><th id="153">153</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="154">154</th><td><a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#s32" title='s32' data-type='int' data-ref="s32">s32</a> <dfn class="decl def fn" id="ixgbe_dcb_config_tx_data_arbiter_82599" title='ixgbe_dcb_config_tx_data_arbiter_82599' data-ref="ixgbe_dcb_config_tx_data_arbiter_82599">ixgbe_dcb_config_tx_data_arbiter_82599</dfn>(<b>struct</b> <a class="type" href="ixgbe_type.h.html#ixgbe_hw" title='ixgbe_hw' data-ref="ixgbe_hw">ixgbe_hw</a> *<dfn class="local col9 decl" id="19hw" title='hw' data-type='struct ixgbe_hw *' data-ref="19hw">hw</dfn>,</td></tr>
+<tr><th id="155">155</th><td>					   <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> *<dfn class="local col0 decl" id="20refill" title='refill' data-type='u16 *' data-ref="20refill">refill</dfn>,</td></tr>
+<tr><th id="156">156</th><td>					   <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> *<dfn class="local col1 decl" id="21max" title='max' data-type='u16 *' data-ref="21max">max</dfn>,</td></tr>
+<tr><th id="157">157</th><td>					   <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col2 decl" id="22bwg_id" title='bwg_id' data-type='u8 *' data-ref="22bwg_id">bwg_id</dfn>,</td></tr>
+<tr><th id="158">158</th><td>					   <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col3 decl" id="23prio_type" title='prio_type' data-type='u8 *' data-ref="23prio_type">prio_type</dfn>,</td></tr>
+<tr><th id="159">159</th><td>					   <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col4 decl" id="24prio_tc" title='prio_tc' data-type='u8 *' data-ref="24prio_tc">prio_tc</dfn>)</td></tr>
+<tr><th id="160">160</th><td>{</td></tr>
+<tr><th id="161">161</th><td>	<a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col5 decl" id="25reg" title='reg' data-type='u32' data-ref="25reg">reg</dfn>;</td></tr>
+<tr><th id="162">162</th><td>	<a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="local col6 decl" id="26i" title='i' data-type='u8' data-ref="26i">i</dfn>;</td></tr>
+<tr><th id="163">163</th><td></td></tr>
+<tr><th id="164">164</th><td>	<i>/*</i></td></tr>
+<tr><th id="165">165</th><td><i>	 * Disable the arbiter before changing parameters</i></td></tr>
+<tr><th id="166">166</th><td><i>	 * (always enable recycle mode; SP; arb delay)</i></td></tr>
+<tr><th id="167">167</th><td><i>	 */</i></td></tr>
+<tr><th id="168">168</th><td>	<a class="local col5 ref" href="#25reg" title='reg' data-ref="25reg">reg</a> = <a class="macro" href="ixgbe_dcb_82599.h.html#83" title="0x00000020" data-ref="_M/IXGBE_RTTPCS_TPPAC">IXGBE_RTTPCS_TPPAC</a> | <a class="macro" href="ixgbe_dcb_82599.h.html#87" title="0x00000100" data-ref="_M/IXGBE_RTTPCS_TPRM">IXGBE_RTTPCS_TPRM</a> |</td></tr>
+<tr><th id="169">169</th><td>	      (<a class="macro" href="ixgbe_dcb_82599.h.html#89" title="0x4" data-ref="_M/IXGBE_RTTPCS_ARBD_DCB">IXGBE_RTTPCS_ARBD_DCB</a> &lt;&lt; <a class="macro" href="ixgbe_dcb_82599.h.html#88" title="22" data-ref="_M/IXGBE_RTTPCS_ARBD_SHIFT">IXGBE_RTTPCS_ARBD_SHIFT</a>) |</td></tr>
+<tr><th id="170">170</th><td>	      <a class="macro" href="ixgbe_dcb_82599.h.html#86" title="0x00000040" data-ref="_M/IXGBE_RTTPCS_ARBDIS">IXGBE_RTTPCS_ARBDIS</a>;</td></tr>
+<tr><th id="171">171</th><td>	<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), (0x0CD00), (reg))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col9 ref" href="#19hw" title='hw' data-ref="19hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#675" title="0x0CD00" data-ref="_M/IXGBE_RTTPCS">IXGBE_RTTPCS</a>, <a class="local col5 ref" href="#25reg" title='reg' data-ref="25reg">reg</a>);</td></tr>
+<tr><th id="172">172</th><td></td></tr>
+<tr><th id="173">173</th><td>	<i>/* Map all traffic classes to their UP */</i></td></tr>
+<tr><th id="174">174</th><td>	<a class="local col5 ref" href="#25reg" title='reg' data-ref="25reg">reg</a> = <var>0</var>;</td></tr>
+<tr><th id="175">175</th><td>	<b>for</b> (<a class="local col6 ref" href="#26i" title='i' data-ref="26i">i</a> = <var>0</var>; <a class="local col6 ref" href="#26i" title='i' data-ref="26i">i</a> &lt; <a class="macro" href="ixgbe_dcb.h.html#38" title="8" data-ref="_M/MAX_USER_PRIORITY">MAX_USER_PRIORITY</a>; <a class="local col6 ref" href="#26i" title='i' data-ref="26i">i</a>++)</td></tr>
+<tr><th id="176">176</th><td>		<a class="local col5 ref" href="#25reg" title='reg' data-ref="25reg">reg</a> |= (<a class="local col4 ref" href="#24prio_tc" title='prio_tc' data-ref="24prio_tc">prio_tc</a>[<a class="local col6 ref" href="#26i" title='i' data-ref="26i">i</a>] &lt;&lt; (<a class="local col6 ref" href="#26i" title='i' data-ref="26i">i</a> * <a class="macro" href="ixgbe_dcb_82599.h.html#51" title="3" data-ref="_M/IXGBE_RTTUP2TC_UP_SHIFT">IXGBE_RTTUP2TC_UP_SHIFT</a>));</td></tr>
+<tr><th id="177">177</th><td>	<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), (0x0C800), (reg))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col9 ref" href="#19hw" title='hw' data-ref="19hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#677" title="0x0C800" data-ref="_M/IXGBE_RTTUP2TC">IXGBE_RTTUP2TC</a>, <a class="local col5 ref" href="#25reg" title='reg' data-ref="25reg">reg</a>);</td></tr>
+<tr><th id="178">178</th><td></td></tr>
+<tr><th id="179">179</th><td>	<i>/* Configure traffic class credits and priority */</i></td></tr>
+<tr><th id="180">180</th><td>	<b>for</b> (<a class="local col6 ref" href="#26i" title='i' data-ref="26i">i</a> = <var>0</var>; <a class="local col6 ref" href="#26i" title='i' data-ref="26i">i</a> &lt; <a class="macro" href="ixgbe_type.h.html#560" title="8" data-ref="_M/MAX_TRAFFIC_CLASS">MAX_TRAFFIC_CLASS</a>; <a class="local col6 ref" href="#26i" title='i' data-ref="26i">i</a>++) {</td></tr>
+<tr><th id="181">181</th><td>		<a class="local col5 ref" href="#25reg" title='reg' data-ref="25reg">reg</a> = <a class="local col0 ref" href="#20refill" title='refill' data-ref="20refill">refill</a>[<a class="local col6 ref" href="#26i" title='i' data-ref="26i">i</a>];</td></tr>
+<tr><th id="182">182</th><td>		<a class="local col5 ref" href="#25reg" title='reg' data-ref="25reg">reg</a> |= (<a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>)(<a class="local col1 ref" href="#21max" title='max' data-ref="21max">max</a>[<a class="local col6 ref" href="#26i" title='i' data-ref="26i">i</a>]) &lt;&lt; <a class="macro" href="ixgbe_dcb_82599.h.html#77" title="12" data-ref="_M/IXGBE_RTTPT2C_MCL_SHIFT">IXGBE_RTTPT2C_MCL_SHIFT</a>;</td></tr>
+<tr><th id="183">183</th><td>		<a class="local col5 ref" href="#25reg" title='reg' data-ref="25reg">reg</a> |= (<a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a>)(<a class="local col2 ref" href="#22bwg_id" title='bwg_id' data-ref="22bwg_id">bwg_id</a>[<a class="local col6 ref" href="#26i" title='i' data-ref="26i">i</a>]) &lt;&lt; <a class="macro" href="ixgbe_dcb_82599.h.html#78" title="9" data-ref="_M/IXGBE_RTTPT2C_BWG_SHIFT">IXGBE_RTTPT2C_BWG_SHIFT</a>;</td></tr>
+<tr><th id="184">184</th><td></td></tr>
+<tr><th id="185">185</th><td>		<b>if</b> (<a class="local col3 ref" href="#23prio_type" title='prio_type' data-ref="23prio_type">prio_type</a>[<a class="local col6 ref" href="#26i" title='i' data-ref="26i">i</a>] == <a class="enum" href="ixgbe_dcb.h.html#prio_group" title='prio_group' data-ref="prio_group">prio_group</a>)</td></tr>
+<tr><th id="186">186</th><td>			<a class="local col5 ref" href="#25reg" title='reg' data-ref="25reg">reg</a> |= <a class="macro" href="ixgbe_dcb_82599.h.html#79" title="0x40000000" data-ref="_M/IXGBE_RTTPT2C_GSP">IXGBE_RTTPT2C_GSP</a>;</td></tr>
+<tr><th id="187">187</th><td></td></tr>
+<tr><th id="188">188</th><td>		<b>if</b> (<a class="local col3 ref" href="#23prio_type" title='prio_type' data-ref="23prio_type">prio_type</a>[<a class="local col6 ref" href="#26i" title='i' data-ref="26i">i</a>] == <a class="enum" href="ixgbe_dcb.h.html#prio_link" title='prio_link' data-ref="prio_link">prio_link</a>)</td></tr>
+<tr><th id="189">189</th><td>			<a class="local col5 ref" href="#25reg" title='reg' data-ref="25reg">reg</a> |= <a class="macro" href="ixgbe_dcb_82599.h.html#80" title="0x80000000" data-ref="_M/IXGBE_RTTPT2C_LSP">IXGBE_RTTPT2C_LSP</a>;</td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td>		<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), ((0x0CD20 + ((i) * 4))), (reg))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col9 ref" href="#19hw" title='hw' data-ref="19hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#683" title="(0x0CD20 + ((i) * 4))" data-ref="_M/IXGBE_RTTPT2C">IXGBE_RTTPT2C</a>(<a class="local col6 ref" href="#26i" title='i' data-ref="26i">i</a>), <a class="local col5 ref" href="#25reg" title='reg' data-ref="25reg">reg</a>);</td></tr>
+<tr><th id="192">192</th><td>	}</td></tr>
+<tr><th id="193">193</th><td></td></tr>
+<tr><th id="194">194</th><td>	<i>/*</i></td></tr>
+<tr><th id="195">195</th><td><i>	 * Configure Tx packet plane (recycle mode; SP; arb delay) and</i></td></tr>
+<tr><th id="196">196</th><td><i>	 * enable arbiter</i></td></tr>
+<tr><th id="197">197</th><td><i>	 */</i></td></tr>
+<tr><th id="198">198</th><td>	<a class="local col5 ref" href="#25reg" title='reg' data-ref="25reg">reg</a> = <a class="macro" href="ixgbe_dcb_82599.h.html#83" title="0x00000020" data-ref="_M/IXGBE_RTTPCS_TPPAC">IXGBE_RTTPCS_TPPAC</a> | <a class="macro" href="ixgbe_dcb_82599.h.html#87" title="0x00000100" data-ref="_M/IXGBE_RTTPCS_TPRM">IXGBE_RTTPCS_TPRM</a> |</td></tr>
+<tr><th id="199">199</th><td>	      (<a class="macro" href="ixgbe_dcb_82599.h.html#89" title="0x4" data-ref="_M/IXGBE_RTTPCS_ARBD_DCB">IXGBE_RTTPCS_ARBD_DCB</a> &lt;&lt; <a class="macro" href="ixgbe_dcb_82599.h.html#88" title="22" data-ref="_M/IXGBE_RTTPCS_ARBD_SHIFT">IXGBE_RTTPCS_ARBD_SHIFT</a>);</td></tr>
+<tr><th id="200">200</th><td>	<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), (0x0CD00), (reg))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col9 ref" href="#19hw" title='hw' data-ref="19hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#675" title="0x0CD00" data-ref="_M/IXGBE_RTTPCS">IXGBE_RTTPCS</a>, <a class="local col5 ref" href="#25reg" title='reg' data-ref="25reg">reg</a>);</td></tr>
+<tr><th id="201">201</th><td></td></tr>
+<tr><th id="202">202</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="203">203</th><td>}</td></tr>
+<tr><th id="204">204</th><td></td></tr>
+<tr><th id="205">205</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc"> * ixgbe_dcb_config_pfc_82599 - Configure priority flow control</i></td></tr>
+<tr><th id="207">207</th><td><i class="doc"> *<span class="command"> @hw</span>: pointer to hardware structure</i></td></tr>
+<tr><th id="208">208</th><td><i class="doc"> *<span class="command"> @pfc</span>_en: enabled pfc bitmask</i></td></tr>
+<tr><th id="209">209</th><td><i class="doc"> *<span class="command"> @prio</span>_tc: priority to tc assignments indexed by priority</i></td></tr>
+<tr><th id="210">210</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="211">211</th><td><i class="doc"> * Configure Priority Flow Control (PFC) for each traffic class.</i></td></tr>
+<tr><th id="212">212</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="213">213</th><td><a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#s32" title='s32' data-type='int' data-ref="s32">s32</a> <dfn class="decl def fn" id="ixgbe_dcb_config_pfc_82599" title='ixgbe_dcb_config_pfc_82599' data-ref="ixgbe_dcb_config_pfc_82599">ixgbe_dcb_config_pfc_82599</dfn>(<b>struct</b> <a class="type" href="ixgbe_type.h.html#ixgbe_hw" title='ixgbe_hw' data-ref="ixgbe_hw">ixgbe_hw</a> *<dfn class="local col7 decl" id="27hw" title='hw' data-type='struct ixgbe_hw *' data-ref="27hw">hw</dfn>, <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="local col8 decl" id="28pfc_en" title='pfc_en' data-type='u8' data-ref="28pfc_en">pfc_en</dfn>, <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col9 decl" id="29prio_tc" title='prio_tc' data-type='u8 *' data-ref="29prio_tc">prio_tc</dfn>)</td></tr>
+<tr><th id="214">214</th><td>{</td></tr>
+<tr><th id="215">215</th><td>	<a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col0 decl" id="30i" title='i' data-type='u32' data-ref="30i">i</dfn>, <dfn class="local col1 decl" id="31j" title='j' data-type='u32' data-ref="31j">j</dfn>, <dfn class="local col2 decl" id="32fcrtl" title='fcrtl' data-type='u32' data-ref="32fcrtl">fcrtl</dfn>, <dfn class="local col3 decl" id="33reg" title='reg' data-type='u32' data-ref="33reg">reg</dfn>;</td></tr>
+<tr><th id="216">216</th><td>	<a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="local col4 decl" id="34max_tc" title='max_tc' data-type='u8' data-ref="34max_tc">max_tc</dfn> = <var>0</var>;</td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td>	<i>/* Enable Transmit Priority Flow Control */</i></td></tr>
+<tr><th id="219">219</th><td>	<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), (0x03D00), (0x00000010))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col7 ref" href="#27hw" title='hw' data-ref="27hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#283" title="0x03D00" data-ref="_M/IXGBE_FCCFG">IXGBE_FCCFG</a>, <a class="macro" href="ixgbe_type.h.html#1571" title="0x00000010" data-ref="_M/IXGBE_FCCFG_TFCE_PRIORITY">IXGBE_FCCFG_TFCE_PRIORITY</a>);</td></tr>
+<tr><th id="220">220</th><td></td></tr>
+<tr><th id="221">221</th><td>	<i>/* Enable Receive Priority Flow Control */</i></td></tr>
+<tr><th id="222">222</th><td>	<a class="local col3 ref" href="#33reg" title='reg' data-ref="33reg">reg</a> = <a class="macro" href="ixgbe_common.h.html#192" title="ixgbe_read_reg((hw), (0x04294))" data-ref="_M/IXGBE_READ_REG">IXGBE_READ_REG</a>(<a class="local col7 ref" href="#27hw" title='hw' data-ref="27hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#1132" title="0x04294" data-ref="_M/IXGBE_MFLCN">IXGBE_MFLCN</a>);</td></tr>
+<tr><th id="223">223</th><td>	<a class="local col3 ref" href="#33reg" title='reg' data-ref="33reg">reg</a> |= <a class="macro" href="ixgbe_type.h.html#2273" title="0x00000002" data-ref="_M/IXGBE_MFLCN_DPF">IXGBE_MFLCN_DPF</a>;</td></tr>
+<tr><th id="224">224</th><td></td></tr>
+<tr><th id="225">225</th><td>	<i>/*</i></td></tr>
+<tr><th id="226">226</th><td><i>	 * X540 &amp; X550 supports per TC Rx priority flow control.</i></td></tr>
+<tr><th id="227">227</th><td><i>	 * So clear all TCs and only enable those that should be</i></td></tr>
+<tr><th id="228">228</th><td><i>	 * enabled.</i></td></tr>
+<tr><th id="229">229</th><td><i>	 */</i></td></tr>
+<tr><th id="230">230</th><td>	<a class="local col3 ref" href="#33reg" title='reg' data-ref="33reg">reg</a> &amp;= ~(<a class="macro" href="ixgbe_type.h.html#2276" title="0x00000FF4" data-ref="_M/IXGBE_MFLCN_RPFCE_MASK">IXGBE_MFLCN_RPFCE_MASK</a> | <a class="macro" href="ixgbe_type.h.html#2275" title="0x00000008" data-ref="_M/IXGBE_MFLCN_RFCE">IXGBE_MFLCN_RFCE</a>);</td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td>	<b>if</b> (<a class="local col7 ref" href="#27hw" title='hw' data-ref="27hw">hw</a>-&gt;<a class="ref field" href="ixgbe_type.h.html#ixgbe_hw::mac" title='ixgbe_hw::mac' data-ref="ixgbe_hw::mac">mac</a>.<a class="ref field" href="ixgbe_type.h.html#ixgbe_mac_info::type" title='ixgbe_mac_info::type' data-ref="ixgbe_mac_info::type">type</a> &gt;= <a class="enum" href="ixgbe_type.h.html#ixgbe_mac_X540" title='ixgbe_mac_X540' data-ref="ixgbe_mac_X540">ixgbe_mac_X540</a>)</td></tr>
+<tr><th id="233">233</th><td>		<a class="local col3 ref" href="#33reg" title='reg' data-ref="33reg">reg</a> |= <a class="local col8 ref" href="#28pfc_en" title='pfc_en' data-ref="28pfc_en">pfc_en</a> &lt;&lt; <a class="macro" href="ixgbe_type.h.html#2278" title="4" data-ref="_M/IXGBE_MFLCN_RPFCE_SHIFT">IXGBE_MFLCN_RPFCE_SHIFT</a>;</td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td>	<b>if</b> (<a class="local col8 ref" href="#28pfc_en" title='pfc_en' data-ref="28pfc_en">pfc_en</a>)</td></tr>
+<tr><th id="236">236</th><td>		<a class="local col3 ref" href="#33reg" title='reg' data-ref="33reg">reg</a> |= <a class="macro" href="ixgbe_type.h.html#2274" title="0x00000004" data-ref="_M/IXGBE_MFLCN_RPFCE">IXGBE_MFLCN_RPFCE</a>;</td></tr>
+<tr><th id="237">237</th><td></td></tr>
+<tr><th id="238">238</th><td>	<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), (0x04294), (reg))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col7 ref" href="#27hw" title='hw' data-ref="27hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#1132" title="0x04294" data-ref="_M/IXGBE_MFLCN">IXGBE_MFLCN</a>, <a class="local col3 ref" href="#33reg" title='reg' data-ref="33reg">reg</a>);</td></tr>
+<tr><th id="239">239</th><td></td></tr>
+<tr><th id="240">240</th><td>	<b>for</b> (<a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a> = <var>0</var>; <a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a> &lt; <a class="macro" href="ixgbe_dcb.h.html#38" title="8" data-ref="_M/MAX_USER_PRIORITY">MAX_USER_PRIORITY</a>; <a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a>++) {</td></tr>
+<tr><th id="241">241</th><td>		<b>if</b> (<a class="local col9 ref" href="#29prio_tc" title='prio_tc' data-ref="29prio_tc">prio_tc</a>[<a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a>] &gt; <a class="local col4 ref" href="#34max_tc" title='max_tc' data-ref="34max_tc">max_tc</a>)</td></tr>
+<tr><th id="242">242</th><td>			<a class="local col4 ref" href="#34max_tc" title='max_tc' data-ref="34max_tc">max_tc</a> = <a class="local col9 ref" href="#29prio_tc" title='prio_tc' data-ref="29prio_tc">prio_tc</a>[<a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a>];</td></tr>
+<tr><th id="243">243</th><td>	}</td></tr>
+<tr><th id="244">244</th><td></td></tr>
+<tr><th id="245">245</th><td></td></tr>
+<tr><th id="246">246</th><td>	<i>/* Configure PFC Tx thresholds per TC */</i></td></tr>
+<tr><th id="247">247</th><td>	<b>for</b> (<a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a> = <var>0</var>; <a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a> &lt;= <a class="local col4 ref" href="#34max_tc" title='max_tc' data-ref="34max_tc">max_tc</a>; <a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a>++) {</td></tr>
+<tr><th id="248">248</th><td>		<em>int</em> <dfn class="local col5 decl" id="35enabled" title='enabled' data-type='int' data-ref="35enabled">enabled</dfn> = <var>0</var>;</td></tr>
+<tr><th id="249">249</th><td></td></tr>
+<tr><th id="250">250</th><td>		<b>for</b> (<a class="local col1 ref" href="#31j" title='j' data-ref="31j">j</a> = <var>0</var>; <a class="local col1 ref" href="#31j" title='j' data-ref="31j">j</a> &lt; <a class="macro" href="ixgbe_dcb.h.html#38" title="8" data-ref="_M/MAX_USER_PRIORITY">MAX_USER_PRIORITY</a>; <a class="local col1 ref" href="#31j" title='j' data-ref="31j">j</a>++) {</td></tr>
+<tr><th id="251">251</th><td>			<b>if</b> ((<a class="local col9 ref" href="#29prio_tc" title='prio_tc' data-ref="29prio_tc">prio_tc</a>[<a class="local col1 ref" href="#31j" title='j' data-ref="31j">j</a>] == <a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a>) &amp;&amp; (<a class="local col8 ref" href="#28pfc_en" title='pfc_en' data-ref="28pfc_en">pfc_en</a> &amp; <a class="macro" href="../../../../../include/linux/bitops.h.html#7" title="(1UL &lt;&lt; (j))" data-ref="_M/BIT">BIT</a>(<a class="local col1 ref" href="#31j" title='j' data-ref="31j">j</a>))) {</td></tr>
+<tr><th id="252">252</th><td>				<a class="local col5 ref" href="#35enabled" title='enabled' data-ref="35enabled">enabled</a> = <var>1</var>;</td></tr>
+<tr><th id="253">253</th><td>				<b>break</b>;</td></tr>
+<tr><th id="254">254</th><td>			}</td></tr>
+<tr><th id="255">255</th><td>		}</td></tr>
+<tr><th id="256">256</th><td></td></tr>
+<tr><th id="257">257</th><td>		<b>if</b> (<a class="local col5 ref" href="#35enabled" title='enabled' data-ref="35enabled">enabled</a>) {</td></tr>
+<tr><th id="258">258</th><td>			<a class="local col3 ref" href="#33reg" title='reg' data-ref="33reg">reg</a> = (<a class="local col7 ref" href="#27hw" title='hw' data-ref="27hw">hw</a>-&gt;<a class="ref field" href="ixgbe_type.h.html#ixgbe_hw::fc" title='ixgbe_hw::fc' data-ref="ixgbe_hw::fc">fc</a>.<a class="ref field" href="ixgbe_type.h.html#ixgbe_fc_info::high_water" title='ixgbe_fc_info::high_water' data-ref="ixgbe_fc_info::high_water">high_water</a>[<a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a>] &lt;&lt; <var>10</var>) | <a class="macro" href="ixgbe_type.h.html#1555" title="0x80000000" data-ref="_M/IXGBE_FCRTH_FCEN">IXGBE_FCRTH_FCEN</a>;</td></tr>
+<tr><th id="259">259</th><td>			<a class="local col2 ref" href="#32fcrtl" title='fcrtl' data-ref="32fcrtl">fcrtl</a> = (<a class="local col7 ref" href="#27hw" title='hw' data-ref="27hw">hw</a>-&gt;<a class="ref field" href="ixgbe_type.h.html#ixgbe_hw::fc" title='ixgbe_hw::fc' data-ref="ixgbe_hw::fc">fc</a>.<a class="ref field" href="ixgbe_type.h.html#ixgbe_fc_info::low_water" title='ixgbe_fc_info::low_water' data-ref="ixgbe_fc_info::low_water">low_water</a>[<a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a>] &lt;&lt; <var>10</var>) | <a class="macro" href="ixgbe_type.h.html#1554" title="0x80000000" data-ref="_M/IXGBE_FCRTL_XONE">IXGBE_FCRTL_XONE</a>;</td></tr>
+<tr><th id="260">260</th><td>			<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), ((0x03220 + ((i) * 4))), (fcrtl))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col7 ref" href="#27hw" title='hw' data-ref="27hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#277" title="(0x03220 + ((i) * 4))" data-ref="_M/IXGBE_FCRTL_82599">IXGBE_FCRTL_82599</a>(<a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a>), <a class="local col2 ref" href="#32fcrtl" title='fcrtl' data-ref="32fcrtl">fcrtl</a>);</td></tr>
+<tr><th id="261">261</th><td>		} <b>else</b> {</td></tr>
+<tr><th id="262">262</th><td>			<i>/* In order to prevent Tx hangs when the internal Tx</i></td></tr>
+<tr><th id="263">263</th><td><i>			 * switch is enabled we must set the high water mark</i></td></tr>
+<tr><th id="264">264</th><td><i>			 * to the Rx packet buffer size - 24KB.  This allows</i></td></tr>
+<tr><th id="265">265</th><td><i>			 * the Tx switch to function even under heavy Rx</i></td></tr>
+<tr><th id="266">266</th><td><i>			 * workloads.</i></td></tr>
+<tr><th id="267">267</th><td><i>			 */</i></td></tr>
+<tr><th id="268">268</th><td>			<a class="local col3 ref" href="#33reg" title='reg' data-ref="33reg">reg</a> = <a class="macro" href="ixgbe_common.h.html#192" title="ixgbe_read_reg((hw), ((0x03C00 + ((i) * 4))))" data-ref="_M/IXGBE_READ_REG">IXGBE_READ_REG</a>(<a class="local col7 ref" href="#27hw" title='hw' data-ref="27hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#324" title="(0x03C00 + ((i) * 4))" data-ref="_M/IXGBE_RXPBSIZE">IXGBE_RXPBSIZE</a>(<a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a>)) - <var>24576</var>;</td></tr>
+<tr><th id="269">269</th><td>			<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), ((0x03220 + ((i) * 4))), (0))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col7 ref" href="#27hw" title='hw' data-ref="27hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#277" title="(0x03220 + ((i) * 4))" data-ref="_M/IXGBE_FCRTL_82599">IXGBE_FCRTL_82599</a>(<a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a>), <var>0</var>);</td></tr>
+<tr><th id="270">270</th><td>		}</td></tr>
+<tr><th id="271">271</th><td></td></tr>
+<tr><th id="272">272</th><td>		<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), ((0x03260 + ((i) * 4))), (reg))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col7 ref" href="#27hw" title='hw' data-ref="27hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#276" title="(0x03260 + ((i) * 4))" data-ref="_M/IXGBE_FCRTH_82599">IXGBE_FCRTH_82599</a>(<a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a>), <a class="local col3 ref" href="#33reg" title='reg' data-ref="33reg">reg</a>);</td></tr>
+<tr><th id="273">273</th><td>	}</td></tr>
+<tr><th id="274">274</th><td></td></tr>
+<tr><th id="275">275</th><td>	<b>for</b> (; <a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a> &lt; <a class="macro" href="ixgbe_type.h.html#560" title="8" data-ref="_M/MAX_TRAFFIC_CLASS">MAX_TRAFFIC_CLASS</a>; <a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a>++) {</td></tr>
+<tr><th id="276">276</th><td>		<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), ((0x03220 + ((i) * 4))), (0))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col7 ref" href="#27hw" title='hw' data-ref="27hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#277" title="(0x03220 + ((i) * 4))" data-ref="_M/IXGBE_FCRTL_82599">IXGBE_FCRTL_82599</a>(<a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a>), <var>0</var>);</td></tr>
+<tr><th id="277">277</th><td>		<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), ((0x03260 + ((i) * 4))), (0))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col7 ref" href="#27hw" title='hw' data-ref="27hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#276" title="(0x03260 + ((i) * 4))" data-ref="_M/IXGBE_FCRTH_82599">IXGBE_FCRTH_82599</a>(<a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a>), <var>0</var>);</td></tr>
+<tr><th id="278">278</th><td>	}</td></tr>
+<tr><th id="279">279</th><td></td></tr>
+<tr><th id="280">280</th><td>	<i>/* Configure pause time (2 TCs per register) */</i></td></tr>
+<tr><th id="281">281</th><td>	<a class="local col3 ref" href="#33reg" title='reg' data-ref="33reg">reg</a> = <a class="local col7 ref" href="#27hw" title='hw' data-ref="27hw">hw</a>-&gt;<a class="ref field" href="ixgbe_type.h.html#ixgbe_hw::fc" title='ixgbe_hw::fc' data-ref="ixgbe_hw::fc">fc</a>.<a class="ref field" href="ixgbe_type.h.html#ixgbe_fc_info::pause_time" title='ixgbe_fc_info::pause_time' data-ref="ixgbe_fc_info::pause_time">pause_time</a> * <var>0x00010001</var>;</td></tr>
+<tr><th id="282">282</th><td>	<b>for</b> (<a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a> = <var>0</var>; <a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a> &lt; (<a class="macro" href="ixgbe_type.h.html#560" title="8" data-ref="_M/MAX_TRAFFIC_CLASS">MAX_TRAFFIC_CLASS</a> / <var>2</var>); <a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a>++)</td></tr>
+<tr><th id="283">283</th><td>		<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), ((0x03200 + ((i) * 4))), (reg))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col7 ref" href="#27hw" title='hw' data-ref="27hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#279" title="(0x03200 + ((i) * 4))" data-ref="_M/IXGBE_FCTTV">IXGBE_FCTTV</a>(<a class="local col0 ref" href="#30i" title='i' data-ref="30i">i</a>), <a class="local col3 ref" href="#33reg" title='reg' data-ref="33reg">reg</a>);</td></tr>
+<tr><th id="284">284</th><td></td></tr>
+<tr><th id="285">285</th><td>	<i>/* Configure flow control refresh threshold value */</i></td></tr>
+<tr><th id="286">286</th><td>	<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), (0x032A0), (hw-&gt;fc.pause_time / 2))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col7 ref" href="#27hw" title='hw' data-ref="27hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#282" title="0x032A0" data-ref="_M/IXGBE_FCRTV">IXGBE_FCRTV</a>, <a class="local col7 ref" href="#27hw" title='hw' data-ref="27hw">hw</a>-&gt;<a class="ref field" href="ixgbe_type.h.html#ixgbe_hw::fc" title='ixgbe_hw::fc' data-ref="ixgbe_hw::fc">fc</a>.<a class="ref field" href="ixgbe_type.h.html#ixgbe_fc_info::pause_time" title='ixgbe_fc_info::pause_time' data-ref="ixgbe_fc_info::pause_time">pause_time</a> / <var>2</var>);</td></tr>
+<tr><th id="287">287</th><td></td></tr>
+<tr><th id="288">288</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="289">289</th><td>}</td></tr>
+<tr><th id="290">290</th><td></td></tr>
+<tr><th id="291">291</th><td><i class="doc" data-doc="ixgbe_dcb_config_tc_stats_82599">/**</i></td></tr>
+<tr><th id="292">292</th><td><i class="doc" data-doc="ixgbe_dcb_config_tc_stats_82599"> * ixgbe_dcb_config_tc_stats_82599 - Config traffic class statistics</i></td></tr>
+<tr><th id="293">293</th><td><i class="doc" data-doc="ixgbe_dcb_config_tc_stats_82599"> *<span class="command"> @hw</span>: pointer to hardware structure</i></td></tr>
+<tr><th id="294">294</th><td><i class="doc" data-doc="ixgbe_dcb_config_tc_stats_82599"> *</i></td></tr>
+<tr><th id="295">295</th><td><i class="doc" data-doc="ixgbe_dcb_config_tc_stats_82599"> * Configure queue statistics registers, all queues belonging to same traffic</i></td></tr>
+<tr><th id="296">296</th><td><i class="doc" data-doc="ixgbe_dcb_config_tc_stats_82599"> * class uses a single set of queue statistics counters.</i></td></tr>
+<tr><th id="297">297</th><td><i class="doc" data-doc="ixgbe_dcb_config_tc_stats_82599"> */</i></td></tr>
+<tr><th id="298">298</th><td><em>static</em> <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#s32" title='s32' data-type='int' data-ref="s32">s32</a> <dfn class="tu decl def fn" id="ixgbe_dcb_config_tc_stats_82599" title='ixgbe_dcb_config_tc_stats_82599' data-type='s32 ixgbe_dcb_config_tc_stats_82599(struct ixgbe_hw * hw)' data-ref="ixgbe_dcb_config_tc_stats_82599">ixgbe_dcb_config_tc_stats_82599</dfn>(<b>struct</b> <a class="type" href="ixgbe_type.h.html#ixgbe_hw" title='ixgbe_hw' data-ref="ixgbe_hw">ixgbe_hw</a> *<dfn class="local col6 decl" id="36hw" title='hw' data-type='struct ixgbe_hw *' data-ref="36hw">hw</dfn>)</td></tr>
+<tr><th id="299">299</th><td>{</td></tr>
+<tr><th id="300">300</th><td>	<a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='unsigned int' data-ref="u32">u32</a> <dfn class="local col7 decl" id="37reg" title='reg' data-type='u32' data-ref="37reg">reg</dfn> = <var>0</var>;</td></tr>
+<tr><th id="301">301</th><td>	<a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>  <dfn class="local col8 decl" id="38i" title='i' data-type='u8' data-ref="38i">i</dfn>   = <var>0</var>;</td></tr>
+<tr><th id="302">302</th><td></td></tr>
+<tr><th id="303">303</th><td>	<i>/*</i></td></tr>
+<tr><th id="304">304</th><td><i>	 * Receive Queues stats setting</i></td></tr>
+<tr><th id="305">305</th><td><i>	 * 32 RQSMR registers, each configuring 4 queues.</i></td></tr>
+<tr><th id="306">306</th><td><i>	 * Set all 16 queues of each TC to the same stat</i></td></tr>
+<tr><th id="307">307</th><td><i>	 * with TC 'n' going to stat 'n'.</i></td></tr>
+<tr><th id="308">308</th><td><i>	 */</i></td></tr>
+<tr><th id="309">309</th><td>	<b>for</b> (<a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a> = <var>0</var>; <a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a> &lt; <var>32</var>; <a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a>++) {</td></tr>
+<tr><th id="310">310</th><td>		<a class="local col7 ref" href="#37reg" title='reg' data-ref="37reg">reg</a> = <var>0x01010101</var> * (<a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a> / <var>4</var>);</td></tr>
+<tr><th id="311">311</th><td>		<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), ((0x02300 + ((i) * 4))), (reg))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col6 ref" href="#36hw" title='hw' data-ref="36hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#828" title="(0x02300 + ((i) * 4))" data-ref="_M/IXGBE_RQSMR">IXGBE_RQSMR</a>(<a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a>), <a class="local col7 ref" href="#37reg" title='reg' data-ref="37reg">reg</a>);</td></tr>
+<tr><th id="312">312</th><td>	}</td></tr>
+<tr><th id="313">313</th><td>	<i>/*</i></td></tr>
+<tr><th id="314">314</th><td><i>	 * Transmit Queues stats setting</i></td></tr>
+<tr><th id="315">315</th><td><i>	 * 32 TQSM registers, each controlling 4 queues.</i></td></tr>
+<tr><th id="316">316</th><td><i>	 * Set all queues of each TC to the same stat</i></td></tr>
+<tr><th id="317">317</th><td><i>	 * with TC 'n' going to stat 'n'.</i></td></tr>
+<tr><th id="318">318</th><td><i>	 * Tx queues are allocated non-uniformly to TCs:</i></td></tr>
+<tr><th id="319">319</th><td><i>	 * 32, 32, 16, 16, 8, 8, 8, 8.</i></td></tr>
+<tr><th id="320">320</th><td><i>	 */</i></td></tr>
+<tr><th id="321">321</th><td>	<b>for</b> (<a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a> = <var>0</var>; <a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a> &lt; <var>32</var>; <a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a>++) {</td></tr>
+<tr><th id="322">322</th><td>		<b>if</b> (<a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a> &lt; <var>8</var>)</td></tr>
+<tr><th id="323">323</th><td>			<a class="local col7 ref" href="#37reg" title='reg' data-ref="37reg">reg</a> = <var>0x00000000</var>;</td></tr>
+<tr><th id="324">324</th><td>		<b>else</b> <b>if</b> (<a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a> &lt; <var>16</var>)</td></tr>
+<tr><th id="325">325</th><td>			<a class="local col7 ref" href="#37reg" title='reg' data-ref="37reg">reg</a> = <var>0x01010101</var>;</td></tr>
+<tr><th id="326">326</th><td>		<b>else</b> <b>if</b> (<a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a> &lt; <var>20</var>)</td></tr>
+<tr><th id="327">327</th><td>			<a class="local col7 ref" href="#37reg" title='reg' data-ref="37reg">reg</a> = <var>0x02020202</var>;</td></tr>
+<tr><th id="328">328</th><td>		<b>else</b> <b>if</b> (<a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a> &lt; <var>24</var>)</td></tr>
+<tr><th id="329">329</th><td>			<a class="local col7 ref" href="#37reg" title='reg' data-ref="37reg">reg</a> = <var>0x03030303</var>;</td></tr>
+<tr><th id="330">330</th><td>		<b>else</b> <b>if</b> (<a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a> &lt; <var>26</var>)</td></tr>
+<tr><th id="331">331</th><td>			<a class="local col7 ref" href="#37reg" title='reg' data-ref="37reg">reg</a> = <var>0x04040404</var>;</td></tr>
+<tr><th id="332">332</th><td>		<b>else</b> <b>if</b> (<a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a> &lt; <var>28</var>)</td></tr>
+<tr><th id="333">333</th><td>			<a class="local col7 ref" href="#37reg" title='reg' data-ref="37reg">reg</a> = <var>0x05050505</var>;</td></tr>
+<tr><th id="334">334</th><td>		<b>else</b> <b>if</b> (<a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a> &lt; <var>30</var>)</td></tr>
+<tr><th id="335">335</th><td>			<a class="local col7 ref" href="#37reg" title='reg' data-ref="37reg">reg</a> = <var>0x06060606</var>;</td></tr>
+<tr><th id="336">336</th><td>		<b>else</b></td></tr>
+<tr><th id="337">337</th><td>			<a class="local col7 ref" href="#37reg" title='reg' data-ref="37reg">reg</a> = <var>0x07070707</var>;</td></tr>
+<tr><th id="338">338</th><td>		<a class="macro" href="ixgbe_common.h.html#170" title="ixgbe_write_reg((hw), ((0x08600 + ((i) * 4))), (reg))" data-ref="_M/IXGBE_WRITE_REG">IXGBE_WRITE_REG</a>(<a class="local col6 ref" href="#36hw" title='hw' data-ref="36hw">hw</a>, <a class="macro" href="ixgbe_type.h.html#831" title="(0x08600 + ((i) * 4))" data-ref="_M/IXGBE_TQSM">IXGBE_TQSM</a>(<a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a>), <a class="local col7 ref" href="#37reg" title='reg' data-ref="37reg">reg</a>);</td></tr>
+<tr><th id="339">339</th><td>	}</td></tr>
+<tr><th id="340">340</th><td></td></tr>
+<tr><th id="341">341</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="342">342</th><td>}</td></tr>
+<tr><th id="343">343</th><td></td></tr>
+<tr><th id="344">344</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="345">345</th><td><i class="doc"> * ixgbe_dcb_hw_config_82599 - Configure and enable DCB</i></td></tr>
+<tr><th id="346">346</th><td><i class="doc"> *<span class="command"> @hw</span>: pointer to hardware structure</i></td></tr>
+<tr><th id="347">347</th><td><i class="doc"> *<span class="command"> @refill</span>: refill credits index by traffic class</i></td></tr>
+<tr><th id="348">348</th><td><i class="doc"> *<span class="command"> @max</span>: max credits index by traffic class</i></td></tr>
+<tr><th id="349">349</th><td><i class="doc"> * <span class="command">@bwg</span>_id: bandwidth grouping indexed by traffic class</i></td></tr>
+<tr><th id="350">350</th><td><i class="doc"> *<span class="command"> @prio</span>_type: priority type indexed by traffic class</i></td></tr>
+<tr><th id="351">351</th><td><i class="doc"> *<span class="command"> @pfc</span>_en: enabled pfc bitmask</i></td></tr>
+<tr><th id="352">352</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="353">353</th><td><i class="doc"> * Configure dcb settings and enable dcb mode.</i></td></tr>
+<tr><th id="354">354</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="355">355</th><td><a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#s32" title='s32' data-type='int' data-ref="s32">s32</a> <dfn class="decl def fn" id="ixgbe_dcb_hw_config_82599" title='ixgbe_dcb_hw_config_82599' data-ref="ixgbe_dcb_hw_config_82599">ixgbe_dcb_hw_config_82599</dfn>(<b>struct</b> <a class="type" href="ixgbe_type.h.html#ixgbe_hw" title='ixgbe_hw' data-ref="ixgbe_hw">ixgbe_hw</a> *<dfn class="local col9 decl" id="39hw" title='hw' data-type='struct ixgbe_hw *' data-ref="39hw">hw</dfn>, <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="local col0 decl" id="40pfc_en" title='pfc_en' data-type='u8' data-ref="40pfc_en">pfc_en</dfn>, <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> *<dfn class="local col1 decl" id="41refill" title='refill' data-type='u16 *' data-ref="41refill">refill</dfn>,</td></tr>
+<tr><th id="356">356</th><td>			      <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='unsigned short' data-ref="u16">u16</a> *<dfn class="local col2 decl" id="42max" title='max' data-type='u16 *' data-ref="42max">max</dfn>, <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col3 decl" id="43bwg_id" title='bwg_id' data-type='u8 *' data-ref="43bwg_id">bwg_id</dfn>, <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col4 decl" id="44prio_type" title='prio_type' data-type='u8 *' data-ref="44prio_type">prio_type</dfn>, <a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> *<dfn class="local col5 decl" id="45prio_tc" title='prio_tc' data-type='u8 *' data-ref="45prio_tc">prio_tc</dfn>)</td></tr>
+<tr><th id="357">357</th><td>{</td></tr>
+<tr><th id="358">358</th><td>	<a class="ref fn" href="#ixgbe_dcb_config_rx_arbiter_82599" title='ixgbe_dcb_config_rx_arbiter_82599' data-ref="ixgbe_dcb_config_rx_arbiter_82599">ixgbe_dcb_config_rx_arbiter_82599</a>(<a class="local col9 ref" href="#39hw" title='hw' data-ref="39hw">hw</a>, <a class="local col1 ref" href="#41refill" title='refill' data-ref="41refill">refill</a>, <a class="local col2 ref" href="#42max" title='max' data-ref="42max">max</a>, <a class="local col3 ref" href="#43bwg_id" title='bwg_id' data-ref="43bwg_id">bwg_id</a>,</td></tr>
+<tr><th id="359">359</th><td>					  <a class="local col4 ref" href="#44prio_type" title='prio_type' data-ref="44prio_type">prio_type</a>, <a class="local col5 ref" href="#45prio_tc" title='prio_tc' data-ref="45prio_tc">prio_tc</a>);</td></tr>
+<tr><th id="360">360</th><td>	<a class="ref fn" href="#ixgbe_dcb_config_tx_desc_arbiter_82599" title='ixgbe_dcb_config_tx_desc_arbiter_82599' data-ref="ixgbe_dcb_config_tx_desc_arbiter_82599">ixgbe_dcb_config_tx_desc_arbiter_82599</a>(<a class="local col9 ref" href="#39hw" title='hw' data-ref="39hw">hw</a>, <a class="local col1 ref" href="#41refill" title='refill' data-ref="41refill">refill</a>, <a class="local col2 ref" href="#42max" title='max' data-ref="42max">max</a>,</td></tr>
+<tr><th id="361">361</th><td>					       <a class="local col3 ref" href="#43bwg_id" title='bwg_id' data-ref="43bwg_id">bwg_id</a>, <a class="local col4 ref" href="#44prio_type" title='prio_type' data-ref="44prio_type">prio_type</a>);</td></tr>
+<tr><th id="362">362</th><td>	<a class="ref fn" href="#ixgbe_dcb_config_tx_data_arbiter_82599" title='ixgbe_dcb_config_tx_data_arbiter_82599' data-ref="ixgbe_dcb_config_tx_data_arbiter_82599">ixgbe_dcb_config_tx_data_arbiter_82599</a>(<a class="local col9 ref" href="#39hw" title='hw' data-ref="39hw">hw</a>, <a class="local col1 ref" href="#41refill" title='refill' data-ref="41refill">refill</a>, <a class="local col2 ref" href="#42max" title='max' data-ref="42max">max</a>,</td></tr>
+<tr><th id="363">363</th><td>					       <a class="local col3 ref" href="#43bwg_id" title='bwg_id' data-ref="43bwg_id">bwg_id</a>, <a class="local col4 ref" href="#44prio_type" title='prio_type' data-ref="44prio_type">prio_type</a>, <a class="local col5 ref" href="#45prio_tc" title='prio_tc' data-ref="45prio_tc">prio_tc</a>);</td></tr>
+<tr><th id="364">364</th><td>	<a class="ref fn" href="#ixgbe_dcb_config_pfc_82599" title='ixgbe_dcb_config_pfc_82599' data-ref="ixgbe_dcb_config_pfc_82599">ixgbe_dcb_config_pfc_82599</a>(<a class="local col9 ref" href="#39hw" title='hw' data-ref="39hw">hw</a>, <a class="local col0 ref" href="#40pfc_en" title='pfc_en' data-ref="40pfc_en">pfc_en</a>, <a class="local col5 ref" href="#45prio_tc" title='prio_tc' data-ref="45prio_tc">prio_tc</a>);</td></tr>
+<tr><th id="365">365</th><td>	<a class="tu ref fn" href="#ixgbe_dcb_config_tc_stats_82599" title='ixgbe_dcb_config_tc_stats_82599' data-use='c' data-ref="ixgbe_dcb_config_tc_stats_82599">ixgbe_dcb_config_tc_stats_82599</a>(<a class="local col9 ref" href="#39hw" title='hw' data-ref="39hw">hw</a>);</td></tr>
+<tr><th id="366">366</th><td></td></tr>
+<tr><th id="367">367</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="368">368</th><td>}</td></tr>
+<tr><th id="369">369</th><td></td></tr>
+<tr><th id="370">370</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Aug-02</em> from project linux-4.14.y revision <em>linux-4.14.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>
