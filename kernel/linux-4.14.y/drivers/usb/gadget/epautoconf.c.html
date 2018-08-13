@@ -1,0 +1,229 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>epautoconf.c source code [linux-4.14.y/drivers/usb/gadget/epautoconf.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.14.y/drivers/usb/gadget/epautoconf.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>linux-4.14.y</a>/<a href='../..'>drivers</a>/<a href='..'>usb</a>/<a href='./'>gadget</a>/<a href='epautoconf.c.html'>epautoconf.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * epautoconf.c -- endpoint autoconfiguration for usb gadget drivers</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> * Copyright (C) 2004 David Brownell</i></td></tr>
+<tr><th id="5">5</th><td><i> *</i></td></tr>
+<tr><th id="6">6</th><td><i> * This program is free software; you can redistribute it and/or modify</i></td></tr>
+<tr><th id="7">7</th><td><i> * it under the terms of the GNU General Public License as published by</i></td></tr>
+<tr><th id="8">8</th><td><i> * the Free Software Foundation; either version 2 of the License, or</i></td></tr>
+<tr><th id="9">9</th><td><i> * (at your option) any later version.</i></td></tr>
+<tr><th id="10">10</th><td><i> */</i></td></tr>
+<tr><th id="11">11</th><td></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../include/linux/kernel.h.html">&lt;linux/kernel.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../include/linux/module.h.html">&lt;linux/module.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../include/linux/types.h.html">&lt;linux/types.h&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../include/linux/device.h.html">&lt;linux/device.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../include/linux/ctype.h.html">&lt;linux/ctype.h&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../include/linux/string.h.html">&lt;linux/string.h&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../include/linux/usb/ch9.h.html">&lt;linux/usb/ch9.h&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../include/linux/usb/gadget.h.html">&lt;linux/usb/gadget.h&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td></td></tr>
+<tr><th id="23">23</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="24">24</th><td><i class="doc"> * usb_ep_autoconfig_ss() - choose an endpoint matching the ep</i></td></tr>
+<tr><th id="25">25</th><td><i class="doc"> * descriptor and ep companion descriptor</i></td></tr>
+<tr><th id="26">26</th><td><i class="doc"> *<span class="command"> @gadget</span>: The device to which the endpoint must belong.</i></td></tr>
+<tr><th id="27">27</th><td><i class="doc"> *<span class="command"> @desc</span>: Endpoint descriptor, with endpoint direction and transfer mode</i></td></tr>
+<tr><th id="28">28</th><td><i class="doc"> *    initialized.  For periodic transfers, the maximum packet</i></td></tr>
+<tr><th id="29">29</th><td><i class="doc"> *    size must also be initialized.  This is modified on</i></td></tr>
+<tr><th id="30">30</th><td><i class="doc"> *    success.</i></td></tr>
+<tr><th id="31">31</th><td><i class="doc"> *<span class="command"> @ep</span>_comp: Endpoint companion descriptor, with the required</i></td></tr>
+<tr><th id="32">32</th><td><i class="doc"> *    number of streams. Will be modified when the chosen EP</i></td></tr>
+<tr><th id="33">33</th><td><i class="doc"> *    supports a different number of streams.</i></td></tr>
+<tr><th id="34">34</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="35">35</th><td><i class="doc"> * This routine replaces the usb_ep_autoconfig when needed</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc"> * superspeed enhancments. If such enhancemnets are required,</i></td></tr>
+<tr><th id="37">37</th><td><i class="doc"> * the FD should call usb_ep_autoconfig_ss directly and provide</i></td></tr>
+<tr><th id="38">38</th><td><i class="doc"> * the additional ep_comp parameter.</i></td></tr>
+<tr><th id="39">39</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="40">40</th><td><i class="doc"> * By choosing an endpoint to use with the specified descriptor,</i></td></tr>
+<tr><th id="41">41</th><td><i class="doc"> * this routine simplifies writing gadget drivers that work with</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc"> * multiple USB device controllers.  The endpoint would be</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc"> * passed later to usb_ep_enable(), along with some descriptor.</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc"> * That second descriptor won't always be the same as the first one.</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc"> * For example, isochronous endpoints can be autoconfigured for high</i></td></tr>
+<tr><th id="47">47</th><td><i class="doc"> * bandwidth, and then used in several lower bandwidth altsettings.</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc"> * Also, high and full speed descriptors will be different.</i></td></tr>
+<tr><th id="49">49</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="50">50</th><td><i class="doc"> * Be sure to examine and test the results of autoconfiguration</i></td></tr>
+<tr><th id="51">51</th><td><i class="doc"> * on your hardware.  This code may not make the best choices</i></td></tr>
+<tr><th id="52">52</th><td><i class="doc"> * about how to use the USB controller, and it can't know all</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc"> * the restrictions that may apply. Some combinations of driver</i></td></tr>
+<tr><th id="54">54</th><td><i class="doc"> * and hardware won't be able to autoconfigure.</i></td></tr>
+<tr><th id="55">55</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc"> * On success, this returns an claimed usb_ep, and modifies the endpoint</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc"> * descriptor bEndpointAddress.  For bulk endpoints, the wMaxPacket value</i></td></tr>
+<tr><th id="58">58</th><td><i class="doc"> * is initialized as if the endpoint were used at full speed and</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc"> * the bmAttribute field in the ep companion descriptor is</i></td></tr>
+<tr><th id="60">60</th><td><i class="doc"> * updated with the assigned number of streams if it is</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc"> * different from the original value. To prevent the endpoint</i></td></tr>
+<tr><th id="62">62</th><td><i class="doc"> * from being returned by a later autoconfig call, claims it by</i></td></tr>
+<tr><th id="63">63</th><td><i class="doc"> * assigning ep-&gt;claimed to true.</i></td></tr>
+<tr><th id="64">64</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc"> * On failure, this returns a null endpoint descriptor.</i></td></tr>
+<tr><th id="66">66</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="67">67</th><td><b>struct</b> <a class="type" href="../../../include/linux/usb/gadget.h.html#usb_ep" title='usb_ep' data-ref="usb_ep">usb_ep</a> *<dfn class="decl def fn" id="usb_ep_autoconfig_ss" title='usb_ep_autoconfig_ss' data-ref="usb_ep_autoconfig_ss">usb_ep_autoconfig_ss</dfn>(</td></tr>
+<tr><th id="68">68</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/usb/gadget.h.html#usb_gadget" title='usb_gadget' data-ref="usb_gadget">usb_gadget</a>		*<dfn class="local col1 decl" id="1gadget" title='gadget' data-type='struct usb_gadget *' data-ref="1gadget">gadget</dfn>,</td></tr>
+<tr><th id="69">69</th><td>	<b>struct</b> <a class="type" href="../../../include/uapi/linux/usb/ch9.h.html#usb_endpoint_descriptor" title='usb_endpoint_descriptor' data-ref="usb_endpoint_descriptor">usb_endpoint_descriptor</a>	*<dfn class="local col2 decl" id="2desc" title='desc' data-type='struct usb_endpoint_descriptor *' data-ref="2desc">desc</dfn>,</td></tr>
+<tr><th id="70">70</th><td>	<b>struct</b> <a class="type" href="../../../include/uapi/linux/usb/ch9.h.html#usb_ss_ep_comp_descriptor" title='usb_ss_ep_comp_descriptor' data-ref="usb_ss_ep_comp_descriptor">usb_ss_ep_comp_descriptor</a> *<dfn class="local col3 decl" id="3ep_comp" title='ep_comp' data-type='struct usb_ss_ep_comp_descriptor *' data-ref="3ep_comp">ep_comp</dfn></td></tr>
+<tr><th id="71">71</th><td>)</td></tr>
+<tr><th id="72">72</th><td>{</td></tr>
+<tr><th id="73">73</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/usb/gadget.h.html#usb_ep" title='usb_ep' data-ref="usb_ep">usb_ep</a>	*<dfn class="local col4 decl" id="4ep" title='ep' data-type='struct usb_ep *' data-ref="4ep">ep</dfn>;</td></tr>
+<tr><th id="74">74</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a>		<dfn class="local col5 decl" id="5type" title='type' data-type='u8' data-ref="5type">type</dfn>;</td></tr>
+<tr><th id="75">75</th><td></td></tr>
+<tr><th id="76">76</th><td>	<a class="local col5 ref" href="#5type" title='type' data-ref="5type">type</a> = <a class="local col2 ref" href="#2desc" title='desc' data-ref="2desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch9.h.html#usb_endpoint_descriptor::bmAttributes" title='usb_endpoint_descriptor::bmAttributes' data-ref="usb_endpoint_descriptor::bmAttributes">bmAttributes</a> &amp; <a class="macro" href="../../../include/uapi/linux/usb/ch9.h.html#421" title="0x03" data-ref="_M/USB_ENDPOINT_XFERTYPE_MASK">USB_ENDPOINT_XFERTYPE_MASK</a>;</td></tr>
+<tr><th id="77">77</th><td></td></tr>
+<tr><th id="78">78</th><td>	<b>if</b> (<a class="local col1 ref" href="#1gadget" title='gadget' data-ref="1gadget">gadget</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_gadget::ops" title='usb_gadget::ops' data-ref="usb_gadget::ops">ops</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_gadget_ops::match_ep" title='usb_gadget_ops::match_ep' data-ref="usb_gadget_ops::match_ep">match_ep</a>) {</td></tr>
+<tr><th id="79">79</th><td>		<a class="local col4 ref" href="#4ep" title='ep' data-ref="4ep">ep</a> = <a class="local col1 ref" href="#1gadget" title='gadget' data-ref="1gadget">gadget</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_gadget::ops" title='usb_gadget::ops' data-ref="usb_gadget::ops">ops</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_gadget_ops::match_ep" title='usb_gadget_ops::match_ep' data-ref="usb_gadget_ops::match_ep">match_ep</a>(<a class="local col1 ref" href="#1gadget" title='gadget' data-ref="1gadget">gadget</a>, <a class="local col2 ref" href="#2desc" title='desc' data-ref="2desc">desc</a>, <a class="local col3 ref" href="#3ep_comp" title='ep_comp' data-ref="3ep_comp">ep_comp</a>);</td></tr>
+<tr><th id="80">80</th><td>		<b>if</b> (<a class="local col4 ref" href="#4ep" title='ep' data-ref="4ep">ep</a>)</td></tr>
+<tr><th id="81">81</th><td>			<b>goto</b> <a class="lbl" href="#6found_ep" data-ref="6found_ep">found_ep</a>;</td></tr>
+<tr><th id="82">82</th><td>	}</td></tr>
+<tr><th id="83">83</th><td></td></tr>
+<tr><th id="84">84</th><td>	<i>/* Second, look at endpoints until an unclaimed one looks usable */</i></td></tr>
+<tr><th id="85">85</th><td>	<a class="macro" href="../../../include/linux/list.h.html#463" title="for (ep = ({ void *__mptr = (void *)((&amp;gadget-&gt;ep_list)-&gt;next); do { bool __cond = !(!(!__builtin_types_compatible_p(typeof(*((&amp;gadget-&gt;ep_list)-&gt;next)), typeof(((typeof(*ep) *)0)-&gt;ep_list)) &amp;&amp; !__builtin_types_compatible_p(typeof(*((&amp;gadget-&gt;ep_list)-&gt;next)), typeof(void)))); extern void __compiletime_assert_85(void) ; if (__cond) __compiletime_assert_85(); do { ((void)sizeof(char[1 - 2 * __cond])); } while (0); } while (0); ((typeof(*ep) *)(__mptr - __builtin_offsetof(typeof(*ep), ep_list))); }); &amp;ep-&gt;ep_list != (&amp;gadget-&gt;ep_list); ep = ({ void *__mptr = (void *)((ep)-&gt;ep_list.next); do { bool __cond = !(!(!__builtin_types_compatible_p(typeof(*((ep)-&gt;ep_list.next)), typeof(((typeof(*(ep)) *)0)-&gt;ep_list)) &amp;&amp; !__builtin_types_compatible_p(typeof(*((ep)-&gt;ep_list.next)), typeof(void)))); extern void __compiletime_assert_85(void) ; if (__cond) __compiletime_assert_85(); do { ((void)sizeof(char[1 - 2 * __cond])); } while (0); } while (0); ((typeof(*(ep)) *)(__mptr - __builtin_offsetof(typeof(*(ep)), ep_list))); }))" data-ref="_M/list_for_each_entry">list_for_each_entry</a> (<a class="local col4 ref" href="#4ep" title='ep' data-ref="4ep">ep</a>, &amp;<a class="local col1 ref" href="#1gadget" title='gadget' data-ref="1gadget">gadget</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_gadget::ep_list" title='usb_gadget::ep_list' data-ref="usb_gadget::ep_list">ep_list</a>, <a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_ep::ep_list" title='usb_ep::ep_list' data-ref="usb_ep::ep_list">ep_list</a>) {</td></tr>
+<tr><th id="86">86</th><td>		<b>if</b> (<a class="ref fn" href="../../../include/linux/usb/gadget.h.html#usb_gadget_ep_match_desc" title='usb_gadget_ep_match_desc' data-ref="usb_gadget_ep_match_desc">usb_gadget_ep_match_desc</a>(<a class="local col1 ref" href="#1gadget" title='gadget' data-ref="1gadget">gadget</a>, <a class="local col4 ref" href="#4ep" title='ep' data-ref="4ep">ep</a>, <a class="local col2 ref" href="#2desc" title='desc' data-ref="2desc">desc</a>, <a class="local col3 ref" href="#3ep_comp" title='ep_comp' data-ref="3ep_comp">ep_comp</a>))</td></tr>
+<tr><th id="87">87</th><td>			<b>goto</b> <a class="lbl" href="#6found_ep" data-ref="6found_ep">found_ep</a>;</td></tr>
+<tr><th id="88">88</th><td>	}</td></tr>
+<tr><th id="89">89</th><td></td></tr>
+<tr><th id="90">90</th><td>	<i>/* Fail */</i></td></tr>
+<tr><th id="91">91</th><td>	<b>return</b> <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="92">92</th><td><dfn class="lbl" id="6found_ep" data-ref="6found_ep">found_ep</dfn>:</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td>	<i>/*</i></td></tr>
+<tr><th id="95">95</th><td><i>	 * If the protocol driver hasn't yet decided on wMaxPacketSize</i></td></tr>
+<tr><th id="96">96</th><td><i>	 * and wants to know the maximum possible, provide the info.</i></td></tr>
+<tr><th id="97">97</th><td><i>	 */</i></td></tr>
+<tr><th id="98">98</th><td>	<b>if</b> (<a class="local col2 ref" href="#2desc" title='desc' data-ref="2desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch9.h.html#usb_endpoint_descriptor::wMaxPacketSize" title='usb_endpoint_descriptor::wMaxPacketSize' data-ref="usb_endpoint_descriptor::wMaxPacketSize">wMaxPacketSize</a> == <var>0</var>)</td></tr>
+<tr><th id="99">99</th><td>		<a class="local col2 ref" href="#2desc" title='desc' data-ref="2desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch9.h.html#usb_endpoint_descriptor::wMaxPacketSize" title='usb_endpoint_descriptor::wMaxPacketSize' data-ref="usb_endpoint_descriptor::wMaxPacketSize">wMaxPacketSize</a> = <a class="macro" href="../../../include/linux/byteorder/generic.h.html#90" title="__cpu_to_le16" data-ref="_M/cpu_to_le16">cpu_to_le16</a>(<a class="local col4 ref" href="#4ep" title='ep' data-ref="4ep">ep</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_ep::maxpacket_limit" title='usb_ep::maxpacket_limit' data-ref="usb_ep::maxpacket_limit">maxpacket_limit</a>);</td></tr>
+<tr><th id="100">100</th><td></td></tr>
+<tr><th id="101">101</th><td>	<i>/* report address */</i></td></tr>
+<tr><th id="102">102</th><td>	<a class="local col2 ref" href="#2desc" title='desc' data-ref="2desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch9.h.html#usb_endpoint_descriptor::bEndpointAddress" title='usb_endpoint_descriptor::bEndpointAddress' data-ref="usb_endpoint_descriptor::bEndpointAddress">bEndpointAddress</a> &amp;= <a class="macro" href="../../../include/uapi/linux/usb/ch9.h.html#51" title="0x80" data-ref="_M/USB_DIR_IN">USB_DIR_IN</a>;</td></tr>
+<tr><th id="103">103</th><td>	<b>if</b> (<a class="ref fn" href="../../../include/linux/ctype.h.html#isdigit" title='isdigit' data-ref="isdigit">isdigit</a>(<a class="local col4 ref" href="#4ep" title='ep' data-ref="4ep">ep</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_ep::name" title='usb_ep::name' data-ref="usb_ep::name">name</a>[<var>2</var>])) {</td></tr>
+<tr><th id="104">104</th><td>		<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='unsigned char' data-ref="u8">u8</a> <dfn class="local col7 decl" id="7num" title='num' data-type='u8' data-ref="7num">num</dfn> = <a class="ref fn" href="../../../include/linux/kernel.h.html#simple_strtoul" title='simple_strtoul' data-ref="simple_strtoul">simple_strtoul</a>(&amp;<a class="local col4 ref" href="#4ep" title='ep' data-ref="4ep">ep</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_ep::name" title='usb_ep::name' data-ref="usb_ep::name">name</a>[<var>2</var>], <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>, <var>10</var>);</td></tr>
+<tr><th id="105">105</th><td>		<a class="local col2 ref" href="#2desc" title='desc' data-ref="2desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch9.h.html#usb_endpoint_descriptor::bEndpointAddress" title='usb_endpoint_descriptor::bEndpointAddress' data-ref="usb_endpoint_descriptor::bEndpointAddress">bEndpointAddress</a> |= <a class="local col7 ref" href="#7num" title='num' data-ref="7num">num</a>;</td></tr>
+<tr><th id="106">106</th><td>	} <b>else</b> <b>if</b> (<a class="local col2 ref" href="#2desc" title='desc' data-ref="2desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch9.h.html#usb_endpoint_descriptor::bEndpointAddress" title='usb_endpoint_descriptor::bEndpointAddress' data-ref="usb_endpoint_descriptor::bEndpointAddress">bEndpointAddress</a> &amp; <a class="macro" href="../../../include/uapi/linux/usb/ch9.h.html#51" title="0x80" data-ref="_M/USB_DIR_IN">USB_DIR_IN</a>) {</td></tr>
+<tr><th id="107">107</th><td>		<b>if</b> (++<a class="local col1 ref" href="#1gadget" title='gadget' data-ref="1gadget">gadget</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_gadget::in_epnum" title='usb_gadget::in_epnum' data-ref="usb_gadget::in_epnum">in_epnum</a> &gt; <var>15</var>)</td></tr>
+<tr><th id="108">108</th><td>			<b>return</b> <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="109">109</th><td>		<a class="local col2 ref" href="#2desc" title='desc' data-ref="2desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch9.h.html#usb_endpoint_descriptor::bEndpointAddress" title='usb_endpoint_descriptor::bEndpointAddress' data-ref="usb_endpoint_descriptor::bEndpointAddress">bEndpointAddress</a> = <a class="macro" href="../../../include/uapi/linux/usb/ch9.h.html#51" title="0x80" data-ref="_M/USB_DIR_IN">USB_DIR_IN</a> | <a class="local col1 ref" href="#1gadget" title='gadget' data-ref="1gadget">gadget</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_gadget::in_epnum" title='usb_gadget::in_epnum' data-ref="usb_gadget::in_epnum">in_epnum</a>;</td></tr>
+<tr><th id="110">110</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="111">111</th><td>		<b>if</b> (++<a class="local col1 ref" href="#1gadget" title='gadget' data-ref="1gadget">gadget</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_gadget::out_epnum" title='usb_gadget::out_epnum' data-ref="usb_gadget::out_epnum">out_epnum</a> &gt; <var>15</var>)</td></tr>
+<tr><th id="112">112</th><td>			<b>return</b> <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="113">113</th><td>		<a class="local col2 ref" href="#2desc" title='desc' data-ref="2desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch9.h.html#usb_endpoint_descriptor::bEndpointAddress" title='usb_endpoint_descriptor::bEndpointAddress' data-ref="usb_endpoint_descriptor::bEndpointAddress">bEndpointAddress</a> |= <a class="local col1 ref" href="#1gadget" title='gadget' data-ref="1gadget">gadget</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_gadget::out_epnum" title='usb_gadget::out_epnum' data-ref="usb_gadget::out_epnum">out_epnum</a>;</td></tr>
+<tr><th id="114">114</th><td>	}</td></tr>
+<tr><th id="115">115</th><td></td></tr>
+<tr><th id="116">116</th><td>	<i>/* report (variable) full speed bulk maxpacket */</i></td></tr>
+<tr><th id="117">117</th><td>	<b>if</b> ((<a class="local col5 ref" href="#5type" title='type' data-ref="5type">type</a> == <a class="macro" href="../../../include/uapi/linux/usb/ch9.h.html#424" title="2" data-ref="_M/USB_ENDPOINT_XFER_BULK">USB_ENDPOINT_XFER_BULK</a>) &amp;&amp; !<a class="local col3 ref" href="#3ep_comp" title='ep_comp' data-ref="3ep_comp">ep_comp</a>) {</td></tr>
+<tr><th id="118">118</th><td>		<em>int</em> <dfn class="local col8 decl" id="8size" title='size' data-type='int' data-ref="8size">size</dfn> = <a class="local col4 ref" href="#4ep" title='ep' data-ref="4ep">ep</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_ep::maxpacket_limit" title='usb_ep::maxpacket_limit' data-ref="usb_ep::maxpacket_limit">maxpacket_limit</a>;</td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td>		<i>/* min() doesn't work on bitfields with gcc-3.5 */</i></td></tr>
+<tr><th id="121">121</th><td>		<b>if</b> (<a class="local col8 ref" href="#8size" title='size' data-ref="8size">size</a> &gt; <var>64</var>)</td></tr>
+<tr><th id="122">122</th><td>			<a class="local col8 ref" href="#8size" title='size' data-ref="8size">size</a> = <var>64</var>;</td></tr>
+<tr><th id="123">123</th><td>		<a class="local col2 ref" href="#2desc" title='desc' data-ref="2desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch9.h.html#usb_endpoint_descriptor::wMaxPacketSize" title='usb_endpoint_descriptor::wMaxPacketSize' data-ref="usb_endpoint_descriptor::wMaxPacketSize">wMaxPacketSize</a> = <a class="macro" href="../../../include/linux/byteorder/generic.h.html#90" title="__cpu_to_le16" data-ref="_M/cpu_to_le16">cpu_to_le16</a>(<a class="local col8 ref" href="#8size" title='size' data-ref="8size">size</a>);</td></tr>
+<tr><th id="124">124</th><td>	}</td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td>	<a class="local col4 ref" href="#4ep" title='ep' data-ref="4ep">ep</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_ep::address" title='usb_ep::address' data-ref="usb_ep::address">address</a> = <a class="local col2 ref" href="#2desc" title='desc' data-ref="2desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch9.h.html#usb_endpoint_descriptor::bEndpointAddress" title='usb_endpoint_descriptor::bEndpointAddress' data-ref="usb_endpoint_descriptor::bEndpointAddress">bEndpointAddress</a>;</td></tr>
+<tr><th id="127">127</th><td>	<a class="local col4 ref" href="#4ep" title='ep' data-ref="4ep">ep</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_ep::desc" title='usb_ep::desc' data-ref="usb_ep::desc">desc</a> = <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="128">128</th><td>	<a class="local col4 ref" href="#4ep" title='ep' data-ref="4ep">ep</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_ep::comp_desc" title='usb_ep::comp_desc' data-ref="usb_ep::comp_desc">comp_desc</a> = <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="129">129</th><td>	<a class="local col4 ref" href="#4ep" title='ep' data-ref="4ep">ep</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_ep::claimed" title='usb_ep::claimed' data-ref="usb_ep::claimed">claimed</a> = <a class="enum" href="../../../include/linux/stddef.h.html#true" title='true' data-ref="true">true</a>;</td></tr>
+<tr><th id="130">130</th><td>	<b>return</b> <a class="local col4 ref" href="#4ep" title='ep' data-ref="4ep">ep</a>;</td></tr>
+<tr><th id="131">131</th><td>}</td></tr>
+<tr><th id="132">132</th><td><a class="macro" href="../../../include/linux/export.h.html#106" title="extern typeof(usb_ep_autoconfig_ss) usb_ep_autoconfig_ss; static const char __kstrtab_usb_ep_autoconfig_ss[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;usb_ep_autoconfig_ss&quot;; static const struct kernel_symbol __ksymtab_usb_ep_autoconfig_ss __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;usb_ep_autoconfig_ss&quot;), used)) = { (unsigned long)&amp;usb_ep_autoconfig_ss, __kstrtab_usb_ep_autoconfig_ss }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#usb_ep_autoconfig_ss" title='usb_ep_autoconfig_ss' data-ref="usb_ep_autoconfig_ss"><a class="ref fn" href="#usb_ep_autoconfig_ss" title='usb_ep_autoconfig_ss' data-ref="usb_ep_autoconfig_ss"><a class="ref fn" href="#usb_ep_autoconfig_ss" title='usb_ep_autoconfig_ss' data-ref="usb_ep_autoconfig_ss"><a class="ref fn" href="#usb_ep_autoconfig_ss" title='usb_ep_autoconfig_ss' data-ref="usb_ep_autoconfig_ss">usb_ep_autoconfig_ss</a></a></a></a>);</td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="135">135</th><td><i class="doc"> * usb_ep_autoconfig() - choose an endpoint matching the</i></td></tr>
+<tr><th id="136">136</th><td><i class="doc"> * descriptor</i></td></tr>
+<tr><th id="137">137</th><td><i class="doc"> *<span class="command"> @gadget</span>: The device to which the endpoint must belong.</i></td></tr>
+<tr><th id="138">138</th><td><i class="doc"> *<span class="command"> @desc</span>: Endpoint descriptor, with endpoint direction and transfer mode</i></td></tr>
+<tr><th id="139">139</th><td><i class="doc"> *	initialized.  For periodic transfers, the maximum packet</i></td></tr>
+<tr><th id="140">140</th><td><i class="doc"> *	size must also be initialized.  This is modified on success.</i></td></tr>
+<tr><th id="141">141</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="142">142</th><td><i class="doc"> * By choosing an endpoint to use with the specified descriptor, this</i></td></tr>
+<tr><th id="143">143</th><td><i class="doc"> * routine simplifies writing gadget drivers that work with multiple</i></td></tr>
+<tr><th id="144">144</th><td><i class="doc"> * USB device controllers.  The endpoint would be passed later to</i></td></tr>
+<tr><th id="145">145</th><td><i class="doc"> * usb_ep_enable(), along with some descriptor.</i></td></tr>
+<tr><th id="146">146</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="147">147</th><td><i class="doc"> * That second descriptor won't always be the same as the first one.</i></td></tr>
+<tr><th id="148">148</th><td><i class="doc"> * For example, isochronous endpoints can be autoconfigured for high</i></td></tr>
+<tr><th id="149">149</th><td><i class="doc"> * bandwidth, and then used in several lower bandwidth altsettings.</i></td></tr>
+<tr><th id="150">150</th><td><i class="doc"> * Also, high and full speed descriptors will be different.</i></td></tr>
+<tr><th id="151">151</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="152">152</th><td><i class="doc"> * Be sure to examine and test the results of autoconfiguration on your</i></td></tr>
+<tr><th id="153">153</th><td><i class="doc"> * hardware.  This code may not make the best choices about how to use the</i></td></tr>
+<tr><th id="154">154</th><td><i class="doc"> * USB controller, and it can't know all the restrictions that may apply.</i></td></tr>
+<tr><th id="155">155</th><td><i class="doc"> * Some combinations of driver and hardware won't be able to autoconfigure.</i></td></tr>
+<tr><th id="156">156</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="157">157</th><td><i class="doc"> * On success, this returns an claimed usb_ep, and modifies the endpoint</i></td></tr>
+<tr><th id="158">158</th><td><i class="doc"> * descriptor bEndpointAddress.  For bulk endpoints, the wMaxPacket value</i></td></tr>
+<tr><th id="159">159</th><td><i class="doc"> * is initialized as if the endpoint were used at full speed.  To prevent</i></td></tr>
+<tr><th id="160">160</th><td><i class="doc"> * the endpoint from being returned by a later autoconfig call, claims it</i></td></tr>
+<tr><th id="161">161</th><td><i class="doc"> * by assigning ep-&gt;claimed to true.</i></td></tr>
+<tr><th id="162">162</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc"> * On failure, this returns a null endpoint descriptor.</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="165">165</th><td><b>struct</b> <a class="type" href="../../../include/linux/usb/gadget.h.html#usb_ep" title='usb_ep' data-ref="usb_ep">usb_ep</a> *<dfn class="decl def fn" id="usb_ep_autoconfig" title='usb_ep_autoconfig' data-ref="usb_ep_autoconfig">usb_ep_autoconfig</dfn>(</td></tr>
+<tr><th id="166">166</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/usb/gadget.h.html#usb_gadget" title='usb_gadget' data-ref="usb_gadget">usb_gadget</a>		*<dfn class="local col9 decl" id="9gadget" title='gadget' data-type='struct usb_gadget *' data-ref="9gadget">gadget</dfn>,</td></tr>
+<tr><th id="167">167</th><td>	<b>struct</b> <a class="type" href="../../../include/uapi/linux/usb/ch9.h.html#usb_endpoint_descriptor" title='usb_endpoint_descriptor' data-ref="usb_endpoint_descriptor">usb_endpoint_descriptor</a>	*<dfn class="local col0 decl" id="10desc" title='desc' data-type='struct usb_endpoint_descriptor *' data-ref="10desc">desc</dfn></td></tr>
+<tr><th id="168">168</th><td>)</td></tr>
+<tr><th id="169">169</th><td>{</td></tr>
+<tr><th id="170">170</th><td>	<b>return</b> <a class="ref fn" href="#usb_ep_autoconfig_ss" title='usb_ep_autoconfig_ss' data-ref="usb_ep_autoconfig_ss">usb_ep_autoconfig_ss</a>(<a class="local col9 ref" href="#9gadget" title='gadget' data-ref="9gadget">gadget</a>, <a class="local col0 ref" href="#10desc" title='desc' data-ref="10desc">desc</a>, <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>);</td></tr>
+<tr><th id="171">171</th><td>}</td></tr>
+<tr><th id="172">172</th><td><a class="macro" href="../../../include/linux/export.h.html#106" title="extern typeof(usb_ep_autoconfig) usb_ep_autoconfig; static const char __kstrtab_usb_ep_autoconfig[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;usb_ep_autoconfig&quot;; static const struct kernel_symbol __ksymtab_usb_ep_autoconfig __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;usb_ep_autoconfig&quot;), used)) = { (unsigned long)&amp;usb_ep_autoconfig, __kstrtab_usb_ep_autoconfig }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#usb_ep_autoconfig" title='usb_ep_autoconfig' data-ref="usb_ep_autoconfig"><a class="ref fn" href="#usb_ep_autoconfig" title='usb_ep_autoconfig' data-ref="usb_ep_autoconfig"><a class="ref fn" href="#usb_ep_autoconfig" title='usb_ep_autoconfig' data-ref="usb_ep_autoconfig"><a class="ref fn" href="#usb_ep_autoconfig" title='usb_ep_autoconfig' data-ref="usb_ep_autoconfig">usb_ep_autoconfig</a></a></a></a>);</td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc"> * usb_ep_autoconfig_release - releases endpoint and set it to initial state</i></td></tr>
+<tr><th id="176">176</th><td><i class="doc"> *<span class="command"> @ep</span>: endpoint which should be released</i></td></tr>
+<tr><th id="177">177</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="178">178</th><td><i class="doc"> * This function can be used during function bind for endpoints obtained</i></td></tr>
+<tr><th id="179">179</th><td><i class="doc"> * from usb_ep_autoconfig(). It unclaims endpoint claimed by</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc"> * usb_ep_autoconfig() to make it available for other functions. Endpoint</i></td></tr>
+<tr><th id="181">181</th><td><i class="doc"> * which was released is no longer invalid and shouldn't be used in</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc"> * context of function which released it.</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="184">184</th><td><em>void</em> <dfn class="decl def fn" id="usb_ep_autoconfig_release" title='usb_ep_autoconfig_release' data-ref="usb_ep_autoconfig_release">usb_ep_autoconfig_release</dfn>(<b>struct</b> <a class="type" href="../../../include/linux/usb/gadget.h.html#usb_ep" title='usb_ep' data-ref="usb_ep">usb_ep</a> *<dfn class="local col1 decl" id="11ep" title='ep' data-type='struct usb_ep *' data-ref="11ep">ep</dfn>)</td></tr>
+<tr><th id="185">185</th><td>{</td></tr>
+<tr><th id="186">186</th><td>	<a class="local col1 ref" href="#11ep" title='ep' data-ref="11ep">ep</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_ep::claimed" title='usb_ep::claimed' data-ref="usb_ep::claimed">claimed</a> = <a class="enum" href="../../../include/linux/stddef.h.html#false" title='false' data-ref="false">false</a>;</td></tr>
+<tr><th id="187">187</th><td>	<a class="local col1 ref" href="#11ep" title='ep' data-ref="11ep">ep</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_ep::driver_data" title='usb_ep::driver_data' data-ref="usb_ep::driver_data">driver_data</a> = <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="188">188</th><td>}</td></tr>
+<tr><th id="189">189</th><td><a class="macro" href="../../../include/linux/export.h.html#106" title="extern typeof(usb_ep_autoconfig_release) usb_ep_autoconfig_release; static const char __kstrtab_usb_ep_autoconfig_release[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;usb_ep_autoconfig_release&quot;; static const struct kernel_symbol __ksymtab_usb_ep_autoconfig_release __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;usb_ep_autoconfig_release&quot;), used)) = { (unsigned long)&amp;usb_ep_autoconfig_release, __kstrtab_usb_ep_autoconfig_release }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#usb_ep_autoconfig_release" title='usb_ep_autoconfig_release' data-ref="usb_ep_autoconfig_release"><a class="ref fn" href="#usb_ep_autoconfig_release" title='usb_ep_autoconfig_release' data-ref="usb_ep_autoconfig_release"><a class="ref fn" href="#usb_ep_autoconfig_release" title='usb_ep_autoconfig_release' data-ref="usb_ep_autoconfig_release"><a class="ref fn" href="#usb_ep_autoconfig_release" title='usb_ep_autoconfig_release' data-ref="usb_ep_autoconfig_release">usb_ep_autoconfig_release</a></a></a></a>);</td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="192">192</th><td><i class="doc"> * usb_ep_autoconfig_reset - reset endpoint autoconfig state</i></td></tr>
+<tr><th id="193">193</th><td><i class="doc"> *<span class="command"> @gadget</span>: device for which autoconfig state will be reset</i></td></tr>
+<tr><th id="194">194</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc"> * Use this for devices where one configuration may need to assign</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc"> * endpoint resources very differently from the next one.  It clears</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc"> * state such as ep-&gt;claimed and the record of assigned endpoints</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc"> * used by usb_ep_autoconfig().</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="200">200</th><td><em>void</em> <dfn class="decl def fn" id="usb_ep_autoconfig_reset" title='usb_ep_autoconfig_reset' data-ref="usb_ep_autoconfig_reset">usb_ep_autoconfig_reset</dfn> (<b>struct</b> <a class="type" href="../../../include/linux/usb/gadget.h.html#usb_gadget" title='usb_gadget' data-ref="usb_gadget">usb_gadget</a> *<dfn class="local col2 decl" id="12gadget" title='gadget' data-type='struct usb_gadget *' data-ref="12gadget">gadget</dfn>)</td></tr>
+<tr><th id="201">201</th><td>{</td></tr>
+<tr><th id="202">202</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/usb/gadget.h.html#usb_ep" title='usb_ep' data-ref="usb_ep">usb_ep</a>	*<dfn class="local col3 decl" id="13ep" title='ep' data-type='struct usb_ep *' data-ref="13ep">ep</dfn>;</td></tr>
+<tr><th id="203">203</th><td></td></tr>
+<tr><th id="204">204</th><td>	<a class="macro" href="../../../include/linux/list.h.html#463" title="for (ep = ({ void *__mptr = (void *)((&amp;gadget-&gt;ep_list)-&gt;next); do { bool __cond = !(!(!__builtin_types_compatible_p(typeof(*((&amp;gadget-&gt;ep_list)-&gt;next)), typeof(((typeof(*ep) *)0)-&gt;ep_list)) &amp;&amp; !__builtin_types_compatible_p(typeof(*((&amp;gadget-&gt;ep_list)-&gt;next)), typeof(void)))); extern void __compiletime_assert_204(void) ; if (__cond) __compiletime_assert_204(); do { ((void)sizeof(char[1 - 2 * __cond])); } while (0); } while (0); ((typeof(*ep) *)(__mptr - __builtin_offsetof(typeof(*ep), ep_list))); }); &amp;ep-&gt;ep_list != (&amp;gadget-&gt;ep_list); ep = ({ void *__mptr = (void *)((ep)-&gt;ep_list.next); do { bool __cond = !(!(!__builtin_types_compatible_p(typeof(*((ep)-&gt;ep_list.next)), typeof(((typeof(*(ep)) *)0)-&gt;ep_list)) &amp;&amp; !__builtin_types_compatible_p(typeof(*((ep)-&gt;ep_list.next)), typeof(void)))); extern void __compiletime_assert_204(void) ; if (__cond) __compiletime_assert_204(); do { ((void)sizeof(char[1 - 2 * __cond])); } while (0); } while (0); ((typeof(*(ep)) *)(__mptr - __builtin_offsetof(typeof(*(ep)), ep_list))); }))" data-ref="_M/list_for_each_entry">list_for_each_entry</a> (<a class="local col3 ref" href="#13ep" title='ep' data-ref="13ep">ep</a>, &amp;<a class="local col2 ref" href="#12gadget" title='gadget' data-ref="12gadget">gadget</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_gadget::ep_list" title='usb_gadget::ep_list' data-ref="usb_gadget::ep_list">ep_list</a>, <a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_ep::ep_list" title='usb_ep::ep_list' data-ref="usb_ep::ep_list">ep_list</a>) {</td></tr>
+<tr><th id="205">205</th><td>		<a class="local col3 ref" href="#13ep" title='ep' data-ref="13ep">ep</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_ep::claimed" title='usb_ep::claimed' data-ref="usb_ep::claimed">claimed</a> = <a class="enum" href="../../../include/linux/stddef.h.html#false" title='false' data-ref="false">false</a>;</td></tr>
+<tr><th id="206">206</th><td>		<a class="local col3 ref" href="#13ep" title='ep' data-ref="13ep">ep</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_ep::driver_data" title='usb_ep::driver_data' data-ref="usb_ep::driver_data">driver_data</a> = <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="207">207</th><td>	}</td></tr>
+<tr><th id="208">208</th><td>	<a class="local col2 ref" href="#12gadget" title='gadget' data-ref="12gadget">gadget</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_gadget::in_epnum" title='usb_gadget::in_epnum' data-ref="usb_gadget::in_epnum">in_epnum</a> = <var>0</var>;</td></tr>
+<tr><th id="209">209</th><td>	<a class="local col2 ref" href="#12gadget" title='gadget' data-ref="12gadget">gadget</a>-&gt;<a class="ref field" href="../../../include/linux/usb/gadget.h.html#usb_gadget::out_epnum" title='usb_gadget::out_epnum' data-ref="usb_gadget::out_epnum">out_epnum</a> = <var>0</var>;</td></tr>
+<tr><th id="210">210</th><td>}</td></tr>
+<tr><th id="211">211</th><td><a class="macro" href="../../../include/linux/export.h.html#106" title="extern typeof(usb_ep_autoconfig_reset) usb_ep_autoconfig_reset; static const char __kstrtab_usb_ep_autoconfig_reset[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;usb_ep_autoconfig_reset&quot;; static const struct kernel_symbol __ksymtab_usb_ep_autoconfig_reset __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;usb_ep_autoconfig_reset&quot;), used)) = { (unsigned long)&amp;usb_ep_autoconfig_reset, __kstrtab_usb_ep_autoconfig_reset }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#usb_ep_autoconfig_reset" title='usb_ep_autoconfig_reset' data-ref="usb_ep_autoconfig_reset"><a class="ref fn" href="#usb_ep_autoconfig_reset" title='usb_ep_autoconfig_reset' data-ref="usb_ep_autoconfig_reset"><a class="ref fn" href="#usb_ep_autoconfig_reset" title='usb_ep_autoconfig_reset' data-ref="usb_ep_autoconfig_reset"><a class="ref fn" href="#usb_ep_autoconfig_reset" title='usb_ep_autoconfig_reset' data-ref="usb_ep_autoconfig_reset">usb_ep_autoconfig_reset</a></a></a></a>);</td></tr>
+<tr><th id="212">212</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Aug-13</em> from project linux-4.14.y revision <em>linux-4.14.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>
