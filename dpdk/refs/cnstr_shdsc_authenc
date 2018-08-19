@@ -1,0 +1,70 @@
+<def f='dpdk_1805/drivers/crypto/dpaa2_sec/hw/desc/ipsec.h' l='1343' ll='1519' type='int cnstr_shdsc_authenc(uint32_t * descbuf, _Bool ps, _Bool swap, struct alginfo * cipherdata, struct alginfo * authdata, uint16_t ivlen, uint16_t auth_only_len, uint8_t trunc_len, uint8_t dir)'/>
+<use f='dpdk_1805/drivers/crypto/dpaa2_sec/dpaa2_sec_dpseci.c' l='2053' u='c' c='dpaa2_sec_aead_chain_init'/>
+<doc f='dpdk_1805/drivers/crypto/dpaa2_sec/hw/desc/ipsec.h' l='1276'>/**
+ * cnstr_shdsc_authenc - authenc-like descriptor
+ * @descbuf: pointer to buffer used for descriptor construction
+ * @ps: if 36/40bit addressing is desired, this parameter must be true
+ * @swap: if true, perform descriptor byte swapping on a 4-byte boundary
+ * @cipherdata: pointer to block cipher transform definitions.
+ *              Valid algorithm values one of OP_ALG_ALGSEL_* {DES, 3DES, AES}
+ *              Valid modes for:
+ *                  AES: OP_ALG_AAI_* {CBC, CTR}
+ *                  DES, 3DES: OP_ALG_AAI_CBC
+ * @authdata: pointer to authentication transform definitions.
+ *            Valid algorithm values - one of OP_ALG_ALGSEL_* {MD5, SHA1,
+ *            SHA224, SHA256, SHA384, SHA512}
+ * Note: The key for authentication is supposed to be given as plain text.
+ * Note: There&apos;s no support for keys longer than the block size of the
+ *       underlying hash function, according to the selected algorithm.
+ *
+ * @ivlen: length of the IV to be read from the input frame, before any data
+ *         to be processed
+ * @auth_only_len: length of the data to be authenticated-only (commonly IP
+ *                 header, IV, Sequence number and SPI)
+ * Note: Extended Sequence Number processing is NOT supported
+ *
+ * @trunc_len: the length of the ICV to be written to the output frame. If 0,
+ *             then the corresponding length of the digest, according to the
+ *             selected algorithm shall be used.
+ * @dir: Protocol direction, encapsulation or decapsulation (DIR_ENC/DIR_DEC)
+ *
+ * Note: Here&apos;s how the input frame needs to be formatted so that the processing
+ *       will be done correctly:
+ * For encapsulation:
+ *     Input:
+ * +----+----------------+---------------------------------------------+
+ * | IV | Auth-only data | Padded data to be authenticated &amp; Encrypted |
+ * +----+----------------+---------------------------------------------+
+ *     Output:
+ * +--------------------------------------+
+ * | Authenticated &amp; Encrypted data | ICV |
+ * +--------------------------------+-----+
+
+ * For decapsulation:
+ *     Input:
+ * +----+----------------+--------------------------------+-----+
+ * | IV | Auth-only data | Authenticated &amp; Encrypted data | ICV |
+ * +----+----------------+--------------------------------+-----+
+ *     Output:
+ * +----+--------------------------+
+ * | Decrypted &amp; authenticated data |
+ * +----+--------------------------+
+ *
+ * Note: This descriptor can use per-packet commands, encoded as below in the
+ *       DPOVRD register:
+ * 32    24    16               0
+ * +------+---------------------+
+ * | 0x80 | 0x00| auth_only_len |
+ * +------+---------------------+
+ *
+ * This mechanism is available only for SoCs having SEC ERA &gt;= 3. In other
+ * words, this will not work for P4080TO2
+ *
+ * Note: The descriptor does not add any kind of padding to the input data,
+ *       so the upper layer needs to ensure that the data is padded properly,
+ *       according to the selected cipher. Failure to do so will result in
+ *       the descriptor failing with a data-size error.
+ *
+ * Return: size of descriptor written in words or negative number on error
+ */</doc>
+<use f='dpdk_1805/drivers/crypto/dpaa_sec/dpaa_sec.c' l='504' u='c' c='dpaa_sec_prep_cdb'/>

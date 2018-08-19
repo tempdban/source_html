@@ -1,0 +1,178 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>netcfg_layer.c source code [dpdk_1805/drivers/bus/dpaa/base/fman/netcfg_layer.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'dpdk_1805/drivers/bus/dpaa/base/fman/netcfg_layer.c'; var root_path = '../../../../../..'; var data_path = '../../../../../../../data';</script>
+<script src='../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../..'>dpdk_1805</a>/<a href='../../../..'>drivers</a>/<a href='../../..'>bus</a>/<a href='../..'>dpaa</a>/<a href='..'>base</a>/<a href='./'>fman</a>/<a href='netcfg_layer.c.html'>netcfg_layer.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: (BSD-3-Clause OR GPL-2.0)</i></td></tr>
+<tr><th id="2">2</th><td><i> *</i></td></tr>
+<tr><th id="3">3</th><td><i> * Copyright 2010-2016 Freescale Semiconductor Inc.</i></td></tr>
+<tr><th id="4">4</th><td><i> * Copyright 2017 NXP</i></td></tr>
+<tr><th id="5">5</th><td><i> *</i></td></tr>
+<tr><th id="6">6</th><td><i> */</i></td></tr>
+<tr><th id="7">7</th><td><u>#include &lt;inttypes.h&gt;</u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="../../include/of.h.html">&lt;of.h&gt;</a></u></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="../../../../../../include/net/if.h.html">&lt;net/if.h&gt;</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../../../../../include/sys/ioctl.h.html">&lt;sys/ioctl.h&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../../../../../include/error.h.html">&lt;error.h&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../../../../include/net/if_arp.h.html">&lt;net/if_arp.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../../../../include/assert.h.html">&lt;assert.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../../../../include/unistd.h.html">&lt;unistd.h&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../../../lib/librte_eal/common/include/rte_malloc.h.html">&lt;rte_malloc.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../rte_dpaa_logs.h.html">&lt;rte_dpaa_logs.h&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../include/netcfg.h.html">&lt;netcfg.h&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td></td></tr>
+<tr><th id="21">21</th><td><i>/* This data structure contaings all configurations information</i></td></tr>
+<tr><th id="22">22</th><td><i> * related to usages of DPA devices.</i></td></tr>
+<tr><th id="23">23</th><td><i> */</i></td></tr>
+<tr><th id="24">24</th><td><b>struct</b> <a class="type" href="../../include/netcfg.h.html#netcfg_info" title='netcfg_info' data-ref="netcfg_info">netcfg_info</a> *<dfn class="decl def" id="netcfg" title='netcfg' data-ref="netcfg">netcfg</dfn>;</td></tr>
+<tr><th id="25">25</th><td><i  data-doc="skfd">/* fd to open a socket for making ioctl request to disable/enable shared</i></td></tr>
+<tr><th id="26">26</th><td><i  data-doc="skfd"> *  interfaces.</i></td></tr>
+<tr><th id="27">27</th><td><i  data-doc="skfd"> */</i></td></tr>
+<tr><th id="28">28</th><td><em>static</em> <em>int</em> <dfn class="tu decl def" id="skfd" title='skfd' data-type='int' data-ref="skfd">skfd</dfn> = -<var>1</var>;</td></tr>
+<tr><th id="29">29</th><td></td></tr>
+<tr><th id="30">30</th><td><u>#<span data-ppcond="30">ifdef</span> <span class="macro" data-ref="_M/RTE_LIBRTE_DPAA_DEBUG_DRIVER">RTE_LIBRTE_DPAA_DEBUG_DRIVER</span></u></td></tr>
+<tr><th id="31">31</th><td><em>void</em></td></tr>
+<tr><th id="32">32</th><td>dump_netcfg(<b>struct</b> netcfg_info *cfg_ptr)</td></tr>
+<tr><th id="33">33</th><td>{</td></tr>
+<tr><th id="34">34</th><td>	<em>int</em> i;</td></tr>
+<tr><th id="35">35</th><td></td></tr>
+<tr><th id="36">36</th><td>	printf(<q>"..........  DPAA Configuration  ..........\n\n"</q>);</td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td>	<i>/* Network interfaces */</i></td></tr>
+<tr><th id="39">39</th><td>	printf(<q>"Network interfaces: %d\n"</q>, cfg_ptr-&gt;num_ethports);</td></tr>
+<tr><th id="40">40</th><td>	<b>for</b> (i = <var>0</var>; i &lt; cfg_ptr-&gt;num_ethports; i++) {</td></tr>
+<tr><th id="41">41</th><td>		<b>struct</b> fman_if_bpool *bpool;</td></tr>
+<tr><th id="42">42</th><td>		<b>struct</b> fm_eth_port_cfg *p_cfg = &amp;cfg_ptr-&gt;port_cfg[i];</td></tr>
+<tr><th id="43">43</th><td>		<b>struct</b> fman_if *__if = p_cfg-&gt;fman_if;</td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td>		printf(<q>"\n+ Fman %d, MAC %d (%s);\n"</q>,</td></tr>
+<tr><th id="46">46</th><td>		       __if-&gt;fman_idx, __if-&gt;mac_idx,</td></tr>
+<tr><th id="47">47</th><td>		       (__if-&gt;mac_type == fman_mac_1g) ? <q>"1G"</q> : <q>"10G"</q>);</td></tr>
+<tr><th id="48">48</th><td></td></tr>
+<tr><th id="49">49</th><td>		printf(<q>"\tmac_addr: %02x:%02x:%02x:%02x:%02x:%02x\n"</q>,</td></tr>
+<tr><th id="50">50</th><td>		       (&amp;__if-&gt;mac_addr)-&gt;addr_bytes[<var>0</var>],</td></tr>
+<tr><th id="51">51</th><td>		       (&amp;__if-&gt;mac_addr)-&gt;addr_bytes[<var>1</var>],</td></tr>
+<tr><th id="52">52</th><td>		       (&amp;__if-&gt;mac_addr)-&gt;addr_bytes[<var>2</var>],</td></tr>
+<tr><th id="53">53</th><td>		       (&amp;__if-&gt;mac_addr)-&gt;addr_bytes[<var>3</var>],</td></tr>
+<tr><th id="54">54</th><td>		       (&amp;__if-&gt;mac_addr)-&gt;addr_bytes[<var>4</var>],</td></tr>
+<tr><th id="55">55</th><td>		       (&amp;__if-&gt;mac_addr)-&gt;addr_bytes[<var>5</var>]);</td></tr>
+<tr><th id="56">56</th><td></td></tr>
+<tr><th id="57">57</th><td>		printf(<q>"\ttx_channel_id: 0x%02x\n"</q>,</td></tr>
+<tr><th id="58">58</th><td>		       __if-&gt;tx_channel_id);</td></tr>
+<tr><th id="59">59</th><td></td></tr>
+<tr><th id="60">60</th><td>		printf(<q>"\tfqid_rx_def: 0x%x\n"</q>, p_cfg-&gt;rx_def);</td></tr>
+<tr><th id="61">61</th><td>		printf(<q>"\tfqid_rx_err: 0x%x\n"</q>, __if-&gt;fqid_rx_err);</td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td>		printf(<q>"\tfqid_tx_err: 0x%x\n"</q>, __if-&gt;fqid_tx_err);</td></tr>
+<tr><th id="64">64</th><td>		printf(<q>"\tfqid_tx_confirm: 0x%x\n"</q>, __if-&gt;fqid_tx_confirm);</td></tr>
+<tr><th id="65">65</th><td>		fman_if_for_each_bpool(bpool, __if)</td></tr>
+<tr><th id="66">66</th><td>			printf(<q>"\tbuffer pool: (bpid=%d, count=%"</q>PRId64</td></tr>
+<tr><th id="67">67</th><td>			       <q>" size=%"</q>PRId64<q>", addr=0x%"</q>PRIx64<q>")\n"</q>,</td></tr>
+<tr><th id="68">68</th><td>			       bpool-&gt;bpid, bpool-&gt;count, bpool-&gt;size,</td></tr>
+<tr><th id="69">69</th><td>			       bpool-&gt;addr);</td></tr>
+<tr><th id="70">70</th><td>	}</td></tr>
+<tr><th id="71">71</th><td>}</td></tr>
+<tr><th id="72">72</th><td><u>#<span data-ppcond="30">endif</span> /* RTE_LIBRTE_DPAA_DEBUG_DRIVER */</u></td></tr>
+<tr><th id="73">73</th><td></td></tr>
+<tr><th id="74">74</th><td><b>struct</b> <a class="type" href="../../include/netcfg.h.html#netcfg_info" title='netcfg_info' data-ref="netcfg_info">netcfg_info</a> *</td></tr>
+<tr><th id="75">75</th><td><dfn class="decl def fn" id="netcfg_acquire" title='netcfg_acquire' data-ref="netcfg_acquire">netcfg_acquire</dfn>(<em>void</em>)</td></tr>
+<tr><th id="76">76</th><td>{</td></tr>
+<tr><th id="77">77</th><td>	<b>struct</b> <a class="type" href="../../include/fman.h.html#fman_if" title='fman_if' data-ref="fman_if">fman_if</a> *<dfn class="local col2 decl" id="62__if" title='__if' data-type='struct fman_if *' data-ref="62__if">__if</dfn>;</td></tr>
+<tr><th id="78">78</th><td>	<em>int</em> <dfn class="local col3 decl" id="63_errno" title='_errno' data-type='int' data-ref="63_errno">_errno</dfn>, <dfn class="local col4 decl" id="64idx" title='idx' data-type='int' data-ref="64idx">idx</dfn> = <var>0</var>;</td></tr>
+<tr><th id="79">79</th><td>	<a class="typedef" href="../../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="local col5 decl" id="65num_ports" title='num_ports' data-type='uint8_t' data-ref="65num_ports">num_ports</dfn> = <var>0</var>;</td></tr>
+<tr><th id="80">80</th><td>	<a class="typedef" href="../../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="local col6 decl" id="66num_cfg_ports" title='num_cfg_ports' data-type='uint8_t' data-ref="66num_cfg_ports">num_cfg_ports</dfn> = <var>0</var>;</td></tr>
+<tr><th id="81">81</th><td>	<span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col7 decl" id="67size" title='size' data-type='size_t' data-ref="67size">size</dfn>;</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td>	<i>/* Extract dpa configuration from fman driver and FMC configuration</i></td></tr>
+<tr><th id="84">84</th><td><i>	 * for command-line interfaces.</i></td></tr>
+<tr><th id="85">85</th><td><i>	 */</i></td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td>	<i>/* Open a basic socket to enable/disable shared</i></td></tr>
+<tr><th id="88">88</th><td><i>	 * interfaces.</i></td></tr>
+<tr><th id="89">89</th><td><i>	 */</i></td></tr>
+<tr><th id="90">90</th><td>	<a class="tu ref" href="#skfd" title='skfd' data-use='w' data-ref="skfd">skfd</a> = <a class="ref fn" href="../../../../../../include/sys/socket.h.html#socket" title='socket' data-ref="socket">socket</a>(<a class="macro" href="../../../../../../include/bits/socket.h.html#107" title="17" data-ref="_M/AF_PACKET">AF_PACKET</a>, <a class="macro" href="../../../../../../include/bits/socket_type.h.html#33" title="SOCK_RAW" data-ref="_M/SOCK_RAW">SOCK_RAW</a>, <var>0</var>);</td></tr>
+<tr><th id="91">91</th><td>	<b>if</b> (<a class="macro" href="../../../../../lib/librte_eal/common/include/rte_branch_prediction.h.html#38" title="__builtin_expect(!!(skfd &lt; 0), 0)" data-ref="_M/unlikely">unlikely</a>(<a class="tu ref" href="#skfd" title='skfd' data-use='r' data-ref="skfd">skfd</a> &lt; <var>0</var>)) {</td></tr>
+<tr><th id="92">92</th><td>		<a class="ref fn" href="../../../../../../include/error.h.html#error" title='error' data-ref="error">error</a>(<var>0</var>, <a class="macro" href="../../../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>, <q>"%s(): open(SOCK_RAW)"</q>, <b>__func__</b>);</td></tr>
+<tr><th id="93">93</th><td>		<b>return</b> <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="94">94</th><td>	}</td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td>	<i>/* Initialise the Fman driver */</i></td></tr>
+<tr><th id="97">97</th><td>	<a class="local col3 ref" href="#63_errno" title='_errno' data-ref="63_errno">_errno</a> = <a class="ref fn" href="../../include/fman.h.html#fman_init" title='fman_init' data-ref="fman_init">fman_init</a>();</td></tr>
+<tr><th id="98">98</th><td>	<b>if</b> (<a class="local col3 ref" href="#63_errno" title='_errno' data-ref="63_errno">_errno</a>) {</td></tr>
+<tr><th id="99">99</th><td>		<a class="macro" href="../../rte_dpaa_logs.h.html#17" title="rte_log(4U, dpaa_logtype_bus, &quot;dpaa: &quot; &quot;FMAN driver init failed (%d)&quot; &quot;\n&quot;, (*__errno_location ()))" data-ref="_M/DPAA_BUS_LOG">DPAA_BUS_LOG</a>(ERR, <q>"FMAN driver init failed (%d)"</q>, errno);</td></tr>
+<tr><th id="100">100</th><td>		<a class="ref fn" href="../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="tu ref" href="#skfd" title='skfd' data-use='r' data-ref="skfd">skfd</a>);</td></tr>
+<tr><th id="101">101</th><td>		<a class="tu ref" href="#skfd" title='skfd' data-use='w' data-ref="skfd">skfd</a> = -<var>1</var>;</td></tr>
+<tr><th id="102">102</th><td>		<b>return</b> <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="103">103</th><td>	}</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td>	<i>/* Number of MAC ports */</i></td></tr>
+<tr><th id="106">106</th><td>	<a class="macro" href="../../include/dpaa_list.h.html#61" title="for (__if = (__typeof__(*__if) *)((void *)(fman_if_list)-&gt;next - __builtin_offsetof(__typeof__(*__if), node)); &amp;__if-&gt;node != (fman_if_list); __if = (__typeof__(*__if) *)((void *)__if-&gt;node.next - __builtin_offsetof(__typeof__(*__if), node)))" data-ref="_M/list_for_each_entry">list_for_each_entry</a>(<a class="local col2 ref" href="#62__if" title='__if' data-ref="62__if">__if</a>, <a class="ref" href="../../include/fman.h.html#fman_if_list" title='fman_if_list' data-ref="fman_if_list">fman_if_list</a>, <a class="ref field" href="../../include/fman.h.html#fman_if::node" title='fman_if::node' data-ref="fman_if::node">node</a>)</td></tr>
+<tr><th id="107">107</th><td>		<a class="local col5 ref" href="#65num_ports" title='num_ports' data-ref="65num_ports">num_ports</a>++;</td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td>	<b>if</b> (!<a class="local col5 ref" href="#65num_ports" title='num_ports' data-ref="65num_ports">num_ports</a>) {</td></tr>
+<tr><th id="110">110</th><td>		<a class="macro" href="../../rte_dpaa_logs.h.html#17" title="rte_log(4U, dpaa_logtype_bus, &quot;dpaa: &quot; &quot;FMAN ports not available&quot; &quot;\n&quot;)" data-ref="_M/DPAA_BUS_LOG">DPAA_BUS_LOG</a>(ERR, <q>"FMAN ports not available"</q>);</td></tr>
+<tr><th id="111">111</th><td>		<b>return</b> <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="112">112</th><td>	}</td></tr>
+<tr><th id="113">113</th><td>	<i>/* Allocate space for all enabled mac ports */</i></td></tr>
+<tr><th id="114">114</th><td>	<a class="local col7 ref" href="#67size" title='size' data-ref="67size">size</a> = <b>sizeof</b>(*<a class="ref" href="#netcfg" title='netcfg' data-ref="netcfg">netcfg</a>) +</td></tr>
+<tr><th id="115">115</th><td>		(<a class="local col5 ref" href="#65num_ports" title='num_ports' data-ref="65num_ports">num_ports</a> * <b>sizeof</b>(<b>struct</b> <a class="type" href="../../include/netcfg.h.html#fm_eth_port_cfg" title='fm_eth_port_cfg' data-ref="fm_eth_port_cfg">fm_eth_port_cfg</a>));</td></tr>
+<tr><th id="116">116</th><td></td></tr>
+<tr><th id="117">117</th><td>	<a class="ref" href="#netcfg" title='netcfg' data-ref="netcfg">netcfg</a> = <a class="ref fn" href="../../../../../../include/stdlib.h.html#calloc" title='calloc' data-ref="calloc">calloc</a>(<var>1</var>, <a class="local col7 ref" href="#67size" title='size' data-ref="67size">size</a>);</td></tr>
+<tr><th id="118">118</th><td>	<b>if</b> (<a class="macro" href="../../../../../lib/librte_eal/common/include/rte_branch_prediction.h.html#38" title="__builtin_expect(!!(netcfg == ((void*)0)), 0)" data-ref="_M/unlikely">unlikely</a>(<a class="ref" href="#netcfg" title='netcfg' data-ref="netcfg">netcfg</a> == <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>)) {</td></tr>
+<tr><th id="119">119</th><td>		<a class="macro" href="../../rte_dpaa_logs.h.html#17" title="rte_log(4U, dpaa_logtype_bus, &quot;dpaa: &quot; &quot;Unable to allocat mem for netcfg&quot; &quot;\n&quot;)" data-ref="_M/DPAA_BUS_LOG">DPAA_BUS_LOG</a>(ERR, <q>"Unable to allocat mem for netcfg"</q>);</td></tr>
+<tr><th id="120">120</th><td>		<b>goto</b> <a class="lbl" href="#68error" data-ref="68error">error</a>;</td></tr>
+<tr><th id="121">121</th><td>	}</td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td>	<a class="ref" href="#netcfg" title='netcfg' data-ref="netcfg">netcfg</a>-&gt;<a class="ref field" href="../../include/netcfg.h.html#netcfg_info::num_ethports" title='netcfg_info::num_ethports' data-ref="netcfg_info::num_ethports">num_ethports</a> = <a class="local col5 ref" href="#65num_ports" title='num_ports' data-ref="65num_ports">num_ports</a>;</td></tr>
+<tr><th id="124">124</th><td></td></tr>
+<tr><th id="125">125</th><td>	<a class="macro" href="../../include/dpaa_list.h.html#61" title="for (__if = (__typeof__(*__if) *)((void *)(fman_if_list)-&gt;next - __builtin_offsetof(__typeof__(*__if), node)); &amp;__if-&gt;node != (fman_if_list); __if = (__typeof__(*__if) *)((void *)__if-&gt;node.next - __builtin_offsetof(__typeof__(*__if), node)))" data-ref="_M/list_for_each_entry">list_for_each_entry</a>(<a class="local col2 ref" href="#62__if" title='__if' data-ref="62__if">__if</a>, <a class="ref" href="../../include/fman.h.html#fman_if_list" title='fman_if_list' data-ref="fman_if_list">fman_if_list</a>, <a class="ref field" href="../../include/fman.h.html#fman_if::node" title='fman_if::node' data-ref="fman_if::node">node</a>) {</td></tr>
+<tr><th id="126">126</th><td>		<b>struct</b> <a class="type" href="../../include/netcfg.h.html#fm_eth_port_cfg" title='fm_eth_port_cfg' data-ref="fm_eth_port_cfg">fm_eth_port_cfg</a> *<dfn class="local col9 decl" id="69cfg" title='cfg' data-type='struct fm_eth_port_cfg *' data-ref="69cfg">cfg</dfn> = &amp;<a class="ref" href="#netcfg" title='netcfg' data-ref="netcfg">netcfg</a>-&gt;<a class="ref field" href="../../include/netcfg.h.html#netcfg_info::port_cfg" title='netcfg_info::port_cfg' data-ref="netcfg_info::port_cfg">port_cfg</a>[<a class="local col4 ref" href="#64idx" title='idx' data-ref="64idx">idx</a>];</td></tr>
+<tr><th id="127">127</th><td>		<i>/* Hook in the fman driver interface */</i></td></tr>
+<tr><th id="128">128</th><td>		<a class="local col9 ref" href="#69cfg" title='cfg' data-ref="69cfg">cfg</a>-&gt;<a class="ref field" href="../../include/netcfg.h.html#fm_eth_port_cfg::fman_if" title='fm_eth_port_cfg::fman_if' data-ref="fm_eth_port_cfg::fman_if">fman_if</a> = <a class="local col2 ref" href="#62__if" title='__if' data-ref="62__if">__if</a>;</td></tr>
+<tr><th id="129">129</th><td>		<a class="local col9 ref" href="#69cfg" title='cfg' data-ref="69cfg">cfg</a>-&gt;<a class="ref field" href="../../include/netcfg.h.html#fm_eth_port_cfg::rx_def" title='fm_eth_port_cfg::rx_def' data-ref="fm_eth_port_cfg::rx_def">rx_def</a> = <a class="local col2 ref" href="#62__if" title='__if' data-ref="62__if">__if</a>-&gt;<a class="ref field" href="../../include/fman.h.html#fman_if::fqid_rx_def" title='fman_if::fqid_rx_def' data-ref="fman_if::fqid_rx_def">fqid_rx_def</a>;</td></tr>
+<tr><th id="130">130</th><td>		<a class="local col6 ref" href="#66num_cfg_ports" title='num_cfg_ports' data-ref="66num_cfg_ports">num_cfg_ports</a>++;</td></tr>
+<tr><th id="131">131</th><td>		<a class="local col4 ref" href="#64idx" title='idx' data-ref="64idx">idx</a>++;</td></tr>
+<tr><th id="132">132</th><td>	}</td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td>	<b>if</b> (!<a class="local col6 ref" href="#66num_cfg_ports" title='num_cfg_ports' data-ref="66num_cfg_ports">num_cfg_ports</a>) {</td></tr>
+<tr><th id="135">135</th><td>		<a class="macro" href="../../rte_dpaa_logs.h.html#17" title="rte_log(4U, dpaa_logtype_bus, &quot;dpaa: &quot; &quot;No FMAN ports found&quot; &quot;\n&quot;)" data-ref="_M/DPAA_BUS_LOG">DPAA_BUS_LOG</a>(ERR, <q>"No FMAN ports found"</q>);</td></tr>
+<tr><th id="136">136</th><td>		<b>goto</b> <a class="lbl" href="#68error" data-ref="68error">error</a>;</td></tr>
+<tr><th id="137">137</th><td>	} <b>else</b> <b>if</b> (<a class="local col5 ref" href="#65num_ports" title='num_ports' data-ref="65num_ports">num_ports</a> != <a class="local col6 ref" href="#66num_cfg_ports" title='num_cfg_ports' data-ref="66num_cfg_ports">num_cfg_ports</a>)</td></tr>
+<tr><th id="138">138</th><td>		<a class="ref" href="#netcfg" title='netcfg' data-ref="netcfg">netcfg</a>-&gt;<a class="ref field" href="../../include/netcfg.h.html#netcfg_info::num_ethports" title='netcfg_info::num_ethports' data-ref="netcfg_info::num_ethports">num_ethports</a> = <a class="local col6 ref" href="#66num_cfg_ports" title='num_cfg_ports' data-ref="66num_cfg_ports">num_cfg_ports</a>;</td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td>	<b>return</b> <a class="ref" href="#netcfg" title='netcfg' data-ref="netcfg">netcfg</a>;</td></tr>
+<tr><th id="141">141</th><td></td></tr>
+<tr><th id="142">142</th><td><dfn class="lbl" id="68error" data-ref="68error">error</dfn>:</td></tr>
+<tr><th id="143">143</th><td>	<b>if</b> (<a class="ref" href="#netcfg" title='netcfg' data-ref="netcfg">netcfg</a>) {</td></tr>
+<tr><th id="144">144</th><td>		<a class="ref fn" href="../../../../../../include/stdlib.h.html#free" title='free' data-ref="free">free</a>(<a class="ref" href="#netcfg" title='netcfg' data-ref="netcfg">netcfg</a>);</td></tr>
+<tr><th id="145">145</th><td>		<a class="ref" href="#netcfg" title='netcfg' data-ref="netcfg">netcfg</a> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="146">146</th><td>	}</td></tr>
+<tr><th id="147">147</th><td></td></tr>
+<tr><th id="148">148</th><td>	<b>return</b> <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="149">149</th><td>}</td></tr>
+<tr><th id="150">150</th><td></td></tr>
+<tr><th id="151">151</th><td><em>void</em></td></tr>
+<tr><th id="152">152</th><td><dfn class="decl def fn" id="netcfg_release" title='netcfg_release' data-ref="netcfg_release">netcfg_release</dfn>(<b>struct</b> <a class="type" href="../../include/netcfg.h.html#netcfg_info" title='netcfg_info' data-ref="netcfg_info">netcfg_info</a> *<dfn class="local col0 decl" id="70cfg_ptr" title='cfg_ptr' data-type='struct netcfg_info *' data-ref="70cfg_ptr">cfg_ptr</dfn>)</td></tr>
+<tr><th id="153">153</th><td>{</td></tr>
+<tr><th id="154">154</th><td>	<a class="ref fn" href="../../../../../../include/stdlib.h.html#free" title='free' data-ref="free">free</a>(<a class="local col0 ref" href="#70cfg_ptr" title='cfg_ptr' data-ref="70cfg_ptr">cfg_ptr</a>);</td></tr>
+<tr><th id="155">155</th><td>	<i>/* Close socket for shared interfaces */</i></td></tr>
+<tr><th id="156">156</th><td>	<b>if</b> (<a class="tu ref" href="#skfd" title='skfd' data-use='r' data-ref="skfd">skfd</a> &gt;= <var>0</var>) {</td></tr>
+<tr><th id="157">157</th><td>		<a class="ref fn" href="../../../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="tu ref" href="#skfd" title='skfd' data-use='r' data-ref="skfd">skfd</a>);</td></tr>
+<tr><th id="158">158</th><td>		<a class="tu ref" href="#skfd" title='skfd' data-use='w' data-ref="skfd">skfd</a> = -<var>1</var>;</td></tr>
+<tr><th id="159">159</th><td>	}</td></tr>
+<tr><th id="160">160</th><td>}</td></tr>
+<tr><th id="161">161</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Aug-19</em> from project dpdk_1805 revision <em>dpdk_1805</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>
