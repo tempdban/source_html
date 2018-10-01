@@ -1,0 +1,148 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>dpaa2_hw_dpbp.c source code [master/drivers/bus/fslmc/portal/dpaa2_hw_dpbp.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'master/drivers/bus/fslmc/portal/dpaa2_hw_dpbp.c'; var root_path = '../../../../..'; var data_path = '../../../../../../data';</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>master</a>/<a href='../../..'>drivers</a>/<a href='../..'>bus</a>/<a href='..'>fslmc</a>/<a href='./'>portal</a>/<a href='dpaa2_hw_dpbp.c.html'>dpaa2_hw_dpbp.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> *</i></td></tr>
+<tr><th id="3">3</th><td><i> *   Copyright (c) 2016 Freescale Semiconductor, Inc. All rights reserved.</i></td></tr>
+<tr><th id="4">4</th><td><i> *   Copyright 2016 NXP</i></td></tr>
+<tr><th id="5">5</th><td><i> *</i></td></tr>
+<tr><th id="6">6</th><td><i> */</i></td></tr>
+<tr><th id="7">7</th><td></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="../../../../../include/unistd.h.html">&lt;unistd.h&gt;</a></u></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="../../../../../include/stdio.h.html">&lt;stdio.h&gt;</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../../../../include/sys/types.h.html">&lt;sys/types.h&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../../../../include/string.h.html">&lt;string.h&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../../../include/stdlib.h.html">&lt;stdlib.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../../../include/fcntl.h.html">&lt;fcntl.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../../../include/errno.h.html">&lt;errno.h&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../../lib/librte_eal/common/include/rte_malloc.h.html">&lt;rte_malloc.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../../lib/librte_eal/common/include/arch/x86/rte_memcpy.h.html">&lt;rte_memcpy.h&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../../lib/librte_eal/common/include/rte_string_fns.h.html">&lt;rte_string_fns.h&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../../lib/librte_eal/common/include/arch/x86/rte_cycles.h.html">&lt;rte_cycles.h&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../../lib/librte_kvargs/rte_kvargs.h.html">&lt;rte_kvargs.h&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../../lib/librte_eal/common/include/rte_dev.h.html">&lt;rte_dev.h&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../../lib/librte_ethdev/rte_ethdev_driver.h.html">&lt;rte_ethdev_driver.h&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../../../lib/librte_mbuf/rte_mbuf_pool_ops.h.html">&lt;rte_mbuf_pool_ops.h&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../fslmc_logs.h.html">&lt;fslmc_logs.h&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../rte_fslmc.h.html">&lt;rte_fslmc.h&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../mc/fsl_dpbp.h.html">&lt;mc/fsl_dpbp.h&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="dpaa2_hw_pvt.h.html">"portal/dpaa2_hw_pvt.h"</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="dpaa2_hw_dpio.h.html">"portal/dpaa2_hw_dpio.h"</a></u></td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><i>/* List of all the memseg information locally maintained in dpaa2 driver. This</i></td></tr>
+<tr><th id="32">32</th><td><i> * is to optimize the PA_to_VA searches until a better mechanism (algo) is</i></td></tr>
+<tr><th id="33">33</th><td><i> * available.</i></td></tr>
+<tr><th id="34">34</th><td><i> */</i></td></tr>
+<tr><th id="35">35</th><td><b>struct</b> <a class="type" href="dpaa2_hw_pvt.h.html#272" title='dpaa2_memseg_list' data-ref="dpaa2_memseg_list">dpaa2_memseg_list</a> <dfn class="decl def" id="rte_dpaa2_memsegs" title='rte_dpaa2_memsegs' data-ref="rte_dpaa2_memsegs">rte_dpaa2_memsegs</dfn></td></tr>
+<tr><th id="36">36</th><td>	= <a class="macro" href="../../../../../include/sys/queue.h.html#374" title="{ ((void*)0), &amp;(rte_dpaa2_memsegs).tqh_first }" data-ref="_M/TAILQ_HEAD_INITIALIZER">TAILQ_HEAD_INITIALIZER</a>(<a class="ref" href="dpaa2_hw_pvt.h.html#rte_dpaa2_memsegs" title='rte_dpaa2_memsegs' data-ref="rte_dpaa2_memsegs">rte_dpaa2_memsegs</a>);</td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><a class="macro" href="../../../../../include/sys/queue.h.html#372" title="struct dpbp_dev_list { struct dpaa2_dpbp_dev *tqh_first; struct dpaa2_dpbp_dev * *tqh_last; }" data-ref="_M/TAILQ_HEAD">TAILQ_HEAD</a>(<dfn class="type def" id="dpbp_dev_list" title='dpbp_dev_list' data-ref="dpbp_dev_list">dpbp_dev_list</dfn>, <a class="type" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev" title='dpaa2_dpbp_dev' data-ref="dpaa2_dpbp_dev">dpaa2_dpbp_dev</a>);</td></tr>
+<tr><th id="39">39</th><td><em>static</em> <b>struct</b> <a class="type" href="#38" title='dpbp_dev_list' data-ref="dpbp_dev_list">dpbp_dev_list</a> <dfn class="tu decl def" id="dpbp_dev_list" title='dpbp_dev_list' data-type='struct dpbp_dev_list' data-ref="dpbp_dev_list">dpbp_dev_list</dfn></td></tr>
+<tr><th id="40">40</th><td>	= <a class="macro" href="../../../../../include/sys/queue.h.html#374" title="{ ((void*)0), &amp;(dpbp_dev_list).tqh_first }" data-ref="_M/TAILQ_HEAD_INITIALIZER">TAILQ_HEAD_INITIALIZER</a>(<a class="tu ref" href="#dpbp_dev_list" title='dpbp_dev_list' data-use='m' data-ref="dpbp_dev_list">dpbp_dev_list</a>); <i class="doc">/*!&lt; DPBP device list */</i></td></tr>
+<tr><th id="41">41</th><td></td></tr>
+<tr><th id="42">42</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="43">43</th><td><dfn class="tu decl def fn" id="dpaa2_create_dpbp_device" title='dpaa2_create_dpbp_device' data-type='int dpaa2_create_dpbp_device(int vdev_fd, struct vfio_device_info * obj_info, int dpbp_id)' data-ref="dpaa2_create_dpbp_device">dpaa2_create_dpbp_device</dfn>(<em>int</em> <dfn class="local col1 decl" id="1vdev_fd" title='vdev_fd' data-type='int' data-ref="1vdev_fd">vdev_fd</dfn> <a class="macro" href="../../../../lib/librte_eal/common/include/rte_common.h.html#76" title="__attribute__((__unused__))" data-ref="_M/__rte_unused">__rte_unused</a>,</td></tr>
+<tr><th id="44">44</th><td>			 <b>struct</b> <a class="type" href="../../../../../include/linux/vfio.h.html#vfio_device_info" title='vfio_device_info' data-ref="vfio_device_info">vfio_device_info</a> *<dfn class="local col2 decl" id="2obj_info" title='obj_info' data-type='struct vfio_device_info *' data-ref="2obj_info">obj_info</dfn> <a class="macro" href="../../../../lib/librte_eal/common/include/rte_common.h.html#76" title="__attribute__((__unused__))" data-ref="_M/__rte_unused">__rte_unused</a>,</td></tr>
+<tr><th id="45">45</th><td>			 <em>int</em> <dfn class="local col3 decl" id="3dpbp_id" title='dpbp_id' data-type='int' data-ref="3dpbp_id">dpbp_id</dfn>)</td></tr>
+<tr><th id="46">46</th><td>{</td></tr>
+<tr><th id="47">47</th><td>	<b>struct</b> <a class="type" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev" title='dpaa2_dpbp_dev' data-ref="dpaa2_dpbp_dev">dpaa2_dpbp_dev</a> *<dfn class="local col4 decl" id="4dpbp_node" title='dpbp_node' data-type='struct dpaa2_dpbp_dev *' data-ref="4dpbp_node">dpbp_node</dfn>;</td></tr>
+<tr><th id="48">48</th><td>	<em>int</em> <dfn class="local col5 decl" id="5ret" title='ret' data-type='int' data-ref="5ret">ret</dfn>;</td></tr>
+<tr><th id="49">49</th><td>	<em>static</em> <em>int</em> <dfn class="local col6 decl" id="6register_once" title='register_once' data-type='int' data-ref="6register_once">register_once</dfn>;</td></tr>
+<tr><th id="50">50</th><td></td></tr>
+<tr><th id="51">51</th><td>	<i>/* Allocate DPAA2 dpbp handle */</i></td></tr>
+<tr><th id="52">52</th><td>	<a class="local col4 ref" href="#4dpbp_node" title='dpbp_node' data-ref="4dpbp_node">dpbp_node</a> = <a class="ref fn" href="../../../../lib/librte_eal/common/include/rte_malloc.h.html#rte_malloc" title='rte_malloc' data-ref="rte_malloc">rte_malloc</a>(<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>, <b>sizeof</b>(<b>struct</b> <a class="type" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev" title='dpaa2_dpbp_dev' data-ref="dpaa2_dpbp_dev">dpaa2_dpbp_dev</a>), <var>0</var>);</td></tr>
+<tr><th id="53">53</th><td>	<b>if</b> (!<a class="local col4 ref" href="#4dpbp_node" title='dpbp_node' data-ref="4dpbp_node">dpbp_node</a>) {</td></tr>
+<tr><th id="54">54</th><td>		<a class="macro" href="../fslmc_logs.h.html#25" title="rte_log(4U, dpaa2_logtype_bus, &quot;fslmc: &quot; &quot;Memory allocation failed for DPBP Device&quot; &quot;\n&quot;)" data-ref="_M/DPAA2_BUS_ERR">DPAA2_BUS_ERR</a>(<q>"Memory allocation failed for DPBP Device"</q>);</td></tr>
+<tr><th id="55">55</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="56">56</th><td>	}</td></tr>
+<tr><th id="57">57</th><td></td></tr>
+<tr><th id="58">58</th><td>	<i>/* Open the dpbp object */</i></td></tr>
+<tr><th id="59">59</th><td>	<a class="local col4 ref" href="#4dpbp_node" title='dpbp_node' data-ref="4dpbp_node">dpbp_node</a>-&gt;<a class="ref field" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev::dpbp" title='dpaa2_dpbp_dev::dpbp' data-ref="dpaa2_dpbp_dev::dpbp">dpbp</a>.<a class="ref field" href="../mc/fsl_mc_sys.h.html#fsl_mc_io::regs" title='fsl_mc_io::regs' data-ref="fsl_mc_io::regs">regs</a> = <a class="ref" href="dpaa2_hw_pvt.h.html#rte_mcp_ptr_list" title='rte_mcp_ptr_list' data-ref="rte_mcp_ptr_list">rte_mcp_ptr_list</a>[<a class="macro" href="dpaa2_hw_pvt.h.html#40" title="0" data-ref="_M/MC_PORTAL_INDEX">MC_PORTAL_INDEX</a>];</td></tr>
+<tr><th id="60">60</th><td>	<a class="local col5 ref" href="#5ret" title='ret' data-ref="5ret">ret</a> = <a class="ref fn" href="../mc/fsl_dpbp.h.html#dpbp_open" title='dpbp_open' data-ref="dpbp_open">dpbp_open</a>(&amp;<a class="local col4 ref" href="#4dpbp_node" title='dpbp_node' data-ref="4dpbp_node">dpbp_node</a>-&gt;<a class="ref field" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev::dpbp" title='dpaa2_dpbp_dev::dpbp' data-ref="dpaa2_dpbp_dev::dpbp">dpbp</a>,</td></tr>
+<tr><th id="61">61</th><td>			<a class="macro" href="../mc/fsl_mc_sys.h.html#55" title="0" data-ref="_M/CMD_PRI_LOW">CMD_PRI_LOW</a>, <a class="local col3 ref" href="#3dpbp_id" title='dpbp_id' data-ref="3dpbp_id">dpbp_id</a>, &amp;<a class="local col4 ref" href="#4dpbp_node" title='dpbp_node' data-ref="4dpbp_node">dpbp_node</a>-&gt;<a class="ref field" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev::token" title='dpaa2_dpbp_dev::token' data-ref="dpaa2_dpbp_dev::token">token</a>);</td></tr>
+<tr><th id="62">62</th><td>	<b>if</b> (<a class="local col5 ref" href="#5ret" title='ret' data-ref="5ret">ret</a>) {</td></tr>
+<tr><th id="63">63</th><td>		<a class="macro" href="../fslmc_logs.h.html#25" title="rte_log(4U, dpaa2_logtype_bus, &quot;fslmc: &quot; &quot;Unable to open buffer pool object: err(%d)&quot; &quot;\n&quot;, ret)" data-ref="_M/DPAA2_BUS_ERR">DPAA2_BUS_ERR</a>(<q>"Unable to open buffer pool object: err(%d)"</q>,</td></tr>
+<tr><th id="64">64</th><td>			      <a class="local col5 ref" href="#5ret" title='ret' data-ref="5ret">ret</a>);</td></tr>
+<tr><th id="65">65</th><td>		<a class="ref fn" href="../../../../lib/librte_eal/common/include/rte_malloc.h.html#rte_free" title='rte_free' data-ref="rte_free">rte_free</a>(<a class="local col4 ref" href="#4dpbp_node" title='dpbp_node' data-ref="4dpbp_node">dpbp_node</a>);</td></tr>
+<tr><th id="66">66</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="67">67</th><td>	}</td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td>	<i>/* Clean the device first */</i></td></tr>
+<tr><th id="70">70</th><td>	<a class="local col5 ref" href="#5ret" title='ret' data-ref="5ret">ret</a> = <a class="ref fn" href="../mc/fsl_dpbp.h.html#dpbp_reset" title='dpbp_reset' data-ref="dpbp_reset">dpbp_reset</a>(&amp;<a class="local col4 ref" href="#4dpbp_node" title='dpbp_node' data-ref="4dpbp_node">dpbp_node</a>-&gt;<a class="ref field" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev::dpbp" title='dpaa2_dpbp_dev::dpbp' data-ref="dpaa2_dpbp_dev::dpbp">dpbp</a>, <a class="macro" href="../mc/fsl_mc_sys.h.html#55" title="0" data-ref="_M/CMD_PRI_LOW">CMD_PRI_LOW</a>, <a class="local col4 ref" href="#4dpbp_node" title='dpbp_node' data-ref="4dpbp_node">dpbp_node</a>-&gt;<a class="ref field" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev::token" title='dpaa2_dpbp_dev::token' data-ref="dpaa2_dpbp_dev::token">token</a>);</td></tr>
+<tr><th id="71">71</th><td>	<b>if</b> (<a class="local col5 ref" href="#5ret" title='ret' data-ref="5ret">ret</a>) {</td></tr>
+<tr><th id="72">72</th><td>		<a class="macro" href="../fslmc_logs.h.html#25" title="rte_log(4U, dpaa2_logtype_bus, &quot;fslmc: &quot; &quot;Unable to reset buffer pool device. err(%d)&quot; &quot;\n&quot;, ret)" data-ref="_M/DPAA2_BUS_ERR">DPAA2_BUS_ERR</a>(<q>"Unable to reset buffer pool device. err(%d)"</q>,</td></tr>
+<tr><th id="73">73</th><td>			      <a class="local col5 ref" href="#5ret" title='ret' data-ref="5ret">ret</a>);</td></tr>
+<tr><th id="74">74</th><td>		<a class="ref fn" href="../mc/fsl_dpbp.h.html#dpbp_close" title='dpbp_close' data-ref="dpbp_close">dpbp_close</a>(&amp;<a class="local col4 ref" href="#4dpbp_node" title='dpbp_node' data-ref="4dpbp_node">dpbp_node</a>-&gt;<a class="ref field" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev::dpbp" title='dpaa2_dpbp_dev::dpbp' data-ref="dpaa2_dpbp_dev::dpbp">dpbp</a>, <a class="macro" href="../mc/fsl_mc_sys.h.html#55" title="0" data-ref="_M/CMD_PRI_LOW">CMD_PRI_LOW</a>, <a class="local col4 ref" href="#4dpbp_node" title='dpbp_node' data-ref="4dpbp_node">dpbp_node</a>-&gt;<a class="ref field" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev::token" title='dpaa2_dpbp_dev::token' data-ref="dpaa2_dpbp_dev::token">token</a>);</td></tr>
+<tr><th id="75">75</th><td>		<a class="ref fn" href="../../../../lib/librte_eal/common/include/rte_malloc.h.html#rte_free" title='rte_free' data-ref="rte_free">rte_free</a>(<a class="local col4 ref" href="#4dpbp_node" title='dpbp_node' data-ref="4dpbp_node">dpbp_node</a>);</td></tr>
+<tr><th id="76">76</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="77">77</th><td>	}</td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td>	<a class="local col4 ref" href="#4dpbp_node" title='dpbp_node' data-ref="4dpbp_node">dpbp_node</a>-&gt;<a class="ref field" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev::dpbp_id" title='dpaa2_dpbp_dev::dpbp_id' data-ref="dpaa2_dpbp_dev::dpbp_id">dpbp_id</a> = <a class="local col3 ref" href="#3dpbp_id" title='dpbp_id' data-ref="3dpbp_id">dpbp_id</a>;</td></tr>
+<tr><th id="80">80</th><td>	<a class="ref fn" href="../../../../lib/librte_eal/common/include/generic/rte_atomic.h.html#rte_atomic16_init" title='rte_atomic16_init' data-ref="rte_atomic16_init">rte_atomic16_init</a>(&amp;<a class="local col4 ref" href="#4dpbp_node" title='dpbp_node' data-ref="4dpbp_node">dpbp_node</a>-&gt;<a class="ref field" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev::in_use" title='dpaa2_dpbp_dev::in_use' data-ref="dpaa2_dpbp_dev::in_use">in_use</a>);</td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td>	<a class="macro" href="../../../../../include/sys/queue.h.html#402" title="do { (dpbp_node)-&gt;next.tqe_next = ((void*)0); (dpbp_node)-&gt;next.tqe_prev = (&amp;dpbp_dev_list)-&gt;tqh_last; *(&amp;dpbp_dev_list)-&gt;tqh_last = (dpbp_node); (&amp;dpbp_dev_list)-&gt;tqh_last = &amp;(dpbp_node)-&gt;next.tqe_next; } while ( 0)" data-ref="_M/TAILQ_INSERT_TAIL">TAILQ_INSERT_TAIL</a>(&amp;<a class="tu ref" href="#dpbp_dev_list" title='dpbp_dev_list' data-use='a' data-ref="dpbp_dev_list">dpbp_dev_list</a>, <a class="local col4 ref" href="#4dpbp_node" title='dpbp_node' data-ref="4dpbp_node">dpbp_node</a>, <a class="ref field" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev::next" title='dpaa2_dpbp_dev::next' data-ref="dpaa2_dpbp_dev::next">next</a>);</td></tr>
+<tr><th id="83">83</th><td></td></tr>
+<tr><th id="84">84</th><td>	<b>if</b> (!<a class="local col6 ref" href="#6register_once" title='register_once' data-ref="6register_once">register_once</a>) {</td></tr>
+<tr><th id="85">85</th><td>		<a class="ref fn" href="../../../../lib/librte_mbuf/rte_mbuf_pool_ops.h.html#rte_mbuf_set_platform_mempool_ops" title='rte_mbuf_set_platform_mempool_ops' data-ref="rte_mbuf_set_platform_mempool_ops">rte_mbuf_set_platform_mempool_ops</a>(<a class="macro" href="dpaa2_hw_pvt.h.html#47" title="&quot;dpaa2&quot;" data-ref="_M/DPAA2_MEMPOOL_OPS_NAME">DPAA2_MEMPOOL_OPS_NAME</a>);</td></tr>
+<tr><th id="86">86</th><td>		<a class="local col6 ref" href="#6register_once" title='register_once' data-ref="6register_once">register_once</a> = <var>1</var>;</td></tr>
+<tr><th id="87">87</th><td>	}</td></tr>
+<tr><th id="88">88</th><td></td></tr>
+<tr><th id="89">89</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="90">90</th><td>}</td></tr>
+<tr><th id="91">91</th><td></td></tr>
+<tr><th id="92">92</th><td><b>struct</b> <a class="type" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev" title='dpaa2_dpbp_dev' data-ref="dpaa2_dpbp_dev">dpaa2_dpbp_dev</a> *<dfn class="decl def fn" id="dpaa2_alloc_dpbp_dev" title='dpaa2_alloc_dpbp_dev' data-ref="dpaa2_alloc_dpbp_dev">dpaa2_alloc_dpbp_dev</dfn>(<em>void</em>)</td></tr>
+<tr><th id="93">93</th><td>{</td></tr>
+<tr><th id="94">94</th><td>	<b>struct</b> <a class="type" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev" title='dpaa2_dpbp_dev' data-ref="dpaa2_dpbp_dev">dpaa2_dpbp_dev</a> *<dfn class="local col7 decl" id="7dpbp_dev" title='dpbp_dev' data-type='struct dpaa2_dpbp_dev *' data-ref="7dpbp_dev">dpbp_dev</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td>	<i>/* Get DPBP dev handle from list using index */</i></td></tr>
+<tr><th id="97">97</th><td>	<a class="macro" href="../../../../../include/sys/queue.h.html#435" title="for ((dpbp_dev) = ((&amp;dpbp_dev_list)-&gt;tqh_first); (dpbp_dev); (dpbp_dev) = ((dpbp_dev)-&gt;next.tqe_next))" data-ref="_M/TAILQ_FOREACH">TAILQ_FOREACH</a>(<a class="local col7 ref" href="#7dpbp_dev" title='dpbp_dev' data-ref="7dpbp_dev">dpbp_dev</a>, &amp;<a class="tu ref" href="#dpbp_dev_list" title='dpbp_dev_list' data-use='a' data-ref="dpbp_dev_list">dpbp_dev_list</a>, <a class="ref field" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev::next" title='dpaa2_dpbp_dev::next' data-ref="dpaa2_dpbp_dev::next">next</a>) {</td></tr>
+<tr><th id="98">98</th><td>		<b>if</b> (<a class="local col7 ref" href="#7dpbp_dev" title='dpbp_dev' data-ref="7dpbp_dev">dpbp_dev</a> &amp;&amp; <a class="ref fn" href="../../../../lib/librte_eal/common/include/generic/rte_atomic.h.html#rte_atomic16_test_and_set" title='rte_atomic16_test_and_set' data-ref="rte_atomic16_test_and_set">rte_atomic16_test_and_set</a>(&amp;<a class="local col7 ref" href="#7dpbp_dev" title='dpbp_dev' data-ref="7dpbp_dev">dpbp_dev</a>-&gt;<a class="ref field" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev::in_use" title='dpaa2_dpbp_dev::in_use' data-ref="dpaa2_dpbp_dev::in_use">in_use</a>))</td></tr>
+<tr><th id="99">99</th><td>			<b>break</b>;</td></tr>
+<tr><th id="100">100</th><td>	}</td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td>	<b>return</b> <a class="local col7 ref" href="#7dpbp_dev" title='dpbp_dev' data-ref="7dpbp_dev">dpbp_dev</a>;</td></tr>
+<tr><th id="103">103</th><td>}</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td><em>void</em> <dfn class="decl def fn" id="dpaa2_free_dpbp_dev" title='dpaa2_free_dpbp_dev' data-ref="dpaa2_free_dpbp_dev">dpaa2_free_dpbp_dev</dfn>(<b>struct</b> <a class="type" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev" title='dpaa2_dpbp_dev' data-ref="dpaa2_dpbp_dev">dpaa2_dpbp_dev</a> *<dfn class="local col8 decl" id="8dpbp" title='dpbp' data-type='struct dpaa2_dpbp_dev *' data-ref="8dpbp">dpbp</dfn>)</td></tr>
+<tr><th id="106">106</th><td>{</td></tr>
+<tr><th id="107">107</th><td>	<b>struct</b> <a class="type" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev" title='dpaa2_dpbp_dev' data-ref="dpaa2_dpbp_dev">dpaa2_dpbp_dev</a> *<dfn class="local col9 decl" id="9dpbp_dev" title='dpbp_dev' data-type='struct dpaa2_dpbp_dev *' data-ref="9dpbp_dev">dpbp_dev</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td>	<i>/* Match DPBP handle and mark it free */</i></td></tr>
+<tr><th id="110">110</th><td>	<a class="macro" href="../../../../../include/sys/queue.h.html#435" title="for ((dpbp_dev) = ((&amp;dpbp_dev_list)-&gt;tqh_first); (dpbp_dev); (dpbp_dev) = ((dpbp_dev)-&gt;next.tqe_next))" data-ref="_M/TAILQ_FOREACH">TAILQ_FOREACH</a>(<a class="local col9 ref" href="#9dpbp_dev" title='dpbp_dev' data-ref="9dpbp_dev">dpbp_dev</a>, &amp;<a class="tu ref" href="#dpbp_dev_list" title='dpbp_dev_list' data-use='a' data-ref="dpbp_dev_list">dpbp_dev_list</a>, <a class="ref field" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev::next" title='dpaa2_dpbp_dev::next' data-ref="dpaa2_dpbp_dev::next">next</a>) {</td></tr>
+<tr><th id="111">111</th><td>		<b>if</b> (<a class="local col9 ref" href="#9dpbp_dev" title='dpbp_dev' data-ref="9dpbp_dev">dpbp_dev</a> == <a class="local col8 ref" href="#8dpbp" title='dpbp' data-ref="8dpbp">dpbp</a>) {</td></tr>
+<tr><th id="112">112</th><td>			<a class="ref fn" href="../../../../lib/librte_eal/common/include/generic/rte_atomic.h.html#rte_atomic16_dec" title='rte_atomic16_dec' data-ref="rte_atomic16_dec">rte_atomic16_dec</a>(&amp;<a class="local col9 ref" href="#9dpbp_dev" title='dpbp_dev' data-ref="9dpbp_dev">dpbp_dev</a>-&gt;<a class="ref field" href="dpaa2_hw_pvt.h.html#dpaa2_dpbp_dev::in_use" title='dpaa2_dpbp_dev::in_use' data-ref="dpaa2_dpbp_dev::in_use">in_use</a>);</td></tr>
+<tr><th id="113">113</th><td>			<b>return</b>;</td></tr>
+<tr><th id="114">114</th><td>		}</td></tr>
+<tr><th id="115">115</th><td>	}</td></tr>
+<tr><th id="116">116</th><td>}</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td><em>int</em> <dfn class="decl def fn" id="dpaa2_dpbp_supported" title='dpaa2_dpbp_supported' data-ref="dpaa2_dpbp_supported">dpaa2_dpbp_supported</dfn>(<em>void</em>)</td></tr>
+<tr><th id="119">119</th><td>{</td></tr>
+<tr><th id="120">120</th><td>	<b>if</b> (<a class="macro" href="../../../../../include/sys/queue.h.html#457" title="((&amp;dpbp_dev_list)-&gt;tqh_first == ((void*)0))" data-ref="_M/TAILQ_EMPTY">TAILQ_EMPTY</a>(&amp;<a class="tu ref" href="#dpbp_dev_list" title='dpbp_dev_list' data-use='a' data-ref="dpbp_dev_list">dpbp_dev_list</a>))</td></tr>
+<tr><th id="121">121</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="122">122</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="123">123</th><td>}</td></tr>
+<tr><th id="124">124</th><td></td></tr>
+<tr><th id="125">125</th><td><em>static</em> <b>struct</b> <a class="type" href="../rte_fslmc.h.html#rte_dpaa2_object" title='rte_dpaa2_object' data-ref="rte_dpaa2_object">rte_dpaa2_object</a> <dfn class="tu decl def" id="rte_dpaa2_dpbp_obj" title='rte_dpaa2_dpbp_obj' data-type='struct rte_dpaa2_object' data-ref="rte_dpaa2_dpbp_obj">rte_dpaa2_dpbp_obj</dfn> = {</td></tr>
+<tr><th id="126">126</th><td>	.<a class="ref field" href="../rte_fslmc.h.html#rte_dpaa2_object::dev_type" title='rte_dpaa2_object::dev_type' data-ref="rte_dpaa2_object::dev_type">dev_type</a> = <a class="enum" href="../rte_fslmc.h.html#DPAA2_BPOOL" title='DPAA2_BPOOL' data-ref="DPAA2_BPOOL">DPAA2_BPOOL</a>,</td></tr>
+<tr><th id="127">127</th><td>	.<a class="ref field" href="../rte_fslmc.h.html#rte_dpaa2_object::create" title='rte_dpaa2_object::create' data-ref="rte_dpaa2_object::create">create</a> = <a class="tu ref fn" href="#dpaa2_create_dpbp_device" title='dpaa2_create_dpbp_device' data-ref="dpaa2_create_dpbp_device">dpaa2_create_dpbp_device</a>,</td></tr>
+<tr><th id="128">128</th><td>};</td></tr>
+<tr><th id="129">129</th><td></td></tr>
+<tr><th id="130">130</th><td><a class="macro" href="../rte_fslmc.h.html#204" title="static void __attribute__((constructor(65535), used)) dpaa2objinitfn_dpbp(void) { (rte_dpaa2_dpbp_obj).name = &quot;dpbp&quot;; rte_fslmc_object_register(&amp;rte_dpaa2_dpbp_obj); } static const char this_pmd_name0[] __attribute__((used)) = &quot;dpbp&quot;" data-ref="_M/RTE_PMD_REGISTER_DPAA2_OBJECT">RTE_PMD_REGISTER_DPAA2_OBJECT</a>(dpbp, <a class="tu ref" href="#rte_dpaa2_dpbp_obj" title='rte_dpaa2_dpbp_obj' data-use='m' data-ref="rte_dpaa2_dpbp_obj"><a class="tu ref" href="#rte_dpaa2_dpbp_obj" title='rte_dpaa2_dpbp_obj' data-use='a' data-ref="rte_dpaa2_dpbp_obj">rte_dpaa2_dpbp_obj</a></a>);</td></tr>
+<tr><th id="131">131</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project master revision <em>master</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

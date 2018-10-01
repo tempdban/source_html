@@ -1,0 +1,439 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>igb_vmdq.c source code [master/kernel/linux/kni/ethtool/igb/igb_vmdq.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'master/kernel/linux/kni/ethtool/igb/igb_vmdq.c'; var root_path = '../../../../../..'; var data_path = '../../../../../../../data';</script>
+<script src='../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../..'>master</a>/<a href='../../../..'>kernel</a>/<a href='../../..'>linux</a>/<a href='../..'>kni</a>/<a href='..'>ethtool</a>/<a href='./'>igb</a>/<a href='igb_vmdq.c.html'>igb_vmdq.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// SPDX-License-Identifier: GPL-2.0</i></td></tr>
+<tr><th id="2">2</th><td><i>/*******************************************************************************</i></td></tr>
+<tr><th id="3">3</th><td><i></i></td></tr>
+<tr><th id="4">4</th><td><i>  Intel(R) Gigabit Ethernet Linux driver</i></td></tr>
+<tr><th id="5">5</th><td><i>  Copyright(c) 2007-2013 Intel Corporation.</i></td></tr>
+<tr><th id="6">6</th><td><i></i></td></tr>
+<tr><th id="7">7</th><td><i>  Contact Information:</i></td></tr>
+<tr><th id="8">8</th><td><i>  e1000-devel Mailing List &lt;e1000-devel@lists.sourceforge.net&gt;</i></td></tr>
+<tr><th id="9">9</th><td><i>  Intel Corporation, 5200 N.E. Elam Young Parkway, Hillsboro, OR 97124-6497</i></td></tr>
+<tr><th id="10">10</th><td><i></i></td></tr>
+<tr><th id="11">11</th><td><i>*******************************************************************************/</i></td></tr>
+<tr><th id="12">12</th><td></td></tr>
+<tr><th id="13">13</th><td></td></tr>
+<tr><th id="14">14</th><td><u>#include &lt;linux/tcp.h&gt;</u></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="igb.h.html">"igb.h"</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="igb_vmdq.h.html">"igb_vmdq.h"</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include &lt;linux/if_vlan.h&gt;</u></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><u>#<span data-ppcond="20">ifdef</span> <span class="macro" data-ref="_M/CONFIG_IGB_VMDQ_NETDEV">CONFIG_IGB_VMDQ_NETDEV</span></u></td></tr>
+<tr><th id="21">21</th><td><em>int</em> igb_vmdq_open(<b>struct</b> net_device *dev)</td></tr>
+<tr><th id="22">22</th><td>{</td></tr>
+<tr><th id="23">23</th><td>	<b>struct</b> igb_vmdq_adapter *vadapter = netdev_priv(dev);</td></tr>
+<tr><th id="24">24</th><td>	<b>struct</b> igb_adapter *adapter = vadapter-&gt;real_adapter;</td></tr>
+<tr><th id="25">25</th><td>	<b>struct</b> net_device *main_netdev = adapter-&gt;netdev;</td></tr>
+<tr><th id="26">26</th><td>	<em>int</em> hw_queue = vadapter-&gt;rx_ring-&gt;queue_index +</td></tr>
+<tr><th id="27">27</th><td>		       adapter-&gt;vfs_allocated_count;</td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td>	<b>if</b> (test_bit(__IGB_DOWN, &amp;adapter-&gt;state)) {</td></tr>
+<tr><th id="30">30</th><td>		DPRINTK(DRV, WARNING,</td></tr>
+<tr><th id="31">31</th><td>			<q>"Open %s before opening this device.\n"</q>,</td></tr>
+<tr><th id="32">32</th><td>			main_netdev-&gt;name);</td></tr>
+<tr><th id="33">33</th><td>		<b>return</b> -EAGAIN;</td></tr>
+<tr><th id="34">34</th><td>	}</td></tr>
+<tr><th id="35">35</th><td>	netif_carrier_off(dev);</td></tr>
+<tr><th id="36">36</th><td>	vadapter-&gt;tx_ring-&gt;vmdq_netdev = dev;</td></tr>
+<tr><th id="37">37</th><td>	vadapter-&gt;rx_ring-&gt;vmdq_netdev = dev;</td></tr>
+<tr><th id="38">38</th><td>	<b>if</b> (is_valid_ether_addr(dev-&gt;dev_addr)) {</td></tr>
+<tr><th id="39">39</th><td>		igb_del_mac_filter(adapter, dev-&gt;dev_addr, hw_queue);</td></tr>
+<tr><th id="40">40</th><td>		igb_add_mac_filter(adapter, dev-&gt;dev_addr, hw_queue);</td></tr>
+<tr><th id="41">41</th><td>	}</td></tr>
+<tr><th id="42">42</th><td>	netif_carrier_on(dev);</td></tr>
+<tr><th id="43">43</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="44">44</th><td>}</td></tr>
+<tr><th id="45">45</th><td></td></tr>
+<tr><th id="46">46</th><td><em>int</em> igb_vmdq_close(<b>struct</b> net_device *dev)</td></tr>
+<tr><th id="47">47</th><td>{</td></tr>
+<tr><th id="48">48</th><td>	<b>struct</b> igb_vmdq_adapter *vadapter = netdev_priv(dev);</td></tr>
+<tr><th id="49">49</th><td>	<b>struct</b> igb_adapter *adapter = vadapter-&gt;real_adapter;</td></tr>
+<tr><th id="50">50</th><td>	<em>int</em> hw_queue = vadapter-&gt;rx_ring-&gt;queue_index +</td></tr>
+<tr><th id="51">51</th><td>		       adapter-&gt;vfs_allocated_count;</td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td>	netif_carrier_off(dev);</td></tr>
+<tr><th id="54">54</th><td>	igb_del_mac_filter(adapter, dev-&gt;dev_addr, hw_queue);</td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td>	vadapter-&gt;tx_ring-&gt;vmdq_netdev = NULL;</td></tr>
+<tr><th id="57">57</th><td>	vadapter-&gt;rx_ring-&gt;vmdq_netdev = NULL;</td></tr>
+<tr><th id="58">58</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="59">59</th><td>}</td></tr>
+<tr><th id="60">60</th><td></td></tr>
+<tr><th id="61">61</th><td>netdev_tx_t igb_vmdq_xmit_frame(<b>struct</b> sk_buff *skb, <b>struct</b> net_device *dev)</td></tr>
+<tr><th id="62">62</th><td>{</td></tr>
+<tr><th id="63">63</th><td>	<b>struct</b> igb_vmdq_adapter *vadapter = netdev_priv(dev);</td></tr>
+<tr><th id="64">64</th><td></td></tr>
+<tr><th id="65">65</th><td>	<b>return</b> igb_xmit_frame_ring(skb, vadapter-&gt;tx_ring);</td></tr>
+<tr><th id="66">66</th><td>}</td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td><b>struct</b> net_device_stats *igb_vmdq_get_stats(<b>struct</b> net_device *dev)</td></tr>
+<tr><th id="69">69</th><td>{</td></tr>
+<tr><th id="70">70</th><td>	<b>struct</b> igb_vmdq_adapter *vadapter = netdev_priv(dev);</td></tr>
+<tr><th id="71">71</th><td>        <b>struct</b> igb_adapter *adapter = vadapter-&gt;real_adapter;</td></tr>
+<tr><th id="72">72</th><td>        <b>struct</b> e1000_hw *hw = &amp;adapter-&gt;hw;</td></tr>
+<tr><th id="73">73</th><td>	<em>int</em> hw_queue = vadapter-&gt;rx_ring-&gt;queue_index +</td></tr>
+<tr><th id="74">74</th><td>		       adapter-&gt;vfs_allocated_count;</td></tr>
+<tr><th id="75">75</th><td></td></tr>
+<tr><th id="76">76</th><td>	vadapter-&gt;net_stats.rx_packets +=</td></tr>
+<tr><th id="77">77</th><td>			E1000_READ_REG(hw, E1000_PFVFGPRC(hw_queue));</td></tr>
+<tr><th id="78">78</th><td>	E1000_WRITE_REG(hw, E1000_PFVFGPRC(hw_queue), <var>0</var>);</td></tr>
+<tr><th id="79">79</th><td>        vadapter-&gt;net_stats.tx_packets +=</td></tr>
+<tr><th id="80">80</th><td>			E1000_READ_REG(hw, E1000_PFVFGPTC(hw_queue));</td></tr>
+<tr><th id="81">81</th><td>        E1000_WRITE_REG(hw, E1000_PFVFGPTC(hw_queue), <var>0</var>);</td></tr>
+<tr><th id="82">82</th><td>        vadapter-&gt;net_stats.rx_bytes +=</td></tr>
+<tr><th id="83">83</th><td>			E1000_READ_REG(hw, E1000_PFVFGORC(hw_queue));</td></tr>
+<tr><th id="84">84</th><td>        E1000_WRITE_REG(hw, E1000_PFVFGORC(hw_queue), <var>0</var>);</td></tr>
+<tr><th id="85">85</th><td>        vadapter-&gt;net_stats.tx_bytes +=</td></tr>
+<tr><th id="86">86</th><td>			E1000_READ_REG(hw, E1000_PFVFGOTC(hw_queue));</td></tr>
+<tr><th id="87">87</th><td>        E1000_WRITE_REG(hw, E1000_PFVFGOTC(hw_queue), <var>0</var>);</td></tr>
+<tr><th id="88">88</th><td>        vadapter-&gt;net_stats.multicast +=</td></tr>
+<tr><th id="89">89</th><td>			E1000_READ_REG(hw, E1000_PFVFMPRC(hw_queue));</td></tr>
+<tr><th id="90">90</th><td>        E1000_WRITE_REG(hw, E1000_PFVFMPRC(hw_queue), <var>0</var>);</td></tr>
+<tr><th id="91">91</th><td>	<i>/* only return the current stats */</i></td></tr>
+<tr><th id="92">92</th><td>	<b>return</b> &amp;vadapter-&gt;net_stats;</td></tr>
+<tr><th id="93">93</th><td>}</td></tr>
+<tr><th id="94">94</th><td></td></tr>
+<tr><th id="95">95</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="96">96</th><td><i class="doc"> * igb_write_vm_addr_list - write unicast addresses to RAR table</i></td></tr>
+<tr><th id="97">97</th><td><i class="doc"> *<span class="command"> @netdev</span>: network interface device structure</i></td></tr>
+<tr><th id="98">98</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="99">99</th><td><i class="doc"> * Writes unicast address list to the RAR table.</i></td></tr>
+<tr><th id="100">100</th><td><i class="doc"> * Returns: -ENOMEM on failure/insufficient address space</i></td></tr>
+<tr><th id="101">101</th><td><i class="doc"> *                0 on no addresses written</i></td></tr>
+<tr><th id="102">102</th><td><i class="doc"> *                X on writing X addresses to the RAR table</i></td></tr>
+<tr><th id="103">103</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="104">104</th><td><em>static</em> <em>int</em> igb_write_vm_addr_list(<b>struct</b> net_device *netdev)</td></tr>
+<tr><th id="105">105</th><td>{</td></tr>
+<tr><th id="106">106</th><td>	<b>struct</b> igb_vmdq_adapter *vadapter = netdev_priv(netdev);</td></tr>
+<tr><th id="107">107</th><td>        <b>struct</b> igb_adapter *adapter = vadapter-&gt;real_adapter;</td></tr>
+<tr><th id="108">108</th><td>	<em>int</em> count = <var>0</var>;</td></tr>
+<tr><th id="109">109</th><td>	<em>int</em> hw_queue = vadapter-&gt;rx_ring-&gt;queue_index +</td></tr>
+<tr><th id="110">110</th><td>		       adapter-&gt;vfs_allocated_count;</td></tr>
+<tr><th id="111">111</th><td></td></tr>
+<tr><th id="112">112</th><td>	<i>/* return ENOMEM indicating insufficient memory for addresses */</i></td></tr>
+<tr><th id="113">113</th><td>	<b>if</b> (netdev_uc_count(netdev) &gt; igb_available_rars(adapter))</td></tr>
+<tr><th id="114">114</th><td>		<b>return</b> -ENOMEM;</td></tr>
+<tr><th id="115">115</th><td></td></tr>
+<tr><th id="116">116</th><td>	<b>if</b> (!netdev_uc_empty(netdev)) {</td></tr>
+<tr><th id="117">117</th><td><u>#ifdef NETDEV_HW_ADDR_T_UNICAST</u></td></tr>
+<tr><th id="118">118</th><td>		<b>struct</b> netdev_hw_addr *ha;</td></tr>
+<tr><th id="119">119</th><td><u>#else</u></td></tr>
+<tr><th id="120">120</th><td>		<b>struct</b> dev_mc_list *ha;</td></tr>
+<tr><th id="121">121</th><td><u>#endif</u></td></tr>
+<tr><th id="122">122</th><td>		netdev_for_each_uc_addr(ha, netdev) {</td></tr>
+<tr><th id="123">123</th><td><u>#ifdef NETDEV_HW_ADDR_T_UNICAST</u></td></tr>
+<tr><th id="124">124</th><td>			igb_del_mac_filter(adapter, ha-&gt;addr, hw_queue);</td></tr>
+<tr><th id="125">125</th><td>			igb_add_mac_filter(adapter, ha-&gt;addr, hw_queue);</td></tr>
+<tr><th id="126">126</th><td><u>#else</u></td></tr>
+<tr><th id="127">127</th><td>			igb_del_mac_filter(adapter, ha-&gt;da_addr, hw_queue);</td></tr>
+<tr><th id="128">128</th><td>			igb_add_mac_filter(adapter, ha-&gt;da_addr, hw_queue);</td></tr>
+<tr><th id="129">129</th><td><u>#endif</u></td></tr>
+<tr><th id="130">130</th><td>			count++;</td></tr>
+<tr><th id="131">131</th><td>		}</td></tr>
+<tr><th id="132">132</th><td>	}</td></tr>
+<tr><th id="133">133</th><td>	<b>return</b> count;</td></tr>
+<tr><th id="134">134</th><td>}</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td></td></tr>
+<tr><th id="137">137</th><td><u>#define E1000_VMOLR_UPE		0x20000000 /* Unicast promiscuous mode */</u></td></tr>
+<tr><th id="138">138</th><td><em>void</em> igb_vmdq_set_rx_mode(<b>struct</b> net_device *dev)</td></tr>
+<tr><th id="139">139</th><td>{</td></tr>
+<tr><th id="140">140</th><td>	<b>struct</b> igb_vmdq_adapter *vadapter = netdev_priv(dev);</td></tr>
+<tr><th id="141">141</th><td>        <b>struct</b> igb_adapter *adapter = vadapter-&gt;real_adapter;</td></tr>
+<tr><th id="142">142</th><td>        <b>struct</b> e1000_hw *hw = &amp;adapter-&gt;hw;</td></tr>
+<tr><th id="143">143</th><td>	u32 vmolr, rctl;</td></tr>
+<tr><th id="144">144</th><td>	<em>int</em> hw_queue = vadapter-&gt;rx_ring-&gt;queue_index +</td></tr>
+<tr><th id="145">145</th><td>		       adapter-&gt;vfs_allocated_count;</td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td>	<i>/* Check for Promiscuous and All Multicast modes */</i></td></tr>
+<tr><th id="148">148</th><td>	vmolr = E1000_READ_REG(hw, E1000_VMOLR(hw_queue));</td></tr>
+<tr><th id="149">149</th><td></td></tr>
+<tr><th id="150">150</th><td>	<i>/* clear the affected bits */</i></td></tr>
+<tr><th id="151">151</th><td>	vmolr &amp;= ~(E1000_VMOLR_UPE | E1000_VMOLR_MPME |</td></tr>
+<tr><th id="152">152</th><td>		   E1000_VMOLR_ROPE | E1000_VMOLR_ROMPE);</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td>	<b>if</b> (dev-&gt;flags &amp; IFF_PROMISC) {</td></tr>
+<tr><th id="155">155</th><td>		vmolr |= E1000_VMOLR_UPE;</td></tr>
+<tr><th id="156">156</th><td>		rctl = E1000_READ_REG(hw, E1000_RCTL);</td></tr>
+<tr><th id="157">157</th><td>		rctl |= E1000_RCTL_UPE;</td></tr>
+<tr><th id="158">158</th><td>		E1000_WRITE_REG(hw, E1000_RCTL, rctl);</td></tr>
+<tr><th id="159">159</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="160">160</th><td>		rctl = E1000_READ_REG(hw, E1000_RCTL);</td></tr>
+<tr><th id="161">161</th><td>		rctl &amp;= ~E1000_RCTL_UPE;</td></tr>
+<tr><th id="162">162</th><td>		E1000_WRITE_REG(hw, E1000_RCTL, rctl);</td></tr>
+<tr><th id="163">163</th><td>		<b>if</b> (dev-&gt;flags &amp; IFF_ALLMULTI) {</td></tr>
+<tr><th id="164">164</th><td>			vmolr |= E1000_VMOLR_MPME;</td></tr>
+<tr><th id="165">165</th><td>		} <b>else</b> {</td></tr>
+<tr><th id="166">166</th><td>			<i>/*</i></td></tr>
+<tr><th id="167">167</th><td><i>			 * Write addresses to the MTA, if the attempt fails</i></td></tr>
+<tr><th id="168">168</th><td><i>			 * then we should just turn on promiscuous mode so</i></td></tr>
+<tr><th id="169">169</th><td><i>			 * that we can at least receive multicast traffic</i></td></tr>
+<tr><th id="170">170</th><td><i>			 */</i></td></tr>
+<tr><th id="171">171</th><td>			<b>if</b> (igb_write_mc_addr_list(adapter-&gt;netdev) != <var>0</var>)</td></tr>
+<tr><th id="172">172</th><td>				vmolr |= E1000_VMOLR_ROMPE;</td></tr>
+<tr><th id="173">173</th><td>		}</td></tr>
+<tr><th id="174">174</th><td><u>#ifdef HAVE_SET_RX_MODE</u></td></tr>
+<tr><th id="175">175</th><td>		<i>/*</i></td></tr>
+<tr><th id="176">176</th><td><i>		 * Write addresses to available RAR registers, if there is not</i></td></tr>
+<tr><th id="177">177</th><td><i>		 * sufficient space to store all the addresses then enable</i></td></tr>
+<tr><th id="178">178</th><td><i>		 * unicast promiscuous mode</i></td></tr>
+<tr><th id="179">179</th><td><i>		 */</i></td></tr>
+<tr><th id="180">180</th><td>		<b>if</b> (igb_write_vm_addr_list(dev) &lt; <var>0</var>)</td></tr>
+<tr><th id="181">181</th><td>			vmolr |= E1000_VMOLR_UPE;</td></tr>
+<tr><th id="182">182</th><td><u>#endif</u></td></tr>
+<tr><th id="183">183</th><td>	}</td></tr>
+<tr><th id="184">184</th><td>	E1000_WRITE_REG(hw, E1000_VMOLR(hw_queue), vmolr);</td></tr>
+<tr><th id="185">185</th><td></td></tr>
+<tr><th id="186">186</th><td>	<b>return</b>;</td></tr>
+<tr><th id="187">187</th><td>}</td></tr>
+<tr><th id="188">188</th><td></td></tr>
+<tr><th id="189">189</th><td><em>int</em> igb_vmdq_set_mac(<b>struct</b> net_device *dev, <em>void</em> *p)</td></tr>
+<tr><th id="190">190</th><td>{</td></tr>
+<tr><th id="191">191</th><td>	<b>struct</b> sockaddr *addr = p;</td></tr>
+<tr><th id="192">192</th><td>	<b>struct</b> igb_vmdq_adapter *vadapter = netdev_priv(dev);</td></tr>
+<tr><th id="193">193</th><td>        <b>struct</b> igb_adapter *adapter = vadapter-&gt;real_adapter;</td></tr>
+<tr><th id="194">194</th><td>	<em>int</em> hw_queue = vadapter-&gt;rx_ring-&gt;queue_index +</td></tr>
+<tr><th id="195">195</th><td>		       adapter-&gt;vfs_allocated_count;</td></tr>
+<tr><th id="196">196</th><td></td></tr>
+<tr><th id="197">197</th><td>	igb_del_mac_filter(adapter, dev-&gt;dev_addr, hw_queue);</td></tr>
+<tr><th id="198">198</th><td>	memcpy(dev-&gt;dev_addr, addr-&gt;sa_data, dev-&gt;addr_len);</td></tr>
+<tr><th id="199">199</th><td>	<b>return</b> igb_add_mac_filter(adapter, dev-&gt;dev_addr, hw_queue);</td></tr>
+<tr><th id="200">200</th><td>}</td></tr>
+<tr><th id="201">201</th><td></td></tr>
+<tr><th id="202">202</th><td><em>int</em> igb_vmdq_change_mtu(<b>struct</b> net_device *dev, <em>int</em> new_mtu)</td></tr>
+<tr><th id="203">203</th><td>{</td></tr>
+<tr><th id="204">204</th><td>	<b>struct</b> igb_vmdq_adapter *vadapter = netdev_priv(dev);</td></tr>
+<tr><th id="205">205</th><td>	<b>struct</b> igb_adapter *adapter = vadapter-&gt;real_adapter;</td></tr>
+<tr><th id="206">206</th><td></td></tr>
+<tr><th id="207">207</th><td>	<b>if</b> (adapter-&gt;netdev-&gt;mtu &lt; new_mtu) {</td></tr>
+<tr><th id="208">208</th><td>		DPRINTK(PROBE, INFO,</td></tr>
+<tr><th id="209">209</th><td>			<q>"Set MTU on %s to &gt;= %d "</q></td></tr>
+<tr><th id="210">210</th><td>			<q>"before changing MTU on %s\n"</q>,</td></tr>
+<tr><th id="211">211</th><td>			adapter-&gt;netdev-&gt;name, new_mtu, dev-&gt;name);</td></tr>
+<tr><th id="212">212</th><td>		<b>return</b> -EINVAL;</td></tr>
+<tr><th id="213">213</th><td>	}</td></tr>
+<tr><th id="214">214</th><td>	dev-&gt;mtu = new_mtu;</td></tr>
+<tr><th id="215">215</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="216">216</th><td>}</td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td><em>void</em> igb_vmdq_tx_timeout(<b>struct</b> net_device *dev)</td></tr>
+<tr><th id="219">219</th><td>{</td></tr>
+<tr><th id="220">220</th><td>	<b>return</b>;</td></tr>
+<tr><th id="221">221</th><td>}</td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td><em>void</em> igb_vmdq_vlan_rx_register(<b>struct</b> net_device *dev, <b>struct</b> vlan_group *grp)</td></tr>
+<tr><th id="224">224</th><td>{</td></tr>
+<tr><th id="225">225</th><td>	<b>struct</b> igb_vmdq_adapter *vadapter = netdev_priv(dev);</td></tr>
+<tr><th id="226">226</th><td>	<b>struct</b> igb_adapter *adapter = vadapter-&gt;real_adapter;</td></tr>
+<tr><th id="227">227</th><td>	<b>struct</b> e1000_hw *hw = &amp;adapter-&gt;hw;</td></tr>
+<tr><th id="228">228</th><td>	<em>int</em> hw_queue = vadapter-&gt;rx_ring-&gt;queue_index +</td></tr>
+<tr><th id="229">229</th><td>		       adapter-&gt;vfs_allocated_count;</td></tr>
+<tr><th id="230">230</th><td></td></tr>
+<tr><th id="231">231</th><td>	vadapter-&gt;vlgrp = grp;</td></tr>
+<tr><th id="232">232</th><td></td></tr>
+<tr><th id="233">233</th><td>	igb_enable_vlan_tags(adapter);</td></tr>
+<tr><th id="234">234</th><td>	E1000_WRITE_REG(hw, E1000_VMVIR(hw_queue), <var>0</var>);</td></tr>
+<tr><th id="235">235</th><td></td></tr>
+<tr><th id="236">236</th><td>	<b>return</b>;</td></tr>
+<tr><th id="237">237</th><td>}</td></tr>
+<tr><th id="238">238</th><td><em>void</em> igb_vmdq_vlan_rx_add_vid(<b>struct</b> net_device *dev, <em>unsigned</em> <em>short</em> vid)</td></tr>
+<tr><th id="239">239</th><td>{</td></tr>
+<tr><th id="240">240</th><td>	<b>struct</b> igb_vmdq_adapter *vadapter = netdev_priv(dev);</td></tr>
+<tr><th id="241">241</th><td>	<b>struct</b> igb_adapter *adapter = vadapter-&gt;real_adapter;</td></tr>
+<tr><th id="242">242</th><td><u>#ifndef HAVE_NETDEV_VLAN_FEATURES</u></td></tr>
+<tr><th id="243">243</th><td>	<b>struct</b> net_device *v_netdev;</td></tr>
+<tr><th id="244">244</th><td><u>#endif</u></td></tr>
+<tr><th id="245">245</th><td>	<em>int</em> hw_queue = vadapter-&gt;rx_ring-&gt;queue_index +</td></tr>
+<tr><th id="246">246</th><td>		       adapter-&gt;vfs_allocated_count;</td></tr>
+<tr><th id="247">247</th><td></td></tr>
+<tr><th id="248">248</th><td>	<i>/* attempt to add filter to vlvf array */</i></td></tr>
+<tr><th id="249">249</th><td>	igb_vlvf_set(adapter, vid, TRUE, hw_queue);</td></tr>
+<tr><th id="250">250</th><td></td></tr>
+<tr><th id="251">251</th><td><u>#ifndef HAVE_NETDEV_VLAN_FEATURES</u></td></tr>
+<tr><th id="252">252</th><td></td></tr>
+<tr><th id="253">253</th><td>	<i>/* Copy feature flags from netdev to the vlan netdev for this vid.</i></td></tr>
+<tr><th id="254">254</th><td><i>	 * This allows things like TSO to bubble down to our vlan device.</i></td></tr>
+<tr><th id="255">255</th><td><i>	 */</i></td></tr>
+<tr><th id="256">256</th><td>	v_netdev = vlan_group_get_device(vadapter-&gt;vlgrp, vid);</td></tr>
+<tr><th id="257">257</th><td>	v_netdev-&gt;features |= adapter-&gt;netdev-&gt;features;</td></tr>
+<tr><th id="258">258</th><td>	vlan_group_set_device(vadapter-&gt;vlgrp, vid, v_netdev);</td></tr>
+<tr><th id="259">259</th><td><u>#endif</u></td></tr>
+<tr><th id="260">260</th><td></td></tr>
+<tr><th id="261">261</th><td>	<b>return</b>;</td></tr>
+<tr><th id="262">262</th><td>}</td></tr>
+<tr><th id="263">263</th><td><em>void</em> igb_vmdq_vlan_rx_kill_vid(<b>struct</b> net_device *dev, <em>unsigned</em> <em>short</em> vid)</td></tr>
+<tr><th id="264">264</th><td>{</td></tr>
+<tr><th id="265">265</th><td>	<b>struct</b> igb_vmdq_adapter *vadapter = netdev_priv(dev);</td></tr>
+<tr><th id="266">266</th><td>	<b>struct</b> igb_adapter *adapter = vadapter-&gt;real_adapter;</td></tr>
+<tr><th id="267">267</th><td>	<em>int</em> hw_queue = vadapter-&gt;rx_ring-&gt;queue_index +</td></tr>
+<tr><th id="268">268</th><td>		       adapter-&gt;vfs_allocated_count;</td></tr>
+<tr><th id="269">269</th><td></td></tr>
+<tr><th id="270">270</th><td>	vlan_group_set_device(vadapter-&gt;vlgrp, vid, NULL);</td></tr>
+<tr><th id="271">271</th><td>	<i>/* remove vlan from VLVF table array */</i></td></tr>
+<tr><th id="272">272</th><td>	igb_vlvf_set(adapter, vid, FALSE, hw_queue);</td></tr>
+<tr><th id="273">273</th><td></td></tr>
+<tr><th id="274">274</th><td></td></tr>
+<tr><th id="275">275</th><td>	<b>return</b>;</td></tr>
+<tr><th id="276">276</th><td>}</td></tr>
+<tr><th id="277">277</th><td></td></tr>
+<tr><th id="278">278</th><td><em>static</em> <em>int</em> igb_vmdq_get_settings(<b>struct</b> net_device *netdev,</td></tr>
+<tr><th id="279">279</th><td>				   <b>struct</b> ethtool_cmd *ecmd)</td></tr>
+<tr><th id="280">280</th><td>{</td></tr>
+<tr><th id="281">281</th><td>	<b>struct</b> igb_vmdq_adapter *vadapter = netdev_priv(netdev);</td></tr>
+<tr><th id="282">282</th><td>	<b>struct</b> igb_adapter *adapter = vadapter-&gt;real_adapter;</td></tr>
+<tr><th id="283">283</th><td>	<b>struct</b> e1000_hw *hw = &amp;adapter-&gt;hw;</td></tr>
+<tr><th id="284">284</th><td>	u32 status;</td></tr>
+<tr><th id="285">285</th><td></td></tr>
+<tr><th id="286">286</th><td>	<b>if</b> (hw-&gt;phy.media_type == e1000_media_type_copper) {</td></tr>
+<tr><th id="287">287</th><td></td></tr>
+<tr><th id="288">288</th><td>		ecmd-&gt;supported = (SUPPORTED_10baseT_Half |</td></tr>
+<tr><th id="289">289</th><td>				   SUPPORTED_10baseT_Full |</td></tr>
+<tr><th id="290">290</th><td>				   SUPPORTED_100baseT_Half |</td></tr>
+<tr><th id="291">291</th><td>				   SUPPORTED_100baseT_Full |</td></tr>
+<tr><th id="292">292</th><td>				   SUPPORTED_1000baseT_Full|</td></tr>
+<tr><th id="293">293</th><td>				   SUPPORTED_Autoneg |</td></tr>
+<tr><th id="294">294</th><td>				   SUPPORTED_TP);</td></tr>
+<tr><th id="295">295</th><td>		ecmd-&gt;advertising = ADVERTISED_TP;</td></tr>
+<tr><th id="296">296</th><td></td></tr>
+<tr><th id="297">297</th><td>		<b>if</b> (hw-&gt;mac.autoneg == <var>1</var>) {</td></tr>
+<tr><th id="298">298</th><td>			ecmd-&gt;advertising |= ADVERTISED_Autoneg;</td></tr>
+<tr><th id="299">299</th><td>			<i>/* the e1000 autoneg seems to match ethtool nicely */</i></td></tr>
+<tr><th id="300">300</th><td>			ecmd-&gt;advertising |= hw-&gt;phy.autoneg_advertised;</td></tr>
+<tr><th id="301">301</th><td>		}</td></tr>
+<tr><th id="302">302</th><td></td></tr>
+<tr><th id="303">303</th><td>		ecmd-&gt;port = PORT_TP;</td></tr>
+<tr><th id="304">304</th><td>		ecmd-&gt;phy_address = hw-&gt;phy.addr;</td></tr>
+<tr><th id="305">305</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="306">306</th><td>		ecmd-&gt;supported   = (SUPPORTED_1000baseT_Full |</td></tr>
+<tr><th id="307">307</th><td>				     SUPPORTED_FIBRE |</td></tr>
+<tr><th id="308">308</th><td>				     SUPPORTED_Autoneg);</td></tr>
+<tr><th id="309">309</th><td></td></tr>
+<tr><th id="310">310</th><td>		ecmd-&gt;advertising = (ADVERTISED_1000baseT_Full |</td></tr>
+<tr><th id="311">311</th><td>				     ADVERTISED_FIBRE |</td></tr>
+<tr><th id="312">312</th><td>				     ADVERTISED_Autoneg);</td></tr>
+<tr><th id="313">313</th><td></td></tr>
+<tr><th id="314">314</th><td>		ecmd-&gt;port = PORT_FIBRE;</td></tr>
+<tr><th id="315">315</th><td>	}</td></tr>
+<tr><th id="316">316</th><td></td></tr>
+<tr><th id="317">317</th><td>	ecmd-&gt;transceiver = XCVR_INTERNAL;</td></tr>
+<tr><th id="318">318</th><td></td></tr>
+<tr><th id="319">319</th><td>	status = E1000_READ_REG(hw, E1000_STATUS);</td></tr>
+<tr><th id="320">320</th><td></td></tr>
+<tr><th id="321">321</th><td>	<b>if</b> (status &amp; E1000_STATUS_LU) {</td></tr>
+<tr><th id="322">322</th><td></td></tr>
+<tr><th id="323">323</th><td>		<b>if</b> ((status &amp; E1000_STATUS_SPEED_1000) ||</td></tr>
+<tr><th id="324">324</th><td>		    hw-&gt;phy.media_type != e1000_media_type_copper)</td></tr>
+<tr><th id="325">325</th><td>			ecmd-&gt;speed = SPEED_1000;</td></tr>
+<tr><th id="326">326</th><td>		<b>else</b> <b>if</b> (status &amp; E1000_STATUS_SPEED_100)</td></tr>
+<tr><th id="327">327</th><td>			ecmd-&gt;speed = SPEED_100;</td></tr>
+<tr><th id="328">328</th><td>		<b>else</b></td></tr>
+<tr><th id="329">329</th><td>			ecmd-&gt;speed = SPEED_10;</td></tr>
+<tr><th id="330">330</th><td></td></tr>
+<tr><th id="331">331</th><td>		<b>if</b> ((status &amp; E1000_STATUS_FD) ||</td></tr>
+<tr><th id="332">332</th><td>		    hw-&gt;phy.media_type != e1000_media_type_copper)</td></tr>
+<tr><th id="333">333</th><td>			ecmd-&gt;duplex = DUPLEX_FULL;</td></tr>
+<tr><th id="334">334</th><td>		<b>else</b></td></tr>
+<tr><th id="335">335</th><td>			ecmd-&gt;duplex = DUPLEX_HALF;</td></tr>
+<tr><th id="336">336</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="337">337</th><td>		ecmd-&gt;speed = -<var>1</var>;</td></tr>
+<tr><th id="338">338</th><td>		ecmd-&gt;duplex = -<var>1</var>;</td></tr>
+<tr><th id="339">339</th><td>	}</td></tr>
+<tr><th id="340">340</th><td></td></tr>
+<tr><th id="341">341</th><td>	ecmd-&gt;autoneg = hw-&gt;mac.autoneg ? AUTONEG_ENABLE : AUTONEG_DISABLE;</td></tr>
+<tr><th id="342">342</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="343">343</th><td>}</td></tr>
+<tr><th id="344">344</th><td></td></tr>
+<tr><th id="345">345</th><td></td></tr>
+<tr><th id="346">346</th><td><em>static</em> u32 igb_vmdq_get_msglevel(<b>struct</b> net_device *netdev)</td></tr>
+<tr><th id="347">347</th><td>{</td></tr>
+<tr><th id="348">348</th><td>	<b>struct</b> igb_vmdq_adapter *vadapter = netdev_priv(netdev);</td></tr>
+<tr><th id="349">349</th><td>	<b>struct</b> igb_adapter *adapter = vadapter-&gt;real_adapter;</td></tr>
+<tr><th id="350">350</th><td>	<b>return</b> adapter-&gt;msg_enable;</td></tr>
+<tr><th id="351">351</th><td>}</td></tr>
+<tr><th id="352">352</th><td></td></tr>
+<tr><th id="353">353</th><td><em>static</em> <em>void</em> igb_vmdq_get_drvinfo(<b>struct</b> net_device *netdev,</td></tr>
+<tr><th id="354">354</th><td>				   <b>struct</b> ethtool_drvinfo *drvinfo)</td></tr>
+<tr><th id="355">355</th><td>{</td></tr>
+<tr><th id="356">356</th><td>	<b>struct</b> igb_vmdq_adapter *vadapter = netdev_priv(netdev);</td></tr>
+<tr><th id="357">357</th><td>	<b>struct</b> igb_adapter *adapter = vadapter-&gt;real_adapter;</td></tr>
+<tr><th id="358">358</th><td>	<b>struct</b> net_device *main_netdev = adapter-&gt;netdev;</td></tr>
+<tr><th id="359">359</th><td></td></tr>
+<tr><th id="360">360</th><td>	strncpy(drvinfo-&gt;driver, igb_driver_name, <var>32</var>);</td></tr>
+<tr><th id="361">361</th><td>	strncpy(drvinfo-&gt;version, igb_driver_version, <var>32</var>);</td></tr>
+<tr><th id="362">362</th><td></td></tr>
+<tr><th id="363">363</th><td>	strncpy(drvinfo-&gt;fw_version, <q>"N/A"</q>, <var>4</var>);</td></tr>
+<tr><th id="364">364</th><td>	snprintf(drvinfo-&gt;bus_info, <var>32</var>, <q>"%s VMDQ %d"</q>, main_netdev-&gt;name,</td></tr>
+<tr><th id="365">365</th><td>		 vadapter-&gt;rx_ring-&gt;queue_index);</td></tr>
+<tr><th id="366">366</th><td>	drvinfo-&gt;n_stats = <var>0</var>;</td></tr>
+<tr><th id="367">367</th><td>	drvinfo-&gt;testinfo_len = <var>0</var>;</td></tr>
+<tr><th id="368">368</th><td>	drvinfo-&gt;regdump_len = <var>0</var>;</td></tr>
+<tr><th id="369">369</th><td>}</td></tr>
+<tr><th id="370">370</th><td></td></tr>
+<tr><th id="371">371</th><td><em>static</em> <em>void</em> igb_vmdq_get_ringparam(<b>struct</b> net_device *netdev,</td></tr>
+<tr><th id="372">372</th><td>				     <b>struct</b> ethtool_ringparam *ring)</td></tr>
+<tr><th id="373">373</th><td>{</td></tr>
+<tr><th id="374">374</th><td>	<b>struct</b> igb_vmdq_adapter *vadapter = netdev_priv(netdev);</td></tr>
+<tr><th id="375">375</th><td></td></tr>
+<tr><th id="376">376</th><td>	<b>struct</b> igb_ring *tx_ring = vadapter-&gt;tx_ring;</td></tr>
+<tr><th id="377">377</th><td>	<b>struct</b> igb_ring *rx_ring = vadapter-&gt;rx_ring;</td></tr>
+<tr><th id="378">378</th><td></td></tr>
+<tr><th id="379">379</th><td>	ring-&gt;rx_max_pending = IGB_MAX_RXD;</td></tr>
+<tr><th id="380">380</th><td>	ring-&gt;tx_max_pending = IGB_MAX_TXD;</td></tr>
+<tr><th id="381">381</th><td>	ring-&gt;rx_mini_max_pending = <var>0</var>;</td></tr>
+<tr><th id="382">382</th><td>	ring-&gt;rx_jumbo_max_pending = <var>0</var>;</td></tr>
+<tr><th id="383">383</th><td>	ring-&gt;rx_pending = rx_ring-&gt;count;</td></tr>
+<tr><th id="384">384</th><td>	ring-&gt;tx_pending = tx_ring-&gt;count;</td></tr>
+<tr><th id="385">385</th><td>	ring-&gt;rx_mini_pending = <var>0</var>;</td></tr>
+<tr><th id="386">386</th><td>	ring-&gt;rx_jumbo_pending = <var>0</var>;</td></tr>
+<tr><th id="387">387</th><td>}</td></tr>
+<tr><th id="388">388</th><td><em>static</em> u32 igb_vmdq_get_rx_csum(<b>struct</b> net_device *netdev)</td></tr>
+<tr><th id="389">389</th><td>{</td></tr>
+<tr><th id="390">390</th><td>	<b>struct</b> igb_vmdq_adapter *vadapter = netdev_priv(netdev);</td></tr>
+<tr><th id="391">391</th><td>	<b>struct</b> igb_adapter *adapter = vadapter-&gt;real_adapter;</td></tr>
+<tr><th id="392">392</th><td></td></tr>
+<tr><th id="393">393</th><td>	<b>return</b> test_bit(IGB_RING_FLAG_RX_CSUM, &amp;adapter-&gt;rx_ring[<var>0</var>]-&gt;flags);</td></tr>
+<tr><th id="394">394</th><td>}</td></tr>
+<tr><th id="395">395</th><td></td></tr>
+<tr><th id="396">396</th><td></td></tr>
+<tr><th id="397">397</th><td><em>static</em> <b>struct</b> ethtool_ops igb_vmdq_ethtool_ops = {</td></tr>
+<tr><th id="398">398</th><td>	.get_settings           = igb_vmdq_get_settings,</td></tr>
+<tr><th id="399">399</th><td>	.get_drvinfo            = igb_vmdq_get_drvinfo,</td></tr>
+<tr><th id="400">400</th><td>	.get_link               = ethtool_op_get_link,</td></tr>
+<tr><th id="401">401</th><td>	.get_ringparam          = igb_vmdq_get_ringparam,</td></tr>
+<tr><th id="402">402</th><td>	.get_rx_csum            = igb_vmdq_get_rx_csum,</td></tr>
+<tr><th id="403">403</th><td>	.get_tx_csum            = ethtool_op_get_tx_csum,</td></tr>
+<tr><th id="404">404</th><td>	.get_sg                 = ethtool_op_get_sg,</td></tr>
+<tr><th id="405">405</th><td>	.set_sg                 = ethtool_op_set_sg,</td></tr>
+<tr><th id="406">406</th><td>	.get_msglevel           = igb_vmdq_get_msglevel,</td></tr>
+<tr><th id="407">407</th><td><u>#ifdef NETIF_F_TSO</u></td></tr>
+<tr><th id="408">408</th><td>	.get_tso                = ethtool_op_get_tso,</td></tr>
+<tr><th id="409">409</th><td><u>#endif</u></td></tr>
+<tr><th id="410">410</th><td><u>#ifdef HAVE_ETHTOOL_GET_PERM_ADDR</u></td></tr>
+<tr><th id="411">411</th><td>	.get_perm_addr          = ethtool_op_get_perm_addr,</td></tr>
+<tr><th id="412">412</th><td><u>#endif</u></td></tr>
+<tr><th id="413">413</th><td>};</td></tr>
+<tr><th id="414">414</th><td></td></tr>
+<tr><th id="415">415</th><td><em>void</em> igb_vmdq_set_ethtool_ops(<b>struct</b> net_device *netdev)</td></tr>
+<tr><th id="416">416</th><td>{</td></tr>
+<tr><th id="417">417</th><td>	SET_ETHTOOL_OPS(netdev, &amp;igb_vmdq_ethtool_ops);</td></tr>
+<tr><th id="418">418</th><td>}</td></tr>
+<tr><th id="419">419</th><td></td></tr>
+<tr><th id="420">420</th><td></td></tr>
+<tr><th id="421">421</th><td><u>#<span data-ppcond="20">endif</span> /* CONFIG_IGB_VMDQ_NETDEV */</u></td></tr>
+<tr><th id="422">422</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project master revision <em>master</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

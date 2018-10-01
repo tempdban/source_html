@@ -1,0 +1,324 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>vmbus_common.c source code [master/drivers/bus/vmbus/vmbus_common.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'master/drivers/bus/vmbus/vmbus_common.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>master</a>/<a href='../..'>drivers</a>/<a href='..'>bus</a>/<a href='./'>vmbus</a>/<a href='vmbus_common.c.html'>vmbus_common.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright (c) 2018, Microsoft Corporation.</i></td></tr>
+<tr><th id="3">3</th><td><i> * All Rights Reserved.</i></td></tr>
+<tr><th id="4">4</th><td><i> */</i></td></tr>
+<tr><th id="5">5</th><td></td></tr>
+<tr><th id="6">6</th><td><u>#include <a href="../../../../include/string.h.html">&lt;string.h&gt;</a></u></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="../../../../include/unistd.h.html">&lt;unistd.h&gt;</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="../../../../include/dirent.h.html">&lt;dirent.h&gt;</a></u></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="../../../../include/fcntl.h.html">&lt;fcntl.h&gt;</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../../../include/sys/queue.h.html">&lt;sys/queue.h&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../../../include/sys/mman.h.html">&lt;sys/mman.h&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../lib/librte_eal/common/include/rte_log.h.html">&lt;rte_log.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../lib/librte_eal/common/include/rte_bus.h.html">&lt;rte_bus.h&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../lib/librte_eal/common/include/rte_eal.h.html">&lt;rte_eal.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../lib/librte_eal/common/include/rte_tailq.h.html">&lt;rte_tailq.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../lib/librte_eal/common/include/rte_devargs.h.html">&lt;rte_devargs.h&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../lib/librte_eal/common/include/rte_malloc.h.html">&lt;rte_malloc.h&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../lib/librte_eal/common/include/rte_errno.h.html">&lt;rte_errno.h&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../lib/librte_eal/common/include/rte_memory.h.html">&lt;rte_memory.h&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="rte_bus_vmbus.h.html">&lt;rte_bus_vmbus.h&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="private.h.html">"private.h"</a></u></td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td><em>int</em> <dfn class="decl def" id="vmbus_logtype_bus" title='vmbus_logtype_bus' data-ref="vmbus_logtype_bus">vmbus_logtype_bus</dfn>;</td></tr>
+<tr><th id="26">26</th><td><b>extern</b> <b>struct</b> <a class="type" href="rte_bus_vmbus.h.html#rte_vmbus_bus" title='rte_vmbus_bus' data-ref="rte_vmbus_bus">rte_vmbus_bus</a> <dfn class="decl" id="rte_vmbus_bus" title='rte_vmbus_bus' data-ref="rte_vmbus_bus">rte_vmbus_bus</dfn>;</td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td><i>/* map a particular resource from a file */</i></td></tr>
+<tr><th id="29">29</th><td><em>void</em> *</td></tr>
+<tr><th id="30">30</th><td><dfn class="decl def fn" id="vmbus_map_resource" title='vmbus_map_resource' data-ref="vmbus_map_resource">vmbus_map_resource</dfn>(<em>void</em> *<dfn class="local col1 decl" id="1requested_addr" title='requested_addr' data-type='void *' data-ref="1requested_addr">requested_addr</dfn>, <em>int</em> <dfn class="local col2 decl" id="2fd" title='fd' data-type='int' data-ref="2fd">fd</dfn>, <a class="typedef" href="../../../../include/unistd.h.html#off_t" title='off_t' data-type='__off_t' data-ref="off_t">off_t</a> <dfn class="local col3 decl" id="3offset" title='offset' data-type='off_t' data-ref="3offset">offset</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col4 decl" id="4size" title='size' data-type='size_t' data-ref="4size">size</dfn>,</td></tr>
+<tr><th id="31">31</th><td>		   <em>int</em> <dfn class="local col5 decl" id="5flags" title='flags' data-type='int' data-ref="5flags">flags</dfn>)</td></tr>
+<tr><th id="32">32</th><td>{</td></tr>
+<tr><th id="33">33</th><td>	<em>void</em> *<dfn class="local col6 decl" id="6mapaddr" title='mapaddr' data-type='void *' data-ref="6mapaddr">mapaddr</dfn>;</td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td>	<i>/* Map the memory resource of device */</i></td></tr>
+<tr><th id="36">36</th><td>	<a class="local col6 ref" href="#6mapaddr" title='mapaddr' data-ref="6mapaddr">mapaddr</a> = <a class="ref fn" href="../../../../include/sys/mman.h.html#mmap" title='mmap' data-ref="mmap">mmap</a>(<a class="local col1 ref" href="#1requested_addr" title='requested_addr' data-ref="1requested_addr">requested_addr</a>, <a class="local col4 ref" href="#4size" title='size' data-ref="4size">size</a>, <a class="macro" href="../../../../include/bits/mman.h.html#32" title="0x1" data-ref="_M/PROT_READ">PROT_READ</a> | <a class="macro" href="../../../../include/bits/mman.h.html#33" title="0x2" data-ref="_M/PROT_WRITE">PROT_WRITE</a>,</td></tr>
+<tr><th id="37">37</th><td>		       <a class="macro" href="../../../../include/bits/mman.h.html#42" title="0x01" data-ref="_M/MAP_SHARED">MAP_SHARED</a> | <a class="local col5 ref" href="#5flags" title='flags' data-ref="5flags">flags</a>, <a class="local col2 ref" href="#2fd" title='fd' data-ref="2fd">fd</a>, <a class="local col3 ref" href="#3offset" title='offset' data-ref="3offset">offset</a>);</td></tr>
+<tr><th id="38">38</th><td>	<b>if</b> (<a class="local col6 ref" href="#6mapaddr" title='mapaddr' data-ref="6mapaddr">mapaddr</a> == <a class="macro" href="../../../../include/sys/mman.h.html#44" title="((void *) -1)" data-ref="_M/MAP_FAILED">MAP_FAILED</a>) {</td></tr>
+<tr><th id="39">39</th><td>		<a class="macro" href="private.h.html#19" title="rte_log(4U, vmbus_logtype_bus, &quot;%s(): &quot; &quot;mmap(%d, %p, %zu, %ld) failed: %s&quot; &quot;\n&quot;, __func__, fd, requested_addr, size, (long)offset, strerror((*__errno_location ())))" data-ref="_M/VMBUS_LOG">VMBUS_LOG</a>(ERR,</td></tr>
+<tr><th id="40">40</th><td>			  <q>"mmap(%d, %p, %zu, %ld) failed: %s"</q>,</td></tr>
+<tr><th id="41">41</th><td>			  <a class="local col2 ref" href="#2fd" title='fd' data-ref="2fd">fd</a>, <a class="local col1 ref" href="#1requested_addr" title='requested_addr' data-ref="1requested_addr">requested_addr</a>, <a class="local col4 ref" href="#4size" title='size' data-ref="4size">size</a>, (<em>long</em>)<a class="local col3 ref" href="#3offset" title='offset' data-ref="3offset">offset</a>,</td></tr>
+<tr><th id="42">42</th><td>			  <a class="ref fn" href="../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(errno));</td></tr>
+<tr><th id="43">43</th><td>	}</td></tr>
+<tr><th id="44">44</th><td>	<b>return</b> <a class="local col6 ref" href="#6mapaddr" title='mapaddr' data-ref="6mapaddr">mapaddr</a>;</td></tr>
+<tr><th id="45">45</th><td>}</td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td><i>/* unmap a particular resource */</i></td></tr>
+<tr><th id="48">48</th><td><em>void</em></td></tr>
+<tr><th id="49">49</th><td><dfn class="decl def fn" id="vmbus_unmap_resource" title='vmbus_unmap_resource' data-ref="vmbus_unmap_resource">vmbus_unmap_resource</dfn>(<em>void</em> *<dfn class="local col7 decl" id="7requested_addr" title='requested_addr' data-type='void *' data-ref="7requested_addr">requested_addr</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col8 decl" id="8size" title='size' data-type='size_t' data-ref="8size">size</dfn>)</td></tr>
+<tr><th id="50">50</th><td>{</td></tr>
+<tr><th id="51">51</th><td>	<b>if</b> (<a class="local col7 ref" href="#7requested_addr" title='requested_addr' data-ref="7requested_addr">requested_addr</a> == <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>)</td></tr>
+<tr><th id="52">52</th><td>		<b>return</b>;</td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td>	<i>/* Unmap the VMBUS memory resource of device */</i></td></tr>
+<tr><th id="55">55</th><td>	<b>if</b> (<a class="ref fn" href="../../../../include/sys/mman.h.html#munmap" title='munmap' data-ref="munmap">munmap</a>(<a class="local col7 ref" href="#7requested_addr" title='requested_addr' data-ref="7requested_addr">requested_addr</a>, <a class="local col8 ref" href="#8size" title='size' data-ref="8size">size</a>)) {</td></tr>
+<tr><th id="56">56</th><td>		<a class="macro" href="private.h.html#19" title="rte_log(4U, vmbus_logtype_bus, &quot;%s(): &quot; &quot;munmap(%p, 0x%lx) failed: %s&quot; &quot;\n&quot;, __func__, requested_addr, (unsigned long)size, strerror((*__errno_location ())))" data-ref="_M/VMBUS_LOG">VMBUS_LOG</a>(ERR, <q>"munmap(%p, 0x%lx) failed: %s"</q>,</td></tr>
+<tr><th id="57">57</th><td>			<a class="local col7 ref" href="#7requested_addr" title='requested_addr' data-ref="7requested_addr">requested_addr</a>, (<em>unsigned</em> <em>long</em>)<a class="local col8 ref" href="#8size" title='size' data-ref="8size">size</a>,</td></tr>
+<tr><th id="58">58</th><td>			<a class="ref fn" href="../../../../include/string.h.html#strerror" title='strerror' data-ref="strerror">strerror</a>(errno));</td></tr>
+<tr><th id="59">59</th><td>	} <b>else</b></td></tr>
+<tr><th id="60">60</th><td>		<a class="macro" href="private.h.html#19" title="rte_log(8U, vmbus_logtype_bus, &quot;%s(): &quot; &quot;  VMBUS memory unmapped at %p&quot; &quot;\n&quot;, __func__, requested_addr)" data-ref="_M/VMBUS_LOG">VMBUS_LOG</a>(DEBUG, <q>"  VMBUS memory unmapped at %p"</q>,</td></tr>
+<tr><th id="61">61</th><td>			  <a class="local col7 ref" href="#7requested_addr" title='requested_addr' data-ref="7requested_addr">requested_addr</a>);</td></tr>
+<tr><th id="62">62</th><td>}</td></tr>
+<tr><th id="63">63</th><td></td></tr>
+<tr><th id="64">64</th><td><i class="doc" data-doc="vmbus_match">/**</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc" data-doc="vmbus_match"> * Match the VMBUS driver and device using UUID table</i></td></tr>
+<tr><th id="66">66</th><td><i class="doc" data-doc="vmbus_match"> *</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc" data-doc="vmbus_match"> * <span class="command">@param</span> <span class="arg">drv</span></i></td></tr>
+<tr><th id="68">68</th><td><i class="doc" data-doc="vmbus_match"> *	VMBUS driver from which ID table would be extracted</i></td></tr>
+<tr><th id="69">69</th><td><i class="doc" data-doc="vmbus_match"> * <span class="command">@param</span> <span class="arg">pci_dev</span></i></td></tr>
+<tr><th id="70">70</th><td><i class="doc" data-doc="vmbus_match"> *	VMBUS device to match against the driver</i></td></tr>
+<tr><th id="71">71</th><td><i class="doc" data-doc="vmbus_match"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="72">72</th><td><i class="doc" data-doc="vmbus_match"> *	true for successful match</i></td></tr>
+<tr><th id="73">73</th><td><i class="doc" data-doc="vmbus_match"> *	false for unsuccessful match</i></td></tr>
+<tr><th id="74">74</th><td><i class="doc" data-doc="vmbus_match"> */</i></td></tr>
+<tr><th id="75">75</th><td><em>static</em> <span class="macro" title="_Bool" data-ref="_M/bool">bool</span></td></tr>
+<tr><th id="76">76</th><td><dfn class="tu decl def fn" id="vmbus_match" title='vmbus_match' data-type='_Bool vmbus_match(const struct rte_vmbus_driver * dr, const struct rte_vmbus_device * dev)' data-ref="vmbus_match">vmbus_match</dfn>(<em>const</em> <b>struct</b> <a class="type" href="rte_bus_vmbus.h.html#rte_vmbus_driver" title='rte_vmbus_driver' data-ref="rte_vmbus_driver">rte_vmbus_driver</a> *<dfn class="local col9 decl" id="9dr" title='dr' data-type='const struct rte_vmbus_driver *' data-ref="9dr">dr</dfn>,</td></tr>
+<tr><th id="77">77</th><td>	    <em>const</em> <b>struct</b> <a class="type" href="rte_bus_vmbus.h.html#rte_vmbus_device" title='rte_vmbus_device' data-ref="rte_vmbus_device">rte_vmbus_device</a> *<dfn class="local col0 decl" id="10dev" title='dev' data-type='const struct rte_vmbus_device *' data-ref="10dev">dev</dfn>)</td></tr>
+<tr><th id="78">78</th><td>{</td></tr>
+<tr><th id="79">79</th><td>	<em>const</em> <a class="typedef" href="../../../lib/librte_eal/common/include/rte_uuid.h.html#rte_uuid_t" title='rte_uuid_t' data-type='unsigned char [16]' data-ref="rte_uuid_t">rte_uuid_t</a> *<dfn class="local col1 decl" id="11id_table" title='id_table' data-type='const rte_uuid_t *' data-ref="11id_table">id_table</dfn>;</td></tr>
+<tr><th id="80">80</th><td></td></tr>
+<tr><th id="81">81</th><td>	<b>for</b> (<a class="local col1 ref" href="#11id_table" title='id_table' data-ref="11id_table">id_table</a> = <a class="local col9 ref" href="#9dr" title='dr' data-ref="9dr">dr</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_driver::id_table" title='rte_vmbus_driver::id_table' data-ref="rte_vmbus_driver::id_table">id_table</a>; !<a class="ref fn" href="../../../lib/librte_eal/common/include/rte_uuid.h.html#rte_uuid_is_null" title='rte_uuid_is_null' data-ref="rte_uuid_is_null">rte_uuid_is_null</a>(*<a class="local col1 ref" href="#11id_table" title='id_table' data-ref="11id_table">id_table</a>); ++<a class="local col1 ref" href="#11id_table" title='id_table' data-ref="11id_table">id_table</a>) {</td></tr>
+<tr><th id="82">82</th><td>		<b>if</b> (<a class="ref fn" href="../../../lib/librte_eal/common/include/rte_uuid.h.html#rte_uuid_compare" title='rte_uuid_compare' data-ref="rte_uuid_compare">rte_uuid_compare</a>(*<a class="local col1 ref" href="#11id_table" title='id_table' data-ref="11id_table">id_table</a>, <a class="local col0 ref" href="#10dev" title='dev' data-ref="10dev">dev</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_device::class_id" title='rte_vmbus_device::class_id' data-ref="rte_vmbus_device::class_id">class_id</a>) == <var>0</var>)</td></tr>
+<tr><th id="83">83</th><td>			<b>return</b> <span class="macro" title="1" data-ref="_M/true">true</span>;</td></tr>
+<tr><th id="84">84</th><td>	}</td></tr>
+<tr><th id="85">85</th><td></td></tr>
+<tr><th id="86">86</th><td>	<b>return</b> <span class="macro" title="0" data-ref="_M/false">false</span>;</td></tr>
+<tr><th id="87">87</th><td>}</td></tr>
+<tr><th id="88">88</th><td><i  data-doc="vmbus_probe_one_driver">/*</i></td></tr>
+<tr><th id="89">89</th><td><i  data-doc="vmbus_probe_one_driver"> * If device ID match, call the devinit() function of the driver.</i></td></tr>
+<tr><th id="90">90</th><td><i  data-doc="vmbus_probe_one_driver"> */</i></td></tr>
+<tr><th id="91">91</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="92">92</th><td><dfn class="tu decl def fn" id="vmbus_probe_one_driver" title='vmbus_probe_one_driver' data-type='int vmbus_probe_one_driver(struct rte_vmbus_driver * dr, struct rte_vmbus_device * dev)' data-ref="vmbus_probe_one_driver">vmbus_probe_one_driver</dfn>(<b>struct</b> <a class="type" href="rte_bus_vmbus.h.html#rte_vmbus_driver" title='rte_vmbus_driver' data-ref="rte_vmbus_driver">rte_vmbus_driver</a> *<dfn class="local col2 decl" id="12dr" title='dr' data-type='struct rte_vmbus_driver *' data-ref="12dr">dr</dfn>,</td></tr>
+<tr><th id="93">93</th><td>		       <b>struct</b> <a class="type" href="rte_bus_vmbus.h.html#rte_vmbus_device" title='rte_vmbus_device' data-ref="rte_vmbus_device">rte_vmbus_device</a> *<dfn class="local col3 decl" id="13dev" title='dev' data-type='struct rte_vmbus_device *' data-ref="13dev">dev</dfn>)</td></tr>
+<tr><th id="94">94</th><td>{</td></tr>
+<tr><th id="95">95</th><td>	<em>char</em> <dfn class="local col4 decl" id="14guid" title='guid' data-type='char [37]' data-ref="14guid">guid</dfn>[<a class="macro" href="../../../lib/librte_eal/common/include/rte_uuid.h.html#122" title="(36 + 1)" data-ref="_M/RTE_UUID_STRLEN">RTE_UUID_STRLEN</a>];</td></tr>
+<tr><th id="96">96</th><td>	<em>int</em> <dfn class="local col5 decl" id="15ret" title='ret' data-type='int' data-ref="15ret">ret</dfn>;</td></tr>
+<tr><th id="97">97</th><td></td></tr>
+<tr><th id="98">98</th><td>	<b>if</b> (!<a class="tu ref fn" href="#vmbus_match" title='vmbus_match' data-use='c' data-ref="vmbus_match">vmbus_match</a>(<a class="local col2 ref" href="#12dr" title='dr' data-ref="12dr">dr</a>, <a class="local col3 ref" href="#13dev" title='dev' data-ref="13dev">dev</a>))</td></tr>
+<tr><th id="99">99</th><td>		<b>return</b> <var>1</var>;	 <i>/* not supported */</i></td></tr>
+<tr><th id="100">100</th><td></td></tr>
+<tr><th id="101">101</th><td>	<a class="ref fn" href="../../../lib/librte_eal/common/include/rte_uuid.h.html#rte_uuid_unparse" title='rte_uuid_unparse' data-ref="rte_uuid_unparse">rte_uuid_unparse</a>(<a class="local col3 ref" href="#13dev" title='dev' data-ref="13dev">dev</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_device::device_id" title='rte_vmbus_device::device_id' data-ref="rte_vmbus_device::device_id">device_id</a>, <a class="local col4 ref" href="#14guid" title='guid' data-ref="14guid">guid</a>, <b>sizeof</b>(<a class="local col4 ref" href="#14guid" title='guid' data-ref="14guid">guid</a>));</td></tr>
+<tr><th id="102">102</th><td>	<a class="macro" href="private.h.html#19" title="rte_log(7U, vmbus_logtype_bus, &quot;%s(): &quot; &quot;VMBUS device %s on NUMA socket %i&quot; &quot;\n&quot;, __func__, guid, dev-&gt;device.numa_node)" data-ref="_M/VMBUS_LOG">VMBUS_LOG</a>(INFO, <q>"VMBUS device %s on NUMA socket %i"</q>,</td></tr>
+<tr><th id="103">103</th><td>		  <a class="local col4 ref" href="#14guid" title='guid' data-ref="14guid">guid</a>, <a class="local col3 ref" href="#13dev" title='dev' data-ref="13dev">dev</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_device::device" title='rte_vmbus_device::device' data-ref="rte_vmbus_device::device">device</a>.<a class="ref field" href="../../../lib/librte_eal/common/include/rte_dev.h.html#rte_device::numa_node" title='rte_device::numa_node' data-ref="rte_device::numa_node">numa_node</a>);</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td>	<i>/* TODO add blacklisted */</i></td></tr>
+<tr><th id="106">106</th><td></td></tr>
+<tr><th id="107">107</th><td>	<i>/* map resources for device */</i></td></tr>
+<tr><th id="108">108</th><td>	<a class="local col5 ref" href="#15ret" title='ret' data-ref="15ret">ret</a> = <a class="ref fn" href="rte_bus_vmbus.h.html#rte_vmbus_map_device" title='rte_vmbus_map_device' data-ref="rte_vmbus_map_device">rte_vmbus_map_device</a>(<a class="local col3 ref" href="#13dev" title='dev' data-ref="13dev">dev</a>);</td></tr>
+<tr><th id="109">109</th><td>	<b>if</b> (<a class="local col5 ref" href="#15ret" title='ret' data-ref="15ret">ret</a> != <var>0</var>)</td></tr>
+<tr><th id="110">110</th><td>		<b>return</b> <a class="local col5 ref" href="#15ret" title='ret' data-ref="15ret">ret</a>;</td></tr>
+<tr><th id="111">111</th><td></td></tr>
+<tr><th id="112">112</th><td>	<i>/* reference driver structure */</i></td></tr>
+<tr><th id="113">113</th><td>	<a class="local col3 ref" href="#13dev" title='dev' data-ref="13dev">dev</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_device::driver" title='rte_vmbus_device::driver' data-ref="rte_vmbus_device::driver">driver</a> = <a class="local col2 ref" href="#12dr" title='dr' data-ref="12dr">dr</a>;</td></tr>
+<tr><th id="114">114</th><td>	<a class="local col3 ref" href="#13dev" title='dev' data-ref="13dev">dev</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_device::device" title='rte_vmbus_device::device' data-ref="rte_vmbus_device::device">device</a>.<a class="ref field" href="../../../lib/librte_eal/common/include/rte_dev.h.html#rte_device::driver" title='rte_device::driver' data-ref="rte_device::driver">driver</a> = &amp;<a class="local col2 ref" href="#12dr" title='dr' data-ref="12dr">dr</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_driver::driver" title='rte_vmbus_driver::driver' data-ref="rte_vmbus_driver::driver">driver</a>;</td></tr>
+<tr><th id="115">115</th><td></td></tr>
+<tr><th id="116">116</th><td>	<b>if</b> (<a class="local col3 ref" href="#13dev" title='dev' data-ref="13dev">dev</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_device::device" title='rte_vmbus_device::device' data-ref="rte_vmbus_device::device">device</a>.<a class="ref field" href="../../../lib/librte_eal/common/include/rte_dev.h.html#rte_device::numa_node" title='rte_device::numa_node' data-ref="rte_device::numa_node">numa_node</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="117">117</th><td>		<a class="macro" href="private.h.html#19" title="rte_log(5U, vmbus_logtype_bus, &quot;%s(): &quot; &quot;  Invalid NUMA socket, default to 0&quot; &quot;\n&quot;, __func__)" data-ref="_M/VMBUS_LOG">VMBUS_LOG</a>(WARNING, <q>"  Invalid NUMA socket, default to 0"</q>);</td></tr>
+<tr><th id="118">118</th><td>		<a class="local col3 ref" href="#13dev" title='dev' data-ref="13dev">dev</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_device::device" title='rte_vmbus_device::device' data-ref="rte_vmbus_device::device">device</a>.<a class="ref field" href="../../../lib/librte_eal/common/include/rte_dev.h.html#rte_device::numa_node" title='rte_device::numa_node' data-ref="rte_device::numa_node">numa_node</a> = <var>0</var>;</td></tr>
+<tr><th id="119">119</th><td>	}</td></tr>
+<tr><th id="120">120</th><td></td></tr>
+<tr><th id="121">121</th><td>	<i>/* call the driver probe() function */</i></td></tr>
+<tr><th id="122">122</th><td>	<a class="macro" href="private.h.html#19" title="rte_log(7U, vmbus_logtype_bus, &quot;%s(): &quot; &quot;  probe driver: %s&quot; &quot;\n&quot;, __func__, dr-&gt;driver.name)" data-ref="_M/VMBUS_LOG">VMBUS_LOG</a>(INFO, <q>"  probe driver: %s"</q>, <a class="local col2 ref" href="#12dr" title='dr' data-ref="12dr">dr</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_driver::driver" title='rte_vmbus_driver::driver' data-ref="rte_vmbus_driver::driver">driver</a>.<a class="ref field" href="../../../lib/librte_eal/common/include/rte_dev.h.html#rte_driver::name" title='rte_driver::name' data-ref="rte_driver::name">name</a>);</td></tr>
+<tr><th id="123">123</th><td>	<a class="local col5 ref" href="#15ret" title='ret' data-ref="15ret">ret</a> = <a class="local col2 ref" href="#12dr" title='dr' data-ref="12dr">dr</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_driver::probe" title='rte_vmbus_driver::probe' data-ref="rte_vmbus_driver::probe">probe</a>(<a class="local col2 ref" href="#12dr" title='dr' data-ref="12dr">dr</a>, <a class="local col3 ref" href="#13dev" title='dev' data-ref="13dev">dev</a>);</td></tr>
+<tr><th id="124">124</th><td>	<b>if</b> (<a class="local col5 ref" href="#15ret" title='ret' data-ref="15ret">ret</a>) {</td></tr>
+<tr><th id="125">125</th><td>		<a class="local col3 ref" href="#13dev" title='dev' data-ref="13dev">dev</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_device::driver" title='rte_vmbus_device::driver' data-ref="rte_vmbus_device::driver">driver</a> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="126">126</th><td>		<a class="ref fn" href="rte_bus_vmbus.h.html#rte_vmbus_unmap_device" title='rte_vmbus_unmap_device' data-ref="rte_vmbus_unmap_device">rte_vmbus_unmap_device</a>(<a class="local col3 ref" href="#13dev" title='dev' data-ref="13dev">dev</a>);</td></tr>
+<tr><th id="127">127</th><td>	}</td></tr>
+<tr><th id="128">128</th><td></td></tr>
+<tr><th id="129">129</th><td>	<b>return</b> <a class="local col5 ref" href="#15ret" title='ret' data-ref="15ret">ret</a>;</td></tr>
+<tr><th id="130">130</th><td>}</td></tr>
+<tr><th id="131">131</th><td></td></tr>
+<tr><th id="132">132</th><td><i  data-doc="vmbus_probe_all_drivers">/*</i></td></tr>
+<tr><th id="133">133</th><td><i  data-doc="vmbus_probe_all_drivers"> * IF device class GUID mathces, call the probe function of</i></td></tr>
+<tr><th id="134">134</th><td><i  data-doc="vmbus_probe_all_drivers"> * registere drivers for the vmbus device.</i></td></tr>
+<tr><th id="135">135</th><td><i  data-doc="vmbus_probe_all_drivers"> * Return -1 if initialization failed,</i></td></tr>
+<tr><th id="136">136</th><td><i  data-doc="vmbus_probe_all_drivers"> * and 1 if no driver found for this device.</i></td></tr>
+<tr><th id="137">137</th><td><i  data-doc="vmbus_probe_all_drivers"> */</i></td></tr>
+<tr><th id="138">138</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="139">139</th><td><dfn class="tu decl def fn" id="vmbus_probe_all_drivers" title='vmbus_probe_all_drivers' data-type='int vmbus_probe_all_drivers(struct rte_vmbus_device * dev)' data-ref="vmbus_probe_all_drivers">vmbus_probe_all_drivers</dfn>(<b>struct</b> <a class="type" href="rte_bus_vmbus.h.html#rte_vmbus_device" title='rte_vmbus_device' data-ref="rte_vmbus_device">rte_vmbus_device</a> *<dfn class="local col6 decl" id="16dev" title='dev' data-type='struct rte_vmbus_device *' data-ref="16dev">dev</dfn>)</td></tr>
+<tr><th id="140">140</th><td>{</td></tr>
+<tr><th id="141">141</th><td>	<b>struct</b> <a class="type" href="rte_bus_vmbus.h.html#rte_vmbus_driver" title='rte_vmbus_driver' data-ref="rte_vmbus_driver">rte_vmbus_driver</a> *<dfn class="local col7 decl" id="17dr" title='dr' data-type='struct rte_vmbus_driver *' data-ref="17dr">dr</dfn>;</td></tr>
+<tr><th id="142">142</th><td>	<em>int</em> <dfn class="local col8 decl" id="18rc" title='rc' data-type='int' data-ref="18rc">rc</dfn>;</td></tr>
+<tr><th id="143">143</th><td></td></tr>
+<tr><th id="144">144</th><td>	<i>/* Check if a driver is already loaded */</i></td></tr>
+<tr><th id="145">145</th><td>	<b>if</b> (<a class="local col6 ref" href="#16dev" title='dev' data-ref="16dev">dev</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_device::driver" title='rte_vmbus_device::driver' data-ref="rte_vmbus_device::driver">driver</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="146">146</th><td>		<a class="macro" href="private.h.html#19" title="rte_log(8U, vmbus_logtype_bus, &quot;%s(): &quot; &quot;VMBUS driver already loaded&quot; &quot;\n&quot;, __func__)" data-ref="_M/VMBUS_LOG">VMBUS_LOG</a>(DEBUG, <q>"VMBUS driver already loaded"</q>);</td></tr>
+<tr><th id="147">147</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="148">148</th><td>	}</td></tr>
+<tr><th id="149">149</th><td></td></tr>
+<tr><th id="150">150</th><td>	<a class="macro" href="rte_bus_vmbus.h.html#48" title="for ((dr) = ((&amp;(rte_vmbus_bus.driver_list))-&gt;tqh_first); (dr); (dr) = ((dr)-&gt;next.tqe_next))" data-ref="_M/FOREACH_DRIVER_ON_VMBUS">FOREACH_DRIVER_ON_VMBUS</a>(<a class="local col7 ref" href="#17dr" title='dr' data-ref="17dr">dr</a>) {</td></tr>
+<tr><th id="151">151</th><td>		<a class="local col8 ref" href="#18rc" title='rc' data-ref="18rc">rc</a> = <a class="tu ref fn" href="#vmbus_probe_one_driver" title='vmbus_probe_one_driver' data-use='c' data-ref="vmbus_probe_one_driver">vmbus_probe_one_driver</a>(<a class="local col7 ref" href="#17dr" title='dr' data-ref="17dr">dr</a>, <a class="local col6 ref" href="#16dev" title='dev' data-ref="16dev">dev</a>);</td></tr>
+<tr><th id="152">152</th><td>		<b>if</b> (<a class="local col8 ref" href="#18rc" title='rc' data-ref="18rc">rc</a> &lt; <var>0</var>) <i>/* negative is an error */</i></td></tr>
+<tr><th id="153">153</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="154">154</th><td></td></tr>
+<tr><th id="155">155</th><td>		<b>if</b> (<a class="local col8 ref" href="#18rc" title='rc' data-ref="18rc">rc</a> &gt; <var>0</var>) <i>/* positive driver doesn't support it */</i></td></tr>
+<tr><th id="156">156</th><td>			<b>continue</b>;</td></tr>
+<tr><th id="157">157</th><td></td></tr>
+<tr><th id="158">158</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="159">159</th><td>	}</td></tr>
+<tr><th id="160">160</th><td>	<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="161">161</th><td>}</td></tr>
+<tr><th id="162">162</th><td></td></tr>
+<tr><th id="163">163</th><td><i>/*</i></td></tr>
+<tr><th id="164">164</th><td><i> * Scan the vmbus, and call the devinit() function for</i></td></tr>
+<tr><th id="165">165</th><td><i> * all registered drivers that have a matching entry in its id_table</i></td></tr>
+<tr><th id="166">166</th><td><i> * for discovered devices.</i></td></tr>
+<tr><th id="167">167</th><td><i> */</i></td></tr>
+<tr><th id="168">168</th><td><em>int</em></td></tr>
+<tr><th id="169">169</th><td><dfn class="decl def fn" id="rte_vmbus_probe" title='rte_vmbus_probe' data-ref="rte_vmbus_probe">rte_vmbus_probe</dfn>(<em>void</em>)</td></tr>
+<tr><th id="170">170</th><td>{</td></tr>
+<tr><th id="171">171</th><td>	<b>struct</b> <a class="type" href="rte_bus_vmbus.h.html#rte_vmbus_device" title='rte_vmbus_device' data-ref="rte_vmbus_device">rte_vmbus_device</a> *<dfn class="local col9 decl" id="19dev" title='dev' data-type='struct rte_vmbus_device *' data-ref="19dev">dev</dfn>;</td></tr>
+<tr><th id="172">172</th><td>	<span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col0 decl" id="20probed" title='probed' data-type='size_t' data-ref="20probed">probed</dfn> = <var>0</var>, <dfn class="local col1 decl" id="21failed" title='failed' data-type='size_t' data-ref="21failed">failed</dfn> = <var>0</var>;</td></tr>
+<tr><th id="173">173</th><td>	<em>char</em> <dfn class="local col2 decl" id="22ubuf" title='ubuf' data-type='char [37]' data-ref="22ubuf">ubuf</dfn>[<a class="macro" href="../../../lib/librte_eal/common/include/rte_uuid.h.html#122" title="(36 + 1)" data-ref="_M/RTE_UUID_STRLEN">RTE_UUID_STRLEN</a>];</td></tr>
+<tr><th id="174">174</th><td></td></tr>
+<tr><th id="175">175</th><td>	<a class="macro" href="rte_bus_vmbus.h.html#45" title="for ((dev) = ((&amp;(rte_vmbus_bus.device_list))-&gt;tqh_first); (dev); (dev) = ((dev)-&gt;next.tqe_next))" data-ref="_M/FOREACH_DEVICE_ON_VMBUS">FOREACH_DEVICE_ON_VMBUS</a>(<a class="local col9 ref" href="#19dev" title='dev' data-ref="19dev">dev</a>) {</td></tr>
+<tr><th id="176">176</th><td>		<a class="local col0 ref" href="#20probed" title='probed' data-ref="20probed">probed</a>++;</td></tr>
+<tr><th id="177">177</th><td></td></tr>
+<tr><th id="178">178</th><td>		<a class="ref fn" href="../../../lib/librte_eal/common/include/rte_uuid.h.html#rte_uuid_unparse" title='rte_uuid_unparse' data-ref="rte_uuid_unparse">rte_uuid_unparse</a>(<a class="local col9 ref" href="#19dev" title='dev' data-ref="19dev">dev</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_device::device_id" title='rte_vmbus_device::device_id' data-ref="rte_vmbus_device::device_id">device_id</a>, <a class="local col2 ref" href="#22ubuf" title='ubuf' data-ref="22ubuf">ubuf</a>, <b>sizeof</b>(<a class="local col2 ref" href="#22ubuf" title='ubuf' data-ref="22ubuf">ubuf</a>));</td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td>		<i>/* TODO: add whitelist/blacklist */</i></td></tr>
+<tr><th id="181">181</th><td></td></tr>
+<tr><th id="182">182</th><td>		<b>if</b> (<a class="tu ref fn" href="#vmbus_probe_all_drivers" title='vmbus_probe_all_drivers' data-use='c' data-ref="vmbus_probe_all_drivers">vmbus_probe_all_drivers</a>(<a class="local col9 ref" href="#19dev" title='dev' data-ref="19dev">dev</a>) &lt; <var>0</var>) {</td></tr>
+<tr><th id="183">183</th><td>			<a class="macro" href="private.h.html#19" title="rte_log(6U, vmbus_logtype_bus, &quot;%s(): &quot; &quot;Requested device %s cannot be used&quot; &quot;\n&quot;, __func__, ubuf)" data-ref="_M/VMBUS_LOG">VMBUS_LOG</a>(NOTICE,</td></tr>
+<tr><th id="184">184</th><td>				<q>"Requested device %s cannot be used"</q>, <a class="local col2 ref" href="#22ubuf" title='ubuf' data-ref="22ubuf">ubuf</a>);</td></tr>
+<tr><th id="185">185</th><td>			<a class="macro" href="../../../lib/librte_eal/common/include/rte_errno.h.html#29" title="(per_lcore__rte_errno)" data-ref="_M/rte_errno">rte_errno</a> = <a class="macro" href="../../../../include/bits/errno.h.html#54" title="(*__errno_location ())" data-ref="_M/errno">errno</a>;</td></tr>
+<tr><th id="186">186</th><td>			<a class="local col1 ref" href="#21failed" title='failed' data-ref="21failed">failed</a>++;</td></tr>
+<tr><th id="187">187</th><td>		}</td></tr>
+<tr><th id="188">188</th><td>	}</td></tr>
+<tr><th id="189">189</th><td></td></tr>
+<tr><th id="190">190</th><td>	<b>return</b> (<a class="local col0 ref" href="#20probed" title='probed' data-ref="20probed">probed</a> &amp;&amp; <a class="local col0 ref" href="#20probed" title='probed' data-ref="20probed">probed</a> == <a class="local col1 ref" href="#21failed" title='failed' data-ref="21failed">failed</a>) ? -<var>1</var> : <var>0</var>;</td></tr>
+<tr><th id="191">191</th><td>}</td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="194">194</th><td><dfn class="tu decl def fn" id="vmbus_parse" title='vmbus_parse' data-type='int vmbus_parse(const char * name, void * addr)' data-ref="vmbus_parse">vmbus_parse</dfn>(<em>const</em> <em>char</em> *<dfn class="local col3 decl" id="23name" title='name' data-type='const char *' data-ref="23name">name</dfn>, <em>void</em> *<dfn class="local col4 decl" id="24addr" title='addr' data-type='void *' data-ref="24addr">addr</dfn>)</td></tr>
+<tr><th id="195">195</th><td>{</td></tr>
+<tr><th id="196">196</th><td>	<a class="typedef" href="../../../lib/librte_eal/common/include/rte_uuid.h.html#rte_uuid_t" title='rte_uuid_t' data-type='unsigned char [16]' data-ref="rte_uuid_t">rte_uuid_t</a> <dfn class="local col5 decl" id="25guid" title='guid' data-type='rte_uuid_t' data-ref="25guid">guid</dfn>;</td></tr>
+<tr><th id="197">197</th><td>	<em>int</em> <dfn class="local col6 decl" id="26ret" title='ret' data-type='int' data-ref="26ret">ret</dfn>;</td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td>	<a class="local col6 ref" href="#26ret" title='ret' data-ref="26ret">ret</a> = <a class="ref fn" href="../../../lib/librte_eal/common/include/rte_uuid.h.html#rte_uuid_parse" title='rte_uuid_parse' data-ref="rte_uuid_parse">rte_uuid_parse</a>(<a class="local col3 ref" href="#23name" title='name' data-ref="23name">name</a>, <a class="local col5 ref" href="#25guid" title='guid' data-ref="25guid">guid</a>);</td></tr>
+<tr><th id="200">200</th><td>	<b>if</b> (<a class="local col6 ref" href="#26ret" title='ret' data-ref="26ret">ret</a> == <var>0</var> &amp;&amp; <a class="local col4 ref" href="#24addr" title='addr' data-ref="24addr">addr</a>)</td></tr>
+<tr><th id="201">201</th><td>		<a class="ref fn" href="../../../../include/string.h.html#memcpy" title='memcpy' data-ref="memcpy">memcpy</a>(<a class="local col4 ref" href="#24addr" title='addr' data-ref="24addr">addr</a>, &amp;<a class="local col5 ref" href="#25guid" title='guid' data-ref="25guid">guid</a>, <b>sizeof</b>(<a class="local col5 ref" href="#25guid" title='guid' data-ref="25guid">guid</a>));</td></tr>
+<tr><th id="202">202</th><td></td></tr>
+<tr><th id="203">203</th><td>	<b>return</b> <a class="local col6 ref" href="#26ret" title='ret' data-ref="26ret">ret</a>;</td></tr>
+<tr><th id="204">204</th><td>}</td></tr>
+<tr><th id="205">205</th><td></td></tr>
+<tr><th id="206">206</th><td><i>/*</i></td></tr>
+<tr><th id="207">207</th><td><i> * scan for matching device args on command line</i></td></tr>
+<tr><th id="208">208</th><td><i> * example:</i></td></tr>
+<tr><th id="209">209</th><td><i> *	-w 'vmbus:635a7ae3-091e-4410-ad59-667c4f8c04c3,latency=20'</i></td></tr>
+<tr><th id="210">210</th><td><i> */</i></td></tr>
+<tr><th id="211">211</th><td><b>struct</b> <a class="type" href="../../../lib/librte_eal/common/include/rte_devargs.h.html#rte_devargs" title='rte_devargs' data-ref="rte_devargs">rte_devargs</a> *</td></tr>
+<tr><th id="212">212</th><td><dfn class="decl def fn" id="vmbus_devargs_lookup" title='vmbus_devargs_lookup' data-ref="vmbus_devargs_lookup">vmbus_devargs_lookup</dfn>(<b>struct</b> <a class="type" href="rte_bus_vmbus.h.html#rte_vmbus_device" title='rte_vmbus_device' data-ref="rte_vmbus_device">rte_vmbus_device</a> *<dfn class="local col7 decl" id="27dev" title='dev' data-type='struct rte_vmbus_device *' data-ref="27dev">dev</dfn>)</td></tr>
+<tr><th id="213">213</th><td>{</td></tr>
+<tr><th id="214">214</th><td>	<b>struct</b> <a class="type" href="../../../lib/librte_eal/common/include/rte_devargs.h.html#rte_devargs" title='rte_devargs' data-ref="rte_devargs">rte_devargs</a> *<dfn class="local col8 decl" id="28devargs" title='devargs' data-type='struct rte_devargs *' data-ref="28devargs">devargs</dfn>;</td></tr>
+<tr><th id="215">215</th><td>	<a class="typedef" href="../../../lib/librte_eal/common/include/rte_uuid.h.html#rte_uuid_t" title='rte_uuid_t' data-type='unsigned char [16]' data-ref="rte_uuid_t">rte_uuid_t</a> <dfn class="local col9 decl" id="29addr" title='addr' data-type='rte_uuid_t' data-ref="29addr">addr</dfn>;</td></tr>
+<tr><th id="216">216</th><td></td></tr>
+<tr><th id="217">217</th><td>	<a class="macro" href="../../../lib/librte_eal/common/include/rte_devargs.h.html#310" title="for (devargs = rte_devargs_next(&quot;vmbus&quot;, ((void*)0)); devargs != ((void*)0); devargs = rte_devargs_next(&quot;vmbus&quot;, devargs))" data-ref="_M/RTE_EAL_DEVARGS_FOREACH">RTE_EAL_DEVARGS_FOREACH</a>(<q>"vmbus"</q>, <a class="local col8 ref" href="#28devargs" title='devargs' data-ref="28devargs">devargs</a>) {</td></tr>
+<tr><th id="218">218</th><td>		<a class="tu ref fn" href="#vmbus_parse" title='vmbus_parse' data-use='c' data-ref="vmbus_parse">vmbus_parse</a>(<a class="local col8 ref" href="#28devargs" title='devargs' data-ref="28devargs">devargs</a>-&gt;<a class="ref field" href="../../../lib/librte_eal/common/include/rte_devargs.h.html#rte_devargs::name" title='rte_devargs::name' data-ref="rte_devargs::name">name</a>, &amp;<a class="local col9 ref" href="#29addr" title='addr' data-ref="29addr">addr</a>);</td></tr>
+<tr><th id="219">219</th><td></td></tr>
+<tr><th id="220">220</th><td>		<b>if</b> (<a class="ref fn" href="../../../lib/librte_eal/common/include/rte_uuid.h.html#rte_uuid_compare" title='rte_uuid_compare' data-ref="rte_uuid_compare">rte_uuid_compare</a>(<a class="local col7 ref" href="#27dev" title='dev' data-ref="27dev">dev</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_device::device_id" title='rte_vmbus_device::device_id' data-ref="rte_vmbus_device::device_id">device_id</a>, <a class="local col9 ref" href="#29addr" title='addr' data-ref="29addr">addr</a>) == <var>0</var>)</td></tr>
+<tr><th id="221">221</th><td>			<b>return</b> <a class="local col8 ref" href="#28devargs" title='devargs' data-ref="28devargs">devargs</a>;</td></tr>
+<tr><th id="222">222</th><td>	}</td></tr>
+<tr><th id="223">223</th><td>	<b>return</b> <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="224">224</th><td></td></tr>
+<tr><th id="225">225</th><td>}</td></tr>
+<tr><th id="226">226</th><td></td></tr>
+<tr><th id="227">227</th><td><i>/* register vmbus driver */</i></td></tr>
+<tr><th id="228">228</th><td><em>void</em></td></tr>
+<tr><th id="229">229</th><td><dfn class="decl def fn" id="rte_vmbus_register" title='rte_vmbus_register' data-ref="rte_vmbus_register">rte_vmbus_register</dfn>(<b>struct</b> <a class="type" href="rte_bus_vmbus.h.html#rte_vmbus_driver" title='rte_vmbus_driver' data-ref="rte_vmbus_driver">rte_vmbus_driver</a> *<dfn class="local col0 decl" id="30driver" title='driver' data-type='struct rte_vmbus_driver *' data-ref="30driver">driver</dfn>)</td></tr>
+<tr><th id="230">230</th><td>{</td></tr>
+<tr><th id="231">231</th><td>	<a class="macro" href="private.h.html#19" title="rte_log(8U, vmbus_logtype_bus, &quot;%s(): &quot; &quot;Registered driver %s&quot; &quot;\n&quot;, __func__, driver-&gt;driver.name)" data-ref="_M/VMBUS_LOG">VMBUS_LOG</a>(DEBUG,</td></tr>
+<tr><th id="232">232</th><td>		<q>"Registered driver %s"</q>, <a class="local col0 ref" href="#30driver" title='driver' data-ref="30driver">driver</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_driver::driver" title='rte_vmbus_driver::driver' data-ref="rte_vmbus_driver::driver">driver</a>.<a class="ref field" href="../../../lib/librte_eal/common/include/rte_dev.h.html#rte_driver::name" title='rte_driver::name' data-ref="rte_driver::name">name</a>);</td></tr>
+<tr><th id="233">233</th><td></td></tr>
+<tr><th id="234">234</th><td>	<a class="macro" href="../../../../include/sys/queue.h.html#402" title="do { (driver)-&gt;next.tqe_next = ((void*)0); (driver)-&gt;next.tqe_prev = (&amp;rte_vmbus_bus.driver_list)-&gt;tqh_last; *(&amp;rte_vmbus_bus.driver_list)-&gt;tqh_last = (driver); (&amp;rte_vmbus_bus.driver_list)-&gt;tqh_last = &amp;(driver)-&gt;next.tqe_next; } while ( 0)" data-ref="_M/TAILQ_INSERT_TAIL">TAILQ_INSERT_TAIL</a>(&amp;<a class="ref" href="#rte_vmbus_bus" title='rte_vmbus_bus' data-ref="rte_vmbus_bus">rte_vmbus_bus</a>.<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_bus::driver_list" title='rte_vmbus_bus::driver_list' data-ref="rte_vmbus_bus::driver_list">driver_list</a>, <a class="local col0 ref" href="#30driver" title='driver' data-ref="30driver">driver</a>, <a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_driver::next" title='rte_vmbus_driver::next' data-ref="rte_vmbus_driver::next">next</a>);</td></tr>
+<tr><th id="235">235</th><td>	<a class="local col0 ref" href="#30driver" title='driver' data-ref="30driver">driver</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_driver::bus" title='rte_vmbus_driver::bus' data-ref="rte_vmbus_driver::bus">bus</a> = &amp;<a class="ref" href="#rte_vmbus_bus" title='rte_vmbus_bus' data-ref="rte_vmbus_bus">rte_vmbus_bus</a>;</td></tr>
+<tr><th id="236">236</th><td>}</td></tr>
+<tr><th id="237">237</th><td></td></tr>
+<tr><th id="238">238</th><td><i>/* unregister vmbus driver */</i></td></tr>
+<tr><th id="239">239</th><td><em>void</em></td></tr>
+<tr><th id="240">240</th><td><dfn class="decl def fn" id="rte_vmbus_unregister" title='rte_vmbus_unregister' data-ref="rte_vmbus_unregister">rte_vmbus_unregister</dfn>(<b>struct</b> <a class="type" href="rte_bus_vmbus.h.html#rte_vmbus_driver" title='rte_vmbus_driver' data-ref="rte_vmbus_driver">rte_vmbus_driver</a> *<dfn class="local col1 decl" id="31driver" title='driver' data-type='struct rte_vmbus_driver *' data-ref="31driver">driver</dfn>)</td></tr>
+<tr><th id="241">241</th><td>{</td></tr>
+<tr><th id="242">242</th><td>	<a class="macro" href="../../../../include/sys/queue.h.html#426" title="do { if (((driver)-&gt;next.tqe_next) != ((void*)0)) (driver)-&gt;next.tqe_next-&gt;next.tqe_prev = (driver)-&gt;next.tqe_prev; else (&amp;rte_vmbus_bus.driver_list)-&gt;tqh_last = (driver)-&gt;next.tqe_prev; *(driver)-&gt;next.tqe_prev = (driver)-&gt;next.tqe_next; } while ( 0)" data-ref="_M/TAILQ_REMOVE">TAILQ_REMOVE</a>(&amp;<a class="ref" href="#rte_vmbus_bus" title='rte_vmbus_bus' data-ref="rte_vmbus_bus">rte_vmbus_bus</a>.<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_bus::driver_list" title='rte_vmbus_bus::driver_list' data-ref="rte_vmbus_bus::driver_list">driver_list</a>, <a class="local col1 ref" href="#31driver" title='driver' data-ref="31driver">driver</a>, <a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_driver::next" title='rte_vmbus_driver::next' data-ref="rte_vmbus_driver::next">next</a>);</td></tr>
+<tr><th id="243">243</th><td>	<a class="local col1 ref" href="#31driver" title='driver' data-ref="31driver">driver</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_driver::bus" title='rte_vmbus_driver::bus' data-ref="rte_vmbus_driver::bus">bus</a> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="244">244</th><td>}</td></tr>
+<tr><th id="245">245</th><td></td></tr>
+<tr><th id="246">246</th><td><i>/* Add a device to VMBUS bus */</i></td></tr>
+<tr><th id="247">247</th><td><em>void</em></td></tr>
+<tr><th id="248">248</th><td><dfn class="decl def fn" id="vmbus_add_device" title='vmbus_add_device' data-ref="vmbus_add_device">vmbus_add_device</dfn>(<b>struct</b> <a class="type" href="rte_bus_vmbus.h.html#rte_vmbus_device" title='rte_vmbus_device' data-ref="rte_vmbus_device">rte_vmbus_device</a> *<dfn class="local col2 decl" id="32vmbus_dev" title='vmbus_dev' data-type='struct rte_vmbus_device *' data-ref="32vmbus_dev">vmbus_dev</dfn>)</td></tr>
+<tr><th id="249">249</th><td>{</td></tr>
+<tr><th id="250">250</th><td>	<a class="macro" href="../../../../include/sys/queue.h.html#402" title="do { (vmbus_dev)-&gt;next.tqe_next = ((void*)0); (vmbus_dev)-&gt;next.tqe_prev = (&amp;rte_vmbus_bus.device_list)-&gt;tqh_last; *(&amp;rte_vmbus_bus.device_list)-&gt;tqh_last = (vmbus_dev); (&amp;rte_vmbus_bus.device_list)-&gt;tqh_last = &amp;(vmbus_dev)-&gt;next.tqe_next; } while ( 0)" data-ref="_M/TAILQ_INSERT_TAIL">TAILQ_INSERT_TAIL</a>(&amp;<a class="ref" href="#rte_vmbus_bus" title='rte_vmbus_bus' data-ref="rte_vmbus_bus">rte_vmbus_bus</a>.<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_bus::device_list" title='rte_vmbus_bus::device_list' data-ref="rte_vmbus_bus::device_list">device_list</a>, <a class="local col2 ref" href="#32vmbus_dev" title='vmbus_dev' data-ref="32vmbus_dev">vmbus_dev</a>, <a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_device::next" title='rte_vmbus_device::next' data-ref="rte_vmbus_device::next">next</a>);</td></tr>
+<tr><th id="251">251</th><td>}</td></tr>
+<tr><th id="252">252</th><td></td></tr>
+<tr><th id="253">253</th><td><i>/* Insert a device into a predefined position in VMBUS bus */</i></td></tr>
+<tr><th id="254">254</th><td><em>void</em></td></tr>
+<tr><th id="255">255</th><td><dfn class="decl def fn" id="vmbus_insert_device" title='vmbus_insert_device' data-ref="vmbus_insert_device">vmbus_insert_device</dfn>(<b>struct</b> <a class="type" href="rte_bus_vmbus.h.html#rte_vmbus_device" title='rte_vmbus_device' data-ref="rte_vmbus_device">rte_vmbus_device</a> *<dfn class="local col3 decl" id="33exist_vmbus_dev" title='exist_vmbus_dev' data-type='struct rte_vmbus_device *' data-ref="33exist_vmbus_dev">exist_vmbus_dev</dfn>,</td></tr>
+<tr><th id="256">256</th><td>		      <b>struct</b> <a class="type" href="rte_bus_vmbus.h.html#rte_vmbus_device" title='rte_vmbus_device' data-ref="rte_vmbus_device">rte_vmbus_device</a> *<dfn class="local col4 decl" id="34new_vmbus_dev" title='new_vmbus_dev' data-type='struct rte_vmbus_device *' data-ref="34new_vmbus_dev">new_vmbus_dev</dfn>)</td></tr>
+<tr><th id="257">257</th><td>{</td></tr>
+<tr><th id="258">258</th><td>	<a class="macro" href="../../../../include/sys/queue.h.html#419" title="do { (new_vmbus_dev)-&gt;next.tqe_prev = (exist_vmbus_dev)-&gt;next.tqe_prev; (new_vmbus_dev)-&gt;next.tqe_next = (exist_vmbus_dev); *(exist_vmbus_dev)-&gt;next.tqe_prev = (new_vmbus_dev); (exist_vmbus_dev)-&gt;next.tqe_prev = &amp;(new_vmbus_dev)-&gt;next.tqe_next; } while ( 0)" data-ref="_M/TAILQ_INSERT_BEFORE">TAILQ_INSERT_BEFORE</a>(<a class="local col3 ref" href="#33exist_vmbus_dev" title='exist_vmbus_dev' data-ref="33exist_vmbus_dev">exist_vmbus_dev</a>, <a class="local col4 ref" href="#34new_vmbus_dev" title='new_vmbus_dev' data-ref="34new_vmbus_dev">new_vmbus_dev</a>, <a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_device::next" title='rte_vmbus_device::next' data-ref="rte_vmbus_device::next">next</a>);</td></tr>
+<tr><th id="259">259</th><td>}</td></tr>
+<tr><th id="260">260</th><td></td></tr>
+<tr><th id="261">261</th><td><i>/* Remove a device from VMBUS bus */</i></td></tr>
+<tr><th id="262">262</th><td><em>void</em></td></tr>
+<tr><th id="263">263</th><td><dfn class="decl def fn" id="vmbus_remove_device" title='vmbus_remove_device' data-ref="vmbus_remove_device">vmbus_remove_device</dfn>(<b>struct</b> <a class="type" href="rte_bus_vmbus.h.html#rte_vmbus_device" title='rte_vmbus_device' data-ref="rte_vmbus_device">rte_vmbus_device</a> *<dfn class="local col5 decl" id="35vmbus_dev" title='vmbus_dev' data-type='struct rte_vmbus_device *' data-ref="35vmbus_dev">vmbus_dev</dfn>)</td></tr>
+<tr><th id="264">264</th><td>{</td></tr>
+<tr><th id="265">265</th><td>	<a class="macro" href="../../../../include/sys/queue.h.html#426" title="do { if (((vmbus_dev)-&gt;next.tqe_next) != ((void*)0)) (vmbus_dev)-&gt;next.tqe_next-&gt;next.tqe_prev = (vmbus_dev)-&gt;next.tqe_prev; else (&amp;rte_vmbus_bus.device_list)-&gt;tqh_last = (vmbus_dev)-&gt;next.tqe_prev; *(vmbus_dev)-&gt;next.tqe_prev = (vmbus_dev)-&gt;next.tqe_next; } while ( 0)" data-ref="_M/TAILQ_REMOVE">TAILQ_REMOVE</a>(&amp;<a class="ref" href="#rte_vmbus_bus" title='rte_vmbus_bus' data-ref="rte_vmbus_bus">rte_vmbus_bus</a>.<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_bus::device_list" title='rte_vmbus_bus::device_list' data-ref="rte_vmbus_bus::device_list">device_list</a>, <a class="local col5 ref" href="#35vmbus_dev" title='vmbus_dev' data-ref="35vmbus_dev">vmbus_dev</a>, <a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_device::next" title='rte_vmbus_device::next' data-ref="rte_vmbus_device::next">next</a>);</td></tr>
+<tr><th id="266">266</th><td>}</td></tr>
+<tr><th id="267">267</th><td></td></tr>
+<tr><th id="268">268</th><td><i  data-doc="vmbus_find_device">/* VMBUS doesn't support hotplug */</i></td></tr>
+<tr><th id="269">269</th><td><em>static</em> <b>struct</b> <a class="type" href="../../../lib/librte_eal/common/include/rte_dev.h.html#rte_device" title='rte_device' data-ref="rte_device">rte_device</a> *</td></tr>
+<tr><th id="270">270</th><td><dfn class="tu decl def fn" id="vmbus_find_device" title='vmbus_find_device' data-type='struct rte_device * vmbus_find_device(const struct rte_device * start, rte_dev_cmp_t cmp, const void * data)' data-ref="vmbus_find_device">vmbus_find_device</dfn>(<em>const</em> <b>struct</b> <a class="type" href="../../../lib/librte_eal/common/include/rte_dev.h.html#rte_device" title='rte_device' data-ref="rte_device">rte_device</a> *<dfn class="local col6 decl" id="36start" title='start' data-type='const struct rte_device *' data-ref="36start">start</dfn>, <a class="typedef" href="../../../lib/librte_eal/common/include/rte_dev.h.html#rte_dev_cmp_t" title='rte_dev_cmp_t' data-type='int (*)(const struct rte_device *, const void *)' data-ref="rte_dev_cmp_t">rte_dev_cmp_t</a> <dfn class="local col7 decl" id="37cmp" title='cmp' data-type='rte_dev_cmp_t' data-ref="37cmp">cmp</dfn>,</td></tr>
+<tr><th id="271">271</th><td>		  <em>const</em> <em>void</em> *<dfn class="local col8 decl" id="38data" title='data' data-type='const void *' data-ref="38data">data</dfn>)</td></tr>
+<tr><th id="272">272</th><td>{</td></tr>
+<tr><th id="273">273</th><td>	<b>struct</b> <a class="type" href="rte_bus_vmbus.h.html#rte_vmbus_device" title='rte_vmbus_device' data-ref="rte_vmbus_device">rte_vmbus_device</a> *<dfn class="local col9 decl" id="39dev" title='dev' data-type='struct rte_vmbus_device *' data-ref="39dev">dev</dfn>;</td></tr>
+<tr><th id="274">274</th><td></td></tr>
+<tr><th id="275">275</th><td>	<a class="macro" href="rte_bus_vmbus.h.html#45" title="for ((dev) = ((&amp;(rte_vmbus_bus.device_list))-&gt;tqh_first); (dev); (dev) = ((dev)-&gt;next.tqe_next))" data-ref="_M/FOREACH_DEVICE_ON_VMBUS">FOREACH_DEVICE_ON_VMBUS</a>(<a class="local col9 ref" href="#39dev" title='dev' data-ref="39dev">dev</a>) {</td></tr>
+<tr><th id="276">276</th><td>		<b>if</b> (<a class="local col6 ref" href="#36start" title='start' data-ref="36start">start</a> &amp;&amp; &amp;<a class="local col9 ref" href="#39dev" title='dev' data-ref="39dev">dev</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_device::device" title='rte_vmbus_device::device' data-ref="rte_vmbus_device::device">device</a> == <a class="local col6 ref" href="#36start" title='start' data-ref="36start">start</a>) {</td></tr>
+<tr><th id="277">277</th><td>			<a class="local col6 ref" href="#36start" title='start' data-ref="36start">start</a> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="278">278</th><td>			<b>continue</b>;</td></tr>
+<tr><th id="279">279</th><td>		}</td></tr>
+<tr><th id="280">280</th><td>		<b>if</b> (<a class="local col7 ref" href="#37cmp" title='cmp' data-ref="37cmp">cmp</a>(&amp;<a class="local col9 ref" href="#39dev" title='dev' data-ref="39dev">dev</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_device::device" title='rte_vmbus_device::device' data-ref="rte_vmbus_device::device">device</a>, <a class="local col8 ref" href="#38data" title='data' data-ref="38data">data</a>) == <var>0</var>)</td></tr>
+<tr><th id="281">281</th><td>			<b>return</b> &amp;<a class="local col9 ref" href="#39dev" title='dev' data-ref="39dev">dev</a>-&gt;<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_device::device" title='rte_vmbus_device::device' data-ref="rte_vmbus_device::device">device</a>;</td></tr>
+<tr><th id="282">282</th><td>	}</td></tr>
+<tr><th id="283">283</th><td></td></tr>
+<tr><th id="284">284</th><td>	<b>return</b> <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="285">285</th><td>}</td></tr>
+<tr><th id="286">286</th><td></td></tr>
+<tr><th id="287">287</th><td></td></tr>
+<tr><th id="288">288</th><td><b>struct</b> <a class="type" href="rte_bus_vmbus.h.html#rte_vmbus_bus" title='rte_vmbus_bus' data-ref="rte_vmbus_bus">rte_vmbus_bus</a> <dfn class="decl def" id="rte_vmbus_bus" title='rte_vmbus_bus' data-ref="rte_vmbus_bus">rte_vmbus_bus</dfn> = {</td></tr>
+<tr><th id="289">289</th><td>	.<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_bus::bus" title='rte_vmbus_bus::bus' data-ref="rte_vmbus_bus::bus">bus</a> = {</td></tr>
+<tr><th id="290">290</th><td>		.<a class="ref field" href="../../../lib/librte_eal/common/include/rte_bus.h.html#rte_bus::scan" title='rte_bus::scan' data-ref="rte_bus::scan">scan</a> = <a class="ref fn" href="rte_bus_vmbus.h.html#rte_vmbus_scan" title='rte_vmbus_scan' data-ref="rte_vmbus_scan">rte_vmbus_scan</a>,</td></tr>
+<tr><th id="291">291</th><td>		.<a class="ref field" href="../../../lib/librte_eal/common/include/rte_bus.h.html#rte_bus::probe" title='rte_bus::probe' data-ref="rte_bus::probe">probe</a> = <a class="ref fn" href="#rte_vmbus_probe" title='rte_vmbus_probe' data-ref="rte_vmbus_probe">rte_vmbus_probe</a>,</td></tr>
+<tr><th id="292">292</th><td>		.<a class="ref field" href="../../../lib/librte_eal/common/include/rte_bus.h.html#rte_bus::find_device" title='rte_bus::find_device' data-ref="rte_bus::find_device">find_device</a> = <a class="tu ref fn" href="#vmbus_find_device" title='vmbus_find_device' data-use='r' data-ref="vmbus_find_device">vmbus_find_device</a>,</td></tr>
+<tr><th id="293">293</th><td>		.<a class="ref field" href="../../../lib/librte_eal/common/include/rte_bus.h.html#rte_bus::parse" title='rte_bus::parse' data-ref="rte_bus::parse">parse</a> = <a class="tu ref fn" href="#vmbus_parse" title='vmbus_parse' data-use='r' data-ref="vmbus_parse">vmbus_parse</a>,</td></tr>
+<tr><th id="294">294</th><td>	},</td></tr>
+<tr><th id="295">295</th><td>	.<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_bus::device_list" title='rte_vmbus_bus::device_list' data-ref="rte_vmbus_bus::device_list">device_list</a> = <a class="macro" href="../../../../include/sys/queue.h.html#374" title="{ ((void*)0), &amp;(rte_vmbus_bus.device_list).tqh_first }" data-ref="_M/TAILQ_HEAD_INITIALIZER">TAILQ_HEAD_INITIALIZER</a>(<a class="ref" href="#rte_vmbus_bus" title='rte_vmbus_bus' data-ref="rte_vmbus_bus">rte_vmbus_bus</a>.<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_bus::device_list" title='rte_vmbus_bus::device_list' data-ref="rte_vmbus_bus::device_list">device_list</a>),</td></tr>
+<tr><th id="296">296</th><td>	.<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_bus::driver_list" title='rte_vmbus_bus::driver_list' data-ref="rte_vmbus_bus::driver_list">driver_list</a> = <a class="macro" href="../../../../include/sys/queue.h.html#374" title="{ ((void*)0), &amp;(rte_vmbus_bus.driver_list).tqh_first }" data-ref="_M/TAILQ_HEAD_INITIALIZER">TAILQ_HEAD_INITIALIZER</a>(<a class="ref" href="#rte_vmbus_bus" title='rte_vmbus_bus' data-ref="rte_vmbus_bus">rte_vmbus_bus</a>.<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_bus::driver_list" title='rte_vmbus_bus::driver_list' data-ref="rte_vmbus_bus::driver_list">driver_list</a>),</td></tr>
+<tr><th id="297">297</th><td>};</td></tr>
+<tr><th id="298">298</th><td></td></tr>
+<tr><th id="299">299</th><td><a class="macro" href="../../../lib/librte_eal/common/include/rte_bus.h.html#328" title="static void __attribute__((constructor(110), used)) businitfn_vmbus(void) { (rte_vmbus_bus.bus).name = &quot;vmbus&quot;; rte_bus_register(&amp;rte_vmbus_bus.bus); }" data-ref="_M/RTE_REGISTER_BUS">RTE_REGISTER_BUS</a>(vmbus, <a class="ref" href="#rte_vmbus_bus" title='rte_vmbus_bus' data-ref="rte_vmbus_bus">rte_vmbus_bus</a>.<a class="ref field" href="rte_bus_vmbus.h.html#rte_vmbus_bus::bus" title='rte_vmbus_bus::bus' data-ref="rte_vmbus_bus::bus">bus</a>);</td></tr>
+<tr><th id="300">300</th><td></td></tr>
+<tr><th id="301">301</th><td><a class="macro" href="../../../lib/librte_eal/common/include/rte_common.h.html#112" title="static void __attribute__((constructor(65535), used)) vmbus_init_log(void)" data-ref="_M/RTE_INIT">RTE_INIT</a>(<dfn class="decl def fn" id="vmbus_init_log" title='vmbus_init_log' data-ref="vmbus_init_log">vmbus_init_log</dfn>)</td></tr>
+<tr><th id="302">302</th><td>{</td></tr>
+<tr><th id="303">303</th><td>	<a class="ref" href="private.h.html#vmbus_logtype_bus" title='vmbus_logtype_bus' data-ref="vmbus_logtype_bus">vmbus_logtype_bus</a> = <a class="ref fn" href="../../../lib/librte_eal/common/include/rte_log.h.html#rte_log_register" title='rte_log_register' data-ref="rte_log_register">rte_log_register</a>(<q>"bus.vmbus"</q>);</td></tr>
+<tr><th id="304">304</th><td>	<b>if</b> (<a class="ref" href="private.h.html#vmbus_logtype_bus" title='vmbus_logtype_bus' data-ref="vmbus_logtype_bus">vmbus_logtype_bus</a> &gt;= <var>0</var>)</td></tr>
+<tr><th id="305">305</th><td>		<a class="ref fn" href="../../../lib/librte_eal/common/include/rte_log.h.html#rte_log_set_level" title='rte_log_set_level' data-ref="rte_log_set_level">rte_log_set_level</a>(<a class="ref" href="private.h.html#vmbus_logtype_bus" title='vmbus_logtype_bus' data-ref="vmbus_logtype_bus">vmbus_logtype_bus</a>, <a class="macro" href="../../../lib/librte_eal/common/include/rte_log.h.html#84" title="6U" data-ref="_M/RTE_LOG_NOTICE">RTE_LOG_NOTICE</a>);</td></tr>
+<tr><th id="306">306</th><td>}</td></tr>
+<tr><th id="307">307</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project master revision <em>master</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

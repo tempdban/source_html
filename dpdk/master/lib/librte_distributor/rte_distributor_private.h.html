@@ -1,0 +1,193 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>rte_distributor_private.h source code [master/lib/librte_distributor/rte_distributor_private.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="rte_distributor,rte_distributor_backlog,rte_distributor_buffer,rte_distributor_buffer_v20,rte_distributor_match_function,rte_distributor_returned_pkts,rte_distributor_v20 "/>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'master/lib/librte_distributor/rte_distributor_private.h'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>master</a>/<a href='..'>lib</a>/<a href='./'>librte_distributor</a>/<a href='rte_distributor_private.h.html'>rte_distributor_private.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright(c) 2017 Intel Corporation</i></td></tr>
+<tr><th id="3">3</th><td><i> */</i></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><u>#<span data-ppcond="5">ifndef</span> <span class="macro" data-ref="_M/_RTE_DIST_PRIV_H_">_RTE_DIST_PRIV_H_</span></u></td></tr>
+<tr><th id="6">6</th><td><u>#define <dfn class="macro" id="_M/_RTE_DIST_PRIV_H_" data-ref="_M/_RTE_DIST_PRIV_H_">_RTE_DIST_PRIV_H_</dfn></u></td></tr>
+<tr><th id="7">7</th><td></td></tr>
+<tr><th id="8">8</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="9">9</th><td><i class="doc"> *<span class="command"> @file</span></i></td></tr>
+<tr><th id="10">10</th><td><i class="doc"> * RTE distributor</i></td></tr>
+<tr><th id="11">11</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="12">12</th><td><i class="doc"> * The distributor is a component which is designed to pass packets</i></td></tr>
+<tr><th id="13">13</th><td><i class="doc"> * one-at-a-time to workers, with dynamic load balancing.</i></td></tr>
+<tr><th id="14">14</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#<span data-ppcond="16">ifdef</span> <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="17">17</th><td><b>extern</b> <q>"C"</q> {</td></tr>
+<tr><th id="18">18</th><td><u>#<span data-ppcond="16">endif</span></u></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><u>#define <dfn class="macro" id="_M/NO_FLAGS" data-ref="_M/NO_FLAGS">NO_FLAGS</dfn> 0</u></td></tr>
+<tr><th id="21">21</th><td><u>#define <dfn class="macro" id="_M/RTE_DISTRIB_PREFIX" data-ref="_M/RTE_DISTRIB_PREFIX">RTE_DISTRIB_PREFIX</dfn> "DT_"</u></td></tr>
+<tr><th id="22">22</th><td></td></tr>
+<tr><th id="23">23</th><td><i>/*</i></td></tr>
+<tr><th id="24">24</th><td><i> * We will use the bottom four bits of pointer for flags, shifting out</i></td></tr>
+<tr><th id="25">25</th><td><i> * the top four bits to make room (since a 64-bit pointer actually only uses</i></td></tr>
+<tr><th id="26">26</th><td><i> * 48 bits). An arithmetic-right-shift will then appropriately restore the</i></td></tr>
+<tr><th id="27">27</th><td><i> * original pointer value with proper sign extension into the top bits.</i></td></tr>
+<tr><th id="28">28</th><td><i> */</i></td></tr>
+<tr><th id="29">29</th><td><u>#define <dfn class="macro" id="_M/RTE_DISTRIB_FLAG_BITS" data-ref="_M/RTE_DISTRIB_FLAG_BITS">RTE_DISTRIB_FLAG_BITS</dfn> 4</u></td></tr>
+<tr><th id="30">30</th><td><u>#define <dfn class="macro" id="_M/RTE_DISTRIB_FLAGS_MASK" data-ref="_M/RTE_DISTRIB_FLAGS_MASK">RTE_DISTRIB_FLAGS_MASK</dfn> (0x0F)</u></td></tr>
+<tr><th id="31">31</th><td><u>#define <dfn class="macro" id="_M/RTE_DISTRIB_NO_BUF" data-ref="_M/RTE_DISTRIB_NO_BUF">RTE_DISTRIB_NO_BUF</dfn> 0       /**&lt; empty flags: no buffer requested */</u></td></tr>
+<tr><th id="32">32</th><td><u>#define <dfn class="macro" id="_M/RTE_DISTRIB_GET_BUF" data-ref="_M/RTE_DISTRIB_GET_BUF">RTE_DISTRIB_GET_BUF</dfn> (1)    /**&lt; worker requests a buffer, returns old */</u></td></tr>
+<tr><th id="33">33</th><td><u>#define <dfn class="macro" id="_M/RTE_DISTRIB_RETURN_BUF" data-ref="_M/RTE_DISTRIB_RETURN_BUF">RTE_DISTRIB_RETURN_BUF</dfn> (2) /**&lt; worker returns a buffer, no request */</u></td></tr>
+<tr><th id="34">34</th><td><u>#define <dfn class="macro" id="_M/RTE_DISTRIB_VALID_BUF" data-ref="_M/RTE_DISTRIB_VALID_BUF">RTE_DISTRIB_VALID_BUF</dfn> (4)  /**&lt; set if bufptr contains ptr */</u></td></tr>
+<tr><th id="35">35</th><td></td></tr>
+<tr><th id="36">36</th><td><u>#define <dfn class="macro" id="_M/RTE_DISTRIB_BACKLOG_SIZE" data-ref="_M/RTE_DISTRIB_BACKLOG_SIZE">RTE_DISTRIB_BACKLOG_SIZE</dfn> 8</u></td></tr>
+<tr><th id="37">37</th><td><u>#define <dfn class="macro" id="_M/RTE_DISTRIB_BACKLOG_MASK" data-ref="_M/RTE_DISTRIB_BACKLOG_MASK">RTE_DISTRIB_BACKLOG_MASK</dfn> (RTE_DISTRIB_BACKLOG_SIZE - 1)</u></td></tr>
+<tr><th id="38">38</th><td></td></tr>
+<tr><th id="39">39</th><td><u>#define <dfn class="macro" id="_M/RTE_DISTRIB_MAX_RETURNS" data-ref="_M/RTE_DISTRIB_MAX_RETURNS">RTE_DISTRIB_MAX_RETURNS</dfn> 128</u></td></tr>
+<tr><th id="40">40</th><td><u>#define <dfn class="macro" id="_M/RTE_DISTRIB_RETURNS_MASK" data-ref="_M/RTE_DISTRIB_RETURNS_MASK">RTE_DISTRIB_RETURNS_MASK</dfn> (RTE_DISTRIB_MAX_RETURNS - 1)</u></td></tr>
+<tr><th id="41">41</th><td></td></tr>
+<tr><th id="42">42</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc"> * Maximum number of workers allowed.</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc"> * Be aware of increasing the limit, becaus it is limited by how we track</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc"> * in-flight tags. See in_flight_bitmask and rte_distributor_process</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="47">47</th><td><u>#define <dfn class="macro" id="_M/RTE_DISTRIB_MAX_WORKERS" data-ref="_M/RTE_DISTRIB_MAX_WORKERS">RTE_DISTRIB_MAX_WORKERS</dfn> 64</u></td></tr>
+<tr><th id="48">48</th><td></td></tr>
+<tr><th id="49">49</th><td><u>#define <dfn class="macro" id="_M/RTE_DISTRIBUTOR_NAMESIZE" data-ref="_M/RTE_DISTRIBUTOR_NAMESIZE">RTE_DISTRIBUTOR_NAMESIZE</dfn> 32 /**&lt; Length of name for instance */</u></td></tr>
+<tr><th id="50">50</th><td></td></tr>
+<tr><th id="51">51</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="52">52</th><td><i class="doc"> * Buffer structure used to pass the pointer data between cores. This is cache</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc"> * line aligned, but to improve performance and prevent adjacent cache-line</i></td></tr>
+<tr><th id="54">54</th><td><i class="doc"> * prefetches of buffers for other workers, e.g. when worker 1's buffer is on</i></td></tr>
+<tr><th id="55">55</th><td><i class="doc"> * the next cache line to worker 0, we pad this out to three cache lines.</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc"> * Only 64-bits of the memory is actually used though.</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="58">58</th><td><b>union</b> <dfn class="type def" id="rte_distributor_buffer_v20" title='rte_distributor_buffer_v20' data-ref="rte_distributor_buffer_v20">rte_distributor_buffer_v20</dfn> {</td></tr>
+<tr><th id="59">59</th><td>	<em>volatile</em> <a class="typedef" href="../../../include/stdint.h.html#int64_t" title='int64_t' data-type='long' data-ref="int64_t">int64_t</a> <dfn class="decl field" id="rte_distributor_buffer_v20::bufptr64" title='rte_distributor_buffer_v20::bufptr64' data-ref="rte_distributor_buffer_v20::bufptr64">bufptr64</dfn>;</td></tr>
+<tr><th id="60">60</th><td>	<em>char</em> <dfn class="decl field" id="rte_distributor_buffer_v20::pad" title='rte_distributor_buffer_v20::pad' data-ref="rte_distributor_buffer_v20::pad">pad</dfn>[<a class="macro" href="../../build/include/rte_config.h.html#19" title="64" data-ref="_M/RTE_CACHE_LINE_SIZE">RTE_CACHE_LINE_SIZE</a>*<var>3</var>];</td></tr>
+<tr><th id="61">61</th><td>} <a class="macro" href="../librte_eal/common/include/rte_memory.h.html#64" title="__attribute__((__aligned__(64)))" data-ref="_M/__rte_cache_aligned">__rte_cache_aligned</a>;</td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td><i>/*</i></td></tr>
+<tr><th id="64">64</th><td><i> * Transfer up to 8 mbufs at a time to/from workers, and</i></td></tr>
+<tr><th id="65">65</th><td><i> * flow matching algorithm optimized for 8 flow IDs at a time</i></td></tr>
+<tr><th id="66">66</th><td><i> */</i></td></tr>
+<tr><th id="67">67</th><td><u>#define <dfn class="macro" id="_M/RTE_DIST_BURST_SIZE" data-ref="_M/RTE_DIST_BURST_SIZE">RTE_DIST_BURST_SIZE</dfn> 8</u></td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td><b>struct</b> <dfn class="type def" id="rte_distributor_backlog" title='rte_distributor_backlog' data-ref="rte_distributor_backlog">rte_distributor_backlog</dfn> {</td></tr>
+<tr><th id="70">70</th><td>	<em>unsigned</em> <em>int</em> <dfn class="decl field" id="rte_distributor_backlog::start" title='rte_distributor_backlog::start' data-ref="rte_distributor_backlog::start">start</dfn>;</td></tr>
+<tr><th id="71">71</th><td>	<em>unsigned</em> <em>int</em> <dfn class="decl field" id="rte_distributor_backlog::count" title='rte_distributor_backlog::count' data-ref="rte_distributor_backlog::count">count</dfn>;</td></tr>
+<tr><th id="72">72</th><td>	<a class="typedef" href="../../../include/stdint.h.html#int64_t" title='int64_t' data-type='long' data-ref="int64_t">int64_t</a> <dfn class="decl field" id="rte_distributor_backlog::pkts" title='rte_distributor_backlog::pkts' data-ref="rte_distributor_backlog::pkts">pkts</dfn>[<a class="macro" href="#67" title="8" data-ref="_M/RTE_DIST_BURST_SIZE">RTE_DIST_BURST_SIZE</a>] <a class="macro" href="../librte_eal/common/include/rte_memory.h.html#64" title="__attribute__((__aligned__(64)))" data-ref="_M/__rte_cache_aligned">__rte_cache_aligned</a>;</td></tr>
+<tr><th id="73">73</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> *<dfn class="decl field" id="rte_distributor_backlog::tags" title='rte_distributor_backlog::tags' data-ref="rte_distributor_backlog::tags">tags</dfn>; <i>/* will point to second cacheline of inflights */</i></td></tr>
+<tr><th id="74">74</th><td>} <a class="macro" href="../librte_eal/common/include/rte_memory.h.html#64" title="__attribute__((__aligned__(64)))" data-ref="_M/__rte_cache_aligned">__rte_cache_aligned</a>;</td></tr>
+<tr><th id="75">75</th><td></td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td><b>struct</b> <dfn class="type def" id="rte_distributor_returned_pkts" title='rte_distributor_returned_pkts' data-ref="rte_distributor_returned_pkts">rte_distributor_returned_pkts</dfn> {</td></tr>
+<tr><th id="78">78</th><td>	<em>unsigned</em> <em>int</em> <dfn class="decl field" id="rte_distributor_returned_pkts::start" title='rte_distributor_returned_pkts::start' data-ref="rte_distributor_returned_pkts::start">start</dfn>;</td></tr>
+<tr><th id="79">79</th><td>	<em>unsigned</em> <em>int</em> <dfn class="decl field" id="rte_distributor_returned_pkts::count" title='rte_distributor_returned_pkts::count' data-ref="rte_distributor_returned_pkts::count">count</dfn>;</td></tr>
+<tr><th id="80">80</th><td>	<b>struct</b> <a class="type" href="../librte_mbuf/rte_mbuf.h.html#rte_mbuf" title='rte_mbuf' data-ref="rte_mbuf">rte_mbuf</a> *<dfn class="decl field" id="rte_distributor_returned_pkts::mbufs" title='rte_distributor_returned_pkts::mbufs' data-ref="rte_distributor_returned_pkts::mbufs">mbufs</dfn>[<a class="macro" href="#39" title="128" data-ref="_M/RTE_DISTRIB_MAX_RETURNS">RTE_DISTRIB_MAX_RETURNS</a>];</td></tr>
+<tr><th id="81">81</th><td>};</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td><b>struct</b> <dfn class="type def" id="rte_distributor_v20" title='rte_distributor_v20' data-ref="rte_distributor_v20">rte_distributor_v20</dfn> {</td></tr>
+<tr><th id="84">84</th><td>	<a class="macro" href="../../../include/sys/queue.h.html#382" title="struct { struct rte_distributor_v20 *tqe_next; struct rte_distributor_v20 * *tqe_prev; }" data-ref="_M/TAILQ_ENTRY">TAILQ_ENTRY</a>(<a class="type" href="#rte_distributor_v20" title='rte_distributor_v20' data-ref="rte_distributor_v20">rte_distributor_v20</a>) <dfn class="decl field" id="rte_distributor_v20::next" title='rte_distributor_v20::next' data-ref="rte_distributor_v20::next">next</dfn>;    <i class="doc">/**&lt; Next in list. */</i></td></tr>
+<tr><th id="85">85</th><td></td></tr>
+<tr><th id="86">86</th><td>	<em>char</em> <dfn class="decl field" id="rte_distributor_v20::name" title='rte_distributor_v20::name' data-ref="rte_distributor_v20::name">name</dfn>[<a class="macro" href="#49" title="32" data-ref="_M/RTE_DISTRIBUTOR_NAMESIZE">RTE_DISTRIBUTOR_NAMESIZE</a>];  <i class="doc">/**&lt; Name of the ring. */</i></td></tr>
+<tr><th id="87">87</th><td>	<em>unsigned</em> <em>int</em> <dfn class="decl field" id="rte_distributor_v20::num_workers" title='rte_distributor_v20::num_workers' data-ref="rte_distributor_v20::num_workers">num_workers</dfn>;             <i class="doc">/**&lt; Number of workers polling */</i></td></tr>
+<tr><th id="88">88</th><td></td></tr>
+<tr><th id="89">89</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="rte_distributor_v20::in_flight_tags" title='rte_distributor_v20::in_flight_tags' data-ref="rte_distributor_v20::in_flight_tags">in_flight_tags</dfn>[<a class="macro" href="#47" title="64" data-ref="_M/RTE_DISTRIB_MAX_WORKERS">RTE_DISTRIB_MAX_WORKERS</a>];</td></tr>
+<tr><th id="90">90</th><td>		<i class="doc">/**&lt; Tracks the tag being processed per core */</i></td></tr>
+<tr><th id="91">91</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="rte_distributor_v20::in_flight_bitmask" title='rte_distributor_v20::in_flight_bitmask' data-ref="rte_distributor_v20::in_flight_bitmask">in_flight_bitmask</dfn>;</td></tr>
+<tr><th id="92">92</th><td>		<i class="doc">/**&lt; on/off bits for in-flight tags.</i></td></tr>
+<tr><th id="93">93</th><td><i class="doc">		 * Note that if RTE_DISTRIB_MAX_WORKERS is larger than 64 then</i></td></tr>
+<tr><th id="94">94</th><td><i class="doc">		 * the bitmask has to expand.</i></td></tr>
+<tr><th id="95">95</th><td><i class="doc">		 */</i></td></tr>
+<tr><th id="96">96</th><td></td></tr>
+<tr><th id="97">97</th><td>	<b>struct</b> <a class="type" href="#rte_distributor_backlog" title='rte_distributor_backlog' data-ref="rte_distributor_backlog">rte_distributor_backlog</a> <dfn class="decl field" id="rte_distributor_v20::backlog" title='rte_distributor_v20::backlog' data-ref="rte_distributor_v20::backlog">backlog</dfn>[<a class="macro" href="#47" title="64" data-ref="_M/RTE_DISTRIB_MAX_WORKERS">RTE_DISTRIB_MAX_WORKERS</a>];</td></tr>
+<tr><th id="98">98</th><td></td></tr>
+<tr><th id="99">99</th><td>	<b>union</b> <a class="type" href="#rte_distributor_buffer_v20" title='rte_distributor_buffer_v20' data-ref="rte_distributor_buffer_v20">rte_distributor_buffer_v20</a> <dfn class="decl field" id="rte_distributor_v20::bufs" title='rte_distributor_v20::bufs' data-ref="rte_distributor_v20::bufs">bufs</dfn>[<a class="macro" href="#47" title="64" data-ref="_M/RTE_DISTRIB_MAX_WORKERS">RTE_DISTRIB_MAX_WORKERS</a>];</td></tr>
+<tr><th id="100">100</th><td></td></tr>
+<tr><th id="101">101</th><td>	<b>struct</b> <a class="type" href="#rte_distributor_returned_pkts" title='rte_distributor_returned_pkts' data-ref="rte_distributor_returned_pkts">rte_distributor_returned_pkts</a> <dfn class="decl field" id="rte_distributor_v20::returns" title='rte_distributor_v20::returns' data-ref="rte_distributor_v20::returns">returns</dfn>;</td></tr>
+<tr><th id="102">102</th><td>};</td></tr>
+<tr><th id="103">103</th><td></td></tr>
+<tr><th id="104">104</th><td><i>/* All different signature compare functions */</i></td></tr>
+<tr><th id="105">105</th><td><b>enum</b> <dfn class="type def" id="rte_distributor_match_function" title='rte_distributor_match_function' data-ref="rte_distributor_match_function">rte_distributor_match_function</dfn> {</td></tr>
+<tr><th id="106">106</th><td>	<dfn class="enum" id="RTE_DIST_MATCH_SCALAR" title='RTE_DIST_MATCH_SCALAR' data-ref="RTE_DIST_MATCH_SCALAR">RTE_DIST_MATCH_SCALAR</dfn> = <var>0</var>,</td></tr>
+<tr><th id="107">107</th><td>	<dfn class="enum" id="RTE_DIST_MATCH_VECTOR" title='RTE_DIST_MATCH_VECTOR' data-ref="RTE_DIST_MATCH_VECTOR">RTE_DIST_MATCH_VECTOR</dfn>,</td></tr>
+<tr><th id="108">108</th><td>	<dfn class="enum" id="RTE_DIST_NUM_MATCH_FNS" title='RTE_DIST_NUM_MATCH_FNS' data-ref="RTE_DIST_NUM_MATCH_FNS">RTE_DIST_NUM_MATCH_FNS</dfn></td></tr>
+<tr><th id="109">109</th><td>};</td></tr>
+<tr><th id="110">110</th><td></td></tr>
+<tr><th id="111">111</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc"> * Buffer structure used to pass the pointer data between cores. This is cache</i></td></tr>
+<tr><th id="113">113</th><td><i class="doc"> * line aligned, but to improve performance and prevent adjacent cache-line</i></td></tr>
+<tr><th id="114">114</th><td><i class="doc"> * prefetches of buffers for other workers, e.g. when worker 1's buffer is on</i></td></tr>
+<tr><th id="115">115</th><td><i class="doc"> * the next cache line to worker 0, we pad this out to two cache lines.</i></td></tr>
+<tr><th id="116">116</th><td><i class="doc"> * We can pass up to 8 mbufs at a time in one cacheline.</i></td></tr>
+<tr><th id="117">117</th><td><i class="doc"> * There is a separate cacheline for returns in the burst API.</i></td></tr>
+<tr><th id="118">118</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="119">119</th><td><b>struct</b> <dfn class="type def" id="rte_distributor_buffer" title='rte_distributor_buffer' data-ref="rte_distributor_buffer">rte_distributor_buffer</dfn> {</td></tr>
+<tr><th id="120">120</th><td>	<em>volatile</em> <a class="typedef" href="../../../include/stdint.h.html#int64_t" title='int64_t' data-type='long' data-ref="int64_t">int64_t</a> <dfn class="decl field" id="rte_distributor_buffer::bufptr64" title='rte_distributor_buffer::bufptr64' data-ref="rte_distributor_buffer::bufptr64">bufptr64</dfn>[<a class="macro" href="#67" title="8" data-ref="_M/RTE_DIST_BURST_SIZE">RTE_DIST_BURST_SIZE</a>]</td></tr>
+<tr><th id="121">121</th><td>		<a class="macro" href="../librte_eal/common/include/rte_memory.h.html#64" title="__attribute__((__aligned__(64)))" data-ref="_M/__rte_cache_aligned">__rte_cache_aligned</a>; <i>/* &lt;= outgoing to worker */</i></td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td>	<a class="typedef" href="../../../include/stdint.h.html#int64_t" title='int64_t' data-type='long' data-ref="int64_t">int64_t</a> <dfn class="decl field" id="rte_distributor_buffer::pad1" title='rte_distributor_buffer::pad1' data-ref="rte_distributor_buffer::pad1">pad1</dfn> <a class="macro" href="../librte_eal/common/include/rte_memory.h.html#64" title="__attribute__((__aligned__(64)))" data-ref="_M/__rte_cache_aligned">__rte_cache_aligned</a>;    <i>/* &lt;= one cache line  */</i></td></tr>
+<tr><th id="124">124</th><td></td></tr>
+<tr><th id="125">125</th><td>	<em>volatile</em> <a class="typedef" href="../../../include/stdint.h.html#int64_t" title='int64_t' data-type='long' data-ref="int64_t">int64_t</a> <dfn class="decl field" id="rte_distributor_buffer::retptr64" title='rte_distributor_buffer::retptr64' data-ref="rte_distributor_buffer::retptr64">retptr64</dfn>[<a class="macro" href="#67" title="8" data-ref="_M/RTE_DIST_BURST_SIZE">RTE_DIST_BURST_SIZE</a>]</td></tr>
+<tr><th id="126">126</th><td>		<a class="macro" href="../librte_eal/common/include/rte_memory.h.html#64" title="__attribute__((__aligned__(64)))" data-ref="_M/__rte_cache_aligned">__rte_cache_aligned</a>; <i>/* &lt;= incoming from worker */</i></td></tr>
+<tr><th id="127">127</th><td></td></tr>
+<tr><th id="128">128</th><td>	<a class="typedef" href="../../../include/stdint.h.html#int64_t" title='int64_t' data-type='long' data-ref="int64_t">int64_t</a> <dfn class="decl field" id="rte_distributor_buffer::pad2" title='rte_distributor_buffer::pad2' data-ref="rte_distributor_buffer::pad2">pad2</dfn> <a class="macro" href="../librte_eal/common/include/rte_memory.h.html#64" title="__attribute__((__aligned__(64)))" data-ref="_M/__rte_cache_aligned">__rte_cache_aligned</a>;    <i>/* &lt;= one cache line  */</i></td></tr>
+<tr><th id="129">129</th><td></td></tr>
+<tr><th id="130">130</th><td>	<em>int</em> <dfn class="decl field" id="rte_distributor_buffer::count" title='rte_distributor_buffer::count' data-ref="rte_distributor_buffer::count">count</dfn> <a class="macro" href="../librte_eal/common/include/rte_memory.h.html#64" title="__attribute__((__aligned__(64)))" data-ref="_M/__rte_cache_aligned">__rte_cache_aligned</a>;       <i>/* &lt;= number of current mbufs */</i></td></tr>
+<tr><th id="131">131</th><td>};</td></tr>
+<tr><th id="132">132</th><td></td></tr>
+<tr><th id="133">133</th><td><b>struct</b> <dfn class="type def" id="rte_distributor" title='rte_distributor' data-ref="rte_distributor">rte_distributor</dfn> {</td></tr>
+<tr><th id="134">134</th><td>	<a class="macro" href="../../../include/sys/queue.h.html#382" title="struct { struct rte_distributor *tqe_next; struct rte_distributor * *tqe_prev; }" data-ref="_M/TAILQ_ENTRY">TAILQ_ENTRY</a>(<a class="type" href="#rte_distributor" title='rte_distributor' data-ref="rte_distributor">rte_distributor</a>) <dfn class="decl field" id="rte_distributor::next" title='rte_distributor::next' data-ref="rte_distributor::next">next</dfn>;    <i class="doc">/**&lt; Next in list. */</i></td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td>	<em>char</em> <dfn class="decl field" id="rte_distributor::name" title='rte_distributor::name' data-ref="rte_distributor::name">name</dfn>[<a class="macro" href="#49" title="32" data-ref="_M/RTE_DISTRIBUTOR_NAMESIZE">RTE_DISTRIBUTOR_NAMESIZE</a>];  <i class="doc">/**&lt; Name of the ring. */</i></td></tr>
+<tr><th id="137">137</th><td>	<em>unsigned</em> <em>int</em> <dfn class="decl field" id="rte_distributor::num_workers" title='rte_distributor::num_workers' data-ref="rte_distributor::num_workers">num_workers</dfn>;             <i class="doc">/**&lt; Number of workers polling */</i></td></tr>
+<tr><th id="138">138</th><td>	<em>unsigned</em> <em>int</em> <dfn class="decl field" id="rte_distributor::alg_type" title='rte_distributor::alg_type' data-ref="rte_distributor::alg_type">alg_type</dfn>;                <i class="doc">/**&lt; Number of alg types */</i></td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td>	<i class="doc">/**&gt;</i></td></tr>
+<tr><th id="141">141</th><td><i class="doc">	 * First cache line in the this array are the tags inflight</i></td></tr>
+<tr><th id="142">142</th><td><i class="doc">	 * on the worker core. Second cache line are the backlog</i></td></tr>
+<tr><th id="143">143</th><td><i class="doc">	 * that are going to go to the worker core.</i></td></tr>
+<tr><th id="144">144</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="145">145</th><td>	<a class="typedef" href="../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="rte_distributor::in_flight_tags" title='rte_distributor::in_flight_tags' data-ref="rte_distributor::in_flight_tags">in_flight_tags</dfn>[<a class="macro" href="#47" title="64" data-ref="_M/RTE_DISTRIB_MAX_WORKERS">RTE_DISTRIB_MAX_WORKERS</a>][<a class="macro" href="#67" title="8" data-ref="_M/RTE_DIST_BURST_SIZE">RTE_DIST_BURST_SIZE</a>*<var>2</var>]</td></tr>
+<tr><th id="146">146</th><td>			<a class="macro" href="../librte_eal/common/include/rte_memory.h.html#64" title="__attribute__((__aligned__(64)))" data-ref="_M/__rte_cache_aligned">__rte_cache_aligned</a>;</td></tr>
+<tr><th id="147">147</th><td></td></tr>
+<tr><th id="148">148</th><td>	<b>struct</b> <a class="type" href="#rte_distributor_backlog" title='rte_distributor_backlog' data-ref="rte_distributor_backlog">rte_distributor_backlog</a> <dfn class="decl field" id="rte_distributor::backlog" title='rte_distributor::backlog' data-ref="rte_distributor::backlog">backlog</dfn>[<a class="macro" href="#47" title="64" data-ref="_M/RTE_DISTRIB_MAX_WORKERS">RTE_DISTRIB_MAX_WORKERS</a>]</td></tr>
+<tr><th id="149">149</th><td>			<a class="macro" href="../librte_eal/common/include/rte_memory.h.html#64" title="__attribute__((__aligned__(64)))" data-ref="_M/__rte_cache_aligned">__rte_cache_aligned</a>;</td></tr>
+<tr><th id="150">150</th><td></td></tr>
+<tr><th id="151">151</th><td>	<b>struct</b> <a class="type" href="#rte_distributor_buffer" title='rte_distributor_buffer' data-ref="rte_distributor_buffer">rte_distributor_buffer</a> <dfn class="decl field" id="rte_distributor::bufs" title='rte_distributor::bufs' data-ref="rte_distributor::bufs">bufs</dfn>[<a class="macro" href="#47" title="64" data-ref="_M/RTE_DISTRIB_MAX_WORKERS">RTE_DISTRIB_MAX_WORKERS</a>];</td></tr>
+<tr><th id="152">152</th><td></td></tr>
+<tr><th id="153">153</th><td>	<b>struct</b> <a class="type" href="#rte_distributor_returned_pkts" title='rte_distributor_returned_pkts' data-ref="rte_distributor_returned_pkts">rte_distributor_returned_pkts</a> <dfn class="decl field" id="rte_distributor::returns" title='rte_distributor::returns' data-ref="rte_distributor::returns">returns</dfn>;</td></tr>
+<tr><th id="154">154</th><td></td></tr>
+<tr><th id="155">155</th><td>	<b>enum</b> <a class="type" href="#rte_distributor_match_function" title='rte_distributor_match_function' data-ref="rte_distributor_match_function">rte_distributor_match_function</a> <dfn class="decl field" id="rte_distributor::dist_match_fn" title='rte_distributor::dist_match_fn' data-ref="rte_distributor::dist_match_fn">dist_match_fn</dfn>;</td></tr>
+<tr><th id="156">156</th><td></td></tr>
+<tr><th id="157">157</th><td>	<b>struct</b> <a class="type" href="#rte_distributor_v20" title='rte_distributor_v20' data-ref="rte_distributor_v20">rte_distributor_v20</a> *<dfn class="decl field" id="rte_distributor::d_v20" title='rte_distributor::d_v20' data-ref="rte_distributor::d_v20">d_v20</dfn>;</td></tr>
+<tr><th id="158">158</th><td>};</td></tr>
+<tr><th id="159">159</th><td></td></tr>
+<tr><th id="160">160</th><td><em>void</em></td></tr>
+<tr><th id="161">161</th><td><a class="decl fn" href="rte_distributor.c.html#find_match_scalar" title='find_match_scalar' data-ref="find_match_scalar" id="find_match_scalar">find_match_scalar</a>(<b>struct</b> <a class="type" href="#rte_distributor" title='rte_distributor' data-ref="rte_distributor">rte_distributor</a> *<dfn class="local col1 decl" id="1d" title='d' data-type='struct rte_distributor *' data-ref="1d">d</dfn>,</td></tr>
+<tr><th id="162">162</th><td>			<a class="typedef" href="../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> *<dfn class="local col2 decl" id="2data_ptr" title='data_ptr' data-type='uint16_t *' data-ref="2data_ptr">data_ptr</dfn>,</td></tr>
+<tr><th id="163">163</th><td>			<a class="typedef" href="../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> *<dfn class="local col3 decl" id="3output_ptr" title='output_ptr' data-type='uint16_t *' data-ref="3output_ptr">output_ptr</dfn>);</td></tr>
+<tr><th id="164">164</th><td></td></tr>
+<tr><th id="165">165</th><td><em>void</em></td></tr>
+<tr><th id="166">166</th><td><dfn class="decl fn" id="find_match_vec" title='find_match_vec' data-ref="find_match_vec">find_match_vec</dfn>(<b>struct</b> <a class="type" href="#rte_distributor" title='rte_distributor' data-ref="rte_distributor">rte_distributor</a> *<dfn class="local col4 decl" id="4d" title='d' data-type='struct rte_distributor *' data-ref="4d">d</dfn>,</td></tr>
+<tr><th id="167">167</th><td>			<a class="typedef" href="../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> *<dfn class="local col5 decl" id="5data_ptr" title='data_ptr' data-type='uint16_t *' data-ref="5data_ptr">data_ptr</dfn>,</td></tr>
+<tr><th id="168">168</th><td>			<a class="typedef" href="../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> *<dfn class="local col6 decl" id="6output_ptr" title='output_ptr' data-type='uint16_t *' data-ref="6output_ptr">output_ptr</dfn>);</td></tr>
+<tr><th id="169">169</th><td></td></tr>
+<tr><th id="170">170</th><td><u>#<span data-ppcond="170">ifdef</span> <span class="macro" data-ref="_M/__cplusplus">__cplusplus</span></u></td></tr>
+<tr><th id="171">171</th><td>}</td></tr>
+<tr><th id="172">172</th><td><u>#<span data-ppcond="170">endif</span></u></td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td><u>#<span data-ppcond="5">endif</span></u></td></tr>
+<tr><th id="175">175</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='rte_distributor.c.html'>master/lib/librte_distributor/rte_distributor.c</a><br/>Generated on <em>2018-Oct-01</em> from project master revision <em>master</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

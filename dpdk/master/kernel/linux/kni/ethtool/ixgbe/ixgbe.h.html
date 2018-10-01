@@ -1,0 +1,929 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>ixgbe.h source code [master/kernel/linux/kni/ethtool/ixgbe/ixgbe.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="ixgbe_adapter,ixgbe_cb,ixgbe_fdir_filter,ixgbe_lro_list,ixgbe_lro_stats,ixgbe_lrohdr,ixgbe_mac_addr,ixgbe_q_vector,ixgbe_queue_stats,ixgbe_ring,ixgbe_ring_container,ixgbe_ring_f_enum,ixgbe_ring_feature,ixgbe_ring_state_t,ixgbe_rx_buffer,ixgbe_rx_queue_stats,ixgbe_state_t,ixgbe_tx_buffer,ixgbe_tx_queue_stats,vf_data_storage,vf_macvlans,vf_stats "/>
+<link rel="stylesheet" href="../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'master/kernel/linux/kni/ethtool/ixgbe/ixgbe.h'; var root_path = '../../../../../..'; var data_path = '../../../../../../../data';</script>
+<script src='../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../..'>master</a>/<a href='../../../..'>kernel</a>/<a href='../../..'>linux</a>/<a href='../..'>kni</a>/<a href='..'>ethtool</a>/<a href='./'>ixgbe</a>/<a href='ixgbe.h.html'>ixgbe.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: GPL-2.0 */</i></td></tr>
+<tr><th id="2">2</th><td><i>/*******************************************************************************</i></td></tr>
+<tr><th id="3">3</th><td><i></i></td></tr>
+<tr><th id="4">4</th><td><i>  Intel 10 Gigabit PCI Express Linux driver</i></td></tr>
+<tr><th id="5">5</th><td><i>  Copyright(c) 1999 - 2012 Intel Corporation.</i></td></tr>
+<tr><th id="6">6</th><td><i></i></td></tr>
+<tr><th id="7">7</th><td><i>  Contact Information:</i></td></tr>
+<tr><th id="8">8</th><td><i>  e1000-devel Mailing List &lt;e1000-devel@lists.sourceforge.net&gt;</i></td></tr>
+<tr><th id="9">9</th><td><i>  Intel Corporation, 5200 N.E. Elam Young Parkway, Hillsboro, OR 97124-6497</i></td></tr>
+<tr><th id="10">10</th><td><i></i></td></tr>
+<tr><th id="11">11</th><td><i>*******************************************************************************/</i></td></tr>
+<tr><th id="12">12</th><td></td></tr>
+<tr><th id="13">13</th><td><u>#<span data-ppcond="13">ifndef</span> <span class="macro" data-ref="_M/_IXGBE_H_">_IXGBE_H_</span></u></td></tr>
+<tr><th id="14">14</th><td><u>#define <dfn class="macro" id="_M/_IXGBE_H_" data-ref="_M/_IXGBE_H_">_IXGBE_H_</dfn></u></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#<span data-ppcond="16">ifndef</span> <span class="macro" data-ref="_M/IXGBE_NO_LRO">IXGBE_NO_LRO</span></u></td></tr>
+<tr><th id="17">17</th><td><u>#include &lt;net/tcp.h&gt;</u></td></tr>
+<tr><th id="18">18</th><td><u>#<span data-ppcond="16">endif</span></u></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><u>#include &lt;linux/pci.h&gt;</u></td></tr>
+<tr><th id="21">21</th><td><u>#include &lt;linux/netdevice.h&gt;</u></td></tr>
+<tr><th id="22">22</th><td><u>#<span data-ppcond="22">ifdef</span> <span class="macro" data-ref="_M/HAVE_IRQ_AFFINITY_HINT">HAVE_IRQ_AFFINITY_HINT</span></u></td></tr>
+<tr><th id="23">23</th><td><u>#include &lt;linux/cpumask.h&gt;</u></td></tr>
+<tr><th id="24">24</th><td><u>#<span data-ppcond="22">endif</span> /* HAVE_IRQ_AFFINITY_HINT */</u></td></tr>
+<tr><th id="25">25</th><td><u>#include &lt;linux/vmalloc.h&gt;</u></td></tr>
+<tr><th id="26">26</th><td></td></tr>
+<tr><th id="27">27</th><td><u>#<span data-ppcond="27">ifdef</span> <span class="macro" data-ref="_M/SIOCETHTOOL">SIOCETHTOOL</span></u></td></tr>
+<tr><th id="28">28</th><td><u>#include &lt;linux/ethtool.h&gt;</u></td></tr>
+<tr><th id="29">29</th><td><u>#<span data-ppcond="27">endif</span></u></td></tr>
+<tr><th id="30">30</th><td><u>#<span data-ppcond="30">ifdef</span> <span class="macro" data-ref="_M/NETIF_F_HW_VLAN_TX">NETIF_F_HW_VLAN_TX</span></u></td></tr>
+<tr><th id="31">31</th><td><u>#include &lt;linux/if_vlan.h&gt;</u></td></tr>
+<tr><th id="32">32</th><td><u>#<span data-ppcond="30">endif</span></u></td></tr>
+<tr><th id="33">33</th><td><u>#<span data-ppcond="33">if</span> defined(<span class="macro" data-ref="_M/CONFIG_DCA">CONFIG_DCA</span>) || defined(<span class="macro" data-ref="_M/CONFIG_DCA_MODULE">CONFIG_DCA_MODULE</span>)</u></td></tr>
+<tr><th id="34">34</th><td><u>#define <dfn class="macro" id="_M/IXGBE_DCA" data-ref="_M/IXGBE_DCA">IXGBE_DCA</dfn></u></td></tr>
+<tr><th id="35">35</th><td><u>#include &lt;linux/dca.h&gt;</u></td></tr>
+<tr><th id="36">36</th><td><u>#<span data-ppcond="33">endif</span></u></td></tr>
+<tr><th id="37">37</th><td><u>#include <a href="ixgbe_dcb.h.html">"ixgbe_dcb.h"</a></u></td></tr>
+<tr><th id="38">38</th><td></td></tr>
+<tr><th id="39">39</th><td><u>#include <a href="kcompat.h.html">"kcompat.h"</a></u></td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td><u>#<span data-ppcond="41">ifdef</span> <a class="macro" href="kcompat.h.html#1042" data-ref="_M/HAVE_SCTP">HAVE_SCTP</a></u></td></tr>
+<tr><th id="42">42</th><td><u>#include &lt;linux/sctp.h&gt;</u></td></tr>
+<tr><th id="43">43</th><td><u>#<span data-ppcond="41">endif</span></u></td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td><u>#<span data-ppcond="45">if</span> defined(<span class="macro" data-ref="_M/CONFIG_FCOE">CONFIG_FCOE</span>) || defined(<span class="macro" data-ref="_M/CONFIG_FCOE_MODULE">CONFIG_FCOE_MODULE</span>)</u></td></tr>
+<tr><th id="46">46</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FCOE" data-ref="_M/IXGBE_FCOE">IXGBE_FCOE</dfn></u></td></tr>
+<tr><th id="47">47</th><td><u>#include <a href="ixgbe_fcoe.h.html">"ixgbe_fcoe.h"</a></u></td></tr>
+<tr><th id="48">48</th><td><u>#<span data-ppcond="45">endif</span> /* CONFIG_FCOE or CONFIG_FCOE_MODULE */</u></td></tr>
+<tr><th id="49">49</th><td></td></tr>
+<tr><th id="50">50</th><td><u>#<span data-ppcond="50">if</span> defined(<span class="macro" data-ref="_M/CONFIG_PTP_1588_CLOCK">CONFIG_PTP_1588_CLOCK</span>) || defined(<span class="macro" data-ref="_M/CONFIG_PTP_1588_CLOCK_MODULE">CONFIG_PTP_1588_CLOCK_MODULE</span>)</u></td></tr>
+<tr><th id="51">51</th><td><u>#define <dfn class="macro" id="_M/HAVE_IXGBE_PTP" data-ref="_M/HAVE_IXGBE_PTP">HAVE_IXGBE_PTP</dfn></u></td></tr>
+<tr><th id="52">52</th><td><u>#<span data-ppcond="50">endif</span></u></td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td><u>#include <a href="ixgbe_api.h.html">"ixgbe_api.h"</a></u></td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td><u>#define <dfn class="macro" id="_M/PFX" data-ref="_M/PFX">PFX</dfn> "ixgbe: "</u></td></tr>
+<tr><th id="57">57</th><td><u>#define <dfn class="macro" id="_M/DPRINTK" data-ref="_M/DPRINTK">DPRINTK</dfn>(nlevel, klevel, fmt, args...) \</u></td></tr>
+<tr><th id="58">58</th><td><u>	((void)((NETIF_MSG_##nlevel &amp; adapter-&gt;msg_enable) &amp;&amp; \</u></td></tr>
+<tr><th id="59">59</th><td><u>	printk(KERN_##klevel PFX "%s: %s: " fmt, adapter-&gt;netdev-&gt;name, \</u></td></tr>
+<tr><th id="60">60</th><td><u>		__func__ , ## args)))</u></td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td><i>/* TX/RX descriptor defines */</i></td></tr>
+<tr><th id="63">63</th><td><u>#define <dfn class="macro" id="_M/IXGBE_DEFAULT_TXD" data-ref="_M/IXGBE_DEFAULT_TXD">IXGBE_DEFAULT_TXD</dfn>		512</u></td></tr>
+<tr><th id="64">64</th><td><u>#define <dfn class="macro" id="_M/IXGBE_DEFAULT_TX_WORK" data-ref="_M/IXGBE_DEFAULT_TX_WORK">IXGBE_DEFAULT_TX_WORK</dfn>		256</u></td></tr>
+<tr><th id="65">65</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_TXD" data-ref="_M/IXGBE_MAX_TXD">IXGBE_MAX_TXD</dfn>			4096</u></td></tr>
+<tr><th id="66">66</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MIN_TXD" data-ref="_M/IXGBE_MIN_TXD">IXGBE_MIN_TXD</dfn>			64</u></td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td><u>#define <dfn class="macro" id="_M/IXGBE_DEFAULT_RXD" data-ref="_M/IXGBE_DEFAULT_RXD">IXGBE_DEFAULT_RXD</dfn>		512</u></td></tr>
+<tr><th id="69">69</th><td><u>#define <dfn class="macro" id="_M/IXGBE_DEFAULT_RX_WORK" data-ref="_M/IXGBE_DEFAULT_RX_WORK">IXGBE_DEFAULT_RX_WORK</dfn>		256</u></td></tr>
+<tr><th id="70">70</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_RXD" data-ref="_M/IXGBE_MAX_RXD">IXGBE_MAX_RXD</dfn>			4096</u></td></tr>
+<tr><th id="71">71</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MIN_RXD" data-ref="_M/IXGBE_MIN_RXD">IXGBE_MIN_RXD</dfn>			64</u></td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td></td></tr>
+<tr><th id="74">74</th><td><i>/* flow control */</i></td></tr>
+<tr><th id="75">75</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MIN_FCRTL" data-ref="_M/IXGBE_MIN_FCRTL">IXGBE_MIN_FCRTL</dfn>			0x40</u></td></tr>
+<tr><th id="76">76</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_FCRTL" data-ref="_M/IXGBE_MAX_FCRTL">IXGBE_MAX_FCRTL</dfn>			0x7FF80</u></td></tr>
+<tr><th id="77">77</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MIN_FCRTH" data-ref="_M/IXGBE_MIN_FCRTH">IXGBE_MIN_FCRTH</dfn>			0x600</u></td></tr>
+<tr><th id="78">78</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_FCRTH" data-ref="_M/IXGBE_MAX_FCRTH">IXGBE_MAX_FCRTH</dfn>			0x7FFF0</u></td></tr>
+<tr><th id="79">79</th><td><u>#define <dfn class="macro" id="_M/IXGBE_DEFAULT_FCPAUSE" data-ref="_M/IXGBE_DEFAULT_FCPAUSE">IXGBE_DEFAULT_FCPAUSE</dfn>		0xFFFF</u></td></tr>
+<tr><th id="80">80</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MIN_FCPAUSE" data-ref="_M/IXGBE_MIN_FCPAUSE">IXGBE_MIN_FCPAUSE</dfn>		0</u></td></tr>
+<tr><th id="81">81</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_FCPAUSE" data-ref="_M/IXGBE_MAX_FCPAUSE">IXGBE_MAX_FCPAUSE</dfn>		0xFFFF</u></td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td><i>/* Supported Rx Buffer Sizes */</i></td></tr>
+<tr><th id="84">84</th><td><u>#define <dfn class="macro" id="_M/IXGBE_RXBUFFER_512" data-ref="_M/IXGBE_RXBUFFER_512">IXGBE_RXBUFFER_512</dfn>	512    /* Used for packet split */</u></td></tr>
+<tr><th id="85">85</th><td><u>#<span data-ppcond="85">ifdef</span> <span class="macro" data-ref="_M/CONFIG_IXGBE_DISABLE_PACKET_SPLIT">CONFIG_IXGBE_DISABLE_PACKET_SPLIT</span></u></td></tr>
+<tr><th id="86">86</th><td><u>#define IXGBE_RXBUFFER_1536	1536</u></td></tr>
+<tr><th id="87">87</th><td><u>#define IXGBE_RXBUFFER_2K	2048</u></td></tr>
+<tr><th id="88">88</th><td><u>#define IXGBE_RXBUFFER_3K	3072</u></td></tr>
+<tr><th id="89">89</th><td><u>#define IXGBE_RXBUFFER_4K	4096</u></td></tr>
+<tr><th id="90">90</th><td><u>#define IXGBE_RXBUFFER_7K	7168</u></td></tr>
+<tr><th id="91">91</th><td><u>#define IXGBE_RXBUFFER_8K	8192</u></td></tr>
+<tr><th id="92">92</th><td><u>#define IXGBE_RXBUFFER_15K	15360</u></td></tr>
+<tr><th id="93">93</th><td><u>#<span data-ppcond="85">endif</span> /* CONFIG_IXGBE_DISABLE_PACKET_SPLIT */</u></td></tr>
+<tr><th id="94">94</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_RXBUFFER" data-ref="_M/IXGBE_MAX_RXBUFFER">IXGBE_MAX_RXBUFFER</dfn>	16384  /* largest size for single descriptor */</u></td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td><i>/*</i></td></tr>
+<tr><th id="97">97</th><td><i> * NOTE: netdev_alloc_skb reserves up to 64 bytes, NET_IP_ALIGN mans we</i></td></tr>
+<tr><th id="98">98</th><td><i> * reserve 2 more, and skb_shared_info adds an additional 384 bytes more,</i></td></tr>
+<tr><th id="99">99</th><td><i> * this adds up to 512 bytes of extra data meaning the smallest allocation</i></td></tr>
+<tr><th id="100">100</th><td><i> * we could have is 1K.</i></td></tr>
+<tr><th id="101">101</th><td><i> * i.e. RXBUFFER_512 --&gt; size-1024 slab</i></td></tr>
+<tr><th id="102">102</th><td><i> */</i></td></tr>
+<tr><th id="103">103</th><td><u>#define <dfn class="macro" id="_M/IXGBE_RX_HDR_SIZE" data-ref="_M/IXGBE_RX_HDR_SIZE">IXGBE_RX_HDR_SIZE</dfn>	IXGBE_RXBUFFER_512</u></td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td><u>#define <dfn class="macro" id="_M/MAXIMUM_ETHERNET_VLAN_SIZE" data-ref="_M/MAXIMUM_ETHERNET_VLAN_SIZE">MAXIMUM_ETHERNET_VLAN_SIZE</dfn>	(VLAN_ETH_FRAME_LEN + ETH_FCS_LEN)</u></td></tr>
+<tr><th id="106">106</th><td></td></tr>
+<tr><th id="107">107</th><td><i>/* How many Rx Buffers do we bundle into one write to the hardware ? */</i></td></tr>
+<tr><th id="108">108</th><td><u>#define <dfn class="macro" id="_M/IXGBE_RX_BUFFER_WRITE" data-ref="_M/IXGBE_RX_BUFFER_WRITE">IXGBE_RX_BUFFER_WRITE</dfn>	16	/* Must be power of 2 */</u></td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td><u>#define <dfn class="macro" id="_M/IXGBE_TX_FLAGS_CSUM" data-ref="_M/IXGBE_TX_FLAGS_CSUM">IXGBE_TX_FLAGS_CSUM</dfn>		(u32)(1)</u></td></tr>
+<tr><th id="111">111</th><td><u>#define <dfn class="macro" id="_M/IXGBE_TX_FLAGS_HW_VLAN" data-ref="_M/IXGBE_TX_FLAGS_HW_VLAN">IXGBE_TX_FLAGS_HW_VLAN</dfn>		(u32)(1 &lt;&lt; 1)</u></td></tr>
+<tr><th id="112">112</th><td><u>#define <dfn class="macro" id="_M/IXGBE_TX_FLAGS_SW_VLAN" data-ref="_M/IXGBE_TX_FLAGS_SW_VLAN">IXGBE_TX_FLAGS_SW_VLAN</dfn>		(u32)(1 &lt;&lt; 2)</u></td></tr>
+<tr><th id="113">113</th><td><u>#define <dfn class="macro" id="_M/IXGBE_TX_FLAGS_TSO" data-ref="_M/IXGBE_TX_FLAGS_TSO">IXGBE_TX_FLAGS_TSO</dfn>		(u32)(1 &lt;&lt; 3)</u></td></tr>
+<tr><th id="114">114</th><td><u>#define <dfn class="macro" id="_M/IXGBE_TX_FLAGS_IPV4" data-ref="_M/IXGBE_TX_FLAGS_IPV4">IXGBE_TX_FLAGS_IPV4</dfn>		(u32)(1 &lt;&lt; 4)</u></td></tr>
+<tr><th id="115">115</th><td><u>#define <dfn class="macro" id="_M/IXGBE_TX_FLAGS_FCOE" data-ref="_M/IXGBE_TX_FLAGS_FCOE">IXGBE_TX_FLAGS_FCOE</dfn>		(u32)(1 &lt;&lt; 5)</u></td></tr>
+<tr><th id="116">116</th><td><u>#define <dfn class="macro" id="_M/IXGBE_TX_FLAGS_FSO" data-ref="_M/IXGBE_TX_FLAGS_FSO">IXGBE_TX_FLAGS_FSO</dfn>		(u32)(1 &lt;&lt; 6)</u></td></tr>
+<tr><th id="117">117</th><td><u>#define <dfn class="macro" id="_M/IXGBE_TX_FLAGS_TXSW" data-ref="_M/IXGBE_TX_FLAGS_TXSW">IXGBE_TX_FLAGS_TXSW</dfn>		(u32)(1 &lt;&lt; 7)</u></td></tr>
+<tr><th id="118">118</th><td><u>#define <dfn class="macro" id="_M/IXGBE_TX_FLAGS_TSTAMP" data-ref="_M/IXGBE_TX_FLAGS_TSTAMP">IXGBE_TX_FLAGS_TSTAMP</dfn>		(u32)(1 &lt;&lt; 8)</u></td></tr>
+<tr><th id="119">119</th><td><u>#define <dfn class="macro" id="_M/IXGBE_TX_FLAGS_VLAN_MASK" data-ref="_M/IXGBE_TX_FLAGS_VLAN_MASK">IXGBE_TX_FLAGS_VLAN_MASK</dfn>	0xffff0000</u></td></tr>
+<tr><th id="120">120</th><td><u>#define <dfn class="macro" id="_M/IXGBE_TX_FLAGS_VLAN_PRIO_MASK" data-ref="_M/IXGBE_TX_FLAGS_VLAN_PRIO_MASK">IXGBE_TX_FLAGS_VLAN_PRIO_MASK</dfn>	0xe0000000</u></td></tr>
+<tr><th id="121">121</th><td><u>#define <dfn class="macro" id="_M/IXGBE_TX_FLAGS_VLAN_PRIO_SHIFT" data-ref="_M/IXGBE_TX_FLAGS_VLAN_PRIO_SHIFT">IXGBE_TX_FLAGS_VLAN_PRIO_SHIFT</dfn>	29</u></td></tr>
+<tr><th id="122">122</th><td><u>#define <dfn class="macro" id="_M/IXGBE_TX_FLAGS_VLAN_SHIFT" data-ref="_M/IXGBE_TX_FLAGS_VLAN_SHIFT">IXGBE_TX_FLAGS_VLAN_SHIFT</dfn>	16</u></td></tr>
+<tr><th id="123">123</th><td></td></tr>
+<tr><th id="124">124</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_RX_DESC_POLL" data-ref="_M/IXGBE_MAX_RX_DESC_POLL">IXGBE_MAX_RX_DESC_POLL</dfn>		10</u></td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_VF_MC_ENTRIES" data-ref="_M/IXGBE_MAX_VF_MC_ENTRIES">IXGBE_MAX_VF_MC_ENTRIES</dfn>		30</u></td></tr>
+<tr><th id="127">127</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_VF_FUNCTIONS" data-ref="_M/IXGBE_MAX_VF_FUNCTIONS">IXGBE_MAX_VF_FUNCTIONS</dfn>		64</u></td></tr>
+<tr><th id="128">128</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_VFTA_ENTRIES" data-ref="_M/IXGBE_MAX_VFTA_ENTRIES">IXGBE_MAX_VFTA_ENTRIES</dfn>		128</u></td></tr>
+<tr><th id="129">129</th><td><u>#define <dfn class="macro" id="_M/MAX_EMULATION_MAC_ADDRS" data-ref="_M/MAX_EMULATION_MAC_ADDRS">MAX_EMULATION_MAC_ADDRS</dfn>		16</u></td></tr>
+<tr><th id="130">130</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_PF_MACVLANS" data-ref="_M/IXGBE_MAX_PF_MACVLANS">IXGBE_MAX_PF_MACVLANS</dfn>		15</u></td></tr>
+<tr><th id="131">131</th><td><u>#define <dfn class="macro" id="_M/IXGBE_82599_VF_DEVICE_ID" data-ref="_M/IXGBE_82599_VF_DEVICE_ID">IXGBE_82599_VF_DEVICE_ID</dfn>	0x10ED</u></td></tr>
+<tr><th id="132">132</th><td><u>#define <dfn class="macro" id="_M/IXGBE_X540_VF_DEVICE_ID" data-ref="_M/IXGBE_X540_VF_DEVICE_ID">IXGBE_X540_VF_DEVICE_ID</dfn>		0x1515</u></td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td><u>#<span data-ppcond="134">ifdef</span> <span class="macro" data-ref="_M/CONFIG_PCI_IOV">CONFIG_PCI_IOV</span></u></td></tr>
+<tr><th id="135">135</th><td><u>#define <dfn class="macro" id="_M/VMDQ_P" data-ref="_M/VMDQ_P">VMDQ_P</dfn>(p)	((p) + adapter-&gt;num_vfs)</u></td></tr>
+<tr><th id="136">136</th><td><u>#<span data-ppcond="134">else</span></u></td></tr>
+<tr><th id="137">137</th><td><u>#define VMDQ_P(p)	(p)</u></td></tr>
+<tr><th id="138">138</th><td><u>#<span data-ppcond="134">endif</span></u></td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td><u>#define <dfn class="macro" id="_M/UPDATE_VF_COUNTER_32bit" data-ref="_M/UPDATE_VF_COUNTER_32bit">UPDATE_VF_COUNTER_32bit</dfn>(reg, last_counter, counter)	\</u></td></tr>
+<tr><th id="141">141</th><td><u>	{							\</u></td></tr>
+<tr><th id="142">142</th><td><u>		u32 current_counter = IXGBE_READ_REG(hw, reg);	\</u></td></tr>
+<tr><th id="143">143</th><td><u>		if (current_counter &lt; last_counter)		\</u></td></tr>
+<tr><th id="144">144</th><td><u>			counter += 0x100000000LL;		\</u></td></tr>
+<tr><th id="145">145</th><td><u>		last_counter = current_counter;			\</u></td></tr>
+<tr><th id="146">146</th><td><u>		counter &amp;= 0xFFFFFFFF00000000LL;		\</u></td></tr>
+<tr><th id="147">147</th><td><u>		counter |= current_counter;			\</u></td></tr>
+<tr><th id="148">148</th><td><u>	}</u></td></tr>
+<tr><th id="149">149</th><td></td></tr>
+<tr><th id="150">150</th><td><u>#define <dfn class="macro" id="_M/UPDATE_VF_COUNTER_36bit" data-ref="_M/UPDATE_VF_COUNTER_36bit">UPDATE_VF_COUNTER_36bit</dfn>(reg_lsb, reg_msb, last_counter, counter) \</u></td></tr>
+<tr><th id="151">151</th><td><u>	{								 \</u></td></tr>
+<tr><th id="152">152</th><td><u>		u64 current_counter_lsb = IXGBE_READ_REG(hw, reg_lsb);	 \</u></td></tr>
+<tr><th id="153">153</th><td><u>		u64 current_counter_msb = IXGBE_READ_REG(hw, reg_msb);	 \</u></td></tr>
+<tr><th id="154">154</th><td><u>		u64 current_counter = (current_counter_msb &lt;&lt; 32) |	 \</u></td></tr>
+<tr><th id="155">155</th><td><u>			current_counter_lsb;				 \</u></td></tr>
+<tr><th id="156">156</th><td><u>		if (current_counter &lt; last_counter)			 \</u></td></tr>
+<tr><th id="157">157</th><td><u>			counter += 0x1000000000LL;			 \</u></td></tr>
+<tr><th id="158">158</th><td><u>		last_counter = current_counter;				 \</u></td></tr>
+<tr><th id="159">159</th><td><u>		counter &amp;= 0xFFFFFFF000000000LL;			 \</u></td></tr>
+<tr><th id="160">160</th><td><u>		counter |= current_counter;				 \</u></td></tr>
+<tr><th id="161">161</th><td><u>	}</u></td></tr>
+<tr><th id="162">162</th><td></td></tr>
+<tr><th id="163">163</th><td><b>struct</b> <dfn class="type def" id="vf_stats" title='vf_stats' data-ref="vf_stats">vf_stats</dfn> {</td></tr>
+<tr><th id="164">164</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="vf_stats::gprc" title='vf_stats::gprc' data-ref="vf_stats::gprc">gprc</dfn>;</td></tr>
+<tr><th id="165">165</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="vf_stats::gorc" title='vf_stats::gorc' data-ref="vf_stats::gorc">gorc</dfn>;</td></tr>
+<tr><th id="166">166</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="vf_stats::gptc" title='vf_stats::gptc' data-ref="vf_stats::gptc">gptc</dfn>;</td></tr>
+<tr><th id="167">167</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="vf_stats::gotc" title='vf_stats::gotc' data-ref="vf_stats::gotc">gotc</dfn>;</td></tr>
+<tr><th id="168">168</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="vf_stats::mprc" title='vf_stats::mprc' data-ref="vf_stats::mprc">mprc</dfn>;</td></tr>
+<tr><th id="169">169</th><td>};</td></tr>
+<tr><th id="170">170</th><td></td></tr>
+<tr><th id="171">171</th><td><b>struct</b> <dfn class="type def" id="vf_data_storage" title='vf_data_storage' data-ref="vf_data_storage">vf_data_storage</dfn> {</td></tr>
+<tr><th id="172">172</th><td>	<em>unsigned</em> <em>char</em> <dfn class="decl field" id="vf_data_storage::vf_mac_addresses" title='vf_data_storage::vf_mac_addresses' data-ref="vf_data_storage::vf_mac_addresses">vf_mac_addresses</dfn>[<span class="macro" title="6" data-ref="_M/ETH_ALEN">ETH_ALEN</span>];</td></tr>
+<tr><th id="173">173</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="vf_data_storage::vf_mc_hashes" title='vf_data_storage::vf_mc_hashes' data-ref="vf_data_storage::vf_mc_hashes">vf_mc_hashes</dfn>[<a class="macro" href="#126" title="30" data-ref="_M/IXGBE_MAX_VF_MC_ENTRIES">IXGBE_MAX_VF_MC_ENTRIES</a>];</td></tr>
+<tr><th id="174">174</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="vf_data_storage::num_vf_mc_hashes" title='vf_data_storage::num_vf_mc_hashes' data-ref="vf_data_storage::num_vf_mc_hashes">num_vf_mc_hashes</dfn>;</td></tr>
+<tr><th id="175">175</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="vf_data_storage::default_vf_vlan_id" title='vf_data_storage::default_vf_vlan_id' data-ref="vf_data_storage::default_vf_vlan_id">default_vf_vlan_id</dfn>;</td></tr>
+<tr><th id="176">176</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="vf_data_storage::vlans_enabled" title='vf_data_storage::vlans_enabled' data-ref="vf_data_storage::vlans_enabled">vlans_enabled</dfn>;</td></tr>
+<tr><th id="177">177</th><td>	<span class='typedef' title='bool' data-type='_Bool' data-ref="bool">bool</span> <dfn class="decl field" id="vf_data_storage::clear_to_send" title='vf_data_storage::clear_to_send' data-ref="vf_data_storage::clear_to_send">clear_to_send</dfn>;</td></tr>
+<tr><th id="178">178</th><td>	<b>struct</b> <a class="type" href="#vf_stats" title='vf_stats' data-ref="vf_stats">vf_stats</a> <dfn class="decl field" id="vf_data_storage::vfstats" title='vf_data_storage::vfstats' data-ref="vf_data_storage::vfstats">vfstats</dfn>;</td></tr>
+<tr><th id="179">179</th><td>	<b>struct</b> <a class="type" href="#vf_stats" title='vf_stats' data-ref="vf_stats">vf_stats</a> <dfn class="decl field" id="vf_data_storage::last_vfstats" title='vf_data_storage::last_vfstats' data-ref="vf_data_storage::last_vfstats">last_vfstats</dfn>;</td></tr>
+<tr><th id="180">180</th><td>	<b>struct</b> <a class="type" href="#vf_stats" title='vf_stats' data-ref="vf_stats">vf_stats</a> <dfn class="decl field" id="vf_data_storage::saved_rst_vfstats" title='vf_data_storage::saved_rst_vfstats' data-ref="vf_data_storage::saved_rst_vfstats">saved_rst_vfstats</dfn>;</td></tr>
+<tr><th id="181">181</th><td>	<span class='typedef' title='bool' data-type='_Bool' data-ref="bool">bool</span> <dfn class="decl field" id="vf_data_storage::pf_set_mac" title='vf_data_storage::pf_set_mac' data-ref="vf_data_storage::pf_set_mac">pf_set_mac</dfn>;</td></tr>
+<tr><th id="182">182</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="vf_data_storage::pf_vlan" title='vf_data_storage::pf_vlan' data-ref="vf_data_storage::pf_vlan">pf_vlan</dfn>; <i>/* When set, guest VLAN config not allowed. */</i></td></tr>
+<tr><th id="183">183</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="vf_data_storage::pf_qos" title='vf_data_storage::pf_qos' data-ref="vf_data_storage::pf_qos">pf_qos</dfn>;</td></tr>
+<tr><th id="184">184</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="vf_data_storage::tx_rate" title='vf_data_storage::tx_rate' data-ref="vf_data_storage::tx_rate">tx_rate</dfn>;</td></tr>
+<tr><th id="185">185</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="vf_data_storage::vlan_count" title='vf_data_storage::vlan_count' data-ref="vf_data_storage::vlan_count">vlan_count</dfn>;</td></tr>
+<tr><th id="186">186</th><td>	<span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <dfn class="decl field" id="vf_data_storage::spoofchk_enabled" title='vf_data_storage::spoofchk_enabled' data-ref="vf_data_storage::spoofchk_enabled">spoofchk_enabled</dfn>;</td></tr>
+<tr><th id="187">187</th><td>	<b>struct</b> <span class='type' title='pci_dev' data-ref="pci_dev">pci_dev</span> *<dfn class="decl field" id="vf_data_storage::vfdev" title='vf_data_storage::vfdev' data-ref="vf_data_storage::vfdev">vfdev</dfn>;</td></tr>
+<tr><th id="188">188</th><td>};</td></tr>
+<tr><th id="189">189</th><td></td></tr>
+<tr><th id="190">190</th><td><b>struct</b> <dfn class="type def" id="vf_macvlans" title='vf_macvlans' data-ref="vf_macvlans">vf_macvlans</dfn> {</td></tr>
+<tr><th id="191">191</th><td>	<b>struct</b> <span class='type' title='list_head' data-ref="list_head">list_head</span> <dfn class="decl field" id="vf_macvlans::l" title='vf_macvlans::l' data-ref="vf_macvlans::l">l</dfn>;</td></tr>
+<tr><th id="192">192</th><td>	<em>int</em> <dfn class="decl field" id="vf_macvlans::vf" title='vf_macvlans::vf' data-ref="vf_macvlans::vf">vf</dfn>;</td></tr>
+<tr><th id="193">193</th><td>	<span class='typedef' title='bool' data-type='_Bool' data-ref="bool">bool</span> <dfn class="decl field" id="vf_macvlans::free" title='vf_macvlans::free' data-ref="vf_macvlans::free">free</dfn>;</td></tr>
+<tr><th id="194">194</th><td>	<span class='typedef' title='bool' data-type='_Bool' data-ref="bool">bool</span> <dfn class="decl field" id="vf_macvlans::is_macvlan" title='vf_macvlans::is_macvlan' data-ref="vf_macvlans::is_macvlan">is_macvlan</dfn>;</td></tr>
+<tr><th id="195">195</th><td>	<span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <dfn class="decl field" id="vf_macvlans::vf_macvlan" title='vf_macvlans::vf_macvlan' data-ref="vf_macvlans::vf_macvlan">vf_macvlan</dfn>[<span class="macro" title="6" data-ref="_M/ETH_ALEN">ETH_ALEN</span>];</td></tr>
+<tr><th id="196">196</th><td>};</td></tr>
+<tr><th id="197">197</th><td></td></tr>
+<tr><th id="198">198</th><td><u>#<span data-ppcond="198">ifndef</span> <span class="macro" data-ref="_M/IXGBE_NO_LRO">IXGBE_NO_LRO</span></u></td></tr>
+<tr><th id="199">199</th><td><u>#define <dfn class="macro" id="_M/IXGBE_LRO_MAX" data-ref="_M/IXGBE_LRO_MAX">IXGBE_LRO_MAX</dfn>		32	/*Maximum number of LRO descriptors*/</u></td></tr>
+<tr><th id="200">200</th><td><u>#define <dfn class="macro" id="_M/IXGBE_LRO_GLOBAL" data-ref="_M/IXGBE_LRO_GLOBAL">IXGBE_LRO_GLOBAL</dfn>	10</u></td></tr>
+<tr><th id="201">201</th><td></td></tr>
+<tr><th id="202">202</th><td><b>struct</b> <dfn class="type def" id="ixgbe_lro_stats" title='ixgbe_lro_stats' data-ref="ixgbe_lro_stats">ixgbe_lro_stats</dfn> {</td></tr>
+<tr><th id="203">203</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_lro_stats::flushed" title='ixgbe_lro_stats::flushed' data-ref="ixgbe_lro_stats::flushed">flushed</dfn>;</td></tr>
+<tr><th id="204">204</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_lro_stats::coal" title='ixgbe_lro_stats::coal' data-ref="ixgbe_lro_stats::coal">coal</dfn>;</td></tr>
+<tr><th id="205">205</th><td>};</td></tr>
+<tr><th id="206">206</th><td></td></tr>
+<tr><th id="207">207</th><td><i>/*</i></td></tr>
+<tr><th id="208">208</th><td><i> * ixgbe_lro_header - header format to be aggregated by LRO</i></td></tr>
+<tr><th id="209">209</th><td><i> * @iph: IP header without options</i></td></tr>
+<tr><th id="210">210</th><td><i> * @tcp: TCP header</i></td></tr>
+<tr><th id="211">211</th><td><i> * @ts:  Optional TCP timestamp data in TCP options</i></td></tr>
+<tr><th id="212">212</th><td><i> *</i></td></tr>
+<tr><th id="213">213</th><td><i> * This structure relies on the check above that verifies that the header</i></td></tr>
+<tr><th id="214">214</th><td><i> * is IPv4 and does not contain any options.</i></td></tr>
+<tr><th id="215">215</th><td><i> */</i></td></tr>
+<tr><th id="216">216</th><td><b>struct</b> <dfn class="type def" id="ixgbe_lrohdr" title='ixgbe_lrohdr' data-ref="ixgbe_lrohdr">ixgbe_lrohdr</dfn> {</td></tr>
+<tr><th id="217">217</th><td>	<b>struct</b> <span class='type' title='iphdr' data-ref="iphdr">iphdr</span> <dfn class="decl field" id="ixgbe_lrohdr::iph" title='ixgbe_lrohdr::iph' data-ref="ixgbe_lrohdr::iph">iph</dfn>;</td></tr>
+<tr><th id="218">218</th><td>	<b>struct</b> <span class='type' title='tcphdr' data-ref="tcphdr">tcphdr</span> <dfn class="decl field" id="ixgbe_lrohdr::th" title='ixgbe_lrohdr::th' data-ref="ixgbe_lrohdr::th">th</dfn>;</td></tr>
+<tr><th id="219">219</th><td>	<a class="macro" href="ixgbe_type.h.html#2295" title="u32" data-ref="_M/__be32">__be32</a> <dfn class="decl field" id="ixgbe_lrohdr::ts" title='ixgbe_lrohdr::ts' data-ref="ixgbe_lrohdr::ts">ts</dfn>[<var>0</var>];</td></tr>
+<tr><th id="220">220</th><td>};</td></tr>
+<tr><th id="221">221</th><td></td></tr>
+<tr><th id="222">222</th><td><b>struct</b> <dfn class="type def" id="ixgbe_lro_list" title='ixgbe_lro_list' data-ref="ixgbe_lro_list">ixgbe_lro_list</dfn> {</td></tr>
+<tr><th id="223">223</th><td>	<b>struct</b> <span class='type' title='sk_buff_head' data-ref="sk_buff_head">sk_buff_head</span> <dfn class="decl field" id="ixgbe_lro_list::active" title='ixgbe_lro_list::active' data-ref="ixgbe_lro_list::active">active</dfn>;</td></tr>
+<tr><th id="224">224</th><td>	<b>struct</b> <a class="type" href="#ixgbe_lro_stats" title='ixgbe_lro_stats' data-ref="ixgbe_lro_stats">ixgbe_lro_stats</a> <dfn class="decl field" id="ixgbe_lro_list::stats" title='ixgbe_lro_list::stats' data-ref="ixgbe_lro_list::stats">stats</dfn>;</td></tr>
+<tr><th id="225">225</th><td>};</td></tr>
+<tr><th id="226">226</th><td></td></tr>
+<tr><th id="227">227</th><td><u>#<span data-ppcond="198">endif</span> /* IXGBE_NO_LRO */</u></td></tr>
+<tr><th id="228">228</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_TXD_PWR" data-ref="_M/IXGBE_MAX_TXD_PWR">IXGBE_MAX_TXD_PWR</dfn>	14</u></td></tr>
+<tr><th id="229">229</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_DATA_PER_TXD" data-ref="_M/IXGBE_MAX_DATA_PER_TXD">IXGBE_MAX_DATA_PER_TXD</dfn>	(1 &lt;&lt; IXGBE_MAX_TXD_PWR)</u></td></tr>
+<tr><th id="230">230</th><td></td></tr>
+<tr><th id="231">231</th><td><i>/* Tx Descriptors needed, worst case */</i></td></tr>
+<tr><th id="232">232</th><td><u>#define <dfn class="macro" id="_M/TXD_USE_COUNT" data-ref="_M/TXD_USE_COUNT">TXD_USE_COUNT</dfn>(S)	DIV_ROUND_UP((S), IXGBE_MAX_DATA_PER_TXD)</u></td></tr>
+<tr><th id="233">233</th><td><u>#<span data-ppcond="233">ifdef</span> <span class="macro" data-ref="_M/MAX_SKB_FRAGS">MAX_SKB_FRAGS</span></u></td></tr>
+<tr><th id="234">234</th><td><u>#define <dfn class="macro" id="_M/DESC_NEEDED" data-ref="_M/DESC_NEEDED">DESC_NEEDED</dfn>	((MAX_SKB_FRAGS * TXD_USE_COUNT(PAGE_SIZE)) + 4)</u></td></tr>
+<tr><th id="235">235</th><td><u>#<span data-ppcond="233">else</span></u></td></tr>
+<tr><th id="236">236</th><td><u>#define DESC_NEEDED	4</u></td></tr>
+<tr><th id="237">237</th><td><u>#<span data-ppcond="233">endif</span></u></td></tr>
+<tr><th id="238">238</th><td></td></tr>
+<tr><th id="239">239</th><td><i>/* wrapper around a pointer to a socket buffer,</i></td></tr>
+<tr><th id="240">240</th><td><i> * so a DMA handle can be stored along with the buffer */</i></td></tr>
+<tr><th id="241">241</th><td><b>struct</b> <dfn class="type def" id="ixgbe_tx_buffer" title='ixgbe_tx_buffer' data-ref="ixgbe_tx_buffer">ixgbe_tx_buffer</dfn> {</td></tr>
+<tr><th id="242">242</th><td>	<b>union</b> <a class="type" href="ixgbe_type.h.html#ixgbe_adv_tx_desc" title='ixgbe_adv_tx_desc' data-ref="ixgbe_adv_tx_desc">ixgbe_adv_tx_desc</a> *<dfn class="decl field" id="ixgbe_tx_buffer::next_to_watch" title='ixgbe_tx_buffer::next_to_watch' data-ref="ixgbe_tx_buffer::next_to_watch">next_to_watch</dfn>;</td></tr>
+<tr><th id="243">243</th><td>	<em>unsigned</em> <em>long</em> <dfn class="decl field" id="ixgbe_tx_buffer::time_stamp" title='ixgbe_tx_buffer::time_stamp' data-ref="ixgbe_tx_buffer::time_stamp">time_stamp</dfn>;</td></tr>
+<tr><th id="244">244</th><td>	<b>struct</b> <span class='type' title='sk_buff' data-ref="sk_buff">sk_buff</span> *<dfn class="decl field" id="ixgbe_tx_buffer::skb" title='ixgbe_tx_buffer::skb' data-ref="ixgbe_tx_buffer::skb">skb</dfn>;</td></tr>
+<tr><th id="245">245</th><td>	<em>unsigned</em> <em>int</em> <dfn class="decl field" id="ixgbe_tx_buffer::bytecount" title='ixgbe_tx_buffer::bytecount' data-ref="ixgbe_tx_buffer::bytecount">bytecount</dfn>;</td></tr>
+<tr><th id="246">246</th><td>	<em>unsigned</em> <em>short</em> <dfn class="decl field" id="ixgbe_tx_buffer::gso_segs" title='ixgbe_tx_buffer::gso_segs' data-ref="ixgbe_tx_buffer::gso_segs">gso_segs</dfn>;</td></tr>
+<tr><th id="247">247</th><td>	<a class="macro" href="ixgbe_type.h.html#2294" title="u16" data-ref="_M/__be16">__be16</a> <dfn class="decl field" id="ixgbe_tx_buffer::protocol" title='ixgbe_tx_buffer::protocol' data-ref="ixgbe_tx_buffer::protocol">protocol</dfn>;</td></tr>
+<tr><th id="248">248</th><td>	<span class="macro" title="dma_addr_t dma" data-ref="_M/DEFINE_DMA_UNMAP_ADDR">DEFINE_DMA_UNMAP_ADDR</span>(<dfn class="decl field" id="ixgbe_tx_buffer::dma" title='ixgbe_tx_buffer::dma' data-ref="ixgbe_tx_buffer::dma">dma</dfn>);</td></tr>
+<tr><th id="249">249</th><td>	<span class="macro" title="__u32 len" data-ref="_M/DEFINE_DMA_UNMAP_LEN">DEFINE_DMA_UNMAP_LEN</span>(<dfn class="decl field" id="ixgbe_tx_buffer::len" title='ixgbe_tx_buffer::len' data-ref="ixgbe_tx_buffer::len">len</dfn>);</td></tr>
+<tr><th id="250">250</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_tx_buffer::tx_flags" title='ixgbe_tx_buffer::tx_flags' data-ref="ixgbe_tx_buffer::tx_flags">tx_flags</dfn>;</td></tr>
+<tr><th id="251">251</th><td>};</td></tr>
+<tr><th id="252">252</th><td></td></tr>
+<tr><th id="253">253</th><td><b>struct</b> <dfn class="type def" id="ixgbe_rx_buffer" title='ixgbe_rx_buffer' data-ref="ixgbe_rx_buffer">ixgbe_rx_buffer</dfn> {</td></tr>
+<tr><th id="254">254</th><td>	<b>struct</b> <span class='type' title='sk_buff' data-ref="sk_buff">sk_buff</span> *<dfn class="decl field" id="ixgbe_rx_buffer::skb" title='ixgbe_rx_buffer::skb' data-ref="ixgbe_rx_buffer::skb">skb</dfn>;</td></tr>
+<tr><th id="255">255</th><td>	<span class='typedef' title='dma_addr_t' data-type='u64' data-ref="dma_addr_t">dma_addr_t</span> <dfn class="decl field" id="ixgbe_rx_buffer::dma" title='ixgbe_rx_buffer::dma' data-ref="ixgbe_rx_buffer::dma">dma</dfn>;</td></tr>
+<tr><th id="256">256</th><td><u>#<span data-ppcond="256">ifndef</span> <span class="macro" data-ref="_M/CONFIG_IXGBE_DISABLE_PACKET_SPLIT">CONFIG_IXGBE_DISABLE_PACKET_SPLIT</span></u></td></tr>
+<tr><th id="257">257</th><td>	<b>struct</b> <span class='type' title='page' data-ref="page">page</span> *<dfn class="decl field" id="ixgbe_rx_buffer::page" title='ixgbe_rx_buffer::page' data-ref="ixgbe_rx_buffer::page">page</dfn>;</td></tr>
+<tr><th id="258">258</th><td>	<em>unsigned</em> <em>int</em> <dfn class="decl field" id="ixgbe_rx_buffer::page_offset" title='ixgbe_rx_buffer::page_offset' data-ref="ixgbe_rx_buffer::page_offset">page_offset</dfn>;</td></tr>
+<tr><th id="259">259</th><td><u>#<span data-ppcond="256">endif</span></u></td></tr>
+<tr><th id="260">260</th><td>};</td></tr>
+<tr><th id="261">261</th><td></td></tr>
+<tr><th id="262">262</th><td><b>struct</b> <dfn class="type def" id="ixgbe_queue_stats" title='ixgbe_queue_stats' data-ref="ixgbe_queue_stats">ixgbe_queue_stats</dfn> {</td></tr>
+<tr><th id="263">263</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_queue_stats::packets" title='ixgbe_queue_stats::packets' data-ref="ixgbe_queue_stats::packets">packets</dfn>;</td></tr>
+<tr><th id="264">264</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_queue_stats::bytes" title='ixgbe_queue_stats::bytes' data-ref="ixgbe_queue_stats::bytes">bytes</dfn>;</td></tr>
+<tr><th id="265">265</th><td>};</td></tr>
+<tr><th id="266">266</th><td></td></tr>
+<tr><th id="267">267</th><td><b>struct</b> <dfn class="type def" id="ixgbe_tx_queue_stats" title='ixgbe_tx_queue_stats' data-ref="ixgbe_tx_queue_stats">ixgbe_tx_queue_stats</dfn> {</td></tr>
+<tr><th id="268">268</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_tx_queue_stats::restart_queue" title='ixgbe_tx_queue_stats::restart_queue' data-ref="ixgbe_tx_queue_stats::restart_queue">restart_queue</dfn>;</td></tr>
+<tr><th id="269">269</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_tx_queue_stats::tx_busy" title='ixgbe_tx_queue_stats::tx_busy' data-ref="ixgbe_tx_queue_stats::tx_busy">tx_busy</dfn>;</td></tr>
+<tr><th id="270">270</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_tx_queue_stats::tx_done_old" title='ixgbe_tx_queue_stats::tx_done_old' data-ref="ixgbe_tx_queue_stats::tx_done_old">tx_done_old</dfn>;</td></tr>
+<tr><th id="271">271</th><td>};</td></tr>
+<tr><th id="272">272</th><td></td></tr>
+<tr><th id="273">273</th><td><b>struct</b> <dfn class="type def" id="ixgbe_rx_queue_stats" title='ixgbe_rx_queue_stats' data-ref="ixgbe_rx_queue_stats">ixgbe_rx_queue_stats</dfn> {</td></tr>
+<tr><th id="274">274</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_rx_queue_stats::rsc_count" title='ixgbe_rx_queue_stats::rsc_count' data-ref="ixgbe_rx_queue_stats::rsc_count">rsc_count</dfn>;</td></tr>
+<tr><th id="275">275</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_rx_queue_stats::rsc_flush" title='ixgbe_rx_queue_stats::rsc_flush' data-ref="ixgbe_rx_queue_stats::rsc_flush">rsc_flush</dfn>;</td></tr>
+<tr><th id="276">276</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_rx_queue_stats::non_eop_descs" title='ixgbe_rx_queue_stats::non_eop_descs' data-ref="ixgbe_rx_queue_stats::non_eop_descs">non_eop_descs</dfn>;</td></tr>
+<tr><th id="277">277</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_rx_queue_stats::alloc_rx_page_failed" title='ixgbe_rx_queue_stats::alloc_rx_page_failed' data-ref="ixgbe_rx_queue_stats::alloc_rx_page_failed">alloc_rx_page_failed</dfn>;</td></tr>
+<tr><th id="278">278</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_rx_queue_stats::alloc_rx_buff_failed" title='ixgbe_rx_queue_stats::alloc_rx_buff_failed' data-ref="ixgbe_rx_queue_stats::alloc_rx_buff_failed">alloc_rx_buff_failed</dfn>;</td></tr>
+<tr><th id="279">279</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_rx_queue_stats::csum_err" title='ixgbe_rx_queue_stats::csum_err' data-ref="ixgbe_rx_queue_stats::csum_err">csum_err</dfn>;</td></tr>
+<tr><th id="280">280</th><td>};</td></tr>
+<tr><th id="281">281</th><td></td></tr>
+<tr><th id="282">282</th><td><b>enum</b> <dfn class="type def" id="ixgbe_ring_state_t" title='ixgbe_ring_state_t' data-ref="ixgbe_ring_state_t">ixgbe_ring_state_t</dfn> {</td></tr>
+<tr><th id="283">283</th><td>	<dfn class="enum" id="__IXGBE_TX_FDIR_INIT_DONE" title='__IXGBE_TX_FDIR_INIT_DONE' data-ref="__IXGBE_TX_FDIR_INIT_DONE">__IXGBE_TX_FDIR_INIT_DONE</dfn>,</td></tr>
+<tr><th id="284">284</th><td>	<dfn class="enum" id="__IXGBE_TX_DETECT_HANG" title='__IXGBE_TX_DETECT_HANG' data-ref="__IXGBE_TX_DETECT_HANG">__IXGBE_TX_DETECT_HANG</dfn>,</td></tr>
+<tr><th id="285">285</th><td>	<dfn class="enum" id="__IXGBE_HANG_CHECK_ARMED" title='__IXGBE_HANG_CHECK_ARMED' data-ref="__IXGBE_HANG_CHECK_ARMED">__IXGBE_HANG_CHECK_ARMED</dfn>,</td></tr>
+<tr><th id="286">286</th><td>	<dfn class="enum" id="__IXGBE_RX_RSC_ENABLED" title='__IXGBE_RX_RSC_ENABLED' data-ref="__IXGBE_RX_RSC_ENABLED">__IXGBE_RX_RSC_ENABLED</dfn>,</td></tr>
+<tr><th id="287">287</th><td><u>#<span data-ppcond="287">ifndef</span> <a class="macro" href="kcompat.h.html#2929" data-ref="_M/HAVE_NDO_SET_FEATURES">HAVE_NDO_SET_FEATURES</a></u></td></tr>
+<tr><th id="288">288</th><td>	__IXGBE_RX_CSUM_ENABLED,</td></tr>
+<tr><th id="289">289</th><td><u>#<span data-ppcond="287">endif</span></u></td></tr>
+<tr><th id="290">290</th><td>	<dfn class="enum" id="__IXGBE_RX_CSUM_UDP_ZERO_ERR" title='__IXGBE_RX_CSUM_UDP_ZERO_ERR' data-ref="__IXGBE_RX_CSUM_UDP_ZERO_ERR">__IXGBE_RX_CSUM_UDP_ZERO_ERR</dfn>,</td></tr>
+<tr><th id="291">291</th><td><u>#<span data-ppcond="291">ifdef</span> <a class="macro" href="#46" data-ref="_M/IXGBE_FCOE">IXGBE_FCOE</a></u></td></tr>
+<tr><th id="292">292</th><td>	<dfn class="enum" id="__IXGBE_RX_FCOE_BUFSZ" title='__IXGBE_RX_FCOE_BUFSZ' data-ref="__IXGBE_RX_FCOE_BUFSZ">__IXGBE_RX_FCOE_BUFSZ</dfn>,</td></tr>
+<tr><th id="293">293</th><td><u>#<span data-ppcond="291">endif</span></u></td></tr>
+<tr><th id="294">294</th><td>};</td></tr>
+<tr><th id="295">295</th><td></td></tr>
+<tr><th id="296">296</th><td><u>#define <dfn class="macro" id="_M/check_for_tx_hang" data-ref="_M/check_for_tx_hang">check_for_tx_hang</dfn>(ring) \</u></td></tr>
+<tr><th id="297">297</th><td><u>	test_bit(__IXGBE_TX_DETECT_HANG, &amp;(ring)-&gt;state)</u></td></tr>
+<tr><th id="298">298</th><td><u>#define <dfn class="macro" id="_M/set_check_for_tx_hang" data-ref="_M/set_check_for_tx_hang">set_check_for_tx_hang</dfn>(ring) \</u></td></tr>
+<tr><th id="299">299</th><td><u>	set_bit(__IXGBE_TX_DETECT_HANG, &amp;(ring)-&gt;state)</u></td></tr>
+<tr><th id="300">300</th><td><u>#define <dfn class="macro" id="_M/clear_check_for_tx_hang" data-ref="_M/clear_check_for_tx_hang">clear_check_for_tx_hang</dfn>(ring) \</u></td></tr>
+<tr><th id="301">301</th><td><u>	clear_bit(__IXGBE_TX_DETECT_HANG, &amp;(ring)-&gt;state)</u></td></tr>
+<tr><th id="302">302</th><td><u>#<span data-ppcond="302">ifndef</span> <span class="macro" data-ref="_M/IXGBE_NO_HW_RSC">IXGBE_NO_HW_RSC</span></u></td></tr>
+<tr><th id="303">303</th><td><u>#define <dfn class="macro" id="_M/ring_is_rsc_enabled" data-ref="_M/ring_is_rsc_enabled">ring_is_rsc_enabled</dfn>(ring) \</u></td></tr>
+<tr><th id="304">304</th><td><u>	test_bit(__IXGBE_RX_RSC_ENABLED, &amp;(ring)-&gt;state)</u></td></tr>
+<tr><th id="305">305</th><td><u>#<span data-ppcond="302">else</span></u></td></tr>
+<tr><th id="306">306</th><td><u>#define ring_is_rsc_enabled(ring)	false</u></td></tr>
+<tr><th id="307">307</th><td><u>#<span data-ppcond="302">endif</span></u></td></tr>
+<tr><th id="308">308</th><td><u>#define <dfn class="macro" id="_M/set_ring_rsc_enabled" data-ref="_M/set_ring_rsc_enabled">set_ring_rsc_enabled</dfn>(ring) \</u></td></tr>
+<tr><th id="309">309</th><td><u>	set_bit(__IXGBE_RX_RSC_ENABLED, &amp;(ring)-&gt;state)</u></td></tr>
+<tr><th id="310">310</th><td><u>#define <dfn class="macro" id="_M/clear_ring_rsc_enabled" data-ref="_M/clear_ring_rsc_enabled">clear_ring_rsc_enabled</dfn>(ring) \</u></td></tr>
+<tr><th id="311">311</th><td><u>	clear_bit(__IXGBE_RX_RSC_ENABLED, &amp;(ring)-&gt;state)</u></td></tr>
+<tr><th id="312">312</th><td><u>#define <dfn class="macro" id="_M/netdev_ring" data-ref="_M/netdev_ring">netdev_ring</dfn>(ring) (ring-&gt;netdev)</u></td></tr>
+<tr><th id="313">313</th><td><u>#define <dfn class="macro" id="_M/ring_queue_index" data-ref="_M/ring_queue_index">ring_queue_index</dfn>(ring) (ring-&gt;queue_index)</u></td></tr>
+<tr><th id="314">314</th><td></td></tr>
+<tr><th id="315">315</th><td></td></tr>
+<tr><th id="316">316</th><td><b>struct</b> <dfn class="type def" id="ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</dfn> {</td></tr>
+<tr><th id="317">317</th><td>	<b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *<dfn class="decl field" id="ixgbe_ring::next" title='ixgbe_ring::next' data-ref="ixgbe_ring::next">next</dfn>;	<i>/* pointer to next ring in q_vector */</i></td></tr>
+<tr><th id="318">318</th><td>	<b>struct</b> <a class="type" href="#ixgbe_q_vector" title='ixgbe_q_vector' data-ref="ixgbe_q_vector">ixgbe_q_vector</a> *<dfn class="decl field" id="ixgbe_ring::q_vector" title='ixgbe_ring::q_vector' data-ref="ixgbe_ring::q_vector">q_vector</dfn>; <i>/* backpointer to host q_vector */</i></td></tr>
+<tr><th id="319">319</th><td>	<b>struct</b> <span class='type' title='net_device' data-ref="net_device">net_device</span> *<dfn class="decl field" id="ixgbe_ring::netdev" title='ixgbe_ring::netdev' data-ref="ixgbe_ring::netdev">netdev</dfn>;	<i>/* netdev ring belongs to */</i></td></tr>
+<tr><th id="320">320</th><td>	<b>struct</b> <span class='type' title='device' data-ref="device">device</span> *<dfn class="decl field" id="ixgbe_ring::dev" title='ixgbe_ring::dev' data-ref="ixgbe_ring::dev">dev</dfn>;		<i>/* device for DMA mapping */</i></td></tr>
+<tr><th id="321">321</th><td>	<em>void</em> *<dfn class="decl field" id="ixgbe_ring::desc" title='ixgbe_ring::desc' data-ref="ixgbe_ring::desc">desc</dfn>;			<i>/* descriptor ring memory */</i></td></tr>
+<tr><th id="322">322</th><td>	<b>union</b> {</td></tr>
+<tr><th id="323">323</th><td>		<b>struct</b> <a class="type" href="#ixgbe_tx_buffer" title='ixgbe_tx_buffer' data-ref="ixgbe_tx_buffer">ixgbe_tx_buffer</a> *<dfn class="decl field" id="ixgbe_ring::(anonymous)::tx_buffer_info" title='ixgbe_ring::(anonymous union)::tx_buffer_info' data-ref="ixgbe_ring::(anonymous)::tx_buffer_info">tx_buffer_info</dfn>;</td></tr>
+<tr><th id="324">324</th><td>		<b>struct</b> <a class="type" href="#ixgbe_rx_buffer" title='ixgbe_rx_buffer' data-ref="ixgbe_rx_buffer">ixgbe_rx_buffer</a> *<dfn class="decl field" id="ixgbe_ring::(anonymous)::rx_buffer_info" title='ixgbe_ring::(anonymous union)::rx_buffer_info' data-ref="ixgbe_ring::(anonymous)::rx_buffer_info">rx_buffer_info</dfn>;</td></tr>
+<tr><th id="325">325</th><td>	};</td></tr>
+<tr><th id="326">326</th><td>	<em>unsigned</em> <em>long</em> <dfn class="decl field" id="ixgbe_ring::state" title='ixgbe_ring::state' data-ref="ixgbe_ring::state">state</dfn>;</td></tr>
+<tr><th id="327">327</th><td>	<span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <span class="macro" title="" data-ref="_M/__iomem">__iomem</span> *<dfn class="decl field" id="ixgbe_ring::tail" title='ixgbe_ring::tail' data-ref="ixgbe_ring::tail">tail</dfn>;</td></tr>
+<tr><th id="328">328</th><td>	<span class='typedef' title='dma_addr_t' data-type='u64' data-ref="dma_addr_t">dma_addr_t</span> <dfn class="decl field" id="ixgbe_ring::dma" title='ixgbe_ring::dma' data-ref="ixgbe_ring::dma">dma</dfn>;			<i>/* phys. address of descriptor ring */</i></td></tr>
+<tr><th id="329">329</th><td>	<em>unsigned</em> <em>int</em> <dfn class="decl field" id="ixgbe_ring::size" title='ixgbe_ring::size' data-ref="ixgbe_ring::size">size</dfn>;		<i>/* length in bytes */</i></td></tr>
+<tr><th id="330">330</th><td></td></tr>
+<tr><th id="331">331</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="ixgbe_ring::count" title='ixgbe_ring::count' data-ref="ixgbe_ring::count">count</dfn>;			<i>/* amount of descriptors */</i></td></tr>
+<tr><th id="332">332</th><td></td></tr>
+<tr><th id="333">333</th><td>	<span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <dfn class="decl field" id="ixgbe_ring::queue_index" title='ixgbe_ring::queue_index' data-ref="ixgbe_ring::queue_index">queue_index</dfn>; <i>/* needed for multiqueue queue management */</i></td></tr>
+<tr><th id="334">334</th><td>	<span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <dfn class="decl field" id="ixgbe_ring::reg_idx" title='ixgbe_ring::reg_idx' data-ref="ixgbe_ring::reg_idx">reg_idx</dfn>;			<i>/* holds the special value that gets</i></td></tr>
+<tr><th id="335">335</th><td><i>					 * the hardware register offset</i></td></tr>
+<tr><th id="336">336</th><td><i>					 * associated with this ring, which is</i></td></tr>
+<tr><th id="337">337</th><td><i>					 * different for DCB and RSS modes</i></td></tr>
+<tr><th id="338">338</th><td><i>					 */</i></td></tr>
+<tr><th id="339">339</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="ixgbe_ring::next_to_use" title='ixgbe_ring::next_to_use' data-ref="ixgbe_ring::next_to_use">next_to_use</dfn>;</td></tr>
+<tr><th id="340">340</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="ixgbe_ring::next_to_clean" title='ixgbe_ring::next_to_clean' data-ref="ixgbe_ring::next_to_clean">next_to_clean</dfn>;</td></tr>
+<tr><th id="341">341</th><td></td></tr>
+<tr><th id="342">342</th><td>	<b>union</b> {</td></tr>
+<tr><th id="343">343</th><td><u>#<span data-ppcond="343">ifdef</span> <span class="macro" data-ref="_M/CONFIG_IXGBE_DISABLE_PACKET_SPLIT">CONFIG_IXGBE_DISABLE_PACKET_SPLIT</span></u></td></tr>
+<tr><th id="344">344</th><td>		u16 rx_buf_len;</td></tr>
+<tr><th id="345">345</th><td><u>#<span data-ppcond="343">else</span></u></td></tr>
+<tr><th id="346">346</th><td>		<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="ixgbe_ring::(anonymous)::next_to_alloc" title='ixgbe_ring::(anonymous union)::next_to_alloc' data-ref="ixgbe_ring::(anonymous)::next_to_alloc">next_to_alloc</dfn>;</td></tr>
+<tr><th id="347">347</th><td><u>#<span data-ppcond="343">endif</span></u></td></tr>
+<tr><th id="348">348</th><td>		<b>struct</b> {</td></tr>
+<tr><th id="349">349</th><td>			<span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <dfn class="decl field" id="ixgbe_ring::(anonymousunion)::(anonymous)::atr_sample_rate" title='ixgbe_ring::(anonymous union)::(anonymous struct)::atr_sample_rate' data-ref="ixgbe_ring::(anonymousunion)::(anonymous)::atr_sample_rate">atr_sample_rate</dfn>;</td></tr>
+<tr><th id="350">350</th><td>			<span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <dfn class="decl field" id="ixgbe_ring::(anonymousunion)::(anonymous)::atr_count" title='ixgbe_ring::(anonymous union)::(anonymous struct)::atr_count' data-ref="ixgbe_ring::(anonymousunion)::(anonymous)::atr_count">atr_count</dfn>;</td></tr>
+<tr><th id="351">351</th><td>		};</td></tr>
+<tr><th id="352">352</th><td>	};</td></tr>
+<tr><th id="353">353</th><td></td></tr>
+<tr><th id="354">354</th><td>	<span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <dfn class="decl field" id="ixgbe_ring::dcb_tc" title='ixgbe_ring::dcb_tc' data-ref="ixgbe_ring::dcb_tc">dcb_tc</dfn>;</td></tr>
+<tr><th id="355">355</th><td>	<b>struct</b> <a class="type" href="#ixgbe_queue_stats" title='ixgbe_queue_stats' data-ref="ixgbe_queue_stats">ixgbe_queue_stats</a> <dfn class="decl field" id="ixgbe_ring::stats" title='ixgbe_ring::stats' data-ref="ixgbe_ring::stats">stats</dfn>;</td></tr>
+<tr><th id="356">356</th><td>	<b>union</b> {</td></tr>
+<tr><th id="357">357</th><td>		<b>struct</b> <a class="type" href="#ixgbe_tx_queue_stats" title='ixgbe_tx_queue_stats' data-ref="ixgbe_tx_queue_stats">ixgbe_tx_queue_stats</a> <dfn class="decl field" id="ixgbe_ring::(anonymous)::tx_stats" title='ixgbe_ring::(anonymous union)::tx_stats' data-ref="ixgbe_ring::(anonymous)::tx_stats">tx_stats</dfn>;</td></tr>
+<tr><th id="358">358</th><td>		<b>struct</b> <a class="type" href="#ixgbe_rx_queue_stats" title='ixgbe_rx_queue_stats' data-ref="ixgbe_rx_queue_stats">ixgbe_rx_queue_stats</a> <dfn class="decl field" id="ixgbe_ring::(anonymous)::rx_stats" title='ixgbe_ring::(anonymous union)::rx_stats' data-ref="ixgbe_ring::(anonymous)::rx_stats">rx_stats</dfn>;</td></tr>
+<tr><th id="359">359</th><td>	};</td></tr>
+<tr><th id="360">360</th><td>} <span class="macro" title="__attribute__((__aligned__(1 &lt;&lt; (6))))" data-ref="_M/____cacheline_internodealigned_in_smp">____cacheline_internodealigned_in_smp</span>;</td></tr>
+<tr><th id="361">361</th><td></td></tr>
+<tr><th id="362">362</th><td><b>enum</b> <dfn class="type def" id="ixgbe_ring_f_enum" title='ixgbe_ring_f_enum' data-ref="ixgbe_ring_f_enum">ixgbe_ring_f_enum</dfn> {</td></tr>
+<tr><th id="363">363</th><td>	<dfn class="enum" id="RING_F_NONE" title='RING_F_NONE' data-ref="RING_F_NONE">RING_F_NONE</dfn> = <var>0</var>,</td></tr>
+<tr><th id="364">364</th><td>	<dfn class="enum" id="RING_F_VMDQ" title='RING_F_VMDQ' data-ref="RING_F_VMDQ">RING_F_VMDQ</dfn>,  <i>/* SR-IOV uses the same ring feature */</i></td></tr>
+<tr><th id="365">365</th><td>	<dfn class="enum" id="RING_F_RSS" title='RING_F_RSS' data-ref="RING_F_RSS">RING_F_RSS</dfn>,</td></tr>
+<tr><th id="366">366</th><td>	<dfn class="enum" id="RING_F_FDIR" title='RING_F_FDIR' data-ref="RING_F_FDIR">RING_F_FDIR</dfn>,</td></tr>
+<tr><th id="367">367</th><td><u>#<span data-ppcond="367">ifdef</span> <a class="macro" href="#46" data-ref="_M/IXGBE_FCOE">IXGBE_FCOE</a></u></td></tr>
+<tr><th id="368">368</th><td>	<dfn class="enum" id="RING_F_FCOE" title='RING_F_FCOE' data-ref="RING_F_FCOE">RING_F_FCOE</dfn>,</td></tr>
+<tr><th id="369">369</th><td><u>#<span data-ppcond="367">endif</span> /* IXGBE_FCOE */</u></td></tr>
+<tr><th id="370">370</th><td>	<dfn class="enum" id="RING_F_ARRAY_SIZE" title='RING_F_ARRAY_SIZE' data-ref="RING_F_ARRAY_SIZE">RING_F_ARRAY_SIZE</dfn>  <i>/* must be last in enum set */</i></td></tr>
+<tr><th id="371">371</th><td>};</td></tr>
+<tr><th id="372">372</th><td></td></tr>
+<tr><th id="373">373</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_DCB_INDICES" data-ref="_M/IXGBE_MAX_DCB_INDICES">IXGBE_MAX_DCB_INDICES</dfn>	8</u></td></tr>
+<tr><th id="374">374</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_RSS_INDICES" data-ref="_M/IXGBE_MAX_RSS_INDICES">IXGBE_MAX_RSS_INDICES</dfn>	16</u></td></tr>
+<tr><th id="375">375</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_VMDQ_INDICES" data-ref="_M/IXGBE_MAX_VMDQ_INDICES">IXGBE_MAX_VMDQ_INDICES</dfn>	64</u></td></tr>
+<tr><th id="376">376</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_FDIR_INDICES" data-ref="_M/IXGBE_MAX_FDIR_INDICES">IXGBE_MAX_FDIR_INDICES</dfn>	64</u></td></tr>
+<tr><th id="377">377</th><td><u>#<span data-ppcond="377">ifdef</span> <a class="macro" href="#46" data-ref="_M/IXGBE_FCOE">IXGBE_FCOE</a></u></td></tr>
+<tr><th id="378">378</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_FCOE_INDICES" data-ref="_M/IXGBE_MAX_FCOE_INDICES">IXGBE_MAX_FCOE_INDICES</dfn>	8</u></td></tr>
+<tr><th id="379">379</th><td><u>#define <dfn class="macro" id="_M/MAX_RX_QUEUES" data-ref="_M/MAX_RX_QUEUES">MAX_RX_QUEUES</dfn>	(IXGBE_MAX_FDIR_INDICES + IXGBE_MAX_FCOE_INDICES)</u></td></tr>
+<tr><th id="380">380</th><td><u>#define <dfn class="macro" id="_M/MAX_TX_QUEUES" data-ref="_M/MAX_TX_QUEUES">MAX_TX_QUEUES</dfn>	(IXGBE_MAX_FDIR_INDICES + IXGBE_MAX_FCOE_INDICES)</u></td></tr>
+<tr><th id="381">381</th><td><u>#<span data-ppcond="377">else</span></u></td></tr>
+<tr><th id="382">382</th><td><u>#define MAX_RX_QUEUES	IXGBE_MAX_FDIR_INDICES</u></td></tr>
+<tr><th id="383">383</th><td><u>#define MAX_TX_QUEUES	IXGBE_MAX_FDIR_INDICES</u></td></tr>
+<tr><th id="384">384</th><td><u>#<span data-ppcond="377">endif</span> /* IXGBE_FCOE */</u></td></tr>
+<tr><th id="385">385</th><td><b>struct</b> <dfn class="type def" id="ixgbe_ring_feature" title='ixgbe_ring_feature' data-ref="ixgbe_ring_feature">ixgbe_ring_feature</dfn> {</td></tr>
+<tr><th id="386">386</th><td>	<em>int</em> <dfn class="decl field" id="ixgbe_ring_feature::indices" title='ixgbe_ring_feature::indices' data-ref="ixgbe_ring_feature::indices">indices</dfn>;</td></tr>
+<tr><th id="387">387</th><td>	<em>int</em> <dfn class="decl field" id="ixgbe_ring_feature::mask" title='ixgbe_ring_feature::mask' data-ref="ixgbe_ring_feature::mask">mask</dfn>;</td></tr>
+<tr><th id="388">388</th><td>};</td></tr>
+<tr><th id="389">389</th><td></td></tr>
+<tr><th id="390">390</th><td><u>#<span data-ppcond="390">ifndef</span> <span class="macro" data-ref="_M/CONFIG_IXGBE_DISABLE_PACKET_SPLIT">CONFIG_IXGBE_DISABLE_PACKET_SPLIT</span></u></td></tr>
+<tr><th id="391">391</th><td><i>/*</i></td></tr>
+<tr><th id="392">392</th><td><i> * FCoE requires that all Rx buffers be over 2200 bytes in length.  Since</i></td></tr>
+<tr><th id="393">393</th><td><i> * this is twice the size of a half page we need to double the page order</i></td></tr>
+<tr><th id="394">394</th><td><i> * for FCoE enabled Rx queues.</i></td></tr>
+<tr><th id="395">395</th><td><i> */</i></td></tr>
+<tr><th id="396">396</th><td><u>#<span data-ppcond="396">if</span> defined(<a class="macro" href="#46" data-ref="_M/IXGBE_FCOE">IXGBE_FCOE</a>) &amp;&amp; (<span class="macro" title="((1UL) &lt;&lt; 12)" data-ref="_M/PAGE_SIZE">PAGE_SIZE</span> &lt; 8192)</u></td></tr>
+<tr><th id="397">397</th><td><em>static</em> <span class="macro" title="inline __attribute__((no_instrument_function))" data-ref="_M/inline"><b>inline</b></span> <em>unsigned</em> <em>int</em> <dfn class="decl def fn" id="ixgbe_rx_pg_order" title='ixgbe_rx_pg_order' data-ref="ixgbe_rx_pg_order">ixgbe_rx_pg_order</dfn>(<b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *<dfn class="local col1 decl" id="1ring" title='ring' data-type='struct ixgbe_ring *' data-ref="1ring">ring</dfn>)</td></tr>
+<tr><th id="398">398</th><td>{</td></tr>
+<tr><th id="399">399</th><td>	<b>return</b> <span class="macro" title="(__builtin_constant_p((__IXGBE_RX_FCOE_BUFSZ)) ? constant_test_bit((__IXGBE_RX_FCOE_BUFSZ), (&amp;ring-&gt;state)) : variable_test_bit((__IXGBE_RX_FCOE_BUFSZ), (&amp;ring-&gt;state)))" data-ref="_M/test_bit">test_bit</span>(<a class="enum" href="#__IXGBE_RX_FCOE_BUFSZ" title='__IXGBE_RX_FCOE_BUFSZ' data-ref="__IXGBE_RX_FCOE_BUFSZ">__IXGBE_RX_FCOE_BUFSZ</a>, &amp;<a class="local col1 ref" href="#1ring" title='ring' data-ref="1ring">ring</a>-&gt;<a class="ref field" href="#ixgbe_ring::state" title='ixgbe_ring::state' data-ref="ixgbe_ring::state">state</a>) ? <var>1</var> : <var>0</var>;</td></tr>
+<tr><th id="400">400</th><td>}</td></tr>
+<tr><th id="401">401</th><td><u>#<span data-ppcond="396">else</span></u></td></tr>
+<tr><th id="402">402</th><td><u>#define ixgbe_rx_pg_order(_ring) 0</u></td></tr>
+<tr><th id="403">403</th><td><u>#<span data-ppcond="396">endif</span></u></td></tr>
+<tr><th id="404">404</th><td><u>#define <dfn class="macro" id="_M/ixgbe_rx_pg_size" data-ref="_M/ixgbe_rx_pg_size">ixgbe_rx_pg_size</dfn>(_ring) (PAGE_SIZE &lt;&lt; ixgbe_rx_pg_order(_ring))</u></td></tr>
+<tr><th id="405">405</th><td><u>#define <dfn class="macro" id="_M/ixgbe_rx_bufsz" data-ref="_M/ixgbe_rx_bufsz">ixgbe_rx_bufsz</dfn>(_ring) ((PAGE_SIZE / 2) &lt;&lt; ixgbe_rx_pg_order(_ring))</u></td></tr>
+<tr><th id="406">406</th><td></td></tr>
+<tr><th id="407">407</th><td><u>#<span data-ppcond="390">endif</span></u></td></tr>
+<tr><th id="408">408</th><td><b>struct</b> <dfn class="type def" id="ixgbe_ring_container" title='ixgbe_ring_container' data-ref="ixgbe_ring_container">ixgbe_ring_container</dfn> {</td></tr>
+<tr><th id="409">409</th><td>	<b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *<dfn class="decl field" id="ixgbe_ring_container::ring" title='ixgbe_ring_container::ring' data-ref="ixgbe_ring_container::ring">ring</dfn>;	<i>/* pointer to linked list of rings */</i></td></tr>
+<tr><th id="410">410</th><td>	<em>unsigned</em> <em>int</em> <dfn class="decl field" id="ixgbe_ring_container::total_bytes" title='ixgbe_ring_container::total_bytes' data-ref="ixgbe_ring_container::total_bytes">total_bytes</dfn>;	<i>/* total bytes processed this int */</i></td></tr>
+<tr><th id="411">411</th><td>	<em>unsigned</em> <em>int</em> <dfn class="decl field" id="ixgbe_ring_container::total_packets" title='ixgbe_ring_container::total_packets' data-ref="ixgbe_ring_container::total_packets">total_packets</dfn>;	<i>/* total packets processed this int */</i></td></tr>
+<tr><th id="412">412</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="ixgbe_ring_container::work_limit" title='ixgbe_ring_container::work_limit' data-ref="ixgbe_ring_container::work_limit">work_limit</dfn>;			<i>/* total work allowed per interrupt */</i></td></tr>
+<tr><th id="413">413</th><td>	<span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <dfn class="decl field" id="ixgbe_ring_container::count" title='ixgbe_ring_container::count' data-ref="ixgbe_ring_container::count">count</dfn>;			<i>/* total number of rings in vector */</i></td></tr>
+<tr><th id="414">414</th><td>	<span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <dfn class="decl field" id="ixgbe_ring_container::itr" title='ixgbe_ring_container::itr' data-ref="ixgbe_ring_container::itr">itr</dfn>;				<i>/* current ITR setting for ring */</i></td></tr>
+<tr><th id="415">415</th><td>};</td></tr>
+<tr><th id="416">416</th><td></td></tr>
+<tr><th id="417">417</th><td><i>/* iterator for handling rings in ring container */</i></td></tr>
+<tr><th id="418">418</th><td><u>#define <dfn class="macro" id="_M/ixgbe_for_each_ring" data-ref="_M/ixgbe_for_each_ring">ixgbe_for_each_ring</dfn>(pos, head) \</u></td></tr>
+<tr><th id="419">419</th><td><u>	for (pos = (head).ring; pos != NULL; pos = pos-&gt;next)</u></td></tr>
+<tr><th id="420">420</th><td></td></tr>
+<tr><th id="421">421</th><td><u>#define <dfn class="macro" id="_M/MAX_RX_PACKET_BUFFERS" data-ref="_M/MAX_RX_PACKET_BUFFERS">MAX_RX_PACKET_BUFFERS</dfn>	((adapter-&gt;flags &amp; IXGBE_FLAG_DCB_ENABLED) \</u></td></tr>
+<tr><th id="422">422</th><td><u>				 ? 8 : 1)</u></td></tr>
+<tr><th id="423">423</th><td><u>#define <dfn class="macro" id="_M/MAX_TX_PACKET_BUFFERS" data-ref="_M/MAX_TX_PACKET_BUFFERS">MAX_TX_PACKET_BUFFERS</dfn>	MAX_RX_PACKET_BUFFERS</u></td></tr>
+<tr><th id="424">424</th><td></td></tr>
+<tr><th id="425">425</th><td><i>/* MAX_MSIX_Q_VECTORS of these are allocated,</i></td></tr>
+<tr><th id="426">426</th><td><i> * but we only use one per queue-specific vector.</i></td></tr>
+<tr><th id="427">427</th><td><i> */</i></td></tr>
+<tr><th id="428">428</th><td><b>struct</b> <dfn class="type def" id="ixgbe_q_vector" title='ixgbe_q_vector' data-ref="ixgbe_q_vector">ixgbe_q_vector</dfn> {</td></tr>
+<tr><th id="429">429</th><td>	<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="decl field" id="ixgbe_q_vector::adapter" title='ixgbe_q_vector::adapter' data-ref="ixgbe_q_vector::adapter">adapter</dfn>;</td></tr>
+<tr><th id="430">430</th><td>	<em>int</em> <dfn class="decl field" id="ixgbe_q_vector::cpu" title='ixgbe_q_vector::cpu' data-ref="ixgbe_q_vector::cpu">cpu</dfn>;	<i>/* CPU for DCA */</i></td></tr>
+<tr><th id="431">431</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="ixgbe_q_vector::v_idx" title='ixgbe_q_vector::v_idx' data-ref="ixgbe_q_vector::v_idx">v_idx</dfn>;	<i>/* index of q_vector within array, also used for</i></td></tr>
+<tr><th id="432">432</th><td><i>			 * finding the bit in EICR and friends that</i></td></tr>
+<tr><th id="433">433</th><td><i>			 * represents the vector for this ring */</i></td></tr>
+<tr><th id="434">434</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="ixgbe_q_vector::itr" title='ixgbe_q_vector::itr' data-ref="ixgbe_q_vector::itr">itr</dfn>;	<i>/* Interrupt throttle rate written to EITR */</i></td></tr>
+<tr><th id="435">435</th><td>	<b>struct</b> <a class="type" href="#ixgbe_ring_container" title='ixgbe_ring_container' data-ref="ixgbe_ring_container">ixgbe_ring_container</a> <dfn class="decl field" id="ixgbe_q_vector::rx" title='ixgbe_q_vector::rx' data-ref="ixgbe_q_vector::rx">rx</dfn>, <dfn class="decl field" id="ixgbe_q_vector::tx" title='ixgbe_q_vector::tx' data-ref="ixgbe_q_vector::tx">tx</dfn>;</td></tr>
+<tr><th id="436">436</th><td></td></tr>
+<tr><th id="437">437</th><td><u>#<span data-ppcond="437">ifdef</span> <a class="macro" href="kcompat.h.html#46" data-ref="_M/CONFIG_IXGBE_NAPI">CONFIG_IXGBE_NAPI</a></u></td></tr>
+<tr><th id="438">438</th><td>	<b>struct</b> <span class='type' title='napi_struct' data-ref="napi_struct">napi_struct</span> <dfn class="decl field" id="ixgbe_q_vector::napi" title='ixgbe_q_vector::napi' data-ref="ixgbe_q_vector::napi">napi</dfn>;</td></tr>
+<tr><th id="439">439</th><td><u>#<span data-ppcond="437">endif</span></u></td></tr>
+<tr><th id="440">440</th><td><u>#<span data-ppcond="440">ifndef</span> <a class="macro" href="kcompat.h.html#2125" data-ref="_M/HAVE_NETDEV_NAPI_LIST">HAVE_NETDEV_NAPI_LIST</a></u></td></tr>
+<tr><th id="441">441</th><td>	<b>struct</b> net_device poll_dev;</td></tr>
+<tr><th id="442">442</th><td><u>#<span data-ppcond="440">endif</span></u></td></tr>
+<tr><th id="443">443</th><td><u>#<span data-ppcond="443">ifdef</span> <a class="macro" href="kcompat.h.html#2716" data-ref="_M/HAVE_IRQ_AFFINITY_HINT">HAVE_IRQ_AFFINITY_HINT</a></u></td></tr>
+<tr><th id="444">444</th><td>	<span class='typedef' title='cpumask_t' data-type='struct cpumask' data-ref="cpumask_t">cpumask_t</span> <dfn class="decl field" id="ixgbe_q_vector::affinity_mask" title='ixgbe_q_vector::affinity_mask' data-ref="ixgbe_q_vector::affinity_mask">affinity_mask</dfn>;</td></tr>
+<tr><th id="445">445</th><td><u>#<span data-ppcond="443">endif</span></u></td></tr>
+<tr><th id="446">446</th><td><u>#<span data-ppcond="446">ifndef</span> <span class="macro" data-ref="_M/IXGBE_NO_LRO">IXGBE_NO_LRO</span></u></td></tr>
+<tr><th id="447">447</th><td>	<b>struct</b> <a class="type" href="#ixgbe_lro_list" title='ixgbe_lro_list' data-ref="ixgbe_lro_list">ixgbe_lro_list</a> <dfn class="decl field" id="ixgbe_q_vector::lrolist" title='ixgbe_q_vector::lrolist' data-ref="ixgbe_q_vector::lrolist">lrolist</dfn>;   <i>/* LRO list for queue vector*/</i></td></tr>
+<tr><th id="448">448</th><td><u>#<span data-ppcond="446">endif</span></u></td></tr>
+<tr><th id="449">449</th><td>	<em>int</em> <dfn class="decl field" id="ixgbe_q_vector::numa_node" title='ixgbe_q_vector::numa_node' data-ref="ixgbe_q_vector::numa_node">numa_node</dfn>;</td></tr>
+<tr><th id="450">450</th><td>	<em>char</em> <dfn class="decl field" id="ixgbe_q_vector::name" title='ixgbe_q_vector::name' data-ref="ixgbe_q_vector::name">name</dfn>[<span class="macro" title="16" data-ref="_M/IFNAMSIZ">IFNAMSIZ</span> + <var>9</var>];</td></tr>
+<tr><th id="451">451</th><td></td></tr>
+<tr><th id="452">452</th><td>	<i>/* for dynamic allocation of rings associated with this q_vector */</i></td></tr>
+<tr><th id="453">453</th><td>	<b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> <dfn class="decl field" id="ixgbe_q_vector::ring" title='ixgbe_q_vector::ring' data-ref="ixgbe_q_vector::ring">ring</dfn>[<var>0</var>] <span class="macro" title="__attribute__((__aligned__(1 &lt;&lt; (6))))" data-ref="_M/____cacheline_internodealigned_in_smp">____cacheline_internodealigned_in_smp</span>;</td></tr>
+<tr><th id="454">454</th><td>};</td></tr>
+<tr><th id="455">455</th><td></td></tr>
+<tr><th id="456">456</th><td><i>/*</i></td></tr>
+<tr><th id="457">457</th><td><i> * microsecond values for various ITR rates shifted by 2 to fit itr register</i></td></tr>
+<tr><th id="458">458</th><td><i> * with the first 3 bits reserved 0</i></td></tr>
+<tr><th id="459">459</th><td><i> */</i></td></tr>
+<tr><th id="460">460</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MIN_RSC_ITR" data-ref="_M/IXGBE_MIN_RSC_ITR">IXGBE_MIN_RSC_ITR</dfn>	24</u></td></tr>
+<tr><th id="461">461</th><td><u>#define <dfn class="macro" id="_M/IXGBE_100K_ITR" data-ref="_M/IXGBE_100K_ITR">IXGBE_100K_ITR</dfn>		40</u></td></tr>
+<tr><th id="462">462</th><td><u>#define <dfn class="macro" id="_M/IXGBE_20K_ITR" data-ref="_M/IXGBE_20K_ITR">IXGBE_20K_ITR</dfn>		200</u></td></tr>
+<tr><th id="463">463</th><td><u>#define <dfn class="macro" id="_M/IXGBE_16K_ITR" data-ref="_M/IXGBE_16K_ITR">IXGBE_16K_ITR</dfn>		248</u></td></tr>
+<tr><th id="464">464</th><td><u>#define <dfn class="macro" id="_M/IXGBE_10K_ITR" data-ref="_M/IXGBE_10K_ITR">IXGBE_10K_ITR</dfn>		400</u></td></tr>
+<tr><th id="465">465</th><td><u>#define <dfn class="macro" id="_M/IXGBE_8K_ITR" data-ref="_M/IXGBE_8K_ITR">IXGBE_8K_ITR</dfn>		500</u></td></tr>
+<tr><th id="466">466</th><td></td></tr>
+<tr><th id="467">467</th><td><i>/* ixgbe_test_staterr - tests bits in Rx descriptor status and error fields */</i></td></tr>
+<tr><th id="468">468</th><td><em>static</em> <span class="macro" title="inline __attribute__((no_instrument_function))" data-ref="_M/inline"><b>inline</b></span> <a class="macro" href="ixgbe_type.h.html#2286" title="u32" data-ref="_M/__le32">__le32</a> <dfn class="decl def fn" id="ixgbe_test_staterr" title='ixgbe_test_staterr' data-ref="ixgbe_test_staterr">ixgbe_test_staterr</dfn>(<b>union</b> <a class="type" href="ixgbe_type.h.html#ixgbe_adv_rx_desc" title='ixgbe_adv_rx_desc' data-ref="ixgbe_adv_rx_desc">ixgbe_adv_rx_desc</a> *<dfn class="local col2 decl" id="2rx_desc" title='rx_desc' data-type='union ixgbe_adv_rx_desc *' data-ref="2rx_desc">rx_desc</dfn>,</td></tr>
+<tr><th id="469">469</th><td>					<em>const</em> <span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="local col3 decl" id="3stat_err_bits" title='stat_err_bits' data-type='const u32' data-ref="3stat_err_bits">stat_err_bits</dfn>)</td></tr>
+<tr><th id="470">470</th><td>{</td></tr>
+<tr><th id="471">471</th><td>	<b>return</b> <a class="local col2 ref" href="#2rx_desc" title='rx_desc' data-ref="2rx_desc">rx_desc</a>-&gt;<a class="ref field" href="ixgbe_type.h.html#ixgbe_adv_rx_desc::wb" title='ixgbe_adv_rx_desc::wb' data-ref="ixgbe_adv_rx_desc::wb">wb</a>.<a class="ref field" href="ixgbe_type.h.html#ixgbe_adv_rx_desc::(anonymous)::upper" title='ixgbe_adv_rx_desc::(anonymous struct)::upper' data-ref="ixgbe_adv_rx_desc::(anonymous)::upper">upper</a>.<a class="ref field" href="ixgbe_type.h.html#ixgbe_adv_rx_desc::(anonymousstruct)::(anonymous)::status_error" title='ixgbe_adv_rx_desc::(anonymous struct)::(anonymous struct)::status_error' data-ref="ixgbe_adv_rx_desc::(anonymousstruct)::(anonymous)::status_error">status_error</a> &amp; <span class="macro" title="__cpu_to_le32" data-ref="_M/cpu_to_le32">cpu_to_le32</span>(<a class="local col3 ref" href="#3stat_err_bits" title='stat_err_bits' data-ref="3stat_err_bits">stat_err_bits</a>);</td></tr>
+<tr><th id="472">472</th><td>}</td></tr>
+<tr><th id="473">473</th><td></td></tr>
+<tr><th id="474">474</th><td><i>/* ixgbe_desc_unused - calculate if we have unused descriptors */</i></td></tr>
+<tr><th id="475">475</th><td><em>static</em> <span class="macro" title="inline __attribute__((no_instrument_function))" data-ref="_M/inline"><b>inline</b></span> <span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl def fn" id="ixgbe_desc_unused" title='ixgbe_desc_unused' data-ref="ixgbe_desc_unused">ixgbe_desc_unused</dfn>(<b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *<dfn class="local col4 decl" id="4ring" title='ring' data-type='struct ixgbe_ring *' data-ref="4ring">ring</dfn>)</td></tr>
+<tr><th id="476">476</th><td>{</td></tr>
+<tr><th id="477">477</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="local col5 decl" id="5ntc" title='ntc' data-type='u16' data-ref="5ntc">ntc</dfn> = <a class="local col4 ref" href="#4ring" title='ring' data-ref="4ring">ring</a>-&gt;<a class="ref field" href="#ixgbe_ring::next_to_clean" title='ixgbe_ring::next_to_clean' data-ref="ixgbe_ring::next_to_clean">next_to_clean</a>;</td></tr>
+<tr><th id="478">478</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="local col6 decl" id="6ntu" title='ntu' data-type='u16' data-ref="6ntu">ntu</dfn> = <a class="local col4 ref" href="#4ring" title='ring' data-ref="4ring">ring</a>-&gt;<a class="ref field" href="#ixgbe_ring::next_to_use" title='ixgbe_ring::next_to_use' data-ref="ixgbe_ring::next_to_use">next_to_use</a>;</td></tr>
+<tr><th id="479">479</th><td></td></tr>
+<tr><th id="480">480</th><td>	<b>return</b> ((<a class="local col5 ref" href="#5ntc" title='ntc' data-ref="5ntc">ntc</a> &gt; <a class="local col6 ref" href="#6ntu" title='ntu' data-ref="6ntu">ntu</a>) ? <var>0</var> : <a class="local col4 ref" href="#4ring" title='ring' data-ref="4ring">ring</a>-&gt;<a class="ref field" href="#ixgbe_ring::count" title='ixgbe_ring::count' data-ref="ixgbe_ring::count">count</a>) + <a class="local col5 ref" href="#5ntc" title='ntc' data-ref="5ntc">ntc</a> - <a class="local col6 ref" href="#6ntu" title='ntu' data-ref="6ntu">ntu</a> - <var>1</var>;</td></tr>
+<tr><th id="481">481</th><td>}</td></tr>
+<tr><th id="482">482</th><td></td></tr>
+<tr><th id="483">483</th><td><u>#define <dfn class="macro" id="_M/IXGBE_RX_DESC" data-ref="_M/IXGBE_RX_DESC">IXGBE_RX_DESC</dfn>(R, i)	\</u></td></tr>
+<tr><th id="484">484</th><td><u>	(&amp;(((union ixgbe_adv_rx_desc *)((R)-&gt;desc))[i]))</u></td></tr>
+<tr><th id="485">485</th><td><u>#define <dfn class="macro" id="_M/IXGBE_TX_DESC" data-ref="_M/IXGBE_TX_DESC">IXGBE_TX_DESC</dfn>(R, i)	\</u></td></tr>
+<tr><th id="486">486</th><td><u>	(&amp;(((union ixgbe_adv_tx_desc *)((R)-&gt;desc))[i]))</u></td></tr>
+<tr><th id="487">487</th><td><u>#define <dfn class="macro" id="_M/IXGBE_TX_CTXTDESC" data-ref="_M/IXGBE_TX_CTXTDESC">IXGBE_TX_CTXTDESC</dfn>(R, i)	\</u></td></tr>
+<tr><th id="488">488</th><td><u>	(&amp;(((struct ixgbe_adv_tx_context_desc *)((R)-&gt;desc))[i]))</u></td></tr>
+<tr><th id="489">489</th><td></td></tr>
+<tr><th id="490">490</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_JUMBO_FRAME_SIZE" data-ref="_M/IXGBE_MAX_JUMBO_FRAME_SIZE">IXGBE_MAX_JUMBO_FRAME_SIZE</dfn>	16128</u></td></tr>
+<tr><th id="491">491</th><td><u>#<span data-ppcond="491">ifdef</span> <a class="macro" href="#46" data-ref="_M/IXGBE_FCOE">IXGBE_FCOE</a></u></td></tr>
+<tr><th id="492">492</th><td><i>/* use 3K as the baby jumbo frame size for FCoE */</i></td></tr>
+<tr><th id="493">493</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FCOE_JUMBO_FRAME_SIZE" data-ref="_M/IXGBE_FCOE_JUMBO_FRAME_SIZE">IXGBE_FCOE_JUMBO_FRAME_SIZE</dfn>	3072</u></td></tr>
+<tr><th id="494">494</th><td><u>#<span data-ppcond="491">endif</span> /* IXGBE_FCOE */</u></td></tr>
+<tr><th id="495">495</th><td></td></tr>
+<tr><th id="496">496</th><td><u>#define <dfn class="macro" id="_M/TCP_TIMER_VECTOR" data-ref="_M/TCP_TIMER_VECTOR">TCP_TIMER_VECTOR</dfn>	0</u></td></tr>
+<tr><th id="497">497</th><td><u>#define <dfn class="macro" id="_M/OTHER_VECTOR" data-ref="_M/OTHER_VECTOR">OTHER_VECTOR</dfn>	1</u></td></tr>
+<tr><th id="498">498</th><td><u>#define <dfn class="macro" id="_M/NON_Q_VECTORS" data-ref="_M/NON_Q_VECTORS">NON_Q_VECTORS</dfn>	(OTHER_VECTOR + TCP_TIMER_VECTOR)</u></td></tr>
+<tr><th id="499">499</th><td></td></tr>
+<tr><th id="500">500</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_MSIX_Q_VECTORS_82599" data-ref="_M/IXGBE_MAX_MSIX_Q_VECTORS_82599">IXGBE_MAX_MSIX_Q_VECTORS_82599</dfn>	64</u></td></tr>
+<tr><th id="501">501</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAX_MSIX_Q_VECTORS_82598" data-ref="_M/IXGBE_MAX_MSIX_Q_VECTORS_82598">IXGBE_MAX_MSIX_Q_VECTORS_82598</dfn>	16</u></td></tr>
+<tr><th id="502">502</th><td></td></tr>
+<tr><th id="503">503</th><td><b>struct</b> <dfn class="type def" id="ixgbe_mac_addr" title='ixgbe_mac_addr' data-ref="ixgbe_mac_addr">ixgbe_mac_addr</dfn> {</td></tr>
+<tr><th id="504">504</th><td>	<span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <dfn class="decl field" id="ixgbe_mac_addr::addr" title='ixgbe_mac_addr::addr' data-ref="ixgbe_mac_addr::addr">addr</dfn>[<span class="macro" title="6" data-ref="_M/ETH_ALEN">ETH_ALEN</span>];</td></tr>
+<tr><th id="505">505</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="ixgbe_mac_addr::queue" title='ixgbe_mac_addr::queue' data-ref="ixgbe_mac_addr::queue">queue</dfn>;</td></tr>
+<tr><th id="506">506</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="ixgbe_mac_addr::state" title='ixgbe_mac_addr::state' data-ref="ixgbe_mac_addr::state">state</dfn>; <i>/* bitmask */</i></td></tr>
+<tr><th id="507">507</th><td>};</td></tr>
+<tr><th id="508">508</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAC_STATE_DEFAULT" data-ref="_M/IXGBE_MAC_STATE_DEFAULT">IXGBE_MAC_STATE_DEFAULT</dfn>		0x1</u></td></tr>
+<tr><th id="509">509</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAC_STATE_MODIFIED" data-ref="_M/IXGBE_MAC_STATE_MODIFIED">IXGBE_MAC_STATE_MODIFIED</dfn>	0x2</u></td></tr>
+<tr><th id="510">510</th><td><u>#define <dfn class="macro" id="_M/IXGBE_MAC_STATE_IN_USE" data-ref="_M/IXGBE_MAC_STATE_IN_USE">IXGBE_MAC_STATE_IN_USE</dfn>		0x4</u></td></tr>
+<tr><th id="511">511</th><td></td></tr>
+<tr><th id="512">512</th><td><u>#<span data-ppcond="512">ifdef</span> <span class="macro" data-ref="_M/IXGBE_PROCFS">IXGBE_PROCFS</span></u></td></tr>
+<tr><th id="513">513</th><td><b>struct</b> ixgbe_therm_proc_data {</td></tr>
+<tr><th id="514">514</th><td>	<b>struct</b> ixgbe_hw *hw;</td></tr>
+<tr><th id="515">515</th><td>	<b>struct</b> ixgbe_thermal_diode_data *sensor_data;</td></tr>
+<tr><th id="516">516</th><td>};</td></tr>
+<tr><th id="517">517</th><td></td></tr>
+<tr><th id="518">518</th><td><u>#<span data-ppcond="512">endif</span> /* IXGBE_PROCFS */</u></td></tr>
+<tr><th id="519">519</th><td></td></tr>
+<tr><th id="520">520</th><td><i>/*</i></td></tr>
+<tr><th id="521">521</th><td><i> * Only for array allocations in our adapter struct.  On 82598, there will be</i></td></tr>
+<tr><th id="522">522</th><td><i> * unused entries in the array, but that's not a big deal.  Also, in 82599,</i></td></tr>
+<tr><th id="523">523</th><td><i> * we can actually assign 64 queue vectors based on our extended-extended</i></td></tr>
+<tr><th id="524">524</th><td><i> * interrupt registers.  This is different than 82598, which is limited to 16.</i></td></tr>
+<tr><th id="525">525</th><td><i> */</i></td></tr>
+<tr><th id="526">526</th><td><u>#define <dfn class="macro" id="_M/MAX_MSIX_Q_VECTORS" data-ref="_M/MAX_MSIX_Q_VECTORS">MAX_MSIX_Q_VECTORS</dfn>	IXGBE_MAX_MSIX_Q_VECTORS_82599</u></td></tr>
+<tr><th id="527">527</th><td><u>#define <dfn class="macro" id="_M/MAX_MSIX_COUNT" data-ref="_M/MAX_MSIX_COUNT">MAX_MSIX_COUNT</dfn>		IXGBE_MAX_MSIX_VECTORS_82599</u></td></tr>
+<tr><th id="528">528</th><td></td></tr>
+<tr><th id="529">529</th><td><u>#define <dfn class="macro" id="_M/MIN_MSIX_Q_VECTORS" data-ref="_M/MIN_MSIX_Q_VECTORS">MIN_MSIX_Q_VECTORS</dfn>	1</u></td></tr>
+<tr><th id="530">530</th><td><u>#define <dfn class="macro" id="_M/MIN_MSIX_COUNT" data-ref="_M/MIN_MSIX_COUNT">MIN_MSIX_COUNT</dfn>		(MIN_MSIX_Q_VECTORS + NON_Q_VECTORS)</u></td></tr>
+<tr><th id="531">531</th><td></td></tr>
+<tr><th id="532">532</th><td><i>/* default to trying for four seconds */</i></td></tr>
+<tr><th id="533">533</th><td><u>#define <dfn class="macro" id="_M/IXGBE_TRY_LINK_TIMEOUT" data-ref="_M/IXGBE_TRY_LINK_TIMEOUT">IXGBE_TRY_LINK_TIMEOUT</dfn>	(4 * HZ)</u></td></tr>
+<tr><th id="534">534</th><td></td></tr>
+<tr><th id="535">535</th><td><i>/* board specific private data structure */</i></td></tr>
+<tr><th id="536">536</th><td><b>struct</b> <dfn class="type def" id="ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</dfn> {</td></tr>
+<tr><th id="537">537</th><td><u>#<span data-ppcond="537">ifdef</span> <a class="macro" href="kcompat.h.html#3106" data-ref="_M/NETIF_F_HW_VLAN_TX">NETIF_F_HW_VLAN_TX</a></u></td></tr>
+<tr><th id="538">538</th><td><u>#<span data-ppcond="538">ifdef</span> <span class="macro" data-ref="_M/HAVE_VLAN_RX_REGISTER">HAVE_VLAN_RX_REGISTER</span></u></td></tr>
+<tr><th id="539">539</th><td>	<b>struct</b> vlan_group *vlgrp; <i>/* must be first, see ixgbe_receive_skb */</i></td></tr>
+<tr><th id="540">540</th><td><u>#<span data-ppcond="538">else</span></u></td></tr>
+<tr><th id="541">541</th><td>	<em>unsigned</em> <em>long</em> <dfn class="decl field" id="ixgbe_adapter::active_vlans" title='ixgbe_adapter::active_vlans' data-ref="ixgbe_adapter::active_vlans">active_vlans</dfn>[<span class="macro" title="(((4096) + (8 * sizeof(long)) - 1) / (8 * sizeof(long)))" data-ref="_M/BITS_TO_LONGS">BITS_TO_LONGS</span>(<span class="macro" title="4096" data-ref="_M/VLAN_N_VID">VLAN_N_VID</span>)];</td></tr>
+<tr><th id="542">542</th><td><u>#<span data-ppcond="538">endif</span></u></td></tr>
+<tr><th id="543">543</th><td><u>#<span data-ppcond="537">endif</span> /* NETIF_F_HW_VLAN_TX */</u></td></tr>
+<tr><th id="544">544</th><td>	<i>/* OS defined structs */</i></td></tr>
+<tr><th id="545">545</th><td>	<b>struct</b> <span class='type' title='net_device' data-ref="net_device">net_device</span> *<dfn class="decl field" id="ixgbe_adapter::netdev" title='ixgbe_adapter::netdev' data-ref="ixgbe_adapter::netdev">netdev</dfn>;</td></tr>
+<tr><th id="546">546</th><td>	<b>struct</b> <span class='type' title='pci_dev' data-ref="pci_dev">pci_dev</span> *<dfn class="decl field" id="ixgbe_adapter::pdev" title='ixgbe_adapter::pdev' data-ref="ixgbe_adapter::pdev">pdev</dfn>;</td></tr>
+<tr><th id="547">547</th><td></td></tr>
+<tr><th id="548">548</th><td>	<em>unsigned</em> <em>long</em> <dfn class="decl field" id="ixgbe_adapter::state" title='ixgbe_adapter::state' data-ref="ixgbe_adapter::state">state</dfn>;</td></tr>
+<tr><th id="549">549</th><td></td></tr>
+<tr><th id="550">550</th><td>	<i>/* Some features need tri-state capability,</i></td></tr>
+<tr><th id="551">551</th><td><i>	 * thus the additional *_CAPABLE flags.</i></td></tr>
+<tr><th id="552">552</th><td><i>	 */</i></td></tr>
+<tr><th id="553">553</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_adapter::flags" title='ixgbe_adapter::flags' data-ref="ixgbe_adapter::flags">flags</dfn>;</td></tr>
+<tr><th id="554">554</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_MSI_CAPABLE" data-ref="_M/IXGBE_FLAG_MSI_CAPABLE">IXGBE_FLAG_MSI_CAPABLE</dfn>			(u32)(1 &lt;&lt; 0)</u></td></tr>
+<tr><th id="555">555</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_MSI_ENABLED" data-ref="_M/IXGBE_FLAG_MSI_ENABLED">IXGBE_FLAG_MSI_ENABLED</dfn>			(u32)(1 &lt;&lt; 1)</u></td></tr>
+<tr><th id="556">556</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_MSIX_CAPABLE" data-ref="_M/IXGBE_FLAG_MSIX_CAPABLE">IXGBE_FLAG_MSIX_CAPABLE</dfn>			(u32)(1 &lt;&lt; 2)</u></td></tr>
+<tr><th id="557">557</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_MSIX_ENABLED" data-ref="_M/IXGBE_FLAG_MSIX_ENABLED">IXGBE_FLAG_MSIX_ENABLED</dfn>			(u32)(1 &lt;&lt; 3)</u></td></tr>
+<tr><th id="558">558</th><td><u>#<span data-ppcond="558">ifndef</span> <span class="macro" data-ref="_M/IXGBE_NO_LLI">IXGBE_NO_LLI</span></u></td></tr>
+<tr><th id="559">559</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_LLI_PUSH" data-ref="_M/IXGBE_FLAG_LLI_PUSH">IXGBE_FLAG_LLI_PUSH</dfn>			(u32)(1 &lt;&lt; 4)</u></td></tr>
+<tr><th id="560">560</th><td><u>#<span data-ppcond="558">endif</span></u></td></tr>
+<tr><th id="561">561</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_IN_NETPOLL" data-ref="_M/IXGBE_FLAG_IN_NETPOLL">IXGBE_FLAG_IN_NETPOLL</dfn>                   (u32)(1 &lt;&lt; 8)</u></td></tr>
+<tr><th id="562">562</th><td><u>#<span data-ppcond="562">if</span> defined(<span class="macro" data-ref="_M/CONFIG_DCA">CONFIG_DCA</span>) || defined(<span class="macro" data-ref="_M/CONFIG_DCA_MODULE">CONFIG_DCA_MODULE</span>)</u></td></tr>
+<tr><th id="563">563</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_DCA_ENABLED" data-ref="_M/IXGBE_FLAG_DCA_ENABLED">IXGBE_FLAG_DCA_ENABLED</dfn>			(u32)(1 &lt;&lt; 9)</u></td></tr>
+<tr><th id="564">564</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_DCA_CAPABLE" data-ref="_M/IXGBE_FLAG_DCA_CAPABLE">IXGBE_FLAG_DCA_CAPABLE</dfn>			(u32)(1 &lt;&lt; 10)</u></td></tr>
+<tr><th id="565">565</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_DCA_ENABLED_DATA" data-ref="_M/IXGBE_FLAG_DCA_ENABLED_DATA">IXGBE_FLAG_DCA_ENABLED_DATA</dfn>		(u32)(1 &lt;&lt; 11)</u></td></tr>
+<tr><th id="566">566</th><td><u>#<span data-ppcond="562">else</span></u></td></tr>
+<tr><th id="567">567</th><td><u>#define IXGBE_FLAG_DCA_ENABLED			(u32)0</u></td></tr>
+<tr><th id="568">568</th><td><u>#define IXGBE_FLAG_DCA_CAPABLE			(u32)0</u></td></tr>
+<tr><th id="569">569</th><td><u>#define IXGBE_FLAG_DCA_ENABLED_DATA             (u32)0</u></td></tr>
+<tr><th id="570">570</th><td><u>#<span data-ppcond="562">endif</span></u></td></tr>
+<tr><th id="571">571</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_MQ_CAPABLE" data-ref="_M/IXGBE_FLAG_MQ_CAPABLE">IXGBE_FLAG_MQ_CAPABLE</dfn>			(u32)(1 &lt;&lt; 12)</u></td></tr>
+<tr><th id="572">572</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_DCB_ENABLED" data-ref="_M/IXGBE_FLAG_DCB_ENABLED">IXGBE_FLAG_DCB_ENABLED</dfn>			(u32)(1 &lt;&lt; 13)</u></td></tr>
+<tr><th id="573">573</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_DCB_CAPABLE" data-ref="_M/IXGBE_FLAG_DCB_CAPABLE">IXGBE_FLAG_DCB_CAPABLE</dfn>			(u32)(1 &lt;&lt; 14)</u></td></tr>
+<tr><th id="574">574</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_RSS_ENABLED" data-ref="_M/IXGBE_FLAG_RSS_ENABLED">IXGBE_FLAG_RSS_ENABLED</dfn>			(u32)(1 &lt;&lt; 15)</u></td></tr>
+<tr><th id="575">575</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_RSS_CAPABLE" data-ref="_M/IXGBE_FLAG_RSS_CAPABLE">IXGBE_FLAG_RSS_CAPABLE</dfn>			(u32)(1 &lt;&lt; 16)</u></td></tr>
+<tr><th id="576">576</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_VMDQ_ENABLED" data-ref="_M/IXGBE_FLAG_VMDQ_ENABLED">IXGBE_FLAG_VMDQ_ENABLED</dfn>			(u32)(1 &lt;&lt; 18)</u></td></tr>
+<tr><th id="577">577</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_FAN_FAIL_CAPABLE" data-ref="_M/IXGBE_FLAG_FAN_FAIL_CAPABLE">IXGBE_FLAG_FAN_FAIL_CAPABLE</dfn>		(u32)(1 &lt;&lt; 19)</u></td></tr>
+<tr><th id="578">578</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_NEED_LINK_UPDATE" data-ref="_M/IXGBE_FLAG_NEED_LINK_UPDATE">IXGBE_FLAG_NEED_LINK_UPDATE</dfn>		(u32)(1 &lt;&lt; 20)</u></td></tr>
+<tr><th id="579">579</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_NEED_LINK_CONFIG" data-ref="_M/IXGBE_FLAG_NEED_LINK_CONFIG">IXGBE_FLAG_NEED_LINK_CONFIG</dfn>		(u32)(1 &lt;&lt; 21)</u></td></tr>
+<tr><th id="580">580</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_FDIR_HASH_CAPABLE" data-ref="_M/IXGBE_FLAG_FDIR_HASH_CAPABLE">IXGBE_FLAG_FDIR_HASH_CAPABLE</dfn>		(u32)(1 &lt;&lt; 22)</u></td></tr>
+<tr><th id="581">581</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_FDIR_PERFECT_CAPABLE" data-ref="_M/IXGBE_FLAG_FDIR_PERFECT_CAPABLE">IXGBE_FLAG_FDIR_PERFECT_CAPABLE</dfn>		(u32)(1 &lt;&lt; 23)</u></td></tr>
+<tr><th id="582">582</th><td><u>#<span data-ppcond="582">ifdef</span> <a class="macro" href="#46" data-ref="_M/IXGBE_FCOE">IXGBE_FCOE</a></u></td></tr>
+<tr><th id="583">583</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_FCOE_CAPABLE" data-ref="_M/IXGBE_FLAG_FCOE_CAPABLE">IXGBE_FLAG_FCOE_CAPABLE</dfn>			(u32)(1 &lt;&lt; 24)</u></td></tr>
+<tr><th id="584">584</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_FCOE_ENABLED" data-ref="_M/IXGBE_FLAG_FCOE_ENABLED">IXGBE_FLAG_FCOE_ENABLED</dfn>			(u32)(1 &lt;&lt; 25)</u></td></tr>
+<tr><th id="585">585</th><td><u>#<span data-ppcond="582">endif</span> /* IXGBE_FCOE */</u></td></tr>
+<tr><th id="586">586</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_SRIOV_CAPABLE" data-ref="_M/IXGBE_FLAG_SRIOV_CAPABLE">IXGBE_FLAG_SRIOV_CAPABLE</dfn>		(u32)(1 &lt;&lt; 26)</u></td></tr>
+<tr><th id="587">587</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_SRIOV_ENABLED" data-ref="_M/IXGBE_FLAG_SRIOV_ENABLED">IXGBE_FLAG_SRIOV_ENABLED</dfn>		(u32)(1 &lt;&lt; 27)</u></td></tr>
+<tr><th id="588">588</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_SRIOV_REPLICATION_ENABLE" data-ref="_M/IXGBE_FLAG_SRIOV_REPLICATION_ENABLE">IXGBE_FLAG_SRIOV_REPLICATION_ENABLE</dfn>	(u32)(1 &lt;&lt; 28)</u></td></tr>
+<tr><th id="589">589</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_SRIOV_L2SWITCH_ENABLE" data-ref="_M/IXGBE_FLAG_SRIOV_L2SWITCH_ENABLE">IXGBE_FLAG_SRIOV_L2SWITCH_ENABLE</dfn>	(u32)(1 &lt;&lt; 29)</u></td></tr>
+<tr><th id="590">590</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_SRIOV_L2LOOPBACK_ENABLE" data-ref="_M/IXGBE_FLAG_SRIOV_L2LOOPBACK_ENABLE">IXGBE_FLAG_SRIOV_L2LOOPBACK_ENABLE</dfn>	(u32)(1 &lt;&lt; 30)</u></td></tr>
+<tr><th id="591">591</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG_RX_BB_CAPABLE" data-ref="_M/IXGBE_FLAG_RX_BB_CAPABLE">IXGBE_FLAG_RX_BB_CAPABLE</dfn>		(u32)(1 &lt;&lt; 31)</u></td></tr>
+<tr><th id="592">592</th><td></td></tr>
+<tr><th id="593">593</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_adapter::flags2" title='ixgbe_adapter::flags2' data-ref="ixgbe_adapter::flags2">flags2</dfn>;</td></tr>
+<tr><th id="594">594</th><td><u>#<span data-ppcond="594">ifndef</span> <span class="macro" data-ref="_M/IXGBE_NO_HW_RSC">IXGBE_NO_HW_RSC</span></u></td></tr>
+<tr><th id="595">595</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG2_RSC_CAPABLE" data-ref="_M/IXGBE_FLAG2_RSC_CAPABLE">IXGBE_FLAG2_RSC_CAPABLE</dfn>			(u32)(1)</u></td></tr>
+<tr><th id="596">596</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG2_RSC_ENABLED" data-ref="_M/IXGBE_FLAG2_RSC_ENABLED">IXGBE_FLAG2_RSC_ENABLED</dfn>			(u32)(1 &lt;&lt; 1)</u></td></tr>
+<tr><th id="597">597</th><td><u>#<span data-ppcond="594">else</span></u></td></tr>
+<tr><th id="598">598</th><td><u>#define IXGBE_FLAG2_RSC_CAPABLE			0</u></td></tr>
+<tr><th id="599">599</th><td><u>#define IXGBE_FLAG2_RSC_ENABLED			0</u></td></tr>
+<tr><th id="600">600</th><td><u>#<span data-ppcond="594">endif</span></u></td></tr>
+<tr><th id="601">601</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG2_VMDQ_DEFAULT_OVERRIDE" data-ref="_M/IXGBE_FLAG2_VMDQ_DEFAULT_OVERRIDE">IXGBE_FLAG2_VMDQ_DEFAULT_OVERRIDE</dfn>	(u32)(1 &lt;&lt; 2)</u></td></tr>
+<tr><th id="602">602</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG2_TEMP_SENSOR_CAPABLE" data-ref="_M/IXGBE_FLAG2_TEMP_SENSOR_CAPABLE">IXGBE_FLAG2_TEMP_SENSOR_CAPABLE</dfn>		(u32)(1 &lt;&lt; 4)</u></td></tr>
+<tr><th id="603">603</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG2_TEMP_SENSOR_EVENT" data-ref="_M/IXGBE_FLAG2_TEMP_SENSOR_EVENT">IXGBE_FLAG2_TEMP_SENSOR_EVENT</dfn>		(u32)(1 &lt;&lt; 5)</u></td></tr>
+<tr><th id="604">604</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG2_SEARCH_FOR_SFP" data-ref="_M/IXGBE_FLAG2_SEARCH_FOR_SFP">IXGBE_FLAG2_SEARCH_FOR_SFP</dfn>		(u32)(1 &lt;&lt; 6)</u></td></tr>
+<tr><th id="605">605</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG2_SFP_NEEDS_RESET" data-ref="_M/IXGBE_FLAG2_SFP_NEEDS_RESET">IXGBE_FLAG2_SFP_NEEDS_RESET</dfn>		(u32)(1 &lt;&lt; 7)</u></td></tr>
+<tr><th id="606">606</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG2_RESET_REQUESTED" data-ref="_M/IXGBE_FLAG2_RESET_REQUESTED">IXGBE_FLAG2_RESET_REQUESTED</dfn>		(u32)(1 &lt;&lt; 8)</u></td></tr>
+<tr><th id="607">607</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG2_FDIR_REQUIRES_REINIT" data-ref="_M/IXGBE_FLAG2_FDIR_REQUIRES_REINIT">IXGBE_FLAG2_FDIR_REQUIRES_REINIT</dfn>	(u32)(1 &lt;&lt; 9)</u></td></tr>
+<tr><th id="608">608</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG2_RSS_FIELD_IPV4_UDP" data-ref="_M/IXGBE_FLAG2_RSS_FIELD_IPV4_UDP">IXGBE_FLAG2_RSS_FIELD_IPV4_UDP</dfn>		(u32)(1 &lt;&lt; 10)</u></td></tr>
+<tr><th id="609">609</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG2_RSS_FIELD_IPV6_UDP" data-ref="_M/IXGBE_FLAG2_RSS_FIELD_IPV6_UDP">IXGBE_FLAG2_RSS_FIELD_IPV6_UDP</dfn>		(u32)(1 &lt;&lt; 11)</u></td></tr>
+<tr><th id="610">610</th><td><u>#define <dfn class="macro" id="_M/IXGBE_FLAG2_OVERFLOW_CHECK_ENABLED" data-ref="_M/IXGBE_FLAG2_OVERFLOW_CHECK_ENABLED">IXGBE_FLAG2_OVERFLOW_CHECK_ENABLED</dfn>      (u32)(1 &lt;&lt; 12)</u></td></tr>
+<tr><th id="611">611</th><td></td></tr>
+<tr><th id="612">612</th><td>	<i>/* Tx fast path data */</i></td></tr>
+<tr><th id="613">613</th><td>	<em>int</em> <dfn class="decl field" id="ixgbe_adapter::num_tx_queues" title='ixgbe_adapter::num_tx_queues' data-ref="ixgbe_adapter::num_tx_queues">num_tx_queues</dfn>;</td></tr>
+<tr><th id="614">614</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="ixgbe_adapter::tx_itr_setting" title='ixgbe_adapter::tx_itr_setting' data-ref="ixgbe_adapter::tx_itr_setting">tx_itr_setting</dfn>;</td></tr>
+<tr><th id="615">615</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="ixgbe_adapter::tx_work_limit" title='ixgbe_adapter::tx_work_limit' data-ref="ixgbe_adapter::tx_work_limit">tx_work_limit</dfn>;</td></tr>
+<tr><th id="616">616</th><td></td></tr>
+<tr><th id="617">617</th><td>	<i>/* Rx fast path data */</i></td></tr>
+<tr><th id="618">618</th><td>	<em>int</em> <dfn class="decl field" id="ixgbe_adapter::num_rx_queues" title='ixgbe_adapter::num_rx_queues' data-ref="ixgbe_adapter::num_rx_queues">num_rx_queues</dfn>;</td></tr>
+<tr><th id="619">619</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="ixgbe_adapter::rx_itr_setting" title='ixgbe_adapter::rx_itr_setting' data-ref="ixgbe_adapter::rx_itr_setting">rx_itr_setting</dfn>;</td></tr>
+<tr><th id="620">620</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="ixgbe_adapter::rx_work_limit" title='ixgbe_adapter::rx_work_limit' data-ref="ixgbe_adapter::rx_work_limit">rx_work_limit</dfn>;</td></tr>
+<tr><th id="621">621</th><td></td></tr>
+<tr><th id="622">622</th><td>	<i>/* TX */</i></td></tr>
+<tr><th id="623">623</th><td>	<b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *<dfn class="decl field" id="ixgbe_adapter::tx_ring" title='ixgbe_adapter::tx_ring' data-ref="ixgbe_adapter::tx_ring">tx_ring</dfn>[<a class="macro" href="#380" title="(64 + 8)" data-ref="_M/MAX_TX_QUEUES">MAX_TX_QUEUES</a>] <span class="macro" title="__attribute__((__aligned__((1 &lt;&lt; (6)))))" data-ref="_M/____cacheline_aligned_in_smp">____cacheline_aligned_in_smp</span>;</td></tr>
+<tr><th id="624">624</th><td></td></tr>
+<tr><th id="625">625</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_adapter::restart_queue" title='ixgbe_adapter::restart_queue' data-ref="ixgbe_adapter::restart_queue">restart_queue</dfn>;</td></tr>
+<tr><th id="626">626</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_adapter::lsc_int" title='ixgbe_adapter::lsc_int' data-ref="ixgbe_adapter::lsc_int">lsc_int</dfn>;</td></tr>
+<tr><th id="627">627</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_adapter::tx_timeout_count" title='ixgbe_adapter::tx_timeout_count' data-ref="ixgbe_adapter::tx_timeout_count">tx_timeout_count</dfn>;</td></tr>
+<tr><th id="628">628</th><td></td></tr>
+<tr><th id="629">629</th><td>	<i>/* RX */</i></td></tr>
+<tr><th id="630">630</th><td>	<b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *<dfn class="decl field" id="ixgbe_adapter::rx_ring" title='ixgbe_adapter::rx_ring' data-ref="ixgbe_adapter::rx_ring">rx_ring</dfn>[<a class="macro" href="#379" title="(64 + 8)" data-ref="_M/MAX_RX_QUEUES">MAX_RX_QUEUES</a>];</td></tr>
+<tr><th id="631">631</th><td>	<em>int</em> <dfn class="decl field" id="ixgbe_adapter::num_rx_pools" title='ixgbe_adapter::num_rx_pools' data-ref="ixgbe_adapter::num_rx_pools">num_rx_pools</dfn>;		<i>/* == num_rx_queues in 82598 */</i></td></tr>
+<tr><th id="632">632</th><td>	<em>int</em> <dfn class="decl field" id="ixgbe_adapter::num_rx_queues_per_pool" title='ixgbe_adapter::num_rx_queues_per_pool' data-ref="ixgbe_adapter::num_rx_queues_per_pool">num_rx_queues_per_pool</dfn>;	<i>/* 1 if 82598, can be many if 82599 */</i></td></tr>
+<tr><th id="633">633</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_adapter::hw_csum_rx_error" title='ixgbe_adapter::hw_csum_rx_error' data-ref="ixgbe_adapter::hw_csum_rx_error">hw_csum_rx_error</dfn>;</td></tr>
+<tr><th id="634">634</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_adapter::hw_rx_no_dma_resources" title='ixgbe_adapter::hw_rx_no_dma_resources' data-ref="ixgbe_adapter::hw_rx_no_dma_resources">hw_rx_no_dma_resources</dfn>;</td></tr>
+<tr><th id="635">635</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_adapter::rsc_total_count" title='ixgbe_adapter::rsc_total_count' data-ref="ixgbe_adapter::rsc_total_count">rsc_total_count</dfn>;</td></tr>
+<tr><th id="636">636</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_adapter::rsc_total_flush" title='ixgbe_adapter::rsc_total_flush' data-ref="ixgbe_adapter::rsc_total_flush">rsc_total_flush</dfn>;</td></tr>
+<tr><th id="637">637</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_adapter::non_eop_descs" title='ixgbe_adapter::non_eop_descs' data-ref="ixgbe_adapter::non_eop_descs">non_eop_descs</dfn>;</td></tr>
+<tr><th id="638">638</th><td><u>#<span data-ppcond="638">ifndef</span> <a class="macro" href="kcompat.h.html#46" data-ref="_M/CONFIG_IXGBE_NAPI">CONFIG_IXGBE_NAPI</a></u></td></tr>
+<tr><th id="639">639</th><td>	u64 rx_dropped_backlog;		<i>/* count drops from rx intr handler */</i></td></tr>
+<tr><th id="640">640</th><td><u>#<span data-ppcond="638">endif</span></u></td></tr>
+<tr><th id="641">641</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_adapter::alloc_rx_page_failed" title='ixgbe_adapter::alloc_rx_page_failed' data-ref="ixgbe_adapter::alloc_rx_page_failed">alloc_rx_page_failed</dfn>;</td></tr>
+<tr><th id="642">642</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_adapter::alloc_rx_buff_failed" title='ixgbe_adapter::alloc_rx_buff_failed' data-ref="ixgbe_adapter::alloc_rx_buff_failed">alloc_rx_buff_failed</dfn>;</td></tr>
+<tr><th id="643">643</th><td></td></tr>
+<tr><th id="644">644</th><td>	<b>struct</b> <a class="type" href="#ixgbe_q_vector" title='ixgbe_q_vector' data-ref="ixgbe_q_vector">ixgbe_q_vector</a> *<dfn class="decl field" id="ixgbe_adapter::q_vector" title='ixgbe_adapter::q_vector' data-ref="ixgbe_adapter::q_vector">q_vector</dfn>[<a class="macro" href="#526" title="64" data-ref="_M/MAX_MSIX_Q_VECTORS">MAX_MSIX_Q_VECTORS</a>];</td></tr>
+<tr><th id="645">645</th><td></td></tr>
+<tr><th id="646">646</th><td><u>#<span data-ppcond="646">ifdef</span> <a class="macro" href="kcompat.h.html#2925" data-ref="_M/HAVE_DCBNL_IEEE">HAVE_DCBNL_IEEE</a></u></td></tr>
+<tr><th id="647">647</th><td>	<b>struct</b> <span class='type' title='ieee_pfc' data-ref="ieee_pfc">ieee_pfc</span> *<dfn class="decl field" id="ixgbe_adapter::ixgbe_ieee_pfc" title='ixgbe_adapter::ixgbe_ieee_pfc' data-ref="ixgbe_adapter::ixgbe_ieee_pfc">ixgbe_ieee_pfc</dfn>;</td></tr>
+<tr><th id="648">648</th><td>	<b>struct</b> <span class='type' title='ieee_ets' data-ref="ieee_ets">ieee_ets</span> *<dfn class="decl field" id="ixgbe_adapter::ixgbe_ieee_ets" title='ixgbe_adapter::ixgbe_ieee_ets' data-ref="ixgbe_adapter::ixgbe_ieee_ets">ixgbe_ieee_ets</dfn>;</td></tr>
+<tr><th id="649">649</th><td><u>#<span data-ppcond="646">endif</span></u></td></tr>
+<tr><th id="650">650</th><td>	<b>struct</b> <a class="type" href="ixgbe_dcb.h.html#ixgbe_dcb_config" title='ixgbe_dcb_config' data-ref="ixgbe_dcb_config">ixgbe_dcb_config</a> <dfn class="decl field" id="ixgbe_adapter::dcb_cfg" title='ixgbe_adapter::dcb_cfg' data-ref="ixgbe_adapter::dcb_cfg">dcb_cfg</dfn>;</td></tr>
+<tr><th id="651">651</th><td>	<b>struct</b> <a class="type" href="ixgbe_dcb.h.html#ixgbe_dcb_config" title='ixgbe_dcb_config' data-ref="ixgbe_dcb_config">ixgbe_dcb_config</a> <dfn class="decl field" id="ixgbe_adapter::temp_dcb_cfg" title='ixgbe_adapter::temp_dcb_cfg' data-ref="ixgbe_adapter::temp_dcb_cfg">temp_dcb_cfg</dfn>;</td></tr>
+<tr><th id="652">652</th><td>	<span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <dfn class="decl field" id="ixgbe_adapter::dcb_set_bitmap" title='ixgbe_adapter::dcb_set_bitmap' data-ref="ixgbe_adapter::dcb_set_bitmap">dcb_set_bitmap</dfn>;</td></tr>
+<tr><th id="653">653</th><td>	<span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <dfn class="decl field" id="ixgbe_adapter::dcbx_cap" title='ixgbe_adapter::dcbx_cap' data-ref="ixgbe_adapter::dcbx_cap">dcbx_cap</dfn>;</td></tr>
+<tr><th id="654">654</th><td><u>#<span data-ppcond="654">ifndef</span> <a class="macro" href="kcompat.h.html#2918" data-ref="_M/HAVE_MQPRIO">HAVE_MQPRIO</a></u></td></tr>
+<tr><th id="655">655</th><td>	u8 tc;</td></tr>
+<tr><th id="656">656</th><td><u>#<span data-ppcond="654">endif</span></u></td></tr>
+<tr><th id="657">657</th><td>	<b>enum</b> <a class="type" href="ixgbe_type.h.html#ixgbe_fc_mode" title='ixgbe_fc_mode' data-ref="ixgbe_fc_mode">ixgbe_fc_mode</a> <dfn class="decl field" id="ixgbe_adapter::last_lfc_mode" title='ixgbe_adapter::last_lfc_mode' data-ref="ixgbe_adapter::last_lfc_mode">last_lfc_mode</dfn>;</td></tr>
+<tr><th id="658">658</th><td></td></tr>
+<tr><th id="659">659</th><td>	<em>int</em> <dfn class="decl field" id="ixgbe_adapter::num_msix_vectors" title='ixgbe_adapter::num_msix_vectors' data-ref="ixgbe_adapter::num_msix_vectors">num_msix_vectors</dfn>;</td></tr>
+<tr><th id="660">660</th><td>	<em>int</em> <dfn class="decl field" id="ixgbe_adapter::max_msix_q_vectors" title='ixgbe_adapter::max_msix_q_vectors' data-ref="ixgbe_adapter::max_msix_q_vectors">max_msix_q_vectors</dfn>;         <i>/* true count of q_vectors for device */</i></td></tr>
+<tr><th id="661">661</th><td>	<b>struct</b> <a class="type" href="#ixgbe_ring_feature" title='ixgbe_ring_feature' data-ref="ixgbe_ring_feature">ixgbe_ring_feature</a> <dfn class="decl field" id="ixgbe_adapter::ring_feature" title='ixgbe_adapter::ring_feature' data-ref="ixgbe_adapter::ring_feature">ring_feature</dfn>[<a class="enum" href="#RING_F_ARRAY_SIZE" title='RING_F_ARRAY_SIZE' data-ref="RING_F_ARRAY_SIZE">RING_F_ARRAY_SIZE</a>];</td></tr>
+<tr><th id="662">662</th><td>	<b>struct</b> <span class='type' title='msix_entry' data-ref="msix_entry">msix_entry</span> *<dfn class="decl field" id="ixgbe_adapter::msix_entries" title='ixgbe_adapter::msix_entries' data-ref="ixgbe_adapter::msix_entries">msix_entries</dfn>;</td></tr>
+<tr><th id="663">663</th><td></td></tr>
+<tr><th id="664">664</th><td><u>#<span data-ppcond="664">ifndef</span> <a class="macro" href="kcompat.h.html#2009" data-ref="_M/HAVE_NETDEV_STATS_IN_NETDEV">HAVE_NETDEV_STATS_IN_NETDEV</a></u></td></tr>
+<tr><th id="665">665</th><td>	<b>struct</b> net_device_stats net_stats;</td></tr>
+<tr><th id="666">666</th><td><u>#<span data-ppcond="664">endif</span></u></td></tr>
+<tr><th id="667">667</th><td><u>#<span data-ppcond="667">ifndef</span> <span class="macro" data-ref="_M/IXGBE_NO_LRO">IXGBE_NO_LRO</span></u></td></tr>
+<tr><th id="668">668</th><td>	<b>struct</b> <a class="type" href="#ixgbe_lro_stats" title='ixgbe_lro_stats' data-ref="ixgbe_lro_stats">ixgbe_lro_stats</a> <dfn class="decl field" id="ixgbe_adapter::lro_stats" title='ixgbe_adapter::lro_stats' data-ref="ixgbe_adapter::lro_stats">lro_stats</dfn>;</td></tr>
+<tr><th id="669">669</th><td><u>#<span data-ppcond="667">endif</span></u></td></tr>
+<tr><th id="670">670</th><td></td></tr>
+<tr><th id="671">671</th><td><u>#<span data-ppcond="671">ifdef</span> <span class="macro" data-ref="_M/ETHTOOL_TEST">ETHTOOL_TEST</span></u></td></tr>
+<tr><th id="672">672</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_adapter::test_icr" title='ixgbe_adapter::test_icr' data-ref="ixgbe_adapter::test_icr">test_icr</dfn>;</td></tr>
+<tr><th id="673">673</th><td>	<b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> <dfn class="decl field" id="ixgbe_adapter::test_tx_ring" title='ixgbe_adapter::test_tx_ring' data-ref="ixgbe_adapter::test_tx_ring">test_tx_ring</dfn>;</td></tr>
+<tr><th id="674">674</th><td>	<b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> <dfn class="decl field" id="ixgbe_adapter::test_rx_ring" title='ixgbe_adapter::test_rx_ring' data-ref="ixgbe_adapter::test_rx_ring">test_rx_ring</dfn>;</td></tr>
+<tr><th id="675">675</th><td><u>#<span data-ppcond="671">endif</span></u></td></tr>
+<tr><th id="676">676</th><td></td></tr>
+<tr><th id="677">677</th><td>	<i>/* structs defined in ixgbe_hw.h */</i></td></tr>
+<tr><th id="678">678</th><td>	<b>struct</b> <a class="type" href="ixgbe_type.h.html#ixgbe_hw" title='ixgbe_hw' data-ref="ixgbe_hw">ixgbe_hw</a> <dfn class="decl field" id="ixgbe_adapter::hw" title='ixgbe_adapter::hw' data-ref="ixgbe_adapter::hw">hw</dfn>;</td></tr>
+<tr><th id="679">679</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="ixgbe_adapter::msg_enable" title='ixgbe_adapter::msg_enable' data-ref="ixgbe_adapter::msg_enable">msg_enable</dfn>;</td></tr>
+<tr><th id="680">680</th><td>	<b>struct</b> <a class="type" href="ixgbe_type.h.html#ixgbe_hw_stats" title='ixgbe_hw_stats' data-ref="ixgbe_hw_stats">ixgbe_hw_stats</a> <dfn class="decl field" id="ixgbe_adapter::stats" title='ixgbe_adapter::stats' data-ref="ixgbe_adapter::stats">stats</dfn>;</td></tr>
+<tr><th id="681">681</th><td><u>#<span data-ppcond="681">ifndef</span> <span class="macro" data-ref="_M/IXGBE_NO_LLI">IXGBE_NO_LLI</span></u></td></tr>
+<tr><th id="682">682</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_adapter::lli_port" title='ixgbe_adapter::lli_port' data-ref="ixgbe_adapter::lli_port">lli_port</dfn>;</td></tr>
+<tr><th id="683">683</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_adapter::lli_size" title='ixgbe_adapter::lli_size' data-ref="ixgbe_adapter::lli_size">lli_size</dfn>;</td></tr>
+<tr><th id="684">684</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_adapter::lli_etype" title='ixgbe_adapter::lli_etype' data-ref="ixgbe_adapter::lli_etype">lli_etype</dfn>;</td></tr>
+<tr><th id="685">685</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_adapter::lli_vlan_pri" title='ixgbe_adapter::lli_vlan_pri' data-ref="ixgbe_adapter::lli_vlan_pri">lli_vlan_pri</dfn>;</td></tr>
+<tr><th id="686">686</th><td><u>#<span data-ppcond="681">endif</span> /* IXGBE_NO_LLI */</u></td></tr>
+<tr><th id="687">687</th><td></td></tr>
+<tr><th id="688">688</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> *<dfn class="decl field" id="ixgbe_adapter::config_space" title='ixgbe_adapter::config_space' data-ref="ixgbe_adapter::config_space">config_space</dfn>;</td></tr>
+<tr><th id="689">689</th><td>	<span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> <dfn class="decl field" id="ixgbe_adapter::tx_busy" title='ixgbe_adapter::tx_busy' data-ref="ixgbe_adapter::tx_busy">tx_busy</dfn>;</td></tr>
+<tr><th id="690">690</th><td>	<em>unsigned</em> <em>int</em> <dfn class="decl field" id="ixgbe_adapter::tx_ring_count" title='ixgbe_adapter::tx_ring_count' data-ref="ixgbe_adapter::tx_ring_count">tx_ring_count</dfn>;</td></tr>
+<tr><th id="691">691</th><td>	<em>unsigned</em> <em>int</em> <dfn class="decl field" id="ixgbe_adapter::rx_ring_count" title='ixgbe_adapter::rx_ring_count' data-ref="ixgbe_adapter::rx_ring_count">rx_ring_count</dfn>;</td></tr>
+<tr><th id="692">692</th><td></td></tr>
+<tr><th id="693">693</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_adapter::link_speed" title='ixgbe_adapter::link_speed' data-ref="ixgbe_adapter::link_speed">link_speed</dfn>;</td></tr>
+<tr><th id="694">694</th><td>	<span class='typedef' title='bool' data-type='_Bool' data-ref="bool">bool</span> <dfn class="decl field" id="ixgbe_adapter::link_up" title='ixgbe_adapter::link_up' data-ref="ixgbe_adapter::link_up">link_up</dfn>;</td></tr>
+<tr><th id="695">695</th><td>	<em>unsigned</em> <em>long</em> <dfn class="decl field" id="ixgbe_adapter::link_check_timeout" title='ixgbe_adapter::link_check_timeout' data-ref="ixgbe_adapter::link_check_timeout">link_check_timeout</dfn>;</td></tr>
+<tr><th id="696">696</th><td></td></tr>
+<tr><th id="697">697</th><td>	<b>struct</b> <span class='type' title='timer_list' data-ref="timer_list">timer_list</span> <dfn class="decl field" id="ixgbe_adapter::service_timer" title='ixgbe_adapter::service_timer' data-ref="ixgbe_adapter::service_timer">service_timer</dfn>;</td></tr>
+<tr><th id="698">698</th><td>	<b>struct</b> <span class='type' title='work_struct' data-ref="work_struct">work_struct</span> <dfn class="decl field" id="ixgbe_adapter::service_task" title='ixgbe_adapter::service_task' data-ref="ixgbe_adapter::service_task">service_task</dfn>;</td></tr>
+<tr><th id="699">699</th><td></td></tr>
+<tr><th id="700">700</th><td>	<b>struct</b> <span class='type' title='hlist_head' data-ref="hlist_head">hlist_head</span> <dfn class="decl field" id="ixgbe_adapter::fdir_filter_list" title='ixgbe_adapter::fdir_filter_list' data-ref="ixgbe_adapter::fdir_filter_list">fdir_filter_list</dfn>;</td></tr>
+<tr><th id="701">701</th><td>	<em>unsigned</em> <em>long</em> <dfn class="decl field" id="ixgbe_adapter::fdir_overflow" title='ixgbe_adapter::fdir_overflow' data-ref="ixgbe_adapter::fdir_overflow">fdir_overflow</dfn>; <i>/* number of times ATR was backed off */</i></td></tr>
+<tr><th id="702">702</th><td>	<b>union</b> <a class="type" href="ixgbe_type.h.html#ixgbe_atr_input" title='ixgbe_atr_input' data-ref="ixgbe_atr_input">ixgbe_atr_input</a> <dfn class="decl field" id="ixgbe_adapter::fdir_mask" title='ixgbe_adapter::fdir_mask' data-ref="ixgbe_adapter::fdir_mask">fdir_mask</dfn>;</td></tr>
+<tr><th id="703">703</th><td>	<em>int</em> <dfn class="decl field" id="ixgbe_adapter::fdir_filter_count" title='ixgbe_adapter::fdir_filter_count' data-ref="ixgbe_adapter::fdir_filter_count">fdir_filter_count</dfn>;</td></tr>
+<tr><th id="704">704</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_adapter::fdir_pballoc" title='ixgbe_adapter::fdir_pballoc' data-ref="ixgbe_adapter::fdir_pballoc">fdir_pballoc</dfn>;</td></tr>
+<tr><th id="705">705</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_adapter::atr_sample_rate" title='ixgbe_adapter::atr_sample_rate' data-ref="ixgbe_adapter::atr_sample_rate">atr_sample_rate</dfn>;</td></tr>
+<tr><th id="706">706</th><td>	<span class='typedef' title='spinlock_t' data-type='struct spinlock' data-ref="spinlock_t">spinlock_t</span> <dfn class="decl field" id="ixgbe_adapter::fdir_perfect_lock" title='ixgbe_adapter::fdir_perfect_lock' data-ref="ixgbe_adapter::fdir_perfect_lock">fdir_perfect_lock</dfn>;</td></tr>
+<tr><th id="707">707</th><td></td></tr>
+<tr><th id="708">708</th><td><u>#<span data-ppcond="708">ifdef</span> <a class="macro" href="#46" data-ref="_M/IXGBE_FCOE">IXGBE_FCOE</a></u></td></tr>
+<tr><th id="709">709</th><td>	<b>struct</b> <a class="type" href="ixgbe_fcoe.h.html#ixgbe_fcoe" title='ixgbe_fcoe' data-ref="ixgbe_fcoe">ixgbe_fcoe</a> <dfn class="decl field" id="ixgbe_adapter::fcoe" title='ixgbe_adapter::fcoe' data-ref="ixgbe_adapter::fcoe">fcoe</dfn>;</td></tr>
+<tr><th id="710">710</th><td><u>#<span data-ppcond="708">endif</span> /* IXGBE_FCOE */</u></td></tr>
+<tr><th id="711">711</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_adapter::wol" title='ixgbe_adapter::wol' data-ref="ixgbe_adapter::wol">wol</dfn>;</td></tr>
+<tr><th id="712">712</th><td></td></tr>
+<tr><th id="713">713</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="ixgbe_adapter::bd_number" title='ixgbe_adapter::bd_number' data-ref="ixgbe_adapter::bd_number">bd_number</dfn>;</td></tr>
+<tr><th id="714">714</th><td></td></tr>
+<tr><th id="715">715</th><td>	<em>char</em> <dfn class="decl field" id="ixgbe_adapter::eeprom_id" title='ixgbe_adapter::eeprom_id' data-ref="ixgbe_adapter::eeprom_id">eeprom_id</dfn>[<var>32</var>];</td></tr>
+<tr><th id="716">716</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="ixgbe_adapter::eeprom_cap" title='ixgbe_adapter::eeprom_cap' data-ref="ixgbe_adapter::eeprom_cap">eeprom_cap</dfn>;</td></tr>
+<tr><th id="717">717</th><td>	<span class='typedef' title='bool' data-type='_Bool' data-ref="bool">bool</span> <dfn class="decl field" id="ixgbe_adapter::netdev_registered" title='ixgbe_adapter::netdev_registered' data-ref="ixgbe_adapter::netdev_registered">netdev_registered</dfn>;</td></tr>
+<tr><th id="718">718</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_adapter::interrupt_event" title='ixgbe_adapter::interrupt_event' data-ref="ixgbe_adapter::interrupt_event">interrupt_event</dfn>;</td></tr>
+<tr><th id="719">719</th><td><u>#<span data-ppcond="719">ifdef</span> <a class="macro" href="kcompat.h.html#2979" data-ref="_M/HAVE_ETHTOOL_SET_PHYS_ID">HAVE_ETHTOOL_SET_PHYS_ID</a></u></td></tr>
+<tr><th id="720">720</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_adapter::led_reg" title='ixgbe_adapter::led_reg' data-ref="ixgbe_adapter::led_reg">led_reg</dfn>;</td></tr>
+<tr><th id="721">721</th><td><u>#<span data-ppcond="719">endif</span></u></td></tr>
+<tr><th id="722">722</th><td></td></tr>
+<tr><th id="723">723</th><td>	<span class="macro" title="unsigned long active_vfs[(((64) + (8 * sizeof(long)) - 1) / (8 * sizeof(long)))]" data-ref="_M/DECLARE_BITMAP">DECLARE_BITMAP</span>(<dfn class="decl field" id="ixgbe_adapter::active_vfs" title='ixgbe_adapter::active_vfs' data-ref="ixgbe_adapter::active_vfs">active_vfs</dfn>, <a class="macro" href="#127" title="64" data-ref="_M/IXGBE_MAX_VF_FUNCTIONS">IXGBE_MAX_VF_FUNCTIONS</a>);</td></tr>
+<tr><th id="724">724</th><td>	<em>unsigned</em> <em>int</em> <dfn class="decl field" id="ixgbe_adapter::num_vfs" title='ixgbe_adapter::num_vfs' data-ref="ixgbe_adapter::num_vfs">num_vfs</dfn>;</td></tr>
+<tr><th id="725">725</th><td>	<b>struct</b> <a class="type" href="#vf_data_storage" title='vf_data_storage' data-ref="vf_data_storage">vf_data_storage</a> *<dfn class="decl field" id="ixgbe_adapter::vfinfo" title='ixgbe_adapter::vfinfo' data-ref="ixgbe_adapter::vfinfo">vfinfo</dfn>;</td></tr>
+<tr><th id="726">726</th><td>	<em>int</em> <dfn class="decl field" id="ixgbe_adapter::vf_rate_link_speed" title='ixgbe_adapter::vf_rate_link_speed' data-ref="ixgbe_adapter::vf_rate_link_speed">vf_rate_link_speed</dfn>;</td></tr>
+<tr><th id="727">727</th><td>	<b>struct</b> <a class="type" href="#vf_macvlans" title='vf_macvlans' data-ref="vf_macvlans">vf_macvlans</a> <dfn class="decl field" id="ixgbe_adapter::vf_mvs" title='ixgbe_adapter::vf_mvs' data-ref="ixgbe_adapter::vf_mvs">vf_mvs</dfn>;</td></tr>
+<tr><th id="728">728</th><td>	<b>struct</b> <a class="type" href="#vf_macvlans" title='vf_macvlans' data-ref="vf_macvlans">vf_macvlans</a> *<dfn class="decl field" id="ixgbe_adapter::mv_list" title='ixgbe_adapter::mv_list' data-ref="ixgbe_adapter::mv_list">mv_list</dfn>;</td></tr>
+<tr><th id="729">729</th><td><u>#<span data-ppcond="729">ifdef</span> <span class="macro" data-ref="_M/CONFIG_PCI_IOV">CONFIG_PCI_IOV</span></u></td></tr>
+<tr><th id="730">730</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_adapter::timer_event_accumulator" title='ixgbe_adapter::timer_event_accumulator' data-ref="ixgbe_adapter::timer_event_accumulator">timer_event_accumulator</dfn>;</td></tr>
+<tr><th id="731">731</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span> <dfn class="decl field" id="ixgbe_adapter::vferr_refcount" title='ixgbe_adapter::vferr_refcount' data-ref="ixgbe_adapter::vferr_refcount">vferr_refcount</dfn>;</td></tr>
+<tr><th id="732">732</th><td><u>#<span data-ppcond="729">endif</span></u></td></tr>
+<tr><th id="733">733</th><td>	<b>struct</b> <a class="type" href="#ixgbe_mac_addr" title='ixgbe_mac_addr' data-ref="ixgbe_mac_addr">ixgbe_mac_addr</a> *<dfn class="decl field" id="ixgbe_adapter::mac_table" title='ixgbe_adapter::mac_table' data-ref="ixgbe_adapter::mac_table">mac_table</dfn>;</td></tr>
+<tr><th id="734">734</th><td><u>#<span data-ppcond="734">ifdef</span> <a class="macro" href="kcompat.h.html#2179" data-ref="_M/IXGBE_SYSFS">IXGBE_SYSFS</a></u></td></tr>
+<tr><th id="735">735</th><td>	<b>struct</b> <span class='type' title='kobject' data-ref="kobject">kobject</span> *<dfn class="decl field" id="ixgbe_adapter::info_kobj" title='ixgbe_adapter::info_kobj' data-ref="ixgbe_adapter::info_kobj">info_kobj</dfn>;</td></tr>
+<tr><th id="736">736</th><td>	<b>struct</b> <span class='type' title='kobject' data-ref="kobject">kobject</span> *<dfn class="decl field" id="ixgbe_adapter::therm_kobj" title='ixgbe_adapter::therm_kobj' data-ref="ixgbe_adapter::therm_kobj">therm_kobj</dfn>[<a class="macro" href="ixgbe_type.h.html#110" title="3" data-ref="_M/IXGBE_MAX_SENSORS">IXGBE_MAX_SENSORS</a>];</td></tr>
+<tr><th id="737">737</th><td><u>#<span data-ppcond="734">else</span> /* IXGBE_SYSFS */</u></td></tr>
+<tr><th id="738">738</th><td><u>#ifdef IXGBE_PROCFS</u></td></tr>
+<tr><th id="739">739</th><td>	<b>struct</b> proc_dir_entry *eth_dir;</td></tr>
+<tr><th id="740">740</th><td>	<b>struct</b> proc_dir_entry *info_dir;</td></tr>
+<tr><th id="741">741</th><td>	<b>struct</b> proc_dir_entry *therm_dir[IXGBE_MAX_SENSORS];</td></tr>
+<tr><th id="742">742</th><td>	<b>struct</b> ixgbe_therm_proc_data therm_data[IXGBE_MAX_SENSORS];</td></tr>
+<tr><th id="743">743</th><td><u>#endif /* IXGBE_PROCFS */</u></td></tr>
+<tr><th id="744">744</th><td><u>#<span data-ppcond="734">endif</span> /* IXGBE_SYSFS */</u></td></tr>
+<tr><th id="745">745</th><td>};</td></tr>
+<tr><th id="746">746</th><td></td></tr>
+<tr><th id="747">747</th><td><b>struct</b> <dfn class="type def" id="ixgbe_fdir_filter" title='ixgbe_fdir_filter' data-ref="ixgbe_fdir_filter">ixgbe_fdir_filter</dfn> {</td></tr>
+<tr><th id="748">748</th><td>	<b>struct</b>  <span class='type' title='hlist_node' data-ref="hlist_node">hlist_node</span> <dfn class="decl field" id="ixgbe_fdir_filter::fdir_node" title='ixgbe_fdir_filter::fdir_node' data-ref="ixgbe_fdir_filter::fdir_node">fdir_node</dfn>;</td></tr>
+<tr><th id="749">749</th><td>	<b>union</b> <a class="type" href="ixgbe_type.h.html#ixgbe_atr_input" title='ixgbe_atr_input' data-ref="ixgbe_atr_input">ixgbe_atr_input</a> <dfn class="decl field" id="ixgbe_fdir_filter::filter" title='ixgbe_fdir_filter::filter' data-ref="ixgbe_fdir_filter::filter">filter</dfn>;</td></tr>
+<tr><th id="750">750</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="ixgbe_fdir_filter::sw_idx" title='ixgbe_fdir_filter::sw_idx' data-ref="ixgbe_fdir_filter::sw_idx">sw_idx</dfn>;</td></tr>
+<tr><th id="751">751</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="decl field" id="ixgbe_fdir_filter::action" title='ixgbe_fdir_filter::action' data-ref="ixgbe_fdir_filter::action">action</dfn>;</td></tr>
+<tr><th id="752">752</th><td>};</td></tr>
+<tr><th id="753">753</th><td></td></tr>
+<tr><th id="754">754</th><td><b>enum</b> <dfn class="type def" id="ixgbe_state_t" title='ixgbe_state_t' data-ref="ixgbe_state_t">ixgbe_state_t</dfn> {</td></tr>
+<tr><th id="755">755</th><td>	<dfn class="enum" id="__IXGBE_TESTING" title='__IXGBE_TESTING' data-ref="__IXGBE_TESTING">__IXGBE_TESTING</dfn>,</td></tr>
+<tr><th id="756">756</th><td>	<dfn class="enum" id="__IXGBE_RESETTING" title='__IXGBE_RESETTING' data-ref="__IXGBE_RESETTING">__IXGBE_RESETTING</dfn>,</td></tr>
+<tr><th id="757">757</th><td>	<dfn class="enum" id="__IXGBE_DOWN" title='__IXGBE_DOWN' data-ref="__IXGBE_DOWN">__IXGBE_DOWN</dfn>,</td></tr>
+<tr><th id="758">758</th><td>	<dfn class="enum" id="__IXGBE_SERVICE_SCHED" title='__IXGBE_SERVICE_SCHED' data-ref="__IXGBE_SERVICE_SCHED">__IXGBE_SERVICE_SCHED</dfn>,</td></tr>
+<tr><th id="759">759</th><td>	<dfn class="enum" id="__IXGBE_IN_SFP_INIT" title='__IXGBE_IN_SFP_INIT' data-ref="__IXGBE_IN_SFP_INIT">__IXGBE_IN_SFP_INIT</dfn>,</td></tr>
+<tr><th id="760">760</th><td>};</td></tr>
+<tr><th id="761">761</th><td></td></tr>
+<tr><th id="762">762</th><td><b>struct</b> <dfn class="type def" id="ixgbe_cb" title='ixgbe_cb' data-ref="ixgbe_cb">ixgbe_cb</dfn> {</td></tr>
+<tr><th id="763">763</th><td><u>#<span data-ppcond="763">ifdef</span> <span class="macro" data-ref="_M/CONFIG_IXGBE_DISABLE_PACKET_SPLIT">CONFIG_IXGBE_DISABLE_PACKET_SPLIT</span></u></td></tr>
+<tr><th id="764">764</th><td>	<b>union</b> {				<i>/* Union defining head/tail partner */</i></td></tr>
+<tr><th id="765">765</th><td>		<b>struct</b> sk_buff *head;</td></tr>
+<tr><th id="766">766</th><td>		<b>struct</b> sk_buff *tail;</td></tr>
+<tr><th id="767">767</th><td>	};</td></tr>
+<tr><th id="768">768</th><td><u>#<span data-ppcond="763">endif</span></u></td></tr>
+<tr><th id="769">769</th><td>	<span class='typedef' title='dma_addr_t' data-type='u64' data-ref="dma_addr_t">dma_addr_t</span> <dfn class="decl field" id="ixgbe_cb::dma" title='ixgbe_cb::dma' data-ref="ixgbe_cb::dma">dma</dfn>;</td></tr>
+<tr><th id="770">770</th><td><u>#<span data-ppcond="770">ifndef</span> <span class="macro" data-ref="_M/IXGBE_NO_LRO">IXGBE_NO_LRO</span></u></td></tr>
+<tr><th id="771">771</th><td>	<a class="macro" href="ixgbe_type.h.html#2295" title="u32" data-ref="_M/__be32">__be32</a>	<dfn class="decl field" id="ixgbe_cb::tsecr" title='ixgbe_cb::tsecr' data-ref="ixgbe_cb::tsecr">tsecr</dfn>;			<i>/* timestamp echo response */</i></td></tr>
+<tr><th id="772">772</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span>	<dfn class="decl field" id="ixgbe_cb::tsval" title='ixgbe_cb::tsval' data-ref="ixgbe_cb::tsval">tsval</dfn>;			<i>/* timestamp value in host order */</i></td></tr>
+<tr><th id="773">773</th><td>	<span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span>	<dfn class="decl field" id="ixgbe_cb::next_seq" title='ixgbe_cb::next_seq' data-ref="ixgbe_cb::next_seq">next_seq</dfn>;		<i>/* next expected sequence number */</i></td></tr>
+<tr><th id="774">774</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span>	<dfn class="decl field" id="ixgbe_cb::free" title='ixgbe_cb::free' data-ref="ixgbe_cb::free">free</dfn>;			<i>/* 65521 minus total size */</i></td></tr>
+<tr><th id="775">775</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span>	<dfn class="decl field" id="ixgbe_cb::mss" title='ixgbe_cb::mss' data-ref="ixgbe_cb::mss">mss</dfn>;			<i>/* size of data portion of packet */</i></td></tr>
+<tr><th id="776">776</th><td><u>#<span data-ppcond="770">endif</span> /* IXGBE_NO_LRO */</u></td></tr>
+<tr><th id="777">777</th><td><u>#<span data-ppcond="777">ifdef</span> <span class="macro" data-ref="_M/HAVE_VLAN_RX_REGISTER">HAVE_VLAN_RX_REGISTER</span></u></td></tr>
+<tr><th id="778">778</th><td>	u16	vid;			<i>/* VLAN tag */</i></td></tr>
+<tr><th id="779">779</th><td><u>#<span data-ppcond="777">endif</span></u></td></tr>
+<tr><th id="780">780</th><td>	<span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span>	<dfn class="decl field" id="ixgbe_cb::append_cnt" title='ixgbe_cb::append_cnt' data-ref="ixgbe_cb::append_cnt">append_cnt</dfn>;		<i>/* number of skb's appended */</i></td></tr>
+<tr><th id="781">781</th><td><u>#<span data-ppcond="781">ifndef</span> <span class="macro" data-ref="_M/CONFIG_IXGBE_DISABLE_PACKET_SPLIT">CONFIG_IXGBE_DISABLE_PACKET_SPLIT</span></u></td></tr>
+<tr><th id="782">782</th><td>	<span class='typedef' title='bool' data-type='_Bool' data-ref="bool">bool</span>	<dfn class="decl field" id="ixgbe_cb::page_released" title='ixgbe_cb::page_released' data-ref="ixgbe_cb::page_released">page_released</dfn>;</td></tr>
+<tr><th id="783">783</th><td><u>#<span data-ppcond="781">endif</span></u></td></tr>
+<tr><th id="784">784</th><td>};</td></tr>
+<tr><th id="785">785</th><td><u>#define <dfn class="macro" id="_M/IXGBE_CB" data-ref="_M/IXGBE_CB">IXGBE_CB</dfn>(skb) ((struct ixgbe_cb *)(skb)-&gt;cb)</u></td></tr>
+<tr><th id="786">786</th><td></td></tr>
+<tr><th id="787">787</th><td><u>#<span data-ppcond="787">ifdef</span> <a class="macro" href="kcompat.h.html#2179" data-ref="_M/IXGBE_SYSFS">IXGBE_SYSFS</a></u></td></tr>
+<tr><th id="788">788</th><td><em>void</em> <dfn class="decl fn" id="ixgbe_sysfs_exit" title='ixgbe_sysfs_exit' data-ref="ixgbe_sysfs_exit">ixgbe_sysfs_exit</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col7 decl" id="7adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="7adapter">adapter</dfn>);</td></tr>
+<tr><th id="789">789</th><td><em>int</em> <dfn class="decl fn" id="ixgbe_sysfs_init" title='ixgbe_sysfs_init' data-ref="ixgbe_sysfs_init">ixgbe_sysfs_init</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col8 decl" id="8adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="8adapter">adapter</dfn>);</td></tr>
+<tr><th id="790">790</th><td><u>#<span data-ppcond="787">endif</span> /* IXGBE_SYSFS */</u></td></tr>
+<tr><th id="791">791</th><td><u>#<span data-ppcond="791">ifdef</span> <span class="macro" data-ref="_M/IXGBE_PROCFS">IXGBE_PROCFS</span></u></td></tr>
+<tr><th id="792">792</th><td><em>void</em> ixgbe_procfs_exit(<b>struct</b> ixgbe_adapter *adapter);</td></tr>
+<tr><th id="793">793</th><td><em>int</em> ixgbe_procfs_init(<b>struct</b> ixgbe_adapter *adapter);</td></tr>
+<tr><th id="794">794</th><td><em>int</em> ixgbe_procfs_topdir_init(<em>void</em>);</td></tr>
+<tr><th id="795">795</th><td><em>void</em> ixgbe_procfs_topdir_exit(<em>void</em>);</td></tr>
+<tr><th id="796">796</th><td><u>#<span data-ppcond="791">endif</span> /* IXGBE_PROCFS */</u></td></tr>
+<tr><th id="797">797</th><td></td></tr>
+<tr><th id="798">798</th><td><b>extern</b> <b>struct</b> <span class='type' title='dcbnl_rtnl_ops' data-ref="dcbnl_rtnl_ops">dcbnl_rtnl_ops</span> <dfn class="decl" id="dcbnl_ops" title='dcbnl_ops' data-ref="dcbnl_ops">dcbnl_ops</dfn>;</td></tr>
+<tr><th id="799">799</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_copy_dcb_cfg" title='ixgbe_copy_dcb_cfg' data-ref="ixgbe_copy_dcb_cfg">ixgbe_copy_dcb_cfg</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col9 decl" id="9adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="9adapter">adapter</dfn>, <em>int</em> <dfn class="local col0 decl" id="10tc_max" title='tc_max' data-type='int' data-ref="10tc_max">tc_max</dfn>);</td></tr>
+<tr><th id="800">800</th><td></td></tr>
+<tr><th id="801">801</th><td><b>extern</b> <span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <dfn class="decl fn" id="ixgbe_dcb_txq_to_tc" title='ixgbe_dcb_txq_to_tc' data-ref="ixgbe_dcb_txq_to_tc">ixgbe_dcb_txq_to_tc</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col1 decl" id="11adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="11adapter">adapter</dfn>, <span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <dfn class="local col2 decl" id="12index" title='index' data-type='u8' data-ref="12index">index</dfn>);</td></tr>
+<tr><th id="802">802</th><td></td></tr>
+<tr><th id="803">803</th><td><i>/* needed by ixgbe_main.c */</i></td></tr>
+<tr><th id="804">804</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_validate_mac_addr" title='ixgbe_validate_mac_addr' data-ref="ixgbe_validate_mac_addr">ixgbe_validate_mac_addr</dfn>(<span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> *<dfn class="local col3 decl" id="13mc_addr" title='mc_addr' data-type='u8 *' data-ref="13mc_addr">mc_addr</dfn>);</td></tr>
+<tr><th id="805">805</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_check_options" title='ixgbe_check_options' data-ref="ixgbe_check_options">ixgbe_check_options</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col4 decl" id="14adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="14adapter">adapter</dfn>);</td></tr>
+<tr><th id="806">806</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_assign_netdev_ops" title='ixgbe_assign_netdev_ops' data-ref="ixgbe_assign_netdev_ops">ixgbe_assign_netdev_ops</dfn>(<b>struct</b> <span class='type' title='net_device' data-ref="net_device">net_device</span> *<dfn class="local col5 decl" id="15netdev" title='netdev' data-type='struct net_device *' data-ref="15netdev">netdev</dfn>);</td></tr>
+<tr><th id="807">807</th><td></td></tr>
+<tr><th id="808">808</th><td><i>/* needed by ixgbe_ethtool.c */</i></td></tr>
+<tr><th id="809">809</th><td><b>extern</b> <em>char</em> <dfn class="decl" id="ixgbe_driver_name" title='ixgbe_driver_name' data-ref="ixgbe_driver_name">ixgbe_driver_name</dfn>[];</td></tr>
+<tr><th id="810">810</th><td><b>extern</b> <em>const</em> <em>char</em> <dfn class="decl" id="ixgbe_driver_version" title='ixgbe_driver_version' data-ref="ixgbe_driver_version">ixgbe_driver_version</dfn>[];</td></tr>
+<tr><th id="811">811</th><td></td></tr>
+<tr><th id="812">812</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_up" title='ixgbe_up' data-ref="ixgbe_up">ixgbe_up</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col6 decl" id="16adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="16adapter">adapter</dfn>);</td></tr>
+<tr><th id="813">813</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_down" title='ixgbe_down' data-ref="ixgbe_down">ixgbe_down</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col7 decl" id="17adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="17adapter">adapter</dfn>);</td></tr>
+<tr><th id="814">814</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_reinit_locked" title='ixgbe_reinit_locked' data-ref="ixgbe_reinit_locked">ixgbe_reinit_locked</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col8 decl" id="18adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="18adapter">adapter</dfn>);</td></tr>
+<tr><th id="815">815</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_reset" title='ixgbe_reset' data-ref="ixgbe_reset">ixgbe_reset</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col9 decl" id="19adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="19adapter">adapter</dfn>);</td></tr>
+<tr><th id="816">816</th><td><b>extern</b> <em>void</em> <a class="decl fn" href="ixgbe_ethtool.c.html#ixgbe_set_ethtool_ops" title='ixgbe_set_ethtool_ops' data-ref="ixgbe_set_ethtool_ops" id="ixgbe_set_ethtool_ops">ixgbe_set_ethtool_ops</a>(<b>struct</b> <span class='type' title='net_device' data-ref="net_device">net_device</span> *<dfn class="local col0 decl" id="20netdev" title='netdev' data-type='struct net_device *' data-ref="20netdev">netdev</dfn>);</td></tr>
+<tr><th id="817">817</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_setup_rx_resources" title='ixgbe_setup_rx_resources' data-ref="ixgbe_setup_rx_resources">ixgbe_setup_rx_resources</dfn>(<b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *);</td></tr>
+<tr><th id="818">818</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_setup_tx_resources" title='ixgbe_setup_tx_resources' data-ref="ixgbe_setup_tx_resources">ixgbe_setup_tx_resources</dfn>(<b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *);</td></tr>
+<tr><th id="819">819</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_free_rx_resources" title='ixgbe_free_rx_resources' data-ref="ixgbe_free_rx_resources">ixgbe_free_rx_resources</dfn>(<b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *);</td></tr>
+<tr><th id="820">820</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_free_tx_resources" title='ixgbe_free_tx_resources' data-ref="ixgbe_free_tx_resources">ixgbe_free_tx_resources</dfn>(<b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *);</td></tr>
+<tr><th id="821">821</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_configure_rx_ring" title='ixgbe_configure_rx_ring' data-ref="ixgbe_configure_rx_ring">ixgbe_configure_rx_ring</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *,</td></tr>
+<tr><th id="822">822</th><td>				    <b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *);</td></tr>
+<tr><th id="823">823</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_configure_tx_ring" title='ixgbe_configure_tx_ring' data-ref="ixgbe_configure_tx_ring">ixgbe_configure_tx_ring</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *,</td></tr>
+<tr><th id="824">824</th><td>				    <b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *);</td></tr>
+<tr><th id="825">825</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_update_stats" title='ixgbe_update_stats' data-ref="ixgbe_update_stats">ixgbe_update_stats</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col1 decl" id="21adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="21adapter">adapter</dfn>);</td></tr>
+<tr><th id="826">826</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_init_interrupt_scheme" title='ixgbe_init_interrupt_scheme' data-ref="ixgbe_init_interrupt_scheme">ixgbe_init_interrupt_scheme</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col2 decl" id="22adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="22adapter">adapter</dfn>);</td></tr>
+<tr><th id="827">827</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_clear_interrupt_scheme" title='ixgbe_clear_interrupt_scheme' data-ref="ixgbe_clear_interrupt_scheme">ixgbe_clear_interrupt_scheme</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col3 decl" id="23adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="23adapter">adapter</dfn>);</td></tr>
+<tr><th id="828">828</th><td><b>extern</b> <span class='typedef' title='bool' data-type='_Bool' data-ref="bool">bool</span> <dfn class="decl fn" id="ixgbe_is_ixgbe" title='ixgbe_is_ixgbe' data-ref="ixgbe_is_ixgbe">ixgbe_is_ixgbe</dfn>(<b>struct</b> <span class='type' title='pci_dev' data-ref="pci_dev">pci_dev</span> *<dfn class="local col4 decl" id="24pcidev" title='pcidev' data-type='struct pci_dev *' data-ref="24pcidev">pcidev</dfn>);</td></tr>
+<tr><th id="829">829</th><td><b>extern</b> <span class='typedef' title='netdev_tx_t' data-type='enum netdev_tx' data-ref="netdev_tx_t">netdev_tx_t</span> <dfn class="decl fn" id="ixgbe_xmit_frame_ring" title='ixgbe_xmit_frame_ring' data-ref="ixgbe_xmit_frame_ring">ixgbe_xmit_frame_ring</dfn>(<b>struct</b> <span class='type' title='sk_buff' data-ref="sk_buff">sk_buff</span> *,</td></tr>
+<tr><th id="830">830</th><td>					 <b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *,</td></tr>
+<tr><th id="831">831</th><td>					 <b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *);</td></tr>
+<tr><th id="832">832</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_unmap_and_free_tx_resource" title='ixgbe_unmap_and_free_tx_resource' data-ref="ixgbe_unmap_and_free_tx_resource">ixgbe_unmap_and_free_tx_resource</dfn>(<b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *,</td></tr>
+<tr><th id="833">833</th><td>					     <b>struct</b> <a class="type" href="#ixgbe_tx_buffer" title='ixgbe_tx_buffer' data-ref="ixgbe_tx_buffer">ixgbe_tx_buffer</a> *);</td></tr>
+<tr><th id="834">834</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_alloc_rx_buffers" title='ixgbe_alloc_rx_buffers' data-ref="ixgbe_alloc_rx_buffers">ixgbe_alloc_rx_buffers</dfn>(<b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *, <span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span>);</td></tr>
+<tr><th id="835">835</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_configure_rscctl" title='ixgbe_configure_rscctl' data-ref="ixgbe_configure_rscctl">ixgbe_configure_rscctl</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col5 decl" id="25adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="25adapter">adapter</dfn>,</td></tr>
+<tr><th id="836">836</th><td>				   <b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *);</td></tr>
+<tr><th id="837">837</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_clear_rscctl" title='ixgbe_clear_rscctl' data-ref="ixgbe_clear_rscctl">ixgbe_clear_rscctl</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col6 decl" id="26adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="26adapter">adapter</dfn>,</td></tr>
+<tr><th id="838">838</th><td>			       <b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *);</td></tr>
+<tr><th id="839">839</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_set_rx_mode" title='ixgbe_set_rx_mode' data-ref="ixgbe_set_rx_mode">ixgbe_set_rx_mode</dfn>(<b>struct</b> <span class='type' title='net_device' data-ref="net_device">net_device</span> *<dfn class="local col7 decl" id="27netdev" title='netdev' data-type='struct net_device *' data-ref="27netdev">netdev</dfn>);</td></tr>
+<tr><th id="840">840</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_write_mc_addr_list" title='ixgbe_write_mc_addr_list' data-ref="ixgbe_write_mc_addr_list">ixgbe_write_mc_addr_list</dfn>(<b>struct</b> <span class='type' title='net_device' data-ref="net_device">net_device</span> *<dfn class="local col8 decl" id="28netdev" title='netdev' data-type='struct net_device *' data-ref="28netdev">netdev</dfn>);</td></tr>
+<tr><th id="841">841</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_setup_tc" title='ixgbe_setup_tc' data-ref="ixgbe_setup_tc">ixgbe_setup_tc</dfn>(<b>struct</b> <span class='type' title='net_device' data-ref="net_device">net_device</span> *<dfn class="local col9 decl" id="29dev" title='dev' data-type='struct net_device *' data-ref="29dev">dev</dfn>, <span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <dfn class="local col0 decl" id="30tc" title='tc' data-type='u8' data-ref="30tc">tc</dfn>);</td></tr>
+<tr><th id="842">842</th><td><u>#<span data-ppcond="842">ifdef</span> <a class="macro" href="#46" data-ref="_M/IXGBE_FCOE">IXGBE_FCOE</a></u></td></tr>
+<tr><th id="843">843</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_tx_ctxtdesc" title='ixgbe_tx_ctxtdesc' data-ref="ixgbe_tx_ctxtdesc">ixgbe_tx_ctxtdesc</dfn>(<b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *, <span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span>, <span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span>, <span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span>, <span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span>);</td></tr>
+<tr><th id="844">844</th><td><u>#<span data-ppcond="842">endif</span> /* IXGBE_FCOE */</u></td></tr>
+<tr><th id="845">845</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_do_reset" title='ixgbe_do_reset' data-ref="ixgbe_do_reset">ixgbe_do_reset</dfn>(<b>struct</b> <span class='type' title='net_device' data-ref="net_device">net_device</span> *<dfn class="local col1 decl" id="31netdev" title='netdev' data-type='struct net_device *' data-ref="31netdev">netdev</dfn>);</td></tr>
+<tr><th id="846">846</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_write_eitr" title='ixgbe_write_eitr' data-ref="ixgbe_write_eitr">ixgbe_write_eitr</dfn>(<b>struct</b> <a class="type" href="#ixgbe_q_vector" title='ixgbe_q_vector' data-ref="ixgbe_q_vector">ixgbe_q_vector</a> *<dfn class="local col2 decl" id="32q_vector" title='q_vector' data-type='struct ixgbe_q_vector *' data-ref="32q_vector">q_vector</dfn>);</td></tr>
+<tr><th id="847">847</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_disable_rx_queue" title='ixgbe_disable_rx_queue' data-ref="ixgbe_disable_rx_queue">ixgbe_disable_rx_queue</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col3 decl" id="33adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="33adapter">adapter</dfn>,</td></tr>
+<tr><th id="848">848</th><td>				   <b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *);</td></tr>
+<tr><th id="849">849</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_vlan_stripping_enable" title='ixgbe_vlan_stripping_enable' data-ref="ixgbe_vlan_stripping_enable">ixgbe_vlan_stripping_enable</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col4 decl" id="34adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="34adapter">adapter</dfn>);</td></tr>
+<tr><th id="850">850</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_vlan_stripping_disable" title='ixgbe_vlan_stripping_disable' data-ref="ixgbe_vlan_stripping_disable">ixgbe_vlan_stripping_disable</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col5 decl" id="35adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="35adapter">adapter</dfn>);</td></tr>
+<tr><th id="851">851</th><td><u>#<span data-ppcond="851">ifdef</span> <span class="macro" data-ref="_M/ETHTOOL_OPS_COMPAT">ETHTOOL_OPS_COMPAT</span></u></td></tr>
+<tr><th id="852">852</th><td><b>extern</b> <em>int</em> ethtool_ioctl(<b>struct</b> ifreq *ifr);</td></tr>
+<tr><th id="853">853</th><td><u>#<span data-ppcond="851">endif</span></u></td></tr>
+<tr><th id="854">854</th><td></td></tr>
+<tr><th id="855">855</th><td><u>#<span data-ppcond="855">ifdef</span> <a class="macro" href="#46" data-ref="_M/IXGBE_FCOE">IXGBE_FCOE</a></u></td></tr>
+<tr><th id="856">856</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_configure_fcoe" title='ixgbe_configure_fcoe' data-ref="ixgbe_configure_fcoe">ixgbe_configure_fcoe</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col6 decl" id="36adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="36adapter">adapter</dfn>);</td></tr>
+<tr><th id="857">857</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_fso" title='ixgbe_fso' data-ref="ixgbe_fso">ixgbe_fso</dfn>(<b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *<dfn class="local col7 decl" id="37tx_ring" title='tx_ring' data-type='struct ixgbe_ring *' data-ref="37tx_ring">tx_ring</dfn>,</td></tr>
+<tr><th id="858">858</th><td>		     <b>struct</b> <a class="type" href="#ixgbe_tx_buffer" title='ixgbe_tx_buffer' data-ref="ixgbe_tx_buffer">ixgbe_tx_buffer</a> *<dfn class="local col8 decl" id="38first" title='first' data-type='struct ixgbe_tx_buffer *' data-ref="38first">first</dfn>,</td></tr>
+<tr><th id="859">859</th><td>		     <span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> *<dfn class="local col9 decl" id="39hdr_len" title='hdr_len' data-type='u8 *' data-ref="39hdr_len">hdr_len</dfn>);</td></tr>
+<tr><th id="860">860</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_cleanup_fcoe" title='ixgbe_cleanup_fcoe' data-ref="ixgbe_cleanup_fcoe">ixgbe_cleanup_fcoe</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col0 decl" id="40adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="40adapter">adapter</dfn>);</td></tr>
+<tr><th id="861">861</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_fcoe_ddp" title='ixgbe_fcoe_ddp' data-ref="ixgbe_fcoe_ddp">ixgbe_fcoe_ddp</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col1 decl" id="41adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="41adapter">adapter</dfn>,</td></tr>
+<tr><th id="862">862</th><td>			  <b>union</b> <a class="type" href="ixgbe_type.h.html#ixgbe_adv_rx_desc" title='ixgbe_adv_rx_desc' data-ref="ixgbe_adv_rx_desc">ixgbe_adv_rx_desc</a> *<dfn class="local col2 decl" id="42rx_desc" title='rx_desc' data-type='union ixgbe_adv_rx_desc *' data-ref="42rx_desc">rx_desc</dfn>,</td></tr>
+<tr><th id="863">863</th><td>			  <b>struct</b> <span class='type' title='sk_buff' data-ref="sk_buff">sk_buff</span> *<dfn class="local col3 decl" id="43skb" title='skb' data-type='struct sk_buff *' data-ref="43skb">skb</dfn>);</td></tr>
+<tr><th id="864">864</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_fcoe_ddp_get" title='ixgbe_fcoe_ddp_get' data-ref="ixgbe_fcoe_ddp_get">ixgbe_fcoe_ddp_get</dfn>(<b>struct</b> <span class='type' title='net_device' data-ref="net_device">net_device</span> *<dfn class="local col4 decl" id="44netdev" title='netdev' data-type='struct net_device *' data-ref="44netdev">netdev</dfn>, <span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="local col5 decl" id="45xid" title='xid' data-type='u16' data-ref="45xid">xid</dfn>,</td></tr>
+<tr><th id="865">865</th><td>			      <b>struct</b> <span class='type' title='scatterlist' data-ref="scatterlist">scatterlist</span> *<dfn class="local col6 decl" id="46sgl" title='sgl' data-type='struct scatterlist *' data-ref="46sgl">sgl</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col7 decl" id="47sgc" title='sgc' data-type='unsigned int' data-ref="47sgc">sgc</dfn>);</td></tr>
+<tr><th id="866">866</th><td><u>#<span data-ppcond="866">ifdef</span> <a class="macro" href="kcompat.h.html#2914" data-ref="_M/HAVE_NETDEV_OPS_FCOE_DDP_TARGET">HAVE_NETDEV_OPS_FCOE_DDP_TARGET</a></u></td></tr>
+<tr><th id="867">867</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_fcoe_ddp_target" title='ixgbe_fcoe_ddp_target' data-ref="ixgbe_fcoe_ddp_target">ixgbe_fcoe_ddp_target</dfn>(<b>struct</b> <span class='type' title='net_device' data-ref="net_device">net_device</span> *<dfn class="local col8 decl" id="48netdev" title='netdev' data-type='struct net_device *' data-ref="48netdev">netdev</dfn>, <span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="local col9 decl" id="49xid" title='xid' data-type='u16' data-ref="49xid">xid</dfn>,</td></tr>
+<tr><th id="868">868</th><td>				 <b>struct</b> <span class='type' title='scatterlist' data-ref="scatterlist">scatterlist</span> *<dfn class="local col0 decl" id="50sgl" title='sgl' data-type='struct scatterlist *' data-ref="50sgl">sgl</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col1 decl" id="51sgc" title='sgc' data-type='unsigned int' data-ref="51sgc">sgc</dfn>);</td></tr>
+<tr><th id="869">869</th><td><u>#<span data-ppcond="866">endif</span> /* HAVE_NETDEV_OPS_FCOE_DDP_TARGET */</u></td></tr>
+<tr><th id="870">870</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_fcoe_ddp_put" title='ixgbe_fcoe_ddp_put' data-ref="ixgbe_fcoe_ddp_put">ixgbe_fcoe_ddp_put</dfn>(<b>struct</b> <span class='type' title='net_device' data-ref="net_device">net_device</span> *<dfn class="local col2 decl" id="52netdev" title='netdev' data-type='struct net_device *' data-ref="52netdev">netdev</dfn>, <span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="local col3 decl" id="53xid" title='xid' data-type='u16' data-ref="53xid">xid</dfn>);</td></tr>
+<tr><th id="871">871</th><td><u>#<span data-ppcond="871">ifdef</span> <a class="macro" href="kcompat.h.html#2482" data-ref="_M/HAVE_NETDEV_OPS_FCOE_ENABLE">HAVE_NETDEV_OPS_FCOE_ENABLE</a></u></td></tr>
+<tr><th id="872">872</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_fcoe_enable" title='ixgbe_fcoe_enable' data-ref="ixgbe_fcoe_enable">ixgbe_fcoe_enable</dfn>(<b>struct</b> <span class='type' title='net_device' data-ref="net_device">net_device</span> *<dfn class="local col4 decl" id="54netdev" title='netdev' data-type='struct net_device *' data-ref="54netdev">netdev</dfn>);</td></tr>
+<tr><th id="873">873</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_fcoe_disable" title='ixgbe_fcoe_disable' data-ref="ixgbe_fcoe_disable">ixgbe_fcoe_disable</dfn>(<b>struct</b> <span class='type' title='net_device' data-ref="net_device">net_device</span> *<dfn class="local col5 decl" id="55netdev" title='netdev' data-type='struct net_device *' data-ref="55netdev">netdev</dfn>);</td></tr>
+<tr><th id="874">874</th><td><u>#<span data-ppcond="871">endif</span> /* HAVE_NETDEV_OPS_FCOE_ENABLE */</u></td></tr>
+<tr><th id="875">875</th><td><u>#<span data-ppcond="875">ifdef</span> <span class="macro" data-ref="_M/CONFIG_DCB">CONFIG_DCB</span></u></td></tr>
+<tr><th id="876">876</th><td><u>#<span data-ppcond="876">ifdef</span> <a class="macro" href="kcompat.h.html#2487" data-ref="_M/HAVE_DCBNL_OPS_GETAPP">HAVE_DCBNL_OPS_GETAPP</a></u></td></tr>
+<tr><th id="877">877</th><td><b>extern</b> <span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <dfn class="decl fn" id="ixgbe_fcoe_getapp" title='ixgbe_fcoe_getapp' data-ref="ixgbe_fcoe_getapp">ixgbe_fcoe_getapp</dfn>(<b>struct</b> <span class='type' title='net_device' data-ref="net_device">net_device</span> *<dfn class="local col6 decl" id="56netdev" title='netdev' data-type='struct net_device *' data-ref="56netdev">netdev</dfn>);</td></tr>
+<tr><th id="878">878</th><td><u>#<span data-ppcond="876">endif</span> /* HAVE_DCBNL_OPS_GETAPP */</u></td></tr>
+<tr><th id="879">879</th><td><b>extern</b> <span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <dfn class="decl fn" id="ixgbe_fcoe_setapp" title='ixgbe_fcoe_setapp' data-ref="ixgbe_fcoe_setapp">ixgbe_fcoe_setapp</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col7 decl" id="57adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="57adapter">adapter</dfn>, <span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> <dfn class="local col8 decl" id="58up" title='up' data-type='u8' data-ref="58up">up</dfn>);</td></tr>
+<tr><th id="880">880</th><td><u>#<span data-ppcond="875">endif</span> /* CONFIG_DCB */</u></td></tr>
+<tr><th id="881">881</th><td><u>#<span data-ppcond="881">ifdef</span> <a class="macro" href="kcompat.h.html#2521" data-ref="_M/HAVE_NETDEV_OPS_FCOE_GETWWN">HAVE_NETDEV_OPS_FCOE_GETWWN</a></u></td></tr>
+<tr><th id="882">882</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_fcoe_get_wwn" title='ixgbe_fcoe_get_wwn' data-ref="ixgbe_fcoe_get_wwn">ixgbe_fcoe_get_wwn</dfn>(<b>struct</b> <span class='type' title='net_device' data-ref="net_device">net_device</span> *<dfn class="local col9 decl" id="59netdev" title='netdev' data-type='struct net_device *' data-ref="59netdev">netdev</dfn>, <span class='typedef' title='u64' data-type='unsigned long long' data-ref="u64">u64</span> *<dfn class="local col0 decl" id="60wwn" title='wwn' data-type='u64 *' data-ref="60wwn">wwn</dfn>, <em>int</em> <dfn class="local col1 decl" id="61type" title='type' data-type='int' data-ref="61type">type</dfn>);</td></tr>
+<tr><th id="883">883</th><td><u>#<span data-ppcond="881">endif</span></u></td></tr>
+<tr><th id="884">884</th><td><u>#<span data-ppcond="855">endif</span> /* IXGBE_FCOE */</u></td></tr>
+<tr><th id="885">885</th><td></td></tr>
+<tr><th id="886">886</th><td><u>#<span data-ppcond="886">ifdef</span> <span class="macro" data-ref="_M/CONFIG_DCB">CONFIG_DCB</span></u></td></tr>
+<tr><th id="887">887</th><td><u>#<span data-ppcond="887">ifdef</span> <a class="macro" href="kcompat.h.html#2925" data-ref="_M/HAVE_DCBNL_IEEE">HAVE_DCBNL_IEEE</a></u></td></tr>
+<tr><th id="888">888</th><td><span class='typedef' title='s32' data-type='int' data-ref="s32">s32</span> <dfn class="decl fn" id="ixgbe_dcb_hw_ets" title='ixgbe_dcb_hw_ets' data-ref="ixgbe_dcb_hw_ets">ixgbe_dcb_hw_ets</dfn>(<b>struct</b> <a class="type" href="ixgbe_type.h.html#ixgbe_hw" title='ixgbe_hw' data-ref="ixgbe_hw">ixgbe_hw</a> *<dfn class="local col2 decl" id="62hw" title='hw' data-type='struct ixgbe_hw *' data-ref="62hw">hw</dfn>, <b>struct</b> <span class='type' title='ieee_ets' data-ref="ieee_ets">ieee_ets</span> *<dfn class="local col3 decl" id="63ets" title='ets' data-type='struct ieee_ets *' data-ref="63ets">ets</dfn>, <em>int</em> <dfn class="local col4 decl" id="64max_frame" title='max_frame' data-type='int' data-ref="64max_frame">max_frame</dfn>);</td></tr>
+<tr><th id="889">889</th><td><u>#<span data-ppcond="887">endif</span> /* HAVE_DCBNL_IEEE */</u></td></tr>
+<tr><th id="890">890</th><td><u>#<span data-ppcond="886">endif</span> /* CONFIG_DCB */</u></td></tr>
+<tr><th id="891">891</th><td></td></tr>
+<tr><th id="892">892</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_clean_rx_ring" title='ixgbe_clean_rx_ring' data-ref="ixgbe_clean_rx_ring">ixgbe_clean_rx_ring</dfn>(<b>struct</b> <a class="type" href="#ixgbe_ring" title='ixgbe_ring' data-ref="ixgbe_ring">ixgbe_ring</a> *<dfn class="local col5 decl" id="65rx_ring" title='rx_ring' data-type='struct ixgbe_ring *' data-ref="65rx_ring">rx_ring</dfn>);</td></tr>
+<tr><th id="893">893</th><td><b>extern</b> <em>int</em> <a class="decl fn" href="ixgbe_ethtool.c.html#ixgbe_get_settings" title='ixgbe_get_settings' data-ref="ixgbe_get_settings" id="ixgbe_get_settings">ixgbe_get_settings</a>(<b>struct</b> <span class='type' title='net_device' data-ref="net_device">net_device</span> *<dfn class="local col6 decl" id="66netdev" title='netdev' data-type='struct net_device *' data-ref="66netdev">netdev</dfn>,</td></tr>
+<tr><th id="894">894</th><td>			      <b>struct</b> <span class='type' title='ethtool_cmd' data-ref="ethtool_cmd">ethtool_cmd</span> *<dfn class="local col7 decl" id="67ecmd" title='ecmd' data-type='struct ethtool_cmd *' data-ref="67ecmd">ecmd</dfn>);</td></tr>
+<tr><th id="895">895</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_write_uc_addr_list" title='ixgbe_write_uc_addr_list' data-ref="ixgbe_write_uc_addr_list">ixgbe_write_uc_addr_list</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col8 decl" id="68adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="68adapter">adapter</dfn>,</td></tr>
+<tr><th id="896">896</th><td>			    <b>struct</b> <span class='type' title='net_device' data-ref="net_device">net_device</span> *<dfn class="local col9 decl" id="69netdev" title='netdev' data-type='struct net_device *' data-ref="69netdev">netdev</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col0 decl" id="70vfn" title='vfn' data-type='unsigned int' data-ref="70vfn">vfn</dfn>);</td></tr>
+<tr><th id="897">897</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_full_sync_mac_table" title='ixgbe_full_sync_mac_table' data-ref="ixgbe_full_sync_mac_table">ixgbe_full_sync_mac_table</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col1 decl" id="71adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="71adapter">adapter</dfn>);</td></tr>
+<tr><th id="898">898</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_add_mac_filter" title='ixgbe_add_mac_filter' data-ref="ixgbe_add_mac_filter">ixgbe_add_mac_filter</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col2 decl" id="72adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="72adapter">adapter</dfn>,</td></tr>
+<tr><th id="899">899</th><td>				<span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> *<dfn class="local col3 decl" id="73addr" title='addr' data-type='u8 *' data-ref="73addr">addr</dfn>, <span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="local col4 decl" id="74queue" title='queue' data-type='u16' data-ref="74queue">queue</dfn>);</td></tr>
+<tr><th id="900">900</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_del_mac_filter" title='ixgbe_del_mac_filter' data-ref="ixgbe_del_mac_filter">ixgbe_del_mac_filter</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col5 decl" id="75adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="75adapter">adapter</dfn>,</td></tr>
+<tr><th id="901">901</th><td>				<span class='typedef' title='u8' data-type='unsigned char' data-ref="u8">u8</span> *<dfn class="local col6 decl" id="76addr" title='addr' data-type='u8 *' data-ref="76addr">addr</dfn>, <span class='typedef' title='u16' data-type='unsigned short' data-ref="u16">u16</span> <dfn class="local col7 decl" id="77queue" title='queue' data-type='u16' data-ref="77queue">queue</dfn>);</td></tr>
+<tr><th id="902">902</th><td><b>extern</b> <em>int</em> <dfn class="decl fn" id="ixgbe_available_rars" title='ixgbe_available_rars' data-ref="ixgbe_available_rars">ixgbe_available_rars</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col8 decl" id="78adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="78adapter">adapter</dfn>);</td></tr>
+<tr><th id="903">903</th><td><u>#<span data-ppcond="903">ifndef</span> <span class="macro" data-ref="_M/HAVE_VLAN_RX_REGISTER">HAVE_VLAN_RX_REGISTER</span></u></td></tr>
+<tr><th id="904">904</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_vlan_mode" title='ixgbe_vlan_mode' data-ref="ixgbe_vlan_mode">ixgbe_vlan_mode</dfn>(<b>struct</b> <span class='type' title='net_device' data-ref="net_device">net_device</span> *, <span class='typedef' title='u32' data-type='unsigned int' data-ref="u32">u32</span>);</td></tr>
+<tr><th id="905">905</th><td><u>#<span data-ppcond="903">endif</span></u></td></tr>
+<tr><th id="906">906</th><td><u>#<span data-ppcond="906">ifndef</span> <span class="macro" data-ref="_M/ixgbe_get_netdev_tc_txq">ixgbe_get_netdev_tc_txq</span></u></td></tr>
+<tr><th id="907">907</th><td><u>#define <dfn class="macro" id="_M/ixgbe_get_netdev_tc_txq" data-ref="_M/ixgbe_get_netdev_tc_txq">ixgbe_get_netdev_tc_txq</dfn>(dev, tc) (&amp;dev-&gt;tc_to_txq[tc])</u></td></tr>
+<tr><th id="908">908</th><td><u>#<span data-ppcond="906">endif</span></u></td></tr>
+<tr><th id="909">909</th><td><b>extern</b> <em>void</em> <dfn class="decl fn" id="ixgbe_set_rx_drop_en" title='ixgbe_set_rx_drop_en' data-ref="ixgbe_set_rx_drop_en">ixgbe_set_rx_drop_en</dfn>(<b>struct</b> <a class="type" href="#ixgbe_adapter" title='ixgbe_adapter' data-ref="ixgbe_adapter">ixgbe_adapter</a> *<dfn class="local col9 decl" id="79adapter" title='adapter' data-type='struct ixgbe_adapter *' data-ref="79adapter">adapter</dfn>);</td></tr>
+<tr><th id="910">910</th><td><u>#<span data-ppcond="13">endif</span> /* _IXGBE_H_ */</u></td></tr>
+<tr><th id="911">911</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='ixgbe_ethtool.c.html'>master/kernel/linux/kni/ethtool/ixgbe/ixgbe_ethtool.c</a><br/>Generated on <em>2018-Oct-01</em> from project master revision <em>master</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

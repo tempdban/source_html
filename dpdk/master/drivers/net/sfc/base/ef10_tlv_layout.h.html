@@ -1,0 +1,1030 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>ef10_tlv_layout.h source code [master/drivers/net/sfc/base/ef10_tlv_layout.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="tlv_0v9_atb_offset,tlv_0v9_atb_target,tlv_0v9_settings,tlv_appendable_partition_header,tlv_binding_ticket,tlv_biu_vi_window_mode,tlv_ca_root_cert,tlv_clock_config,tlv_clock_config_medford,tlv_descriptor_cache_config,tlv_fastpd_mode,tlv_firmware_options,tlv_global_capabilities,tlv_global_dbi,tlv_global_dynamic_vpd,tlv_global_mac,tlv_global_port_config,tlv_global_port_mode,tlv_global_static_vpd,tlv_l3xudp_ports,tlv_license,tlv_mcast_filter_chaining,tlv_ocsd,tlv_partition_header,tlv_partition_subtype,tlv_partition_trailer,tlv_partition_version,tlv_pcie_config,tlv_pcie_config_r2,tlv_pcie_link_settings,tlv_pcie_tx_amp_config,tlv_per_pf_pcie_config,tlv_pf_dbi,tlv_pf_dynamic_vpd,tlv_pf_static_vpd,tlv_pfiov,tlv_pik_sf,tlv_port_mac,tlv_privilege_mask,tlv_privilege_mask_add,tlv_privilege_mask_add_all_pfs,tlv_privilege_mask_add_single_pf,tlv_privilege_mask_rem,tlv_rate_limit,tlv_rx_event_merging_config,tlv_tmp_gubbins,tlv_tsac_config,tlv_tsan_config,tlv_tx_event_merging_config,tlv_tx_vfifo_ull_mode,tlv_vport_vlan_tag,tlv_vswitch_type "/>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'master/drivers/net/sfc/base/ef10_tlv_layout.h'; var root_path = '../../../../..'; var data_path = '../../../../../../data';</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>master</a>/<a href='../../..'>drivers</a>/<a href='../..'>net</a>/<a href='..'>sfc</a>/<a href='./'>base</a>/<a href='ef10_tlv_layout.h.html'>ef10_tlv_layout.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> *</i></td></tr>
+<tr><th id="3">3</th><td><i> * Copyright (c) 2012-2018 Solarflare Communications Inc.</i></td></tr>
+<tr><th id="4">4</th><td><i> * All rights reserved.</i></td></tr>
+<tr><th id="5">5</th><td><i> */</i></td></tr>
+<tr><th id="6">6</th><td></td></tr>
+<tr><th id="7">7</th><td><i>/*</i></td></tr>
+<tr><th id="8">8</th><td><i> * This is NOT the original source file. Do NOT edit it.</i></td></tr>
+<tr><th id="9">9</th><td><i> * To update the tlv layout, please edit the copy in</i></td></tr>
+<tr><th id="10">10</th><td><i> * the sfregistry repo and then, in that repo,</i></td></tr>
+<tr><th id="11">11</th><td><i> * "make tlv_headers" or "make export" to</i></td></tr>
+<tr><th id="12">12</th><td><i> * regenerate and export all types of headers.</i></td></tr>
+<tr><th id="13">13</th><td><i> */</i></td></tr>
+<tr><th id="14">14</th><td></td></tr>
+<tr><th id="15">15</th><td><i>/* These structures define the layouts for the TLV items stored in static and</i></td></tr>
+<tr><th id="16">16</th><td><i> * dynamic configuration partitions in NVRAM for EF10 (Huntington etc.).</i></td></tr>
+<tr><th id="17">17</th><td><i> *</i></td></tr>
+<tr><th id="18">18</th><td><i> * They contain the same sort of information that was kept in the</i></td></tr>
+<tr><th id="19">19</th><td><i> * siena_mc_static_config_hdr_t and siena_mc_dynamic_config_hdr_t structures</i></td></tr>
+<tr><th id="20">20</th><td><i> * (defined in &lt;ci/mgmt/mc_flash_layout.h&gt; and &lt;ci/mgmt/mc_dynamic_cfg.h&gt;) for</i></td></tr>
+<tr><th id="21">21</th><td><i> * Siena.</i></td></tr>
+<tr><th id="22">22</th><td><i> *</i></td></tr>
+<tr><th id="23">23</th><td><i> * These are used directly by the MC and should also be usable directly on host</i></td></tr>
+<tr><th id="24">24</th><td><i> * systems which are little-endian and do not do strange things with structure</i></td></tr>
+<tr><th id="25">25</th><td><i> * padding.  (Big-endian host systems will require some byte-swapping.)</i></td></tr>
+<tr><th id="26">26</th><td><i> *</i></td></tr>
+<tr><th id="27">27</th><td><i> *                                    -----</i></td></tr>
+<tr><th id="28">28</th><td><i> *</i></td></tr>
+<tr><th id="29">29</th><td><i> * Please refer to SF-108797-SW for a general overview of the TLV partition</i></td></tr>
+<tr><th id="30">30</th><td><i> * format.</i></td></tr>
+<tr><th id="31">31</th><td><i> *</i></td></tr>
+<tr><th id="32">32</th><td><i> *                                    -----</i></td></tr>
+<tr><th id="33">33</th><td><i> *</i></td></tr>
+<tr><th id="34">34</th><td><i> * The current tag IDs have a general structure: with the exception of the</i></td></tr>
+<tr><th id="35">35</th><td><i> * special values defined in the document, they are of the form 0xLTTTNNNN,</i></td></tr>
+<tr><th id="36">36</th><td><i> * where:</i></td></tr>
+<tr><th id="37">37</th><td><i> *</i></td></tr>
+<tr><th id="38">38</th><td><i> *   -  L is a location, indicating where this tag is expected to be found:</i></td></tr>
+<tr><th id="39">39</th><td><i> *        0: static configuration</i></td></tr>
+<tr><th id="40">40</th><td><i> *        1: dynamic configuration</i></td></tr>
+<tr><th id="41">41</th><td><i> *        2: firmware internal use</i></td></tr>
+<tr><th id="42">42</th><td><i> *        3: license partition</i></td></tr>
+<tr><th id="43">43</th><td><i> *        4: tsa configuration</i></td></tr>
+<tr><th id="44">44</th><td><i> *</i></td></tr>
+<tr><th id="45">45</th><td><i> *   -  TTT is a type, which is just a unique value.  The same type value</i></td></tr>
+<tr><th id="46">46</th><td><i> *      might appear in both locations, indicating a relationship between</i></td></tr>
+<tr><th id="47">47</th><td><i> *      the items (e.g. static and dynamic VPD below).</i></td></tr>
+<tr><th id="48">48</th><td><i> *</i></td></tr>
+<tr><th id="49">49</th><td><i> *   -  NNNN is an index of some form.  Some item types are per-port, some</i></td></tr>
+<tr><th id="50">50</th><td><i> *      are per-PF, some are per-partition-type.</i></td></tr>
+<tr><th id="51">51</th><td><i> *</i></td></tr>
+<tr><th id="52">52</th><td><i> *                                    -----</i></td></tr>
+<tr><th id="53">53</th><td><i> *</i></td></tr>
+<tr><th id="54">54</th><td><i> * As with the previous Siena structures, each structure here is laid out</i></td></tr>
+<tr><th id="55">55</th><td><i> * carefully: values are aligned to their natural boundary, with explicit</i></td></tr>
+<tr><th id="56">56</th><td><i> * padding fields added where necessary.  (No, technically this does not</i></td></tr>
+<tr><th id="57">57</th><td><i> * absolutely guarantee portability.  But, in practice, compilers are generally</i></td></tr>
+<tr><th id="58">58</th><td><i> * sensible enough not to introduce completely pointless padding, and it works</i></td></tr>
+<tr><th id="59">59</th><td><i> * well enough.)</i></td></tr>
+<tr><th id="60">60</th><td><i> */</i></td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td><u>#<span data-ppcond="63">ifndef</span> <span class="macro" data-ref="_M/CI_MGMT_TLV_LAYOUT_H">CI_MGMT_TLV_LAYOUT_H</span></u></td></tr>
+<tr><th id="64">64</th><td><u>#define <dfn class="macro" id="_M/CI_MGMT_TLV_LAYOUT_H" data-ref="_M/CI_MGMT_TLV_LAYOUT_H">CI_MGMT_TLV_LAYOUT_H</dfn></u></td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td><i>/* ----------------------------------------------------------------------------</i></td></tr>
+<tr><th id="68">68</th><td><i> *  General structure (defined by SF-108797-SW)</i></td></tr>
+<tr><th id="69">69</th><td><i> * ----------------------------------------------------------------------------</i></td></tr>
+<tr><th id="70">70</th><td><i> */</i></td></tr>
+<tr><th id="71">71</th><td></td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td><i>/* The "end" tag.</i></td></tr>
+<tr><th id="74">74</th><td><i> *</i></td></tr>
+<tr><th id="75">75</th><td><i> * (Note that this is *not* followed by length or value fields: anything after</i></td></tr>
+<tr><th id="76">76</th><td><i> * the tag itself is irrelevant.)</i></td></tr>
+<tr><th id="77">77</th><td><i> */</i></td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_END" data-ref="_M/TLV_TAG_END">TLV_TAG_END</dfn>                     (0xEEEEEEEE)</u></td></tr>
+<tr><th id="80">80</th><td></td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td><i>/* Other special reserved tag values.</i></td></tr>
+<tr><th id="83">83</th><td><i> */</i></td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_SKIP" data-ref="_M/TLV_TAG_SKIP">TLV_TAG_SKIP</dfn>                    (0x00000000)</u></td></tr>
+<tr><th id="86">86</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_INVALID" data-ref="_M/TLV_TAG_INVALID">TLV_TAG_INVALID</dfn>                 (0xFFFFFFFF)</u></td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td></td></tr>
+<tr><th id="89">89</th><td><i>/* TLV partition header.</i></td></tr>
+<tr><th id="90">90</th><td><i> *</i></td></tr>
+<tr><th id="91">91</th><td><i> * In a TLV partition, this must be the first item in the sequence, at offset</i></td></tr>
+<tr><th id="92">92</th><td><i> * 0.</i></td></tr>
+<tr><th id="93">93</th><td><i> */</i></td></tr>
+<tr><th id="94">94</th><td></td></tr>
+<tr><th id="95">95</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_PARTITION_HEADER" data-ref="_M/TLV_TAG_PARTITION_HEADER">TLV_TAG_PARTITION_HEADER</dfn>        (0xEF10DA7A)</u></td></tr>
+<tr><th id="96">96</th><td></td></tr>
+<tr><th id="97">97</th><td><b>struct</b> <dfn class="type def" id="tlv_partition_header" title='tlv_partition_header' data-ref="tlv_partition_header">tlv_partition_header</dfn> {</td></tr>
+<tr><th id="98">98</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_partition_header::tag" title='tlv_partition_header::tag' data-ref="tlv_partition_header::tag">tag</dfn>;</td></tr>
+<tr><th id="99">99</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_partition_header::length" title='tlv_partition_header::length' data-ref="tlv_partition_header::length">length</dfn>;</td></tr>
+<tr><th id="100">100</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_partition_header::type_id" title='tlv_partition_header::type_id' data-ref="tlv_partition_header::type_id">type_id</dfn>;</td></tr>
+<tr><th id="101">101</th><td><i>/* 0 indicates the default segment (always located at offset 0), while other values</i></td></tr>
+<tr><th id="102">102</th><td><i> * are for RFID-selectable presets that should immediately follow the default segment.</i></td></tr>
+<tr><th id="103">103</th><td><i> * The default segment may also have preset &gt; 0, which means that it is a preset</i></td></tr>
+<tr><th id="104">104</th><td><i> * selected through an RFID command and copied by FW to the location at offset 0. */</i></td></tr>
+<tr><th id="105">105</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_partition_header::preset" title='tlv_partition_header::preset' data-ref="tlv_partition_header::preset">preset</dfn>;</td></tr>
+<tr><th id="106">106</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_partition_header::generation" title='tlv_partition_header::generation' data-ref="tlv_partition_header::generation">generation</dfn>;</td></tr>
+<tr><th id="107">107</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_partition_header::total_length" title='tlv_partition_header::total_length' data-ref="tlv_partition_header::total_length">total_length</dfn>;</td></tr>
+<tr><th id="108">108</th><td>};</td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td></td></tr>
+<tr><th id="111">111</th><td><i>/* TLV partition trailer.</i></td></tr>
+<tr><th id="112">112</th><td><i> *</i></td></tr>
+<tr><th id="113">113</th><td><i> * In a TLV partition, this must be the last item in the sequence, immediately</i></td></tr>
+<tr><th id="114">114</th><td><i> * preceding the TLV_TAG_END word.</i></td></tr>
+<tr><th id="115">115</th><td><i> */</i></td></tr>
+<tr><th id="116">116</th><td></td></tr>
+<tr><th id="117">117</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_PARTITION_TRAILER" data-ref="_M/TLV_TAG_PARTITION_TRAILER">TLV_TAG_PARTITION_TRAILER</dfn>       (0xEF101A57)</u></td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td><b>struct</b> <dfn class="type def" id="tlv_partition_trailer" title='tlv_partition_trailer' data-ref="tlv_partition_trailer">tlv_partition_trailer</dfn> {</td></tr>
+<tr><th id="120">120</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_partition_trailer::tag" title='tlv_partition_trailer::tag' data-ref="tlv_partition_trailer::tag">tag</dfn>;</td></tr>
+<tr><th id="121">121</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_partition_trailer::length" title='tlv_partition_trailer::length' data-ref="tlv_partition_trailer::length">length</dfn>;</td></tr>
+<tr><th id="122">122</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_partition_trailer::generation" title='tlv_partition_trailer::generation' data-ref="tlv_partition_trailer::generation">generation</dfn>;</td></tr>
+<tr><th id="123">123</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_partition_trailer::checksum" title='tlv_partition_trailer::checksum' data-ref="tlv_partition_trailer::checksum">checksum</dfn>;</td></tr>
+<tr><th id="124">124</th><td>};</td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td></td></tr>
+<tr><th id="127">127</th><td><i>/* Appendable TLV partition header.</i></td></tr>
+<tr><th id="128">128</th><td><i> *</i></td></tr>
+<tr><th id="129">129</th><td><i> * In an appendable TLV partition, this must be the first item in the sequence,</i></td></tr>
+<tr><th id="130">130</th><td><i> * at offset 0.  (Note that, unlike the configuration partitions, there is no</i></td></tr>
+<tr><th id="131">131</th><td><i> * trailer before the TLV_TAG_END word.)</i></td></tr>
+<tr><th id="132">132</th><td><i> */</i></td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_APPENDABLE_PARTITION_HEADER" data-ref="_M/TLV_TAG_APPENDABLE_PARTITION_HEADER">TLV_TAG_APPENDABLE_PARTITION_HEADER</dfn> (0xEF10ADA7)</u></td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td><b>struct</b> <dfn class="type def" id="tlv_appendable_partition_header" title='tlv_appendable_partition_header' data-ref="tlv_appendable_partition_header">tlv_appendable_partition_header</dfn> {</td></tr>
+<tr><th id="137">137</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_appendable_partition_header::tag" title='tlv_appendable_partition_header::tag' data-ref="tlv_appendable_partition_header::tag">tag</dfn>;</td></tr>
+<tr><th id="138">138</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_appendable_partition_header::length" title='tlv_appendable_partition_header::length' data-ref="tlv_appendable_partition_header::length">length</dfn>;</td></tr>
+<tr><th id="139">139</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_appendable_partition_header::type_id" title='tlv_appendable_partition_header::type_id' data-ref="tlv_appendable_partition_header::type_id">type_id</dfn>;</td></tr>
+<tr><th id="140">140</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_appendable_partition_header::reserved" title='tlv_appendable_partition_header::reserved' data-ref="tlv_appendable_partition_header::reserved">reserved</dfn>;</td></tr>
+<tr><th id="141">141</th><td>};</td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td></td></tr>
+<tr><th id="144">144</th><td><i>/* ----------------------------------------------------------------------------</i></td></tr>
+<tr><th id="145">145</th><td><i> *  Configuration items</i></td></tr>
+<tr><th id="146">146</th><td><i> * ----------------------------------------------------------------------------</i></td></tr>
+<tr><th id="147">147</th><td><i> */</i></td></tr>
+<tr><th id="148">148</th><td></td></tr>
+<tr><th id="149">149</th><td></td></tr>
+<tr><th id="150">150</th><td><i>/* NIC global capabilities.</i></td></tr>
+<tr><th id="151">151</th><td><i> */</i></td></tr>
+<tr><th id="152">152</th><td></td></tr>
+<tr><th id="153">153</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_GLOBAL_CAPABILITIES" data-ref="_M/TLV_TAG_GLOBAL_CAPABILITIES">TLV_TAG_GLOBAL_CAPABILITIES</dfn>     (0x00010000)</u></td></tr>
+<tr><th id="154">154</th><td></td></tr>
+<tr><th id="155">155</th><td><b>struct</b> <dfn class="type def" id="tlv_global_capabilities" title='tlv_global_capabilities' data-ref="tlv_global_capabilities">tlv_global_capabilities</dfn> {</td></tr>
+<tr><th id="156">156</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_capabilities::tag" title='tlv_global_capabilities::tag' data-ref="tlv_global_capabilities::tag">tag</dfn>;</td></tr>
+<tr><th id="157">157</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_capabilities::length" title='tlv_global_capabilities::length' data-ref="tlv_global_capabilities::length">length</dfn>;</td></tr>
+<tr><th id="158">158</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_capabilities::flags" title='tlv_global_capabilities::flags' data-ref="tlv_global_capabilities::flags">flags</dfn>;</td></tr>
+<tr><th id="159">159</th><td>};</td></tr>
+<tr><th id="160">160</th><td></td></tr>
+<tr><th id="161">161</th><td></td></tr>
+<tr><th id="162">162</th><td><i>/* Siena-style per-port MAC address allocation.</i></td></tr>
+<tr><th id="163">163</th><td><i> *</i></td></tr>
+<tr><th id="164">164</th><td><i> * There are &lt;count&gt; addresses, starting at &lt;base_address&gt; and incrementing</i></td></tr>
+<tr><th id="165">165</th><td><i> * by adding &lt;stride&gt; to the low-order byte(s).</i></td></tr>
+<tr><th id="166">166</th><td><i> *</i></td></tr>
+<tr><th id="167">167</th><td><i> * (See also TLV_TAG_GLOBAL_MAC for an alternative, specifying a global pool</i></td></tr>
+<tr><th id="168">168</th><td><i> * of contiguous MAC addresses for the firmware to allocate as it sees fit.)</i></td></tr>
+<tr><th id="169">169</th><td><i> */</i></td></tr>
+<tr><th id="170">170</th><td></td></tr>
+<tr><th id="171">171</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_PORT_MAC" data-ref="_M/TLV_TAG_PORT_MAC">TLV_TAG_PORT_MAC</dfn>(port)          (0x00020000 + (port))</u></td></tr>
+<tr><th id="172">172</th><td></td></tr>
+<tr><th id="173">173</th><td><b>struct</b> <dfn class="type def" id="tlv_port_mac" title='tlv_port_mac' data-ref="tlv_port_mac">tlv_port_mac</dfn> {</td></tr>
+<tr><th id="174">174</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_port_mac::tag" title='tlv_port_mac::tag' data-ref="tlv_port_mac::tag">tag</dfn>;</td></tr>
+<tr><th id="175">175</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_port_mac::length" title='tlv_port_mac::length' data-ref="tlv_port_mac::length">length</dfn>;</td></tr>
+<tr><th id="176">176</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a>  <dfn class="decl field" id="tlv_port_mac::base_address" title='tlv_port_mac::base_address' data-ref="tlv_port_mac::base_address">base_address</dfn>[<var>6</var>];</td></tr>
+<tr><th id="177">177</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_port_mac::reserved" title='tlv_port_mac::reserved' data-ref="tlv_port_mac::reserved">reserved</dfn>;</td></tr>
+<tr><th id="178">178</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_port_mac::count" title='tlv_port_mac::count' data-ref="tlv_port_mac::count">count</dfn>;</td></tr>
+<tr><th id="179">179</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_port_mac::stride" title='tlv_port_mac::stride' data-ref="tlv_port_mac::stride">stride</dfn>;</td></tr>
+<tr><th id="180">180</th><td>};</td></tr>
+<tr><th id="181">181</th><td></td></tr>
+<tr><th id="182">182</th><td></td></tr>
+<tr><th id="183">183</th><td><i>/* Static VPD.</i></td></tr>
+<tr><th id="184">184</th><td><i> *</i></td></tr>
+<tr><th id="185">185</th><td><i> * This is the portion of VPD which is set at manufacturing time and not</i></td></tr>
+<tr><th id="186">186</th><td><i> * expected to change.  It is formatted as a standard PCI VPD block. There are</i></td></tr>
+<tr><th id="187">187</th><td><i> * global and per-pf TLVs for this, the global TLV is new for Medford and is</i></td></tr>
+<tr><th id="188">188</th><td><i> * used in preference to the per-pf TLV.</i></td></tr>
+<tr><th id="189">189</th><td><i> */</i></td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_PF_STATIC_VPD" data-ref="_M/TLV_TAG_PF_STATIC_VPD">TLV_TAG_PF_STATIC_VPD</dfn>(pf)       (0x00030000 + (pf))</u></td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td><b>struct</b> <dfn class="type def" id="tlv_pf_static_vpd" title='tlv_pf_static_vpd' data-ref="tlv_pf_static_vpd">tlv_pf_static_vpd</dfn> {</td></tr>
+<tr><th id="194">194</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pf_static_vpd::tag" title='tlv_pf_static_vpd::tag' data-ref="tlv_pf_static_vpd::tag">tag</dfn>;</td></tr>
+<tr><th id="195">195</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pf_static_vpd::length" title='tlv_pf_static_vpd::length' data-ref="tlv_pf_static_vpd::length">length</dfn>;</td></tr>
+<tr><th id="196">196</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a>  <dfn class="decl field" id="tlv_pf_static_vpd::bytes" title='tlv_pf_static_vpd::bytes' data-ref="tlv_pf_static_vpd::bytes">bytes</dfn>[];</td></tr>
+<tr><th id="197">197</th><td>};</td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_GLOBAL_STATIC_VPD" data-ref="_M/TLV_TAG_GLOBAL_STATIC_VPD">TLV_TAG_GLOBAL_STATIC_VPD</dfn>       (0x001f0000)</u></td></tr>
+<tr><th id="200">200</th><td></td></tr>
+<tr><th id="201">201</th><td><b>struct</b> <dfn class="type def" id="tlv_global_static_vpd" title='tlv_global_static_vpd' data-ref="tlv_global_static_vpd">tlv_global_static_vpd</dfn> {</td></tr>
+<tr><th id="202">202</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_static_vpd::tag" title='tlv_global_static_vpd::tag' data-ref="tlv_global_static_vpd::tag">tag</dfn>;</td></tr>
+<tr><th id="203">203</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_static_vpd::length" title='tlv_global_static_vpd::length' data-ref="tlv_global_static_vpd::length">length</dfn>;</td></tr>
+<tr><th id="204">204</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a>  <dfn class="decl field" id="tlv_global_static_vpd::bytes" title='tlv_global_static_vpd::bytes' data-ref="tlv_global_static_vpd::bytes">bytes</dfn>[];</td></tr>
+<tr><th id="205">205</th><td>};</td></tr>
+<tr><th id="206">206</th><td></td></tr>
+<tr><th id="207">207</th><td></td></tr>
+<tr><th id="208">208</th><td><i>/* Dynamic VPD.</i></td></tr>
+<tr><th id="209">209</th><td><i> *</i></td></tr>
+<tr><th id="210">210</th><td><i> * This is the portion of VPD which may be changed (e.g. by firmware updates).</i></td></tr>
+<tr><th id="211">211</th><td><i> * It is formatted as a standard PCI VPD block. There are global and per-pf TLVs</i></td></tr>
+<tr><th id="212">212</th><td><i> * for this, the global TLV is new for Medford and is used in preference to the</i></td></tr>
+<tr><th id="213">213</th><td><i> * per-pf TLV.</i></td></tr>
+<tr><th id="214">214</th><td><i> */</i></td></tr>
+<tr><th id="215">215</th><td></td></tr>
+<tr><th id="216">216</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_PF_DYNAMIC_VPD" data-ref="_M/TLV_TAG_PF_DYNAMIC_VPD">TLV_TAG_PF_DYNAMIC_VPD</dfn>(pf)      (0x10030000 + (pf))</u></td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td><b>struct</b> <dfn class="type def" id="tlv_pf_dynamic_vpd" title='tlv_pf_dynamic_vpd' data-ref="tlv_pf_dynamic_vpd">tlv_pf_dynamic_vpd</dfn> {</td></tr>
+<tr><th id="219">219</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pf_dynamic_vpd::tag" title='tlv_pf_dynamic_vpd::tag' data-ref="tlv_pf_dynamic_vpd::tag">tag</dfn>;</td></tr>
+<tr><th id="220">220</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pf_dynamic_vpd::length" title='tlv_pf_dynamic_vpd::length' data-ref="tlv_pf_dynamic_vpd::length">length</dfn>;</td></tr>
+<tr><th id="221">221</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a>  <dfn class="decl field" id="tlv_pf_dynamic_vpd::bytes" title='tlv_pf_dynamic_vpd::bytes' data-ref="tlv_pf_dynamic_vpd::bytes">bytes</dfn>[];</td></tr>
+<tr><th id="222">222</th><td>};</td></tr>
+<tr><th id="223">223</th><td></td></tr>
+<tr><th id="224">224</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_GLOBAL_DYNAMIC_VPD" data-ref="_M/TLV_TAG_GLOBAL_DYNAMIC_VPD">TLV_TAG_GLOBAL_DYNAMIC_VPD</dfn>      (0x10200000)</u></td></tr>
+<tr><th id="225">225</th><td></td></tr>
+<tr><th id="226">226</th><td><b>struct</b> <dfn class="type def" id="tlv_global_dynamic_vpd" title='tlv_global_dynamic_vpd' data-ref="tlv_global_dynamic_vpd">tlv_global_dynamic_vpd</dfn> {</td></tr>
+<tr><th id="227">227</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_dynamic_vpd::tag" title='tlv_global_dynamic_vpd::tag' data-ref="tlv_global_dynamic_vpd::tag">tag</dfn>;</td></tr>
+<tr><th id="228">228</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_dynamic_vpd::length" title='tlv_global_dynamic_vpd::length' data-ref="tlv_global_dynamic_vpd::length">length</dfn>;</td></tr>
+<tr><th id="229">229</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a>  <dfn class="decl field" id="tlv_global_dynamic_vpd::bytes" title='tlv_global_dynamic_vpd::bytes' data-ref="tlv_global_dynamic_vpd::bytes">bytes</dfn>[];</td></tr>
+<tr><th id="230">230</th><td>};</td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td></td></tr>
+<tr><th id="233">233</th><td><i>/* "DBI" PCI config space changes.</i></td></tr>
+<tr><th id="234">234</th><td><i> *</i></td></tr>
+<tr><th id="235">235</th><td><i> * This is a set of edits made to the default PCI config space values before</i></td></tr>
+<tr><th id="236">236</th><td><i> * the device is allowed to enumerate. There are global and per-pf TLVs for</i></td></tr>
+<tr><th id="237">237</th><td><i> * this, the global TLV is new for Medford and is used in preference to the</i></td></tr>
+<tr><th id="238">238</th><td><i> * per-pf TLV.</i></td></tr>
+<tr><th id="239">239</th><td><i> */</i></td></tr>
+<tr><th id="240">240</th><td></td></tr>
+<tr><th id="241">241</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_PF_DBI" data-ref="_M/TLV_TAG_PF_DBI">TLV_TAG_PF_DBI</dfn>(pf)              (0x00040000 + (pf))</u></td></tr>
+<tr><th id="242">242</th><td></td></tr>
+<tr><th id="243">243</th><td><b>struct</b> <dfn class="type def" id="tlv_pf_dbi" title='tlv_pf_dbi' data-ref="tlv_pf_dbi">tlv_pf_dbi</dfn> {</td></tr>
+<tr><th id="244">244</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pf_dbi::tag" title='tlv_pf_dbi::tag' data-ref="tlv_pf_dbi::tag">tag</dfn>;</td></tr>
+<tr><th id="245">245</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pf_dbi::length" title='tlv_pf_dbi::length' data-ref="tlv_pf_dbi::length">length</dfn>;</td></tr>
+<tr><th id="246">246</th><td>  <b>struct</b> {</td></tr>
+<tr><th id="247">247</th><td>    <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_pf_dbi::(anonymous)::addr" title='tlv_pf_dbi::(anonymous struct)::addr' data-ref="tlv_pf_dbi::(anonymous)::addr">addr</dfn>;</td></tr>
+<tr><th id="248">248</th><td>    <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_pf_dbi::(anonymous)::byte_enables" title='tlv_pf_dbi::(anonymous struct)::byte_enables' data-ref="tlv_pf_dbi::(anonymous)::byte_enables">byte_enables</dfn>;</td></tr>
+<tr><th id="249">249</th><td>    <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pf_dbi::(anonymous)::value" title='tlv_pf_dbi::(anonymous struct)::value' data-ref="tlv_pf_dbi::(anonymous)::value">value</dfn>;</td></tr>
+<tr><th id="250">250</th><td>  } <dfn class="decl field" id="tlv_pf_dbi::items" title='tlv_pf_dbi::items' data-ref="tlv_pf_dbi::items">items</dfn>[];</td></tr>
+<tr><th id="251">251</th><td>};</td></tr>
+<tr><th id="252">252</th><td></td></tr>
+<tr><th id="253">253</th><td></td></tr>
+<tr><th id="254">254</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_GLOBAL_DBI" data-ref="_M/TLV_TAG_GLOBAL_DBI">TLV_TAG_GLOBAL_DBI</dfn>              (0x00210000)</u></td></tr>
+<tr><th id="255">255</th><td></td></tr>
+<tr><th id="256">256</th><td><b>struct</b> <dfn class="type def" id="tlv_global_dbi" title='tlv_global_dbi' data-ref="tlv_global_dbi">tlv_global_dbi</dfn> {</td></tr>
+<tr><th id="257">257</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_dbi::tag" title='tlv_global_dbi::tag' data-ref="tlv_global_dbi::tag">tag</dfn>;</td></tr>
+<tr><th id="258">258</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_dbi::length" title='tlv_global_dbi::length' data-ref="tlv_global_dbi::length">length</dfn>;</td></tr>
+<tr><th id="259">259</th><td>  <b>struct</b> {</td></tr>
+<tr><th id="260">260</th><td>    <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_global_dbi::(anonymous)::addr" title='tlv_global_dbi::(anonymous struct)::addr' data-ref="tlv_global_dbi::(anonymous)::addr">addr</dfn>;</td></tr>
+<tr><th id="261">261</th><td>    <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_global_dbi::(anonymous)::byte_enables" title='tlv_global_dbi::(anonymous struct)::byte_enables' data-ref="tlv_global_dbi::(anonymous)::byte_enables">byte_enables</dfn>;</td></tr>
+<tr><th id="262">262</th><td>    <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_dbi::(anonymous)::value" title='tlv_global_dbi::(anonymous struct)::value' data-ref="tlv_global_dbi::(anonymous)::value">value</dfn>;</td></tr>
+<tr><th id="263">263</th><td>  } <dfn class="decl field" id="tlv_global_dbi::items" title='tlv_global_dbi::items' data-ref="tlv_global_dbi::items">items</dfn>[];</td></tr>
+<tr><th id="264">264</th><td>};</td></tr>
+<tr><th id="265">265</th><td></td></tr>
+<tr><th id="266">266</th><td></td></tr>
+<tr><th id="267">267</th><td><i>/* Partition subtype codes.</i></td></tr>
+<tr><th id="268">268</th><td><i> *</i></td></tr>
+<tr><th id="269">269</th><td><i> * A subtype may optionally be stored for each type of partition present in</i></td></tr>
+<tr><th id="270">270</th><td><i> * the NVRAM.  For example, this may be used to allow a generic firmware update</i></td></tr>
+<tr><th id="271">271</th><td><i> * utility to select a specific variant of firmware for a specific variant of</i></td></tr>
+<tr><th id="272">272</th><td><i> * board.</i></td></tr>
+<tr><th id="273">273</th><td><i> *</i></td></tr>
+<tr><th id="274">274</th><td><i> * The description[] field is an optional string which is returned in the</i></td></tr>
+<tr><th id="275">275</th><td><i> * MC_CMD_NVRAM_METADATA response if present.</i></td></tr>
+<tr><th id="276">276</th><td><i> */</i></td></tr>
+<tr><th id="277">277</th><td></td></tr>
+<tr><th id="278">278</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_PARTITION_SUBTYPE" data-ref="_M/TLV_TAG_PARTITION_SUBTYPE">TLV_TAG_PARTITION_SUBTYPE</dfn>(type) (0x00050000 + (type))</u></td></tr>
+<tr><th id="279">279</th><td></td></tr>
+<tr><th id="280">280</th><td><b>struct</b> <dfn class="type def" id="tlv_partition_subtype" title='tlv_partition_subtype' data-ref="tlv_partition_subtype">tlv_partition_subtype</dfn> {</td></tr>
+<tr><th id="281">281</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_partition_subtype::tag" title='tlv_partition_subtype::tag' data-ref="tlv_partition_subtype::tag">tag</dfn>;</td></tr>
+<tr><th id="282">282</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_partition_subtype::length" title='tlv_partition_subtype::length' data-ref="tlv_partition_subtype::length">length</dfn>;</td></tr>
+<tr><th id="283">283</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_partition_subtype::subtype" title='tlv_partition_subtype::subtype' data-ref="tlv_partition_subtype::subtype">subtype</dfn>;</td></tr>
+<tr><th id="284">284</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a>  <dfn class="decl field" id="tlv_partition_subtype::description" title='tlv_partition_subtype::description' data-ref="tlv_partition_subtype::description">description</dfn>[];</td></tr>
+<tr><th id="285">285</th><td>};</td></tr>
+<tr><th id="286">286</th><td></td></tr>
+<tr><th id="287">287</th><td></td></tr>
+<tr><th id="288">288</th><td><i>/* Partition version codes.</i></td></tr>
+<tr><th id="289">289</th><td><i> *</i></td></tr>
+<tr><th id="290">290</th><td><i> * A version may optionally be stored for each type of partition present in</i></td></tr>
+<tr><th id="291">291</th><td><i> * the NVRAM.  This provides a standard way of tracking the currently stored</i></td></tr>
+<tr><th id="292">292</th><td><i> * version of each of the various component images.</i></td></tr>
+<tr><th id="293">293</th><td><i> */</i></td></tr>
+<tr><th id="294">294</th><td></td></tr>
+<tr><th id="295">295</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_PARTITION_VERSION" data-ref="_M/TLV_TAG_PARTITION_VERSION">TLV_TAG_PARTITION_VERSION</dfn>(type) (0x10060000 + (type))</u></td></tr>
+<tr><th id="296">296</th><td></td></tr>
+<tr><th id="297">297</th><td><b>struct</b> <dfn class="type def" id="tlv_partition_version" title='tlv_partition_version' data-ref="tlv_partition_version">tlv_partition_version</dfn> {</td></tr>
+<tr><th id="298">298</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_partition_version::tag" title='tlv_partition_version::tag' data-ref="tlv_partition_version::tag">tag</dfn>;</td></tr>
+<tr><th id="299">299</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_partition_version::length" title='tlv_partition_version::length' data-ref="tlv_partition_version::length">length</dfn>;</td></tr>
+<tr><th id="300">300</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_partition_version::version_w" title='tlv_partition_version::version_w' data-ref="tlv_partition_version::version_w">version_w</dfn>;</td></tr>
+<tr><th id="301">301</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_partition_version::version_x" title='tlv_partition_version::version_x' data-ref="tlv_partition_version::version_x">version_x</dfn>;</td></tr>
+<tr><th id="302">302</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_partition_version::version_y" title='tlv_partition_version::version_y' data-ref="tlv_partition_version::version_y">version_y</dfn>;</td></tr>
+<tr><th id="303">303</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_partition_version::version_z" title='tlv_partition_version::version_z' data-ref="tlv_partition_version::version_z">version_z</dfn>;</td></tr>
+<tr><th id="304">304</th><td>};</td></tr>
+<tr><th id="305">305</th><td></td></tr>
+<tr><th id="306">306</th><td><i>/* Global PCIe configuration */</i></td></tr>
+<tr><th id="307">307</th><td></td></tr>
+<tr><th id="308">308</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_GLOBAL_PCIE_CONFIG" data-ref="_M/TLV_TAG_GLOBAL_PCIE_CONFIG">TLV_TAG_GLOBAL_PCIE_CONFIG</dfn> (0x10070000)</u></td></tr>
+<tr><th id="309">309</th><td></td></tr>
+<tr><th id="310">310</th><td><b>struct</b> <dfn class="type def" id="tlv_pcie_config" title='tlv_pcie_config' data-ref="tlv_pcie_config">tlv_pcie_config</dfn> {</td></tr>
+<tr><th id="311">311</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pcie_config::tag" title='tlv_pcie_config::tag' data-ref="tlv_pcie_config::tag">tag</dfn>;</td></tr>
+<tr><th id="312">312</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pcie_config::length" title='tlv_pcie_config::length' data-ref="tlv_pcie_config::length">length</dfn>;</td></tr>
+<tr><th id="313">313</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#int16_t" title='int16_t' data-type='short' data-ref="int16_t">int16_t</a> <dfn class="decl field" id="tlv_pcie_config::max_pf_number" title='tlv_pcie_config::max_pf_number' data-ref="tlv_pcie_config::max_pf_number">max_pf_number</dfn>;                        <i class="doc">/**&lt; Largest PF RID (lower PFs may be hidden) */</i></td></tr>
+<tr><th id="314">314</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_pcie_config::pf_aper" title='tlv_pcie_config::pf_aper' data-ref="tlv_pcie_config::pf_aper">pf_aper</dfn>;                             <i class="doc">/**&lt; BIU aperture for PF BAR2 */</i></td></tr>
+<tr><th id="315">315</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_pcie_config::vf_aper" title='tlv_pcie_config::vf_aper' data-ref="tlv_pcie_config::vf_aper">vf_aper</dfn>;                             <i class="doc">/**&lt; BIU aperture for VF BAR0 */</i></td></tr>
+<tr><th id="316">316</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_pcie_config::int_aper" title='tlv_pcie_config::int_aper' data-ref="tlv_pcie_config::int_aper">int_aper</dfn>;                            <i class="doc">/**&lt; BIU aperture for PF BAR4 and VF BAR2 */</i></td></tr>
+<tr><th id="317">317</th><td><u>#define <dfn class="macro" id="_M/TLV_MAX_PF_DEFAULT" data-ref="_M/TLV_MAX_PF_DEFAULT">TLV_MAX_PF_DEFAULT</dfn> (-1)                 /* Use FW default for largest PF RID  */</u></td></tr>
+<tr><th id="318">318</th><td><u>#define <dfn class="macro" id="_M/TLV_APER_DEFAULT" data-ref="_M/TLV_APER_DEFAULT">TLV_APER_DEFAULT</dfn> (0xFFFF)               /* Use FW default for a given aperture */</u></td></tr>
+<tr><th id="319">319</th><td>};</td></tr>
+<tr><th id="320">320</th><td></td></tr>
+<tr><th id="321">321</th><td><i>/* Per-PF configuration. Note that not all these fields are necessarily useful</i></td></tr>
+<tr><th id="322">322</th><td><i> * as the apertures are constrained by the BIU settings (the one case we do</i></td></tr>
+<tr><th id="323">323</th><td><i> * use is to make BAR2 bigger than the BIU thinks to reserve space), but we can</i></td></tr>
+<tr><th id="324">324</th><td><i> * tidy things up later */</i></td></tr>
+<tr><th id="325">325</th><td></td></tr>
+<tr><th id="326">326</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_PF_PCIE_CONFIG" data-ref="_M/TLV_TAG_PF_PCIE_CONFIG">TLV_TAG_PF_PCIE_CONFIG</dfn>(pf)  (0x10080000 + (pf))</u></td></tr>
+<tr><th id="327">327</th><td></td></tr>
+<tr><th id="328">328</th><td><b>struct</b> <dfn class="type def" id="tlv_per_pf_pcie_config" title='tlv_per_pf_pcie_config' data-ref="tlv_per_pf_pcie_config">tlv_per_pf_pcie_config</dfn> {</td></tr>
+<tr><th id="329">329</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_per_pf_pcie_config::tag" title='tlv_per_pf_pcie_config::tag' data-ref="tlv_per_pf_pcie_config::tag">tag</dfn>;</td></tr>
+<tr><th id="330">330</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_per_pf_pcie_config::length" title='tlv_per_pf_pcie_config::length' data-ref="tlv_per_pf_pcie_config::length">length</dfn>;</td></tr>
+<tr><th id="331">331</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="tlv_per_pf_pcie_config::vfs_total" title='tlv_per_pf_pcie_config::vfs_total' data-ref="tlv_per_pf_pcie_config::vfs_total">vfs_total</dfn>;</td></tr>
+<tr><th id="332">332</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="tlv_per_pf_pcie_config::port_allocation" title='tlv_per_pf_pcie_config::port_allocation' data-ref="tlv_per_pf_pcie_config::port_allocation">port_allocation</dfn>;</td></tr>
+<tr><th id="333">333</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_per_pf_pcie_config::vectors_per_pf" title='tlv_per_pf_pcie_config::vectors_per_pf' data-ref="tlv_per_pf_pcie_config::vectors_per_pf">vectors_per_pf</dfn>;</td></tr>
+<tr><th id="334">334</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_per_pf_pcie_config::vectors_per_vf" title='tlv_per_pf_pcie_config::vectors_per_vf' data-ref="tlv_per_pf_pcie_config::vectors_per_vf">vectors_per_vf</dfn>;</td></tr>
+<tr><th id="335">335</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="tlv_per_pf_pcie_config::pf_bar0_aperture" title='tlv_per_pf_pcie_config::pf_bar0_aperture' data-ref="tlv_per_pf_pcie_config::pf_bar0_aperture">pf_bar0_aperture</dfn>;</td></tr>
+<tr><th id="336">336</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="tlv_per_pf_pcie_config::pf_bar2_aperture" title='tlv_per_pf_pcie_config::pf_bar2_aperture' data-ref="tlv_per_pf_pcie_config::pf_bar2_aperture">pf_bar2_aperture</dfn>;</td></tr>
+<tr><th id="337">337</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="tlv_per_pf_pcie_config::vf_bar0_aperture" title='tlv_per_pf_pcie_config::vf_bar0_aperture' data-ref="tlv_per_pf_pcie_config::vf_bar0_aperture">vf_bar0_aperture</dfn>;</td></tr>
+<tr><th id="338">338</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="tlv_per_pf_pcie_config::vf_base" title='tlv_per_pf_pcie_config::vf_base' data-ref="tlv_per_pf_pcie_config::vf_base">vf_base</dfn>;</td></tr>
+<tr><th id="339">339</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_per_pf_pcie_config::supp_pagesz" title='tlv_per_pf_pcie_config::supp_pagesz' data-ref="tlv_per_pf_pcie_config::supp_pagesz">supp_pagesz</dfn>;</td></tr>
+<tr><th id="340">340</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_per_pf_pcie_config::msix_vec_base" title='tlv_per_pf_pcie_config::msix_vec_base' data-ref="tlv_per_pf_pcie_config::msix_vec_base">msix_vec_base</dfn>;</td></tr>
+<tr><th id="341">341</th><td>};</td></tr>
+<tr><th id="342">342</th><td></td></tr>
+<tr><th id="343">343</th><td></td></tr>
+<tr><th id="344">344</th><td><i>/* Development ONLY. This is a single TLV tag for all the gubbins</i></td></tr>
+<tr><th id="345">345</th><td><i> * that can be set through the MC command-line other than the PCIe</i></td></tr>
+<tr><th id="346">346</th><td><i> * settings. This is a temporary measure. */</i></td></tr>
+<tr><th id="347">347</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_TMP_GUBBINS" data-ref="_M/TLV_TAG_TMP_GUBBINS">TLV_TAG_TMP_GUBBINS</dfn> (0x10090000)        /* legacy symbol - do not use */</u></td></tr>
+<tr><th id="348">348</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_TMP_GUBBINS_HUNT" data-ref="_M/TLV_TAG_TMP_GUBBINS_HUNT">TLV_TAG_TMP_GUBBINS_HUNT</dfn> TLV_TAG_TMP_GUBBINS</u></td></tr>
+<tr><th id="349">349</th><td></td></tr>
+<tr><th id="350">350</th><td><b>struct</b> <dfn class="type def" id="tlv_tmp_gubbins" title='tlv_tmp_gubbins' data-ref="tlv_tmp_gubbins">tlv_tmp_gubbins</dfn> {</td></tr>
+<tr><th id="351">351</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tmp_gubbins::tag" title='tlv_tmp_gubbins::tag' data-ref="tlv_tmp_gubbins::tag">tag</dfn>;</td></tr>
+<tr><th id="352">352</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tmp_gubbins::length" title='tlv_tmp_gubbins::length' data-ref="tlv_tmp_gubbins::length">length</dfn>;</td></tr>
+<tr><th id="353">353</th><td>  <i>/* Consumed by dpcpu.c */</i></td></tr>
+<tr><th id="354">354</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="tlv_tmp_gubbins::tx0_tags" title='tlv_tmp_gubbins::tx0_tags' data-ref="tlv_tmp_gubbins::tx0_tags">tx0_tags</dfn>;     <i>/* Bitmap */</i></td></tr>
+<tr><th id="355">355</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="tlv_tmp_gubbins::tx1_tags" title='tlv_tmp_gubbins::tx1_tags' data-ref="tlv_tmp_gubbins::tx1_tags">tx1_tags</dfn>;     <i>/* Bitmap */</i></td></tr>
+<tr><th id="356">356</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="tlv_tmp_gubbins::dl_tags" title='tlv_tmp_gubbins::dl_tags' data-ref="tlv_tmp_gubbins::dl_tags">dl_tags</dfn>;      <i>/* Bitmap */</i></td></tr>
+<tr><th id="357">357</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tmp_gubbins::flags" title='tlv_tmp_gubbins::flags' data-ref="tlv_tmp_gubbins::flags">flags</dfn>;</td></tr>
+<tr><th id="358">358</th><td><u>#define <dfn class="macro" id="_M/TLV_DPCPU_TX_STRIPE" data-ref="_M/TLV_DPCPU_TX_STRIPE">TLV_DPCPU_TX_STRIPE</dfn> (1) /* No longer used, has no effect */</u></td></tr>
+<tr><th id="359">359</th><td><u>#define <dfn class="macro" id="_M/TLV_DPCPU_BIU_TAGS" data-ref="_M/TLV_DPCPU_BIU_TAGS">TLV_DPCPU_BIU_TAGS</dfn>  (2) /* Use BIU tag manager */</u></td></tr>
+<tr><th id="360">360</th><td><u>#define <dfn class="macro" id="_M/TLV_DPCPU_TX0_TAGS" data-ref="_M/TLV_DPCPU_TX0_TAGS">TLV_DPCPU_TX0_TAGS</dfn>  (4) /* tx0_tags is valid */</u></td></tr>
+<tr><th id="361">361</th><td><u>#define <dfn class="macro" id="_M/TLV_DPCPU_TX1_TAGS" data-ref="_M/TLV_DPCPU_TX1_TAGS">TLV_DPCPU_TX1_TAGS</dfn>  (8) /* tx1_tags is valid */</u></td></tr>
+<tr><th id="362">362</th><td><u>#define <dfn class="macro" id="_M/TLV_DPCPU_DL_TAGS" data-ref="_M/TLV_DPCPU_DL_TAGS">TLV_DPCPU_DL_TAGS</dfn>  (16) /* dl_tags is valid */</u></td></tr>
+<tr><th id="363">363</th><td>  <i>/* Consumed by features.c */</i></td></tr>
+<tr><th id="364">364</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tmp_gubbins::dut_features" title='tlv_tmp_gubbins::dut_features' data-ref="tlv_tmp_gubbins::dut_features">dut_features</dfn>;        <i>/* All 1s -&gt; leave alone */</i></td></tr>
+<tr><th id="365">365</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#int8_t" title='int8_t' data-type='signed char' data-ref="int8_t">int8_t</a> <dfn class="decl field" id="tlv_tmp_gubbins::with_rmon" title='tlv_tmp_gubbins::with_rmon' data-ref="tlv_tmp_gubbins::with_rmon">with_rmon</dfn>;             <i>/* 0 -&gt; off, 1 -&gt; on, -1 -&gt; leave alone */</i></td></tr>
+<tr><th id="366">366</th><td>  <i>/* Consumed by clocks_hunt.c */</i></td></tr>
+<tr><th id="367">367</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#int8_t" title='int8_t' data-type='signed char' data-ref="int8_t">int8_t</a> <dfn class="decl field" id="tlv_tmp_gubbins::clk_mode" title='tlv_tmp_gubbins::clk_mode' data-ref="tlv_tmp_gubbins::clk_mode">clk_mode</dfn>;             <i>/* 0 -&gt; off, 1 -&gt; on, -1 -&gt; leave alone */</i></td></tr>
+<tr><th id="368">368</th><td>  <i>/* No longer used, superseded by TLV_TAG_DESCRIPTOR_CACHE_CONFIG. */</i></td></tr>
+<tr><th id="369">369</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#int8_t" title='int8_t' data-type='signed char' data-ref="int8_t">int8_t</a> <dfn class="decl field" id="tlv_tmp_gubbins::rx_dc_size" title='tlv_tmp_gubbins::rx_dc_size' data-ref="tlv_tmp_gubbins::rx_dc_size">rx_dc_size</dfn>;           <i>/* -1 -&gt; leave alone */</i></td></tr>
+<tr><th id="370">370</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#int8_t" title='int8_t' data-type='signed char' data-ref="int8_t">int8_t</a> <dfn class="decl field" id="tlv_tmp_gubbins::tx_dc_size" title='tlv_tmp_gubbins::tx_dc_size' data-ref="tlv_tmp_gubbins::tx_dc_size">tx_dc_size</dfn>;</td></tr>
+<tr><th id="371">371</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#int16_t" title='int16_t' data-type='short' data-ref="int16_t">int16_t</a> <dfn class="decl field" id="tlv_tmp_gubbins::num_q_allocs" title='tlv_tmp_gubbins::num_q_allocs' data-ref="tlv_tmp_gubbins::num_q_allocs">num_q_allocs</dfn>;</td></tr>
+<tr><th id="372">372</th><td>};</td></tr>
+<tr><th id="373">373</th><td></td></tr>
+<tr><th id="374">374</th><td><i>/* Global port configuration</i></td></tr>
+<tr><th id="375">375</th><td><i> *</i></td></tr>
+<tr><th id="376">376</th><td><i> * This is now deprecated in favour of a platform-provided default</i></td></tr>
+<tr><th id="377">377</th><td><i> * and dynamic config override via tlv_global_port_options.</i></td></tr>
+<tr><th id="378">378</th><td><i> */</i></td></tr>
+<tr><th id="379">379</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_GLOBAL_PORT_CONFIG" data-ref="_M/TLV_TAG_GLOBAL_PORT_CONFIG">TLV_TAG_GLOBAL_PORT_CONFIG</dfn>      (0x000a0000)</u></td></tr>
+<tr><th id="380">380</th><td></td></tr>
+<tr><th id="381">381</th><td><b>struct</b> <dfn class="type def" id="tlv_global_port_config" title='tlv_global_port_config' data-ref="tlv_global_port_config">tlv_global_port_config</dfn> {</td></tr>
+<tr><th id="382">382</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_port_config::tag" title='tlv_global_port_config::tag' data-ref="tlv_global_port_config::tag">tag</dfn>;</td></tr>
+<tr><th id="383">383</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_port_config::length" title='tlv_global_port_config::length' data-ref="tlv_global_port_config::length">length</dfn>;</td></tr>
+<tr><th id="384">384</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_port_config::ports_per_core" title='tlv_global_port_config::ports_per_core' data-ref="tlv_global_port_config::ports_per_core">ports_per_core</dfn>;</td></tr>
+<tr><th id="385">385</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_port_config::max_port_speed" title='tlv_global_port_config::max_port_speed' data-ref="tlv_global_port_config::max_port_speed">max_port_speed</dfn>;</td></tr>
+<tr><th id="386">386</th><td>};</td></tr>
+<tr><th id="387">387</th><td></td></tr>
+<tr><th id="388">388</th><td></td></tr>
+<tr><th id="389">389</th><td><i>/* Firmware options.</i></td></tr>
+<tr><th id="390">390</th><td><i> *</i></td></tr>
+<tr><th id="391">391</th><td><i> * This is intended for user-configurable selection of optional firmware</i></td></tr>
+<tr><th id="392">392</th><td><i> * features and variants.</i></td></tr>
+<tr><th id="393">393</th><td><i> *</i></td></tr>
+<tr><th id="394">394</th><td><i> * Initially, this consists only of the satellite CPU firmware variant</i></td></tr>
+<tr><th id="395">395</th><td><i> * selection, but this tag could be extended in the future (using the</i></td></tr>
+<tr><th id="396">396</th><td><i> * tag length to determine whether additional fields are present).</i></td></tr>
+<tr><th id="397">397</th><td><i> */</i></td></tr>
+<tr><th id="398">398</th><td></td></tr>
+<tr><th id="399">399</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_FIRMWARE_OPTIONS" data-ref="_M/TLV_TAG_FIRMWARE_OPTIONS">TLV_TAG_FIRMWARE_OPTIONS</dfn>        (0x100b0000)</u></td></tr>
+<tr><th id="400">400</th><td></td></tr>
+<tr><th id="401">401</th><td><b>struct</b> <dfn class="type def" id="tlv_firmware_options" title='tlv_firmware_options' data-ref="tlv_firmware_options">tlv_firmware_options</dfn> {</td></tr>
+<tr><th id="402">402</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_firmware_options::tag" title='tlv_firmware_options::tag' data-ref="tlv_firmware_options::tag">tag</dfn>;</td></tr>
+<tr><th id="403">403</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_firmware_options::length" title='tlv_firmware_options::length' data-ref="tlv_firmware_options::length">length</dfn>;</td></tr>
+<tr><th id="404">404</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_firmware_options::firmware_variant" title='tlv_firmware_options::firmware_variant' data-ref="tlv_firmware_options::firmware_variant">firmware_variant</dfn>;</td></tr>
+<tr><th id="405">405</th><td><u>#define <dfn class="macro" id="_M/TLV_FIRMWARE_VARIANT_DRIVER_SELECTED" data-ref="_M/TLV_FIRMWARE_VARIANT_DRIVER_SELECTED">TLV_FIRMWARE_VARIANT_DRIVER_SELECTED</dfn> (0xffffffff)</u></td></tr>
+<tr><th id="406">406</th><td></td></tr>
+<tr><th id="407">407</th><td><i>/* These are the values for overriding the driver's choice; the definitions</i></td></tr>
+<tr><th id="408">408</th><td><i> * are taken from MCDI so that they don't get out of step.  Include</i></td></tr>
+<tr><th id="409">409</th><td><i> * &lt;ci/mgmt/mc_driver_pcol.h&gt; or the equivalent from your driver's tree if</i></td></tr>
+<tr><th id="410">410</th><td><i> * you need to use these constants.</i></td></tr>
+<tr><th id="411">411</th><td><i> */</i></td></tr>
+<tr><th id="412">412</th><td><u>#define <dfn class="macro" id="_M/TLV_FIRMWARE_VARIANT_FULL_FEATURED" data-ref="_M/TLV_FIRMWARE_VARIANT_FULL_FEATURED">TLV_FIRMWARE_VARIANT_FULL_FEATURED</dfn>   MC_CMD_FW_FULL_FEATURED</u></td></tr>
+<tr><th id="413">413</th><td><u>#define <dfn class="macro" id="_M/TLV_FIRMWARE_VARIANT_LOW_LATENCY" data-ref="_M/TLV_FIRMWARE_VARIANT_LOW_LATENCY">TLV_FIRMWARE_VARIANT_LOW_LATENCY</dfn>     MC_CMD_FW_LOW_LATENCY</u></td></tr>
+<tr><th id="414">414</th><td><u>#define <dfn class="macro" id="_M/TLV_FIRMWARE_VARIANT_PACKED_STREAM" data-ref="_M/TLV_FIRMWARE_VARIANT_PACKED_STREAM">TLV_FIRMWARE_VARIANT_PACKED_STREAM</dfn>   MC_CMD_FW_PACKED_STREAM</u></td></tr>
+<tr><th id="415">415</th><td><u>#define <dfn class="macro" id="_M/TLV_FIRMWARE_VARIANT_HIGH_TX_RATE" data-ref="_M/TLV_FIRMWARE_VARIANT_HIGH_TX_RATE">TLV_FIRMWARE_VARIANT_HIGH_TX_RATE</dfn>    MC_CMD_FW_HIGH_TX_RATE</u></td></tr>
+<tr><th id="416">416</th><td><u>#define <dfn class="macro" id="_M/TLV_FIRMWARE_VARIANT_PACKED_STREAM_HASH_MODE_1" data-ref="_M/TLV_FIRMWARE_VARIANT_PACKED_STREAM_HASH_MODE_1">TLV_FIRMWARE_VARIANT_PACKED_STREAM_HASH_MODE_1</dfn> \</u></td></tr>
+<tr><th id="417">417</th><td><u>                                             MC_CMD_FW_PACKED_STREAM_HASH_MODE_1</u></td></tr>
+<tr><th id="418">418</th><td><u>#define <dfn class="macro" id="_M/TLV_FIRMWARE_VARIANT_RULES_ENGINE" data-ref="_M/TLV_FIRMWARE_VARIANT_RULES_ENGINE">TLV_FIRMWARE_VARIANT_RULES_ENGINE</dfn>    MC_CMD_FW_RULES_ENGINE</u></td></tr>
+<tr><th id="419">419</th><td><u>#define <dfn class="macro" id="_M/TLV_FIRMWARE_VARIANT_DPDK" data-ref="_M/TLV_FIRMWARE_VARIANT_DPDK">TLV_FIRMWARE_VARIANT_DPDK</dfn>            MC_CMD_FW_DPDK</u></td></tr>
+<tr><th id="420">420</th><td><u>#define <dfn class="macro" id="_M/TLV_FIRMWARE_VARIANT_L3XUDP" data-ref="_M/TLV_FIRMWARE_VARIANT_L3XUDP">TLV_FIRMWARE_VARIANT_L3XUDP</dfn>          MC_CMD_FW_L3XUDP</u></td></tr>
+<tr><th id="421">421</th><td>};</td></tr>
+<tr><th id="422">422</th><td></td></tr>
+<tr><th id="423">423</th><td><i>/* Voltage settings</i></td></tr>
+<tr><th id="424">424</th><td><i> *</i></td></tr>
+<tr><th id="425">425</th><td><i> * Intended for boards with A0 silicon where the core voltage may</i></td></tr>
+<tr><th id="426">426</th><td><i> * need tweaking. Most likely set once when the pass voltage is</i></td></tr>
+<tr><th id="427">427</th><td><i> * determined. */</i></td></tr>
+<tr><th id="428">428</th><td></td></tr>
+<tr><th id="429">429</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_0V9_SETTINGS" data-ref="_M/TLV_TAG_0V9_SETTINGS">TLV_TAG_0V9_SETTINGS</dfn> (0x000c0000)</u></td></tr>
+<tr><th id="430">430</th><td></td></tr>
+<tr><th id="431">431</th><td><b>struct</b> <dfn class="type def" id="tlv_0v9_settings" title='tlv_0v9_settings' data-ref="tlv_0v9_settings">tlv_0v9_settings</dfn> {</td></tr>
+<tr><th id="432">432</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_0v9_settings::tag" title='tlv_0v9_settings::tag' data-ref="tlv_0v9_settings::tag">tag</dfn>;</td></tr>
+<tr><th id="433">433</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_0v9_settings::length" title='tlv_0v9_settings::length' data-ref="tlv_0v9_settings::length">length</dfn>;</td></tr>
+<tr><th id="434">434</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_0v9_settings::flags" title='tlv_0v9_settings::flags' data-ref="tlv_0v9_settings::flags">flags</dfn>; <i>/* Boards with high 0v9 settings may need active cooling */</i></td></tr>
+<tr><th id="435">435</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_0V9_REQUIRES_FAN" data-ref="_M/TLV_TAG_0V9_REQUIRES_FAN">TLV_TAG_0V9_REQUIRES_FAN</dfn> (1)</u></td></tr>
+<tr><th id="436">436</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_0v9_settings::target_voltage" title='tlv_0v9_settings::target_voltage' data-ref="tlv_0v9_settings::target_voltage">target_voltage</dfn>; <i>/* In millivolts */</i></td></tr>
+<tr><th id="437">437</th><td>  <i>/* Since the limits are meant to be centred to the target (and must at least</i></td></tr>
+<tr><th id="438">438</th><td><i>   * contain it) they need setting as well. */</i></td></tr>
+<tr><th id="439">439</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_0v9_settings::warn_low" title='tlv_0v9_settings::warn_low' data-ref="tlv_0v9_settings::warn_low">warn_low</dfn>;       <i>/* In millivolts */</i></td></tr>
+<tr><th id="440">440</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_0v9_settings::warn_high" title='tlv_0v9_settings::warn_high' data-ref="tlv_0v9_settings::warn_high">warn_high</dfn>;      <i>/* In millivolts */</i></td></tr>
+<tr><th id="441">441</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_0v9_settings::panic_low" title='tlv_0v9_settings::panic_low' data-ref="tlv_0v9_settings::panic_low">panic_low</dfn>;      <i>/* In millivolts */</i></td></tr>
+<tr><th id="442">442</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_0v9_settings::panic_high" title='tlv_0v9_settings::panic_high' data-ref="tlv_0v9_settings::panic_high">panic_high</dfn>;     <i>/* In millivolts */</i></td></tr>
+<tr><th id="443">443</th><td>};</td></tr>
+<tr><th id="444">444</th><td></td></tr>
+<tr><th id="445">445</th><td></td></tr>
+<tr><th id="446">446</th><td><i>/* Clock configuration */</i></td></tr>
+<tr><th id="447">447</th><td></td></tr>
+<tr><th id="448">448</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_CLOCK_CONFIG" data-ref="_M/TLV_TAG_CLOCK_CONFIG">TLV_TAG_CLOCK_CONFIG</dfn>       (0x000d0000) /* legacy symbol - do not use */</u></td></tr>
+<tr><th id="449">449</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_CLOCK_CONFIG_HUNT" data-ref="_M/TLV_TAG_CLOCK_CONFIG_HUNT">TLV_TAG_CLOCK_CONFIG_HUNT</dfn>  TLV_TAG_CLOCK_CONFIG</u></td></tr>
+<tr><th id="450">450</th><td></td></tr>
+<tr><th id="451">451</th><td><b>struct</b> <dfn class="type def" id="tlv_clock_config" title='tlv_clock_config' data-ref="tlv_clock_config">tlv_clock_config</dfn> {</td></tr>
+<tr><th id="452">452</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_clock_config::tag" title='tlv_clock_config::tag' data-ref="tlv_clock_config::tag">tag</dfn>;</td></tr>
+<tr><th id="453">453</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_clock_config::length" title='tlv_clock_config::length' data-ref="tlv_clock_config::length">length</dfn>;</td></tr>
+<tr><th id="454">454</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_clock_config::clk_sys" title='tlv_clock_config::clk_sys' data-ref="tlv_clock_config::clk_sys">clk_sys</dfn>;        <i>/* MHz */</i></td></tr>
+<tr><th id="455">455</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_clock_config::clk_dpcpu" title='tlv_clock_config::clk_dpcpu' data-ref="tlv_clock_config::clk_dpcpu">clk_dpcpu</dfn>;      <i>/* MHz */</i></td></tr>
+<tr><th id="456">456</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_clock_config::clk_icore" title='tlv_clock_config::clk_icore' data-ref="tlv_clock_config::clk_icore">clk_icore</dfn>;      <i>/* MHz */</i></td></tr>
+<tr><th id="457">457</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_clock_config::clk_pcs" title='tlv_clock_config::clk_pcs' data-ref="tlv_clock_config::clk_pcs">clk_pcs</dfn>;        <i>/* MHz */</i></td></tr>
+<tr><th id="458">458</th><td>};</td></tr>
+<tr><th id="459">459</th><td></td></tr>
+<tr><th id="460">460</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_CLOCK_CONFIG_MEDFORD" data-ref="_M/TLV_TAG_CLOCK_CONFIG_MEDFORD">TLV_TAG_CLOCK_CONFIG_MEDFORD</dfn>      (0x00100000)</u></td></tr>
+<tr><th id="461">461</th><td></td></tr>
+<tr><th id="462">462</th><td><b>struct</b> <dfn class="type def" id="tlv_clock_config_medford" title='tlv_clock_config_medford' data-ref="tlv_clock_config_medford">tlv_clock_config_medford</dfn> {</td></tr>
+<tr><th id="463">463</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_clock_config_medford::tag" title='tlv_clock_config_medford::tag' data-ref="tlv_clock_config_medford::tag">tag</dfn>;</td></tr>
+<tr><th id="464">464</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_clock_config_medford::length" title='tlv_clock_config_medford::length' data-ref="tlv_clock_config_medford::length">length</dfn>;</td></tr>
+<tr><th id="465">465</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_clock_config_medford::clk_sys" title='tlv_clock_config_medford::clk_sys' data-ref="tlv_clock_config_medford::clk_sys">clk_sys</dfn>;        <i>/* MHz */</i></td></tr>
+<tr><th id="466">466</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_clock_config_medford::clk_mc" title='tlv_clock_config_medford::clk_mc' data-ref="tlv_clock_config_medford::clk_mc">clk_mc</dfn>;         <i>/* MHz */</i></td></tr>
+<tr><th id="467">467</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_clock_config_medford::clk_rmon" title='tlv_clock_config_medford::clk_rmon' data-ref="tlv_clock_config_medford::clk_rmon">clk_rmon</dfn>;       <i>/* MHz */</i></td></tr>
+<tr><th id="468">468</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_clock_config_medford::clk_vswitch" title='tlv_clock_config_medford::clk_vswitch' data-ref="tlv_clock_config_medford::clk_vswitch">clk_vswitch</dfn>;    <i>/* MHz */</i></td></tr>
+<tr><th id="469">469</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_clock_config_medford::clk_dpcpu" title='tlv_clock_config_medford::clk_dpcpu' data-ref="tlv_clock_config_medford::clk_dpcpu">clk_dpcpu</dfn>;      <i>/* MHz */</i></td></tr>
+<tr><th id="470">470</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_clock_config_medford::clk_pcs" title='tlv_clock_config_medford::clk_pcs' data-ref="tlv_clock_config_medford::clk_pcs">clk_pcs</dfn>;        <i>/* MHz */</i></td></tr>
+<tr><th id="471">471</th><td>};</td></tr>
+<tr><th id="472">472</th><td></td></tr>
+<tr><th id="473">473</th><td></td></tr>
+<tr><th id="474">474</th><td><i>/* EF10-style global pool of MAC addresses.</i></td></tr>
+<tr><th id="475">475</th><td><i> *</i></td></tr>
+<tr><th id="476">476</th><td><i> * There are &lt;count&gt; addresses, starting at &lt;base_address&gt;, which are</i></td></tr>
+<tr><th id="477">477</th><td><i> * contiguous.  Firmware is responsible for allocating addresses from this</i></td></tr>
+<tr><th id="478">478</th><td><i> * pool to ports / PFs as appropriate.</i></td></tr>
+<tr><th id="479">479</th><td><i> */</i></td></tr>
+<tr><th id="480">480</th><td></td></tr>
+<tr><th id="481">481</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_GLOBAL_MAC" data-ref="_M/TLV_TAG_GLOBAL_MAC">TLV_TAG_GLOBAL_MAC</dfn>              (0x000e0000)</u></td></tr>
+<tr><th id="482">482</th><td></td></tr>
+<tr><th id="483">483</th><td><b>struct</b> <dfn class="type def" id="tlv_global_mac" title='tlv_global_mac' data-ref="tlv_global_mac">tlv_global_mac</dfn> {</td></tr>
+<tr><th id="484">484</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_mac::tag" title='tlv_global_mac::tag' data-ref="tlv_global_mac::tag">tag</dfn>;</td></tr>
+<tr><th id="485">485</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_mac::length" title='tlv_global_mac::length' data-ref="tlv_global_mac::length">length</dfn>;</td></tr>
+<tr><th id="486">486</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a>  <dfn class="decl field" id="tlv_global_mac::base_address" title='tlv_global_mac::base_address' data-ref="tlv_global_mac::base_address">base_address</dfn>[<var>6</var>];</td></tr>
+<tr><th id="487">487</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_global_mac::reserved1" title='tlv_global_mac::reserved1' data-ref="tlv_global_mac::reserved1">reserved1</dfn>;</td></tr>
+<tr><th id="488">488</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_global_mac::count" title='tlv_global_mac::count' data-ref="tlv_global_mac::count">count</dfn>;</td></tr>
+<tr><th id="489">489</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_global_mac::reserved2" title='tlv_global_mac::reserved2' data-ref="tlv_global_mac::reserved2">reserved2</dfn>;</td></tr>
+<tr><th id="490">490</th><td>};</td></tr>
+<tr><th id="491">491</th><td></td></tr>
+<tr><th id="492">492</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_ATB_0V9_TARGET" data-ref="_M/TLV_TAG_ATB_0V9_TARGET">TLV_TAG_ATB_0V9_TARGET</dfn>     (0x000f0000) /* legacy symbol - do not use */</u></td></tr>
+<tr><th id="493">493</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_ATB_0V9_TARGET_HUNT" data-ref="_M/TLV_TAG_ATB_0V9_TARGET_HUNT">TLV_TAG_ATB_0V9_TARGET_HUNT</dfn>     TLV_TAG_ATB_0V9_TARGET</u></td></tr>
+<tr><th id="494">494</th><td></td></tr>
+<tr><th id="495">495</th><td><i>/* The target value for the 0v9 power rail measured on-chip at the</i></td></tr>
+<tr><th id="496">496</th><td><i> * analogue test bus */</i></td></tr>
+<tr><th id="497">497</th><td><b>struct</b> <dfn class="type def" id="tlv_0v9_atb_target" title='tlv_0v9_atb_target' data-ref="tlv_0v9_atb_target">tlv_0v9_atb_target</dfn> {</td></tr>
+<tr><th id="498">498</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_0v9_atb_target::tag" title='tlv_0v9_atb_target::tag' data-ref="tlv_0v9_atb_target::tag">tag</dfn>;</td></tr>
+<tr><th id="499">499</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_0v9_atb_target::length" title='tlv_0v9_atb_target::length' data-ref="tlv_0v9_atb_target::length">length</dfn>;</td></tr>
+<tr><th id="500">500</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_0v9_atb_target::millivolts" title='tlv_0v9_atb_target::millivolts' data-ref="tlv_0v9_atb_target::millivolts">millivolts</dfn>;</td></tr>
+<tr><th id="501">501</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_0v9_atb_target::reserved" title='tlv_0v9_atb_target::reserved' data-ref="tlv_0v9_atb_target::reserved">reserved</dfn>;</td></tr>
+<tr><th id="502">502</th><td>};</td></tr>
+<tr><th id="503">503</th><td></td></tr>
+<tr><th id="504">504</th><td><i>/* Factory settings for amplitude calibration of the PCIE TX serdes */</i></td></tr>
+<tr><th id="505">505</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_TX_PCIE_AMP_CONFIG" data-ref="_M/TLV_TAG_TX_PCIE_AMP_CONFIG">TLV_TAG_TX_PCIE_AMP_CONFIG</dfn>  (0x00220000)</u></td></tr>
+<tr><th id="506">506</th><td><b>struct</b> <dfn class="type def" id="tlv_pcie_tx_amp_config" title='tlv_pcie_tx_amp_config' data-ref="tlv_pcie_tx_amp_config">tlv_pcie_tx_amp_config</dfn> {</td></tr>
+<tr><th id="507">507</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pcie_tx_amp_config::tag" title='tlv_pcie_tx_amp_config::tag' data-ref="tlv_pcie_tx_amp_config::tag">tag</dfn>;</td></tr>
+<tr><th id="508">508</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pcie_tx_amp_config::length" title='tlv_pcie_tx_amp_config::length' data-ref="tlv_pcie_tx_amp_config::length">length</dfn>;</td></tr>
+<tr><th id="509">509</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="tlv_pcie_tx_amp_config::quad_tx_imp2k" title='tlv_pcie_tx_amp_config::quad_tx_imp2k' data-ref="tlv_pcie_tx_amp_config::quad_tx_imp2k">quad_tx_imp2k</dfn>[<var>4</var>];</td></tr>
+<tr><th id="510">510</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="tlv_pcie_tx_amp_config::quad_tx_imp50" title='tlv_pcie_tx_amp_config::quad_tx_imp50' data-ref="tlv_pcie_tx_amp_config::quad_tx_imp50">quad_tx_imp50</dfn>[<var>4</var>];</td></tr>
+<tr><th id="511">511</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="tlv_pcie_tx_amp_config::lane_amp" title='tlv_pcie_tx_amp_config::lane_amp' data-ref="tlv_pcie_tx_amp_config::lane_amp">lane_amp</dfn>[<var>16</var>];</td></tr>
+<tr><th id="512">512</th><td>};</td></tr>
+<tr><th id="513">513</th><td></td></tr>
+<tr><th id="514">514</th><td></td></tr>
+<tr><th id="515">515</th><td><i>/* Global PCIe configuration, second revision. This represents the visible PFs</i></td></tr>
+<tr><th id="516">516</th><td><i> * by a bitmap rather than having the number of the highest visible one. As such</i></td></tr>
+<tr><th id="517">517</th><td><i> * it can (for a 16-PF chip) represent a superset of what TLV_TAG_GLOBAL_PCIE_CONFIG</i></td></tr>
+<tr><th id="518">518</th><td><i> * can and it should be used in place of that tag in future (but compatibility with</i></td></tr>
+<tr><th id="519">519</th><td><i> * the old tag will be left in the firmware indefinitely).  */</i></td></tr>
+<tr><th id="520">520</th><td></td></tr>
+<tr><th id="521">521</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_GLOBAL_PCIE_CONFIG_R2" data-ref="_M/TLV_TAG_GLOBAL_PCIE_CONFIG_R2">TLV_TAG_GLOBAL_PCIE_CONFIG_R2</dfn> (0x10100000)</u></td></tr>
+<tr><th id="522">522</th><td></td></tr>
+<tr><th id="523">523</th><td><b>struct</b> <dfn class="type def" id="tlv_pcie_config_r2" title='tlv_pcie_config_r2' data-ref="tlv_pcie_config_r2">tlv_pcie_config_r2</dfn> {</td></tr>
+<tr><th id="524">524</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pcie_config_r2::tag" title='tlv_pcie_config_r2::tag' data-ref="tlv_pcie_config_r2::tag">tag</dfn>;</td></tr>
+<tr><th id="525">525</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pcie_config_r2::length" title='tlv_pcie_config_r2::length' data-ref="tlv_pcie_config_r2::length">length</dfn>;</td></tr>
+<tr><th id="526">526</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_pcie_config_r2::visible_pfs" title='tlv_pcie_config_r2::visible_pfs' data-ref="tlv_pcie_config_r2::visible_pfs">visible_pfs</dfn>;                         <i class="doc">/**&lt; Bitmap of visible PFs */</i></td></tr>
+<tr><th id="527">527</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_pcie_config_r2::pf_aper" title='tlv_pcie_config_r2::pf_aper' data-ref="tlv_pcie_config_r2::pf_aper">pf_aper</dfn>;                             <i class="doc">/**&lt; BIU aperture for PF BAR2 */</i></td></tr>
+<tr><th id="528">528</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_pcie_config_r2::vf_aper" title='tlv_pcie_config_r2::vf_aper' data-ref="tlv_pcie_config_r2::vf_aper">vf_aper</dfn>;                             <i class="doc">/**&lt; BIU aperture for VF BAR0 */</i></td></tr>
+<tr><th id="529">529</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_pcie_config_r2::int_aper" title='tlv_pcie_config_r2::int_aper' data-ref="tlv_pcie_config_r2::int_aper">int_aper</dfn>;                            <i class="doc">/**&lt; BIU aperture for PF BAR4 and VF BAR2 */</i></td></tr>
+<tr><th id="530">530</th><td>};</td></tr>
+<tr><th id="531">531</th><td></td></tr>
+<tr><th id="532">532</th><td><i>/* Dynamic port mode.</i></td></tr>
+<tr><th id="533">533</th><td><i> *</i></td></tr>
+<tr><th id="534">534</th><td><i> * Allows selecting alternate port configuration for platforms that support it</i></td></tr>
+<tr><th id="535">535</th><td><i> * (e.g. 1x40G vs 2x10G on Milano, 1x40G vs 4x10G on Medford). This affects the</i></td></tr>
+<tr><th id="536">536</th><td><i> * number of externally visible ports (and, hence, PF to port mapping), so must</i></td></tr>
+<tr><th id="537">537</th><td><i> * be done at boot time.</i></td></tr>
+<tr><th id="538">538</th><td><i> *</i></td></tr>
+<tr><th id="539">539</th><td><i> * Port mode naming convention is</i></td></tr>
+<tr><th id="540">540</th><td><i> *</i></td></tr>
+<tr><th id="541">541</th><td><i> * [nports_on_cage0]x[port_lane_width]_[nports_on_cage1]x[port_lane_width]</i></td></tr>
+<tr><th id="542">542</th><td><i> *</i></td></tr>
+<tr><th id="543">543</th><td><i> * Port lane width determines the capabilities (speeds) of the ports, subject</i></td></tr>
+<tr><th id="544">544</th><td><i> * to architecture capabilities (e.g. 25G support) and switch bandwidth</i></td></tr>
+<tr><th id="545">545</th><td><i> * constraints:</i></td></tr>
+<tr><th id="546">546</th><td><i> *  - single lane ports can do 25G/10G/1G</i></td></tr>
+<tr><th id="547">547</th><td><i> *  - dual lane ports can do 50G/25G/10G/1G (with fallback to 1 lane)</i></td></tr>
+<tr><th id="548">548</th><td><i> *  - quad lane ports can do 100G/40G/50G/25G/10G/1G (with fallback to 2 or 1 lanes)</i></td></tr>
+<tr><th id="549">549</th><td><i></i></td></tr>
+<tr><th id="550">550</th><td><i> * This tag supercedes tlv_global_port_config.</i></td></tr>
+<tr><th id="551">551</th><td><i> */</i></td></tr>
+<tr><th id="552">552</th><td></td></tr>
+<tr><th id="553">553</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_GLOBAL_PORT_MODE" data-ref="_M/TLV_TAG_GLOBAL_PORT_MODE">TLV_TAG_GLOBAL_PORT_MODE</dfn>         (0x10110000)</u></td></tr>
+<tr><th id="554">554</th><td></td></tr>
+<tr><th id="555">555</th><td><b>struct</b> <dfn class="type def" id="tlv_global_port_mode" title='tlv_global_port_mode' data-ref="tlv_global_port_mode">tlv_global_port_mode</dfn> {</td></tr>
+<tr><th id="556">556</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_port_mode::tag" title='tlv_global_port_mode::tag' data-ref="tlv_global_port_mode::tag">tag</dfn>;</td></tr>
+<tr><th id="557">557</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_port_mode::length" title='tlv_global_port_mode::length' data-ref="tlv_global_port_mode::length">length</dfn>;</td></tr>
+<tr><th id="558">558</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_global_port_mode::port_mode" title='tlv_global_port_mode::port_mode' data-ref="tlv_global_port_mode::port_mode">port_mode</dfn>;</td></tr>
+<tr><th id="559">559</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_DEFAULT" data-ref="_M/TLV_PORT_MODE_DEFAULT">TLV_PORT_MODE_DEFAULT</dfn>           (0xffffffff) /* Default for given platform */</u></td></tr>
+<tr><th id="560">560</th><td></td></tr>
+<tr><th id="561">561</th><td><i>/* Huntington port modes */</i></td></tr>
+<tr><th id="562">562</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_10G" data-ref="_M/TLV_PORT_MODE_10G">TLV_PORT_MODE_10G</dfn>                        (0)</u></td></tr>
+<tr><th id="563">563</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_40G" data-ref="_M/TLV_PORT_MODE_40G">TLV_PORT_MODE_40G</dfn>                        (1)</u></td></tr>
+<tr><th id="564">564</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_10G_10G" data-ref="_M/TLV_PORT_MODE_10G_10G">TLV_PORT_MODE_10G_10G</dfn>                    (2)</u></td></tr>
+<tr><th id="565">565</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_40G_40G" data-ref="_M/TLV_PORT_MODE_40G_40G">TLV_PORT_MODE_40G_40G</dfn>                    (3)</u></td></tr>
+<tr><th id="566">566</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_10G_10G_10G_10G" data-ref="_M/TLV_PORT_MODE_10G_10G_10G_10G">TLV_PORT_MODE_10G_10G_10G_10G</dfn>            (4)</u></td></tr>
+<tr><th id="567">567</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_40G_10G_10G" data-ref="_M/TLV_PORT_MODE_40G_10G_10G">TLV_PORT_MODE_40G_10G_10G</dfn>                (6)</u></td></tr>
+<tr><th id="568">568</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_10G_10G_40G" data-ref="_M/TLV_PORT_MODE_10G_10G_40G">TLV_PORT_MODE_10G_10G_40G</dfn>                (7)</u></td></tr>
+<tr><th id="569">569</th><td></td></tr>
+<tr><th id="570">570</th><td><i>/* Medford (and later) port modes */</i></td></tr>
+<tr><th id="571">571</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_1x1_NA" data-ref="_M/TLV_PORT_MODE_1x1_NA">TLV_PORT_MODE_1x1_NA</dfn>                     (0) /* Single 10G/25G on mdi0 */</u></td></tr>
+<tr><th id="572">572</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_1x4_NA" data-ref="_M/TLV_PORT_MODE_1x4_NA">TLV_PORT_MODE_1x4_NA</dfn>                     (1) /* Single 100G/40G on mdi0 */</u></td></tr>
+<tr><th id="573">573</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_NA_1x4" data-ref="_M/TLV_PORT_MODE_NA_1x4">TLV_PORT_MODE_NA_1x4</dfn>                     (22) /* Single 100G/40G on mdi1 */</u></td></tr>
+<tr><th id="574">574</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_1x2_NA" data-ref="_M/TLV_PORT_MODE_1x2_NA">TLV_PORT_MODE_1x2_NA</dfn>                     (10) /* Single 50G on mdi0 */</u></td></tr>
+<tr><th id="575">575</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_NA_1x2" data-ref="_M/TLV_PORT_MODE_NA_1x2">TLV_PORT_MODE_NA_1x2</dfn>                     (11) /* Single 50G on mdi1 */</u></td></tr>
+<tr><th id="576">576</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_1x1_1x1" data-ref="_M/TLV_PORT_MODE_1x1_1x1">TLV_PORT_MODE_1x1_1x1</dfn>                    (2) /* Single 10G/25G on mdi0, single 10G/25G on mdi1 */</u></td></tr>
+<tr><th id="577">577</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_1x4_1x4" data-ref="_M/TLV_PORT_MODE_1x4_1x4">TLV_PORT_MODE_1x4_1x4</dfn>                    (3) /* Single 40G on mdi0, single 40G on mdi1 */</u></td></tr>
+<tr><th id="578">578</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_2x1_2x1" data-ref="_M/TLV_PORT_MODE_2x1_2x1">TLV_PORT_MODE_2x1_2x1</dfn>                    (5) /* Dual 10G/25G on mdi0, dual 10G/25G on mdi1 */</u></td></tr>
+<tr><th id="579">579</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_4x1_NA" data-ref="_M/TLV_PORT_MODE_4x1_NA">TLV_PORT_MODE_4x1_NA</dfn>                     (4) /* Quad 10G/25G on mdi0 */</u></td></tr>
+<tr><th id="580">580</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_NA_4x1" data-ref="_M/TLV_PORT_MODE_NA_4x1">TLV_PORT_MODE_NA_4x1</dfn>                     (8) /* Quad 10G/25G on mdi1 */</u></td></tr>
+<tr><th id="581">581</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_1x4_2x1" data-ref="_M/TLV_PORT_MODE_1x4_2x1">TLV_PORT_MODE_1x4_2x1</dfn>                    (6) /* Single 40G on mdi0, dual 10G/25G on mdi1 */</u></td></tr>
+<tr><th id="582">582</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_2x1_1x4" data-ref="_M/TLV_PORT_MODE_2x1_1x4">TLV_PORT_MODE_2x1_1x4</dfn>                    (7) /* Dual 10G/25G on mdi0, single 40G on mdi1 */</u></td></tr>
+<tr><th id="583">583</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_1x2_1x2" data-ref="_M/TLV_PORT_MODE_1x2_1x2">TLV_PORT_MODE_1x2_1x2</dfn>                    (12) /* Single 50G on mdi0, single 50G on mdi1 */</u></td></tr>
+<tr><th id="584">584</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_2x2_NA" data-ref="_M/TLV_PORT_MODE_2x2_NA">TLV_PORT_MODE_2x2_NA</dfn>                     (13) /* Dual 50G on mdi0 */</u></td></tr>
+<tr><th id="585">585</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_NA_2x2" data-ref="_M/TLV_PORT_MODE_NA_2x2">TLV_PORT_MODE_NA_2x2</dfn>                     (14) /* Dual 50G on mdi1 */</u></td></tr>
+<tr><th id="586">586</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_1x4_1x2" data-ref="_M/TLV_PORT_MODE_1x4_1x2">TLV_PORT_MODE_1x4_1x2</dfn>                    (15) /* Single 40G on mdi0, single 50G on mdi1 */</u></td></tr>
+<tr><th id="587">587</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_1x2_1x4" data-ref="_M/TLV_PORT_MODE_1x2_1x4">TLV_PORT_MODE_1x2_1x4</dfn>                    (16) /* Single 50G on mdi0, single 40G on mdi1 */</u></td></tr>
+<tr><th id="588">588</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_1x2_2x1" data-ref="_M/TLV_PORT_MODE_1x2_2x1">TLV_PORT_MODE_1x2_2x1</dfn>                    (17) /* Single 50G on mdi0, dual 10G/25G on mdi1 */</u></td></tr>
+<tr><th id="589">589</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_2x1_1x2" data-ref="_M/TLV_PORT_MODE_2x1_1x2">TLV_PORT_MODE_2x1_1x2</dfn>                    (18) /* Dual 10G/25G on mdi0, single 50G on mdi1 */</u></td></tr>
+<tr><th id="590">590</th><td></td></tr>
+<tr><th id="591">591</th><td><i>/* Snapper-only Medford2 port modes.</i></td></tr>
+<tr><th id="592">592</th><td><i> * These modes are eftest only, to allow snapper explicit</i></td></tr>
+<tr><th id="593">593</th><td><i> * selection between multi-channel and LLPCS. In production,</i></td></tr>
+<tr><th id="594">594</th><td><i> * this selection is automatic and outside world should not</i></td></tr>
+<tr><th id="595">595</th><td><i> * care about LLPCS.</i></td></tr>
+<tr><th id="596">596</th><td><i> */</i></td></tr>
+<tr><th id="597">597</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_2x1_2x1_LL" data-ref="_M/TLV_PORT_MODE_2x1_2x1_LL">TLV_PORT_MODE_2x1_2x1_LL</dfn>                 (19) /* Dual 10G/25G on mdi0, dual 10G/25G on mdi1, low-latency PCS */</u></td></tr>
+<tr><th id="598">598</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_4x1_NA_LL" data-ref="_M/TLV_PORT_MODE_4x1_NA_LL">TLV_PORT_MODE_4x1_NA_LL</dfn>                  (20) /* Quad 10G/25G on mdi0, low-latency PCS */</u></td></tr>
+<tr><th id="599">599</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_NA_4x1_LL" data-ref="_M/TLV_PORT_MODE_NA_4x1_LL">TLV_PORT_MODE_NA_4x1_LL</dfn>                  (21) /* Quad 10G/25G on mdi1, low-latency PCS */</u></td></tr>
+<tr><th id="600">600</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_1x1_NA_LL" data-ref="_M/TLV_PORT_MODE_1x1_NA_LL">TLV_PORT_MODE_1x1_NA_LL</dfn>                  (23) /* Single 10G/25G on mdi0, low-latency PCS */</u></td></tr>
+<tr><th id="601">601</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_1x1_1x1_LL" data-ref="_M/TLV_PORT_MODE_1x1_1x1_LL">TLV_PORT_MODE_1x1_1x1_LL</dfn>                 (24) /* Single 10G/25G on mdi0, single 10G/25G on mdi1, low-latency PCS */</u></td></tr>
+<tr><th id="602">602</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_BUG63720_DO_NOT_USE" data-ref="_M/TLV_PORT_MODE_BUG63720_DO_NOT_USE">TLV_PORT_MODE_BUG63720_DO_NOT_USE</dfn>        (9) /* bug63720: Do not use */</u></td></tr>
+<tr><th id="603">603</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_MAX" data-ref="_M/TLV_PORT_MODE_MAX">TLV_PORT_MODE_MAX</dfn> TLV_PORT_MODE_1x1_1x1_LL</u></td></tr>
+<tr><th id="604">604</th><td></td></tr>
+<tr><th id="605">605</th><td><i>/* Deprecated Medford aliases - DO NOT USE IN NEW CODE */</i></td></tr>
+<tr><th id="606">606</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_10G_10G_10G_10G_Q" data-ref="_M/TLV_PORT_MODE_10G_10G_10G_10G_Q">TLV_PORT_MODE_10G_10G_10G_10G_Q</dfn>          (5)</u></td></tr>
+<tr><th id="607">607</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_10G_10G_10G_10G_Q1" data-ref="_M/TLV_PORT_MODE_10G_10G_10G_10G_Q1">TLV_PORT_MODE_10G_10G_10G_10G_Q1</dfn>         (4)</u></td></tr>
+<tr><th id="608">608</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_10G_10G_10G_10G_Q2" data-ref="_M/TLV_PORT_MODE_10G_10G_10G_10G_Q2">TLV_PORT_MODE_10G_10G_10G_10G_Q2</dfn>         (8)</u></td></tr>
+<tr><th id="609">609</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_10G_10G_10G_10G_Q1_Q2" data-ref="_M/TLV_PORT_MODE_10G_10G_10G_10G_Q1_Q2">TLV_PORT_MODE_10G_10G_10G_10G_Q1_Q2</dfn>      (9)</u></td></tr>
+<tr><th id="610">610</th><td></td></tr>
+<tr><th id="611">611</th><td><u>#define <dfn class="macro" id="_M/TLV_PORT_MODE_MAX" data-ref="_M/TLV_PORT_MODE_MAX">TLV_PORT_MODE_MAX</dfn> TLV_PORT_MODE_1x1_1x1_LL</u></td></tr>
+<tr><th id="612">612</th><td>};</td></tr>
+<tr><th id="613">613</th><td></td></tr>
+<tr><th id="614">614</th><td><i>/* Type of the v-switch created implicitly by the firmware */</i></td></tr>
+<tr><th id="615">615</th><td></td></tr>
+<tr><th id="616">616</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_VSWITCH_TYPE" data-ref="_M/TLV_TAG_VSWITCH_TYPE">TLV_TAG_VSWITCH_TYPE</dfn>(port)       (0x10120000 + (port))</u></td></tr>
+<tr><th id="617">617</th><td></td></tr>
+<tr><th id="618">618</th><td><b>struct</b> <dfn class="type def" id="tlv_vswitch_type" title='tlv_vswitch_type' data-ref="tlv_vswitch_type">tlv_vswitch_type</dfn> {</td></tr>
+<tr><th id="619">619</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_vswitch_type::tag" title='tlv_vswitch_type::tag' data-ref="tlv_vswitch_type::tag">tag</dfn>;</td></tr>
+<tr><th id="620">620</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_vswitch_type::length" title='tlv_vswitch_type::length' data-ref="tlv_vswitch_type::length">length</dfn>;</td></tr>
+<tr><th id="621">621</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_vswitch_type::vswitch_type" title='tlv_vswitch_type::vswitch_type' data-ref="tlv_vswitch_type::vswitch_type">vswitch_type</dfn>;</td></tr>
+<tr><th id="622">622</th><td><u>#define <dfn class="macro" id="_M/TLV_VSWITCH_TYPE_DEFAULT" data-ref="_M/TLV_VSWITCH_TYPE_DEFAULT">TLV_VSWITCH_TYPE_DEFAULT</dfn>        (0xffffffff) /* Firmware default; equivalent to no TLV present for a given port */</u></td></tr>
+<tr><th id="623">623</th><td><u>#define <dfn class="macro" id="_M/TLV_VSWITCH_TYPE_NONE" data-ref="_M/TLV_VSWITCH_TYPE_NONE">TLV_VSWITCH_TYPE_NONE</dfn>                    (0)</u></td></tr>
+<tr><th id="624">624</th><td><u>#define <dfn class="macro" id="_M/TLV_VSWITCH_TYPE_VLAN" data-ref="_M/TLV_VSWITCH_TYPE_VLAN">TLV_VSWITCH_TYPE_VLAN</dfn>                    (1)</u></td></tr>
+<tr><th id="625">625</th><td><u>#define <dfn class="macro" id="_M/TLV_VSWITCH_TYPE_VEB" data-ref="_M/TLV_VSWITCH_TYPE_VEB">TLV_VSWITCH_TYPE_VEB</dfn>                     (2)</u></td></tr>
+<tr><th id="626">626</th><td><u>#define <dfn class="macro" id="_M/TLV_VSWITCH_TYPE_VEPA" data-ref="_M/TLV_VSWITCH_TYPE_VEPA">TLV_VSWITCH_TYPE_VEPA</dfn>                    (3)</u></td></tr>
+<tr><th id="627">627</th><td><u>#define <dfn class="macro" id="_M/TLV_VSWITCH_TYPE_MUX" data-ref="_M/TLV_VSWITCH_TYPE_MUX">TLV_VSWITCH_TYPE_MUX</dfn>                     (4)</u></td></tr>
+<tr><th id="628">628</th><td><u>#define <dfn class="macro" id="_M/TLV_VSWITCH_TYPE_TEST" data-ref="_M/TLV_VSWITCH_TYPE_TEST">TLV_VSWITCH_TYPE_TEST</dfn>                    (5)</u></td></tr>
+<tr><th id="629">629</th><td>};</td></tr>
+<tr><th id="630">630</th><td></td></tr>
+<tr><th id="631">631</th><td><i>/* A VLAN tag for the v-port created implicitly by the firmware */</i></td></tr>
+<tr><th id="632">632</th><td></td></tr>
+<tr><th id="633">633</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_VPORT_VLAN_TAG" data-ref="_M/TLV_TAG_VPORT_VLAN_TAG">TLV_TAG_VPORT_VLAN_TAG</dfn>(pf)               (0x10130000 + (pf))</u></td></tr>
+<tr><th id="634">634</th><td></td></tr>
+<tr><th id="635">635</th><td><b>struct</b> <dfn class="type def" id="tlv_vport_vlan_tag" title='tlv_vport_vlan_tag' data-ref="tlv_vport_vlan_tag">tlv_vport_vlan_tag</dfn> {</td></tr>
+<tr><th id="636">636</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_vport_vlan_tag::tag" title='tlv_vport_vlan_tag::tag' data-ref="tlv_vport_vlan_tag::tag">tag</dfn>;</td></tr>
+<tr><th id="637">637</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_vport_vlan_tag::length" title='tlv_vport_vlan_tag::length' data-ref="tlv_vport_vlan_tag::length">length</dfn>;</td></tr>
+<tr><th id="638">638</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_vport_vlan_tag::vlan_tag" title='tlv_vport_vlan_tag::vlan_tag' data-ref="tlv_vport_vlan_tag::vlan_tag">vlan_tag</dfn>;</td></tr>
+<tr><th id="639">639</th><td><u>#define <dfn class="macro" id="_M/TLV_VPORT_NO_VLAN_TAG" data-ref="_M/TLV_VPORT_NO_VLAN_TAG">TLV_VPORT_NO_VLAN_TAG</dfn>                    (0xFFFFFFFF) /* Default in the absence of TLV for a given PF */</u></td></tr>
+<tr><th id="640">640</th><td>};</td></tr>
+<tr><th id="641">641</th><td></td></tr>
+<tr><th id="642">642</th><td><i>/* Offset to be applied to the 0v9 setting, wherever it came from */</i></td></tr>
+<tr><th id="643">643</th><td></td></tr>
+<tr><th id="644">644</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_ATB_0V9_OFFSET" data-ref="_M/TLV_TAG_ATB_0V9_OFFSET">TLV_TAG_ATB_0V9_OFFSET</dfn>           (0x10140000)</u></td></tr>
+<tr><th id="645">645</th><td></td></tr>
+<tr><th id="646">646</th><td><b>struct</b> <dfn class="type def" id="tlv_0v9_atb_offset" title='tlv_0v9_atb_offset' data-ref="tlv_0v9_atb_offset">tlv_0v9_atb_offset</dfn> {</td></tr>
+<tr><th id="647">647</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_0v9_atb_offset::tag" title='tlv_0v9_atb_offset::tag' data-ref="tlv_0v9_atb_offset::tag">tag</dfn>;</td></tr>
+<tr><th id="648">648</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_0v9_atb_offset::length" title='tlv_0v9_atb_offset::length' data-ref="tlv_0v9_atb_offset::length">length</dfn>;</td></tr>
+<tr><th id="649">649</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#int16_t" title='int16_t' data-type='short' data-ref="int16_t">int16_t</a>  <dfn class="decl field" id="tlv_0v9_atb_offset::offset_millivolts" title='tlv_0v9_atb_offset::offset_millivolts' data-ref="tlv_0v9_atb_offset::offset_millivolts">offset_millivolts</dfn>;</td></tr>
+<tr><th id="650">650</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_0v9_atb_offset::reserved" title='tlv_0v9_atb_offset::reserved' data-ref="tlv_0v9_atb_offset::reserved">reserved</dfn>;</td></tr>
+<tr><th id="651">651</th><td>};</td></tr>
+<tr><th id="652">652</th><td></td></tr>
+<tr><th id="653">653</th><td><i>/* A privilege mask given on reset to all non-admin PCIe functions (that is other than first-PF-per-port).</i></td></tr>
+<tr><th id="654">654</th><td><i> * The meaning of particular bits is defined in mcdi_ef10.yml under MC_CMD_PRIVILEGE_MASK, see also bug 44583.</i></td></tr>
+<tr><th id="655">655</th><td><i> * TLV_TAG_PRIVILEGE_MASK_ADD specifies bits that should be added (ORed) to firmware default while</i></td></tr>
+<tr><th id="656">656</th><td><i> * TLV_TAG_PRIVILEGE_MASK_REM specifies bits that should be removed (ANDed) from firmware default:</i></td></tr>
+<tr><th id="657">657</th><td><i> * Initial_privilege_mask = (firmware_default_mask | privilege_mask_add) &amp; ~privilege_mask_rem */</i></td></tr>
+<tr><th id="658">658</th><td></td></tr>
+<tr><th id="659">659</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_PRIVILEGE_MASK" data-ref="_M/TLV_TAG_PRIVILEGE_MASK">TLV_TAG_PRIVILEGE_MASK</dfn>          (0x10150000) /* legacy symbol - do not use */</u></td></tr>
+<tr><th id="660">660</th><td></td></tr>
+<tr><th id="661">661</th><td><b>struct</b> <dfn class="type def" id="tlv_privilege_mask" title='tlv_privilege_mask' data-ref="tlv_privilege_mask">tlv_privilege_mask</dfn> {                          <i>/* legacy structure - do not use */</i></td></tr>
+<tr><th id="662">662</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_privilege_mask::tag" title='tlv_privilege_mask::tag' data-ref="tlv_privilege_mask::tag">tag</dfn>;</td></tr>
+<tr><th id="663">663</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_privilege_mask::length" title='tlv_privilege_mask::length' data-ref="tlv_privilege_mask::length">length</dfn>;</td></tr>
+<tr><th id="664">664</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_privilege_mask::privilege_mask" title='tlv_privilege_mask::privilege_mask' data-ref="tlv_privilege_mask::privilege_mask">privilege_mask</dfn>;</td></tr>
+<tr><th id="665">665</th><td>};</td></tr>
+<tr><th id="666">666</th><td></td></tr>
+<tr><th id="667">667</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_PRIVILEGE_MASK_ADD" data-ref="_M/TLV_TAG_PRIVILEGE_MASK_ADD">TLV_TAG_PRIVILEGE_MASK_ADD</dfn>      (0x10150000)</u></td></tr>
+<tr><th id="668">668</th><td></td></tr>
+<tr><th id="669">669</th><td><b>struct</b> <dfn class="type def" id="tlv_privilege_mask_add" title='tlv_privilege_mask_add' data-ref="tlv_privilege_mask_add">tlv_privilege_mask_add</dfn> {</td></tr>
+<tr><th id="670">670</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_privilege_mask_add::tag" title='tlv_privilege_mask_add::tag' data-ref="tlv_privilege_mask_add::tag">tag</dfn>;</td></tr>
+<tr><th id="671">671</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_privilege_mask_add::length" title='tlv_privilege_mask_add::length' data-ref="tlv_privilege_mask_add::length">length</dfn>;</td></tr>
+<tr><th id="672">672</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_privilege_mask_add::privilege_mask_add" title='tlv_privilege_mask_add::privilege_mask_add' data-ref="tlv_privilege_mask_add::privilege_mask_add">privilege_mask_add</dfn>;</td></tr>
+<tr><th id="673">673</th><td>};</td></tr>
+<tr><th id="674">674</th><td></td></tr>
+<tr><th id="675">675</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_PRIVILEGE_MASK_REM" data-ref="_M/TLV_TAG_PRIVILEGE_MASK_REM">TLV_TAG_PRIVILEGE_MASK_REM</dfn>      (0x10160000)</u></td></tr>
+<tr><th id="676">676</th><td></td></tr>
+<tr><th id="677">677</th><td><b>struct</b> <dfn class="type def" id="tlv_privilege_mask_rem" title='tlv_privilege_mask_rem' data-ref="tlv_privilege_mask_rem">tlv_privilege_mask_rem</dfn> {</td></tr>
+<tr><th id="678">678</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_privilege_mask_rem::tag" title='tlv_privilege_mask_rem::tag' data-ref="tlv_privilege_mask_rem::tag">tag</dfn>;</td></tr>
+<tr><th id="679">679</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_privilege_mask_rem::length" title='tlv_privilege_mask_rem::length' data-ref="tlv_privilege_mask_rem::length">length</dfn>;</td></tr>
+<tr><th id="680">680</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_privilege_mask_rem::privilege_mask_rem" title='tlv_privilege_mask_rem::privilege_mask_rem' data-ref="tlv_privilege_mask_rem::privilege_mask_rem">privilege_mask_rem</dfn>;</td></tr>
+<tr><th id="681">681</th><td>};</td></tr>
+<tr><th id="682">682</th><td></td></tr>
+<tr><th id="683">683</th><td><i>/* Additional privileges given to all PFs.</i></td></tr>
+<tr><th id="684">684</th><td><i> * This tag takes precedence over TLV_TAG_PRIVILEGE_MASK_REM. */</i></td></tr>
+<tr><th id="685">685</th><td></td></tr>
+<tr><th id="686">686</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_PRIVILEGE_MASK_ADD_ALL_PFS" data-ref="_M/TLV_TAG_PRIVILEGE_MASK_ADD_ALL_PFS">TLV_TAG_PRIVILEGE_MASK_ADD_ALL_PFS</dfn>         (0x10190000)</u></td></tr>
+<tr><th id="687">687</th><td></td></tr>
+<tr><th id="688">688</th><td><b>struct</b> <dfn class="type def" id="tlv_privilege_mask_add_all_pfs" title='tlv_privilege_mask_add_all_pfs' data-ref="tlv_privilege_mask_add_all_pfs">tlv_privilege_mask_add_all_pfs</dfn> {</td></tr>
+<tr><th id="689">689</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_privilege_mask_add_all_pfs::tag" title='tlv_privilege_mask_add_all_pfs::tag' data-ref="tlv_privilege_mask_add_all_pfs::tag">tag</dfn>;</td></tr>
+<tr><th id="690">690</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_privilege_mask_add_all_pfs::length" title='tlv_privilege_mask_add_all_pfs::length' data-ref="tlv_privilege_mask_add_all_pfs::length">length</dfn>;</td></tr>
+<tr><th id="691">691</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_privilege_mask_add_all_pfs::privilege_mask_add" title='tlv_privilege_mask_add_all_pfs::privilege_mask_add' data-ref="tlv_privilege_mask_add_all_pfs::privilege_mask_add">privilege_mask_add</dfn>;</td></tr>
+<tr><th id="692">692</th><td>};</td></tr>
+<tr><th id="693">693</th><td></td></tr>
+<tr><th id="694">694</th><td><i>/* Additional privileges given to a selected PF.</i></td></tr>
+<tr><th id="695">695</th><td><i> * This tag takes precedence over TLV_TAG_PRIVILEGE_MASK_REM. */</i></td></tr>
+<tr><th id="696">696</th><td></td></tr>
+<tr><th id="697">697</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_PRIVILEGE_MASK_ADD_SINGLE_PF" data-ref="_M/TLV_TAG_PRIVILEGE_MASK_ADD_SINGLE_PF">TLV_TAG_PRIVILEGE_MASK_ADD_SINGLE_PF</dfn>(pf)   (0x101A0000 + (pf))</u></td></tr>
+<tr><th id="698">698</th><td></td></tr>
+<tr><th id="699">699</th><td><b>struct</b> <dfn class="type def" id="tlv_privilege_mask_add_single_pf" title='tlv_privilege_mask_add_single_pf' data-ref="tlv_privilege_mask_add_single_pf">tlv_privilege_mask_add_single_pf</dfn> {</td></tr>
+<tr><th id="700">700</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_privilege_mask_add_single_pf::tag" title='tlv_privilege_mask_add_single_pf::tag' data-ref="tlv_privilege_mask_add_single_pf::tag">tag</dfn>;</td></tr>
+<tr><th id="701">701</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_privilege_mask_add_single_pf::length" title='tlv_privilege_mask_add_single_pf::length' data-ref="tlv_privilege_mask_add_single_pf::length">length</dfn>;</td></tr>
+<tr><th id="702">702</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_privilege_mask_add_single_pf::privilege_mask_add" title='tlv_privilege_mask_add_single_pf::privilege_mask_add' data-ref="tlv_privilege_mask_add_single_pf::privilege_mask_add">privilege_mask_add</dfn>;</td></tr>
+<tr><th id="703">703</th><td>};</td></tr>
+<tr><th id="704">704</th><td></td></tr>
+<tr><th id="705">705</th><td><i>/* Turning on/off the PFIOV mode.</i></td></tr>
+<tr><th id="706">706</th><td><i> * This tag only takes effect if TLV_TAG_VSWITCH_TYPE is missing or set to DEFAULT. */</i></td></tr>
+<tr><th id="707">707</th><td></td></tr>
+<tr><th id="708">708</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_PFIOV" data-ref="_M/TLV_TAG_PFIOV">TLV_TAG_PFIOV</dfn>(port)             (0x10170000 + (port))</u></td></tr>
+<tr><th id="709">709</th><td></td></tr>
+<tr><th id="710">710</th><td><b>struct</b> <dfn class="type def" id="tlv_pfiov" title='tlv_pfiov' data-ref="tlv_pfiov">tlv_pfiov</dfn> {</td></tr>
+<tr><th id="711">711</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pfiov::tag" title='tlv_pfiov::tag' data-ref="tlv_pfiov::tag">tag</dfn>;</td></tr>
+<tr><th id="712">712</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pfiov::length" title='tlv_pfiov::length' data-ref="tlv_pfiov::length">length</dfn>;</td></tr>
+<tr><th id="713">713</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pfiov::pfiov" title='tlv_pfiov::pfiov' data-ref="tlv_pfiov::pfiov">pfiov</dfn>;</td></tr>
+<tr><th id="714">714</th><td><u>#define <dfn class="macro" id="_M/TLV_PFIOV_OFF" data-ref="_M/TLV_PFIOV_OFF">TLV_PFIOV_OFF</dfn>                    (0) /* Default */</u></td></tr>
+<tr><th id="715">715</th><td><u>#define <dfn class="macro" id="_M/TLV_PFIOV_ON" data-ref="_M/TLV_PFIOV_ON">TLV_PFIOV_ON</dfn>                     (1)</u></td></tr>
+<tr><th id="716">716</th><td>};</td></tr>
+<tr><th id="717">717</th><td></td></tr>
+<tr><th id="718">718</th><td><i>/* Multicast filter chaining mode selection.</i></td></tr>
+<tr><th id="719">719</th><td><i> *</i></td></tr>
+<tr><th id="720">720</th><td><i> * When enabled, multicast packets are delivered to all recipients of all</i></td></tr>
+<tr><th id="721">721</th><td><i> * matching multicast filters, with the exception that IP multicast filters</i></td></tr>
+<tr><th id="722">722</th><td><i> * will steal traffic from MAC multicast filters on a per-function basis.</i></td></tr>
+<tr><th id="723">723</th><td><i> * (New behaviour.)</i></td></tr>
+<tr><th id="724">724</th><td><i> *</i></td></tr>
+<tr><th id="725">725</th><td><i> * When disabled, multicast packets will always be delivered only to the</i></td></tr>
+<tr><th id="726">726</th><td><i> * recipients of the highest priority matching multicast filter.</i></td></tr>
+<tr><th id="727">727</th><td><i> * (Legacy behaviour.)</i></td></tr>
+<tr><th id="728">728</th><td><i> *</i></td></tr>
+<tr><th id="729">729</th><td><i> * The DEFAULT mode (which is the same as the tag not being present at all)</i></td></tr>
+<tr><th id="730">730</th><td><i> * is equivalent to ENABLED in production builds, and DISABLED in eftest</i></td></tr>
+<tr><th id="731">731</th><td><i> * builds.</i></td></tr>
+<tr><th id="732">732</th><td><i> *</i></td></tr>
+<tr><th id="733">733</th><td><i> * This option is intended to provide run-time control over this feature</i></td></tr>
+<tr><th id="734">734</th><td><i> * while it is being stabilised and may be withdrawn at some point in the</i></td></tr>
+<tr><th id="735">735</th><td><i> * future; the new behaviour is intended to become the standard behaviour.</i></td></tr>
+<tr><th id="736">736</th><td><i> */</i></td></tr>
+<tr><th id="737">737</th><td></td></tr>
+<tr><th id="738">738</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_MCAST_FILTER_CHAINING" data-ref="_M/TLV_TAG_MCAST_FILTER_CHAINING">TLV_TAG_MCAST_FILTER_CHAINING</dfn>   (0x10180000)</u></td></tr>
+<tr><th id="739">739</th><td></td></tr>
+<tr><th id="740">740</th><td><b>struct</b> <dfn class="type def" id="tlv_mcast_filter_chaining" title='tlv_mcast_filter_chaining' data-ref="tlv_mcast_filter_chaining">tlv_mcast_filter_chaining</dfn> {</td></tr>
+<tr><th id="741">741</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_mcast_filter_chaining::tag" title='tlv_mcast_filter_chaining::tag' data-ref="tlv_mcast_filter_chaining::tag">tag</dfn>;</td></tr>
+<tr><th id="742">742</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_mcast_filter_chaining::length" title='tlv_mcast_filter_chaining::length' data-ref="tlv_mcast_filter_chaining::length">length</dfn>;</td></tr>
+<tr><th id="743">743</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_mcast_filter_chaining::mode" title='tlv_mcast_filter_chaining::mode' data-ref="tlv_mcast_filter_chaining::mode">mode</dfn>;</td></tr>
+<tr><th id="744">744</th><td><u>#define <dfn class="macro" id="_M/TLV_MCAST_FILTER_CHAINING_DEFAULT" data-ref="_M/TLV_MCAST_FILTER_CHAINING_DEFAULT">TLV_MCAST_FILTER_CHAINING_DEFAULT</dfn>  (0xffffffff)</u></td></tr>
+<tr><th id="745">745</th><td><u>#define <dfn class="macro" id="_M/TLV_MCAST_FILTER_CHAINING_DISABLED" data-ref="_M/TLV_MCAST_FILTER_CHAINING_DISABLED">TLV_MCAST_FILTER_CHAINING_DISABLED</dfn> (0)</u></td></tr>
+<tr><th id="746">746</th><td><u>#define <dfn class="macro" id="_M/TLV_MCAST_FILTER_CHAINING_ENABLED" data-ref="_M/TLV_MCAST_FILTER_CHAINING_ENABLED">TLV_MCAST_FILTER_CHAINING_ENABLED</dfn>  (1)</u></td></tr>
+<tr><th id="747">747</th><td>};</td></tr>
+<tr><th id="748">748</th><td></td></tr>
+<tr><th id="749">749</th><td><i>/* Pacer rate limit per PF */</i></td></tr>
+<tr><th id="750">750</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_RATE_LIMIT" data-ref="_M/TLV_TAG_RATE_LIMIT">TLV_TAG_RATE_LIMIT</dfn>(pf)    (0x101b0000 + (pf))</u></td></tr>
+<tr><th id="751">751</th><td></td></tr>
+<tr><th id="752">752</th><td><b>struct</b> <dfn class="type def" id="tlv_rate_limit" title='tlv_rate_limit' data-ref="tlv_rate_limit">tlv_rate_limit</dfn> {</td></tr>
+<tr><th id="753">753</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_rate_limit::tag" title='tlv_rate_limit::tag' data-ref="tlv_rate_limit::tag">tag</dfn>;</td></tr>
+<tr><th id="754">754</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_rate_limit::length" title='tlv_rate_limit::length' data-ref="tlv_rate_limit::length">length</dfn>;</td></tr>
+<tr><th id="755">755</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_rate_limit::rate_mbps" title='tlv_rate_limit::rate_mbps' data-ref="tlv_rate_limit::rate_mbps">rate_mbps</dfn>;</td></tr>
+<tr><th id="756">756</th><td>};</td></tr>
+<tr><th id="757">757</th><td></td></tr>
+<tr><th id="758">758</th><td><i>/* OCSD Enable/Disable</i></td></tr>
+<tr><th id="759">759</th><td><i> *</i></td></tr>
+<tr><th id="760">760</th><td><i> * This setting allows OCSD to be disabled. This is a requirement for HP</i></td></tr>
+<tr><th id="761">761</th><td><i> * servers to support PCI passthrough for virtualization.</i></td></tr>
+<tr><th id="762">762</th><td><i> *</i></td></tr>
+<tr><th id="763">763</th><td><i> * The DEFAULT mode (which is the same as the tag not being present) is</i></td></tr>
+<tr><th id="764">764</th><td><i> * equivalent to ENABLED.</i></td></tr>
+<tr><th id="765">765</th><td><i> *</i></td></tr>
+<tr><th id="766">766</th><td><i> * This option is not used by the MCFW, and is entirely handled by the various</i></td></tr>
+<tr><th id="767">767</th><td><i> * drivers that support OCSD, by reading the setting before they attempt</i></td></tr>
+<tr><th id="768">768</th><td><i> * to enable OCSD.</i></td></tr>
+<tr><th id="769">769</th><td><i> *</i></td></tr>
+<tr><th id="770">770</th><td><i> * bit0: OCSD Disabled/Enabled</i></td></tr>
+<tr><th id="771">771</th><td><i> */</i></td></tr>
+<tr><th id="772">772</th><td></td></tr>
+<tr><th id="773">773</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_OCSD" data-ref="_M/TLV_TAG_OCSD">TLV_TAG_OCSD</dfn> (0x101C0000)</u></td></tr>
+<tr><th id="774">774</th><td></td></tr>
+<tr><th id="775">775</th><td><b>struct</b> <dfn class="type def" id="tlv_ocsd" title='tlv_ocsd' data-ref="tlv_ocsd">tlv_ocsd</dfn> {</td></tr>
+<tr><th id="776">776</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_ocsd::tag" title='tlv_ocsd::tag' data-ref="tlv_ocsd::tag">tag</dfn>;</td></tr>
+<tr><th id="777">777</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_ocsd::length" title='tlv_ocsd::length' data-ref="tlv_ocsd::length">length</dfn>;</td></tr>
+<tr><th id="778">778</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_ocsd::mode" title='tlv_ocsd::mode' data-ref="tlv_ocsd::mode">mode</dfn>;</td></tr>
+<tr><th id="779">779</th><td><u>#define <dfn class="macro" id="_M/TLV_OCSD_DISABLED" data-ref="_M/TLV_OCSD_DISABLED">TLV_OCSD_DISABLED</dfn> 0</u></td></tr>
+<tr><th id="780">780</th><td><u>#define <dfn class="macro" id="_M/TLV_OCSD_ENABLED" data-ref="_M/TLV_OCSD_ENABLED">TLV_OCSD_ENABLED</dfn> 1 /* Default */</u></td></tr>
+<tr><th id="781">781</th><td>};</td></tr>
+<tr><th id="782">782</th><td></td></tr>
+<tr><th id="783">783</th><td><i>/* Descriptor cache config.</i></td></tr>
+<tr><th id="784">784</th><td><i> *</i></td></tr>
+<tr><th id="785">785</th><td><i> * Sets the sizes of the TX and RX descriptor caches as a power of 2. It also</i></td></tr>
+<tr><th id="786">786</th><td><i> * sets the total number of VIs. When the number of VIs is reduced VIs are taken</i></td></tr>
+<tr><th id="787">787</th><td><i> * away from the highest numbered port first, so a vi_count of 1024 means 1024</i></td></tr>
+<tr><th id="788">788</th><td><i> * VIs on the first port and 0 on the second (on a Torino).</i></td></tr>
+<tr><th id="789">789</th><td><i> */</i></td></tr>
+<tr><th id="790">790</th><td></td></tr>
+<tr><th id="791">791</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_DESCRIPTOR_CACHE_CONFIG" data-ref="_M/TLV_TAG_DESCRIPTOR_CACHE_CONFIG">TLV_TAG_DESCRIPTOR_CACHE_CONFIG</dfn>    (0x101d0000)</u></td></tr>
+<tr><th id="792">792</th><td></td></tr>
+<tr><th id="793">793</th><td><b>struct</b> <dfn class="type def" id="tlv_descriptor_cache_config" title='tlv_descriptor_cache_config' data-ref="tlv_descriptor_cache_config">tlv_descriptor_cache_config</dfn> {</td></tr>
+<tr><th id="794">794</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_descriptor_cache_config::tag" title='tlv_descriptor_cache_config::tag' data-ref="tlv_descriptor_cache_config::tag">tag</dfn>;</td></tr>
+<tr><th id="795">795</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_descriptor_cache_config::length" title='tlv_descriptor_cache_config::length' data-ref="tlv_descriptor_cache_config::length">length</dfn>;</td></tr>
+<tr><th id="796">796</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="tlv_descriptor_cache_config::rx_desc_cache_size" title='tlv_descriptor_cache_config::rx_desc_cache_size' data-ref="tlv_descriptor_cache_config::rx_desc_cache_size">rx_desc_cache_size</dfn>;</td></tr>
+<tr><th id="797">797</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="tlv_descriptor_cache_config::tx_desc_cache_size" title='tlv_descriptor_cache_config::tx_desc_cache_size' data-ref="tlv_descriptor_cache_config::tx_desc_cache_size">tx_desc_cache_size</dfn>;</td></tr>
+<tr><th id="798">798</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_descriptor_cache_config::vi_count" title='tlv_descriptor_cache_config::vi_count' data-ref="tlv_descriptor_cache_config::vi_count">vi_count</dfn>;</td></tr>
+<tr><th id="799">799</th><td>};</td></tr>
+<tr><th id="800">800</th><td><u>#define <dfn class="macro" id="_M/TLV_DESC_CACHE_DEFAULT" data-ref="_M/TLV_DESC_CACHE_DEFAULT">TLV_DESC_CACHE_DEFAULT</dfn> (0xff)</u></td></tr>
+<tr><th id="801">801</th><td><u>#define <dfn class="macro" id="_M/TLV_VI_COUNT_DEFAULT" data-ref="_M/TLV_VI_COUNT_DEFAULT">TLV_VI_COUNT_DEFAULT</dfn>   (0xffff)</u></td></tr>
+<tr><th id="802">802</th><td></td></tr>
+<tr><th id="803">803</th><td><i>/* RX event merging config (read batching).</i></td></tr>
+<tr><th id="804">804</th><td><i> *</i></td></tr>
+<tr><th id="805">805</th><td><i> * Sets the global maximum number of events for the merging bins, and the</i></td></tr>
+<tr><th id="806">806</th><td><i> * global timeout configuration for the bins.</i></td></tr>
+<tr><th id="807">807</th><td><i> */</i></td></tr>
+<tr><th id="808">808</th><td></td></tr>
+<tr><th id="809">809</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_RX_EVENT_MERGING_CONFIG" data-ref="_M/TLV_TAG_RX_EVENT_MERGING_CONFIG">TLV_TAG_RX_EVENT_MERGING_CONFIG</dfn>    (0x101e0000)</u></td></tr>
+<tr><th id="810">810</th><td></td></tr>
+<tr><th id="811">811</th><td><b>struct</b> <dfn class="type def" id="tlv_rx_event_merging_config" title='tlv_rx_event_merging_config' data-ref="tlv_rx_event_merging_config">tlv_rx_event_merging_config</dfn> {</td></tr>
+<tr><th id="812">812</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a>  <dfn class="decl field" id="tlv_rx_event_merging_config::tag" title='tlv_rx_event_merging_config::tag' data-ref="tlv_rx_event_merging_config::tag">tag</dfn>;</td></tr>
+<tr><th id="813">813</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a>  <dfn class="decl field" id="tlv_rx_event_merging_config::length" title='tlv_rx_event_merging_config::length' data-ref="tlv_rx_event_merging_config::length">length</dfn>;</td></tr>
+<tr><th id="814">814</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a>  <dfn class="decl field" id="tlv_rx_event_merging_config::max_events" title='tlv_rx_event_merging_config::max_events' data-ref="tlv_rx_event_merging_config::max_events">max_events</dfn>;</td></tr>
+<tr><th id="815">815</th><td><u>#define <dfn class="macro" id="_M/TLV_RX_EVENT_MERGING_CONFIG_MAX_EVENTS_MAX" data-ref="_M/TLV_RX_EVENT_MERGING_CONFIG_MAX_EVENTS_MAX">TLV_RX_EVENT_MERGING_CONFIG_MAX_EVENTS_MAX</dfn> ((1 &lt;&lt; 4) - 1)</u></td></tr>
+<tr><th id="816">816</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a>  <dfn class="decl field" id="tlv_rx_event_merging_config::timeout_ns" title='tlv_rx_event_merging_config::timeout_ns' data-ref="tlv_rx_event_merging_config::timeout_ns">timeout_ns</dfn>;</td></tr>
+<tr><th id="817">817</th><td>};</td></tr>
+<tr><th id="818">818</th><td><u>#define <dfn class="macro" id="_M/TLV_RX_EVENT_MERGING_MAX_EVENTS_DEFAULT" data-ref="_M/TLV_RX_EVENT_MERGING_MAX_EVENTS_DEFAULT">TLV_RX_EVENT_MERGING_MAX_EVENTS_DEFAULT</dfn> (0xffffffff)</u></td></tr>
+<tr><th id="819">819</th><td><u>#define <dfn class="macro" id="_M/TLV_RX_EVENT_MERGING_TIMEOUT_NS_DEFAULT" data-ref="_M/TLV_RX_EVENT_MERGING_TIMEOUT_NS_DEFAULT">TLV_RX_EVENT_MERGING_TIMEOUT_NS_DEFAULT</dfn> (0xffffffff)</u></td></tr>
+<tr><th id="820">820</th><td></td></tr>
+<tr><th id="821">821</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_PCIE_LINK_SETTINGS" data-ref="_M/TLV_TAG_PCIE_LINK_SETTINGS">TLV_TAG_PCIE_LINK_SETTINGS</dfn> (0x101f0000)</u></td></tr>
+<tr><th id="822">822</th><td><b>struct</b> <dfn class="type def" id="tlv_pcie_link_settings" title='tlv_pcie_link_settings' data-ref="tlv_pcie_link_settings">tlv_pcie_link_settings</dfn> {</td></tr>
+<tr><th id="823">823</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pcie_link_settings::tag" title='tlv_pcie_link_settings::tag' data-ref="tlv_pcie_link_settings::tag">tag</dfn>;</td></tr>
+<tr><th id="824">824</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pcie_link_settings::length" title='tlv_pcie_link_settings::length' data-ref="tlv_pcie_link_settings::length">length</dfn>;</td></tr>
+<tr><th id="825">825</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_pcie_link_settings::gen" title='tlv_pcie_link_settings::gen' data-ref="tlv_pcie_link_settings::gen">gen</dfn>;   <i>/* Target PCIe generation: 1, 2, 3 */</i></td></tr>
+<tr><th id="826">826</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_pcie_link_settings::width" title='tlv_pcie_link_settings::width' data-ref="tlv_pcie_link_settings::width">width</dfn>; <i>/* Number of lanes */</i></td></tr>
+<tr><th id="827">827</th><td>};</td></tr>
+<tr><th id="828">828</th><td></td></tr>
+<tr><th id="829">829</th><td><i>/* TX event merging config.</i></td></tr>
+<tr><th id="830">830</th><td><i> *</i></td></tr>
+<tr><th id="831">831</th><td><i> * Sets the global maximum number of events for the merging bins, and the</i></td></tr>
+<tr><th id="832">832</th><td><i> * global timeout configuration for the bins, and the global timeout for</i></td></tr>
+<tr><th id="833">833</th><td><i> * empty queues.</i></td></tr>
+<tr><th id="834">834</th><td><i> */</i></td></tr>
+<tr><th id="835">835</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_TX_EVENT_MERGING_CONFIG" data-ref="_M/TLV_TAG_TX_EVENT_MERGING_CONFIG">TLV_TAG_TX_EVENT_MERGING_CONFIG</dfn>    (0x10210000)</u></td></tr>
+<tr><th id="836">836</th><td><b>struct</b> <dfn class="type def" id="tlv_tx_event_merging_config" title='tlv_tx_event_merging_config' data-ref="tlv_tx_event_merging_config">tlv_tx_event_merging_config</dfn> {</td></tr>
+<tr><th id="837">837</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a>  <dfn class="decl field" id="tlv_tx_event_merging_config::tag" title='tlv_tx_event_merging_config::tag' data-ref="tlv_tx_event_merging_config::tag">tag</dfn>;</td></tr>
+<tr><th id="838">838</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a>  <dfn class="decl field" id="tlv_tx_event_merging_config::length" title='tlv_tx_event_merging_config::length' data-ref="tlv_tx_event_merging_config::length">length</dfn>;</td></tr>
+<tr><th id="839">839</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a>  <dfn class="decl field" id="tlv_tx_event_merging_config::max_events" title='tlv_tx_event_merging_config::max_events' data-ref="tlv_tx_event_merging_config::max_events">max_events</dfn>;</td></tr>
+<tr><th id="840">840</th><td><u>#define <dfn class="macro" id="_M/TLV_TX_EVENT_MERGING_CONFIG_MAX_EVENTS_MAX" data-ref="_M/TLV_TX_EVENT_MERGING_CONFIG_MAX_EVENTS_MAX">TLV_TX_EVENT_MERGING_CONFIG_MAX_EVENTS_MAX</dfn> ((1 &lt;&lt; 4) - 1)</u></td></tr>
+<tr><th id="841">841</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a>  <dfn class="decl field" id="tlv_tx_event_merging_config::timeout_ns" title='tlv_tx_event_merging_config::timeout_ns' data-ref="tlv_tx_event_merging_config::timeout_ns">timeout_ns</dfn>;</td></tr>
+<tr><th id="842">842</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a>  <dfn class="decl field" id="tlv_tx_event_merging_config::qempty_timeout_ns" title='tlv_tx_event_merging_config::qempty_timeout_ns' data-ref="tlv_tx_event_merging_config::qempty_timeout_ns">qempty_timeout_ns</dfn>; <i>/* Medford only */</i></td></tr>
+<tr><th id="843">843</th><td>};</td></tr>
+<tr><th id="844">844</th><td><u>#define <dfn class="macro" id="_M/TLV_TX_EVENT_MERGING_MAX_EVENTS_DEFAULT" data-ref="_M/TLV_TX_EVENT_MERGING_MAX_EVENTS_DEFAULT">TLV_TX_EVENT_MERGING_MAX_EVENTS_DEFAULT</dfn> (0xffffffff)</u></td></tr>
+<tr><th id="845">845</th><td><u>#define <dfn class="macro" id="_M/TLV_TX_EVENT_MERGING_TIMEOUT_NS_DEFAULT" data-ref="_M/TLV_TX_EVENT_MERGING_TIMEOUT_NS_DEFAULT">TLV_TX_EVENT_MERGING_TIMEOUT_NS_DEFAULT</dfn> (0xffffffff)</u></td></tr>
+<tr><th id="846">846</th><td><u>#define <dfn class="macro" id="_M/TLV_TX_EVENT_MERGING_QEMPTY_TIMEOUT_NS_DEFAULT" data-ref="_M/TLV_TX_EVENT_MERGING_QEMPTY_TIMEOUT_NS_DEFAULT">TLV_TX_EVENT_MERGING_QEMPTY_TIMEOUT_NS_DEFAULT</dfn> (0xffffffff)</u></td></tr>
+<tr><th id="847">847</th><td></td></tr>
+<tr><th id="848">848</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_LICENSE" data-ref="_M/TLV_TAG_LICENSE">TLV_TAG_LICENSE</dfn> (0x30800000)</u></td></tr>
+<tr><th id="849">849</th><td></td></tr>
+<tr><th id="850">850</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="tlv_license" title='tlv_license' data-ref="tlv_license"><a class="type" href="#tlv_license" title='tlv_license' data-ref="tlv_license">tlv_license</a></dfn> {</td></tr>
+<tr><th id="851">851</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a>  <dfn class="decl field" id="tlv_license::tag" title='tlv_license::tag' data-ref="tlv_license::tag">tag</dfn>;</td></tr>
+<tr><th id="852">852</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a>  <dfn class="decl field" id="tlv_license::length" title='tlv_license::length' data-ref="tlv_license::length">length</dfn>;</td></tr>
+<tr><th id="853">853</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a>   <dfn class="decl field" id="tlv_license::data" title='tlv_license::data' data-ref="tlv_license::data">data</dfn>[];</td></tr>
+<tr><th id="854">854</th><td>} <dfn class="typedef" id="tlv_license_t" title='tlv_license_t' data-type='struct tlv_license' data-ref="tlv_license_t">tlv_license_t</dfn>;</td></tr>
+<tr><th id="855">855</th><td></td></tr>
+<tr><th id="856">856</th><td><i>/* TSA NIC IP address configuration (DEPRECATED)</i></td></tr>
+<tr><th id="857">857</th><td><i> *</i></td></tr>
+<tr><th id="858">858</th><td><i> * Sets the TSA NIC IP address statically via configuration tool or dynamically</i></td></tr>
+<tr><th id="859">859</th><td><i> * via DHCP via snooping based on the mode selection (0=Static, 1=DHCP, 2=Snoop)</i></td></tr>
+<tr><th id="860">860</th><td><i> *</i></td></tr>
+<tr><th id="861">861</th><td><i> * NOTE: This TAG is temporarily placed in the dynamic config partition and will</i></td></tr>
+<tr><th id="862">862</th><td><i> * be moved to a private partition during TSA development. It is not used in any</i></td></tr>
+<tr><th id="863">863</th><td><i> * released code yet.</i></td></tr>
+<tr><th id="864">864</th><td><i> */</i></td></tr>
+<tr><th id="865">865</th><td></td></tr>
+<tr><th id="866">866</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_TMP_TSAN_CONFIG" data-ref="_M/TLV_TAG_TMP_TSAN_CONFIG">TLV_TAG_TMP_TSAN_CONFIG</dfn>         (0x10220000) /* DEPRECATED */</u></td></tr>
+<tr><th id="867">867</th><td></td></tr>
+<tr><th id="868">868</th><td><u>#define <dfn class="macro" id="_M/TLV_TSAN_IP_MODE_STATIC" data-ref="_M/TLV_TSAN_IP_MODE_STATIC">TLV_TSAN_IP_MODE_STATIC</dfn>         (0)</u></td></tr>
+<tr><th id="869">869</th><td><u>#define <dfn class="macro" id="_M/TLV_TSAN_IP_MODE_DHCP" data-ref="_M/TLV_TSAN_IP_MODE_DHCP">TLV_TSAN_IP_MODE_DHCP</dfn>           (1)</u></td></tr>
+<tr><th id="870">870</th><td><u>#define <dfn class="macro" id="_M/TLV_TSAN_IP_MODE_SNOOP" data-ref="_M/TLV_TSAN_IP_MODE_SNOOP">TLV_TSAN_IP_MODE_SNOOP</dfn>          (2)</u></td></tr>
+<tr><th id="871">871</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="tlv_tsan_config" title='tlv_tsan_config' data-ref="tlv_tsan_config"><a class="type" href="#tlv_tsan_config" title='tlv_tsan_config' data-ref="tlv_tsan_config">tlv_tsan_config</a></dfn> {</td></tr>
+<tr><th id="872">872</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tsan_config::tag" title='tlv_tsan_config::tag' data-ref="tlv_tsan_config::tag">tag</dfn>;</td></tr>
+<tr><th id="873">873</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tsan_config::length" title='tlv_tsan_config::length' data-ref="tlv_tsan_config::length">length</dfn>;</td></tr>
+<tr><th id="874">874</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tsan_config::mode" title='tlv_tsan_config::mode' data-ref="tlv_tsan_config::mode">mode</dfn>;</td></tr>
+<tr><th id="875">875</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tsan_config::ip" title='tlv_tsan_config::ip' data-ref="tlv_tsan_config::ip">ip</dfn>;</td></tr>
+<tr><th id="876">876</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tsan_config::netmask" title='tlv_tsan_config::netmask' data-ref="tlv_tsan_config::netmask">netmask</dfn>;</td></tr>
+<tr><th id="877">877</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tsan_config::gateway" title='tlv_tsan_config::gateway' data-ref="tlv_tsan_config::gateway">gateway</dfn>;</td></tr>
+<tr><th id="878">878</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tsan_config::port" title='tlv_tsan_config::port' data-ref="tlv_tsan_config::port">port</dfn>;</td></tr>
+<tr><th id="879">879</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tsan_config::bind_retry" title='tlv_tsan_config::bind_retry' data-ref="tlv_tsan_config::bind_retry">bind_retry</dfn>;  <i>/* DEPRECATED */</i></td></tr>
+<tr><th id="880">880</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tsan_config::bind_bkout" title='tlv_tsan_config::bind_bkout' data-ref="tlv_tsan_config::bind_bkout">bind_bkout</dfn>;  <i>/* DEPRECATED */</i></td></tr>
+<tr><th id="881">881</th><td>} <dfn class="typedef" id="tlv_tsan_config_t" title='tlv_tsan_config_t' data-type='struct tlv_tsan_config' data-ref="tlv_tsan_config_t">tlv_tsan_config_t</dfn>;</td></tr>
+<tr><th id="882">882</th><td></td></tr>
+<tr><th id="883">883</th><td><i>/* TSA Controller IP address configuration (DEPRECATED)</i></td></tr>
+<tr><th id="884">884</th><td><i> *</i></td></tr>
+<tr><th id="885">885</th><td><i> * Sets the TSA Controller IP address statically via configuration tool</i></td></tr>
+<tr><th id="886">886</th><td><i> *</i></td></tr>
+<tr><th id="887">887</th><td><i> * NOTE: This TAG is temporarily placed in the dynamic config partition and will</i></td></tr>
+<tr><th id="888">888</th><td><i> * be moved to a private partition during TSA development. It is not used in any</i></td></tr>
+<tr><th id="889">889</th><td><i> * released code yet.</i></td></tr>
+<tr><th id="890">890</th><td><i> */</i></td></tr>
+<tr><th id="891">891</th><td></td></tr>
+<tr><th id="892">892</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_TMP_TSAC_CONFIG" data-ref="_M/TLV_TAG_TMP_TSAC_CONFIG">TLV_TAG_TMP_TSAC_CONFIG</dfn>         (0x10230000) /* DEPRECATED */</u></td></tr>
+<tr><th id="893">893</th><td></td></tr>
+<tr><th id="894">894</th><td><u>#define <dfn class="macro" id="_M/TLV_MAX_TSACS" data-ref="_M/TLV_MAX_TSACS">TLV_MAX_TSACS</dfn> (4)</u></td></tr>
+<tr><th id="895">895</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="tlv_tsac_config" title='tlv_tsac_config' data-ref="tlv_tsac_config"><a class="type" href="#tlv_tsac_config" title='tlv_tsac_config' data-ref="tlv_tsac_config">tlv_tsac_config</a></dfn> {</td></tr>
+<tr><th id="896">896</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tsac_config::tag" title='tlv_tsac_config::tag' data-ref="tlv_tsac_config::tag">tag</dfn>;</td></tr>
+<tr><th id="897">897</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tsac_config::length" title='tlv_tsac_config::length' data-ref="tlv_tsac_config::length">length</dfn>;</td></tr>
+<tr><th id="898">898</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tsac_config::num_tsacs" title='tlv_tsac_config::num_tsacs' data-ref="tlv_tsac_config::num_tsacs">num_tsacs</dfn>;</td></tr>
+<tr><th id="899">899</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tsac_config::ip" title='tlv_tsac_config::ip' data-ref="tlv_tsac_config::ip">ip</dfn>[<a class="macro" href="#894" title="(4)" data-ref="_M/TLV_MAX_TSACS">TLV_MAX_TSACS</a>];</td></tr>
+<tr><th id="900">900</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tsac_config::port" title='tlv_tsac_config::port' data-ref="tlv_tsac_config::port">port</dfn>[<a class="macro" href="#894" title="(4)" data-ref="_M/TLV_MAX_TSACS">TLV_MAX_TSACS</a>];</td></tr>
+<tr><th id="901">901</th><td>} <dfn class="typedef" id="tlv_tsac_config_t" title='tlv_tsac_config_t' data-type='struct tlv_tsac_config' data-ref="tlv_tsac_config_t">tlv_tsac_config_t</dfn>;</td></tr>
+<tr><th id="902">902</th><td></td></tr>
+<tr><th id="903">903</th><td><i>/* Binding ticket (DEPRECATED)</i></td></tr>
+<tr><th id="904">904</th><td><i> *</i></td></tr>
+<tr><th id="905">905</th><td><i> * Sets the TSA NIC binding ticket used for binding process between the TSA NIC</i></td></tr>
+<tr><th id="906">906</th><td><i> * and the TSA Controller</i></td></tr>
+<tr><th id="907">907</th><td><i> *</i></td></tr>
+<tr><th id="908">908</th><td><i> * NOTE: This TAG is temporarily placed in the dynamic config partition and will</i></td></tr>
+<tr><th id="909">909</th><td><i> * be moved to a private partition during TSA development. It is not used in any</i></td></tr>
+<tr><th id="910">910</th><td><i> * released code yet.</i></td></tr>
+<tr><th id="911">911</th><td><i> */</i></td></tr>
+<tr><th id="912">912</th><td></td></tr>
+<tr><th id="913">913</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_TMP_BINDING_TICKET" data-ref="_M/TLV_TAG_TMP_BINDING_TICKET">TLV_TAG_TMP_BINDING_TICKET</dfn>      (0x10240000) /* DEPRECATED */</u></td></tr>
+<tr><th id="914">914</th><td></td></tr>
+<tr><th id="915">915</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="tlv_binding_ticket" title='tlv_binding_ticket' data-ref="tlv_binding_ticket"><a class="type" href="#tlv_binding_ticket" title='tlv_binding_ticket' data-ref="tlv_binding_ticket">tlv_binding_ticket</a></dfn> {</td></tr>
+<tr><th id="916">916</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_binding_ticket::tag" title='tlv_binding_ticket::tag' data-ref="tlv_binding_ticket::tag">tag</dfn>;</td></tr>
+<tr><th id="917">917</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_binding_ticket::length" title='tlv_binding_ticket::length' data-ref="tlv_binding_ticket::length">length</dfn>;</td></tr>
+<tr><th id="918">918</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a>  <dfn class="decl field" id="tlv_binding_ticket::bytes" title='tlv_binding_ticket::bytes' data-ref="tlv_binding_ticket::bytes">bytes</dfn>[];</td></tr>
+<tr><th id="919">919</th><td>} <dfn class="typedef" id="tlv_binding_ticket_t" title='tlv_binding_ticket_t' data-type='struct tlv_binding_ticket' data-ref="tlv_binding_ticket_t">tlv_binding_ticket_t</dfn>;</td></tr>
+<tr><th id="920">920</th><td></td></tr>
+<tr><th id="921">921</th><td><i>/* Solarflare private key  (DEPRECATED)</i></td></tr>
+<tr><th id="922">922</th><td><i> *</i></td></tr>
+<tr><th id="923">923</th><td><i> * Sets the Solareflare private key used for signing during the binding process</i></td></tr>
+<tr><th id="924">924</th><td><i> *</i></td></tr>
+<tr><th id="925">925</th><td><i> * NOTE: This TAG is temporarily placed in the dynamic config partition and will</i></td></tr>
+<tr><th id="926">926</th><td><i> * be moved to a private partition during TSA development. It is not used in any</i></td></tr>
+<tr><th id="927">927</th><td><i> * released code yet.</i></td></tr>
+<tr><th id="928">928</th><td><i> */</i></td></tr>
+<tr><th id="929">929</th><td></td></tr>
+<tr><th id="930">930</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_TMP_PIK_SF" data-ref="_M/TLV_TAG_TMP_PIK_SF">TLV_TAG_TMP_PIK_SF</dfn>              (0x10250000)    /* DEPRECATED */</u></td></tr>
+<tr><th id="931">931</th><td></td></tr>
+<tr><th id="932">932</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="tlv_pik_sf" title='tlv_pik_sf' data-ref="tlv_pik_sf"><a class="type" href="#tlv_pik_sf" title='tlv_pik_sf' data-ref="tlv_pik_sf">tlv_pik_sf</a></dfn> {</td></tr>
+<tr><th id="933">933</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pik_sf::tag" title='tlv_pik_sf::tag' data-ref="tlv_pik_sf::tag">tag</dfn>;</td></tr>
+<tr><th id="934">934</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_pik_sf::length" title='tlv_pik_sf::length' data-ref="tlv_pik_sf::length">length</dfn>;</td></tr>
+<tr><th id="935">935</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a>  <dfn class="decl field" id="tlv_pik_sf::bytes" title='tlv_pik_sf::bytes' data-ref="tlv_pik_sf::bytes">bytes</dfn>[];</td></tr>
+<tr><th id="936">936</th><td>} <dfn class="typedef" id="tlv_pik_sf_t" title='tlv_pik_sf_t' data-type='struct tlv_pik_sf' data-ref="tlv_pik_sf_t">tlv_pik_sf_t</dfn>;</td></tr>
+<tr><th id="937">937</th><td></td></tr>
+<tr><th id="938">938</th><td><i>/* CA root certificate (DEPRECATED)</i></td></tr>
+<tr><th id="939">939</th><td><i> *</i></td></tr>
+<tr><th id="940">940</th><td><i> * Sets the CA root certificate used for TSA Controller verfication during</i></td></tr>
+<tr><th id="941">941</th><td><i> * TLS connection setup between the TSA NIC and the TSA Controller</i></td></tr>
+<tr><th id="942">942</th><td><i> *</i></td></tr>
+<tr><th id="943">943</th><td><i> * NOTE: This TAG is temporarily placed in the dynamic config partition and will</i></td></tr>
+<tr><th id="944">944</th><td><i> * be moved to a private partition during TSA development. It is not used in any</i></td></tr>
+<tr><th id="945">945</th><td><i> * released code yet.</i></td></tr>
+<tr><th id="946">946</th><td><i> */</i></td></tr>
+<tr><th id="947">947</th><td></td></tr>
+<tr><th id="948">948</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_TMP_CA_ROOT_CERT" data-ref="_M/TLV_TAG_TMP_CA_ROOT_CERT">TLV_TAG_TMP_CA_ROOT_CERT</dfn>        (0x10260000) /* DEPRECATED */</u></td></tr>
+<tr><th id="949">949</th><td></td></tr>
+<tr><th id="950">950</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="tlv_ca_root_cert" title='tlv_ca_root_cert' data-ref="tlv_ca_root_cert"><a class="type" href="#tlv_ca_root_cert" title='tlv_ca_root_cert' data-ref="tlv_ca_root_cert">tlv_ca_root_cert</a></dfn> {</td></tr>
+<tr><th id="951">951</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_ca_root_cert::tag" title='tlv_ca_root_cert::tag' data-ref="tlv_ca_root_cert::tag">tag</dfn>;</td></tr>
+<tr><th id="952">952</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_ca_root_cert::length" title='tlv_ca_root_cert::length' data-ref="tlv_ca_root_cert::length">length</dfn>;</td></tr>
+<tr><th id="953">953</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a>  <dfn class="decl field" id="tlv_ca_root_cert::bytes" title='tlv_ca_root_cert::bytes' data-ref="tlv_ca_root_cert::bytes">bytes</dfn>[];</td></tr>
+<tr><th id="954">954</th><td>} <dfn class="typedef" id="tlv_ca_root_cert_t" title='tlv_ca_root_cert_t' data-type='struct tlv_ca_root_cert' data-ref="tlv_ca_root_cert_t">tlv_ca_root_cert_t</dfn>;</td></tr>
+<tr><th id="955">955</th><td></td></tr>
+<tr><th id="956">956</th><td><i>/* Tx vFIFO Low latency configuration</i></td></tr>
+<tr><th id="957">957</th><td><i> *</i></td></tr>
+<tr><th id="958">958</th><td><i> * To keep the desired booting behaviour for the switch, it just requires to</i></td></tr>
+<tr><th id="959">959</th><td><i> * know if the low latency mode is enabled.</i></td></tr>
+<tr><th id="960">960</th><td><i> */</i></td></tr>
+<tr><th id="961">961</th><td></td></tr>
+<tr><th id="962">962</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_TX_VFIFO_ULL_MODE" data-ref="_M/TLV_TAG_TX_VFIFO_ULL_MODE">TLV_TAG_TX_VFIFO_ULL_MODE</dfn>       (0x10270000)</u></td></tr>
+<tr><th id="963">963</th><td><b>struct</b> <dfn class="type def" id="tlv_tx_vfifo_ull_mode" title='tlv_tx_vfifo_ull_mode' data-ref="tlv_tx_vfifo_ull_mode">tlv_tx_vfifo_ull_mode</dfn> {</td></tr>
+<tr><th id="964">964</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tx_vfifo_ull_mode::tag" title='tlv_tx_vfifo_ull_mode::tag' data-ref="tlv_tx_vfifo_ull_mode::tag">tag</dfn>;</td></tr>
+<tr><th id="965">965</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_tx_vfifo_ull_mode::length" title='tlv_tx_vfifo_ull_mode::length' data-ref="tlv_tx_vfifo_ull_mode::length">length</dfn>;</td></tr>
+<tr><th id="966">966</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a>  <dfn class="decl field" id="tlv_tx_vfifo_ull_mode::mode" title='tlv_tx_vfifo_ull_mode::mode' data-ref="tlv_tx_vfifo_ull_mode::mode">mode</dfn>;</td></tr>
+<tr><th id="967">967</th><td><u>#define <dfn class="macro" id="_M/TLV_TX_VFIFO_ULL_MODE_DEFAULT" data-ref="_M/TLV_TX_VFIFO_ULL_MODE_DEFAULT">TLV_TX_VFIFO_ULL_MODE_DEFAULT</dfn>    0</u></td></tr>
+<tr><th id="968">968</th><td>};</td></tr>
+<tr><th id="969">969</th><td></td></tr>
+<tr><th id="970">970</th><td><i>/* BIU mode</i></td></tr>
+<tr><th id="971">971</th><td><i> *</i></td></tr>
+<tr><th id="972">972</th><td><i> * Medford2 tag for selecting VI window decode (see values below)</i></td></tr>
+<tr><th id="973">973</th><td><i> */</i></td></tr>
+<tr><th id="974">974</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_BIU_VI_WINDOW_MODE" data-ref="_M/TLV_TAG_BIU_VI_WINDOW_MODE">TLV_TAG_BIU_VI_WINDOW_MODE</dfn>       (0x10280000)</u></td></tr>
+<tr><th id="975">975</th><td><b>struct</b> <dfn class="type def" id="tlv_biu_vi_window_mode" title='tlv_biu_vi_window_mode' data-ref="tlv_biu_vi_window_mode">tlv_biu_vi_window_mode</dfn> {</td></tr>
+<tr><th id="976">976</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_biu_vi_window_mode::tag" title='tlv_biu_vi_window_mode::tag' data-ref="tlv_biu_vi_window_mode::tag">tag</dfn>;</td></tr>
+<tr><th id="977">977</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_biu_vi_window_mode::length" title='tlv_biu_vi_window_mode::length' data-ref="tlv_biu_vi_window_mode::length">length</dfn>;</td></tr>
+<tr><th id="978">978</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a>  <dfn class="decl field" id="tlv_biu_vi_window_mode::mode" title='tlv_biu_vi_window_mode::mode' data-ref="tlv_biu_vi_window_mode::mode">mode</dfn>;</td></tr>
+<tr><th id="979">979</th><td><u>#define <dfn class="macro" id="_M/TLV_BIU_VI_WINDOW_MODE_8K" data-ref="_M/TLV_BIU_VI_WINDOW_MODE_8K">TLV_BIU_VI_WINDOW_MODE_8K</dfn>    0  /*  8k per VI, CTPIO not mapped, medford/hunt compatible */</u></td></tr>
+<tr><th id="980">980</th><td><u>#define <dfn class="macro" id="_M/TLV_BIU_VI_WINDOW_MODE_16K" data-ref="_M/TLV_BIU_VI_WINDOW_MODE_16K">TLV_BIU_VI_WINDOW_MODE_16K</dfn>   1  /* 16k per VI, CTPIO mapped */</u></td></tr>
+<tr><th id="981">981</th><td><u>#define <dfn class="macro" id="_M/TLV_BIU_VI_WINDOW_MODE_64K" data-ref="_M/TLV_BIU_VI_WINDOW_MODE_64K">TLV_BIU_VI_WINDOW_MODE_64K</dfn>   2  /* 64k per VI, CTPIO mapped, POWER-friendly */</u></td></tr>
+<tr><th id="982">982</th><td>};</td></tr>
+<tr><th id="983">983</th><td></td></tr>
+<tr><th id="984">984</th><td><i>/* FastPD mode</i></td></tr>
+<tr><th id="985">985</th><td><i> *</i></td></tr>
+<tr><th id="986">986</th><td><i> * Medford2 tag for configuring the FastPD mode (see values below)</i></td></tr>
+<tr><th id="987">987</th><td><i> */</i></td></tr>
+<tr><th id="988">988</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_FASTPD_MODE" data-ref="_M/TLV_TAG_FASTPD_MODE">TLV_TAG_FASTPD_MODE</dfn>(port)       (0x10290000 + (port))</u></td></tr>
+<tr><th id="989">989</th><td><b>struct</b> <dfn class="type def" id="tlv_fastpd_mode" title='tlv_fastpd_mode' data-ref="tlv_fastpd_mode">tlv_fastpd_mode</dfn> {</td></tr>
+<tr><th id="990">990</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_fastpd_mode::tag" title='tlv_fastpd_mode::tag' data-ref="tlv_fastpd_mode::tag">tag</dfn>;</td></tr>
+<tr><th id="991">991</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_fastpd_mode::length" title='tlv_fastpd_mode::length' data-ref="tlv_fastpd_mode::length">length</dfn>;</td></tr>
+<tr><th id="992">992</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a>  <dfn class="decl field" id="tlv_fastpd_mode::mode" title='tlv_fastpd_mode::mode' data-ref="tlv_fastpd_mode::mode">mode</dfn>;</td></tr>
+<tr><th id="993">993</th><td><u>#define <dfn class="macro" id="_M/TLV_FASTPD_MODE_SOFT_ALL" data-ref="_M/TLV_FASTPD_MODE_SOFT_ALL">TLV_FASTPD_MODE_SOFT_ALL</dfn>       0  /* All packets to the SoftPD */</u></td></tr>
+<tr><th id="994">994</th><td><u>#define <dfn class="macro" id="_M/TLV_FASTPD_MODE_FAST_ALL" data-ref="_M/TLV_FASTPD_MODE_FAST_ALL">TLV_FASTPD_MODE_FAST_ALL</dfn>       1  /* All packets to the FastPD */</u></td></tr>
+<tr><th id="995">995</th><td><u>#define <dfn class="macro" id="_M/TLV_FASTPD_MODE_FAST_SUPPORTED" data-ref="_M/TLV_FASTPD_MODE_FAST_SUPPORTED">TLV_FASTPD_MODE_FAST_SUPPORTED</dfn> 2  /* Supported packet types to the FastPD; everything else to the SoftPD  */</u></td></tr>
+<tr><th id="996">996</th><td>};</td></tr>
+<tr><th id="997">997</th><td></td></tr>
+<tr><th id="998">998</th><td><i>/* L3xUDP datapath firmware UDP port configuration</i></td></tr>
+<tr><th id="999">999</th><td><i> *</i></td></tr>
+<tr><th id="1000">1000</th><td><i> * Sets the list of UDP ports on which the encapsulation will be handled.</i></td></tr>
+<tr><th id="1001">1001</th><td><i> * The number of ports in the list is implied by the length of the TLV item.</i></td></tr>
+<tr><th id="1002">1002</th><td><i> */</i></td></tr>
+<tr><th id="1003">1003</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_L3XUDP_PORTS" data-ref="_M/TLV_TAG_L3XUDP_PORTS">TLV_TAG_L3XUDP_PORTS</dfn>            (0x102a0000)</u></td></tr>
+<tr><th id="1004">1004</th><td><b>struct</b> <dfn class="type def" id="tlv_l3xudp_ports" title='tlv_l3xudp_ports' data-ref="tlv_l3xudp_ports">tlv_l3xudp_ports</dfn> {</td></tr>
+<tr><th id="1005">1005</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_l3xudp_ports::tag" title='tlv_l3xudp_ports::tag' data-ref="tlv_l3xudp_ports::tag">tag</dfn>;</td></tr>
+<tr><th id="1006">1006</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="tlv_l3xudp_ports::length" title='tlv_l3xudp_ports::length' data-ref="tlv_l3xudp_ports::length">length</dfn>;</td></tr>
+<tr><th id="1007">1007</th><td>  <a class="typedef" href="../../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="tlv_l3xudp_ports::ports" title='tlv_l3xudp_ports::ports' data-ref="tlv_l3xudp_ports::ports">ports</dfn>[];</td></tr>
+<tr><th id="1008">1008</th><td><u>#define <dfn class="macro" id="_M/TLV_TAG_L3XUDP_PORTS_MAX_NUM_PORTS" data-ref="_M/TLV_TAG_L3XUDP_PORTS_MAX_NUM_PORTS">TLV_TAG_L3XUDP_PORTS_MAX_NUM_PORTS</dfn> 16</u></td></tr>
+<tr><th id="1009">1009</th><td>};</td></tr>
+<tr><th id="1010">1010</th><td></td></tr>
+<tr><th id="1011">1011</th><td><u>#<span data-ppcond="63">endif</span> /* CI_MGMT_TLV_LAYOUT_H */</u></td></tr>
+<tr><th id="1012">1012</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='ef10_nic.c.html'>master/drivers/net/sfc/base/ef10_nic.c</a><br/>Generated on <em>2018-Oct-01</em> from project master revision <em>master</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>
