@@ -1,0 +1,407 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>compiler-gcc.h source code [linux-4.18.y/include/linux/compiler-gcc.h] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/include/linux/compiler-gcc.h'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>linux-4.18.y</a>/<a href='..'>include</a>/<a href='./'>linux</a>/<a href='compiler-gcc.h.html'>compiler-gcc.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: GPL-2.0 */</i></td></tr>
+<tr><th id="2">2</th><td><u>#<span data-ppcond="2">ifndef</span> <a class="macro" href="compiler_types.h.html#2" data-ref="_M/__LINUX_COMPILER_TYPES_H">__LINUX_COMPILER_TYPES_H</a></u></td></tr>
+<tr><th id="3">3</th><td><u>#error "Please don't include &lt;linux/compiler-gcc.h&gt; directly, include &lt;linux/compiler.h&gt; instead."</u></td></tr>
+<tr><th id="4">4</th><td><u>#<span data-ppcond="2">endif</span></u></td></tr>
+<tr><th id="5">5</th><td></td></tr>
+<tr><th id="6">6</th><td><i>/*</i></td></tr>
+<tr><th id="7">7</th><td><i> * Common definitions for all gcc versions go here.</i></td></tr>
+<tr><th id="8">8</th><td><i> */</i></td></tr>
+<tr><th id="9">9</th><td><u>#define <dfn class="macro" id="_M/GCC_VERSION" data-ref="_M/GCC_VERSION">GCC_VERSION</dfn> (__GNUC__ * 10000		\</u></td></tr>
+<tr><th id="10">10</th><td><u>		     + __GNUC_MINOR__ * 100	\</u></td></tr>
+<tr><th id="11">11</th><td><u>		     + __GNUC_PATCHLEVEL__)</u></td></tr>
+<tr><th id="12">12</th><td></td></tr>
+<tr><th id="13">13</th><td><i>/* Optimization barrier */</i></td></tr>
+<tr><th id="14">14</th><td></td></tr>
+<tr><th id="15">15</th><td><i>/* The "volatile" is due to gcc bugs */</i></td></tr>
+<tr><th id="16">16</th><td><u>#define <dfn class="macro" id="_M/barrier" data-ref="_M/barrier">barrier</dfn>() __asm__ __volatile__("": : :"memory")</u></td></tr>
+<tr><th id="17">17</th><td><i>/*</i></td></tr>
+<tr><th id="18">18</th><td><i> * This version is i.e. to prevent dead stores elimination on @ptr</i></td></tr>
+<tr><th id="19">19</th><td><i> * where gcc and llvm may behave differently when otherwise using</i></td></tr>
+<tr><th id="20">20</th><td><i> * normal barrier(): while gcc behavior gets along with a normal</i></td></tr>
+<tr><th id="21">21</th><td><i> * barrier(), llvm needs an explicit input variable to be assumed</i></td></tr>
+<tr><th id="22">22</th><td><i> * clobbered. The issue is as follows: while the inline asm might</i></td></tr>
+<tr><th id="23">23</th><td><i> * access any memory it wants, the compiler could have fit all of</i></td></tr>
+<tr><th id="24">24</th><td><i> * @ptr into memory registers instead, and since @ptr never escaped</i></td></tr>
+<tr><th id="25">25</th><td><i> * from that, it proved that the inline asm wasn't touching any of</i></td></tr>
+<tr><th id="26">26</th><td><i> * it. This version works well with both compilers, i.e. we're telling</i></td></tr>
+<tr><th id="27">27</th><td><i> * the compiler that the inline asm absolutely may see the contents</i></td></tr>
+<tr><th id="28">28</th><td><i> * of @ptr. See also: <a href="https://llvm.org/bugs/show_bug.cgi?id=15495">https://llvm.org/bugs/show_bug.cgi?id=15495</a></i></td></tr>
+<tr><th id="29">29</th><td><i> */</i></td></tr>
+<tr><th id="30">30</th><td><u>#define <dfn class="macro" id="_M/barrier_data" data-ref="_M/barrier_data">barrier_data</dfn>(ptr) __asm__ __volatile__("": :"r"(ptr) :"memory")</u></td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><i>/*</i></td></tr>
+<tr><th id="33">33</th><td><i> * This macro obfuscates arithmetic on a variable address so that gcc</i></td></tr>
+<tr><th id="34">34</th><td><i> * shouldn't recognize the original var, and make assumptions about it.</i></td></tr>
+<tr><th id="35">35</th><td><i> *</i></td></tr>
+<tr><th id="36">36</th><td><i> * This is needed because the C standard makes it undefined to do</i></td></tr>
+<tr><th id="37">37</th><td><i> * pointer arithmetic on "objects" outside their boundaries and the</i></td></tr>
+<tr><th id="38">38</th><td><i> * gcc optimizers assume this is the case. In particular they</i></td></tr>
+<tr><th id="39">39</th><td><i> * assume such arithmetic does not wrap.</i></td></tr>
+<tr><th id="40">40</th><td><i> *</i></td></tr>
+<tr><th id="41">41</th><td><i> * A miscompilation has been observed because of this on PPC.</i></td></tr>
+<tr><th id="42">42</th><td><i> * To work around it we hide the relationship of the pointer and the object</i></td></tr>
+<tr><th id="43">43</th><td><i> * using this macro.</i></td></tr>
+<tr><th id="44">44</th><td><i> *</i></td></tr>
+<tr><th id="45">45</th><td><i> * Versions of the ppc64 compiler before 4.1 had a bug where use of</i></td></tr>
+<tr><th id="46">46</th><td><i> * RELOC_HIDE could trash r30. The bug can be worked around by changing</i></td></tr>
+<tr><th id="47">47</th><td><i> * the inline assembly constraint from =g to =r, in this particular</i></td></tr>
+<tr><th id="48">48</th><td><i> * case either is valid.</i></td></tr>
+<tr><th id="49">49</th><td><i> */</i></td></tr>
+<tr><th id="50">50</th><td><u>#define <dfn class="macro" id="_M/RELOC_HIDE" data-ref="_M/RELOC_HIDE">RELOC_HIDE</dfn>(ptr, off)						\</u></td></tr>
+<tr><th id="51">51</th><td><u>({									\</u></td></tr>
+<tr><th id="52">52</th><td><u>	unsigned long __ptr;						\</u></td></tr>
+<tr><th id="53">53</th><td><u>	__asm__ ("" : "=r"(__ptr) : "0"(ptr));				\</u></td></tr>
+<tr><th id="54">54</th><td><u>	(typeof(ptr)) (__ptr + (off));					\</u></td></tr>
+<tr><th id="55">55</th><td><u>})</u></td></tr>
+<tr><th id="56">56</th><td></td></tr>
+<tr><th id="57">57</th><td><i>/* Make the optimizer believe the variable can be manipulated arbitrarily. */</i></td></tr>
+<tr><th id="58">58</th><td><u>#define <dfn class="macro" id="_M/OPTIMIZER_HIDE_VAR" data-ref="_M/OPTIMIZER_HIDE_VAR">OPTIMIZER_HIDE_VAR</dfn>(var)						\</u></td></tr>
+<tr><th id="59">59</th><td><u>	__asm__ ("" : "=r" (var) : "0" (var))</u></td></tr>
+<tr><th id="60">60</th><td></td></tr>
+<tr><th id="61">61</th><td><u>#<span data-ppcond="61">ifdef</span> <span class="macro" data-ref="_M/__CHECKER__">__CHECKER__</span></u></td></tr>
+<tr><th id="62">62</th><td><u>#define __must_be_array(a)	0</u></td></tr>
+<tr><th id="63">63</th><td><u>#<span data-ppcond="61">else</span></u></td></tr>
+<tr><th id="64">64</th><td><i>/* &amp;a[0] degrades to a pointer: a different type from an array */</i></td></tr>
+<tr><th id="65">65</th><td><u>#define <dfn class="macro" id="_M/__must_be_array" data-ref="_M/__must_be_array">__must_be_array</dfn>(a)	BUILD_BUG_ON_ZERO(__same_type((a), &amp;(a)[0]))</u></td></tr>
+<tr><th id="66">66</th><td><u>#<span data-ppcond="61">endif</span></u></td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td><i>/*</i></td></tr>
+<tr><th id="69">69</th><td><i> * Feature detection for gnu_inline (gnu89 extern inline semantics). Either</i></td></tr>
+<tr><th id="70">70</th><td><i> * __GNUC_STDC_INLINE__ is defined (not using gnu89 extern inline semantics,</i></td></tr>
+<tr><th id="71">71</th><td><i> * and we opt in to the gnu89 semantics), or __GNUC_STDC_INLINE__ is not</i></td></tr>
+<tr><th id="72">72</th><td><i> * defined so the gnu89 semantics are the default.</i></td></tr>
+<tr><th id="73">73</th><td><i> */</i></td></tr>
+<tr><th id="74">74</th><td><u>#<span data-ppcond="74">ifdef</span> <span class="macro" data-ref="_M/__GNUC_STDC_INLINE__">__GNUC_STDC_INLINE__</span></u></td></tr>
+<tr><th id="75">75</th><td><u># define <dfn class="macro" id="_M/__gnu_inline" data-ref="_M/__gnu_inline">__gnu_inline</dfn>	__attribute__((gnu_inline))</u></td></tr>
+<tr><th id="76">76</th><td><u>#<span data-ppcond="74">else</span></u></td></tr>
+<tr><th id="77">77</th><td><u># define __gnu_inline</u></td></tr>
+<tr><th id="78">78</th><td><u>#<span data-ppcond="74">endif</span></u></td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td><i>/*</i></td></tr>
+<tr><th id="81">81</th><td><i> * Force always-inline if the user requests it so via the .config,</i></td></tr>
+<tr><th id="82">82</th><td><i> * or if gcc is too old.</i></td></tr>
+<tr><th id="83">83</th><td><i> * GCC does not warn about unused static inline functions for</i></td></tr>
+<tr><th id="84">84</th><td><i> * -Wunused-function.  This turns out to avoid the need for complex #ifdef</i></td></tr>
+<tr><th id="85">85</th><td><i> * directives.  Suppress the warning in clang as well by using "unused"</i></td></tr>
+<tr><th id="86">86</th><td><i> * function attribute, which is redundant but not harmful for gcc.</i></td></tr>
+<tr><th id="87">87</th><td><i> * Prefer gnu_inline, so that extern inline functions do not emit an</i></td></tr>
+<tr><th id="88">88</th><td><i> * externally visible function. This makes extern inline behave as per gnu89</i></td></tr>
+<tr><th id="89">89</th><td><i> * semantics rather than c99. This prevents multiple symbol definition errors</i></td></tr>
+<tr><th id="90">90</th><td><i> * of extern inline functions at link time.</i></td></tr>
+<tr><th id="91">91</th><td><i> * A lot of inline functions can cause havoc with function tracing.</i></td></tr>
+<tr><th id="92">92</th><td><i> */</i></td></tr>
+<tr><th id="93">93</th><td><u>#<span data-ppcond="93">if</span> !defined(<a class="macro" href="../generated/autoconf.h.html#250" data-ref="_M/CONFIG_ARCH_SUPPORTS_OPTIMIZED_INLINING">CONFIG_ARCH_SUPPORTS_OPTIMIZED_INLINING</a>) ||		\</u></td></tr>
+<tr><th id="94">94</th><td><u>    !defined(<span class="macro" data-ref="_M/CONFIG_OPTIMIZE_INLINING">CONFIG_OPTIMIZE_INLINING</span>) || (<span class="macro" title="4" data-ref="_M/__GNUC__">__GNUC__</span> &lt; 4)</u></td></tr>
+<tr><th id="95">95</th><td><u>#define <dfn class="macro" id="_M/inline" data-ref="_M/inline">inline</dfn> \</u></td></tr>
+<tr><th id="96">96</th><td><u>	inline __attribute__((always_inline, unused)) notrace __gnu_inline</u></td></tr>
+<tr><th id="97">97</th><td><u>#<span data-ppcond="93">else</span></u></td></tr>
+<tr><th id="98">98</th><td><u>#define inline inline		__attribute__((unused)) notrace __gnu_inline</u></td></tr>
+<tr><th id="99">99</th><td><u>#<span data-ppcond="93">endif</span></u></td></tr>
+<tr><th id="100">100</th><td></td></tr>
+<tr><th id="101">101</th><td><u>#define <dfn class="macro" id="_M/__inline__" data-ref="_M/__inline__">__inline__</dfn> inline</u></td></tr>
+<tr><th id="102">102</th><td><u>#define <dfn class="macro" id="_M/__inline" data-ref="_M/__inline">__inline</dfn> inline</u></td></tr>
+<tr><th id="103">103</th><td><u>#define <dfn class="macro" id="_M/__always_inline" data-ref="_M/__always_inline">__always_inline</dfn>	inline __attribute__((always_inline))</u></td></tr>
+<tr><th id="104">104</th><td><u>#define  <dfn class="macro" id="_M/noinline" data-ref="_M/noinline">noinline</dfn>	__attribute__((noinline))</u></td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td><u>#define <dfn class="macro" id="_M/__deprecated" data-ref="_M/__deprecated">__deprecated</dfn>	__attribute__((deprecated))</u></td></tr>
+<tr><th id="107">107</th><td><u>#define <dfn class="macro" id="_M/__packed" data-ref="_M/__packed">__packed</dfn>	__attribute__((packed))</u></td></tr>
+<tr><th id="108">108</th><td><u>#define <dfn class="macro" id="_M/__weak" data-ref="_M/__weak">__weak</dfn>		__attribute__((weak))</u></td></tr>
+<tr><th id="109">109</th><td><u>#define <dfn class="macro" id="_M/__alias" data-ref="_M/__alias">__alias</dfn>(symbol)	__attribute__((alias(#symbol)))</u></td></tr>
+<tr><th id="110">110</th><td></td></tr>
+<tr><th id="111">111</th><td><u>#<span data-ppcond="111">ifdef</span> <span class="macro" data-ref="_M/RETPOLINE">RETPOLINE</span></u></td></tr>
+<tr><th id="112">112</th><td><u>#define __noretpoline __attribute__((indirect_branch("keep")))</u></td></tr>
+<tr><th id="113">113</th><td><u>#<span data-ppcond="111">endif</span></u></td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td><i>/*</i></td></tr>
+<tr><th id="116">116</th><td><i> * it doesn't make sense on ARM (currently the only user of __naked)</i></td></tr>
+<tr><th id="117">117</th><td><i> * to trace naked functions because then mcount is called without</i></td></tr>
+<tr><th id="118">118</th><td><i> * stack and frame pointer being set up and there is no chance to</i></td></tr>
+<tr><th id="119">119</th><td><i> * restore the lr register to the value before mcount was called.</i></td></tr>
+<tr><th id="120">120</th><td><i> *</i></td></tr>
+<tr><th id="121">121</th><td><i> * The asm() bodies of naked functions often depend on standard calling</i></td></tr>
+<tr><th id="122">122</th><td><i> * conventions, therefore they must be noinline and noclone.</i></td></tr>
+<tr><th id="123">123</th><td><i> *</i></td></tr>
+<tr><th id="124">124</th><td><i> * GCC 4.[56] currently fail to enforce this, so we must do so ourselves.</i></td></tr>
+<tr><th id="125">125</th><td><i> * See GCC PR44290.</i></td></tr>
+<tr><th id="126">126</th><td><i> */</i></td></tr>
+<tr><th id="127">127</th><td><u>#define <dfn class="macro" id="_M/__naked" data-ref="_M/__naked">__naked</dfn>		__attribute__((naked)) noinline __noclone notrace</u></td></tr>
+<tr><th id="128">128</th><td></td></tr>
+<tr><th id="129">129</th><td><u>#define <dfn class="macro" id="_M/__noreturn" data-ref="_M/__noreturn">__noreturn</dfn>	__attribute__((noreturn))</u></td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td><i>/*</i></td></tr>
+<tr><th id="132">132</th><td><i> * From the GCC manual:</i></td></tr>
+<tr><th id="133">133</th><td><i> *</i></td></tr>
+<tr><th id="134">134</th><td><i> * Many functions have no effects except the return value and their</i></td></tr>
+<tr><th id="135">135</th><td><i> * return value depends only on the parameters and/or global</i></td></tr>
+<tr><th id="136">136</th><td><i> * variables.  Such a function can be subject to common subexpression</i></td></tr>
+<tr><th id="137">137</th><td><i> * elimination and loop optimization just as an arithmetic operator</i></td></tr>
+<tr><th id="138">138</th><td><i> * would be.</i></td></tr>
+<tr><th id="139">139</th><td><i> * [...]</i></td></tr>
+<tr><th id="140">140</th><td><i> */</i></td></tr>
+<tr><th id="141">141</th><td><u>#define <dfn class="macro" id="_M/__pure" data-ref="_M/__pure">__pure</dfn>			__attribute__((pure))</u></td></tr>
+<tr><th id="142">142</th><td><u>#define <dfn class="macro" id="_M/__aligned" data-ref="_M/__aligned">__aligned</dfn>(x)		__attribute__((aligned(x)))</u></td></tr>
+<tr><th id="143">143</th><td><u>#define <dfn class="macro" id="_M/__aligned_largest" data-ref="_M/__aligned_largest">__aligned_largest</dfn>	__attribute__((aligned))</u></td></tr>
+<tr><th id="144">144</th><td><u>#define <dfn class="macro" id="_M/__printf" data-ref="_M/__printf">__printf</dfn>(a, b)		__attribute__((format(printf, a, b)))</u></td></tr>
+<tr><th id="145">145</th><td><u>#define <dfn class="macro" id="_M/__scanf" data-ref="_M/__scanf">__scanf</dfn>(a, b)		__attribute__((format(scanf, a, b)))</u></td></tr>
+<tr><th id="146">146</th><td><u>#define <dfn class="macro" id="_M/__attribute_const__" data-ref="_M/__attribute_const__">__attribute_const__</dfn>	__attribute__((__const__))</u></td></tr>
+<tr><th id="147">147</th><td><u>#define <dfn class="macro" id="_M/__maybe_unused" data-ref="_M/__maybe_unused">__maybe_unused</dfn>		__attribute__((unused))</u></td></tr>
+<tr><th id="148">148</th><td><u>#define <dfn class="macro" id="_M/__always_unused" data-ref="_M/__always_unused">__always_unused</dfn>		__attribute__((unused))</u></td></tr>
+<tr><th id="149">149</th><td><u>#define <dfn class="macro" id="_M/__mode" data-ref="_M/__mode">__mode</dfn>(x)               __attribute__((mode(x)))</u></td></tr>
+<tr><th id="150">150</th><td></td></tr>
+<tr><th id="151">151</th><td><i>/* gcc version specific checks */</i></td></tr>
+<tr><th id="152">152</th><td></td></tr>
+<tr><th id="153">153</th><td><u>#<span data-ppcond="153">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &lt; 30200</u></td></tr>
+<tr><th id="154">154</th><td><u># error Sorry, your compiler is too old - please upgrade it.</u></td></tr>
+<tr><th id="155">155</th><td><u>#<span data-ppcond="153">endif</span></u></td></tr>
+<tr><th id="156">156</th><td></td></tr>
+<tr><th id="157">157</th><td><u>#<span data-ppcond="157">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &lt; 30300</u></td></tr>
+<tr><th id="158">158</th><td><u># define __used			__attribute__((__unused__))</u></td></tr>
+<tr><th id="159">159</th><td><u>#<span data-ppcond="157">else</span></u></td></tr>
+<tr><th id="160">160</th><td><u># define <dfn class="macro" id="_M/__used" data-ref="_M/__used">__used</dfn>			__attribute__((__used__))</u></td></tr>
+<tr><th id="161">161</th><td><u>#<span data-ppcond="157">endif</span></u></td></tr>
+<tr><th id="162">162</th><td></td></tr>
+<tr><th id="163">163</th><td><u>#<span data-ppcond="163">ifdef</span> <span class="macro" data-ref="_M/CONFIG_GCOV_KERNEL">CONFIG_GCOV_KERNEL</span></u></td></tr>
+<tr><th id="164">164</th><td><u># if GCC_VERSION &lt; 30400</u></td></tr>
+<tr><th id="165">165</th><td><u>#   error "GCOV profiling support for gcc versions below 3.4 not included"</u></td></tr>
+<tr><th id="166">166</th><td><u># endif /* __GNUC_MINOR__ */</u></td></tr>
+<tr><th id="167">167</th><td><u>#<span data-ppcond="163">endif</span> /* CONFIG_GCOV_KERNEL */</u></td></tr>
+<tr><th id="168">168</th><td></td></tr>
+<tr><th id="169">169</th><td><u>#<span data-ppcond="169">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 30400</u></td></tr>
+<tr><th id="170">170</th><td><u>#define <dfn class="macro" id="_M/__must_check" data-ref="_M/__must_check">__must_check</dfn>		__attribute__((warn_unused_result))</u></td></tr>
+<tr><th id="171">171</th><td><u>#define <dfn class="macro" id="_M/__malloc" data-ref="_M/__malloc">__malloc</dfn>		__attribute__((__malloc__))</u></td></tr>
+<tr><th id="172">172</th><td><u>#<span data-ppcond="169">endif</span></u></td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td><u>#<span data-ppcond="174">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 40000</u></td></tr>
+<tr><th id="175">175</th><td></td></tr>
+<tr><th id="176">176</th><td><i>/* GCC 4.1.[01] miscompiles __weak */</i></td></tr>
+<tr><th id="177">177</th><td><u>#<span data-ppcond="177">ifdef</span> <span class="macro" data-ref="_M/__KERNEL__">__KERNEL__</span></u></td></tr>
+<tr><th id="178">178</th><td><u># <span data-ppcond="178">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 40100 &amp;&amp;  <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &lt;= 40101</u></td></tr>
+<tr><th id="179">179</th><td><u>#  error Your version of gcc miscompiles the __weak directive</u></td></tr>
+<tr><th id="180">180</th><td><u># <span data-ppcond="178">endif</span></u></td></tr>
+<tr><th id="181">181</th><td><u>#<span data-ppcond="177">endif</span></u></td></tr>
+<tr><th id="182">182</th><td></td></tr>
+<tr><th id="183">183</th><td><u>#define <dfn class="macro" id="_M/__used" data-ref="_M/__used">__used</dfn>			__attribute__((__used__))</u></td></tr>
+<tr><th id="184">184</th><td><u>#define <dfn class="macro" id="_M/__compiler_offsetof" data-ref="_M/__compiler_offsetof">__compiler_offsetof</dfn>(a, b)					\</u></td></tr>
+<tr><th id="185">185</th><td><u>	__builtin_offsetof(a, b)</u></td></tr>
+<tr><th id="186">186</th><td></td></tr>
+<tr><th id="187">187</th><td><u>#<span data-ppcond="187">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 40100</u></td></tr>
+<tr><th id="188">188</th><td><u># define <dfn class="macro" id="_M/__compiletime_object_size" data-ref="_M/__compiletime_object_size">__compiletime_object_size</dfn>(obj) __builtin_object_size(obj, 0)</u></td></tr>
+<tr><th id="189">189</th><td><u>#<span data-ppcond="187">endif</span></u></td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td><u>#<span data-ppcond="191">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 40300</u></td></tr>
+<tr><th id="192">192</th><td><i>/* Mark functions as cold. gcc will assume any path leading to a call</i></td></tr>
+<tr><th id="193">193</th><td><i> * to them will be unlikely.  This means a lot of manual unlikely()s</i></td></tr>
+<tr><th id="194">194</th><td><i> * are unnecessary now for any paths leading to the usual suspects</i></td></tr>
+<tr><th id="195">195</th><td><i> * like BUG(), printk(), panic() etc. [but let's keep them for now for</i></td></tr>
+<tr><th id="196">196</th><td><i> * older compilers]</i></td></tr>
+<tr><th id="197">197</th><td><i> *</i></td></tr>
+<tr><th id="198">198</th><td><i> * Early snapshots of gcc 4.3 don't support this and we can't detect this</i></td></tr>
+<tr><th id="199">199</th><td><i> * in the preprocessor, but we can live with this because they're unreleased.</i></td></tr>
+<tr><th id="200">200</th><td><i> * Maketime probing would be overkill here.</i></td></tr>
+<tr><th id="201">201</th><td><i> *</i></td></tr>
+<tr><th id="202">202</th><td><i> * gcc also has a __attribute__((__hot__)) to move hot functions into</i></td></tr>
+<tr><th id="203">203</th><td><i> * a special section, but I don't see any sense in this right now in</i></td></tr>
+<tr><th id="204">204</th><td><i> * the kernel context</i></td></tr>
+<tr><th id="205">205</th><td><i> */</i></td></tr>
+<tr><th id="206">206</th><td><u>#define __cold			__attribute__((__cold__))</u></td></tr>
+<tr><th id="207">207</th><td></td></tr>
+<tr><th id="208">208</th><td><u>#define __UNIQUE_ID(prefix) __PASTE(__PASTE(__UNIQUE_ID_, prefix), __COUNTER__)</u></td></tr>
+<tr><th id="209">209</th><td></td></tr>
+<tr><th id="210">210</th><td><u>#ifndef __CHECKER__</u></td></tr>
+<tr><th id="211">211</th><td><u># define __compiletime_warning(message) __attribute__((warning(message)))</u></td></tr>
+<tr><th id="212">212</th><td><u># define __compiletime_error(message) __attribute__((error(message)))</u></td></tr>
+<tr><th id="213">213</th><td><u>#endif /* __CHECKER__ */</u></td></tr>
+<tr><th id="214">214</th><td><u>#<span data-ppcond="191">endif</span> /* GCC_VERSION &gt;= 40300 */</u></td></tr>
+<tr><th id="215">215</th><td></td></tr>
+<tr><th id="216">216</th><td><u>#<span data-ppcond="216">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 40400</u></td></tr>
+<tr><th id="217">217</th><td><u>#define __optimize(level)	__attribute__((__optimize__(level)))</u></td></tr>
+<tr><th id="218">218</th><td><u>#define __nostackprotector	__optimize("no-stack-protector")</u></td></tr>
+<tr><th id="219">219</th><td><u>#<span data-ppcond="216">endif</span> /* GCC_VERSION &gt;= 40400 */</u></td></tr>
+<tr><th id="220">220</th><td></td></tr>
+<tr><th id="221">221</th><td><u>#<span data-ppcond="221">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 40500</u></td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td><u>#ifndef __CHECKER__</u></td></tr>
+<tr><th id="224">224</th><td><u>#ifdef LATENT_ENTROPY_PLUGIN</u></td></tr>
+<tr><th id="225">225</th><td><u>#define __latent_entropy __attribute__((latent_entropy))</u></td></tr>
+<tr><th id="226">226</th><td><u>#endif</u></td></tr>
+<tr><th id="227">227</th><td><u>#endif</u></td></tr>
+<tr><th id="228">228</th><td></td></tr>
+<tr><th id="229">229</th><td><i>/*</i></td></tr>
+<tr><th id="230">230</th><td><i> * calling noreturn functions, __builtin_unreachable() and __builtin_trap()</i></td></tr>
+<tr><th id="231">231</th><td><i> * confuse the stack allocation in gcc, leading to overly large stack</i></td></tr>
+<tr><th id="232">232</th><td><i> * frames, see <a href="https://gcc.gnu.org/bugzilla/show_bug.cgi?id=82365">https://gcc.gnu.org/bugzilla/show_bug.cgi?id=82365</a></i></td></tr>
+<tr><th id="233">233</th><td><i> *</i></td></tr>
+<tr><th id="234">234</th><td><i> * Adding an empty inline assembly before it works around the problem</i></td></tr>
+<tr><th id="235">235</th><td><i> */</i></td></tr>
+<tr><th id="236">236</th><td><u>#define barrier_before_unreachable() asm volatile("")</u></td></tr>
+<tr><th id="237">237</th><td></td></tr>
+<tr><th id="238">238</th><td><i>/*</i></td></tr>
+<tr><th id="239">239</th><td><i> * Mark a position in code as unreachable.  This can be used to</i></td></tr>
+<tr><th id="240">240</th><td><i> * suppress control flow warnings after asm blocks that transfer</i></td></tr>
+<tr><th id="241">241</th><td><i> * control elsewhere.</i></td></tr>
+<tr><th id="242">242</th><td><i> *</i></td></tr>
+<tr><th id="243">243</th><td><i> * Early snapshots of gcc 4.5 don't support this and we can't detect</i></td></tr>
+<tr><th id="244">244</th><td><i> * this in the preprocessor, but we can live with this because they're</i></td></tr>
+<tr><th id="245">245</th><td><i> * unreleased.  Really, we need to have autoconf for the kernel.</i></td></tr>
+<tr><th id="246">246</th><td><i> */</i></td></tr>
+<tr><th id="247">247</th><td><u>#define unreachable() \</u></td></tr>
+<tr><th id="248">248</th><td><u>	do {					\</u></td></tr>
+<tr><th id="249">249</th><td><u>		annotate_unreachable();		\</u></td></tr>
+<tr><th id="250">250</th><td><u>		barrier_before_unreachable();	\</u></td></tr>
+<tr><th id="251">251</th><td><u>		__builtin_unreachable();	\</u></td></tr>
+<tr><th id="252">252</th><td><u>	} while (0)</u></td></tr>
+<tr><th id="253">253</th><td></td></tr>
+<tr><th id="254">254</th><td><i>/* Mark a function definition as prohibited from being cloned. */</i></td></tr>
+<tr><th id="255">255</th><td><u>#define __noclone	__attribute__((__noclone__, __optimize__("no-tracer")))</u></td></tr>
+<tr><th id="256">256</th><td></td></tr>
+<tr><th id="257">257</th><td><u>#if defined(RANDSTRUCT_PLUGIN) &amp;&amp; !defined(__CHECKER__)</u></td></tr>
+<tr><th id="258">258</th><td><u>#define __randomize_layout __attribute__((randomize_layout))</u></td></tr>
+<tr><th id="259">259</th><td><u>#define __no_randomize_layout __attribute__((no_randomize_layout))</u></td></tr>
+<tr><th id="260">260</th><td><i>/* This anon struct can add padding, so only enable it under randstruct. */</i></td></tr>
+<tr><th id="261">261</th><td><u>#define randomized_struct_fields_start	struct {</u></td></tr>
+<tr><th id="262">262</th><td><u>#define randomized_struct_fields_end	} __randomize_layout;</u></td></tr>
+<tr><th id="263">263</th><td><u>#endif</u></td></tr>
+<tr><th id="264">264</th><td></td></tr>
+<tr><th id="265">265</th><td><u>#<span data-ppcond="221">endif</span> /* GCC_VERSION &gt;= 40500 */</u></td></tr>
+<tr><th id="266">266</th><td></td></tr>
+<tr><th id="267">267</th><td><u>#<span data-ppcond="267">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 40600</u></td></tr>
+<tr><th id="268">268</th><td></td></tr>
+<tr><th id="269">269</th><td><i>/*</i></td></tr>
+<tr><th id="270">270</th><td><i> * When used with Link Time Optimization, gcc can optimize away C functions or</i></td></tr>
+<tr><th id="271">271</th><td><i> * variables which are referenced only from assembly code.  __visible tells the</i></td></tr>
+<tr><th id="272">272</th><td><i> * optimizer that something else uses this function or variable, thus preventing</i></td></tr>
+<tr><th id="273">273</th><td><i> * this.</i></td></tr>
+<tr><th id="274">274</th><td><i> */</i></td></tr>
+<tr><th id="275">275</th><td><u>#define __visible	__attribute__((externally_visible))</u></td></tr>
+<tr><th id="276">276</th><td></td></tr>
+<tr><th id="277">277</th><td><u>#<span data-ppcond="267">endif</span> /* GCC_VERSION &gt;= 40600 */</u></td></tr>
+<tr><th id="278">278</th><td></td></tr>
+<tr><th id="279">279</th><td></td></tr>
+<tr><th id="280">280</th><td><u>#<span data-ppcond="280">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 40900 &amp;&amp; !defined(<span class="macro" data-ref="_M/__CHECKER__">__CHECKER__</span>)</u></td></tr>
+<tr><th id="281">281</th><td><i>/*</i></td></tr>
+<tr><th id="282">282</th><td><i> * __assume_aligned(n, k): Tell the optimizer that the returned</i></td></tr>
+<tr><th id="283">283</th><td><i> * pointer can be assumed to be k modulo n. The second argument is</i></td></tr>
+<tr><th id="284">284</th><td><i> * optional (default 0), so we use a variadic macro to make the</i></td></tr>
+<tr><th id="285">285</th><td><i> * shorthand.</i></td></tr>
+<tr><th id="286">286</th><td><i> *</i></td></tr>
+<tr><th id="287">287</th><td><i> * Beware: Do not apply this to functions which may return</i></td></tr>
+<tr><th id="288">288</th><td><i> * ERR_PTRs. Also, it is probably unwise to apply it to functions</i></td></tr>
+<tr><th id="289">289</th><td><i> * returning extra information in the low bits (but in that case the</i></td></tr>
+<tr><th id="290">290</th><td><i> * compiler should see some alignment anyway, when the return value is</i></td></tr>
+<tr><th id="291">291</th><td><i> * massaged by 'flags = ptr &amp; 3; ptr &amp;= ~3;').</i></td></tr>
+<tr><th id="292">292</th><td><i> */</i></td></tr>
+<tr><th id="293">293</th><td><u>#define __assume_aligned(a, ...) __attribute__((__assume_aligned__(a, ## __VA_ARGS__)))</u></td></tr>
+<tr><th id="294">294</th><td><u>#<span data-ppcond="280">endif</span></u></td></tr>
+<tr><th id="295">295</th><td></td></tr>
+<tr><th id="296">296</th><td><i>/*</i></td></tr>
+<tr><th id="297">297</th><td><i> * GCC 'asm goto' miscompiles certain code sequences:</i></td></tr>
+<tr><th id="298">298</th><td><i> *</i></td></tr>
+<tr><th id="299">299</th><td><i> *   <a href="http://gcc.gnu.org/bugzilla/show_bug.cgi?id=58670">http://gcc.gnu.org/bugzilla/show_bug.cgi?id=58670</a></i></td></tr>
+<tr><th id="300">300</th><td><i> *</i></td></tr>
+<tr><th id="301">301</th><td><i> * Work it around via a compiler barrier quirk suggested by Jakub Jelinek.</i></td></tr>
+<tr><th id="302">302</th><td><i> *</i></td></tr>
+<tr><th id="303">303</th><td><i> * (asm goto is automatically volatile - the naming reflects this.)</i></td></tr>
+<tr><th id="304">304</th><td><i> */</i></td></tr>
+<tr><th id="305">305</th><td><u>#define <dfn class="macro" id="_M/asm_volatile_goto" data-ref="_M/asm_volatile_goto">asm_volatile_goto</dfn>(x...)	do { asm goto(x); asm (""); } while (0)</u></td></tr>
+<tr><th id="306">306</th><td></td></tr>
+<tr><th id="307">307</th><td><i>/*</i></td></tr>
+<tr><th id="308">308</th><td><i> * sparse (__CHECKER__) pretends to be gcc, but can't do constant</i></td></tr>
+<tr><th id="309">309</th><td><i> * folding in __builtin_bswap*() (yet), so don't set these for it.</i></td></tr>
+<tr><th id="310">310</th><td><i> */</i></td></tr>
+<tr><th id="311">311</th><td><u>#<span data-ppcond="311">if</span> defined(<a class="macro" href="../generated/autoconf.h.html#229" data-ref="_M/CONFIG_ARCH_USE_BUILTIN_BSWAP">CONFIG_ARCH_USE_BUILTIN_BSWAP</a>) &amp;&amp; !defined(<span class="macro" data-ref="_M/__CHECKER__">__CHECKER__</span>)</u></td></tr>
+<tr><th id="312">312</th><td><u>#<span data-ppcond="312">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 40400</u></td></tr>
+<tr><th id="313">313</th><td><u>#define __HAVE_BUILTIN_BSWAP32__</u></td></tr>
+<tr><th id="314">314</th><td><u>#define __HAVE_BUILTIN_BSWAP64__</u></td></tr>
+<tr><th id="315">315</th><td><u>#<span data-ppcond="312">endif</span></u></td></tr>
+<tr><th id="316">316</th><td><u>#<span data-ppcond="316">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 40800</u></td></tr>
+<tr><th id="317">317</th><td><u>#define __HAVE_BUILTIN_BSWAP16__</u></td></tr>
+<tr><th id="318">318</th><td><u>#<span data-ppcond="316">endif</span></u></td></tr>
+<tr><th id="319">319</th><td><u>#<span data-ppcond="311">endif</span> /* CONFIG_ARCH_USE_BUILTIN_BSWAP &amp;&amp; !__CHECKER__ */</u></td></tr>
+<tr><th id="320">320</th><td></td></tr>
+<tr><th id="321">321</th><td><u>#<span data-ppcond="321">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 70000</u></td></tr>
+<tr><th id="322">322</th><td><u>#define KASAN_ABI_VERSION 5</u></td></tr>
+<tr><th id="323">323</th><td><u>#<span data-ppcond="321">elif</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 50000</u></td></tr>
+<tr><th id="324">324</th><td><u>#define KASAN_ABI_VERSION 4</u></td></tr>
+<tr><th id="325">325</th><td><u>#<span data-ppcond="321">elif</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 40902</u></td></tr>
+<tr><th id="326">326</th><td><u>#define KASAN_ABI_VERSION 3</u></td></tr>
+<tr><th id="327">327</th><td><u>#<span data-ppcond="321">endif</span></u></td></tr>
+<tr><th id="328">328</th><td></td></tr>
+<tr><th id="329">329</th><td><u>#<span data-ppcond="329">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 40902</u></td></tr>
+<tr><th id="330">330</th><td><i>/*</i></td></tr>
+<tr><th id="331">331</th><td><i> * Tell the compiler that address safety instrumentation (KASAN)</i></td></tr>
+<tr><th id="332">332</th><td><i> * should not be applied to that function.</i></td></tr>
+<tr><th id="333">333</th><td><i> * Conflicts with inlining: <a href="https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67368">https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67368</a></i></td></tr>
+<tr><th id="334">334</th><td><i> */</i></td></tr>
+<tr><th id="335">335</th><td><u>#define __no_sanitize_address __attribute__((no_sanitize_address))</u></td></tr>
+<tr><th id="336">336</th><td><u>#<span data-ppcond="329">endif</span></u></td></tr>
+<tr><th id="337">337</th><td></td></tr>
+<tr><th id="338">338</th><td><u>#<span data-ppcond="338">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 50100</u></td></tr>
+<tr><th id="339">339</th><td><i>/*</i></td></tr>
+<tr><th id="340">340</th><td><i> * Mark structures as requiring designated initializers.</i></td></tr>
+<tr><th id="341">341</th><td><i> * <a href="https://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html">https://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html</a></i></td></tr>
+<tr><th id="342">342</th><td><i> */</i></td></tr>
+<tr><th id="343">343</th><td><u>#define __designated_init __attribute__((designated_init))</u></td></tr>
+<tr><th id="344">344</th><td><u>#<span data-ppcond="338">endif</span></u></td></tr>
+<tr><th id="345">345</th><td></td></tr>
+<tr><th id="346">346</th><td><u>#<span data-ppcond="174">endif</span>	/* gcc version &gt;= 40000 specific checks */</u></td></tr>
+<tr><th id="347">347</th><td></td></tr>
+<tr><th id="348">348</th><td><u>#<span data-ppcond="348">if</span> !defined(<span class="macro" data-ref="_M/__noclone">__noclone</span>)</u></td></tr>
+<tr><th id="349">349</th><td><u>#define <dfn class="macro" id="_M/__noclone" data-ref="_M/__noclone">__noclone</dfn>	/* not needed */</u></td></tr>
+<tr><th id="350">350</th><td><u>#<span data-ppcond="348">endif</span></u></td></tr>
+<tr><th id="351">351</th><td></td></tr>
+<tr><th id="352">352</th><td><u>#<span data-ppcond="352">if</span> !defined(<span class="macro" data-ref="_M/__no_sanitize_address">__no_sanitize_address</span>)</u></td></tr>
+<tr><th id="353">353</th><td><u>#define <dfn class="macro" id="_M/__no_sanitize_address" data-ref="_M/__no_sanitize_address">__no_sanitize_address</dfn></u></td></tr>
+<tr><th id="354">354</th><td><u>#<span data-ppcond="352">endif</span></u></td></tr>
+<tr><th id="355">355</th><td></td></tr>
+<tr><th id="356">356</th><td><i>/*</i></td></tr>
+<tr><th id="357">357</th><td><i> * A trick to suppress uninitialized variable warning without generating any</i></td></tr>
+<tr><th id="358">358</th><td><i> * code</i></td></tr>
+<tr><th id="359">359</th><td><i> */</i></td></tr>
+<tr><th id="360">360</th><td><u>#define <dfn class="macro" id="_M/uninitialized_var" data-ref="_M/uninitialized_var">uninitialized_var</dfn>(x) x = x</u></td></tr>
+<tr><th id="361">361</th><td></td></tr>
+<tr><th id="362">362</th><td><u>#<span data-ppcond="362">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 50100</u></td></tr>
+<tr><th id="363">363</th><td><u>#define COMPILER_HAS_GENERIC_BUILTIN_OVERFLOW 1</u></td></tr>
+<tr><th id="364">364</th><td><u>#<span data-ppcond="362">endif</span></u></td></tr>
+<tr><th id="365">365</th><td></td></tr>
+<tr><th id="366">366</th><td><i>/*</i></td></tr>
+<tr><th id="367">367</th><td><i> * Turn individual warnings and errors on and off locally, depending</i></td></tr>
+<tr><th id="368">368</th><td><i> * on version.</i></td></tr>
+<tr><th id="369">369</th><td><i> */</i></td></tr>
+<tr><th id="370">370</th><td><u>#define <dfn class="macro" id="_M/__diag_GCC" data-ref="_M/__diag_GCC">__diag_GCC</dfn>(version, severity, s) \</u></td></tr>
+<tr><th id="371">371</th><td><u>	__diag_GCC_ ## version(__diag_GCC_ ## severity s)</u></td></tr>
+<tr><th id="372">372</th><td></td></tr>
+<tr><th id="373">373</th><td><i>/* Severity used in pragma directives */</i></td></tr>
+<tr><th id="374">374</th><td><u>#define <dfn class="macro" id="_M/__diag_GCC_ignore" data-ref="_M/__diag_GCC_ignore">__diag_GCC_ignore</dfn>	ignored</u></td></tr>
+<tr><th id="375">375</th><td><u>#define <dfn class="macro" id="_M/__diag_GCC_warn" data-ref="_M/__diag_GCC_warn">__diag_GCC_warn</dfn>		warning</u></td></tr>
+<tr><th id="376">376</th><td><u>#define <dfn class="macro" id="_M/__diag_GCC_error" data-ref="_M/__diag_GCC_error">__diag_GCC_error</dfn>	error</u></td></tr>
+<tr><th id="377">377</th><td></td></tr>
+<tr><th id="378">378</th><td><i>/* Compilers before gcc-4.6 do not understand "#pragma GCC diagnostic push" */</i></td></tr>
+<tr><th id="379">379</th><td><u>#<span data-ppcond="379">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 40600</u></td></tr>
+<tr><th id="380">380</th><td><u>#define __diag_str1(s)		#s</u></td></tr>
+<tr><th id="381">381</th><td><u>#define __diag_str(s)		__diag_str1(s)</u></td></tr>
+<tr><th id="382">382</th><td><u>#define __diag(s)		_Pragma(__diag_str(GCC diagnostic s))</u></td></tr>
+<tr><th id="383">383</th><td><u>#<span data-ppcond="379">endif</span></u></td></tr>
+<tr><th id="384">384</th><td></td></tr>
+<tr><th id="385">385</th><td><u>#<span data-ppcond="385">if</span> <a class="macro" href="#9" title="(4 * 10000 + 2 * 100 + 1)" data-ref="_M/GCC_VERSION">GCC_VERSION</a> &gt;= 80000</u></td></tr>
+<tr><th id="386">386</th><td><u>#define __diag_GCC_8(s)		__diag(s)</u></td></tr>
+<tr><th id="387">387</th><td><u>#<span data-ppcond="385">else</span></u></td></tr>
+<tr><th id="388">388</th><td><u>#define <dfn class="macro" id="_M/__diag_GCC_8" data-ref="_M/__diag_GCC_8">__diag_GCC_8</dfn>(s)</u></td></tr>
+<tr><th id="389">389</th><td><u>#<span data-ppcond="385">endif</span></u></td></tr>
+<tr><th id="390">390</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../arch/x86/boot/a20.c.html'>linux-4.18.y/arch/x86/boot/a20.c</a><br/>Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

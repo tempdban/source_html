@@ -1,0 +1,817 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>ohci-hub.c source code [linux-4.18.y/drivers/usb/host/ohci-hub.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/drivers/usb/host/ohci-hub.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>linux-4.18.y</a>/<a href='../..'>drivers</a>/<a href='..'>usb</a>/<a href='./'>host</a>/<a href='ohci-hub.c.html'>ohci-hub.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// SPDX-License-Identifier: GPL-1.0+</i></td></tr>
+<tr><th id="2">2</th><td><i>/*</i></td></tr>
+<tr><th id="3">3</th><td><i> * OHCI HCD (Host Controller Driver) for USB.</i></td></tr>
+<tr><th id="4">4</th><td><i> *</i></td></tr>
+<tr><th id="5">5</th><td><i> * (C) Copyright 1999 Roman Weissgaerber &lt;weissg@vienna.at&gt;</i></td></tr>
+<tr><th id="6">6</th><td><i> * (C) Copyright 2000-2004 David Brownell &lt;dbrownell@users.sourceforge.net&gt;</i></td></tr>
+<tr><th id="7">7</th><td><i> *</i></td></tr>
+<tr><th id="8">8</th><td><i> * This file is licenced under GPL</i></td></tr>
+<tr><th id="9">9</th><td><i> */</i></td></tr>
+<tr><th id="10">10</th><td></td></tr>
+<tr><th id="11">11</th><td><i>/*-------------------------------------------------------------------------*/</i></td></tr>
+<tr><th id="12">12</th><td></td></tr>
+<tr><th id="13">13</th><td><i>/*</i></td></tr>
+<tr><th id="14">14</th><td><i> * OHCI Root Hub ... the nonsharable stuff</i></td></tr>
+<tr><th id="15">15</th><td><i> */</i></td></tr>
+<tr><th id="16">16</th><td></td></tr>
+<tr><th id="17">17</th><td><u>#define <dfn class="macro" id="_M/dbg_port" data-ref="_M/dbg_port">dbg_port</dfn>(hc,label,num,value) \</u></td></tr>
+<tr><th id="18">18</th><td><u>	ohci_dbg (hc, \</u></td></tr>
+<tr><th id="19">19</th><td><u>		"%s roothub.portstatus [%d] " \</u></td></tr>
+<tr><th id="20">20</th><td><u>		"= 0x%08x%s%s%s%s%s%s%s%s%s%s%s%s\n", \</u></td></tr>
+<tr><th id="21">21</th><td><u>		label, num, value, \</u></td></tr>
+<tr><th id="22">22</th><td><u>		(value &amp; RH_PS_PRSC) ? " PRSC" : "", \</u></td></tr>
+<tr><th id="23">23</th><td><u>		(value &amp; RH_PS_OCIC) ? " OCIC" : "", \</u></td></tr>
+<tr><th id="24">24</th><td><u>		(value &amp; RH_PS_PSSC) ? " PSSC" : "", \</u></td></tr>
+<tr><th id="25">25</th><td><u>		(value &amp; RH_PS_PESC) ? " PESC" : "", \</u></td></tr>
+<tr><th id="26">26</th><td><u>		(value &amp; RH_PS_CSC) ? " CSC" : "", \</u></td></tr>
+<tr><th id="27">27</th><td><u>		\</u></td></tr>
+<tr><th id="28">28</th><td><u>		(value &amp; RH_PS_LSDA) ? " LSDA" : "", \</u></td></tr>
+<tr><th id="29">29</th><td><u>		(value &amp; RH_PS_PPS) ? " PPS" : "", \</u></td></tr>
+<tr><th id="30">30</th><td><u>		(value &amp; RH_PS_PRS) ? " PRS" : "", \</u></td></tr>
+<tr><th id="31">31</th><td><u>		(value &amp; RH_PS_POCI) ? " POCI" : "", \</u></td></tr>
+<tr><th id="32">32</th><td><u>		(value &amp; RH_PS_PSS) ? " PSS" : "", \</u></td></tr>
+<tr><th id="33">33</th><td><u>		\</u></td></tr>
+<tr><th id="34">34</th><td><u>		(value &amp; RH_PS_PES) ? " PES" : "", \</u></td></tr>
+<tr><th id="35">35</th><td><u>		(value &amp; RH_PS_CCS) ? " CCS" : "" \</u></td></tr>
+<tr><th id="36">36</th><td><u>		);</u></td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><i>/*-------------------------------------------------------------------------*/</i></td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><u>#define <dfn class="macro" id="_M/OHCI_SCHED_ENABLES" data-ref="_M/OHCI_SCHED_ENABLES">OHCI_SCHED_ENABLES</dfn> \</u></td></tr>
+<tr><th id="41">41</th><td><u>	(OHCI_CTRL_CLE|OHCI_CTRL_BLE|OHCI_CTRL_PLE|OHCI_CTRL_IE)</u></td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><em>static</em> <em>void</em> <a class="decl fn" href="ohci-q.c.html#update_done_list" title='update_done_list' data-ref="update_done_list" id="update_done_list">update_done_list</a>(<b>struct</b> <a class="type" href="ohci.h.html#ohci_hcd" title='ohci_hcd' data-ref="ohci_hcd">ohci_hcd</a> *);</td></tr>
+<tr><th id="44">44</th><td><em>static</em> <em>void</em> <a class="decl fn" href="ohci-q.c.html#ohci_work" title='ohci_work' data-ref="ohci_work" id="ohci_work">ohci_work</a>(<b>struct</b> <a class="type" href="ohci.h.html#ohci_hcd" title='ohci_hcd' data-ref="ohci_hcd">ohci_hcd</a> *);</td></tr>
+<tr><th id="45">45</th><td></td></tr>
+<tr><th id="46">46</th><td><u>#<span data-ppcond="46">ifdef</span>	<span class="macro" data-ref="_M/CONFIG_PM">CONFIG_PM</span></u></td></tr>
+<tr><th id="47">47</th><td><em>static</em> <em>int</em> ohci_rh_suspend (<b>struct</b> ohci_hcd *ohci, <em>int</em> autostop)</td></tr>
+<tr><th id="48">48</th><td>__releases(ohci-&gt;lock)</td></tr>
+<tr><th id="49">49</th><td>__acquires(ohci-&gt;lock)</td></tr>
+<tr><th id="50">50</th><td>{</td></tr>
+<tr><th id="51">51</th><td>	<em>int</em>			status = <var>0</var>;</td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td>	ohci-&gt;hc_control = ohci_readl (ohci, &amp;ohci-&gt;regs-&gt;control);</td></tr>
+<tr><th id="54">54</th><td>	<b>switch</b> (ohci-&gt;hc_control &amp; OHCI_CTRL_HCFS) {</td></tr>
+<tr><th id="55">55</th><td>	<b>case</b> OHCI_USB_RESUME:</td></tr>
+<tr><th id="56">56</th><td>		ohci_dbg (ohci, <q>"resume/suspend?\n"</q>);</td></tr>
+<tr><th id="57">57</th><td>		ohci-&gt;hc_control &amp;= ~OHCI_CTRL_HCFS;</td></tr>
+<tr><th id="58">58</th><td>		ohci-&gt;hc_control |= OHCI_USB_RESET;</td></tr>
+<tr><th id="59">59</th><td>		ohci_writel (ohci, ohci-&gt;hc_control, &amp;ohci-&gt;regs-&gt;control);</td></tr>
+<tr><th id="60">60</th><td>		(<em>void</em>) ohci_readl (ohci, &amp;ohci-&gt;regs-&gt;control);</td></tr>
+<tr><th id="61">61</th><td>		<i>/* FALL THROUGH */</i></td></tr>
+<tr><th id="62">62</th><td>	<b>case</b> OHCI_USB_RESET:</td></tr>
+<tr><th id="63">63</th><td>		status = -EBUSY;</td></tr>
+<tr><th id="64">64</th><td>		ohci_dbg (ohci, <q>"needs reinit!\n"</q>);</td></tr>
+<tr><th id="65">65</th><td>		<b>goto</b> done;</td></tr>
+<tr><th id="66">66</th><td>	<b>case</b> OHCI_USB_SUSPEND:</td></tr>
+<tr><th id="67">67</th><td>		<b>if</b> (!ohci-&gt;autostop) {</td></tr>
+<tr><th id="68">68</th><td>			ohci_dbg (ohci, <q>"already suspended\n"</q>);</td></tr>
+<tr><th id="69">69</th><td>			<b>goto</b> done;</td></tr>
+<tr><th id="70">70</th><td>		}</td></tr>
+<tr><th id="71">71</th><td>	}</td></tr>
+<tr><th id="72">72</th><td>	ohci_dbg (ohci, <q>"%s root hub\n"</q>,</td></tr>
+<tr><th id="73">73</th><td>			autostop ? <q>"auto-stop"</q> : <q>"suspend"</q>);</td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td>	<i>/* First stop any processing */</i></td></tr>
+<tr><th id="76">76</th><td>	<b>if</b> (!autostop &amp;&amp; (ohci-&gt;hc_control &amp; OHCI_SCHED_ENABLES)) {</td></tr>
+<tr><th id="77">77</th><td>		ohci-&gt;hc_control &amp;= ~OHCI_SCHED_ENABLES;</td></tr>
+<tr><th id="78">78</th><td>		ohci_writel (ohci, ohci-&gt;hc_control, &amp;ohci-&gt;regs-&gt;control);</td></tr>
+<tr><th id="79">79</th><td>		ohci-&gt;hc_control = ohci_readl (ohci, &amp;ohci-&gt;regs-&gt;control);</td></tr>
+<tr><th id="80">80</th><td>		ohci_writel (ohci, OHCI_INTR_SF, &amp;ohci-&gt;regs-&gt;intrstatus);</td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td>		<i>/* sched disables take effect on the next frame,</i></td></tr>
+<tr><th id="83">83</th><td><i>		 * then the last WDH could take 6+ msec</i></td></tr>
+<tr><th id="84">84</th><td><i>		 */</i></td></tr>
+<tr><th id="85">85</th><td>		ohci_dbg (ohci, <q>"stopping schedules ...\n"</q>);</td></tr>
+<tr><th id="86">86</th><td>		ohci-&gt;autostop = <var>0</var>;</td></tr>
+<tr><th id="87">87</th><td>		spin_unlock_irq (&amp;ohci-&gt;lock);</td></tr>
+<tr><th id="88">88</th><td>		msleep (<var>8</var>);</td></tr>
+<tr><th id="89">89</th><td>		spin_lock_irq (&amp;ohci-&gt;lock);</td></tr>
+<tr><th id="90">90</th><td>	}</td></tr>
+<tr><th id="91">91</th><td>	update_done_list(ohci);</td></tr>
+<tr><th id="92">92</th><td>	ohci_work(ohci);</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td>	<i>/*</i></td></tr>
+<tr><th id="95">95</th><td><i>	 * Some controllers don't handle "global" suspend properly if</i></td></tr>
+<tr><th id="96">96</th><td><i>	 * there are unsuspended ports.  For these controllers, put all</i></td></tr>
+<tr><th id="97">97</th><td><i>	 * the enabled ports into suspend before suspending the root hub.</i></td></tr>
+<tr><th id="98">98</th><td><i>	 */</i></td></tr>
+<tr><th id="99">99</th><td>	<b>if</b> (ohci-&gt;flags &amp; OHCI_QUIRK_GLOBAL_SUSPEND) {</td></tr>
+<tr><th id="100">100</th><td>		__hc32 __iomem	*portstat = ohci-&gt;regs-&gt;roothub.portstatus;</td></tr>
+<tr><th id="101">101</th><td>		<em>int</em>		i;</td></tr>
+<tr><th id="102">102</th><td>		<em>unsigned</em>	temp;</td></tr>
+<tr><th id="103">103</th><td></td></tr>
+<tr><th id="104">104</th><td>		<b>for</b> (i = <var>0</var>; i &lt; ohci-&gt;num_ports; (++i, ++portstat)) {</td></tr>
+<tr><th id="105">105</th><td>			temp = ohci_readl(ohci, portstat);</td></tr>
+<tr><th id="106">106</th><td>			<b>if</b> ((temp &amp; (RH_PS_PES | RH_PS_PSS)) ==</td></tr>
+<tr><th id="107">107</th><td>					RH_PS_PES)</td></tr>
+<tr><th id="108">108</th><td>				ohci_writel(ohci, RH_PS_PSS, portstat);</td></tr>
+<tr><th id="109">109</th><td>		}</td></tr>
+<tr><th id="110">110</th><td>	}</td></tr>
+<tr><th id="111">111</th><td></td></tr>
+<tr><th id="112">112</th><td>	<i>/* maybe resume can wake root hub */</i></td></tr>
+<tr><th id="113">113</th><td>	<b>if</b> (ohci_to_hcd(ohci)-&gt;self.root_hub-&gt;do_remote_wakeup || autostop) {</td></tr>
+<tr><th id="114">114</th><td>		ohci-&gt;hc_control |= OHCI_CTRL_RWE;</td></tr>
+<tr><th id="115">115</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="116">116</th><td>		ohci_writel(ohci, OHCI_INTR_RHSC | OHCI_INTR_RD,</td></tr>
+<tr><th id="117">117</th><td>				&amp;ohci-&gt;regs-&gt;intrdisable);</td></tr>
+<tr><th id="118">118</th><td>		ohci-&gt;hc_control &amp;= ~OHCI_CTRL_RWE;</td></tr>
+<tr><th id="119">119</th><td>	}</td></tr>
+<tr><th id="120">120</th><td></td></tr>
+<tr><th id="121">121</th><td>	<i>/* Suspend hub ... this is the "global (to this bus) suspend" mode,</i></td></tr>
+<tr><th id="122">122</th><td><i>	 * which doesn't imply ports will first be individually suspended.</i></td></tr>
+<tr><th id="123">123</th><td><i>	 */</i></td></tr>
+<tr><th id="124">124</th><td>	ohci-&gt;hc_control &amp;= ~OHCI_CTRL_HCFS;</td></tr>
+<tr><th id="125">125</th><td>	ohci-&gt;hc_control |= OHCI_USB_SUSPEND;</td></tr>
+<tr><th id="126">126</th><td>	ohci_writel (ohci, ohci-&gt;hc_control, &amp;ohci-&gt;regs-&gt;control);</td></tr>
+<tr><th id="127">127</th><td>	(<em>void</em>) ohci_readl (ohci, &amp;ohci-&gt;regs-&gt;control);</td></tr>
+<tr><th id="128">128</th><td></td></tr>
+<tr><th id="129">129</th><td>	<i>/* no resumes until devices finish suspending */</i></td></tr>
+<tr><th id="130">130</th><td>	<b>if</b> (!autostop) {</td></tr>
+<tr><th id="131">131</th><td>		ohci-&gt;next_statechange = jiffies + msecs_to_jiffies (<var>5</var>);</td></tr>
+<tr><th id="132">132</th><td>		ohci-&gt;autostop = <var>0</var>;</td></tr>
+<tr><th id="133">133</th><td>		ohci-&gt;rh_state = OHCI_RH_SUSPENDED;</td></tr>
+<tr><th id="134">134</th><td>	}</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td>done:</td></tr>
+<tr><th id="137">137</th><td>	<b>return</b> status;</td></tr>
+<tr><th id="138">138</th><td>}</td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td><em>static</em> <b>inline</b> <b>struct</b> ed *find_head (<b>struct</b> ed *ed)</td></tr>
+<tr><th id="141">141</th><td>{</td></tr>
+<tr><th id="142">142</th><td>	<i>/* for bulk and control lists */</i></td></tr>
+<tr><th id="143">143</th><td>	<b>while</b> (ed-&gt;ed_prev)</td></tr>
+<tr><th id="144">144</th><td>		ed = ed-&gt;ed_prev;</td></tr>
+<tr><th id="145">145</th><td>	<b>return</b> ed;</td></tr>
+<tr><th id="146">146</th><td>}</td></tr>
+<tr><th id="147">147</th><td></td></tr>
+<tr><th id="148">148</th><td><i>/* caller has locked the root hub */</i></td></tr>
+<tr><th id="149">149</th><td><em>static</em> <em>int</em> ohci_rh_resume (<b>struct</b> ohci_hcd *ohci)</td></tr>
+<tr><th id="150">150</th><td>__releases(ohci-&gt;lock)</td></tr>
+<tr><th id="151">151</th><td>__acquires(ohci-&gt;lock)</td></tr>
+<tr><th id="152">152</th><td>{</td></tr>
+<tr><th id="153">153</th><td>	<b>struct</b> usb_hcd		*hcd = ohci_to_hcd (ohci);</td></tr>
+<tr><th id="154">154</th><td>	u32			temp, enables;</td></tr>
+<tr><th id="155">155</th><td>	<em>int</em>			status = -EINPROGRESS;</td></tr>
+<tr><th id="156">156</th><td>	<em>int</em>			autostopped = ohci-&gt;autostop;</td></tr>
+<tr><th id="157">157</th><td></td></tr>
+<tr><th id="158">158</th><td>	ohci-&gt;autostop = <var>0</var>;</td></tr>
+<tr><th id="159">159</th><td>	ohci-&gt;hc_control = ohci_readl (ohci, &amp;ohci-&gt;regs-&gt;control);</td></tr>
+<tr><th id="160">160</th><td></td></tr>
+<tr><th id="161">161</th><td>	<b>if</b> (ohci-&gt;hc_control &amp; (OHCI_CTRL_IR | OHCI_SCHED_ENABLES)) {</td></tr>
+<tr><th id="162">162</th><td>		<i>/* this can happen after resuming a swsusp snapshot */</i></td></tr>
+<tr><th id="163">163</th><td>		<b>if</b> (ohci-&gt;rh_state != OHCI_RH_RUNNING) {</td></tr>
+<tr><th id="164">164</th><td>			ohci_dbg (ohci, <q>"BIOS/SMM active, control %03x\n"</q>,</td></tr>
+<tr><th id="165">165</th><td>					ohci-&gt;hc_control);</td></tr>
+<tr><th id="166">166</th><td>			status = -EBUSY;</td></tr>
+<tr><th id="167">167</th><td>		<i>/* this happens when pmcore resumes HC then root */</i></td></tr>
+<tr><th id="168">168</th><td>		} <b>else</b> {</td></tr>
+<tr><th id="169">169</th><td>			ohci_dbg (ohci, <q>"duplicate resume\n"</q>);</td></tr>
+<tr><th id="170">170</th><td>			status = <var>0</var>;</td></tr>
+<tr><th id="171">171</th><td>		}</td></tr>
+<tr><th id="172">172</th><td>	} <b>else</b> <b>switch</b> (ohci-&gt;hc_control &amp; OHCI_CTRL_HCFS) {</td></tr>
+<tr><th id="173">173</th><td>	<b>case</b> OHCI_USB_SUSPEND:</td></tr>
+<tr><th id="174">174</th><td>		ohci-&gt;hc_control &amp;= ~(OHCI_CTRL_HCFS|OHCI_SCHED_ENABLES);</td></tr>
+<tr><th id="175">175</th><td>		ohci-&gt;hc_control |= OHCI_USB_RESUME;</td></tr>
+<tr><th id="176">176</th><td>		ohci_writel (ohci, ohci-&gt;hc_control, &amp;ohci-&gt;regs-&gt;control);</td></tr>
+<tr><th id="177">177</th><td>		(<em>void</em>) ohci_readl (ohci, &amp;ohci-&gt;regs-&gt;control);</td></tr>
+<tr><th id="178">178</th><td>		ohci_dbg (ohci, <q>"%s root hub\n"</q>,</td></tr>
+<tr><th id="179">179</th><td>				autostopped ? <q>"auto-start"</q> : <q>"resume"</q>);</td></tr>
+<tr><th id="180">180</th><td>		<b>break</b>;</td></tr>
+<tr><th id="181">181</th><td>	<b>case</b> OHCI_USB_RESUME:</td></tr>
+<tr><th id="182">182</th><td>		<i>/* HCFS changes sometime after INTR_RD */</i></td></tr>
+<tr><th id="183">183</th><td>		ohci_dbg(ohci, <q>"%swakeup root hub\n"</q>,</td></tr>
+<tr><th id="184">184</th><td>				autostopped ? <q>"auto-"</q> : <q>""</q>);</td></tr>
+<tr><th id="185">185</th><td>		<b>break</b>;</td></tr>
+<tr><th id="186">186</th><td>	<b>case</b> OHCI_USB_OPER:</td></tr>
+<tr><th id="187">187</th><td>		<i>/* this can happen after resuming a swsusp snapshot */</i></td></tr>
+<tr><th id="188">188</th><td>		ohci_dbg (ohci, <q>"snapshot resume? reinit\n"</q>);</td></tr>
+<tr><th id="189">189</th><td>		status = -EBUSY;</td></tr>
+<tr><th id="190">190</th><td>		<b>break</b>;</td></tr>
+<tr><th id="191">191</th><td>	<b>default</b>:		<i>/* RESET, we lost power */</i></td></tr>
+<tr><th id="192">192</th><td>		ohci_dbg (ohci, <q>"lost power\n"</q>);</td></tr>
+<tr><th id="193">193</th><td>		status = -EBUSY;</td></tr>
+<tr><th id="194">194</th><td>	}</td></tr>
+<tr><th id="195">195</th><td>	<b>if</b> (status == -EBUSY) {</td></tr>
+<tr><th id="196">196</th><td>		<b>if</b> (!autostopped) {</td></tr>
+<tr><th id="197">197</th><td>			spin_unlock_irq (&amp;ohci-&gt;lock);</td></tr>
+<tr><th id="198">198</th><td>			status = ohci_restart (ohci);</td></tr>
+<tr><th id="199">199</th><td></td></tr>
+<tr><th id="200">200</th><td>			usb_root_hub_lost_power(hcd-&gt;self.root_hub);</td></tr>
+<tr><th id="201">201</th><td></td></tr>
+<tr><th id="202">202</th><td>			spin_lock_irq (&amp;ohci-&gt;lock);</td></tr>
+<tr><th id="203">203</th><td>		}</td></tr>
+<tr><th id="204">204</th><td>		<b>return</b> status;</td></tr>
+<tr><th id="205">205</th><td>	}</td></tr>
+<tr><th id="206">206</th><td>	<b>if</b> (status != -EINPROGRESS)</td></tr>
+<tr><th id="207">207</th><td>		<b>return</b> status;</td></tr>
+<tr><th id="208">208</th><td>	<b>if</b> (autostopped)</td></tr>
+<tr><th id="209">209</th><td>		<b>goto</b> skip_resume;</td></tr>
+<tr><th id="210">210</th><td>	spin_unlock_irq (&amp;ohci-&gt;lock);</td></tr>
+<tr><th id="211">211</th><td></td></tr>
+<tr><th id="212">212</th><td>	<i>/* Some controllers (lucent erratum) need extra-long delays */</i></td></tr>
+<tr><th id="213">213</th><td>	msleep (<var>20</var> <i>/* usb 11.5.1.10 */</i> + <var>12</var> <i>/* 32 msec counter */</i> + <var>1</var>);</td></tr>
+<tr><th id="214">214</th><td></td></tr>
+<tr><th id="215">215</th><td>	temp = ohci_readl (ohci, &amp;ohci-&gt;regs-&gt;control);</td></tr>
+<tr><th id="216">216</th><td>	temp &amp;= OHCI_CTRL_HCFS;</td></tr>
+<tr><th id="217">217</th><td>	<b>if</b> (temp != OHCI_USB_RESUME) {</td></tr>
+<tr><th id="218">218</th><td>		ohci_err (ohci, <q>"controller won't resume\n"</q>);</td></tr>
+<tr><th id="219">219</th><td>		spin_lock_irq(&amp;ohci-&gt;lock);</td></tr>
+<tr><th id="220">220</th><td>		<b>return</b> -EBUSY;</td></tr>
+<tr><th id="221">221</th><td>	}</td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td>	<i>/* disable old schedule state, reinit from scratch */</i></td></tr>
+<tr><th id="224">224</th><td>	ohci_writel (ohci, <var>0</var>, &amp;ohci-&gt;regs-&gt;ed_controlhead);</td></tr>
+<tr><th id="225">225</th><td>	ohci_writel (ohci, <var>0</var>, &amp;ohci-&gt;regs-&gt;ed_controlcurrent);</td></tr>
+<tr><th id="226">226</th><td>	ohci_writel (ohci, <var>0</var>, &amp;ohci-&gt;regs-&gt;ed_bulkhead);</td></tr>
+<tr><th id="227">227</th><td>	ohci_writel (ohci, <var>0</var>, &amp;ohci-&gt;regs-&gt;ed_bulkcurrent);</td></tr>
+<tr><th id="228">228</th><td>	ohci_writel (ohci, <var>0</var>, &amp;ohci-&gt;regs-&gt;ed_periodcurrent);</td></tr>
+<tr><th id="229">229</th><td>	ohci_writel (ohci, (u32) ohci-&gt;hcca_dma, &amp;ohci-&gt;regs-&gt;hcca);</td></tr>
+<tr><th id="230">230</th><td></td></tr>
+<tr><th id="231">231</th><td>	<i>/* Sometimes PCI D3 suspend trashes frame timings ... */</i></td></tr>
+<tr><th id="232">232</th><td>	periodic_reinit (ohci);</td></tr>
+<tr><th id="233">233</th><td></td></tr>
+<tr><th id="234">234</th><td>	<i>/*</i></td></tr>
+<tr><th id="235">235</th><td><i>	 * The following code is executed with ohci-&gt;lock held and</i></td></tr>
+<tr><th id="236">236</th><td><i>	 * irqs disabled if and only if autostopped is true.  This</i></td></tr>
+<tr><th id="237">237</th><td><i>	 * will cause sparse to warn about a "context imbalance".</i></td></tr>
+<tr><th id="238">238</th><td><i>	 */</i></td></tr>
+<tr><th id="239">239</th><td>skip_resume:</td></tr>
+<tr><th id="240">240</th><td>	<i>/* interrupts might have been disabled */</i></td></tr>
+<tr><th id="241">241</th><td>	ohci_writel (ohci, OHCI_INTR_INIT, &amp;ohci-&gt;regs-&gt;intrenable);</td></tr>
+<tr><th id="242">242</th><td>	<b>if</b> (ohci-&gt;ed_rm_list)</td></tr>
+<tr><th id="243">243</th><td>		ohci_writel (ohci, OHCI_INTR_SF, &amp;ohci-&gt;regs-&gt;intrenable);</td></tr>
+<tr><th id="244">244</th><td></td></tr>
+<tr><th id="245">245</th><td>	<i>/* Then re-enable operations */</i></td></tr>
+<tr><th id="246">246</th><td>	ohci_writel (ohci, OHCI_USB_OPER, &amp;ohci-&gt;regs-&gt;control);</td></tr>
+<tr><th id="247">247</th><td>	(<em>void</em>) ohci_readl (ohci, &amp;ohci-&gt;regs-&gt;control);</td></tr>
+<tr><th id="248">248</th><td>	<b>if</b> (!autostopped)</td></tr>
+<tr><th id="249">249</th><td>		msleep (<var>3</var>);</td></tr>
+<tr><th id="250">250</th><td></td></tr>
+<tr><th id="251">251</th><td>	temp = ohci-&gt;hc_control;</td></tr>
+<tr><th id="252">252</th><td>	temp &amp;= OHCI_CTRL_RWC;</td></tr>
+<tr><th id="253">253</th><td>	temp |= OHCI_CONTROL_INIT | OHCI_USB_OPER;</td></tr>
+<tr><th id="254">254</th><td>	ohci-&gt;hc_control = temp;</td></tr>
+<tr><th id="255">255</th><td>	ohci_writel (ohci, temp, &amp;ohci-&gt;regs-&gt;control);</td></tr>
+<tr><th id="256">256</th><td>	(<em>void</em>) ohci_readl (ohci, &amp;ohci-&gt;regs-&gt;control);</td></tr>
+<tr><th id="257">257</th><td></td></tr>
+<tr><th id="258">258</th><td>	<i>/* TRSMRCY */</i></td></tr>
+<tr><th id="259">259</th><td>	<b>if</b> (!autostopped) {</td></tr>
+<tr><th id="260">260</th><td>		msleep (<var>10</var>);</td></tr>
+<tr><th id="261">261</th><td>		spin_lock_irq (&amp;ohci-&gt;lock);</td></tr>
+<tr><th id="262">262</th><td>	}</td></tr>
+<tr><th id="263">263</th><td>	<i>/* now ohci-&gt;lock is always held and irqs are always disabled */</i></td></tr>
+<tr><th id="264">264</th><td></td></tr>
+<tr><th id="265">265</th><td>	<i>/* keep it alive for more than ~5x suspend + resume costs */</i></td></tr>
+<tr><th id="266">266</th><td>	ohci-&gt;next_statechange = jiffies + STATECHANGE_DELAY;</td></tr>
+<tr><th id="267">267</th><td></td></tr>
+<tr><th id="268">268</th><td>	<i>/* maybe turn schedules back on */</i></td></tr>
+<tr><th id="269">269</th><td>	enables = <var>0</var>;</td></tr>
+<tr><th id="270">270</th><td>	temp = <var>0</var>;</td></tr>
+<tr><th id="271">271</th><td>	<b>if</b> (!ohci-&gt;ed_rm_list) {</td></tr>
+<tr><th id="272">272</th><td>		<b>if</b> (ohci-&gt;ed_controltail) {</td></tr>
+<tr><th id="273">273</th><td>			ohci_writel (ohci,</td></tr>
+<tr><th id="274">274</th><td>					find_head (ohci-&gt;ed_controltail)-&gt;dma,</td></tr>
+<tr><th id="275">275</th><td>					&amp;ohci-&gt;regs-&gt;ed_controlhead);</td></tr>
+<tr><th id="276">276</th><td>			enables |= OHCI_CTRL_CLE;</td></tr>
+<tr><th id="277">277</th><td>			temp |= OHCI_CLF;</td></tr>
+<tr><th id="278">278</th><td>		}</td></tr>
+<tr><th id="279">279</th><td>		<b>if</b> (ohci-&gt;ed_bulktail) {</td></tr>
+<tr><th id="280">280</th><td>			ohci_writel (ohci, find_head (ohci-&gt;ed_bulktail)-&gt;dma,</td></tr>
+<tr><th id="281">281</th><td>				&amp;ohci-&gt;regs-&gt;ed_bulkhead);</td></tr>
+<tr><th id="282">282</th><td>			enables |= OHCI_CTRL_BLE;</td></tr>
+<tr><th id="283">283</th><td>			temp |= OHCI_BLF;</td></tr>
+<tr><th id="284">284</th><td>		}</td></tr>
+<tr><th id="285">285</th><td>	}</td></tr>
+<tr><th id="286">286</th><td>	<b>if</b> (hcd-&gt;self.bandwidth_isoc_reqs || hcd-&gt;self.bandwidth_int_reqs)</td></tr>
+<tr><th id="287">287</th><td>		enables |= OHCI_CTRL_PLE|OHCI_CTRL_IE;</td></tr>
+<tr><th id="288">288</th><td>	<b>if</b> (enables) {</td></tr>
+<tr><th id="289">289</th><td>		ohci_dbg (ohci, <q>"restarting schedules ... %08x\n"</q>, enables);</td></tr>
+<tr><th id="290">290</th><td>		ohci-&gt;hc_control |= enables;</td></tr>
+<tr><th id="291">291</th><td>		ohci_writel (ohci, ohci-&gt;hc_control, &amp;ohci-&gt;regs-&gt;control);</td></tr>
+<tr><th id="292">292</th><td>		<b>if</b> (temp)</td></tr>
+<tr><th id="293">293</th><td>			ohci_writel (ohci, temp, &amp;ohci-&gt;regs-&gt;cmdstatus);</td></tr>
+<tr><th id="294">294</th><td>		(<em>void</em>) ohci_readl (ohci, &amp;ohci-&gt;regs-&gt;control);</td></tr>
+<tr><th id="295">295</th><td>	}</td></tr>
+<tr><th id="296">296</th><td></td></tr>
+<tr><th id="297">297</th><td>	ohci-&gt;rh_state = OHCI_RH_RUNNING;</td></tr>
+<tr><th id="298">298</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="299">299</th><td>}</td></tr>
+<tr><th id="300">300</th><td></td></tr>
+<tr><th id="301">301</th><td><em>static</em> <em>int</em> ohci_bus_suspend (<b>struct</b> usb_hcd *hcd)</td></tr>
+<tr><th id="302">302</th><td>{</td></tr>
+<tr><th id="303">303</th><td>	<b>struct</b> ohci_hcd		*ohci = hcd_to_ohci (hcd);</td></tr>
+<tr><th id="304">304</th><td>	<em>int</em>			rc;</td></tr>
+<tr><th id="305">305</th><td></td></tr>
+<tr><th id="306">306</th><td>	spin_lock_irq (&amp;ohci-&gt;lock);</td></tr>
+<tr><th id="307">307</th><td></td></tr>
+<tr><th id="308">308</th><td>	<b>if</b> (unlikely(!HCD_HW_ACCESSIBLE(hcd)))</td></tr>
+<tr><th id="309">309</th><td>		rc = -ESHUTDOWN;</td></tr>
+<tr><th id="310">310</th><td>	<b>else</b></td></tr>
+<tr><th id="311">311</th><td>		rc = ohci_rh_suspend (ohci, <var>0</var>);</td></tr>
+<tr><th id="312">312</th><td>	spin_unlock_irq (&amp;ohci-&gt;lock);</td></tr>
+<tr><th id="313">313</th><td></td></tr>
+<tr><th id="314">314</th><td>	<b>if</b> (rc == <var>0</var>) {</td></tr>
+<tr><th id="315">315</th><td>		del_timer_sync(&amp;ohci-&gt;io_watchdog);</td></tr>
+<tr><th id="316">316</th><td>		ohci-&gt;prev_frame_no = IO_WATCHDOG_OFF;</td></tr>
+<tr><th id="317">317</th><td>	}</td></tr>
+<tr><th id="318">318</th><td>	<b>return</b> rc;</td></tr>
+<tr><th id="319">319</th><td>}</td></tr>
+<tr><th id="320">320</th><td></td></tr>
+<tr><th id="321">321</th><td><em>static</em> <em>int</em> ohci_bus_resume (<b>struct</b> usb_hcd *hcd)</td></tr>
+<tr><th id="322">322</th><td>{</td></tr>
+<tr><th id="323">323</th><td>	<b>struct</b> ohci_hcd		*ohci = hcd_to_ohci (hcd);</td></tr>
+<tr><th id="324">324</th><td>	<em>int</em>			rc;</td></tr>
+<tr><th id="325">325</th><td></td></tr>
+<tr><th id="326">326</th><td>	<b>if</b> (time_before (jiffies, ohci-&gt;next_statechange))</td></tr>
+<tr><th id="327">327</th><td>		msleep(<var>5</var>);</td></tr>
+<tr><th id="328">328</th><td></td></tr>
+<tr><th id="329">329</th><td>	spin_lock_irq (&amp;ohci-&gt;lock);</td></tr>
+<tr><th id="330">330</th><td></td></tr>
+<tr><th id="331">331</th><td>	<b>if</b> (unlikely(!HCD_HW_ACCESSIBLE(hcd)))</td></tr>
+<tr><th id="332">332</th><td>		rc = -ESHUTDOWN;</td></tr>
+<tr><th id="333">333</th><td>	<b>else</b></td></tr>
+<tr><th id="334">334</th><td>		rc = ohci_rh_resume (ohci);</td></tr>
+<tr><th id="335">335</th><td>	spin_unlock_irq (&amp;ohci-&gt;lock);</td></tr>
+<tr><th id="336">336</th><td></td></tr>
+<tr><th id="337">337</th><td>	<i>/* poll until we know a device is connected or we autostop */</i></td></tr>
+<tr><th id="338">338</th><td>	<b>if</b> (rc == <var>0</var>)</td></tr>
+<tr><th id="339">339</th><td>		usb_hcd_poll_rh_status(hcd);</td></tr>
+<tr><th id="340">340</th><td>	<b>return</b> rc;</td></tr>
+<tr><th id="341">341</th><td>}</td></tr>
+<tr><th id="342">342</th><td></td></tr>
+<tr><th id="343">343</th><td><i>/* Carry out polling-, autostop-, and autoresume-related state changes */</i></td></tr>
+<tr><th id="344">344</th><td><em>static</em> <em>int</em> ohci_root_hub_state_changes(<b>struct</b> ohci_hcd *ohci, <em>int</em> changed,</td></tr>
+<tr><th id="345">345</th><td>		<em>int</em> any_connected, <em>int</em> rhsc_status)</td></tr>
+<tr><th id="346">346</th><td>{</td></tr>
+<tr><th id="347">347</th><td>	<em>int</em>	poll_rh = <var>1</var>;</td></tr>
+<tr><th id="348">348</th><td>	<em>int</em>	rhsc_enable;</td></tr>
+<tr><th id="349">349</th><td></td></tr>
+<tr><th id="350">350</th><td>	<i>/* Some broken controllers never turn off RHSC in the interrupt</i></td></tr>
+<tr><th id="351">351</th><td><i>	 * status register.  For their sake we won't re-enable RHSC</i></td></tr>
+<tr><th id="352">352</th><td><i>	 * interrupts if the interrupt bit is already active.</i></td></tr>
+<tr><th id="353">353</th><td><i>	 */</i></td></tr>
+<tr><th id="354">354</th><td>	rhsc_enable = ohci_readl(ohci, &amp;ohci-&gt;regs-&gt;intrenable) &amp;</td></tr>
+<tr><th id="355">355</th><td>			OHCI_INTR_RHSC;</td></tr>
+<tr><th id="356">356</th><td></td></tr>
+<tr><th id="357">357</th><td>	<b>switch</b> (ohci-&gt;hc_control &amp; OHCI_CTRL_HCFS) {</td></tr>
+<tr><th id="358">358</th><td>	<b>case</b> OHCI_USB_OPER:</td></tr>
+<tr><th id="359">359</th><td>		<i>/* If no status changes are pending, enable RHSC interrupts. */</i></td></tr>
+<tr><th id="360">360</th><td>		<b>if</b> (!rhsc_enable &amp;&amp; !rhsc_status &amp;&amp; !changed) {</td></tr>
+<tr><th id="361">361</th><td>			rhsc_enable = OHCI_INTR_RHSC;</td></tr>
+<tr><th id="362">362</th><td>			ohci_writel(ohci, rhsc_enable, &amp;ohci-&gt;regs-&gt;intrenable);</td></tr>
+<tr><th id="363">363</th><td>		}</td></tr>
+<tr><th id="364">364</th><td></td></tr>
+<tr><th id="365">365</th><td>		<i>/* Keep on polling until we know a device is connected</i></td></tr>
+<tr><th id="366">366</th><td><i>		 * and RHSC is enabled, or until we autostop.</i></td></tr>
+<tr><th id="367">367</th><td><i>		 */</i></td></tr>
+<tr><th id="368">368</th><td>		<b>if</b> (!ohci-&gt;autostop) {</td></tr>
+<tr><th id="369">369</th><td>			<b>if</b> (any_connected ||</td></tr>
+<tr><th id="370">370</th><td>					!device_may_wakeup(&amp;ohci_to_hcd(ohci)</td></tr>
+<tr><th id="371">371</th><td>						-&gt;self.root_hub-&gt;dev)) {</td></tr>
+<tr><th id="372">372</th><td>				<b>if</b> (rhsc_enable)</td></tr>
+<tr><th id="373">373</th><td>					poll_rh = <var>0</var>;</td></tr>
+<tr><th id="374">374</th><td>			} <b>else</b> {</td></tr>
+<tr><th id="375">375</th><td>				ohci-&gt;autostop = <var>1</var>;</td></tr>
+<tr><th id="376">376</th><td>				ohci-&gt;next_statechange = jiffies + HZ;</td></tr>
+<tr><th id="377">377</th><td>			}</td></tr>
+<tr><th id="378">378</th><td></td></tr>
+<tr><th id="379">379</th><td>		<i>/* if no devices have been attached for one second, autostop */</i></td></tr>
+<tr><th id="380">380</th><td>		} <b>else</b> {</td></tr>
+<tr><th id="381">381</th><td>			<b>if</b> (changed || any_connected) {</td></tr>
+<tr><th id="382">382</th><td>				ohci-&gt;autostop = <var>0</var>;</td></tr>
+<tr><th id="383">383</th><td>				ohci-&gt;next_statechange = jiffies +</td></tr>
+<tr><th id="384">384</th><td>						STATECHANGE_DELAY;</td></tr>
+<tr><th id="385">385</th><td>			} <b>else</b> <b>if</b> (time_after_eq(jiffies,</td></tr>
+<tr><th id="386">386</th><td>						ohci-&gt;next_statechange)</td></tr>
+<tr><th id="387">387</th><td>					&amp;&amp; !ohci-&gt;ed_rm_list</td></tr>
+<tr><th id="388">388</th><td>					&amp;&amp; !(ohci-&gt;hc_control &amp;</td></tr>
+<tr><th id="389">389</th><td>						OHCI_SCHED_ENABLES)) {</td></tr>
+<tr><th id="390">390</th><td>				ohci_rh_suspend(ohci, <var>1</var>);</td></tr>
+<tr><th id="391">391</th><td>				<b>if</b> (rhsc_enable)</td></tr>
+<tr><th id="392">392</th><td>					poll_rh = <var>0</var>;</td></tr>
+<tr><th id="393">393</th><td>			}</td></tr>
+<tr><th id="394">394</th><td>		}</td></tr>
+<tr><th id="395">395</th><td>		<b>break</b>;</td></tr>
+<tr><th id="396">396</th><td></td></tr>
+<tr><th id="397">397</th><td>	<b>case</b> OHCI_USB_SUSPEND:</td></tr>
+<tr><th id="398">398</th><td>	<b>case</b> OHCI_USB_RESUME:</td></tr>
+<tr><th id="399">399</th><td>		<i>/* if there is a port change, autostart or ask to be resumed */</i></td></tr>
+<tr><th id="400">400</th><td>		<b>if</b> (changed) {</td></tr>
+<tr><th id="401">401</th><td>			<b>if</b> (ohci-&gt;autostop)</td></tr>
+<tr><th id="402">402</th><td>				ohci_rh_resume(ohci);</td></tr>
+<tr><th id="403">403</th><td>			<b>else</b></td></tr>
+<tr><th id="404">404</th><td>				usb_hcd_resume_root_hub(ohci_to_hcd(ohci));</td></tr>
+<tr><th id="405">405</th><td></td></tr>
+<tr><th id="406">406</th><td>		<i>/* If remote wakeup is disabled, stop polling */</i></td></tr>
+<tr><th id="407">407</th><td>		} <b>else</b> <b>if</b> (!ohci-&gt;autostop &amp;&amp;</td></tr>
+<tr><th id="408">408</th><td>				!ohci_to_hcd(ohci)-&gt;self.root_hub-&gt;</td></tr>
+<tr><th id="409">409</th><td>					do_remote_wakeup) {</td></tr>
+<tr><th id="410">410</th><td>			poll_rh = <var>0</var>;</td></tr>
+<tr><th id="411">411</th><td></td></tr>
+<tr><th id="412">412</th><td>		} <b>else</b> {</td></tr>
+<tr><th id="413">413</th><td>			<i>/* If no status changes are pending,</i></td></tr>
+<tr><th id="414">414</th><td><i>			 * enable RHSC interrupts</i></td></tr>
+<tr><th id="415">415</th><td><i>			 */</i></td></tr>
+<tr><th id="416">416</th><td>			<b>if</b> (!rhsc_enable &amp;&amp; !rhsc_status) {</td></tr>
+<tr><th id="417">417</th><td>				rhsc_enable = OHCI_INTR_RHSC;</td></tr>
+<tr><th id="418">418</th><td>				ohci_writel(ohci, rhsc_enable,</td></tr>
+<tr><th id="419">419</th><td>						&amp;ohci-&gt;regs-&gt;intrenable);</td></tr>
+<tr><th id="420">420</th><td>			}</td></tr>
+<tr><th id="421">421</th><td>			<i>/* Keep polling until RHSC is enabled */</i></td></tr>
+<tr><th id="422">422</th><td>			<b>if</b> (rhsc_enable)</td></tr>
+<tr><th id="423">423</th><td>				poll_rh = <var>0</var>;</td></tr>
+<tr><th id="424">424</th><td>		}</td></tr>
+<tr><th id="425">425</th><td>		<b>break</b>;</td></tr>
+<tr><th id="426">426</th><td>	}</td></tr>
+<tr><th id="427">427</th><td>	<b>return</b> poll_rh;</td></tr>
+<tr><th id="428">428</th><td>}</td></tr>
+<tr><th id="429">429</th><td></td></tr>
+<tr><th id="430">430</th><td><u>#<span data-ppcond="46">else</span>	/* CONFIG_PM */</u></td></tr>
+<tr><th id="431">431</th><td></td></tr>
+<tr><th id="432">432</th><td><em>static</em> <a class="macro" href="../../../include/linux/compiler-gcc.h.html#95" title="inline __attribute__((always_inline, unused)) __attribute__((no_instrument_function))" data-ref="_M/inline"><b>inline</b></a> <em>int</em> <dfn class="decl def fn" id="ohci_rh_resume" title='ohci_rh_resume' data-ref="ohci_rh_resume">ohci_rh_resume</dfn>(<b>struct</b> <a class="type" href="ohci.h.html#ohci_hcd" title='ohci_hcd' data-ref="ohci_hcd">ohci_hcd</a> *<dfn class="local col7 decl" id="67ohci" title='ohci' data-type='struct ohci_hcd *' data-ref="67ohci">ohci</dfn>)</td></tr>
+<tr><th id="433">433</th><td>{</td></tr>
+<tr><th id="434">434</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="435">435</th><td>}</td></tr>
+<tr><th id="436">436</th><td></td></tr>
+<tr><th id="437">437</th><td><i>/* Carry out polling-related state changes.</i></td></tr>
+<tr><th id="438">438</th><td><i> * autostop isn't used when CONFIG_PM is turned off.</i></td></tr>
+<tr><th id="439">439</th><td><i> */</i></td></tr>
+<tr><th id="440">440</th><td><em>static</em> <em>int</em> <dfn class="decl def fn" id="ohci_root_hub_state_changes" title='ohci_root_hub_state_changes' data-ref="ohci_root_hub_state_changes">ohci_root_hub_state_changes</dfn>(<b>struct</b> <a class="type" href="ohci.h.html#ohci_hcd" title='ohci_hcd' data-ref="ohci_hcd">ohci_hcd</a> *<dfn class="local col8 decl" id="68ohci" title='ohci' data-type='struct ohci_hcd *' data-ref="68ohci">ohci</dfn>, <em>int</em> <dfn class="local col9 decl" id="69changed" title='changed' data-type='int' data-ref="69changed">changed</dfn>,</td></tr>
+<tr><th id="441">441</th><td>		<em>int</em> <dfn class="local col0 decl" id="70any_connected" title='any_connected' data-type='int' data-ref="70any_connected">any_connected</dfn>, <em>int</em> <dfn class="local col1 decl" id="71rhsc_status" title='rhsc_status' data-type='int' data-ref="71rhsc_status">rhsc_status</dfn>)</td></tr>
+<tr><th id="442">442</th><td>{</td></tr>
+<tr><th id="443">443</th><td>	<i>/* If RHSC is enabled, don't poll */</i></td></tr>
+<tr><th id="444">444</th><td>	<b>if</b> (<a class="macro" href="ohci.h.html#583" title="_ohci_readl(ohci,&amp;ohci-&gt;regs-&gt;intrenable)" data-ref="_M/ohci_readl">ohci_readl</a>(<a class="local col8 ref" href="#68ohci" title='ohci' data-ref="68ohci">ohci</a>, &amp;<a class="local col8 ref" href="#68ohci" title='ohci' data-ref="68ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::regs" title='ohci_hcd::regs' data-ref="ohci_hcd::regs">regs</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_regs::intrenable" title='ohci_regs::intrenable' data-ref="ohci_regs::intrenable">intrenable</a>) &amp; <a class="macro" href="ohci.h.html#291" title="(1 &lt;&lt; 6)" data-ref="_M/OHCI_INTR_RHSC">OHCI_INTR_RHSC</a>)</td></tr>
+<tr><th id="445">445</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="446">446</th><td></td></tr>
+<tr><th id="447">447</th><td>	<i>/* If status changes are pending, continue polling.</i></td></tr>
+<tr><th id="448">448</th><td><i>	 * Conversely, if no status changes are pending but the RHSC</i></td></tr>
+<tr><th id="449">449</th><td><i>	 * status bit was set, then RHSC may be broken so continue polling.</i></td></tr>
+<tr><th id="450">450</th><td><i>	 */</i></td></tr>
+<tr><th id="451">451</th><td>	<b>if</b> (<a class="local col9 ref" href="#69changed" title='changed' data-ref="69changed">changed</a> || <a class="local col1 ref" href="#71rhsc_status" title='rhsc_status' data-ref="71rhsc_status">rhsc_status</a>)</td></tr>
+<tr><th id="452">452</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="453">453</th><td></td></tr>
+<tr><th id="454">454</th><td>	<i>/* It's safe to re-enable RHSC interrupts */</i></td></tr>
+<tr><th id="455">455</th><td>	<a class="macro" href="ohci.h.html#584" title="_ohci_writel(ohci,(1 &lt;&lt; 6),&amp;ohci-&gt;regs-&gt;intrenable)" data-ref="_M/ohci_writel">ohci_writel</a>(<a class="local col8 ref" href="#68ohci" title='ohci' data-ref="68ohci">ohci</a>, <a class="macro" href="ohci.h.html#291" title="(1 &lt;&lt; 6)" data-ref="_M/OHCI_INTR_RHSC">OHCI_INTR_RHSC</a>, &amp;<a class="local col8 ref" href="#68ohci" title='ohci' data-ref="68ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::regs" title='ohci_hcd::regs' data-ref="ohci_hcd::regs">regs</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_regs::intrenable" title='ohci_regs::intrenable' data-ref="ohci_regs::intrenable">intrenable</a>);</td></tr>
+<tr><th id="456">456</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="457">457</th><td>}</td></tr>
+<tr><th id="458">458</th><td></td></tr>
+<tr><th id="459">459</th><td><u>#<span data-ppcond="46">endif</span>	/* CONFIG_PM */</u></td></tr>
+<tr><th id="460">460</th><td></td></tr>
+<tr><th id="461">461</th><td><i>/*-------------------------------------------------------------------------*/</i></td></tr>
+<tr><th id="462">462</th><td></td></tr>
+<tr><th id="463">463</th><td><i>/* build "status change" packet (one or two bytes) from HC registers */</i></td></tr>
+<tr><th id="464">464</th><td></td></tr>
+<tr><th id="465">465</th><td><em>int</em> <dfn class="decl def fn" id="ohci_hub_status_data" title='ohci_hub_status_data' data-ref="ohci_hub_status_data">ohci_hub_status_data</dfn>(<b>struct</b> <a class="type" href="../../../include/linux/usb/hcd.h.html#usb_hcd" title='usb_hcd' data-ref="usb_hcd">usb_hcd</a> *<dfn class="local col2 decl" id="72hcd" title='hcd' data-type='struct usb_hcd *' data-ref="72hcd">hcd</dfn>, <em>char</em> *<dfn class="local col3 decl" id="73buf" title='buf' data-type='char *' data-ref="73buf">buf</dfn>)</td></tr>
+<tr><th id="466">466</th><td>{</td></tr>
+<tr><th id="467">467</th><td>	<b>struct</b> <a class="type" href="ohci.h.html#ohci_hcd" title='ohci_hcd' data-ref="ohci_hcd">ohci_hcd</a>	*<dfn class="local col4 decl" id="74ohci" title='ohci' data-type='struct ohci_hcd *' data-ref="74ohci">ohci</dfn> = <a class="ref fn" href="ohci.h.html#hcd_to_ohci" title='hcd_to_ohci' data-ref="hcd_to_ohci">hcd_to_ohci</a> (<a class="local col2 ref" href="#72hcd" title='hcd' data-ref="72hcd">hcd</a>);</td></tr>
+<tr><th id="468">468</th><td>	<em>int</em>		<dfn class="local col5 decl" id="75i" title='i' data-type='int' data-ref="75i">i</dfn>, <dfn class="local col6 decl" id="76changed" title='changed' data-type='int' data-ref="76changed">changed</dfn> = <var>0</var>, <dfn class="local col7 decl" id="77length" title='length' data-type='int' data-ref="77length">length</dfn> = <var>1</var>;</td></tr>
+<tr><th id="469">469</th><td>	<em>int</em>		<dfn class="local col8 decl" id="78any_connected" title='any_connected' data-type='int' data-ref="78any_connected">any_connected</dfn> = <var>0</var>;</td></tr>
+<tr><th id="470">470</th><td>	<em>int</em>		<dfn class="local col9 decl" id="79rhsc_status" title='rhsc_status' data-type='int' data-ref="79rhsc_status">rhsc_status</dfn>;</td></tr>
+<tr><th id="471">471</th><td>	<em>unsigned</em> <em>long</em>	<dfn class="local col0 decl" id="80flags" title='flags' data-type='unsigned long' data-ref="80flags">flags</dfn>;</td></tr>
+<tr><th id="472">472</th><td></td></tr>
+<tr><th id="473">473</th><td>	<a class="macro" href="../../../include/linux/spinlock.h.html#338" title="do { do { ({ unsigned long __dummy; typeof(flags) __dummy2; (void)(&amp;__dummy == &amp;__dummy2); 1; }); flags = _raw_spin_lock_irqsave(spinlock_check(&amp;ohci-&gt;lock)); } while (0); } while (0)" data-ref="_M/spin_lock_irqsave">spin_lock_irqsave</a> (&amp;<a class="local col4 ref" href="#74ohci" title='ohci' data-ref="74ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::lock" title='ohci_hcd::lock' data-ref="ohci_hcd::lock">lock</a>, <a class="local col0 ref" href="#80flags" title='flags' data-ref="80flags">flags</a>);</td></tr>
+<tr><th id="474">474</th><td>	<b>if</b> (!<a class="macro" href="../../../include/linux/usb/hcd.h.html#125" title="((hcd)-&gt;flags &amp; (1U &lt;&lt; 0))" data-ref="_M/HCD_HW_ACCESSIBLE">HCD_HW_ACCESSIBLE</a>(<a class="local col2 ref" href="#72hcd" title='hcd' data-ref="72hcd">hcd</a>))</td></tr>
+<tr><th id="475">475</th><td>		<b>goto</b> <a class="lbl" href="#81done" data-ref="81done">done</a>;</td></tr>
+<tr><th id="476">476</th><td></td></tr>
+<tr><th id="477">477</th><td>	<i>/* undocumented erratum seen on at least rev D */</i></td></tr>
+<tr><th id="478">478</th><td>	<b>if</b> ((<a class="local col4 ref" href="#74ohci" title='ohci' data-ref="74ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::flags" title='ohci_hcd::flags' data-ref="ohci_hcd::flags">flags</a> &amp; <a class="macro" href="ohci.h.html#410" title="0x01" data-ref="_M/OHCI_QUIRK_AMD756">OHCI_QUIRK_AMD756</a>)</td></tr>
+<tr><th id="479">479</th><td>			&amp;&amp; (<a class="ref fn" href="ohci.h.html#roothub_a" title='roothub_a' data-ref="roothub_a">roothub_a</a> (<a class="local col4 ref" href="#74ohci" title='ohci' data-ref="74ohci">ohci</a>) &amp; <a class="macro" href="ohci.h.html#325" title="(0xff &lt;&lt; 0)" data-ref="_M/RH_A_NDP">RH_A_NDP</a>) &gt; <a class="macro" href="ohci.h.html#240" title="15" data-ref="_M/MAX_ROOT_PORTS">MAX_ROOT_PORTS</a>) {</td></tr>
+<tr><th id="480">480</th><td>		<a class="macro" href="ohci.h.html#494" title="dev_warn (ohci_to_hcd(ohci)-&gt;self.controller , &quot;bogus NDP, rereads as NDP=%d\n&quot; , _ohci_readl(ohci,&amp;ohci-&gt;regs-&gt;roothub.a) &amp; (0xff &lt;&lt; 0) )" data-ref="_M/ohci_warn">ohci_warn</a> (<a class="local col4 ref" href="#74ohci" title='ohci' data-ref="74ohci">ohci</a>, <q>"bogus NDP, rereads as NDP=%d\n"</q>,</td></tr>
+<tr><th id="481">481</th><td>			  ohci_readl (<a class="local col4 ref" href="#74ohci" title='ohci' data-ref="74ohci">ohci</a>, &amp;<a class="local col4 ref" href="#74ohci" title='ohci' data-ref="74ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::regs" title='ohci_hcd::regs' data-ref="ohci_hcd::regs">regs</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_regs::roothub" title='ohci_regs::roothub' data-ref="ohci_regs::roothub">roothub</a>.<a class="ref field" href="ohci.h.html#ohci_roothub_regs::a" title='ohci_roothub_regs::a' data-ref="ohci_roothub_regs::a">a</a>) &amp; RH_A_NDP);</td></tr>
+<tr><th id="482">482</th><td>		<i>/* retry later; "should not happen" */</i></td></tr>
+<tr><th id="483">483</th><td>		<b>goto</b> <a class="lbl" href="#81done" data-ref="81done">done</a>;</td></tr>
+<tr><th id="484">484</th><td>	}</td></tr>
+<tr><th id="485">485</th><td></td></tr>
+<tr><th id="486">486</th><td>	<i>/* init status */</i></td></tr>
+<tr><th id="487">487</th><td>	<b>if</b> (<a class="ref fn" href="ohci.h.html#roothub_status" title='roothub_status' data-ref="roothub_status">roothub_status</a> (<a class="local col4 ref" href="#74ohci" title='ohci' data-ref="74ohci">ohci</a>) &amp; (<a class="macro" href="ohci.h.html#316" title="0x00010000" data-ref="_M/RH_HS_LPSC">RH_HS_LPSC</a> | <a class="macro" href="ohci.h.html#317" title="0x00020000" data-ref="_M/RH_HS_OCIC">RH_HS_OCIC</a>))</td></tr>
+<tr><th id="488">488</th><td>		<a class="local col3 ref" href="#73buf" title='buf' data-ref="73buf">buf</a> [<var>0</var>] = <a class="local col6 ref" href="#76changed" title='changed' data-ref="76changed">changed</a> = <var>1</var>;</td></tr>
+<tr><th id="489">489</th><td>	<b>else</b></td></tr>
+<tr><th id="490">490</th><td>		<a class="local col3 ref" href="#73buf" title='buf' data-ref="73buf">buf</a> [<var>0</var>] = <var>0</var>;</td></tr>
+<tr><th id="491">491</th><td>	<b>if</b> (<a class="local col4 ref" href="#74ohci" title='ohci' data-ref="74ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::num_ports" title='ohci_hcd::num_ports' data-ref="ohci_hcd::num_ports">num_ports</a> &gt; <var>7</var>) {</td></tr>
+<tr><th id="492">492</th><td>		<a class="local col3 ref" href="#73buf" title='buf' data-ref="73buf">buf</a> [<var>1</var>] = <var>0</var>;</td></tr>
+<tr><th id="493">493</th><td>		<a class="local col7 ref" href="#77length" title='length' data-ref="77length">length</a>++;</td></tr>
+<tr><th id="494">494</th><td>	}</td></tr>
+<tr><th id="495">495</th><td></td></tr>
+<tr><th id="496">496</th><td>	<i>/* Clear the RHSC status flag before reading the port statuses */</i></td></tr>
+<tr><th id="497">497</th><td>	<a class="macro" href="ohci.h.html#584" title="_ohci_writel(ohci,(1 &lt;&lt; 6),&amp;ohci-&gt;regs-&gt;intrstatus)" data-ref="_M/ohci_writel">ohci_writel</a>(<a class="local col4 ref" href="#74ohci" title='ohci' data-ref="74ohci">ohci</a>, <a class="macro" href="ohci.h.html#291" title="(1 &lt;&lt; 6)" data-ref="_M/OHCI_INTR_RHSC">OHCI_INTR_RHSC</a>, &amp;<a class="local col4 ref" href="#74ohci" title='ohci' data-ref="74ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::regs" title='ohci_hcd::regs' data-ref="ohci_hcd::regs">regs</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_regs::intrstatus" title='ohci_regs::intrstatus' data-ref="ohci_regs::intrstatus">intrstatus</a>);</td></tr>
+<tr><th id="498">498</th><td>	<a class="local col9 ref" href="#79rhsc_status" title='rhsc_status' data-ref="79rhsc_status">rhsc_status</a> = <a class="macro" href="ohci.h.html#583" title="_ohci_readl(ohci,&amp;ohci-&gt;regs-&gt;intrstatus)" data-ref="_M/ohci_readl">ohci_readl</a>(<a class="local col4 ref" href="#74ohci" title='ohci' data-ref="74ohci">ohci</a>, &amp;<a class="local col4 ref" href="#74ohci" title='ohci' data-ref="74ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::regs" title='ohci_hcd::regs' data-ref="ohci_hcd::regs">regs</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_regs::intrstatus" title='ohci_regs::intrstatus' data-ref="ohci_regs::intrstatus">intrstatus</a>) &amp;</td></tr>
+<tr><th id="499">499</th><td>			<a class="macro" href="ohci.h.html#291" title="(1 &lt;&lt; 6)" data-ref="_M/OHCI_INTR_RHSC">OHCI_INTR_RHSC</a>;</td></tr>
+<tr><th id="500">500</th><td></td></tr>
+<tr><th id="501">501</th><td>	<i>/* look at each port */</i></td></tr>
+<tr><th id="502">502</th><td>	<b>for</b> (<a class="local col5 ref" href="#75i" title='i' data-ref="75i">i</a> = <var>0</var>; <a class="local col5 ref" href="#75i" title='i' data-ref="75i">i</a> &lt; <a class="local col4 ref" href="#74ohci" title='ohci' data-ref="74ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::num_ports" title='ohci_hcd::num_ports' data-ref="ohci_hcd::num_ports">num_ports</a>; <a class="local col5 ref" href="#75i" title='i' data-ref="75i">i</a>++) {</td></tr>
+<tr><th id="503">503</th><td>		<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a>	<dfn class="local col2 decl" id="82status" title='status' data-type='u32' data-ref="82status">status</dfn> = <a class="ref fn" href="ohci.h.html#roothub_portstatus" title='roothub_portstatus' data-ref="roothub_portstatus">roothub_portstatus</a> (<a class="local col4 ref" href="#74ohci" title='ohci' data-ref="74ohci">ohci</a>, <a class="local col5 ref" href="#75i" title='i' data-ref="75i">i</a>);</td></tr>
+<tr><th id="504">504</th><td></td></tr>
+<tr><th id="505">505</th><td>		<i>/* can't autostop if ports are connected */</i></td></tr>
+<tr><th id="506">506</th><td>		<a class="local col8 ref" href="#78any_connected" title='any_connected' data-ref="78any_connected">any_connected</a> |= (<a class="local col2 ref" href="#82status" title='status' data-ref="82status">status</a> &amp; <a class="macro" href="ohci.h.html#299" title="0x00000001" data-ref="_M/RH_PS_CCS">RH_PS_CCS</a>);</td></tr>
+<tr><th id="507">507</th><td></td></tr>
+<tr><th id="508">508</th><td>		<b>if</b> (<a class="local col2 ref" href="#82status" title='status' data-ref="82status">status</a> &amp; (<a class="macro" href="ohci.h.html#306" title="0x00010000" data-ref="_M/RH_PS_CSC">RH_PS_CSC</a> | <a class="macro" href="ohci.h.html#307" title="0x00020000" data-ref="_M/RH_PS_PESC">RH_PS_PESC</a> | <a class="macro" href="ohci.h.html#308" title="0x00040000" data-ref="_M/RH_PS_PSSC">RH_PS_PSSC</a></td></tr>
+<tr><th id="509">509</th><td>				| <a class="macro" href="ohci.h.html#309" title="0x00080000" data-ref="_M/RH_PS_OCIC">RH_PS_OCIC</a> | <a class="macro" href="ohci.h.html#310" title="0x00100000" data-ref="_M/RH_PS_PRSC">RH_PS_PRSC</a>)) {</td></tr>
+<tr><th id="510">510</th><td>			<a class="local col6 ref" href="#76changed" title='changed' data-ref="76changed">changed</a> = <var>1</var>;</td></tr>
+<tr><th id="511">511</th><td>			<b>if</b> (<a class="local col5 ref" href="#75i" title='i' data-ref="75i">i</a> &lt; <var>7</var>)</td></tr>
+<tr><th id="512">512</th><td>			    <a class="local col3 ref" href="#73buf" title='buf' data-ref="73buf">buf</a> [<var>0</var>] |= <var>1</var> &lt;&lt; (<a class="local col5 ref" href="#75i" title='i' data-ref="75i">i</a> + <var>1</var>);</td></tr>
+<tr><th id="513">513</th><td>			<b>else</b></td></tr>
+<tr><th id="514">514</th><td>			    <a class="local col3 ref" href="#73buf" title='buf' data-ref="73buf">buf</a> [<var>1</var>] |= <var>1</var> &lt;&lt; (<a class="local col5 ref" href="#75i" title='i' data-ref="75i">i</a> - <var>7</var>);</td></tr>
+<tr><th id="515">515</th><td>		}</td></tr>
+<tr><th id="516">516</th><td>	}</td></tr>
+<tr><th id="517">517</th><td></td></tr>
+<tr><th id="518">518</th><td>	<b>if</b> (<a class="ref fn" href="#ohci_root_hub_state_changes" title='ohci_root_hub_state_changes' data-ref="ohci_root_hub_state_changes">ohci_root_hub_state_changes</a>(<a class="local col4 ref" href="#74ohci" title='ohci' data-ref="74ohci">ohci</a>, <a class="local col6 ref" href="#76changed" title='changed' data-ref="76changed">changed</a>,</td></tr>
+<tr><th id="519">519</th><td>			<a class="local col8 ref" href="#78any_connected" title='any_connected' data-ref="78any_connected">any_connected</a>, <a class="local col9 ref" href="#79rhsc_status" title='rhsc_status' data-ref="79rhsc_status">rhsc_status</a>))</td></tr>
+<tr><th id="520">520</th><td>		<a class="ref fn" href="../../../arch/x86/include/asm/bitops.h.html#set_bit" title='set_bit' data-ref="set_bit">set_bit</a>(<a class="macro" href="../../../include/linux/usb/hcd.h.html#114" title="2" data-ref="_M/HCD_FLAG_POLL_RH">HCD_FLAG_POLL_RH</a>, &amp;<a class="local col2 ref" href="#72hcd" title='hcd' data-ref="72hcd">hcd</a>-&gt;<a class="ref field" href="../../../include/linux/usb/hcd.h.html#usb_hcd::flags" title='usb_hcd::flags' data-ref="usb_hcd::flags">flags</a>);</td></tr>
+<tr><th id="521">521</th><td>	<b>else</b></td></tr>
+<tr><th id="522">522</th><td>		<a class="ref fn" href="../../../arch/x86/include/asm/bitops.h.html#clear_bit" title='clear_bit' data-ref="clear_bit">clear_bit</a>(<a class="macro" href="../../../include/linux/usb/hcd.h.html#114" title="2" data-ref="_M/HCD_FLAG_POLL_RH">HCD_FLAG_POLL_RH</a>, &amp;<a class="local col2 ref" href="#72hcd" title='hcd' data-ref="72hcd">hcd</a>-&gt;<a class="ref field" href="../../../include/linux/usb/hcd.h.html#usb_hcd::flags" title='usb_hcd::flags' data-ref="usb_hcd::flags">flags</a>);</td></tr>
+<tr><th id="523">523</th><td></td></tr>
+<tr><th id="524">524</th><td></td></tr>
+<tr><th id="525">525</th><td><dfn class="lbl" id="81done" data-ref="81done">done</dfn>:</td></tr>
+<tr><th id="526">526</th><td>	<a class="ref fn" href="../../../include/linux/spinlock.h.html#spin_unlock_irqrestore" title='spin_unlock_irqrestore' data-ref="spin_unlock_irqrestore">spin_unlock_irqrestore</a> (&amp;<a class="local col4 ref" href="#74ohci" title='ohci' data-ref="74ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::lock" title='ohci_hcd::lock' data-ref="ohci_hcd::lock">lock</a>, <a class="local col0 ref" href="#80flags" title='flags' data-ref="80flags">flags</a>);</td></tr>
+<tr><th id="527">527</th><td></td></tr>
+<tr><th id="528">528</th><td>	<b>return</b> <a class="local col6 ref" href="#76changed" title='changed' data-ref="76changed">changed</a> ? <a class="local col7 ref" href="#77length" title='length' data-ref="77length">length</a> : <var>0</var>;</td></tr>
+<tr><th id="529">529</th><td>}</td></tr>
+<tr><th id="530">530</th><td><a class="macro" href="../../../include/linux/export.h.html#100" title="extern typeof(ohci_hub_status_data) ohci_hub_status_data; static const char __kstrtab_ohci_hub_status_data[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;ohci_hub_status_data&quot;; static const struct kernel_symbol __ksymtab_ohci_hub_status_data __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;ohci_hub_status_data&quot;), used)) = { (unsigned long)&amp;ohci_hub_status_data, __kstrtab_ohci_hub_status_data }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#ohci_hub_status_data" title='ohci_hub_status_data' data-ref="ohci_hub_status_data"><a class="ref fn" href="#ohci_hub_status_data" title='ohci_hub_status_data' data-ref="ohci_hub_status_data"><a class="ref fn" href="#ohci_hub_status_data" title='ohci_hub_status_data' data-ref="ohci_hub_status_data"><a class="ref fn" href="#ohci_hub_status_data" title='ohci_hub_status_data' data-ref="ohci_hub_status_data">ohci_hub_status_data</a></a></a></a>);</td></tr>
+<tr><th id="531">531</th><td></td></tr>
+<tr><th id="532">532</th><td><i>/*-------------------------------------------------------------------------*/</i></td></tr>
+<tr><th id="533">533</th><td></td></tr>
+<tr><th id="534">534</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="535">535</th><td><dfn class="decl def fn" id="ohci_hub_descriptor" title='ohci_hub_descriptor' data-ref="ohci_hub_descriptor">ohci_hub_descriptor</dfn> (</td></tr>
+<tr><th id="536">536</th><td>	<b>struct</b> <a class="type" href="ohci.h.html#ohci_hcd" title='ohci_hcd' data-ref="ohci_hcd">ohci_hcd</a>			*<dfn class="local col3 decl" id="83ohci" title='ohci' data-type='struct ohci_hcd *' data-ref="83ohci">ohci</dfn>,</td></tr>
+<tr><th id="537">537</th><td>	<b>struct</b> <a class="type" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor" title='usb_hub_descriptor' data-ref="usb_hub_descriptor">usb_hub_descriptor</a>	*<dfn class="local col4 decl" id="84desc" title='desc' data-type='struct usb_hub_descriptor *' data-ref="84desc">desc</dfn></td></tr>
+<tr><th id="538">538</th><td>) {</td></tr>
+<tr><th id="539">539</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a>		<dfn class="local col5 decl" id="85rh" title='rh' data-type='u32' data-ref="85rh">rh</dfn> = <a class="ref fn" href="ohci.h.html#roothub_a" title='roothub_a' data-ref="roothub_a">roothub_a</a> (<a class="local col3 ref" href="#83ohci" title='ohci' data-ref="83ohci">ohci</a>);</td></tr>
+<tr><th id="540">540</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a>		<dfn class="local col6 decl" id="86temp" title='temp' data-type='u16' data-ref="86temp">temp</dfn>;</td></tr>
+<tr><th id="541">541</th><td></td></tr>
+<tr><th id="542">542</th><td>	<a class="local col4 ref" href="#84desc" title='desc' data-ref="84desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::bDescriptorType" title='usb_hub_descriptor::bDescriptorType' data-ref="usb_hub_descriptor::bDescriptorType">bDescriptorType</a> = <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#246" title="((0x01 &lt;&lt; 5) | 0x09)" data-ref="_M/USB_DT_HUB">USB_DT_HUB</a>;</td></tr>
+<tr><th id="543">543</th><td>	<a class="local col4 ref" href="#84desc" title='desc' data-ref="84desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::bPwrOn2PwrGood" title='usb_hub_descriptor::bPwrOn2PwrGood' data-ref="usb_hub_descriptor::bPwrOn2PwrGood">bPwrOn2PwrGood</a> = (<a class="local col5 ref" href="#85rh" title='rh' data-ref="85rh">rh</a> &amp; <a class="macro" href="ohci.h.html#331" title="(0xff &lt;&lt; 24)" data-ref="_M/RH_A_POTPGT">RH_A_POTPGT</a>) &gt;&gt; <var>24</var>;</td></tr>
+<tr><th id="544">544</th><td>	<a class="local col4 ref" href="#84desc" title='desc' data-ref="84desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::bHubContrCurrent" title='usb_hub_descriptor::bHubContrCurrent' data-ref="usb_hub_descriptor::bHubContrCurrent">bHubContrCurrent</a> = <var>0</var>;</td></tr>
+<tr><th id="545">545</th><td></td></tr>
+<tr><th id="546">546</th><td>	<a class="local col4 ref" href="#84desc" title='desc' data-ref="84desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::bNbrPorts" title='usb_hub_descriptor::bNbrPorts' data-ref="usb_hub_descriptor::bNbrPorts">bNbrPorts</a> = <a class="local col3 ref" href="#83ohci" title='ohci' data-ref="83ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::num_ports" title='ohci_hcd::num_ports' data-ref="ohci_hcd::num_ports">num_ports</a>;</td></tr>
+<tr><th id="547">547</th><td>	<a class="local col6 ref" href="#86temp" title='temp' data-ref="86temp">temp</a> = <var>1</var> + (<a class="local col3 ref" href="#83ohci" title='ohci' data-ref="83ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::num_ports" title='ohci_hcd::num_ports' data-ref="ohci_hcd::num_ports">num_ports</a> / <var>8</var>);</td></tr>
+<tr><th id="548">548</th><td>	<a class="local col4 ref" href="#84desc" title='desc' data-ref="84desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::bDescLength" title='usb_hub_descriptor::bDescLength' data-ref="usb_hub_descriptor::bDescLength">bDescLength</a> = <var>7</var> + <var>2</var> * <a class="local col6 ref" href="#86temp" title='temp' data-ref="86temp">temp</a>;</td></tr>
+<tr><th id="549">549</th><td></td></tr>
+<tr><th id="550">550</th><td>	<a class="local col6 ref" href="#86temp" title='temp' data-ref="86temp">temp</a> = <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#210" title="0x0000" data-ref="_M/HUB_CHAR_COMMON_LPSM">HUB_CHAR_COMMON_LPSM</a> | <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#217" title="0x0000" data-ref="_M/HUB_CHAR_COMMON_OCPM">HUB_CHAR_COMMON_OCPM</a>;</td></tr>
+<tr><th id="551">551</th><td>	<b>if</b> (<a class="local col5 ref" href="#85rh" title='rh' data-ref="85rh">rh</a> &amp; <a class="macro" href="ohci.h.html#327" title="(1 &lt;&lt; 9)" data-ref="_M/RH_A_NPS">RH_A_NPS</a>)		<i>/* no power switching? */</i></td></tr>
+<tr><th id="552">552</th><td>		<a class="local col6 ref" href="#86temp" title='temp' data-ref="86temp">temp</a> |= <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#212" title="0x0002" data-ref="_M/HUB_CHAR_NO_LPSM">HUB_CHAR_NO_LPSM</a>;</td></tr>
+<tr><th id="553">553</th><td>	<b>if</b> (<a class="local col5 ref" href="#85rh" title='rh' data-ref="85rh">rh</a> &amp; <a class="macro" href="ohci.h.html#326" title="(1 &lt;&lt; 8)" data-ref="_M/RH_A_PSM">RH_A_PSM</a>)		<i>/* per-port power switching? */</i></td></tr>
+<tr><th id="554">554</th><td>		<a class="local col6 ref" href="#86temp" title='temp' data-ref="86temp">temp</a> |= <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#211" title="0x0001" data-ref="_M/HUB_CHAR_INDV_PORT_LPSM">HUB_CHAR_INDV_PORT_LPSM</a>;</td></tr>
+<tr><th id="555">555</th><td>	<b>if</b> (<a class="local col5 ref" href="#85rh" title='rh' data-ref="85rh">rh</a> &amp; <a class="macro" href="ohci.h.html#330" title="(1 &lt;&lt; 12)" data-ref="_M/RH_A_NOCP">RH_A_NOCP</a>)		<i>/* no overcurrent reporting? */</i></td></tr>
+<tr><th id="556">556</th><td>		<a class="local col6 ref" href="#86temp" title='temp' data-ref="86temp">temp</a> |= <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#219" title="0x0010" data-ref="_M/HUB_CHAR_NO_OCPM">HUB_CHAR_NO_OCPM</a>;</td></tr>
+<tr><th id="557">557</th><td>	<b>else</b> <b>if</b> (<a class="local col5 ref" href="#85rh" title='rh' data-ref="85rh">rh</a> &amp; <a class="macro" href="ohci.h.html#329" title="(1 &lt;&lt; 11)" data-ref="_M/RH_A_OCPM">RH_A_OCPM</a>)	<i>/* per-port overcurrent reporting? */</i></td></tr>
+<tr><th id="558">558</th><td>		<a class="local col6 ref" href="#86temp" title='temp' data-ref="86temp">temp</a> |= <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#218" title="0x0008" data-ref="_M/HUB_CHAR_INDV_PORT_OCPM">HUB_CHAR_INDV_PORT_OCPM</a>;</td></tr>
+<tr><th id="559">559</th><td>	<a class="local col4 ref" href="#84desc" title='desc' data-ref="84desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::wHubCharacteristics" title='usb_hub_descriptor::wHubCharacteristics' data-ref="usb_hub_descriptor::wHubCharacteristics">wHubCharacteristics</a> = <a class="macro" href="../../../include/linux/byteorder/generic.h.html#90" title="__cpu_to_le16" data-ref="_M/cpu_to_le16">cpu_to_le16</a>(<a class="local col6 ref" href="#86temp" title='temp' data-ref="86temp">temp</a>);</td></tr>
+<tr><th id="560">560</th><td></td></tr>
+<tr><th id="561">561</th><td>	<i>/* ports removable, and usb 1.0 legacy PortPwrCtrlMask */</i></td></tr>
+<tr><th id="562">562</th><td>	<a class="local col5 ref" href="#85rh" title='rh' data-ref="85rh">rh</a> = <a class="ref fn" href="ohci.h.html#roothub_b" title='roothub_b' data-ref="roothub_b">roothub_b</a> (<a class="local col3 ref" href="#83ohci" title='ohci' data-ref="83ohci">ohci</a>);</td></tr>
+<tr><th id="563">563</th><td>	<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#memset" title='memset' data-ref="memset">memset</a>(<a class="local col4 ref" href="#84desc" title='desc' data-ref="84desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::u" title='usb_hub_descriptor::u' data-ref="usb_hub_descriptor::u">u</a>.<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::(anonymous)::hs" title='usb_hub_descriptor::(anonymous union)::hs' data-ref="usb_hub_descriptor::(anonymous)::hs">hs</a>.<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::(anonymousunion)::(anonymous)::DeviceRemovable" title='usb_hub_descriptor::(anonymous union)::(anonymous struct)::DeviceRemovable' data-ref="usb_hub_descriptor::(anonymousunion)::(anonymous)::DeviceRemovable">DeviceRemovable</a>, <var>0xff</var>,</td></tr>
+<tr><th id="564">564</th><td>			<b>sizeof</b>(<a class="local col4 ref" href="#84desc" title='desc' data-ref="84desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::u" title='usb_hub_descriptor::u' data-ref="usb_hub_descriptor::u">u</a>.<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::(anonymous)::hs" title='usb_hub_descriptor::(anonymous union)::hs' data-ref="usb_hub_descriptor::(anonymous)::hs">hs</a>.<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::(anonymousunion)::(anonymous)::DeviceRemovable" title='usb_hub_descriptor::(anonymous union)::(anonymous struct)::DeviceRemovable' data-ref="usb_hub_descriptor::(anonymousunion)::(anonymous)::DeviceRemovable">DeviceRemovable</a>));</td></tr>
+<tr><th id="565">565</th><td>	<a class="local col4 ref" href="#84desc" title='desc' data-ref="84desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::u" title='usb_hub_descriptor::u' data-ref="usb_hub_descriptor::u">u</a>.<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::(anonymous)::hs" title='usb_hub_descriptor::(anonymous union)::hs' data-ref="usb_hub_descriptor::(anonymous)::hs">hs</a>.<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::(anonymousunion)::(anonymous)::DeviceRemovable" title='usb_hub_descriptor::(anonymous union)::(anonymous struct)::DeviceRemovable' data-ref="usb_hub_descriptor::(anonymousunion)::(anonymous)::DeviceRemovable">DeviceRemovable</a>[<var>0</var>] = <a class="local col5 ref" href="#85rh" title='rh' data-ref="85rh">rh</a> &amp; <a class="macro" href="ohci.h.html#321" title="0x0000ffff" data-ref="_M/RH_B_DR">RH_B_DR</a>;</td></tr>
+<tr><th id="566">566</th><td>	<b>if</b> (<a class="local col3 ref" href="#83ohci" title='ohci' data-ref="83ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::num_ports" title='ohci_hcd::num_ports' data-ref="ohci_hcd::num_ports">num_ports</a> &gt; <var>7</var>) {</td></tr>
+<tr><th id="567">567</th><td>		<a class="local col4 ref" href="#84desc" title='desc' data-ref="84desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::u" title='usb_hub_descriptor::u' data-ref="usb_hub_descriptor::u">u</a>.<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::(anonymous)::hs" title='usb_hub_descriptor::(anonymous union)::hs' data-ref="usb_hub_descriptor::(anonymous)::hs">hs</a>.<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::(anonymousunion)::(anonymous)::DeviceRemovable" title='usb_hub_descriptor::(anonymous union)::(anonymous struct)::DeviceRemovable' data-ref="usb_hub_descriptor::(anonymousunion)::(anonymous)::DeviceRemovable">DeviceRemovable</a>[<var>1</var>] = (<a class="local col5 ref" href="#85rh" title='rh' data-ref="85rh">rh</a> &amp; <a class="macro" href="ohci.h.html#321" title="0x0000ffff" data-ref="_M/RH_B_DR">RH_B_DR</a>) &gt;&gt; <var>8</var>;</td></tr>
+<tr><th id="568">568</th><td>		<a class="local col4 ref" href="#84desc" title='desc' data-ref="84desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::u" title='usb_hub_descriptor::u' data-ref="usb_hub_descriptor::u">u</a>.<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::(anonymous)::hs" title='usb_hub_descriptor::(anonymous union)::hs' data-ref="usb_hub_descriptor::(anonymous)::hs">hs</a>.<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::(anonymousunion)::(anonymous)::DeviceRemovable" title='usb_hub_descriptor::(anonymous union)::(anonymous struct)::DeviceRemovable' data-ref="usb_hub_descriptor::(anonymousunion)::(anonymous)::DeviceRemovable">DeviceRemovable</a>[<var>2</var>] = <var>0xff</var>;</td></tr>
+<tr><th id="569">569</th><td>	} <b>else</b></td></tr>
+<tr><th id="570">570</th><td>		<a class="local col4 ref" href="#84desc" title='desc' data-ref="84desc">desc</a>-&gt;<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::u" title='usb_hub_descriptor::u' data-ref="usb_hub_descriptor::u">u</a>.<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::(anonymous)::hs" title='usb_hub_descriptor::(anonymous union)::hs' data-ref="usb_hub_descriptor::(anonymous)::hs">hs</a>.<a class="ref field" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor::(anonymousunion)::(anonymous)::DeviceRemovable" title='usb_hub_descriptor::(anonymous union)::(anonymous struct)::DeviceRemovable' data-ref="usb_hub_descriptor::(anonymousunion)::(anonymous)::DeviceRemovable">DeviceRemovable</a>[<var>1</var>] = <var>0xff</var>;</td></tr>
+<tr><th id="571">571</th><td>}</td></tr>
+<tr><th id="572">572</th><td></td></tr>
+<tr><th id="573">573</th><td><i>/*-------------------------------------------------------------------------*/</i></td></tr>
+<tr><th id="574">574</th><td></td></tr>
+<tr><th id="575">575</th><td><u>#<span data-ppcond="575">ifdef</span>	<span class="macro" data-ref="_M/CONFIG_USB_OTG">CONFIG_USB_OTG</span></u></td></tr>
+<tr><th id="576">576</th><td></td></tr>
+<tr><th id="577">577</th><td><em>static</em> <em>int</em> ohci_start_port_reset (<b>struct</b> usb_hcd *hcd, <em>unsigned</em> port)</td></tr>
+<tr><th id="578">578</th><td>{</td></tr>
+<tr><th id="579">579</th><td>	<b>struct</b> ohci_hcd	*ohci = hcd_to_ohci (hcd);</td></tr>
+<tr><th id="580">580</th><td>	u32			status;</td></tr>
+<tr><th id="581">581</th><td></td></tr>
+<tr><th id="582">582</th><td>	<b>if</b> (!port)</td></tr>
+<tr><th id="583">583</th><td>		<b>return</b> -EINVAL;</td></tr>
+<tr><th id="584">584</th><td>	port--;</td></tr>
+<tr><th id="585">585</th><td></td></tr>
+<tr><th id="586">586</th><td>	<i>/* start port reset before HNP protocol times out */</i></td></tr>
+<tr><th id="587">587</th><td>	status = ohci_readl(ohci, &amp;ohci-&gt;regs-&gt;roothub.portstatus [port]);</td></tr>
+<tr><th id="588">588</th><td>	<b>if</b> (!(status &amp; RH_PS_CCS))</td></tr>
+<tr><th id="589">589</th><td>		<b>return</b> -ENODEV;</td></tr>
+<tr><th id="590">590</th><td></td></tr>
+<tr><th id="591">591</th><td>	<i>/* hub_wq will finish the reset later */</i></td></tr>
+<tr><th id="592">592</th><td>	ohci_writel(ohci, RH_PS_PRS, &amp;ohci-&gt;regs-&gt;roothub.portstatus [port]);</td></tr>
+<tr><th id="593">593</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="594">594</th><td>}</td></tr>
+<tr><th id="595">595</th><td></td></tr>
+<tr><th id="596">596</th><td><u>#<span data-ppcond="575">else</span></u></td></tr>
+<tr><th id="597">597</th><td></td></tr>
+<tr><th id="598">598</th><td><u>#define	<dfn class="macro" id="_M/ohci_start_port_reset" data-ref="_M/ohci_start_port_reset">ohci_start_port_reset</dfn>		NULL</u></td></tr>
+<tr><th id="599">599</th><td></td></tr>
+<tr><th id="600">600</th><td><u>#<span data-ppcond="575">endif</span></u></td></tr>
+<tr><th id="601">601</th><td></td></tr>
+<tr><th id="602">602</th><td><i>/*-------------------------------------------------------------------------*/</i></td></tr>
+<tr><th id="603">603</th><td></td></tr>
+<tr><th id="604">604</th><td></td></tr>
+<tr><th id="605">605</th><td><i>/* See usb 7.1.7.5:  root hubs must issue at least 50 msec reset signaling,</i></td></tr>
+<tr><th id="606">606</th><td><i> * not necessarily continuous ... to guard against resume signaling.</i></td></tr>
+<tr><th id="607">607</th><td><i> */</i></td></tr>
+<tr><th id="608">608</th><td><u>#define	<dfn class="macro" id="_M/PORT_RESET_MSEC" data-ref="_M/PORT_RESET_MSEC">PORT_RESET_MSEC</dfn>		50</u></td></tr>
+<tr><th id="609">609</th><td></td></tr>
+<tr><th id="610">610</th><td><i>/* this timer value might be vendor-specific ... */</i></td></tr>
+<tr><th id="611">611</th><td><u>#define	<dfn class="macro" id="_M/PORT_RESET_HW_MSEC" data-ref="_M/PORT_RESET_HW_MSEC">PORT_RESET_HW_MSEC</dfn>	10</u></td></tr>
+<tr><th id="612">612</th><td></td></tr>
+<tr><th id="613">613</th><td><i>/* wrap-aware logic morphed from &lt;linux/jiffies.h&gt; */</i></td></tr>
+<tr><th id="614">614</th><td><u>#define <dfn class="macro" id="_M/tick_before" data-ref="_M/tick_before">tick_before</dfn>(t1,t2) ((<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#s16" title='s16' data-type='__s16' data-ref="s16">s16</a>)(((<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#s16" title='s16' data-type='__s16' data-ref="s16">s16</a>)(t1))-((<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#s16" title='s16' data-type='__s16' data-ref="s16">s16</a>)(t2))) &lt; 0)</u></td></tr>
+<tr><th id="615">615</th><td></td></tr>
+<tr><th id="616">616</th><td><i>/* called from some task, normally hub_wq */</i></td></tr>
+<tr><th id="617">617</th><td><em>static</em> <a class="macro" href="../../../include/linux/compiler-gcc.h.html#95" title="inline __attribute__((always_inline, unused)) __attribute__((no_instrument_function))" data-ref="_M/inline"><b>inline</b></a> <em>int</em> <dfn class="decl def fn" id="root_port_reset" title='root_port_reset' data-ref="root_port_reset">root_port_reset</dfn> (<b>struct</b> <a class="type" href="ohci.h.html#ohci_hcd" title='ohci_hcd' data-ref="ohci_hcd">ohci_hcd</a> *<dfn class="local col7 decl" id="87ohci" title='ohci' data-type='struct ohci_hcd *' data-ref="87ohci">ohci</dfn>, <em>unsigned</em> <dfn class="local col8 decl" id="88port" title='port' data-type='unsigned int' data-ref="88port">port</dfn>)</td></tr>
+<tr><th id="618">618</th><td>{</td></tr>
+<tr><th id="619">619</th><td>	<a class="typedef" href="ohci.h.html#__hc32" title='__hc32' data-type='__u32' data-ref="__hc32">__hc32</a> <a class="macro" href="../../../include/linux/compiler_types.h.html#35" title="" data-ref="_M/__iomem">__iomem</a> *<dfn class="local col9 decl" id="89portstat" title='portstat' data-type='__hc32 *' data-ref="89portstat">portstat</dfn> = &amp;<a class="local col7 ref" href="#87ohci" title='ohci' data-ref="87ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::regs" title='ohci_hcd::regs' data-ref="ohci_hcd::regs">regs</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_regs::roothub" title='ohci_regs::roothub' data-ref="ohci_regs::roothub">roothub</a>.<a class="ref field" href="ohci.h.html#ohci_roothub_regs::portstatus" title='ohci_roothub_regs::portstatus' data-ref="ohci_roothub_regs::portstatus">portstatus</a> [<a class="local col8 ref" href="#88port" title='port' data-ref="88port">port</a>];</td></tr>
+<tr><th id="620">620</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a>	<dfn class="local col0 decl" id="90temp" title='temp' data-type='u32' data-ref="90temp">temp</dfn> = <var>0</var>;</td></tr>
+<tr><th id="621">621</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a>	<dfn class="local col1 decl" id="91now" title='now' data-type='u16' data-ref="91now">now</dfn> = <a class="macro" href="ohci.h.html#583" title="_ohci_readl(ohci,&amp;ohci-&gt;regs-&gt;fmnumber)" data-ref="_M/ohci_readl">ohci_readl</a>(<a class="local col7 ref" href="#87ohci" title='ohci' data-ref="87ohci">ohci</a>, &amp;<a class="local col7 ref" href="#87ohci" title='ohci' data-ref="87ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::regs" title='ohci_hcd::regs' data-ref="ohci_hcd::regs">regs</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_regs::fmnumber" title='ohci_regs::fmnumber' data-ref="ohci_regs::fmnumber">fmnumber</a>);</td></tr>
+<tr><th id="622">622</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a>	<dfn class="local col2 decl" id="92reset_done" title='reset_done' data-type='u16' data-ref="92reset_done">reset_done</dfn> = <a class="local col1 ref" href="#91now" title='now' data-ref="91now">now</a> + <a class="macro" href="#608" title="50" data-ref="_M/PORT_RESET_MSEC">PORT_RESET_MSEC</a>;</td></tr>
+<tr><th id="623">623</th><td>	<em>int</em>	<dfn class="local col3 decl" id="93limit_1" title='limit_1' data-type='int' data-ref="93limit_1">limit_1</dfn> = <a class="macro" href="../../../include/linux/kernel.h.html#100" title="__KERNEL_DIV_ROUND_UP" data-ref="_M/DIV_ROUND_UP">DIV_ROUND_UP</a>(<a class="macro" href="#608" title="50" data-ref="_M/PORT_RESET_MSEC">PORT_RESET_MSEC</a>, <a class="macro" href="#611" title="10" data-ref="_M/PORT_RESET_HW_MSEC">PORT_RESET_HW_MSEC</a>);</td></tr>
+<tr><th id="624">624</th><td></td></tr>
+<tr><th id="625">625</th><td>	<i>/* build a "continuous enough" reset signal, with up to</i></td></tr>
+<tr><th id="626">626</th><td><i>	 * 3msec gap between pulses.  scheduler HZ==100 must work;</i></td></tr>
+<tr><th id="627">627</th><td><i>	 * this might need to be deadline-scheduled.</i></td></tr>
+<tr><th id="628">628</th><td><i>	 */</i></td></tr>
+<tr><th id="629">629</th><td>	<b>do</b> {</td></tr>
+<tr><th id="630">630</th><td>		<em>int</em> <dfn class="local col4 decl" id="94limit_2" title='limit_2' data-type='int' data-ref="94limit_2">limit_2</dfn>;</td></tr>
+<tr><th id="631">631</th><td></td></tr>
+<tr><th id="632">632</th><td>		<i>/* spin until any current reset finishes */</i></td></tr>
+<tr><th id="633">633</th><td>		<a class="local col4 ref" href="#94limit_2" title='limit_2' data-ref="94limit_2">limit_2</a> = <a class="macro" href="#611" title="10" data-ref="_M/PORT_RESET_HW_MSEC">PORT_RESET_HW_MSEC</a> * <var>2</var>;</td></tr>
+<tr><th id="634">634</th><td>		<b>while</b> (--<a class="local col4 ref" href="#94limit_2" title='limit_2' data-ref="94limit_2">limit_2</a> &gt;= <var>0</var>) {</td></tr>
+<tr><th id="635">635</th><td>			<a class="local col0 ref" href="#90temp" title='temp' data-ref="90temp">temp</a> = <a class="macro" href="ohci.h.html#583" title="_ohci_readl(ohci,portstat)" data-ref="_M/ohci_readl">ohci_readl</a> (<a class="local col7 ref" href="#87ohci" title='ohci' data-ref="87ohci">ohci</a>, <a class="local col9 ref" href="#89portstat" title='portstat' data-ref="89portstat">portstat</a>);</td></tr>
+<tr><th id="636">636</th><td>			<i>/* handle e.g. CardBus eject */</i></td></tr>
+<tr><th id="637">637</th><td>			<b>if</b> (<a class="local col0 ref" href="#90temp" title='temp' data-ref="90temp">temp</a> == ~(<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a>)<var>0</var>)</td></tr>
+<tr><th id="638">638</th><td>				<b>return</b> -<a class="macro" href="../../../include/uapi/asm-generic/errno.h.html#91" title="108" data-ref="_M/ESHUTDOWN">ESHUTDOWN</a>;</td></tr>
+<tr><th id="639">639</th><td>			<b>if</b> (!(<a class="local col0 ref" href="#90temp" title='temp' data-ref="90temp">temp</a> &amp; <a class="macro" href="ohci.h.html#303" title="0x00000010" data-ref="_M/RH_PS_PRS">RH_PS_PRS</a>))</td></tr>
+<tr><th id="640">640</th><td>				<b>break</b>;</td></tr>
+<tr><th id="641">641</th><td>			<a class="macro" href="../../../include/asm-generic/delay.h.html#20" title="({ if (__builtin_constant_p(500)) { if ((500) / 20000 &gt;= 1) __bad_udelay(); else __const_udelay((500) * 0x10c7ul); } else { __udelay(500); } })" data-ref="_M/udelay">udelay</a> (<var>500</var>);</td></tr>
+<tr><th id="642">642</th><td>		}</td></tr>
+<tr><th id="643">643</th><td></td></tr>
+<tr><th id="644">644</th><td>		<i>/* timeout (a hardware error) has been observed when</i></td></tr>
+<tr><th id="645">645</th><td><i>		 * EHCI sets CF while this driver is resetting a port;</i></td></tr>
+<tr><th id="646">646</th><td><i>		 * presumably other disconnect paths might do it too.</i></td></tr>
+<tr><th id="647">647</th><td><i>		 */</i></td></tr>
+<tr><th id="648">648</th><td>		<b>if</b> (<a class="local col4 ref" href="#94limit_2" title='limit_2' data-ref="94limit_2">limit_2</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="649">649</th><td>			<a class="macro" href="ohci.h.html#488" title="({ if (0) dev_printk(&quot;\001&quot; &quot;7&quot;, ohci_to_hcd(ohci)-&gt;self.controller, &quot;port[%d] reset timeout, stat %08x\n&quot;, port, temp); })" data-ref="_M/ohci_dbg">ohci_dbg</a>(<a class="local col7 ref" href="#87ohci" title='ohci' data-ref="87ohci">ohci</a>,</td></tr>
+<tr><th id="650">650</th><td>				<q>"port[%d] reset timeout, stat %08x\n"</q>,</td></tr>
+<tr><th id="651">651</th><td>				<a class="local col8 ref" href="#88port" title='port' data-ref="88port">port</a>, <a class="local col0 ref" href="#90temp" title='temp' data-ref="90temp">temp</a>);</td></tr>
+<tr><th id="652">652</th><td>			<b>break</b>;</td></tr>
+<tr><th id="653">653</th><td>		}</td></tr>
+<tr><th id="654">654</th><td></td></tr>
+<tr><th id="655">655</th><td>		<b>if</b> (!(<a class="local col0 ref" href="#90temp" title='temp' data-ref="90temp">temp</a> &amp; <a class="macro" href="ohci.h.html#299" title="0x00000001" data-ref="_M/RH_PS_CCS">RH_PS_CCS</a>))</td></tr>
+<tr><th id="656">656</th><td>			<b>break</b>;</td></tr>
+<tr><th id="657">657</th><td>		<b>if</b> (<a class="local col0 ref" href="#90temp" title='temp' data-ref="90temp">temp</a> &amp; <a class="macro" href="ohci.h.html#310" title="0x00100000" data-ref="_M/RH_PS_PRSC">RH_PS_PRSC</a>)</td></tr>
+<tr><th id="658">658</th><td>			<a class="macro" href="ohci.h.html#584" title="_ohci_writel(ohci,0x00100000,portstat)" data-ref="_M/ohci_writel">ohci_writel</a> (<a class="local col7 ref" href="#87ohci" title='ohci' data-ref="87ohci">ohci</a>, <a class="macro" href="ohci.h.html#310" title="0x00100000" data-ref="_M/RH_PS_PRSC">RH_PS_PRSC</a>, <a class="local col9 ref" href="#89portstat" title='portstat' data-ref="89portstat">portstat</a>);</td></tr>
+<tr><th id="659">659</th><td></td></tr>
+<tr><th id="660">660</th><td>		<i>/* start the next reset, sleep till it's probably done */</i></td></tr>
+<tr><th id="661">661</th><td>		<a class="macro" href="ohci.h.html#584" title="_ohci_writel(ohci,0x00000010,portstat)" data-ref="_M/ohci_writel">ohci_writel</a> (<a class="local col7 ref" href="#87ohci" title='ohci' data-ref="87ohci">ohci</a>, <a class="macro" href="ohci.h.html#303" title="0x00000010" data-ref="_M/RH_PS_PRS">RH_PS_PRS</a>, <a class="local col9 ref" href="#89portstat" title='portstat' data-ref="89portstat">portstat</a>);</td></tr>
+<tr><th id="662">662</th><td>		<a class="ref fn" href="../../../include/linux/delay.h.html#msleep" title='msleep' data-ref="msleep">msleep</a>(<a class="macro" href="#611" title="10" data-ref="_M/PORT_RESET_HW_MSEC">PORT_RESET_HW_MSEC</a>);</td></tr>
+<tr><th id="663">663</th><td>		<a class="local col1 ref" href="#91now" title='now' data-ref="91now">now</a> = <a class="macro" href="ohci.h.html#583" title="_ohci_readl(ohci,&amp;ohci-&gt;regs-&gt;fmnumber)" data-ref="_M/ohci_readl">ohci_readl</a>(<a class="local col7 ref" href="#87ohci" title='ohci' data-ref="87ohci">ohci</a>, &amp;<a class="local col7 ref" href="#87ohci" title='ohci' data-ref="87ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::regs" title='ohci_hcd::regs' data-ref="ohci_hcd::regs">regs</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_regs::fmnumber" title='ohci_regs::fmnumber' data-ref="ohci_regs::fmnumber">fmnumber</a>);</td></tr>
+<tr><th id="664">664</th><td>	} <b>while</b> (<a class="macro" href="#614" title="((s16)(((s16)(now))-((s16)(reset_done))) &lt; 0)" data-ref="_M/tick_before">tick_before</a>(<a class="local col1 ref" href="#91now" title='now' data-ref="91now">now</a>, <a class="local col2 ref" href="#92reset_done" title='reset_done' data-ref="92reset_done">reset_done</a>) &amp;&amp; --<a class="local col3 ref" href="#93limit_1" title='limit_1' data-ref="93limit_1">limit_1</a> &gt;= <var>0</var>);</td></tr>
+<tr><th id="665">665</th><td></td></tr>
+<tr><th id="666">666</th><td>	<i>/* caller synchronizes using PRSC ... and handles PRS</i></td></tr>
+<tr><th id="667">667</th><td><i>	 * still being set when this returns.</i></td></tr>
+<tr><th id="668">668</th><td><i>	 */</i></td></tr>
+<tr><th id="669">669</th><td></td></tr>
+<tr><th id="670">670</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="671">671</th><td>}</td></tr>
+<tr><th id="672">672</th><td></td></tr>
+<tr><th id="673">673</th><td><em>int</em> <dfn class="decl def fn" id="ohci_hub_control" title='ohci_hub_control' data-ref="ohci_hub_control">ohci_hub_control</dfn>(</td></tr>
+<tr><th id="674">674</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/usb/hcd.h.html#usb_hcd" title='usb_hcd' data-ref="usb_hcd">usb_hcd</a>	*<dfn class="local col5 decl" id="95hcd" title='hcd' data-type='struct usb_hcd *' data-ref="95hcd">hcd</dfn>,</td></tr>
+<tr><th id="675">675</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a>		<dfn class="local col6 decl" id="96typeReq" title='typeReq' data-type='u16' data-ref="96typeReq">typeReq</dfn>,</td></tr>
+<tr><th id="676">676</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a>		<dfn class="local col7 decl" id="97wValue" title='wValue' data-type='u16' data-ref="97wValue">wValue</dfn>,</td></tr>
+<tr><th id="677">677</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a>		<dfn class="local col8 decl" id="98wIndex" title='wIndex' data-type='u16' data-ref="98wIndex">wIndex</dfn>,</td></tr>
+<tr><th id="678">678</th><td>	<em>char</em>		*<dfn class="local col9 decl" id="99buf" title='buf' data-type='char *' data-ref="99buf">buf</dfn>,</td></tr>
+<tr><th id="679">679</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a>		<dfn class="local col0 decl" id="100wLength" title='wLength' data-type='u16' data-ref="100wLength">wLength</dfn></td></tr>
+<tr><th id="680">680</th><td>) {</td></tr>
+<tr><th id="681">681</th><td>	<b>struct</b> <a class="type" href="ohci.h.html#ohci_hcd" title='ohci_hcd' data-ref="ohci_hcd">ohci_hcd</a>	*<dfn class="local col1 decl" id="101ohci" title='ohci' data-type='struct ohci_hcd *' data-ref="101ohci">ohci</dfn> = <a class="ref fn" href="ohci.h.html#hcd_to_ohci" title='hcd_to_ohci' data-ref="hcd_to_ohci">hcd_to_ohci</a> (<a class="local col5 ref" href="#95hcd" title='hcd' data-ref="95hcd">hcd</a>);</td></tr>
+<tr><th id="682">682</th><td>	<em>int</em>		<dfn class="local col2 decl" id="102ports" title='ports' data-type='int' data-ref="102ports">ports</dfn> = <a class="local col1 ref" href="#101ohci" title='ohci' data-ref="101ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::num_ports" title='ohci_hcd::num_ports' data-ref="ohci_hcd::num_ports">num_ports</a>;</td></tr>
+<tr><th id="683">683</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a>		<dfn class="local col3 decl" id="103temp" title='temp' data-type='u32' data-ref="103temp">temp</dfn>;</td></tr>
+<tr><th id="684">684</th><td>	<em>int</em>		<dfn class="local col4 decl" id="104retval" title='retval' data-type='int' data-ref="104retval">retval</dfn> = <var>0</var>;</td></tr>
+<tr><th id="685">685</th><td></td></tr>
+<tr><th id="686">686</th><td>	<b>if</b> (<a class="macro" href="../../../include/linux/compiler.h.html#77" title="__builtin_expect(!!(!((hcd)-&gt;flags &amp; (1U &lt;&lt; 0))), 0)" data-ref="_M/unlikely">unlikely</a>(!<a class="macro" href="../../../include/linux/usb/hcd.h.html#125" title="((hcd)-&gt;flags &amp; (1U &lt;&lt; 0))" data-ref="_M/HCD_HW_ACCESSIBLE">HCD_HW_ACCESSIBLE</a>(<a class="local col5 ref" href="#95hcd" title='hcd' data-ref="95hcd">hcd</a>)))</td></tr>
+<tr><th id="687">687</th><td>		<b>return</b> -<a class="macro" href="../../../include/uapi/asm-generic/errno.h.html#91" title="108" data-ref="_M/ESHUTDOWN">ESHUTDOWN</a>;</td></tr>
+<tr><th id="688">688</th><td></td></tr>
+<tr><th id="689">689</th><td>	<b>switch</b> (<a class="local col6 ref" href="#96typeReq" title='typeReq' data-ref="96typeReq">typeReq</a>) {</td></tr>
+<tr><th id="690">690</th><td>	<b>case</b> <a class="macro" href="../../../include/linux/usb/hcd.h.html#582" title="((((0) | (((0x01 &lt;&lt; 5) | 0x00))) &lt;&lt; 8) | (0x01))" data-ref="_M/ClearHubFeature">ClearHubFeature</a>:</td></tr>
+<tr><th id="691">691</th><td>		<b>switch</b> (<a class="local col7 ref" href="#97wValue" title='wValue' data-ref="97wValue">wValue</a>) {</td></tr>
+<tr><th id="692">692</th><td>		<b>case</b> <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#65" title="1" data-ref="_M/C_HUB_OVER_CURRENT">C_HUB_OVER_CURRENT</a>:</td></tr>
+<tr><th id="693">693</th><td>			<a class="macro" href="ohci.h.html#584" title="_ohci_writel(ohci,0x00020000,&amp;ohci-&gt;regs-&gt;roothub.status)" data-ref="_M/ohci_writel">ohci_writel</a> (<a class="local col1 ref" href="#101ohci" title='ohci' data-ref="101ohci">ohci</a>, <a class="macro" href="ohci.h.html#317" title="0x00020000" data-ref="_M/RH_HS_OCIC">RH_HS_OCIC</a>,</td></tr>
+<tr><th id="694">694</th><td>					&amp;<a class="local col1 ref" href="#101ohci" title='ohci' data-ref="101ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::regs" title='ohci_hcd::regs' data-ref="ohci_hcd::regs">regs</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_regs::roothub" title='ohci_regs::roothub' data-ref="ohci_regs::roothub">roothub</a>.<a class="ref field" href="ohci.h.html#ohci_roothub_regs::status" title='ohci_roothub_regs::status' data-ref="ohci_roothub_regs::status">status</a>);</td></tr>
+<tr><th id="695">695</th><td>		<b>case</b> <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#64" title="0" data-ref="_M/C_HUB_LOCAL_POWER">C_HUB_LOCAL_POWER</a>:</td></tr>
+<tr><th id="696">696</th><td>			<b>break</b>;</td></tr>
+<tr><th id="697">697</th><td>		<b>default</b>:</td></tr>
+<tr><th id="698">698</th><td>			<b>goto</b> <a class="lbl" href="#105error" data-ref="105error">error</a>;</td></tr>
+<tr><th id="699">699</th><td>		}</td></tr>
+<tr><th id="700">700</th><td>		<b>break</b>;</td></tr>
+<tr><th id="701">701</th><td>	<b>case</b> <a class="macro" href="../../../include/linux/usb/hcd.h.html#583" title="((((0) | (((0x01 &lt;&lt; 5) | 0x03))) &lt;&lt; 8) | (0x01))" data-ref="_M/ClearPortFeature">ClearPortFeature</a>:</td></tr>
+<tr><th id="702">702</th><td>		<b>if</b> (!<a class="local col8 ref" href="#98wIndex" title='wIndex' data-ref="98wIndex">wIndex</a> || <a class="local col8 ref" href="#98wIndex" title='wIndex' data-ref="98wIndex">wIndex</a> &gt; <a class="local col2 ref" href="#102ports" title='ports' data-ref="102ports">ports</a>)</td></tr>
+<tr><th id="703">703</th><td>			<b>goto</b> <a class="lbl" href="#105error" data-ref="105error">error</a>;</td></tr>
+<tr><th id="704">704</th><td>		<a class="local col8 ref" href="#98wIndex" title='wIndex' data-ref="98wIndex">wIndex</a>--;</td></tr>
+<tr><th id="705">705</th><td></td></tr>
+<tr><th id="706">706</th><td>		<b>switch</b> (<a class="local col7 ref" href="#97wValue" title='wValue' data-ref="97wValue">wValue</a>) {</td></tr>
+<tr><th id="707">707</th><td>		<b>case</b> <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#72" title="1" data-ref="_M/USB_PORT_FEAT_ENABLE">USB_PORT_FEAT_ENABLE</a>:</td></tr>
+<tr><th id="708">708</th><td>			<a class="local col3 ref" href="#103temp" title='temp' data-ref="103temp">temp</a> = <a class="macro" href="ohci.h.html#299" title="0x00000001" data-ref="_M/RH_PS_CCS">RH_PS_CCS</a>;</td></tr>
+<tr><th id="709">709</th><td>			<b>break</b>;</td></tr>
+<tr><th id="710">710</th><td>		<b>case</b> <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#80" title="17" data-ref="_M/USB_PORT_FEAT_C_ENABLE">USB_PORT_FEAT_C_ENABLE</a>:</td></tr>
+<tr><th id="711">711</th><td>			<a class="local col3 ref" href="#103temp" title='temp' data-ref="103temp">temp</a> = <a class="macro" href="ohci.h.html#307" title="0x00020000" data-ref="_M/RH_PS_PESC">RH_PS_PESC</a>;</td></tr>
+<tr><th id="712">712</th><td>			<b>break</b>;</td></tr>
+<tr><th id="713">713</th><td>		<b>case</b> <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#73" title="2" data-ref="_M/USB_PORT_FEAT_SUSPEND">USB_PORT_FEAT_SUSPEND</a>:</td></tr>
+<tr><th id="714">714</th><td>			<a class="local col3 ref" href="#103temp" title='temp' data-ref="103temp">temp</a> = <a class="macro" href="ohci.h.html#302" title="0x00000008" data-ref="_M/RH_PS_POCI">RH_PS_POCI</a>;</td></tr>
+<tr><th id="715">715</th><td>			<b>break</b>;</td></tr>
+<tr><th id="716">716</th><td>		<b>case</b> <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#81" title="18" data-ref="_M/USB_PORT_FEAT_C_SUSPEND">USB_PORT_FEAT_C_SUSPEND</a>:</td></tr>
+<tr><th id="717">717</th><td>			<a class="local col3 ref" href="#103temp" title='temp' data-ref="103temp">temp</a> = <a class="macro" href="ohci.h.html#308" title="0x00040000" data-ref="_M/RH_PS_PSSC">RH_PS_PSSC</a>;</td></tr>
+<tr><th id="718">718</th><td>			<b>break</b>;</td></tr>
+<tr><th id="719">719</th><td>		<b>case</b> <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#77" title="8" data-ref="_M/USB_PORT_FEAT_POWER">USB_PORT_FEAT_POWER</a>:</td></tr>
+<tr><th id="720">720</th><td>			<a class="local col3 ref" href="#103temp" title='temp' data-ref="103temp">temp</a> = <a class="macro" href="ohci.h.html#305" title="0x00000200" data-ref="_M/RH_PS_LSDA">RH_PS_LSDA</a>;</td></tr>
+<tr><th id="721">721</th><td>			<b>break</b>;</td></tr>
+<tr><th id="722">722</th><td>		<b>case</b> <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#79" title="16" data-ref="_M/USB_PORT_FEAT_C_CONNECTION">USB_PORT_FEAT_C_CONNECTION</a>:</td></tr>
+<tr><th id="723">723</th><td>			<a class="local col3 ref" href="#103temp" title='temp' data-ref="103temp">temp</a> = <a class="macro" href="ohci.h.html#306" title="0x00010000" data-ref="_M/RH_PS_CSC">RH_PS_CSC</a>;</td></tr>
+<tr><th id="724">724</th><td>			<b>break</b>;</td></tr>
+<tr><th id="725">725</th><td>		<b>case</b> <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#82" title="19" data-ref="_M/USB_PORT_FEAT_C_OVER_CURRENT">USB_PORT_FEAT_C_OVER_CURRENT</a>:</td></tr>
+<tr><th id="726">726</th><td>			<a class="local col3 ref" href="#103temp" title='temp' data-ref="103temp">temp</a> = <a class="macro" href="ohci.h.html#309" title="0x00080000" data-ref="_M/RH_PS_OCIC">RH_PS_OCIC</a>;</td></tr>
+<tr><th id="727">727</th><td>			<b>break</b>;</td></tr>
+<tr><th id="728">728</th><td>		<b>case</b> <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#83" title="20" data-ref="_M/USB_PORT_FEAT_C_RESET">USB_PORT_FEAT_C_RESET</a>:</td></tr>
+<tr><th id="729">729</th><td>			<a class="local col3 ref" href="#103temp" title='temp' data-ref="103temp">temp</a> = <a class="macro" href="ohci.h.html#310" title="0x00100000" data-ref="_M/RH_PS_PRSC">RH_PS_PRSC</a>;</td></tr>
+<tr><th id="730">730</th><td>			<b>break</b>;</td></tr>
+<tr><th id="731">731</th><td>		<b>default</b>:</td></tr>
+<tr><th id="732">732</th><td>			<b>goto</b> <a class="lbl" href="#105error" data-ref="105error">error</a>;</td></tr>
+<tr><th id="733">733</th><td>		}</td></tr>
+<tr><th id="734">734</th><td>		<a class="macro" href="ohci.h.html#584" title="_ohci_writel(ohci,temp,&amp;ohci-&gt;regs-&gt;roothub.portstatus [wIndex])" data-ref="_M/ohci_writel">ohci_writel</a> (<a class="local col1 ref" href="#101ohci" title='ohci' data-ref="101ohci">ohci</a>, <a class="local col3 ref" href="#103temp" title='temp' data-ref="103temp">temp</a>,</td></tr>
+<tr><th id="735">735</th><td>				&amp;<a class="local col1 ref" href="#101ohci" title='ohci' data-ref="101ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::regs" title='ohci_hcd::regs' data-ref="ohci_hcd::regs">regs</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_regs::roothub" title='ohci_regs::roothub' data-ref="ohci_regs::roothub">roothub</a>.<a class="ref field" href="ohci.h.html#ohci_roothub_regs::portstatus" title='ohci_roothub_regs::portstatus' data-ref="ohci_roothub_regs::portstatus">portstatus</a> [<a class="local col8 ref" href="#98wIndex" title='wIndex' data-ref="98wIndex">wIndex</a>]);</td></tr>
+<tr><th id="736">736</th><td>		<i>// ohci_readl (ohci, &amp;ohci-&gt;regs-&gt;roothub.portstatus [wIndex]);</i></td></tr>
+<tr><th id="737">737</th><td>		<b>break</b>;</td></tr>
+<tr><th id="738">738</th><td>	<b>case</b> <a class="macro" href="../../../include/linux/usb/hcd.h.html#584" title="((((0x80) | (((0x01 &lt;&lt; 5) | 0x00))) &lt;&lt; 8) | (0x06))" data-ref="_M/GetHubDescriptor">GetHubDescriptor</a>:</td></tr>
+<tr><th id="739">739</th><td>		<a class="ref fn" href="#ohci_hub_descriptor" title='ohci_hub_descriptor' data-ref="ohci_hub_descriptor">ohci_hub_descriptor</a> (<a class="local col1 ref" href="#101ohci" title='ohci' data-ref="101ohci">ohci</a>, (<b>struct</b> <a class="type" href="../../../include/uapi/linux/usb/ch11.h.html#usb_hub_descriptor" title='usb_hub_descriptor' data-ref="usb_hub_descriptor">usb_hub_descriptor</a> *) <a class="local col9 ref" href="#99buf" title='buf' data-ref="99buf">buf</a>);</td></tr>
+<tr><th id="740">740</th><td>		<b>break</b>;</td></tr>
+<tr><th id="741">741</th><td>	<b>case</b> <a class="macro" href="../../../include/linux/usb/hcd.h.html#585" title="((((0x80) | (((0x01 &lt;&lt; 5) | 0x00))) &lt;&lt; 8) | (0x00))" data-ref="_M/GetHubStatus">GetHubStatus</a>:</td></tr>
+<tr><th id="742">742</th><td>		<a class="local col3 ref" href="#103temp" title='temp' data-ref="103temp">temp</a> = <a class="ref fn" href="ohci.h.html#roothub_status" title='roothub_status' data-ref="roothub_status">roothub_status</a> (<a class="local col1 ref" href="#101ohci" title='ohci' data-ref="101ohci">ohci</a>) &amp; ~(<a class="macro" href="ohci.h.html#318" title="0x80000000" data-ref="_M/RH_HS_CRWE">RH_HS_CRWE</a> | <a class="macro" href="ohci.h.html#315" title="0x00008000" data-ref="_M/RH_HS_DRWE">RH_HS_DRWE</a>);</td></tr>
+<tr><th id="743">743</th><td>		<a class="ref fn" href="../../../include/linux/unaligned/access_ok.h.html#put_unaligned_le32" title='put_unaligned_le32' data-ref="put_unaligned_le32">put_unaligned_le32</a>(<a class="local col3 ref" href="#103temp" title='temp' data-ref="103temp">temp</a>, <a class="local col9 ref" href="#99buf" title='buf' data-ref="99buf">buf</a>);</td></tr>
+<tr><th id="744">744</th><td>		<b>break</b>;</td></tr>
+<tr><th id="745">745</th><td>	<b>case</b> <a class="macro" href="../../../include/linux/usb/hcd.h.html#586" title="((((0x80) | (((0x01 &lt;&lt; 5) | 0x03))) &lt;&lt; 8) | (0x00))" data-ref="_M/GetPortStatus">GetPortStatus</a>:</td></tr>
+<tr><th id="746">746</th><td>		<b>if</b> (!<a class="local col8 ref" href="#98wIndex" title='wIndex' data-ref="98wIndex">wIndex</a> || <a class="local col8 ref" href="#98wIndex" title='wIndex' data-ref="98wIndex">wIndex</a> &gt; <a class="local col2 ref" href="#102ports" title='ports' data-ref="102ports">ports</a>)</td></tr>
+<tr><th id="747">747</th><td>			<b>goto</b> <a class="lbl" href="#105error" data-ref="105error">error</a>;</td></tr>
+<tr><th id="748">748</th><td>		<a class="local col8 ref" href="#98wIndex" title='wIndex' data-ref="98wIndex">wIndex</a>--;</td></tr>
+<tr><th id="749">749</th><td>		<a class="local col3 ref" href="#103temp" title='temp' data-ref="103temp">temp</a> = <a class="ref fn" href="ohci.h.html#roothub_portstatus" title='roothub_portstatus' data-ref="roothub_portstatus">roothub_portstatus</a> (<a class="local col1 ref" href="#101ohci" title='ohci' data-ref="101ohci">ohci</a>, <a class="local col8 ref" href="#98wIndex" title='wIndex' data-ref="98wIndex">wIndex</a>);</td></tr>
+<tr><th id="750">750</th><td>		<a class="ref fn" href="../../../include/linux/unaligned/access_ok.h.html#put_unaligned_le32" title='put_unaligned_le32' data-ref="put_unaligned_le32">put_unaligned_le32</a>(<a class="local col3 ref" href="#103temp" title='temp' data-ref="103temp">temp</a>, <a class="local col9 ref" href="#99buf" title='buf' data-ref="99buf">buf</a>);</td></tr>
+<tr><th id="751">751</th><td></td></tr>
+<tr><th id="752">752</th><td>		<b>if</b> (*(<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a>*)(<a class="local col9 ref" href="#99buf" title='buf' data-ref="99buf">buf</a>+<var>2</var>))	<i>/* only if wPortChange is interesting */</i></td></tr>
+<tr><th id="753">753</th><td>			<a class="macro" href="#17" title="({ if (0) dev_printk(&quot;\001&quot; &quot;7&quot;, ohci_to_hcd(ohci)-&gt;self.controller, &quot;%s roothub.portstatus [%d] &quot; &quot;= 0x%08x%s%s%s%s%s%s%s%s%s%s%s%s\n&quot;, &quot;GetStatus&quot;, wIndex, temp, (temp &amp; 0x00100000) ? &quot; PRSC&quot; : &quot;&quot;, (temp &amp; 0x00080000) ? &quot; OCIC&quot; : &quot;&quot;, (temp &amp; 0x00040000) ? &quot; PSSC&quot; : &quot;&quot;, (temp &amp; 0x00020000) ? &quot; PESC&quot; : &quot;&quot;, (temp &amp; 0x00010000) ? &quot; CSC&quot; : &quot;&quot;, (temp &amp; 0x00000200) ? &quot; LSDA&quot; : &quot;&quot;, (temp &amp; 0x00000100) ? &quot; PPS&quot; : &quot;&quot;, (temp &amp; 0x00000010) ? &quot; PRS&quot; : &quot;&quot;, (temp &amp; 0x00000008) ? &quot; POCI&quot; : &quot;&quot;, (temp &amp; 0x00000004) ? &quot; PSS&quot; : &quot;&quot;, (temp &amp; 0x00000002) ? &quot; PES&quot; : &quot;&quot;, (temp &amp; 0x00000001) ? &quot; CCS&quot; : &quot;&quot;); });" data-ref="_M/dbg_port">dbg_port</a>(<a class="local col1 ref" href="#101ohci" title='ohci' data-ref="101ohci">ohci</a>, <q>"GetStatus"</q>, <a class="local col8 ref" href="#98wIndex" title='wIndex' data-ref="98wIndex">wIndex</a>, <a class="local col3 ref" href="#103temp" title='temp' data-ref="103temp">temp</a>);</td></tr>
+<tr><th id="754">754</th><td>		<b>break</b>;</td></tr>
+<tr><th id="755">755</th><td>	<b>case</b> <a class="macro" href="../../../include/linux/usb/hcd.h.html#587" title="((((0) | (((0x01 &lt;&lt; 5) | 0x00))) &lt;&lt; 8) | (0x03))" data-ref="_M/SetHubFeature">SetHubFeature</a>:</td></tr>
+<tr><th id="756">756</th><td>		<b>switch</b> (<a class="local col7 ref" href="#97wValue" title='wValue' data-ref="97wValue">wValue</a>) {</td></tr>
+<tr><th id="757">757</th><td>		<b>case</b> <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#65" title="1" data-ref="_M/C_HUB_OVER_CURRENT">C_HUB_OVER_CURRENT</a>:</td></tr>
+<tr><th id="758">758</th><td>			<i>// FIXME:  this can be cleared, yes?</i></td></tr>
+<tr><th id="759">759</th><td>		<b>case</b> <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#64" title="0" data-ref="_M/C_HUB_LOCAL_POWER">C_HUB_LOCAL_POWER</a>:</td></tr>
+<tr><th id="760">760</th><td>			<b>break</b>;</td></tr>
+<tr><th id="761">761</th><td>		<b>default</b>:</td></tr>
+<tr><th id="762">762</th><td>			<b>goto</b> <a class="lbl" href="#105error" data-ref="105error">error</a>;</td></tr>
+<tr><th id="763">763</th><td>		}</td></tr>
+<tr><th id="764">764</th><td>		<b>break</b>;</td></tr>
+<tr><th id="765">765</th><td>	<b>case</b> <a class="macro" href="../../../include/linux/usb/hcd.h.html#588" title="((((0) | (((0x01 &lt;&lt; 5) | 0x03))) &lt;&lt; 8) | (0x03))" data-ref="_M/SetPortFeature">SetPortFeature</a>:</td></tr>
+<tr><th id="766">766</th><td>		<b>if</b> (!<a class="local col8 ref" href="#98wIndex" title='wIndex' data-ref="98wIndex">wIndex</a> || <a class="local col8 ref" href="#98wIndex" title='wIndex' data-ref="98wIndex">wIndex</a> &gt; <a class="local col2 ref" href="#102ports" title='ports' data-ref="102ports">ports</a>)</td></tr>
+<tr><th id="767">767</th><td>			<b>goto</b> <a class="lbl" href="#105error" data-ref="105error">error</a>;</td></tr>
+<tr><th id="768">768</th><td>		<a class="local col8 ref" href="#98wIndex" title='wIndex' data-ref="98wIndex">wIndex</a>--;</td></tr>
+<tr><th id="769">769</th><td>		<b>switch</b> (<a class="local col7 ref" href="#97wValue" title='wValue' data-ref="97wValue">wValue</a>) {</td></tr>
+<tr><th id="770">770</th><td>		<b>case</b> <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#73" title="2" data-ref="_M/USB_PORT_FEAT_SUSPEND">USB_PORT_FEAT_SUSPEND</a>:</td></tr>
+<tr><th id="771">771</th><td><u>#<span data-ppcond="771">ifdef</span>	<span class="macro" data-ref="_M/CONFIG_USB_OTG">CONFIG_USB_OTG</span></u></td></tr>
+<tr><th id="772">772</th><td>			<b>if</b> (hcd-&gt;self.otg_port == (wIndex + <var>1</var>)</td></tr>
+<tr><th id="773">773</th><td>					&amp;&amp; hcd-&gt;self.b_hnp_enable)</td></tr>
+<tr><th id="774">774</th><td>				ohci-&gt;start_hnp(ohci);</td></tr>
+<tr><th id="775">775</th><td>			<b>else</b></td></tr>
+<tr><th id="776">776</th><td><u>#<span data-ppcond="771">endif</span></u></td></tr>
+<tr><th id="777">777</th><td>			<a class="macro" href="ohci.h.html#584" title="_ohci_writel(ohci,0x00000004,&amp;ohci-&gt;regs-&gt;roothub.portstatus [wIndex])" data-ref="_M/ohci_writel">ohci_writel</a> (<a class="local col1 ref" href="#101ohci" title='ohci' data-ref="101ohci">ohci</a>, <a class="macro" href="ohci.h.html#301" title="0x00000004" data-ref="_M/RH_PS_PSS">RH_PS_PSS</a>,</td></tr>
+<tr><th id="778">778</th><td>				&amp;<a class="local col1 ref" href="#101ohci" title='ohci' data-ref="101ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::regs" title='ohci_hcd::regs' data-ref="ohci_hcd::regs">regs</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_regs::roothub" title='ohci_regs::roothub' data-ref="ohci_regs::roothub">roothub</a>.<a class="ref field" href="ohci.h.html#ohci_roothub_regs::portstatus" title='ohci_roothub_regs::portstatus' data-ref="ohci_roothub_regs::portstatus">portstatus</a> [<a class="local col8 ref" href="#98wIndex" title='wIndex' data-ref="98wIndex">wIndex</a>]);</td></tr>
+<tr><th id="779">779</th><td>			<b>break</b>;</td></tr>
+<tr><th id="780">780</th><td>		<b>case</b> <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#77" title="8" data-ref="_M/USB_PORT_FEAT_POWER">USB_PORT_FEAT_POWER</a>:</td></tr>
+<tr><th id="781">781</th><td>			<a class="macro" href="ohci.h.html#584" title="_ohci_writel(ohci,0x00000100,&amp;ohci-&gt;regs-&gt;roothub.portstatus [wIndex])" data-ref="_M/ohci_writel">ohci_writel</a> (<a class="local col1 ref" href="#101ohci" title='ohci' data-ref="101ohci">ohci</a>, <a class="macro" href="ohci.h.html#304" title="0x00000100" data-ref="_M/RH_PS_PPS">RH_PS_PPS</a>,</td></tr>
+<tr><th id="782">782</th><td>				&amp;<a class="local col1 ref" href="#101ohci" title='ohci' data-ref="101ohci">ohci</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_hcd::regs" title='ohci_hcd::regs' data-ref="ohci_hcd::regs">regs</a>-&gt;<a class="ref field" href="ohci.h.html#ohci_regs::roothub" title='ohci_regs::roothub' data-ref="ohci_regs::roothub">roothub</a>.<a class="ref field" href="ohci.h.html#ohci_roothub_regs::portstatus" title='ohci_roothub_regs::portstatus' data-ref="ohci_roothub_regs::portstatus">portstatus</a> [<a class="local col8 ref" href="#98wIndex" title='wIndex' data-ref="98wIndex">wIndex</a>]);</td></tr>
+<tr><th id="783">783</th><td>			<b>break</b>;</td></tr>
+<tr><th id="784">784</th><td>		<b>case</b> <a class="macro" href="../../../include/uapi/linux/usb/ch11.h.html#75" title="4" data-ref="_M/USB_PORT_FEAT_RESET">USB_PORT_FEAT_RESET</a>:</td></tr>
+<tr><th id="785">785</th><td>			<a class="local col4 ref" href="#104retval" title='retval' data-ref="104retval">retval</a> = <a class="ref fn" href="#root_port_reset" title='root_port_reset' data-ref="root_port_reset">root_port_reset</a> (<a class="local col1 ref" href="#101ohci" title='ohci' data-ref="101ohci">ohci</a>, <a class="local col8 ref" href="#98wIndex" title='wIndex' data-ref="98wIndex">wIndex</a>);</td></tr>
+<tr><th id="786">786</th><td>			<b>break</b>;</td></tr>
+<tr><th id="787">787</th><td>		<b>default</b>:</td></tr>
+<tr><th id="788">788</th><td>			<b>goto</b> <a class="lbl" href="#105error" data-ref="105error">error</a>;</td></tr>
+<tr><th id="789">789</th><td>		}</td></tr>
+<tr><th id="790">790</th><td>		<b>break</b>;</td></tr>
+<tr><th id="791">791</th><td></td></tr>
+<tr><th id="792">792</th><td>	<b>default</b>:</td></tr>
+<tr><th id="793">793</th><td><dfn class="lbl" id="105error" data-ref="105error">error</dfn>:</td></tr>
+<tr><th id="794">794</th><td>		<i>/* "protocol stall" on error */</i></td></tr>
+<tr><th id="795">795</th><td>		<a class="local col4 ref" href="#104retval" title='retval' data-ref="104retval">retval</a> = -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#36" title="32" data-ref="_M/EPIPE">EPIPE</a>;</td></tr>
+<tr><th id="796">796</th><td>	}</td></tr>
+<tr><th id="797">797</th><td>	<b>return</b> <a class="local col4 ref" href="#104retval" title='retval' data-ref="104retval">retval</a>;</td></tr>
+<tr><th id="798">798</th><td>}</td></tr>
+<tr><th id="799">799</th><td><a class="macro" href="../../../include/linux/export.h.html#100" title="extern typeof(ohci_hub_control) ohci_hub_control; static const char __kstrtab_ohci_hub_control[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;ohci_hub_control&quot;; static const struct kernel_symbol __ksymtab_ohci_hub_control __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;ohci_hub_control&quot;), used)) = { (unsigned long)&amp;ohci_hub_control, __kstrtab_ohci_hub_control }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#ohci_hub_control" title='ohci_hub_control' data-ref="ohci_hub_control"><a class="ref fn" href="#ohci_hub_control" title='ohci_hub_control' data-ref="ohci_hub_control"><a class="ref fn" href="#ohci_hub_control" title='ohci_hub_control' data-ref="ohci_hub_control"><a class="ref fn" href="#ohci_hub_control" title='ohci_hub_control' data-ref="ohci_hub_control">ohci_hub_control</a></a></a></a>);</td></tr>
+<tr><th id="800">800</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='ohci-hcd.c.html'>linux-4.18.y/drivers/usb/host/ohci-hcd.c</a><br/>Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

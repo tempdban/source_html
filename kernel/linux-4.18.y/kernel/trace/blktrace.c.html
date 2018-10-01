@@ -1,0 +1,1953 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>blktrace.c source code [linux-4.18.y/kernel/trace/blktrace.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/kernel/trace/blktrace.c'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>linux-4.18.y</a>/<a href='..'>kernel</a>/<a href='./'>trace</a>/<a href='blktrace.c.html'>blktrace.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright (C) 2006 Jens Axboe &lt;axboe@kernel.dk&gt;</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> * This program is free software; you can redistribute it and/or modify</i></td></tr>
+<tr><th id="5">5</th><td><i> * it under the terms of the GNU General Public License version 2 as</i></td></tr>
+<tr><th id="6">6</th><td><i> * published by the Free Software Foundation.</i></td></tr>
+<tr><th id="7">7</th><td><i> *</i></td></tr>
+<tr><th id="8">8</th><td><i> * This program is distributed in the hope that it will be useful,</i></td></tr>
+<tr><th id="9">9</th><td><i> * but WITHOUT ANY WARRANTY; without even the implied warranty of</i></td></tr>
+<tr><th id="10">10</th><td><i> * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</i></td></tr>
+<tr><th id="11">11</th><td><i> * GNU General Public License for more details.</i></td></tr>
+<tr><th id="12">12</th><td><i> *</i></td></tr>
+<tr><th id="13">13</th><td><i> * You should have received a copy of the GNU General Public License</i></td></tr>
+<tr><th id="14">14</th><td><i> * along with this program; if not, write to the Free Software</i></td></tr>
+<tr><th id="15">15</th><td><i> * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA</i></td></tr>
+<tr><th id="16">16</th><td><i> *</i></td></tr>
+<tr><th id="17">17</th><td><i> */</i></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../include/linux/kernel.h.html">&lt;linux/kernel.h&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../include/linux/blkdev.h.html">&lt;linux/blkdev.h&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../include/linux/blktrace_api.h.html">&lt;linux/blktrace_api.h&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../include/linux/percpu.h.html">&lt;linux/percpu.h&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../include/linux/init.h.html">&lt;linux/init.h&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../include/linux/mutex.h.html">&lt;linux/mutex.h&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../../include/linux/slab.h.html">&lt;linux/slab.h&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../include/linux/debugfs.h.html">&lt;linux/debugfs.h&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../../include/linux/export.h.html">&lt;linux/export.h&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../../include/linux/time.h.html">&lt;linux/time.h&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../../include/linux/uaccess.h.html">&lt;linux/uaccess.h&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../../include/linux/list.h.html">&lt;linux/list.h&gt;</a></u></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="../../include/linux/blk-cgroup.h.html">&lt;linux/blk-cgroup.h&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="../../block/blk.h.html">"../../block/blk.h"</a></u></td></tr>
+<tr><th id="33">33</th><td></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="../../include/trace/events/block.h.html">&lt;trace/events/block.h&gt;</a></u></td></tr>
+<tr><th id="35">35</th><td></td></tr>
+<tr><th id="36">36</th><td><u>#include <a href="trace_output.h.html">"trace_output.h"</a></u></td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><u>#<span data-ppcond="38">ifdef</span> <span class="macro" data-ref="_M/CONFIG_BLK_DEV_IO_TRACE">CONFIG_BLK_DEV_IO_TRACE</span></u></td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><em>static</em> <em>unsigned</em> <em>int</em> blktrace_seq __read_mostly = <var>1</var>;</td></tr>
+<tr><th id="41">41</th><td></td></tr>
+<tr><th id="42">42</th><td><em>static</em> <b>struct</b> trace_array *blk_tr;</td></tr>
+<tr><th id="43">43</th><td><em>static</em> bool blk_tracer_enabled __read_mostly;</td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td><em>static</em> LIST_HEAD(running_trace_list);</td></tr>
+<tr><th id="46">46</th><td><em>static</em> __cacheline_aligned_in_smp DEFINE_SPINLOCK(running_trace_lock);</td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td><i>/* Select an alternative, minimalistic output than the original one */</i></td></tr>
+<tr><th id="49">49</th><td><u>#define TRACE_BLK_OPT_CLASSIC	0x1</u></td></tr>
+<tr><th id="50">50</th><td><u>#define TRACE_BLK_OPT_CGROUP	0x2</u></td></tr>
+<tr><th id="51">51</th><td><u>#define TRACE_BLK_OPT_CGNAME	0x4</u></td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td><em>static</em> <b>struct</b> tracer_opt blk_tracer_opts[] = {</td></tr>
+<tr><th id="54">54</th><td>	<i>/* Default disable the minimalistic output */</i></td></tr>
+<tr><th id="55">55</th><td>	{ TRACER_OPT(blk_classic, TRACE_BLK_OPT_CLASSIC) },</td></tr>
+<tr><th id="56">56</th><td><u>#ifdef CONFIG_BLK_CGROUP</u></td></tr>
+<tr><th id="57">57</th><td>	{ TRACER_OPT(blk_cgroup, TRACE_BLK_OPT_CGROUP) },</td></tr>
+<tr><th id="58">58</th><td>	{ TRACER_OPT(blk_cgname, TRACE_BLK_OPT_CGNAME) },</td></tr>
+<tr><th id="59">59</th><td><u>#endif</u></td></tr>
+<tr><th id="60">60</th><td>	{ }</td></tr>
+<tr><th id="61">61</th><td>};</td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td><em>static</em> <b>struct</b> tracer_flags blk_tracer_flags = {</td></tr>
+<tr><th id="64">64</th><td>	.val  = <var>0</var>,</td></tr>
+<tr><th id="65">65</th><td>	.opts = blk_tracer_opts,</td></tr>
+<tr><th id="66">66</th><td>};</td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td><i>/* Global reference count of probes */</i></td></tr>
+<tr><th id="69">69</th><td><em>static</em> DEFINE_MUTEX(blk_probe_mutex);</td></tr>
+<tr><th id="70">70</th><td><em>static</em> <em>int</em> blk_probes_ref;</td></tr>
+<tr><th id="71">71</th><td></td></tr>
+<tr><th id="72">72</th><td><em>static</em> <em>void</em> blk_register_tracepoints(<em>void</em>);</td></tr>
+<tr><th id="73">73</th><td><em>static</em> <em>void</em> blk_unregister_tracepoints(<em>void</em>);</td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td><i>/*</i></td></tr>
+<tr><th id="76">76</th><td><i> * Send out a notify message.</i></td></tr>
+<tr><th id="77">77</th><td><i> */</i></td></tr>
+<tr><th id="78">78</th><td><em>static</em> <em>void</em> trace_note(<b>struct</b> blk_trace *bt, pid_t pid, <em>int</em> action,</td></tr>
+<tr><th id="79">79</th><td>		       <em>const</em> <em>void</em> *data, size_t len,</td></tr>
+<tr><th id="80">80</th><td>		       <b>union</b> kernfs_node_id *cgid)</td></tr>
+<tr><th id="81">81</th><td>{</td></tr>
+<tr><th id="82">82</th><td>	<b>struct</b> blk_io_trace *t;</td></tr>
+<tr><th id="83">83</th><td>	<b>struct</b> ring_buffer_event *event = NULL;</td></tr>
+<tr><th id="84">84</th><td>	<b>struct</b> ring_buffer *buffer = NULL;</td></tr>
+<tr><th id="85">85</th><td>	<em>int</em> pc = <var>0</var>;</td></tr>
+<tr><th id="86">86</th><td>	<em>int</em> cpu = smp_processor_id();</td></tr>
+<tr><th id="87">87</th><td>	bool blk_tracer = blk_tracer_enabled;</td></tr>
+<tr><th id="88">88</th><td>	ssize_t cgid_len = cgid ? <b>sizeof</b>(*cgid) : <var>0</var>;</td></tr>
+<tr><th id="89">89</th><td></td></tr>
+<tr><th id="90">90</th><td>	<b>if</b> (blk_tracer) {</td></tr>
+<tr><th id="91">91</th><td>		buffer = blk_tr-&gt;trace_buffer.buffer;</td></tr>
+<tr><th id="92">92</th><td>		pc = preempt_count();</td></tr>
+<tr><th id="93">93</th><td>		event = trace_buffer_lock_reserve(buffer, TRACE_BLK,</td></tr>
+<tr><th id="94">94</th><td>						  <b>sizeof</b>(*t) + len + cgid_len,</td></tr>
+<tr><th id="95">95</th><td>						  <var>0</var>, pc);</td></tr>
+<tr><th id="96">96</th><td>		<b>if</b> (!event)</td></tr>
+<tr><th id="97">97</th><td>			<b>return</b>;</td></tr>
+<tr><th id="98">98</th><td>		t = ring_buffer_event_data(event);</td></tr>
+<tr><th id="99">99</th><td>		<b>goto</b> record_it;</td></tr>
+<tr><th id="100">100</th><td>	}</td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td>	<b>if</b> (!bt-&gt;rchan)</td></tr>
+<tr><th id="103">103</th><td>		<b>return</b>;</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td>	t = relay_reserve(bt-&gt;rchan, <b>sizeof</b>(*t) + len + cgid_len);</td></tr>
+<tr><th id="106">106</th><td>	<b>if</b> (t) {</td></tr>
+<tr><th id="107">107</th><td>		t-&gt;magic = BLK_IO_TRACE_MAGIC | BLK_IO_TRACE_VERSION;</td></tr>
+<tr><th id="108">108</th><td>		t-&gt;time = ktime_to_ns(ktime_get());</td></tr>
+<tr><th id="109">109</th><td>record_it:</td></tr>
+<tr><th id="110">110</th><td>		t-&gt;device = bt-&gt;dev;</td></tr>
+<tr><th id="111">111</th><td>		t-&gt;action = action | (cgid ? __BLK_TN_CGROUP : <var>0</var>);</td></tr>
+<tr><th id="112">112</th><td>		t-&gt;pid = pid;</td></tr>
+<tr><th id="113">113</th><td>		t-&gt;cpu = cpu;</td></tr>
+<tr><th id="114">114</th><td>		t-&gt;pdu_len = len + cgid_len;</td></tr>
+<tr><th id="115">115</th><td>		<b>if</b> (cgid)</td></tr>
+<tr><th id="116">116</th><td>			memcpy((<em>void</em> *)t + <b>sizeof</b>(*t), cgid, cgid_len);</td></tr>
+<tr><th id="117">117</th><td>		memcpy((<em>void</em> *) t + <b>sizeof</b>(*t) + cgid_len, data, len);</td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td>		<b>if</b> (blk_tracer)</td></tr>
+<tr><th id="120">120</th><td>			trace_buffer_unlock_commit(blk_tr, buffer, event, <var>0</var>, pc);</td></tr>
+<tr><th id="121">121</th><td>	}</td></tr>
+<tr><th id="122">122</th><td>}</td></tr>
+<tr><th id="123">123</th><td></td></tr>
+<tr><th id="124">124</th><td><i>/*</i></td></tr>
+<tr><th id="125">125</th><td><i> * Send out a notify for this process, if we haven't done so since a trace</i></td></tr>
+<tr><th id="126">126</th><td><i> * started</i></td></tr>
+<tr><th id="127">127</th><td><i> */</i></td></tr>
+<tr><th id="128">128</th><td><em>static</em> <em>void</em> trace_note_tsk(<b>struct</b> task_struct *tsk)</td></tr>
+<tr><th id="129">129</th><td>{</td></tr>
+<tr><th id="130">130</th><td>	<em>unsigned</em> <em>long</em> flags;</td></tr>
+<tr><th id="131">131</th><td>	<b>struct</b> blk_trace *bt;</td></tr>
+<tr><th id="132">132</th><td></td></tr>
+<tr><th id="133">133</th><td>	tsk-&gt;btrace_seq = blktrace_seq;</td></tr>
+<tr><th id="134">134</th><td>	spin_lock_irqsave(&amp;running_trace_lock, flags);</td></tr>
+<tr><th id="135">135</th><td>	list_for_each_entry(bt, &amp;running_trace_list, running_list) {</td></tr>
+<tr><th id="136">136</th><td>		trace_note(bt, tsk-&gt;pid, BLK_TN_PROCESS, tsk-&gt;comm,</td></tr>
+<tr><th id="137">137</th><td>			   <b>sizeof</b>(tsk-&gt;comm), NULL);</td></tr>
+<tr><th id="138">138</th><td>	}</td></tr>
+<tr><th id="139">139</th><td>	spin_unlock_irqrestore(&amp;running_trace_lock, flags);</td></tr>
+<tr><th id="140">140</th><td>}</td></tr>
+<tr><th id="141">141</th><td></td></tr>
+<tr><th id="142">142</th><td><em>static</em> <em>void</em> trace_note_time(<b>struct</b> blk_trace *bt)</td></tr>
+<tr><th id="143">143</th><td>{</td></tr>
+<tr><th id="144">144</th><td>	<b>struct</b> timespec64 now;</td></tr>
+<tr><th id="145">145</th><td>	<em>unsigned</em> <em>long</em> flags;</td></tr>
+<tr><th id="146">146</th><td>	u32 words[<var>2</var>];</td></tr>
+<tr><th id="147">147</th><td></td></tr>
+<tr><th id="148">148</th><td>	<i>/* need to check user space to see if this breaks in y2038 or y2106 */</i></td></tr>
+<tr><th id="149">149</th><td>	ktime_get_real_ts64(&amp;now);</td></tr>
+<tr><th id="150">150</th><td>	words[<var>0</var>] = (u32)now.tv_sec;</td></tr>
+<tr><th id="151">151</th><td>	words[<var>1</var>] = now.tv_nsec;</td></tr>
+<tr><th id="152">152</th><td></td></tr>
+<tr><th id="153">153</th><td>	local_irq_save(flags);</td></tr>
+<tr><th id="154">154</th><td>	trace_note(bt, <var>0</var>, BLK_TN_TIMESTAMP, words, <b>sizeof</b>(words), NULL);</td></tr>
+<tr><th id="155">155</th><td>	local_irq_restore(flags);</td></tr>
+<tr><th id="156">156</th><td>}</td></tr>
+<tr><th id="157">157</th><td></td></tr>
+<tr><th id="158">158</th><td><em>void</em> __trace_note_message(<b>struct</b> blk_trace *bt, <b>struct</b> blkcg *blkcg,</td></tr>
+<tr><th id="159">159</th><td>	<em>const</em> <em>char</em> *fmt, ...)</td></tr>
+<tr><th id="160">160</th><td>{</td></tr>
+<tr><th id="161">161</th><td>	<em>int</em> n;</td></tr>
+<tr><th id="162">162</th><td>	va_list args;</td></tr>
+<tr><th id="163">163</th><td>	<em>unsigned</em> <em>long</em> flags;</td></tr>
+<tr><th id="164">164</th><td>	<em>char</em> *buf;</td></tr>
+<tr><th id="165">165</th><td></td></tr>
+<tr><th id="166">166</th><td>	<b>if</b> (unlikely(bt-&gt;trace_state != Blktrace_running &amp;&amp;</td></tr>
+<tr><th id="167">167</th><td>		     !blk_tracer_enabled))</td></tr>
+<tr><th id="168">168</th><td>		<b>return</b>;</td></tr>
+<tr><th id="169">169</th><td></td></tr>
+<tr><th id="170">170</th><td>	<i>/*</i></td></tr>
+<tr><th id="171">171</th><td><i>	 * If the BLK_TC_NOTIFY action mask isn't set, don't send any note</i></td></tr>
+<tr><th id="172">172</th><td><i>	 * message to the trace.</i></td></tr>
+<tr><th id="173">173</th><td><i>	 */</i></td></tr>
+<tr><th id="174">174</th><td>	<b>if</b> (!(bt-&gt;act_mask &amp; BLK_TC_NOTIFY))</td></tr>
+<tr><th id="175">175</th><td>		<b>return</b>;</td></tr>
+<tr><th id="176">176</th><td></td></tr>
+<tr><th id="177">177</th><td>	local_irq_save(flags);</td></tr>
+<tr><th id="178">178</th><td>	buf = this_cpu_ptr(bt-&gt;msg_data);</td></tr>
+<tr><th id="179">179</th><td>	va_start(args, fmt);</td></tr>
+<tr><th id="180">180</th><td>	n = vscnprintf(buf, BLK_TN_MAX_MSG, fmt, args);</td></tr>
+<tr><th id="181">181</th><td>	va_end(args);</td></tr>
+<tr><th id="182">182</th><td></td></tr>
+<tr><th id="183">183</th><td>	<b>if</b> (!(blk_tracer_flags.val &amp; TRACE_BLK_OPT_CGROUP))</td></tr>
+<tr><th id="184">184</th><td>		blkcg = NULL;</td></tr>
+<tr><th id="185">185</th><td><u>#ifdef CONFIG_BLK_CGROUP</u></td></tr>
+<tr><th id="186">186</th><td>	trace_note(bt, <var>0</var>, BLK_TN_MESSAGE, buf, n,</td></tr>
+<tr><th id="187">187</th><td>		blkcg ? cgroup_get_kernfs_id(blkcg-&gt;css.cgroup) : NULL);</td></tr>
+<tr><th id="188">188</th><td><u>#else</u></td></tr>
+<tr><th id="189">189</th><td>	trace_note(bt, <var>0</var>, BLK_TN_MESSAGE, buf, n, NULL);</td></tr>
+<tr><th id="190">190</th><td><u>#endif</u></td></tr>
+<tr><th id="191">191</th><td>	local_irq_restore(flags);</td></tr>
+<tr><th id="192">192</th><td>}</td></tr>
+<tr><th id="193">193</th><td>EXPORT_SYMBOL_GPL(__trace_note_message);</td></tr>
+<tr><th id="194">194</th><td></td></tr>
+<tr><th id="195">195</th><td><em>static</em> <em>int</em> act_log_check(<b>struct</b> blk_trace *bt, u32 what, sector_t sector,</td></tr>
+<tr><th id="196">196</th><td>			 pid_t pid)</td></tr>
+<tr><th id="197">197</th><td>{</td></tr>
+<tr><th id="198">198</th><td>	<b>if</b> (((bt-&gt;act_mask &lt;&lt; BLK_TC_SHIFT) &amp; what) == <var>0</var>)</td></tr>
+<tr><th id="199">199</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="200">200</th><td>	<b>if</b> (sector &amp;&amp; (sector &lt; bt-&gt;start_lba || sector &gt; bt-&gt;end_lba))</td></tr>
+<tr><th id="201">201</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="202">202</th><td>	<b>if</b> (bt-&gt;pid &amp;&amp; pid != bt-&gt;pid)</td></tr>
+<tr><th id="203">203</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="204">204</th><td></td></tr>
+<tr><th id="205">205</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="206">206</th><td>}</td></tr>
+<tr><th id="207">207</th><td></td></tr>
+<tr><th id="208">208</th><td><i>/*</i></td></tr>
+<tr><th id="209">209</th><td><i> * Data direction bit lookup</i></td></tr>
+<tr><th id="210">210</th><td><i> */</i></td></tr>
+<tr><th id="211">211</th><td><em>static</em> <em>const</em> u32 ddir_act[<var>2</var>] = { BLK_TC_ACT(BLK_TC_READ),</td></tr>
+<tr><th id="212">212</th><td>				 BLK_TC_ACT(BLK_TC_WRITE) };</td></tr>
+<tr><th id="213">213</th><td></td></tr>
+<tr><th id="214">214</th><td><u>#define BLK_TC_RAHEAD		BLK_TC_AHEAD</u></td></tr>
+<tr><th id="215">215</th><td><u>#define BLK_TC_PREFLUSH		BLK_TC_FLUSH</u></td></tr>
+<tr><th id="216">216</th><td></td></tr>
+<tr><th id="217">217</th><td><i>/* The ilog2() calls fall out because they're constant */</i></td></tr>
+<tr><th id="218">218</th><td><u>#define MASK_TC_BIT(rw, __name) ((rw &amp; REQ_ ## __name) &lt;&lt; \</u></td></tr>
+<tr><th id="219">219</th><td><u>	  (ilog2(BLK_TC_ ## __name) + BLK_TC_SHIFT - __REQ_ ## __name))</u></td></tr>
+<tr><th id="220">220</th><td></td></tr>
+<tr><th id="221">221</th><td><i>/*</i></td></tr>
+<tr><th id="222">222</th><td><i> * The worker for the various blk_add_trace*() types. Fills out a</i></td></tr>
+<tr><th id="223">223</th><td><i> * blk_io_trace structure and places it in a per-cpu subbuffer.</i></td></tr>
+<tr><th id="224">224</th><td><i> */</i></td></tr>
+<tr><th id="225">225</th><td><em>static</em> <em>void</em> __blk_add_trace(<b>struct</b> blk_trace *bt, sector_t sector, <em>int</em> bytes,</td></tr>
+<tr><th id="226">226</th><td>		     <em>int</em> op, <em>int</em> op_flags, u32 what, <em>int</em> error, <em>int</em> pdu_len,</td></tr>
+<tr><th id="227">227</th><td>		     <em>void</em> *pdu_data, <b>union</b> kernfs_node_id *cgid)</td></tr>
+<tr><th id="228">228</th><td>{</td></tr>
+<tr><th id="229">229</th><td>	<b>struct</b> task_struct *tsk = current;</td></tr>
+<tr><th id="230">230</th><td>	<b>struct</b> ring_buffer_event *event = NULL;</td></tr>
+<tr><th id="231">231</th><td>	<b>struct</b> ring_buffer *buffer = NULL;</td></tr>
+<tr><th id="232">232</th><td>	<b>struct</b> blk_io_trace *t;</td></tr>
+<tr><th id="233">233</th><td>	<em>unsigned</em> <em>long</em> flags = <var>0</var>;</td></tr>
+<tr><th id="234">234</th><td>	<em>unsigned</em> <em>long</em> *sequence;</td></tr>
+<tr><th id="235">235</th><td>	pid_t pid;</td></tr>
+<tr><th id="236">236</th><td>	<em>int</em> cpu, pc = <var>0</var>;</td></tr>
+<tr><th id="237">237</th><td>	bool blk_tracer = blk_tracer_enabled;</td></tr>
+<tr><th id="238">238</th><td>	ssize_t cgid_len = cgid ? <b>sizeof</b>(*cgid) : <var>0</var>;</td></tr>
+<tr><th id="239">239</th><td></td></tr>
+<tr><th id="240">240</th><td>	<b>if</b> (unlikely(bt-&gt;trace_state != Blktrace_running &amp;&amp; !blk_tracer))</td></tr>
+<tr><th id="241">241</th><td>		<b>return</b>;</td></tr>
+<tr><th id="242">242</th><td></td></tr>
+<tr><th id="243">243</th><td>	what |= ddir_act[op_is_write(op) ? WRITE : READ];</td></tr>
+<tr><th id="244">244</th><td>	what |= MASK_TC_BIT(op_flags, SYNC);</td></tr>
+<tr><th id="245">245</th><td>	what |= MASK_TC_BIT(op_flags, RAHEAD);</td></tr>
+<tr><th id="246">246</th><td>	what |= MASK_TC_BIT(op_flags, META);</td></tr>
+<tr><th id="247">247</th><td>	what |= MASK_TC_BIT(op_flags, PREFLUSH);</td></tr>
+<tr><th id="248">248</th><td>	what |= MASK_TC_BIT(op_flags, FUA);</td></tr>
+<tr><th id="249">249</th><td>	<b>if</b> (op == REQ_OP_DISCARD || op == REQ_OP_SECURE_ERASE)</td></tr>
+<tr><th id="250">250</th><td>		what |= BLK_TC_ACT(BLK_TC_DISCARD);</td></tr>
+<tr><th id="251">251</th><td>	<b>if</b> (op == REQ_OP_FLUSH)</td></tr>
+<tr><th id="252">252</th><td>		what |= BLK_TC_ACT(BLK_TC_FLUSH);</td></tr>
+<tr><th id="253">253</th><td>	<b>if</b> (cgid)</td></tr>
+<tr><th id="254">254</th><td>		what |= __BLK_TA_CGROUP;</td></tr>
+<tr><th id="255">255</th><td></td></tr>
+<tr><th id="256">256</th><td>	pid = tsk-&gt;pid;</td></tr>
+<tr><th id="257">257</th><td>	<b>if</b> (act_log_check(bt, what, sector, pid))</td></tr>
+<tr><th id="258">258</th><td>		<b>return</b>;</td></tr>
+<tr><th id="259">259</th><td>	cpu = raw_smp_processor_id();</td></tr>
+<tr><th id="260">260</th><td></td></tr>
+<tr><th id="261">261</th><td>	<b>if</b> (blk_tracer) {</td></tr>
+<tr><th id="262">262</th><td>		tracing_record_cmdline(current);</td></tr>
+<tr><th id="263">263</th><td></td></tr>
+<tr><th id="264">264</th><td>		buffer = blk_tr-&gt;trace_buffer.buffer;</td></tr>
+<tr><th id="265">265</th><td>		pc = preempt_count();</td></tr>
+<tr><th id="266">266</th><td>		event = trace_buffer_lock_reserve(buffer, TRACE_BLK,</td></tr>
+<tr><th id="267">267</th><td>						  <b>sizeof</b>(*t) + pdu_len + cgid_len,</td></tr>
+<tr><th id="268">268</th><td>						  <var>0</var>, pc);</td></tr>
+<tr><th id="269">269</th><td>		<b>if</b> (!event)</td></tr>
+<tr><th id="270">270</th><td>			<b>return</b>;</td></tr>
+<tr><th id="271">271</th><td>		t = ring_buffer_event_data(event);</td></tr>
+<tr><th id="272">272</th><td>		<b>goto</b> record_it;</td></tr>
+<tr><th id="273">273</th><td>	}</td></tr>
+<tr><th id="274">274</th><td></td></tr>
+<tr><th id="275">275</th><td>	<b>if</b> (unlikely(tsk-&gt;btrace_seq != blktrace_seq))</td></tr>
+<tr><th id="276">276</th><td>		trace_note_tsk(tsk);</td></tr>
+<tr><th id="277">277</th><td></td></tr>
+<tr><th id="278">278</th><td>	<i>/*</i></td></tr>
+<tr><th id="279">279</th><td><i>	 * A word about the locking here - we disable interrupts to reserve</i></td></tr>
+<tr><th id="280">280</th><td><i>	 * some space in the relay per-cpu buffer, to prevent an irq</i></td></tr>
+<tr><th id="281">281</th><td><i>	 * from coming in and stepping on our toes.</i></td></tr>
+<tr><th id="282">282</th><td><i>	 */</i></td></tr>
+<tr><th id="283">283</th><td>	local_irq_save(flags);</td></tr>
+<tr><th id="284">284</th><td>	t = relay_reserve(bt-&gt;rchan, <b>sizeof</b>(*t) + pdu_len + cgid_len);</td></tr>
+<tr><th id="285">285</th><td>	<b>if</b> (t) {</td></tr>
+<tr><th id="286">286</th><td>		sequence = per_cpu_ptr(bt-&gt;sequence, cpu);</td></tr>
+<tr><th id="287">287</th><td></td></tr>
+<tr><th id="288">288</th><td>		t-&gt;magic = BLK_IO_TRACE_MAGIC | BLK_IO_TRACE_VERSION;</td></tr>
+<tr><th id="289">289</th><td>		t-&gt;sequence = ++(*sequence);</td></tr>
+<tr><th id="290">290</th><td>		t-&gt;time = ktime_to_ns(ktime_get());</td></tr>
+<tr><th id="291">291</th><td>record_it:</td></tr>
+<tr><th id="292">292</th><td>		<i>/*</i></td></tr>
+<tr><th id="293">293</th><td><i>		 * These two are not needed in ftrace as they are in the</i></td></tr>
+<tr><th id="294">294</th><td><i>		 * generic trace_entry, filled by tracing_generic_entry_update,</i></td></tr>
+<tr><th id="295">295</th><td><i>		 * but for the trace_event-&gt;bin() synthesizer benefit we do it</i></td></tr>
+<tr><th id="296">296</th><td><i>		 * here too.</i></td></tr>
+<tr><th id="297">297</th><td><i>		 */</i></td></tr>
+<tr><th id="298">298</th><td>		t-&gt;cpu = cpu;</td></tr>
+<tr><th id="299">299</th><td>		t-&gt;pid = pid;</td></tr>
+<tr><th id="300">300</th><td></td></tr>
+<tr><th id="301">301</th><td>		t-&gt;sector = sector;</td></tr>
+<tr><th id="302">302</th><td>		t-&gt;bytes = bytes;</td></tr>
+<tr><th id="303">303</th><td>		t-&gt;action = what;</td></tr>
+<tr><th id="304">304</th><td>		t-&gt;device = bt-&gt;dev;</td></tr>
+<tr><th id="305">305</th><td>		t-&gt;error = error;</td></tr>
+<tr><th id="306">306</th><td>		t-&gt;pdu_len = pdu_len + cgid_len;</td></tr>
+<tr><th id="307">307</th><td></td></tr>
+<tr><th id="308">308</th><td>		<b>if</b> (cgid_len)</td></tr>
+<tr><th id="309">309</th><td>			memcpy((<em>void</em> *)t + <b>sizeof</b>(*t), cgid, cgid_len);</td></tr>
+<tr><th id="310">310</th><td>		<b>if</b> (pdu_len)</td></tr>
+<tr><th id="311">311</th><td>			memcpy((<em>void</em> *)t + <b>sizeof</b>(*t) + cgid_len, pdu_data, pdu_len);</td></tr>
+<tr><th id="312">312</th><td></td></tr>
+<tr><th id="313">313</th><td>		<b>if</b> (blk_tracer) {</td></tr>
+<tr><th id="314">314</th><td>			trace_buffer_unlock_commit(blk_tr, buffer, event, <var>0</var>, pc);</td></tr>
+<tr><th id="315">315</th><td>			<b>return</b>;</td></tr>
+<tr><th id="316">316</th><td>		}</td></tr>
+<tr><th id="317">317</th><td>	}</td></tr>
+<tr><th id="318">318</th><td></td></tr>
+<tr><th id="319">319</th><td>	local_irq_restore(flags);</td></tr>
+<tr><th id="320">320</th><td>}</td></tr>
+<tr><th id="321">321</th><td></td></tr>
+<tr><th id="322">322</th><td><em>static</em> <em>void</em> blk_trace_free(<b>struct</b> blk_trace *bt)</td></tr>
+<tr><th id="323">323</th><td>{</td></tr>
+<tr><th id="324">324</th><td>	debugfs_remove(bt-&gt;msg_file);</td></tr>
+<tr><th id="325">325</th><td>	debugfs_remove(bt-&gt;dropped_file);</td></tr>
+<tr><th id="326">326</th><td>	relay_close(bt-&gt;rchan);</td></tr>
+<tr><th id="327">327</th><td>	debugfs_remove(bt-&gt;dir);</td></tr>
+<tr><th id="328">328</th><td>	free_percpu(bt-&gt;sequence);</td></tr>
+<tr><th id="329">329</th><td>	free_percpu(bt-&gt;msg_data);</td></tr>
+<tr><th id="330">330</th><td>	kfree(bt);</td></tr>
+<tr><th id="331">331</th><td>}</td></tr>
+<tr><th id="332">332</th><td></td></tr>
+<tr><th id="333">333</th><td><em>static</em> <em>void</em> get_probe_ref(<em>void</em>)</td></tr>
+<tr><th id="334">334</th><td>{</td></tr>
+<tr><th id="335">335</th><td>	mutex_lock(&amp;blk_probe_mutex);</td></tr>
+<tr><th id="336">336</th><td>	<b>if</b> (++blk_probes_ref == <var>1</var>)</td></tr>
+<tr><th id="337">337</th><td>		blk_register_tracepoints();</td></tr>
+<tr><th id="338">338</th><td>	mutex_unlock(&amp;blk_probe_mutex);</td></tr>
+<tr><th id="339">339</th><td>}</td></tr>
+<tr><th id="340">340</th><td></td></tr>
+<tr><th id="341">341</th><td><em>static</em> <em>void</em> put_probe_ref(<em>void</em>)</td></tr>
+<tr><th id="342">342</th><td>{</td></tr>
+<tr><th id="343">343</th><td>	mutex_lock(&amp;blk_probe_mutex);</td></tr>
+<tr><th id="344">344</th><td>	<b>if</b> (!--blk_probes_ref)</td></tr>
+<tr><th id="345">345</th><td>		blk_unregister_tracepoints();</td></tr>
+<tr><th id="346">346</th><td>	mutex_unlock(&amp;blk_probe_mutex);</td></tr>
+<tr><th id="347">347</th><td>}</td></tr>
+<tr><th id="348">348</th><td></td></tr>
+<tr><th id="349">349</th><td><em>static</em> <em>void</em> blk_trace_cleanup(<b>struct</b> blk_trace *bt)</td></tr>
+<tr><th id="350">350</th><td>{</td></tr>
+<tr><th id="351">351</th><td>	blk_trace_free(bt);</td></tr>
+<tr><th id="352">352</th><td>	put_probe_ref();</td></tr>
+<tr><th id="353">353</th><td>}</td></tr>
+<tr><th id="354">354</th><td></td></tr>
+<tr><th id="355">355</th><td><em>static</em> <em>int</em> __blk_trace_remove(<b>struct</b> request_queue *q)</td></tr>
+<tr><th id="356">356</th><td>{</td></tr>
+<tr><th id="357">357</th><td>	<b>struct</b> blk_trace *bt;</td></tr>
+<tr><th id="358">358</th><td></td></tr>
+<tr><th id="359">359</th><td>	bt = xchg(&amp;q-&gt;blk_trace, NULL);</td></tr>
+<tr><th id="360">360</th><td>	<b>if</b> (!bt)</td></tr>
+<tr><th id="361">361</th><td>		<b>return</b> -EINVAL;</td></tr>
+<tr><th id="362">362</th><td></td></tr>
+<tr><th id="363">363</th><td>	<b>if</b> (bt-&gt;trace_state != Blktrace_running)</td></tr>
+<tr><th id="364">364</th><td>		blk_trace_cleanup(bt);</td></tr>
+<tr><th id="365">365</th><td></td></tr>
+<tr><th id="366">366</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="367">367</th><td>}</td></tr>
+<tr><th id="368">368</th><td></td></tr>
+<tr><th id="369">369</th><td><em>int</em> blk_trace_remove(<b>struct</b> request_queue *q)</td></tr>
+<tr><th id="370">370</th><td>{</td></tr>
+<tr><th id="371">371</th><td>	<em>int</em> ret;</td></tr>
+<tr><th id="372">372</th><td></td></tr>
+<tr><th id="373">373</th><td>	mutex_lock(&amp;q-&gt;blk_trace_mutex);</td></tr>
+<tr><th id="374">374</th><td>	ret = __blk_trace_remove(q);</td></tr>
+<tr><th id="375">375</th><td>	mutex_unlock(&amp;q-&gt;blk_trace_mutex);</td></tr>
+<tr><th id="376">376</th><td></td></tr>
+<tr><th id="377">377</th><td>	<b>return</b> ret;</td></tr>
+<tr><th id="378">378</th><td>}</td></tr>
+<tr><th id="379">379</th><td>EXPORT_SYMBOL_GPL(blk_trace_remove);</td></tr>
+<tr><th id="380">380</th><td></td></tr>
+<tr><th id="381">381</th><td><em>static</em> ssize_t blk_dropped_read(<b>struct</b> file *filp, <em>char</em> __user *buffer,</td></tr>
+<tr><th id="382">382</th><td>				size_t count, loff_t *ppos)</td></tr>
+<tr><th id="383">383</th><td>{</td></tr>
+<tr><th id="384">384</th><td>	<b>struct</b> blk_trace *bt = filp-&gt;private_data;</td></tr>
+<tr><th id="385">385</th><td>	<em>char</em> buf[<var>16</var>];</td></tr>
+<tr><th id="386">386</th><td></td></tr>
+<tr><th id="387">387</th><td>	snprintf(buf, <b>sizeof</b>(buf), <q>"%u\n"</q>, atomic_read(&amp;bt-&gt;dropped));</td></tr>
+<tr><th id="388">388</th><td></td></tr>
+<tr><th id="389">389</th><td>	<b>return</b> simple_read_from_buffer(buffer, count, ppos, buf, strlen(buf));</td></tr>
+<tr><th id="390">390</th><td>}</td></tr>
+<tr><th id="391">391</th><td></td></tr>
+<tr><th id="392">392</th><td><em>static</em> <em>const</em> <b>struct</b> file_operations blk_dropped_fops = {</td></tr>
+<tr><th id="393">393</th><td>	.owner =	THIS_MODULE,</td></tr>
+<tr><th id="394">394</th><td>	.open =		simple_open,</td></tr>
+<tr><th id="395">395</th><td>	.read =		blk_dropped_read,</td></tr>
+<tr><th id="396">396</th><td>	.llseek =	default_llseek,</td></tr>
+<tr><th id="397">397</th><td>};</td></tr>
+<tr><th id="398">398</th><td></td></tr>
+<tr><th id="399">399</th><td><em>static</em> ssize_t blk_msg_write(<b>struct</b> file *filp, <em>const</em> <em>char</em> __user *buffer,</td></tr>
+<tr><th id="400">400</th><td>				size_t count, loff_t *ppos)</td></tr>
+<tr><th id="401">401</th><td>{</td></tr>
+<tr><th id="402">402</th><td>	<em>char</em> *msg;</td></tr>
+<tr><th id="403">403</th><td>	<b>struct</b> blk_trace *bt;</td></tr>
+<tr><th id="404">404</th><td></td></tr>
+<tr><th id="405">405</th><td>	<b>if</b> (count &gt;= BLK_TN_MAX_MSG)</td></tr>
+<tr><th id="406">406</th><td>		<b>return</b> -EINVAL;</td></tr>
+<tr><th id="407">407</th><td></td></tr>
+<tr><th id="408">408</th><td>	msg = memdup_user_nul(buffer, count);</td></tr>
+<tr><th id="409">409</th><td>	<b>if</b> (IS_ERR(msg))</td></tr>
+<tr><th id="410">410</th><td>		<b>return</b> PTR_ERR(msg);</td></tr>
+<tr><th id="411">411</th><td></td></tr>
+<tr><th id="412">412</th><td>	bt = filp-&gt;private_data;</td></tr>
+<tr><th id="413">413</th><td>	__trace_note_message(bt, NULL, <q>"%s"</q>, msg);</td></tr>
+<tr><th id="414">414</th><td>	kfree(msg);</td></tr>
+<tr><th id="415">415</th><td></td></tr>
+<tr><th id="416">416</th><td>	<b>return</b> count;</td></tr>
+<tr><th id="417">417</th><td>}</td></tr>
+<tr><th id="418">418</th><td></td></tr>
+<tr><th id="419">419</th><td><em>static</em> <em>const</em> <b>struct</b> file_operations blk_msg_fops = {</td></tr>
+<tr><th id="420">420</th><td>	.owner =	THIS_MODULE,</td></tr>
+<tr><th id="421">421</th><td>	.open =		simple_open,</td></tr>
+<tr><th id="422">422</th><td>	.write =	blk_msg_write,</td></tr>
+<tr><th id="423">423</th><td>	.llseek =	noop_llseek,</td></tr>
+<tr><th id="424">424</th><td>};</td></tr>
+<tr><th id="425">425</th><td></td></tr>
+<tr><th id="426">426</th><td><i>/*</i></td></tr>
+<tr><th id="427">427</th><td><i> * Keep track of how many times we encountered a full subbuffer, to aid</i></td></tr>
+<tr><th id="428">428</th><td><i> * the user space app in telling how many lost events there were.</i></td></tr>
+<tr><th id="429">429</th><td><i> */</i></td></tr>
+<tr><th id="430">430</th><td><em>static</em> <em>int</em> blk_subbuf_start_callback(<b>struct</b> rchan_buf *buf, <em>void</em> *subbuf,</td></tr>
+<tr><th id="431">431</th><td>				     <em>void</em> *prev_subbuf, size_t prev_padding)</td></tr>
+<tr><th id="432">432</th><td>{</td></tr>
+<tr><th id="433">433</th><td>	<b>struct</b> blk_trace *bt;</td></tr>
+<tr><th id="434">434</th><td></td></tr>
+<tr><th id="435">435</th><td>	<b>if</b> (!relay_buf_full(buf))</td></tr>
+<tr><th id="436">436</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="437">437</th><td></td></tr>
+<tr><th id="438">438</th><td>	bt = buf-&gt;chan-&gt;private_data;</td></tr>
+<tr><th id="439">439</th><td>	atomic_inc(&amp;bt-&gt;dropped);</td></tr>
+<tr><th id="440">440</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="441">441</th><td>}</td></tr>
+<tr><th id="442">442</th><td></td></tr>
+<tr><th id="443">443</th><td><em>static</em> <em>int</em> blk_remove_buf_file_callback(<b>struct</b> dentry *dentry)</td></tr>
+<tr><th id="444">444</th><td>{</td></tr>
+<tr><th id="445">445</th><td>	debugfs_remove(dentry);</td></tr>
+<tr><th id="446">446</th><td></td></tr>
+<tr><th id="447">447</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="448">448</th><td>}</td></tr>
+<tr><th id="449">449</th><td></td></tr>
+<tr><th id="450">450</th><td><em>static</em> <b>struct</b> dentry *blk_create_buf_file_callback(<em>const</em> <em>char</em> *filename,</td></tr>
+<tr><th id="451">451</th><td>						   <b>struct</b> dentry *parent,</td></tr>
+<tr><th id="452">452</th><td>						   umode_t mode,</td></tr>
+<tr><th id="453">453</th><td>						   <b>struct</b> rchan_buf *buf,</td></tr>
+<tr><th id="454">454</th><td>						   <em>int</em> *is_global)</td></tr>
+<tr><th id="455">455</th><td>{</td></tr>
+<tr><th id="456">456</th><td>	<b>return</b> debugfs_create_file(filename, mode, parent, buf,</td></tr>
+<tr><th id="457">457</th><td>					&amp;relay_file_operations);</td></tr>
+<tr><th id="458">458</th><td>}</td></tr>
+<tr><th id="459">459</th><td></td></tr>
+<tr><th id="460">460</th><td><em>static</em> <b>struct</b> rchan_callbacks blk_relay_callbacks = {</td></tr>
+<tr><th id="461">461</th><td>	.subbuf_start		= blk_subbuf_start_callback,</td></tr>
+<tr><th id="462">462</th><td>	.create_buf_file	= blk_create_buf_file_callback,</td></tr>
+<tr><th id="463">463</th><td>	.remove_buf_file	= blk_remove_buf_file_callback,</td></tr>
+<tr><th id="464">464</th><td>};</td></tr>
+<tr><th id="465">465</th><td></td></tr>
+<tr><th id="466">466</th><td><em>static</em> <em>void</em> blk_trace_setup_lba(<b>struct</b> blk_trace *bt,</td></tr>
+<tr><th id="467">467</th><td>				<b>struct</b> block_device *bdev)</td></tr>
+<tr><th id="468">468</th><td>{</td></tr>
+<tr><th id="469">469</th><td>	<b>struct</b> hd_struct *part = NULL;</td></tr>
+<tr><th id="470">470</th><td></td></tr>
+<tr><th id="471">471</th><td>	<b>if</b> (bdev)</td></tr>
+<tr><th id="472">472</th><td>		part = bdev-&gt;bd_part;</td></tr>
+<tr><th id="473">473</th><td></td></tr>
+<tr><th id="474">474</th><td>	<b>if</b> (part) {</td></tr>
+<tr><th id="475">475</th><td>		bt-&gt;start_lba = part-&gt;start_sect;</td></tr>
+<tr><th id="476">476</th><td>		bt-&gt;end_lba = part-&gt;start_sect + part-&gt;nr_sects;</td></tr>
+<tr><th id="477">477</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="478">478</th><td>		bt-&gt;start_lba = <var>0</var>;</td></tr>
+<tr><th id="479">479</th><td>		bt-&gt;end_lba = -<var>1ULL</var>;</td></tr>
+<tr><th id="480">480</th><td>	}</td></tr>
+<tr><th id="481">481</th><td>}</td></tr>
+<tr><th id="482">482</th><td></td></tr>
+<tr><th id="483">483</th><td><i>/*</i></td></tr>
+<tr><th id="484">484</th><td><i> * Setup everything required to start tracing</i></td></tr>
+<tr><th id="485">485</th><td><i> */</i></td></tr>
+<tr><th id="486">486</th><td><em>static</em> <em>int</em> do_blk_trace_setup(<b>struct</b> request_queue *q, <em>char</em> *name, dev_t dev,</td></tr>
+<tr><th id="487">487</th><td>			      <b>struct</b> block_device *bdev,</td></tr>
+<tr><th id="488">488</th><td>			      <b>struct</b> blk_user_trace_setup *buts)</td></tr>
+<tr><th id="489">489</th><td>{</td></tr>
+<tr><th id="490">490</th><td>	<b>struct</b> blk_trace *bt = NULL;</td></tr>
+<tr><th id="491">491</th><td>	<b>struct</b> dentry *dir = NULL;</td></tr>
+<tr><th id="492">492</th><td>	<em>int</em> ret;</td></tr>
+<tr><th id="493">493</th><td></td></tr>
+<tr><th id="494">494</th><td>	<b>if</b> (!buts-&gt;buf_size || !buts-&gt;buf_nr)</td></tr>
+<tr><th id="495">495</th><td>		<b>return</b> -EINVAL;</td></tr>
+<tr><th id="496">496</th><td></td></tr>
+<tr><th id="497">497</th><td>	strncpy(buts-&gt;name, name, BLKTRACE_BDEV_SIZE);</td></tr>
+<tr><th id="498">498</th><td>	buts-&gt;name[BLKTRACE_BDEV_SIZE - <var>1</var>] = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="499">499</th><td></td></tr>
+<tr><th id="500">500</th><td>	<i>/*</i></td></tr>
+<tr><th id="501">501</th><td><i>	 * some device names have larger paths - convert the slashes</i></td></tr>
+<tr><th id="502">502</th><td><i>	 * to underscores for this to work as expected</i></td></tr>
+<tr><th id="503">503</th><td><i>	 */</i></td></tr>
+<tr><th id="504">504</th><td>	strreplace(buts-&gt;name, <kbd>'/'</kbd>, <kbd>'_'</kbd>);</td></tr>
+<tr><th id="505">505</th><td></td></tr>
+<tr><th id="506">506</th><td>	bt = kzalloc(<b>sizeof</b>(*bt), GFP_KERNEL);</td></tr>
+<tr><th id="507">507</th><td>	<b>if</b> (!bt)</td></tr>
+<tr><th id="508">508</th><td>		<b>return</b> -ENOMEM;</td></tr>
+<tr><th id="509">509</th><td></td></tr>
+<tr><th id="510">510</th><td>	ret = -ENOMEM;</td></tr>
+<tr><th id="511">511</th><td>	bt-&gt;sequence = alloc_percpu(<em>unsigned</em> <em>long</em>);</td></tr>
+<tr><th id="512">512</th><td>	<b>if</b> (!bt-&gt;sequence)</td></tr>
+<tr><th id="513">513</th><td>		<b>goto</b> err;</td></tr>
+<tr><th id="514">514</th><td></td></tr>
+<tr><th id="515">515</th><td>	bt-&gt;msg_data = __alloc_percpu(BLK_TN_MAX_MSG, <b>__alignof__</b>(<em>char</em>));</td></tr>
+<tr><th id="516">516</th><td>	<b>if</b> (!bt-&gt;msg_data)</td></tr>
+<tr><th id="517">517</th><td>		<b>goto</b> err;</td></tr>
+<tr><th id="518">518</th><td></td></tr>
+<tr><th id="519">519</th><td>	ret = -ENOENT;</td></tr>
+<tr><th id="520">520</th><td></td></tr>
+<tr><th id="521">521</th><td>	<b>if</b> (!blk_debugfs_root)</td></tr>
+<tr><th id="522">522</th><td>		<b>goto</b> err;</td></tr>
+<tr><th id="523">523</th><td></td></tr>
+<tr><th id="524">524</th><td>	dir = debugfs_lookup(buts-&gt;name, blk_debugfs_root);</td></tr>
+<tr><th id="525">525</th><td>	<b>if</b> (!dir)</td></tr>
+<tr><th id="526">526</th><td>		bt-&gt;dir = dir = debugfs_create_dir(buts-&gt;name, blk_debugfs_root);</td></tr>
+<tr><th id="527">527</th><td>	<b>if</b> (!dir)</td></tr>
+<tr><th id="528">528</th><td>		<b>goto</b> err;</td></tr>
+<tr><th id="529">529</th><td></td></tr>
+<tr><th id="530">530</th><td>	bt-&gt;dev = dev;</td></tr>
+<tr><th id="531">531</th><td>	atomic_set(&amp;bt-&gt;dropped, <var>0</var>);</td></tr>
+<tr><th id="532">532</th><td>	INIT_LIST_HEAD(&amp;bt-&gt;running_list);</td></tr>
+<tr><th id="533">533</th><td></td></tr>
+<tr><th id="534">534</th><td>	ret = -EIO;</td></tr>
+<tr><th id="535">535</th><td>	bt-&gt;dropped_file = debugfs_create_file(<q>"dropped"</q>, <var>0444</var>, dir, bt,</td></tr>
+<tr><th id="536">536</th><td>					       &amp;blk_dropped_fops);</td></tr>
+<tr><th id="537">537</th><td>	<b>if</b> (!bt-&gt;dropped_file)</td></tr>
+<tr><th id="538">538</th><td>		<b>goto</b> err;</td></tr>
+<tr><th id="539">539</th><td></td></tr>
+<tr><th id="540">540</th><td>	bt-&gt;msg_file = debugfs_create_file(<q>"msg"</q>, <var>0222</var>, dir, bt, &amp;blk_msg_fops);</td></tr>
+<tr><th id="541">541</th><td>	<b>if</b> (!bt-&gt;msg_file)</td></tr>
+<tr><th id="542">542</th><td>		<b>goto</b> err;</td></tr>
+<tr><th id="543">543</th><td></td></tr>
+<tr><th id="544">544</th><td>	bt-&gt;rchan = relay_open(<q>"trace"</q>, dir, buts-&gt;buf_size,</td></tr>
+<tr><th id="545">545</th><td>				buts-&gt;buf_nr, &amp;blk_relay_callbacks, bt);</td></tr>
+<tr><th id="546">546</th><td>	<b>if</b> (!bt-&gt;rchan)</td></tr>
+<tr><th id="547">547</th><td>		<b>goto</b> err;</td></tr>
+<tr><th id="548">548</th><td></td></tr>
+<tr><th id="549">549</th><td>	bt-&gt;act_mask = buts-&gt;act_mask;</td></tr>
+<tr><th id="550">550</th><td>	<b>if</b> (!bt-&gt;act_mask)</td></tr>
+<tr><th id="551">551</th><td>		bt-&gt;act_mask = (u16) -<var>1</var>;</td></tr>
+<tr><th id="552">552</th><td></td></tr>
+<tr><th id="553">553</th><td>	blk_trace_setup_lba(bt, bdev);</td></tr>
+<tr><th id="554">554</th><td></td></tr>
+<tr><th id="555">555</th><td>	<i>/* overwrite with user settings */</i></td></tr>
+<tr><th id="556">556</th><td>	<b>if</b> (buts-&gt;start_lba)</td></tr>
+<tr><th id="557">557</th><td>		bt-&gt;start_lba = buts-&gt;start_lba;</td></tr>
+<tr><th id="558">558</th><td>	<b>if</b> (buts-&gt;end_lba)</td></tr>
+<tr><th id="559">559</th><td>		bt-&gt;end_lba = buts-&gt;end_lba;</td></tr>
+<tr><th id="560">560</th><td></td></tr>
+<tr><th id="561">561</th><td>	bt-&gt;pid = buts-&gt;pid;</td></tr>
+<tr><th id="562">562</th><td>	bt-&gt;trace_state = Blktrace_setup;</td></tr>
+<tr><th id="563">563</th><td></td></tr>
+<tr><th id="564">564</th><td>	ret = -EBUSY;</td></tr>
+<tr><th id="565">565</th><td>	<b>if</b> (cmpxchg(&amp;q-&gt;blk_trace, NULL, bt))</td></tr>
+<tr><th id="566">566</th><td>		<b>goto</b> err;</td></tr>
+<tr><th id="567">567</th><td></td></tr>
+<tr><th id="568">568</th><td>	get_probe_ref();</td></tr>
+<tr><th id="569">569</th><td></td></tr>
+<tr><th id="570">570</th><td>	ret = <var>0</var>;</td></tr>
+<tr><th id="571">571</th><td>err:</td></tr>
+<tr><th id="572">572</th><td>	<b>if</b> (dir &amp;&amp; !bt-&gt;dir)</td></tr>
+<tr><th id="573">573</th><td>		dput(dir);</td></tr>
+<tr><th id="574">574</th><td>	<b>if</b> (ret)</td></tr>
+<tr><th id="575">575</th><td>		blk_trace_free(bt);</td></tr>
+<tr><th id="576">576</th><td>	<b>return</b> ret;</td></tr>
+<tr><th id="577">577</th><td>}</td></tr>
+<tr><th id="578">578</th><td></td></tr>
+<tr><th id="579">579</th><td><em>static</em> <em>int</em> __blk_trace_setup(<b>struct</b> request_queue *q, <em>char</em> *name, dev_t dev,</td></tr>
+<tr><th id="580">580</th><td>			     <b>struct</b> block_device *bdev, <em>char</em> __user *arg)</td></tr>
+<tr><th id="581">581</th><td>{</td></tr>
+<tr><th id="582">582</th><td>	<b>struct</b> blk_user_trace_setup buts;</td></tr>
+<tr><th id="583">583</th><td>	<em>int</em> ret;</td></tr>
+<tr><th id="584">584</th><td></td></tr>
+<tr><th id="585">585</th><td>	ret = copy_from_user(&amp;buts, arg, <b>sizeof</b>(buts));</td></tr>
+<tr><th id="586">586</th><td>	<b>if</b> (ret)</td></tr>
+<tr><th id="587">587</th><td>		<b>return</b> -EFAULT;</td></tr>
+<tr><th id="588">588</th><td></td></tr>
+<tr><th id="589">589</th><td>	ret = do_blk_trace_setup(q, name, dev, bdev, &amp;buts);</td></tr>
+<tr><th id="590">590</th><td>	<b>if</b> (ret)</td></tr>
+<tr><th id="591">591</th><td>		<b>return</b> ret;</td></tr>
+<tr><th id="592">592</th><td></td></tr>
+<tr><th id="593">593</th><td>	<b>if</b> (copy_to_user(arg, &amp;buts, <b>sizeof</b>(buts))) {</td></tr>
+<tr><th id="594">594</th><td>		__blk_trace_remove(q);</td></tr>
+<tr><th id="595">595</th><td>		<b>return</b> -EFAULT;</td></tr>
+<tr><th id="596">596</th><td>	}</td></tr>
+<tr><th id="597">597</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="598">598</th><td>}</td></tr>
+<tr><th id="599">599</th><td></td></tr>
+<tr><th id="600">600</th><td><em>int</em> blk_trace_setup(<b>struct</b> request_queue *q, <em>char</em> *name, dev_t dev,</td></tr>
+<tr><th id="601">601</th><td>		    <b>struct</b> block_device *bdev,</td></tr>
+<tr><th id="602">602</th><td>		    <em>char</em> __user *arg)</td></tr>
+<tr><th id="603">603</th><td>{</td></tr>
+<tr><th id="604">604</th><td>	<em>int</em> ret;</td></tr>
+<tr><th id="605">605</th><td></td></tr>
+<tr><th id="606">606</th><td>	mutex_lock(&amp;q-&gt;blk_trace_mutex);</td></tr>
+<tr><th id="607">607</th><td>	ret = __blk_trace_setup(q, name, dev, bdev, arg);</td></tr>
+<tr><th id="608">608</th><td>	mutex_unlock(&amp;q-&gt;blk_trace_mutex);</td></tr>
+<tr><th id="609">609</th><td></td></tr>
+<tr><th id="610">610</th><td>	<b>return</b> ret;</td></tr>
+<tr><th id="611">611</th><td>}</td></tr>
+<tr><th id="612">612</th><td>EXPORT_SYMBOL_GPL(blk_trace_setup);</td></tr>
+<tr><th id="613">613</th><td></td></tr>
+<tr><th id="614">614</th><td><u>#if defined(CONFIG_COMPAT) &amp;&amp; defined(CONFIG_X86_64)</u></td></tr>
+<tr><th id="615">615</th><td><em>static</em> <em>int</em> compat_blk_trace_setup(<b>struct</b> request_queue *q, <em>char</em> *name,</td></tr>
+<tr><th id="616">616</th><td>				  dev_t dev, <b>struct</b> block_device *bdev,</td></tr>
+<tr><th id="617">617</th><td>				  <em>char</em> __user *arg)</td></tr>
+<tr><th id="618">618</th><td>{</td></tr>
+<tr><th id="619">619</th><td>	<b>struct</b> blk_user_trace_setup buts;</td></tr>
+<tr><th id="620">620</th><td>	<b>struct</b> compat_blk_user_trace_setup cbuts;</td></tr>
+<tr><th id="621">621</th><td>	<em>int</em> ret;</td></tr>
+<tr><th id="622">622</th><td></td></tr>
+<tr><th id="623">623</th><td>	<b>if</b> (copy_from_user(&amp;cbuts, arg, <b>sizeof</b>(cbuts)))</td></tr>
+<tr><th id="624">624</th><td>		<b>return</b> -EFAULT;</td></tr>
+<tr><th id="625">625</th><td></td></tr>
+<tr><th id="626">626</th><td>	buts = (<b>struct</b> blk_user_trace_setup) {</td></tr>
+<tr><th id="627">627</th><td>		.act_mask = cbuts.act_mask,</td></tr>
+<tr><th id="628">628</th><td>		.buf_size = cbuts.buf_size,</td></tr>
+<tr><th id="629">629</th><td>		.buf_nr = cbuts.buf_nr,</td></tr>
+<tr><th id="630">630</th><td>		.start_lba = cbuts.start_lba,</td></tr>
+<tr><th id="631">631</th><td>		.end_lba = cbuts.end_lba,</td></tr>
+<tr><th id="632">632</th><td>		.pid = cbuts.pid,</td></tr>
+<tr><th id="633">633</th><td>	};</td></tr>
+<tr><th id="634">634</th><td></td></tr>
+<tr><th id="635">635</th><td>	ret = do_blk_trace_setup(q, name, dev, bdev, &amp;buts);</td></tr>
+<tr><th id="636">636</th><td>	<b>if</b> (ret)</td></tr>
+<tr><th id="637">637</th><td>		<b>return</b> ret;</td></tr>
+<tr><th id="638">638</th><td></td></tr>
+<tr><th id="639">639</th><td>	<b>if</b> (copy_to_user(arg, &amp;buts.name, ARRAY_SIZE(buts.name))) {</td></tr>
+<tr><th id="640">640</th><td>		__blk_trace_remove(q);</td></tr>
+<tr><th id="641">641</th><td>		<b>return</b> -EFAULT;</td></tr>
+<tr><th id="642">642</th><td>	}</td></tr>
+<tr><th id="643">643</th><td></td></tr>
+<tr><th id="644">644</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="645">645</th><td>}</td></tr>
+<tr><th id="646">646</th><td><u>#endif</u></td></tr>
+<tr><th id="647">647</th><td></td></tr>
+<tr><th id="648">648</th><td><em>static</em> <em>int</em> __blk_trace_startstop(<b>struct</b> request_queue *q, <em>int</em> start)</td></tr>
+<tr><th id="649">649</th><td>{</td></tr>
+<tr><th id="650">650</th><td>	<em>int</em> ret;</td></tr>
+<tr><th id="651">651</th><td>	<b>struct</b> blk_trace *bt = q-&gt;blk_trace;</td></tr>
+<tr><th id="652">652</th><td></td></tr>
+<tr><th id="653">653</th><td>	<b>if</b> (bt == NULL)</td></tr>
+<tr><th id="654">654</th><td>		<b>return</b> -EINVAL;</td></tr>
+<tr><th id="655">655</th><td></td></tr>
+<tr><th id="656">656</th><td>	<i>/*</i></td></tr>
+<tr><th id="657">657</th><td><i>	 * For starting a trace, we can transition from a setup or stopped</i></td></tr>
+<tr><th id="658">658</th><td><i>	 * trace. For stopping a trace, the state must be running</i></td></tr>
+<tr><th id="659">659</th><td><i>	 */</i></td></tr>
+<tr><th id="660">660</th><td>	ret = -EINVAL;</td></tr>
+<tr><th id="661">661</th><td>	<b>if</b> (start) {</td></tr>
+<tr><th id="662">662</th><td>		<b>if</b> (bt-&gt;trace_state == Blktrace_setup ||</td></tr>
+<tr><th id="663">663</th><td>		    bt-&gt;trace_state == Blktrace_stopped) {</td></tr>
+<tr><th id="664">664</th><td>			blktrace_seq++;</td></tr>
+<tr><th id="665">665</th><td>			smp_mb();</td></tr>
+<tr><th id="666">666</th><td>			bt-&gt;trace_state = Blktrace_running;</td></tr>
+<tr><th id="667">667</th><td>			spin_lock_irq(&amp;running_trace_lock);</td></tr>
+<tr><th id="668">668</th><td>			list_add(&amp;bt-&gt;running_list, &amp;running_trace_list);</td></tr>
+<tr><th id="669">669</th><td>			spin_unlock_irq(&amp;running_trace_lock);</td></tr>
+<tr><th id="670">670</th><td></td></tr>
+<tr><th id="671">671</th><td>			trace_note_time(bt);</td></tr>
+<tr><th id="672">672</th><td>			ret = <var>0</var>;</td></tr>
+<tr><th id="673">673</th><td>		}</td></tr>
+<tr><th id="674">674</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="675">675</th><td>		<b>if</b> (bt-&gt;trace_state == Blktrace_running) {</td></tr>
+<tr><th id="676">676</th><td>			bt-&gt;trace_state = Blktrace_stopped;</td></tr>
+<tr><th id="677">677</th><td>			spin_lock_irq(&amp;running_trace_lock);</td></tr>
+<tr><th id="678">678</th><td>			list_del_init(&amp;bt-&gt;running_list);</td></tr>
+<tr><th id="679">679</th><td>			spin_unlock_irq(&amp;running_trace_lock);</td></tr>
+<tr><th id="680">680</th><td>			relay_flush(bt-&gt;rchan);</td></tr>
+<tr><th id="681">681</th><td>			ret = <var>0</var>;</td></tr>
+<tr><th id="682">682</th><td>		}</td></tr>
+<tr><th id="683">683</th><td>	}</td></tr>
+<tr><th id="684">684</th><td></td></tr>
+<tr><th id="685">685</th><td>	<b>return</b> ret;</td></tr>
+<tr><th id="686">686</th><td>}</td></tr>
+<tr><th id="687">687</th><td></td></tr>
+<tr><th id="688">688</th><td><em>int</em> blk_trace_startstop(<b>struct</b> request_queue *q, <em>int</em> start)</td></tr>
+<tr><th id="689">689</th><td>{</td></tr>
+<tr><th id="690">690</th><td>	<em>int</em> ret;</td></tr>
+<tr><th id="691">691</th><td></td></tr>
+<tr><th id="692">692</th><td>	mutex_lock(&amp;q-&gt;blk_trace_mutex);</td></tr>
+<tr><th id="693">693</th><td>	ret = __blk_trace_startstop(q, start);</td></tr>
+<tr><th id="694">694</th><td>	mutex_unlock(&amp;q-&gt;blk_trace_mutex);</td></tr>
+<tr><th id="695">695</th><td></td></tr>
+<tr><th id="696">696</th><td>	<b>return</b> ret;</td></tr>
+<tr><th id="697">697</th><td>}</td></tr>
+<tr><th id="698">698</th><td>EXPORT_SYMBOL_GPL(blk_trace_startstop);</td></tr>
+<tr><th id="699">699</th><td></td></tr>
+<tr><th id="700">700</th><td><i>/*</i></td></tr>
+<tr><th id="701">701</th><td><i> * When reading or writing the blktrace sysfs files, the references to the</i></td></tr>
+<tr><th id="702">702</th><td><i> * opened sysfs or device files should prevent the underlying block device</i></td></tr>
+<tr><th id="703">703</th><td><i> * from being removed. So no further delete protection is really needed.</i></td></tr>
+<tr><th id="704">704</th><td><i> */</i></td></tr>
+<tr><th id="705">705</th><td></td></tr>
+<tr><th id="706">706</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="707">707</th><td><i class="doc"> * blk_trace_ioctl: - handle the ioctls associated with tracing</i></td></tr>
+<tr><th id="708">708</th><td><i class="doc"> *<span class="command"> @bdev</span>:	the block device</i></td></tr>
+<tr><th id="709">709</th><td><i class="doc"> *<span class="command"> @cmd</span>:	the ioctl cmd</i></td></tr>
+<tr><th id="710">710</th><td><i class="doc"> * <span class="command">@arg</span>:	the argument data, if any</i></td></tr>
+<tr><th id="711">711</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="712">712</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="713">713</th><td><em>int</em> blk_trace_ioctl(<b>struct</b> block_device *bdev, <em>unsigned</em> cmd, <em>char</em> __user *arg)</td></tr>
+<tr><th id="714">714</th><td>{</td></tr>
+<tr><th id="715">715</th><td>	<b>struct</b> request_queue *q;</td></tr>
+<tr><th id="716">716</th><td>	<em>int</em> ret, start = <var>0</var>;</td></tr>
+<tr><th id="717">717</th><td>	<em>char</em> b[BDEVNAME_SIZE];</td></tr>
+<tr><th id="718">718</th><td></td></tr>
+<tr><th id="719">719</th><td>	q = bdev_get_queue(bdev);</td></tr>
+<tr><th id="720">720</th><td>	<b>if</b> (!q)</td></tr>
+<tr><th id="721">721</th><td>		<b>return</b> -ENXIO;</td></tr>
+<tr><th id="722">722</th><td></td></tr>
+<tr><th id="723">723</th><td>	mutex_lock(&amp;q-&gt;blk_trace_mutex);</td></tr>
+<tr><th id="724">724</th><td></td></tr>
+<tr><th id="725">725</th><td>	<b>switch</b> (cmd) {</td></tr>
+<tr><th id="726">726</th><td>	<b>case</b> BLKTRACESETUP:</td></tr>
+<tr><th id="727">727</th><td>		bdevname(bdev, b);</td></tr>
+<tr><th id="728">728</th><td>		ret = __blk_trace_setup(q, b, bdev-&gt;bd_dev, bdev, arg);</td></tr>
+<tr><th id="729">729</th><td>		<b>break</b>;</td></tr>
+<tr><th id="730">730</th><td><u>#if defined(CONFIG_COMPAT) &amp;&amp; defined(CONFIG_X86_64)</u></td></tr>
+<tr><th id="731">731</th><td>	<b>case</b> BLKTRACESETUP32:</td></tr>
+<tr><th id="732">732</th><td>		bdevname(bdev, b);</td></tr>
+<tr><th id="733">733</th><td>		ret = compat_blk_trace_setup(q, b, bdev-&gt;bd_dev, bdev, arg);</td></tr>
+<tr><th id="734">734</th><td>		<b>break</b>;</td></tr>
+<tr><th id="735">735</th><td><u>#endif</u></td></tr>
+<tr><th id="736">736</th><td>	<b>case</b> BLKTRACESTART:</td></tr>
+<tr><th id="737">737</th><td>		start = <var>1</var>;</td></tr>
+<tr><th id="738">738</th><td>	<b>case</b> BLKTRACESTOP:</td></tr>
+<tr><th id="739">739</th><td>		ret = __blk_trace_startstop(q, start);</td></tr>
+<tr><th id="740">740</th><td>		<b>break</b>;</td></tr>
+<tr><th id="741">741</th><td>	<b>case</b> BLKTRACETEARDOWN:</td></tr>
+<tr><th id="742">742</th><td>		ret = __blk_trace_remove(q);</td></tr>
+<tr><th id="743">743</th><td>		<b>break</b>;</td></tr>
+<tr><th id="744">744</th><td>	<b>default</b>:</td></tr>
+<tr><th id="745">745</th><td>		ret = -ENOTTY;</td></tr>
+<tr><th id="746">746</th><td>		<b>break</b>;</td></tr>
+<tr><th id="747">747</th><td>	}</td></tr>
+<tr><th id="748">748</th><td></td></tr>
+<tr><th id="749">749</th><td>	mutex_unlock(&amp;q-&gt;blk_trace_mutex);</td></tr>
+<tr><th id="750">750</th><td>	<b>return</b> ret;</td></tr>
+<tr><th id="751">751</th><td>}</td></tr>
+<tr><th id="752">752</th><td></td></tr>
+<tr><th id="753">753</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="754">754</th><td><i class="doc"> * blk_trace_shutdown: - stop and cleanup trace structures</i></td></tr>
+<tr><th id="755">755</th><td><i class="doc"> *<span class="command"> @q</span>:    the request queue associated with the device</i></td></tr>
+<tr><th id="756">756</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="757">757</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="758">758</th><td><em>void</em> blk_trace_shutdown(<b>struct</b> request_queue *q)</td></tr>
+<tr><th id="759">759</th><td>{</td></tr>
+<tr><th id="760">760</th><td>	mutex_lock(&amp;q-&gt;blk_trace_mutex);</td></tr>
+<tr><th id="761">761</th><td></td></tr>
+<tr><th id="762">762</th><td>	<b>if</b> (q-&gt;blk_trace) {</td></tr>
+<tr><th id="763">763</th><td>		__blk_trace_startstop(q, <var>0</var>);</td></tr>
+<tr><th id="764">764</th><td>		__blk_trace_remove(q);</td></tr>
+<tr><th id="765">765</th><td>	}</td></tr>
+<tr><th id="766">766</th><td></td></tr>
+<tr><th id="767">767</th><td>	mutex_unlock(&amp;q-&gt;blk_trace_mutex);</td></tr>
+<tr><th id="768">768</th><td>}</td></tr>
+<tr><th id="769">769</th><td></td></tr>
+<tr><th id="770">770</th><td><u>#ifdef CONFIG_BLK_CGROUP</u></td></tr>
+<tr><th id="771">771</th><td><em>static</em> <b>union</b> kernfs_node_id *</td></tr>
+<tr><th id="772">772</th><td>blk_trace_bio_get_cgid(<b>struct</b> request_queue *q, <b>struct</b> bio *bio)</td></tr>
+<tr><th id="773">773</th><td>{</td></tr>
+<tr><th id="774">774</th><td>	<b>struct</b> blk_trace *bt = q-&gt;blk_trace;</td></tr>
+<tr><th id="775">775</th><td></td></tr>
+<tr><th id="776">776</th><td>	<b>if</b> (!bt || !(blk_tracer_flags.val &amp; TRACE_BLK_OPT_CGROUP))</td></tr>
+<tr><th id="777">777</th><td>		<b>return</b> NULL;</td></tr>
+<tr><th id="778">778</th><td></td></tr>
+<tr><th id="779">779</th><td>	<b>if</b> (!bio-&gt;bi_css)</td></tr>
+<tr><th id="780">780</th><td>		<b>return</b> NULL;</td></tr>
+<tr><th id="781">781</th><td>	<b>return</b> cgroup_get_kernfs_id(bio-&gt;bi_css-&gt;cgroup);</td></tr>
+<tr><th id="782">782</th><td>}</td></tr>
+<tr><th id="783">783</th><td><u>#else</u></td></tr>
+<tr><th id="784">784</th><td><em>static</em> <b>union</b> kernfs_node_id *</td></tr>
+<tr><th id="785">785</th><td>blk_trace_bio_get_cgid(<b>struct</b> request_queue *q, <b>struct</b> bio *bio)</td></tr>
+<tr><th id="786">786</th><td>{</td></tr>
+<tr><th id="787">787</th><td>	<b>return</b> NULL;</td></tr>
+<tr><th id="788">788</th><td>}</td></tr>
+<tr><th id="789">789</th><td><u>#endif</u></td></tr>
+<tr><th id="790">790</th><td></td></tr>
+<tr><th id="791">791</th><td><em>static</em> <b>union</b> kernfs_node_id *</td></tr>
+<tr><th id="792">792</th><td>blk_trace_request_get_cgid(<b>struct</b> request_queue *q, <b>struct</b> request *rq)</td></tr>
+<tr><th id="793">793</th><td>{</td></tr>
+<tr><th id="794">794</th><td>	<b>if</b> (!rq-&gt;bio)</td></tr>
+<tr><th id="795">795</th><td>		<b>return</b> NULL;</td></tr>
+<tr><th id="796">796</th><td>	<i>/* Use the first bio */</i></td></tr>
+<tr><th id="797">797</th><td>	<b>return</b> blk_trace_bio_get_cgid(q, rq-&gt;bio);</td></tr>
+<tr><th id="798">798</th><td>}</td></tr>
+<tr><th id="799">799</th><td></td></tr>
+<tr><th id="800">800</th><td><i>/*</i></td></tr>
+<tr><th id="801">801</th><td><i> * blktrace probes</i></td></tr>
+<tr><th id="802">802</th><td><i> */</i></td></tr>
+<tr><th id="803">803</th><td></td></tr>
+<tr><th id="804">804</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="805">805</th><td><i class="doc"> * blk_add_trace_rq - Add a trace for a request oriented action</i></td></tr>
+<tr><th id="806">806</th><td><i class="doc"> *<span class="command"> @rq</span>:		the source request</i></td></tr>
+<tr><th id="807">807</th><td><i class="doc"> *<span class="command"> @error</span>:	return status to log</i></td></tr>
+<tr><th id="808">808</th><td><i class="doc"> *<span class="command"> @nr</span>_bytes:	number of completed bytes</i></td></tr>
+<tr><th id="809">809</th><td><i class="doc"> *<span class="command"> @what</span>:	the action</i></td></tr>
+<tr><th id="810">810</th><td><i class="doc"> *<span class="command"> @cgid</span>:	the cgroup info</i></td></tr>
+<tr><th id="811">811</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="812">812</th><td><i class="doc"> * Description:</i></td></tr>
+<tr><th id="813">813</th><td><i class="doc"> *     Records an action against a request. Will log the bio offset + size.</i></td></tr>
+<tr><th id="814">814</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="815">815</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="816">816</th><td><em>static</em> <em>void</em> blk_add_trace_rq(<b>struct</b> request *rq, <em>int</em> error,</td></tr>
+<tr><th id="817">817</th><td>			     <em>unsigned</em> <em>int</em> nr_bytes, u32 what,</td></tr>
+<tr><th id="818">818</th><td>			     <b>union</b> kernfs_node_id *cgid)</td></tr>
+<tr><th id="819">819</th><td>{</td></tr>
+<tr><th id="820">820</th><td>	<b>struct</b> blk_trace *bt = rq-&gt;q-&gt;blk_trace;</td></tr>
+<tr><th id="821">821</th><td></td></tr>
+<tr><th id="822">822</th><td>	<b>if</b> (likely(!bt))</td></tr>
+<tr><th id="823">823</th><td>		<b>return</b>;</td></tr>
+<tr><th id="824">824</th><td></td></tr>
+<tr><th id="825">825</th><td>	<b>if</b> (blk_rq_is_passthrough(rq))</td></tr>
+<tr><th id="826">826</th><td>		what |= BLK_TC_ACT(BLK_TC_PC);</td></tr>
+<tr><th id="827">827</th><td>	<b>else</b></td></tr>
+<tr><th id="828">828</th><td>		what |= BLK_TC_ACT(BLK_TC_FS);</td></tr>
+<tr><th id="829">829</th><td></td></tr>
+<tr><th id="830">830</th><td>	__blk_add_trace(bt, blk_rq_trace_sector(rq), nr_bytes, req_op(rq),</td></tr>
+<tr><th id="831">831</th><td>			rq-&gt;cmd_flags, what, error, <var>0</var>, NULL, cgid);</td></tr>
+<tr><th id="832">832</th><td>}</td></tr>
+<tr><th id="833">833</th><td></td></tr>
+<tr><th id="834">834</th><td><em>static</em> <em>void</em> blk_add_trace_rq_insert(<em>void</em> *ignore,</td></tr>
+<tr><th id="835">835</th><td>				    <b>struct</b> request_queue *q, <b>struct</b> request *rq)</td></tr>
+<tr><th id="836">836</th><td>{</td></tr>
+<tr><th id="837">837</th><td>	blk_add_trace_rq(rq, <var>0</var>, blk_rq_bytes(rq), BLK_TA_INSERT,</td></tr>
+<tr><th id="838">838</th><td>			 blk_trace_request_get_cgid(q, rq));</td></tr>
+<tr><th id="839">839</th><td>}</td></tr>
+<tr><th id="840">840</th><td></td></tr>
+<tr><th id="841">841</th><td><em>static</em> <em>void</em> blk_add_trace_rq_issue(<em>void</em> *ignore,</td></tr>
+<tr><th id="842">842</th><td>				   <b>struct</b> request_queue *q, <b>struct</b> request *rq)</td></tr>
+<tr><th id="843">843</th><td>{</td></tr>
+<tr><th id="844">844</th><td>	blk_add_trace_rq(rq, <var>0</var>, blk_rq_bytes(rq), BLK_TA_ISSUE,</td></tr>
+<tr><th id="845">845</th><td>			 blk_trace_request_get_cgid(q, rq));</td></tr>
+<tr><th id="846">846</th><td>}</td></tr>
+<tr><th id="847">847</th><td></td></tr>
+<tr><th id="848">848</th><td><em>static</em> <em>void</em> blk_add_trace_rq_requeue(<em>void</em> *ignore,</td></tr>
+<tr><th id="849">849</th><td>				     <b>struct</b> request_queue *q,</td></tr>
+<tr><th id="850">850</th><td>				     <b>struct</b> request *rq)</td></tr>
+<tr><th id="851">851</th><td>{</td></tr>
+<tr><th id="852">852</th><td>	blk_add_trace_rq(rq, <var>0</var>, blk_rq_bytes(rq), BLK_TA_REQUEUE,</td></tr>
+<tr><th id="853">853</th><td>			 blk_trace_request_get_cgid(q, rq));</td></tr>
+<tr><th id="854">854</th><td>}</td></tr>
+<tr><th id="855">855</th><td></td></tr>
+<tr><th id="856">856</th><td><em>static</em> <em>void</em> blk_add_trace_rq_complete(<em>void</em> *ignore, <b>struct</b> request *rq,</td></tr>
+<tr><th id="857">857</th><td>			<em>int</em> error, <em>unsigned</em> <em>int</em> nr_bytes)</td></tr>
+<tr><th id="858">858</th><td>{</td></tr>
+<tr><th id="859">859</th><td>	blk_add_trace_rq(rq, error, nr_bytes, BLK_TA_COMPLETE,</td></tr>
+<tr><th id="860">860</th><td>			 blk_trace_request_get_cgid(rq-&gt;q, rq));</td></tr>
+<tr><th id="861">861</th><td>}</td></tr>
+<tr><th id="862">862</th><td></td></tr>
+<tr><th id="863">863</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="864">864</th><td><i class="doc"> * blk_add_trace_bio - Add a trace for a bio oriented action</i></td></tr>
+<tr><th id="865">865</th><td><i class="doc"> *<span class="command"> @q</span>:		queue the io is for</i></td></tr>
+<tr><th id="866">866</th><td><i class="doc"> *<span class="command"> @bio</span>:	the source bio</i></td></tr>
+<tr><th id="867">867</th><td><i class="doc"> *<span class="command"> @what</span>:	the action</i></td></tr>
+<tr><th id="868">868</th><td><i class="doc"> *<span class="command"> @error</span>:	error, if any</i></td></tr>
+<tr><th id="869">869</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="870">870</th><td><i class="doc"> * Description:</i></td></tr>
+<tr><th id="871">871</th><td><i class="doc"> *     Records an action against a bio. Will log the bio offset + size.</i></td></tr>
+<tr><th id="872">872</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="873">873</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="874">874</th><td><em>static</em> <em>void</em> blk_add_trace_bio(<b>struct</b> request_queue *q, <b>struct</b> bio *bio,</td></tr>
+<tr><th id="875">875</th><td>			      u32 what, <em>int</em> error)</td></tr>
+<tr><th id="876">876</th><td>{</td></tr>
+<tr><th id="877">877</th><td>	<b>struct</b> blk_trace *bt = q-&gt;blk_trace;</td></tr>
+<tr><th id="878">878</th><td></td></tr>
+<tr><th id="879">879</th><td>	<b>if</b> (likely(!bt))</td></tr>
+<tr><th id="880">880</th><td>		<b>return</b>;</td></tr>
+<tr><th id="881">881</th><td></td></tr>
+<tr><th id="882">882</th><td>	__blk_add_trace(bt, bio-&gt;bi_iter.bi_sector, bio-&gt;bi_iter.bi_size,</td></tr>
+<tr><th id="883">883</th><td>			bio_op(bio), bio-&gt;bi_opf, what, error, <var>0</var>, NULL,</td></tr>
+<tr><th id="884">884</th><td>			blk_trace_bio_get_cgid(q, bio));</td></tr>
+<tr><th id="885">885</th><td>}</td></tr>
+<tr><th id="886">886</th><td></td></tr>
+<tr><th id="887">887</th><td><em>static</em> <em>void</em> blk_add_trace_bio_bounce(<em>void</em> *ignore,</td></tr>
+<tr><th id="888">888</th><td>				     <b>struct</b> request_queue *q, <b>struct</b> bio *bio)</td></tr>
+<tr><th id="889">889</th><td>{</td></tr>
+<tr><th id="890">890</th><td>	blk_add_trace_bio(q, bio, BLK_TA_BOUNCE, <var>0</var>);</td></tr>
+<tr><th id="891">891</th><td>}</td></tr>
+<tr><th id="892">892</th><td></td></tr>
+<tr><th id="893">893</th><td><em>static</em> <em>void</em> blk_add_trace_bio_complete(<em>void</em> *ignore,</td></tr>
+<tr><th id="894">894</th><td>				       <b>struct</b> request_queue *q, <b>struct</b> bio *bio,</td></tr>
+<tr><th id="895">895</th><td>				       <em>int</em> error)</td></tr>
+<tr><th id="896">896</th><td>{</td></tr>
+<tr><th id="897">897</th><td>	blk_add_trace_bio(q, bio, BLK_TA_COMPLETE, error);</td></tr>
+<tr><th id="898">898</th><td>}</td></tr>
+<tr><th id="899">899</th><td></td></tr>
+<tr><th id="900">900</th><td><em>static</em> <em>void</em> blk_add_trace_bio_backmerge(<em>void</em> *ignore,</td></tr>
+<tr><th id="901">901</th><td>					<b>struct</b> request_queue *q,</td></tr>
+<tr><th id="902">902</th><td>					<b>struct</b> request *rq,</td></tr>
+<tr><th id="903">903</th><td>					<b>struct</b> bio *bio)</td></tr>
+<tr><th id="904">904</th><td>{</td></tr>
+<tr><th id="905">905</th><td>	blk_add_trace_bio(q, bio, BLK_TA_BACKMERGE, <var>0</var>);</td></tr>
+<tr><th id="906">906</th><td>}</td></tr>
+<tr><th id="907">907</th><td></td></tr>
+<tr><th id="908">908</th><td><em>static</em> <em>void</em> blk_add_trace_bio_frontmerge(<em>void</em> *ignore,</td></tr>
+<tr><th id="909">909</th><td>					 <b>struct</b> request_queue *q,</td></tr>
+<tr><th id="910">910</th><td>					 <b>struct</b> request *rq,</td></tr>
+<tr><th id="911">911</th><td>					 <b>struct</b> bio *bio)</td></tr>
+<tr><th id="912">912</th><td>{</td></tr>
+<tr><th id="913">913</th><td>	blk_add_trace_bio(q, bio, BLK_TA_FRONTMERGE, <var>0</var>);</td></tr>
+<tr><th id="914">914</th><td>}</td></tr>
+<tr><th id="915">915</th><td></td></tr>
+<tr><th id="916">916</th><td><em>static</em> <em>void</em> blk_add_trace_bio_queue(<em>void</em> *ignore,</td></tr>
+<tr><th id="917">917</th><td>				    <b>struct</b> request_queue *q, <b>struct</b> bio *bio)</td></tr>
+<tr><th id="918">918</th><td>{</td></tr>
+<tr><th id="919">919</th><td>	blk_add_trace_bio(q, bio, BLK_TA_QUEUE, <var>0</var>);</td></tr>
+<tr><th id="920">920</th><td>}</td></tr>
+<tr><th id="921">921</th><td></td></tr>
+<tr><th id="922">922</th><td><em>static</em> <em>void</em> blk_add_trace_getrq(<em>void</em> *ignore,</td></tr>
+<tr><th id="923">923</th><td>				<b>struct</b> request_queue *q,</td></tr>
+<tr><th id="924">924</th><td>				<b>struct</b> bio *bio, <em>int</em> rw)</td></tr>
+<tr><th id="925">925</th><td>{</td></tr>
+<tr><th id="926">926</th><td>	<b>if</b> (bio)</td></tr>
+<tr><th id="927">927</th><td>		blk_add_trace_bio(q, bio, BLK_TA_GETRQ, <var>0</var>);</td></tr>
+<tr><th id="928">928</th><td>	<b>else</b> {</td></tr>
+<tr><th id="929">929</th><td>		<b>struct</b> blk_trace *bt = q-&gt;blk_trace;</td></tr>
+<tr><th id="930">930</th><td></td></tr>
+<tr><th id="931">931</th><td>		<b>if</b> (bt)</td></tr>
+<tr><th id="932">932</th><td>			__blk_add_trace(bt, <var>0</var>, <var>0</var>, rw, <var>0</var>, BLK_TA_GETRQ, <var>0</var>, <var>0</var>,</td></tr>
+<tr><th id="933">933</th><td>					NULL, NULL);</td></tr>
+<tr><th id="934">934</th><td>	}</td></tr>
+<tr><th id="935">935</th><td>}</td></tr>
+<tr><th id="936">936</th><td></td></tr>
+<tr><th id="937">937</th><td></td></tr>
+<tr><th id="938">938</th><td><em>static</em> <em>void</em> blk_add_trace_sleeprq(<em>void</em> *ignore,</td></tr>
+<tr><th id="939">939</th><td>				  <b>struct</b> request_queue *q,</td></tr>
+<tr><th id="940">940</th><td>				  <b>struct</b> bio *bio, <em>int</em> rw)</td></tr>
+<tr><th id="941">941</th><td>{</td></tr>
+<tr><th id="942">942</th><td>	<b>if</b> (bio)</td></tr>
+<tr><th id="943">943</th><td>		blk_add_trace_bio(q, bio, BLK_TA_SLEEPRQ, <var>0</var>);</td></tr>
+<tr><th id="944">944</th><td>	<b>else</b> {</td></tr>
+<tr><th id="945">945</th><td>		<b>struct</b> blk_trace *bt = q-&gt;blk_trace;</td></tr>
+<tr><th id="946">946</th><td></td></tr>
+<tr><th id="947">947</th><td>		<b>if</b> (bt)</td></tr>
+<tr><th id="948">948</th><td>			__blk_add_trace(bt, <var>0</var>, <var>0</var>, rw, <var>0</var>, BLK_TA_SLEEPRQ,</td></tr>
+<tr><th id="949">949</th><td>					<var>0</var>, <var>0</var>, NULL, NULL);</td></tr>
+<tr><th id="950">950</th><td>	}</td></tr>
+<tr><th id="951">951</th><td>}</td></tr>
+<tr><th id="952">952</th><td></td></tr>
+<tr><th id="953">953</th><td><em>static</em> <em>void</em> blk_add_trace_plug(<em>void</em> *ignore, <b>struct</b> request_queue *q)</td></tr>
+<tr><th id="954">954</th><td>{</td></tr>
+<tr><th id="955">955</th><td>	<b>struct</b> blk_trace *bt = q-&gt;blk_trace;</td></tr>
+<tr><th id="956">956</th><td></td></tr>
+<tr><th id="957">957</th><td>	<b>if</b> (bt)</td></tr>
+<tr><th id="958">958</th><td>		__blk_add_trace(bt, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, BLK_TA_PLUG, <var>0</var>, <var>0</var>, NULL, NULL);</td></tr>
+<tr><th id="959">959</th><td>}</td></tr>
+<tr><th id="960">960</th><td></td></tr>
+<tr><th id="961">961</th><td><em>static</em> <em>void</em> blk_add_trace_unplug(<em>void</em> *ignore, <b>struct</b> request_queue *q,</td></tr>
+<tr><th id="962">962</th><td>				    <em>unsigned</em> <em>int</em> depth, bool explicit)</td></tr>
+<tr><th id="963">963</th><td>{</td></tr>
+<tr><th id="964">964</th><td>	<b>struct</b> blk_trace *bt = q-&gt;blk_trace;</td></tr>
+<tr><th id="965">965</th><td></td></tr>
+<tr><th id="966">966</th><td>	<b>if</b> (bt) {</td></tr>
+<tr><th id="967">967</th><td>		__be64 rpdu = cpu_to_be64(depth);</td></tr>
+<tr><th id="968">968</th><td>		u32 what;</td></tr>
+<tr><th id="969">969</th><td></td></tr>
+<tr><th id="970">970</th><td>		<b>if</b> (explicit)</td></tr>
+<tr><th id="971">971</th><td>			what = BLK_TA_UNPLUG_IO;</td></tr>
+<tr><th id="972">972</th><td>		<b>else</b></td></tr>
+<tr><th id="973">973</th><td>			what = BLK_TA_UNPLUG_TIMER;</td></tr>
+<tr><th id="974">974</th><td></td></tr>
+<tr><th id="975">975</th><td>		__blk_add_trace(bt, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, what, <var>0</var>, <b>sizeof</b>(rpdu), &amp;rpdu, NULL);</td></tr>
+<tr><th id="976">976</th><td>	}</td></tr>
+<tr><th id="977">977</th><td>}</td></tr>
+<tr><th id="978">978</th><td></td></tr>
+<tr><th id="979">979</th><td><em>static</em> <em>void</em> blk_add_trace_split(<em>void</em> *ignore,</td></tr>
+<tr><th id="980">980</th><td>				<b>struct</b> request_queue *q, <b>struct</b> bio *bio,</td></tr>
+<tr><th id="981">981</th><td>				<em>unsigned</em> <em>int</em> pdu)</td></tr>
+<tr><th id="982">982</th><td>{</td></tr>
+<tr><th id="983">983</th><td>	<b>struct</b> blk_trace *bt = q-&gt;blk_trace;</td></tr>
+<tr><th id="984">984</th><td></td></tr>
+<tr><th id="985">985</th><td>	<b>if</b> (bt) {</td></tr>
+<tr><th id="986">986</th><td>		__be64 rpdu = cpu_to_be64(pdu);</td></tr>
+<tr><th id="987">987</th><td></td></tr>
+<tr><th id="988">988</th><td>		__blk_add_trace(bt, bio-&gt;bi_iter.bi_sector,</td></tr>
+<tr><th id="989">989</th><td>				bio-&gt;bi_iter.bi_size, bio_op(bio), bio-&gt;bi_opf,</td></tr>
+<tr><th id="990">990</th><td>				BLK_TA_SPLIT, bio-&gt;bi_status, <b>sizeof</b>(rpdu),</td></tr>
+<tr><th id="991">991</th><td>				&amp;rpdu, blk_trace_bio_get_cgid(q, bio));</td></tr>
+<tr><th id="992">992</th><td>	}</td></tr>
+<tr><th id="993">993</th><td>}</td></tr>
+<tr><th id="994">994</th><td></td></tr>
+<tr><th id="995">995</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="996">996</th><td><i class="doc"> * blk_add_trace_bio_remap - Add a trace for a bio-remap operation</i></td></tr>
+<tr><th id="997">997</th><td><i class="doc"> *<span class="command"> @ignore</span>:	trace callback data parameter (not used)</i></td></tr>
+<tr><th id="998">998</th><td><i class="doc"> *<span class="command"> @q</span>:		queue the io is for</i></td></tr>
+<tr><th id="999">999</th><td><i class="doc"> *<span class="command"> @bio</span>:	the source bio</i></td></tr>
+<tr><th id="1000">1000</th><td><i class="doc"> * <span class="command">@dev</span>:<span class="verb">	target device</span></i></td></tr>
+<tr><th id="1001">1001</th><td><i class="doc"> *<span class="command"> @from</span>:	source sector</i></td></tr>
+<tr><th id="1002">1002</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1003">1003</th><td><i class="doc"> * Description:</i></td></tr>
+<tr><th id="1004">1004</th><td><i class="doc"> *     Device mapper or raid target sometimes need to split a bio because</i></td></tr>
+<tr><th id="1005">1005</th><td><i class="doc"> *     it spans a stripe (or similar). Add a trace for that action.</i></td></tr>
+<tr><th id="1006">1006</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1007">1007</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="1008">1008</th><td><em>static</em> <em>void</em> blk_add_trace_bio_remap(<em>void</em> *ignore,</td></tr>
+<tr><th id="1009">1009</th><td>				    <b>struct</b> request_queue *q, <b>struct</b> bio *bio,</td></tr>
+<tr><th id="1010">1010</th><td>				    dev_t dev, sector_t from)</td></tr>
+<tr><th id="1011">1011</th><td>{</td></tr>
+<tr><th id="1012">1012</th><td>	<b>struct</b> blk_trace *bt = q-&gt;blk_trace;</td></tr>
+<tr><th id="1013">1013</th><td>	<b>struct</b> blk_io_trace_remap r;</td></tr>
+<tr><th id="1014">1014</th><td></td></tr>
+<tr><th id="1015">1015</th><td>	<b>if</b> (likely(!bt))</td></tr>
+<tr><th id="1016">1016</th><td>		<b>return</b>;</td></tr>
+<tr><th id="1017">1017</th><td></td></tr>
+<tr><th id="1018">1018</th><td>	r.device_from = cpu_to_be32(dev);</td></tr>
+<tr><th id="1019">1019</th><td>	r.device_to   = cpu_to_be32(bio_dev(bio));</td></tr>
+<tr><th id="1020">1020</th><td>	r.sector_from = cpu_to_be64(from);</td></tr>
+<tr><th id="1021">1021</th><td></td></tr>
+<tr><th id="1022">1022</th><td>	__blk_add_trace(bt, bio-&gt;bi_iter.bi_sector, bio-&gt;bi_iter.bi_size,</td></tr>
+<tr><th id="1023">1023</th><td>			bio_op(bio), bio-&gt;bi_opf, BLK_TA_REMAP, bio-&gt;bi_status,</td></tr>
+<tr><th id="1024">1024</th><td>			<b>sizeof</b>(r), &amp;r, blk_trace_bio_get_cgid(q, bio));</td></tr>
+<tr><th id="1025">1025</th><td>}</td></tr>
+<tr><th id="1026">1026</th><td></td></tr>
+<tr><th id="1027">1027</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="1028">1028</th><td><i class="doc"> * blk_add_trace_rq_remap - Add a trace for a request-remap operation</i></td></tr>
+<tr><th id="1029">1029</th><td><i class="doc"> *<span class="command"> @ignore</span>:	trace callback data parameter (not used)</i></td></tr>
+<tr><th id="1030">1030</th><td><i class="doc"> *<span class="command"> @q</span>:		queue the io is for</i></td></tr>
+<tr><th id="1031">1031</th><td><i class="doc"> *<span class="command"> @rq</span>:		the source request</i></td></tr>
+<tr><th id="1032">1032</th><td><i class="doc"> * <span class="command">@dev</span>:<span class="verb">	target device</span></i></td></tr>
+<tr><th id="1033">1033</th><td><i class="doc"> *<span class="command"> @from</span>:	source sector</i></td></tr>
+<tr><th id="1034">1034</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1035">1035</th><td><i class="doc"> * Description:</i></td></tr>
+<tr><th id="1036">1036</th><td><i class="doc"> *     Device mapper remaps request to other devices.</i></td></tr>
+<tr><th id="1037">1037</th><td><i class="doc"> *     Add a trace for that action.</i></td></tr>
+<tr><th id="1038">1038</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1039">1039</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="1040">1040</th><td><em>static</em> <em>void</em> blk_add_trace_rq_remap(<em>void</em> *ignore,</td></tr>
+<tr><th id="1041">1041</th><td>				   <b>struct</b> request_queue *q,</td></tr>
+<tr><th id="1042">1042</th><td>				   <b>struct</b> request *rq, dev_t dev,</td></tr>
+<tr><th id="1043">1043</th><td>				   sector_t from)</td></tr>
+<tr><th id="1044">1044</th><td>{</td></tr>
+<tr><th id="1045">1045</th><td>	<b>struct</b> blk_trace *bt = q-&gt;blk_trace;</td></tr>
+<tr><th id="1046">1046</th><td>	<b>struct</b> blk_io_trace_remap r;</td></tr>
+<tr><th id="1047">1047</th><td></td></tr>
+<tr><th id="1048">1048</th><td>	<b>if</b> (likely(!bt))</td></tr>
+<tr><th id="1049">1049</th><td>		<b>return</b>;</td></tr>
+<tr><th id="1050">1050</th><td></td></tr>
+<tr><th id="1051">1051</th><td>	r.device_from = cpu_to_be32(dev);</td></tr>
+<tr><th id="1052">1052</th><td>	r.device_to   = cpu_to_be32(disk_devt(rq-&gt;rq_disk));</td></tr>
+<tr><th id="1053">1053</th><td>	r.sector_from = cpu_to_be64(from);</td></tr>
+<tr><th id="1054">1054</th><td></td></tr>
+<tr><th id="1055">1055</th><td>	__blk_add_trace(bt, blk_rq_pos(rq), blk_rq_bytes(rq),</td></tr>
+<tr><th id="1056">1056</th><td>			rq_data_dir(rq), <var>0</var>, BLK_TA_REMAP, <var>0</var>,</td></tr>
+<tr><th id="1057">1057</th><td>			<b>sizeof</b>(r), &amp;r, blk_trace_request_get_cgid(q, rq));</td></tr>
+<tr><th id="1058">1058</th><td>}</td></tr>
+<tr><th id="1059">1059</th><td></td></tr>
+<tr><th id="1060">1060</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="1061">1061</th><td><i class="doc"> * blk_add_driver_data - Add binary message with driver-specific data</i></td></tr>
+<tr><th id="1062">1062</th><td><i class="doc"> *<span class="command"> @q</span>:		queue the io is for</i></td></tr>
+<tr><th id="1063">1063</th><td><i class="doc"> *<span class="command"> @rq</span>:		io request</i></td></tr>
+<tr><th id="1064">1064</th><td><i class="doc"> * <span class="command">@data</span>:	driver-specific data</i></td></tr>
+<tr><th id="1065">1065</th><td><i class="doc"> *<span class="command"> @len</span>:	length of driver-specific data</i></td></tr>
+<tr><th id="1066">1066</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1067">1067</th><td><i class="doc"> * Description:</i></td></tr>
+<tr><th id="1068">1068</th><td><i class="doc"> *     Some drivers might want to write driver-specific data per request.</i></td></tr>
+<tr><th id="1069">1069</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="1070">1070</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="1071">1071</th><td><em>void</em> blk_add_driver_data(<b>struct</b> request_queue *q,</td></tr>
+<tr><th id="1072">1072</th><td>			 <b>struct</b> request *rq,</td></tr>
+<tr><th id="1073">1073</th><td>			 <em>void</em> *data, size_t len)</td></tr>
+<tr><th id="1074">1074</th><td>{</td></tr>
+<tr><th id="1075">1075</th><td>	<b>struct</b> blk_trace *bt = q-&gt;blk_trace;</td></tr>
+<tr><th id="1076">1076</th><td></td></tr>
+<tr><th id="1077">1077</th><td>	<b>if</b> (likely(!bt))</td></tr>
+<tr><th id="1078">1078</th><td>		<b>return</b>;</td></tr>
+<tr><th id="1079">1079</th><td></td></tr>
+<tr><th id="1080">1080</th><td>	__blk_add_trace(bt, blk_rq_trace_sector(rq), blk_rq_bytes(rq), <var>0</var>, <var>0</var>,</td></tr>
+<tr><th id="1081">1081</th><td>				BLK_TA_DRV_DATA, <var>0</var>, len, data,</td></tr>
+<tr><th id="1082">1082</th><td>				blk_trace_request_get_cgid(q, rq));</td></tr>
+<tr><th id="1083">1083</th><td>}</td></tr>
+<tr><th id="1084">1084</th><td>EXPORT_SYMBOL_GPL(blk_add_driver_data);</td></tr>
+<tr><th id="1085">1085</th><td></td></tr>
+<tr><th id="1086">1086</th><td><em>static</em> <em>void</em> blk_register_tracepoints(<em>void</em>)</td></tr>
+<tr><th id="1087">1087</th><td>{</td></tr>
+<tr><th id="1088">1088</th><td>	<em>int</em> ret;</td></tr>
+<tr><th id="1089">1089</th><td></td></tr>
+<tr><th id="1090">1090</th><td>	ret = register_trace_block_rq_insert(blk_add_trace_rq_insert, NULL);</td></tr>
+<tr><th id="1091">1091</th><td>	WARN_ON(ret);</td></tr>
+<tr><th id="1092">1092</th><td>	ret = register_trace_block_rq_issue(blk_add_trace_rq_issue, NULL);</td></tr>
+<tr><th id="1093">1093</th><td>	WARN_ON(ret);</td></tr>
+<tr><th id="1094">1094</th><td>	ret = register_trace_block_rq_requeue(blk_add_trace_rq_requeue, NULL);</td></tr>
+<tr><th id="1095">1095</th><td>	WARN_ON(ret);</td></tr>
+<tr><th id="1096">1096</th><td>	ret = register_trace_block_rq_complete(blk_add_trace_rq_complete, NULL);</td></tr>
+<tr><th id="1097">1097</th><td>	WARN_ON(ret);</td></tr>
+<tr><th id="1098">1098</th><td>	ret = register_trace_block_bio_bounce(blk_add_trace_bio_bounce, NULL);</td></tr>
+<tr><th id="1099">1099</th><td>	WARN_ON(ret);</td></tr>
+<tr><th id="1100">1100</th><td>	ret = register_trace_block_bio_complete(blk_add_trace_bio_complete, NULL);</td></tr>
+<tr><th id="1101">1101</th><td>	WARN_ON(ret);</td></tr>
+<tr><th id="1102">1102</th><td>	ret = register_trace_block_bio_backmerge(blk_add_trace_bio_backmerge, NULL);</td></tr>
+<tr><th id="1103">1103</th><td>	WARN_ON(ret);</td></tr>
+<tr><th id="1104">1104</th><td>	ret = register_trace_block_bio_frontmerge(blk_add_trace_bio_frontmerge, NULL);</td></tr>
+<tr><th id="1105">1105</th><td>	WARN_ON(ret);</td></tr>
+<tr><th id="1106">1106</th><td>	ret = register_trace_block_bio_queue(blk_add_trace_bio_queue, NULL);</td></tr>
+<tr><th id="1107">1107</th><td>	WARN_ON(ret);</td></tr>
+<tr><th id="1108">1108</th><td>	ret = register_trace_block_getrq(blk_add_trace_getrq, NULL);</td></tr>
+<tr><th id="1109">1109</th><td>	WARN_ON(ret);</td></tr>
+<tr><th id="1110">1110</th><td>	ret = register_trace_block_sleeprq(blk_add_trace_sleeprq, NULL);</td></tr>
+<tr><th id="1111">1111</th><td>	WARN_ON(ret);</td></tr>
+<tr><th id="1112">1112</th><td>	ret = register_trace_block_plug(blk_add_trace_plug, NULL);</td></tr>
+<tr><th id="1113">1113</th><td>	WARN_ON(ret);</td></tr>
+<tr><th id="1114">1114</th><td>	ret = register_trace_block_unplug(blk_add_trace_unplug, NULL);</td></tr>
+<tr><th id="1115">1115</th><td>	WARN_ON(ret);</td></tr>
+<tr><th id="1116">1116</th><td>	ret = register_trace_block_split(blk_add_trace_split, NULL);</td></tr>
+<tr><th id="1117">1117</th><td>	WARN_ON(ret);</td></tr>
+<tr><th id="1118">1118</th><td>	ret = register_trace_block_bio_remap(blk_add_trace_bio_remap, NULL);</td></tr>
+<tr><th id="1119">1119</th><td>	WARN_ON(ret);</td></tr>
+<tr><th id="1120">1120</th><td>	ret = register_trace_block_rq_remap(blk_add_trace_rq_remap, NULL);</td></tr>
+<tr><th id="1121">1121</th><td>	WARN_ON(ret);</td></tr>
+<tr><th id="1122">1122</th><td>}</td></tr>
+<tr><th id="1123">1123</th><td></td></tr>
+<tr><th id="1124">1124</th><td><em>static</em> <em>void</em> blk_unregister_tracepoints(<em>void</em>)</td></tr>
+<tr><th id="1125">1125</th><td>{</td></tr>
+<tr><th id="1126">1126</th><td>	unregister_trace_block_rq_remap(blk_add_trace_rq_remap, NULL);</td></tr>
+<tr><th id="1127">1127</th><td>	unregister_trace_block_bio_remap(blk_add_trace_bio_remap, NULL);</td></tr>
+<tr><th id="1128">1128</th><td>	unregister_trace_block_split(blk_add_trace_split, NULL);</td></tr>
+<tr><th id="1129">1129</th><td>	unregister_trace_block_unplug(blk_add_trace_unplug, NULL);</td></tr>
+<tr><th id="1130">1130</th><td>	unregister_trace_block_plug(blk_add_trace_plug, NULL);</td></tr>
+<tr><th id="1131">1131</th><td>	unregister_trace_block_sleeprq(blk_add_trace_sleeprq, NULL);</td></tr>
+<tr><th id="1132">1132</th><td>	unregister_trace_block_getrq(blk_add_trace_getrq, NULL);</td></tr>
+<tr><th id="1133">1133</th><td>	unregister_trace_block_bio_queue(blk_add_trace_bio_queue, NULL);</td></tr>
+<tr><th id="1134">1134</th><td>	unregister_trace_block_bio_frontmerge(blk_add_trace_bio_frontmerge, NULL);</td></tr>
+<tr><th id="1135">1135</th><td>	unregister_trace_block_bio_backmerge(blk_add_trace_bio_backmerge, NULL);</td></tr>
+<tr><th id="1136">1136</th><td>	unregister_trace_block_bio_complete(blk_add_trace_bio_complete, NULL);</td></tr>
+<tr><th id="1137">1137</th><td>	unregister_trace_block_bio_bounce(blk_add_trace_bio_bounce, NULL);</td></tr>
+<tr><th id="1138">1138</th><td>	unregister_trace_block_rq_complete(blk_add_trace_rq_complete, NULL);</td></tr>
+<tr><th id="1139">1139</th><td>	unregister_trace_block_rq_requeue(blk_add_trace_rq_requeue, NULL);</td></tr>
+<tr><th id="1140">1140</th><td>	unregister_trace_block_rq_issue(blk_add_trace_rq_issue, NULL);</td></tr>
+<tr><th id="1141">1141</th><td>	unregister_trace_block_rq_insert(blk_add_trace_rq_insert, NULL);</td></tr>
+<tr><th id="1142">1142</th><td></td></tr>
+<tr><th id="1143">1143</th><td>	tracepoint_synchronize_unregister();</td></tr>
+<tr><th id="1144">1144</th><td>}</td></tr>
+<tr><th id="1145">1145</th><td></td></tr>
+<tr><th id="1146">1146</th><td><i>/*</i></td></tr>
+<tr><th id="1147">1147</th><td><i> * struct blk_io_tracer formatting routines</i></td></tr>
+<tr><th id="1148">1148</th><td><i> */</i></td></tr>
+<tr><th id="1149">1149</th><td></td></tr>
+<tr><th id="1150">1150</th><td><em>static</em> <em>void</em> fill_rwbs(<em>char</em> *rwbs, <em>const</em> <b>struct</b> blk_io_trace *t)</td></tr>
+<tr><th id="1151">1151</th><td>{</td></tr>
+<tr><th id="1152">1152</th><td>	<em>int</em> i = <var>0</var>;</td></tr>
+<tr><th id="1153">1153</th><td>	<em>int</em> tc = t-&gt;action &gt;&gt; BLK_TC_SHIFT;</td></tr>
+<tr><th id="1154">1154</th><td></td></tr>
+<tr><th id="1155">1155</th><td>	<b>if</b> ((t-&gt;action &amp; ~__BLK_TN_CGROUP) == BLK_TN_MESSAGE) {</td></tr>
+<tr><th id="1156">1156</th><td>		rwbs[i++] = <kbd>'N'</kbd>;</td></tr>
+<tr><th id="1157">1157</th><td>		<b>goto</b> out;</td></tr>
+<tr><th id="1158">1158</th><td>	}</td></tr>
+<tr><th id="1159">1159</th><td></td></tr>
+<tr><th id="1160">1160</th><td>	<b>if</b> (tc &amp; BLK_TC_FLUSH)</td></tr>
+<tr><th id="1161">1161</th><td>		rwbs[i++] = <kbd>'F'</kbd>;</td></tr>
+<tr><th id="1162">1162</th><td></td></tr>
+<tr><th id="1163">1163</th><td>	<b>if</b> (tc &amp; BLK_TC_DISCARD)</td></tr>
+<tr><th id="1164">1164</th><td>		rwbs[i++] = <kbd>'D'</kbd>;</td></tr>
+<tr><th id="1165">1165</th><td>	<b>else</b> <b>if</b> (tc &amp; BLK_TC_WRITE)</td></tr>
+<tr><th id="1166">1166</th><td>		rwbs[i++] = <kbd>'W'</kbd>;</td></tr>
+<tr><th id="1167">1167</th><td>	<b>else</b> <b>if</b> (t-&gt;bytes)</td></tr>
+<tr><th id="1168">1168</th><td>		rwbs[i++] = <kbd>'R'</kbd>;</td></tr>
+<tr><th id="1169">1169</th><td>	<b>else</b></td></tr>
+<tr><th id="1170">1170</th><td>		rwbs[i++] = <kbd>'N'</kbd>;</td></tr>
+<tr><th id="1171">1171</th><td></td></tr>
+<tr><th id="1172">1172</th><td>	<b>if</b> (tc &amp; BLK_TC_FUA)</td></tr>
+<tr><th id="1173">1173</th><td>		rwbs[i++] = <kbd>'F'</kbd>;</td></tr>
+<tr><th id="1174">1174</th><td>	<b>if</b> (tc &amp; BLK_TC_AHEAD)</td></tr>
+<tr><th id="1175">1175</th><td>		rwbs[i++] = <kbd>'A'</kbd>;</td></tr>
+<tr><th id="1176">1176</th><td>	<b>if</b> (tc &amp; BLK_TC_SYNC)</td></tr>
+<tr><th id="1177">1177</th><td>		rwbs[i++] = <kbd>'S'</kbd>;</td></tr>
+<tr><th id="1178">1178</th><td>	<b>if</b> (tc &amp; BLK_TC_META)</td></tr>
+<tr><th id="1179">1179</th><td>		rwbs[i++] = <kbd>'M'</kbd>;</td></tr>
+<tr><th id="1180">1180</th><td>out:</td></tr>
+<tr><th id="1181">1181</th><td>	rwbs[i] = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="1182">1182</th><td>}</td></tr>
+<tr><th id="1183">1183</th><td></td></tr>
+<tr><th id="1184">1184</th><td><em>static</em> <b>inline</b></td></tr>
+<tr><th id="1185">1185</th><td><em>const</em> <b>struct</b> blk_io_trace *te_blk_io_trace(<em>const</em> <b>struct</b> trace_entry *ent)</td></tr>
+<tr><th id="1186">1186</th><td>{</td></tr>
+<tr><th id="1187">1187</th><td>	<b>return</b> (<em>const</em> <b>struct</b> blk_io_trace *)ent;</td></tr>
+<tr><th id="1188">1188</th><td>}</td></tr>
+<tr><th id="1189">1189</th><td></td></tr>
+<tr><th id="1190">1190</th><td><em>static</em> <b>inline</b> <em>const</em> <em>void</em> *pdu_start(<em>const</em> <b>struct</b> trace_entry *ent, bool has_cg)</td></tr>
+<tr><th id="1191">1191</th><td>{</td></tr>
+<tr><th id="1192">1192</th><td>	<b>return</b> (<em>void</em> *)(te_blk_io_trace(ent) + <var>1</var>) +</td></tr>
+<tr><th id="1193">1193</th><td>		(has_cg ? <b>sizeof</b>(<b>union</b> kernfs_node_id) : <var>0</var>);</td></tr>
+<tr><th id="1194">1194</th><td>}</td></tr>
+<tr><th id="1195">1195</th><td></td></tr>
+<tr><th id="1196">1196</th><td><em>static</em> <b>inline</b> <em>const</em> <em>void</em> *cgid_start(<em>const</em> <b>struct</b> trace_entry *ent)</td></tr>
+<tr><th id="1197">1197</th><td>{</td></tr>
+<tr><th id="1198">1198</th><td>	<b>return</b> (<em>void</em> *)(te_blk_io_trace(ent) + <var>1</var>);</td></tr>
+<tr><th id="1199">1199</th><td>}</td></tr>
+<tr><th id="1200">1200</th><td></td></tr>
+<tr><th id="1201">1201</th><td><em>static</em> <b>inline</b> <em>int</em> pdu_real_len(<em>const</em> <b>struct</b> trace_entry *ent, bool has_cg)</td></tr>
+<tr><th id="1202">1202</th><td>{</td></tr>
+<tr><th id="1203">1203</th><td>	<b>return</b> te_blk_io_trace(ent)-&gt;pdu_len -</td></tr>
+<tr><th id="1204">1204</th><td>			(has_cg ? <b>sizeof</b>(<b>union</b> kernfs_node_id) : <var>0</var>);</td></tr>
+<tr><th id="1205">1205</th><td>}</td></tr>
+<tr><th id="1206">1206</th><td></td></tr>
+<tr><th id="1207">1207</th><td><em>static</em> <b>inline</b> u32 t_action(<em>const</em> <b>struct</b> trace_entry *ent)</td></tr>
+<tr><th id="1208">1208</th><td>{</td></tr>
+<tr><th id="1209">1209</th><td>	<b>return</b> te_blk_io_trace(ent)-&gt;action;</td></tr>
+<tr><th id="1210">1210</th><td>}</td></tr>
+<tr><th id="1211">1211</th><td></td></tr>
+<tr><th id="1212">1212</th><td><em>static</em> <b>inline</b> u32 t_bytes(<em>const</em> <b>struct</b> trace_entry *ent)</td></tr>
+<tr><th id="1213">1213</th><td>{</td></tr>
+<tr><th id="1214">1214</th><td>	<b>return</b> te_blk_io_trace(ent)-&gt;bytes;</td></tr>
+<tr><th id="1215">1215</th><td>}</td></tr>
+<tr><th id="1216">1216</th><td></td></tr>
+<tr><th id="1217">1217</th><td><em>static</em> <b>inline</b> u32 t_sec(<em>const</em> <b>struct</b> trace_entry *ent)</td></tr>
+<tr><th id="1218">1218</th><td>{</td></tr>
+<tr><th id="1219">1219</th><td>	<b>return</b> te_blk_io_trace(ent)-&gt;bytes &gt;&gt; <var>9</var>;</td></tr>
+<tr><th id="1220">1220</th><td>}</td></tr>
+<tr><th id="1221">1221</th><td></td></tr>
+<tr><th id="1222">1222</th><td><em>static</em> <b>inline</b> <em>unsigned</em> <em>long</em> <em>long</em> t_sector(<em>const</em> <b>struct</b> trace_entry *ent)</td></tr>
+<tr><th id="1223">1223</th><td>{</td></tr>
+<tr><th id="1224">1224</th><td>	<b>return</b> te_blk_io_trace(ent)-&gt;sector;</td></tr>
+<tr><th id="1225">1225</th><td>}</td></tr>
+<tr><th id="1226">1226</th><td></td></tr>
+<tr><th id="1227">1227</th><td><em>static</em> <b>inline</b> __u16 t_error(<em>const</em> <b>struct</b> trace_entry *ent)</td></tr>
+<tr><th id="1228">1228</th><td>{</td></tr>
+<tr><th id="1229">1229</th><td>	<b>return</b> te_blk_io_trace(ent)-&gt;error;</td></tr>
+<tr><th id="1230">1230</th><td>}</td></tr>
+<tr><th id="1231">1231</th><td></td></tr>
+<tr><th id="1232">1232</th><td><em>static</em> __u64 get_pdu_int(<em>const</em> <b>struct</b> trace_entry *ent, bool has_cg)</td></tr>
+<tr><th id="1233">1233</th><td>{</td></tr>
+<tr><th id="1234">1234</th><td>	<em>const</em> __u64 *val = pdu_start(ent, has_cg);</td></tr>
+<tr><th id="1235">1235</th><td>	<b>return</b> be64_to_cpu(*val);</td></tr>
+<tr><th id="1236">1236</th><td>}</td></tr>
+<tr><th id="1237">1237</th><td></td></tr>
+<tr><th id="1238">1238</th><td><em>static</em> <em>void</em> get_pdu_remap(<em>const</em> <b>struct</b> trace_entry *ent,</td></tr>
+<tr><th id="1239">1239</th><td>			  <b>struct</b> blk_io_trace_remap *r, bool has_cg)</td></tr>
+<tr><th id="1240">1240</th><td>{</td></tr>
+<tr><th id="1241">1241</th><td>	<em>const</em> <b>struct</b> blk_io_trace_remap *__r = pdu_start(ent, has_cg);</td></tr>
+<tr><th id="1242">1242</th><td>	__u64 sector_from = __r-&gt;sector_from;</td></tr>
+<tr><th id="1243">1243</th><td></td></tr>
+<tr><th id="1244">1244</th><td>	r-&gt;device_from = be32_to_cpu(__r-&gt;device_from);</td></tr>
+<tr><th id="1245">1245</th><td>	r-&gt;device_to   = be32_to_cpu(__r-&gt;device_to);</td></tr>
+<tr><th id="1246">1246</th><td>	r-&gt;sector_from = be64_to_cpu(sector_from);</td></tr>
+<tr><th id="1247">1247</th><td>}</td></tr>
+<tr><th id="1248">1248</th><td></td></tr>
+<tr><th id="1249">1249</th><td><b>typedef</b> <em>void</em> (blk_log_action_t) (<b>struct</b> trace_iterator *iter, <em>const</em> <em>char</em> *act,</td></tr>
+<tr><th id="1250">1250</th><td>	bool has_cg);</td></tr>
+<tr><th id="1251">1251</th><td></td></tr>
+<tr><th id="1252">1252</th><td><em>static</em> <em>void</em> blk_log_action_classic(<b>struct</b> trace_iterator *iter, <em>const</em> <em>char</em> *act,</td></tr>
+<tr><th id="1253">1253</th><td>	bool has_cg)</td></tr>
+<tr><th id="1254">1254</th><td>{</td></tr>
+<tr><th id="1255">1255</th><td>	<em>char</em> rwbs[RWBS_LEN];</td></tr>
+<tr><th id="1256">1256</th><td>	<em>unsigned</em> <em>long</em> <em>long</em> ts  = iter-&gt;ts;</td></tr>
+<tr><th id="1257">1257</th><td>	<em>unsigned</em> <em>long</em> nsec_rem = do_div(ts, NSEC_PER_SEC);</td></tr>
+<tr><th id="1258">1258</th><td>	<em>unsigned</em> secs	       = (<em>unsigned</em> <em>long</em>)ts;</td></tr>
+<tr><th id="1259">1259</th><td>	<em>const</em> <b>struct</b> blk_io_trace *t = te_blk_io_trace(iter-&gt;ent);</td></tr>
+<tr><th id="1260">1260</th><td></td></tr>
+<tr><th id="1261">1261</th><td>	fill_rwbs(rwbs, t);</td></tr>
+<tr><th id="1262">1262</th><td></td></tr>
+<tr><th id="1263">1263</th><td>	trace_seq_printf(&amp;iter-&gt;seq,</td></tr>
+<tr><th id="1264">1264</th><td>			 <q>"%3d,%-3d %2d %5d.%09lu %5u %2s %3s "</q>,</td></tr>
+<tr><th id="1265">1265</th><td>			 MAJOR(t-&gt;device), MINOR(t-&gt;device), iter-&gt;cpu,</td></tr>
+<tr><th id="1266">1266</th><td>			 secs, nsec_rem, iter-&gt;ent-&gt;pid, act, rwbs);</td></tr>
+<tr><th id="1267">1267</th><td>}</td></tr>
+<tr><th id="1268">1268</th><td></td></tr>
+<tr><th id="1269">1269</th><td><em>static</em> <em>void</em> blk_log_action(<b>struct</b> trace_iterator *iter, <em>const</em> <em>char</em> *act,</td></tr>
+<tr><th id="1270">1270</th><td>	bool has_cg)</td></tr>
+<tr><th id="1271">1271</th><td>{</td></tr>
+<tr><th id="1272">1272</th><td>	<em>char</em> rwbs[RWBS_LEN];</td></tr>
+<tr><th id="1273">1273</th><td>	<em>const</em> <b>struct</b> blk_io_trace *t = te_blk_io_trace(iter-&gt;ent);</td></tr>
+<tr><th id="1274">1274</th><td></td></tr>
+<tr><th id="1275">1275</th><td>	fill_rwbs(rwbs, t);</td></tr>
+<tr><th id="1276">1276</th><td>	<b>if</b> (has_cg) {</td></tr>
+<tr><th id="1277">1277</th><td>		<em>const</em> <b>union</b> kernfs_node_id *id = cgid_start(iter-&gt;ent);</td></tr>
+<tr><th id="1278">1278</th><td></td></tr>
+<tr><th id="1279">1279</th><td>		<b>if</b> (blk_tracer_flags.val &amp; TRACE_BLK_OPT_CGNAME) {</td></tr>
+<tr><th id="1280">1280</th><td>			<em>char</em> blkcg_name_buf[NAME_MAX + <var>1</var>] = <q>"&lt;...&gt;"</q>;</td></tr>
+<tr><th id="1281">1281</th><td></td></tr>
+<tr><th id="1282">1282</th><td>			cgroup_path_from_kernfs_id(id, blkcg_name_buf,</td></tr>
+<tr><th id="1283">1283</th><td>				<b>sizeof</b>(blkcg_name_buf));</td></tr>
+<tr><th id="1284">1284</th><td>			trace_seq_printf(&amp;iter-&gt;seq, <q>"%3d,%-3d %s %2s %3s "</q>,</td></tr>
+<tr><th id="1285">1285</th><td>				 MAJOR(t-&gt;device), MINOR(t-&gt;device),</td></tr>
+<tr><th id="1286">1286</th><td>				 blkcg_name_buf, act, rwbs);</td></tr>
+<tr><th id="1287">1287</th><td>		} <b>else</b></td></tr>
+<tr><th id="1288">1288</th><td>			trace_seq_printf(&amp;iter-&gt;seq,</td></tr>
+<tr><th id="1289">1289</th><td>				 <q>"%3d,%-3d %x,%-x %2s %3s "</q>,</td></tr>
+<tr><th id="1290">1290</th><td>				 MAJOR(t-&gt;device), MINOR(t-&gt;device),</td></tr>
+<tr><th id="1291">1291</th><td>				 id-&gt;ino, id-&gt;generation, act, rwbs);</td></tr>
+<tr><th id="1292">1292</th><td>	} <b>else</b></td></tr>
+<tr><th id="1293">1293</th><td>		trace_seq_printf(&amp;iter-&gt;seq, <q>"%3d,%-3d %2s %3s "</q>,</td></tr>
+<tr><th id="1294">1294</th><td>				 MAJOR(t-&gt;device), MINOR(t-&gt;device), act, rwbs);</td></tr>
+<tr><th id="1295">1295</th><td>}</td></tr>
+<tr><th id="1296">1296</th><td></td></tr>
+<tr><th id="1297">1297</th><td><em>static</em> <em>void</em> blk_log_dump_pdu(<b>struct</b> trace_seq *s,</td></tr>
+<tr><th id="1298">1298</th><td>	<em>const</em> <b>struct</b> trace_entry *ent, bool has_cg)</td></tr>
+<tr><th id="1299">1299</th><td>{</td></tr>
+<tr><th id="1300">1300</th><td>	<em>const</em> <em>unsigned</em> <em>char</em> *pdu_buf;</td></tr>
+<tr><th id="1301">1301</th><td>	<em>int</em> pdu_len;</td></tr>
+<tr><th id="1302">1302</th><td>	<em>int</em> i, end;</td></tr>
+<tr><th id="1303">1303</th><td></td></tr>
+<tr><th id="1304">1304</th><td>	pdu_buf = pdu_start(ent, has_cg);</td></tr>
+<tr><th id="1305">1305</th><td>	pdu_len = pdu_real_len(ent, has_cg);</td></tr>
+<tr><th id="1306">1306</th><td></td></tr>
+<tr><th id="1307">1307</th><td>	<b>if</b> (!pdu_len)</td></tr>
+<tr><th id="1308">1308</th><td>		<b>return</b>;</td></tr>
+<tr><th id="1309">1309</th><td></td></tr>
+<tr><th id="1310">1310</th><td>	<i>/* find the last zero that needs to be printed */</i></td></tr>
+<tr><th id="1311">1311</th><td>	<b>for</b> (end = pdu_len - <var>1</var>; end &gt;= <var>0</var>; end--)</td></tr>
+<tr><th id="1312">1312</th><td>		<b>if</b> (pdu_buf[end])</td></tr>
+<tr><th id="1313">1313</th><td>			<b>break</b>;</td></tr>
+<tr><th id="1314">1314</th><td>	end++;</td></tr>
+<tr><th id="1315">1315</th><td></td></tr>
+<tr><th id="1316">1316</th><td>	trace_seq_putc(s, <kbd>'('</kbd>);</td></tr>
+<tr><th id="1317">1317</th><td></td></tr>
+<tr><th id="1318">1318</th><td>	<b>for</b> (i = <var>0</var>; i &lt; pdu_len; i++) {</td></tr>
+<tr><th id="1319">1319</th><td></td></tr>
+<tr><th id="1320">1320</th><td>		trace_seq_printf(s, <q>"%s%02x"</q>,</td></tr>
+<tr><th id="1321">1321</th><td>				 i == <var>0</var> ? <q>""</q> : <q>" "</q>, pdu_buf[i]);</td></tr>
+<tr><th id="1322">1322</th><td></td></tr>
+<tr><th id="1323">1323</th><td>		<i>/*</i></td></tr>
+<tr><th id="1324">1324</th><td><i>		 * stop when the rest is just zeroes and indicate so</i></td></tr>
+<tr><th id="1325">1325</th><td><i>		 * with a ".." appended</i></td></tr>
+<tr><th id="1326">1326</th><td><i>		 */</i></td></tr>
+<tr><th id="1327">1327</th><td>		<b>if</b> (i == end &amp;&amp; end != pdu_len - <var>1</var>) {</td></tr>
+<tr><th id="1328">1328</th><td>			trace_seq_puts(s, <q>" ..) "</q>);</td></tr>
+<tr><th id="1329">1329</th><td>			<b>return</b>;</td></tr>
+<tr><th id="1330">1330</th><td>		}</td></tr>
+<tr><th id="1331">1331</th><td>	}</td></tr>
+<tr><th id="1332">1332</th><td></td></tr>
+<tr><th id="1333">1333</th><td>	trace_seq_puts(s, <q>") "</q>);</td></tr>
+<tr><th id="1334">1334</th><td>}</td></tr>
+<tr><th id="1335">1335</th><td></td></tr>
+<tr><th id="1336">1336</th><td><em>static</em> <em>void</em> blk_log_generic(<b>struct</b> trace_seq *s, <em>const</em> <b>struct</b> trace_entry *ent, bool has_cg)</td></tr>
+<tr><th id="1337">1337</th><td>{</td></tr>
+<tr><th id="1338">1338</th><td>	<em>char</em> cmd[TASK_COMM_LEN];</td></tr>
+<tr><th id="1339">1339</th><td></td></tr>
+<tr><th id="1340">1340</th><td>	trace_find_cmdline(ent-&gt;pid, cmd);</td></tr>
+<tr><th id="1341">1341</th><td></td></tr>
+<tr><th id="1342">1342</th><td>	<b>if</b> (t_action(ent) &amp; BLK_TC_ACT(BLK_TC_PC)) {</td></tr>
+<tr><th id="1343">1343</th><td>		trace_seq_printf(s, <q>"%u "</q>, t_bytes(ent));</td></tr>
+<tr><th id="1344">1344</th><td>		blk_log_dump_pdu(s, ent, has_cg);</td></tr>
+<tr><th id="1345">1345</th><td>		trace_seq_printf(s, <q>"[%s]\n"</q>, cmd);</td></tr>
+<tr><th id="1346">1346</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="1347">1347</th><td>		<b>if</b> (t_sec(ent))</td></tr>
+<tr><th id="1348">1348</th><td>			trace_seq_printf(s, <q>"%llu + %u [%s]\n"</q>,</td></tr>
+<tr><th id="1349">1349</th><td>						t_sector(ent), t_sec(ent), cmd);</td></tr>
+<tr><th id="1350">1350</th><td>		<b>else</b></td></tr>
+<tr><th id="1351">1351</th><td>			trace_seq_printf(s, <q>"[%s]\n"</q>, cmd);</td></tr>
+<tr><th id="1352">1352</th><td>	}</td></tr>
+<tr><th id="1353">1353</th><td>}</td></tr>
+<tr><th id="1354">1354</th><td></td></tr>
+<tr><th id="1355">1355</th><td><em>static</em> <em>void</em> blk_log_with_error(<b>struct</b> trace_seq *s,</td></tr>
+<tr><th id="1356">1356</th><td>			      <em>const</em> <b>struct</b> trace_entry *ent, bool has_cg)</td></tr>
+<tr><th id="1357">1357</th><td>{</td></tr>
+<tr><th id="1358">1358</th><td>	<b>if</b> (t_action(ent) &amp; BLK_TC_ACT(BLK_TC_PC)) {</td></tr>
+<tr><th id="1359">1359</th><td>		blk_log_dump_pdu(s, ent, has_cg);</td></tr>
+<tr><th id="1360">1360</th><td>		trace_seq_printf(s, <q>"[%d]\n"</q>, t_error(ent));</td></tr>
+<tr><th id="1361">1361</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="1362">1362</th><td>		<b>if</b> (t_sec(ent))</td></tr>
+<tr><th id="1363">1363</th><td>			trace_seq_printf(s, <q>"%llu + %u [%d]\n"</q>,</td></tr>
+<tr><th id="1364">1364</th><td>					 t_sector(ent),</td></tr>
+<tr><th id="1365">1365</th><td>					 t_sec(ent), t_error(ent));</td></tr>
+<tr><th id="1366">1366</th><td>		<b>else</b></td></tr>
+<tr><th id="1367">1367</th><td>			trace_seq_printf(s, <q>"%llu [%d]\n"</q>,</td></tr>
+<tr><th id="1368">1368</th><td>					 t_sector(ent), t_error(ent));</td></tr>
+<tr><th id="1369">1369</th><td>	}</td></tr>
+<tr><th id="1370">1370</th><td>}</td></tr>
+<tr><th id="1371">1371</th><td></td></tr>
+<tr><th id="1372">1372</th><td><em>static</em> <em>void</em> blk_log_remap(<b>struct</b> trace_seq *s, <em>const</em> <b>struct</b> trace_entry *ent, bool has_cg)</td></tr>
+<tr><th id="1373">1373</th><td>{</td></tr>
+<tr><th id="1374">1374</th><td>	<b>struct</b> blk_io_trace_remap r = { .device_from = <var>0</var>, };</td></tr>
+<tr><th id="1375">1375</th><td></td></tr>
+<tr><th id="1376">1376</th><td>	get_pdu_remap(ent, &amp;r, has_cg);</td></tr>
+<tr><th id="1377">1377</th><td>	trace_seq_printf(s, <q>"%llu + %u &lt;- (%d,%d) %llu\n"</q>,</td></tr>
+<tr><th id="1378">1378</th><td>			 t_sector(ent), t_sec(ent),</td></tr>
+<tr><th id="1379">1379</th><td>			 MAJOR(r.device_from), MINOR(r.device_from),</td></tr>
+<tr><th id="1380">1380</th><td>			 (<em>unsigned</em> <em>long</em> <em>long</em>)r.sector_from);</td></tr>
+<tr><th id="1381">1381</th><td>}</td></tr>
+<tr><th id="1382">1382</th><td></td></tr>
+<tr><th id="1383">1383</th><td><em>static</em> <em>void</em> blk_log_plug(<b>struct</b> trace_seq *s, <em>const</em> <b>struct</b> trace_entry *ent, bool has_cg)</td></tr>
+<tr><th id="1384">1384</th><td>{</td></tr>
+<tr><th id="1385">1385</th><td>	<em>char</em> cmd[TASK_COMM_LEN];</td></tr>
+<tr><th id="1386">1386</th><td></td></tr>
+<tr><th id="1387">1387</th><td>	trace_find_cmdline(ent-&gt;pid, cmd);</td></tr>
+<tr><th id="1388">1388</th><td></td></tr>
+<tr><th id="1389">1389</th><td>	trace_seq_printf(s, <q>"[%s]\n"</q>, cmd);</td></tr>
+<tr><th id="1390">1390</th><td>}</td></tr>
+<tr><th id="1391">1391</th><td></td></tr>
+<tr><th id="1392">1392</th><td><em>static</em> <em>void</em> blk_log_unplug(<b>struct</b> trace_seq *s, <em>const</em> <b>struct</b> trace_entry *ent, bool has_cg)</td></tr>
+<tr><th id="1393">1393</th><td>{</td></tr>
+<tr><th id="1394">1394</th><td>	<em>char</em> cmd[TASK_COMM_LEN];</td></tr>
+<tr><th id="1395">1395</th><td></td></tr>
+<tr><th id="1396">1396</th><td>	trace_find_cmdline(ent-&gt;pid, cmd);</td></tr>
+<tr><th id="1397">1397</th><td></td></tr>
+<tr><th id="1398">1398</th><td>	trace_seq_printf(s, <q>"[%s] %llu\n"</q>, cmd, get_pdu_int(ent, has_cg));</td></tr>
+<tr><th id="1399">1399</th><td>}</td></tr>
+<tr><th id="1400">1400</th><td></td></tr>
+<tr><th id="1401">1401</th><td><em>static</em> <em>void</em> blk_log_split(<b>struct</b> trace_seq *s, <em>const</em> <b>struct</b> trace_entry *ent, bool has_cg)</td></tr>
+<tr><th id="1402">1402</th><td>{</td></tr>
+<tr><th id="1403">1403</th><td>	<em>char</em> cmd[TASK_COMM_LEN];</td></tr>
+<tr><th id="1404">1404</th><td></td></tr>
+<tr><th id="1405">1405</th><td>	trace_find_cmdline(ent-&gt;pid, cmd);</td></tr>
+<tr><th id="1406">1406</th><td></td></tr>
+<tr><th id="1407">1407</th><td>	trace_seq_printf(s, <q>"%llu / %llu [%s]\n"</q>, t_sector(ent),</td></tr>
+<tr><th id="1408">1408</th><td>			 get_pdu_int(ent, has_cg), cmd);</td></tr>
+<tr><th id="1409">1409</th><td>}</td></tr>
+<tr><th id="1410">1410</th><td></td></tr>
+<tr><th id="1411">1411</th><td><em>static</em> <em>void</em> blk_log_msg(<b>struct</b> trace_seq *s, <em>const</em> <b>struct</b> trace_entry *ent,</td></tr>
+<tr><th id="1412">1412</th><td>			bool has_cg)</td></tr>
+<tr><th id="1413">1413</th><td>{</td></tr>
+<tr><th id="1414">1414</th><td></td></tr>
+<tr><th id="1415">1415</th><td>	trace_seq_putmem(s, pdu_start(ent, has_cg),</td></tr>
+<tr><th id="1416">1416</th><td>		pdu_real_len(ent, has_cg));</td></tr>
+<tr><th id="1417">1417</th><td>	trace_seq_putc(s, <kbd>'\n'</kbd>);</td></tr>
+<tr><th id="1418">1418</th><td>}</td></tr>
+<tr><th id="1419">1419</th><td></td></tr>
+<tr><th id="1420">1420</th><td><i>/*</i></td></tr>
+<tr><th id="1421">1421</th><td><i> * struct tracer operations</i></td></tr>
+<tr><th id="1422">1422</th><td><i> */</i></td></tr>
+<tr><th id="1423">1423</th><td></td></tr>
+<tr><th id="1424">1424</th><td><em>static</em> <em>void</em> blk_tracer_print_header(<b>struct</b> seq_file *m)</td></tr>
+<tr><th id="1425">1425</th><td>{</td></tr>
+<tr><th id="1426">1426</th><td>	<b>if</b> (!(blk_tracer_flags.val &amp; TRACE_BLK_OPT_CLASSIC))</td></tr>
+<tr><th id="1427">1427</th><td>		<b>return</b>;</td></tr>
+<tr><th id="1428">1428</th><td>	seq_puts(m, <q>"# DEV   CPU TIMESTAMP     PID ACT FLG\n"</q></td></tr>
+<tr><th id="1429">1429</th><td>		    <q>"#  |     |     |           |   |   |\n"</q>);</td></tr>
+<tr><th id="1430">1430</th><td>}</td></tr>
+<tr><th id="1431">1431</th><td></td></tr>
+<tr><th id="1432">1432</th><td><em>static</em> <em>void</em> blk_tracer_start(<b>struct</b> trace_array *tr)</td></tr>
+<tr><th id="1433">1433</th><td>{</td></tr>
+<tr><th id="1434">1434</th><td>	blk_tracer_enabled = true;</td></tr>
+<tr><th id="1435">1435</th><td>}</td></tr>
+<tr><th id="1436">1436</th><td></td></tr>
+<tr><th id="1437">1437</th><td><em>static</em> <em>int</em> blk_tracer_init(<b>struct</b> trace_array *tr)</td></tr>
+<tr><th id="1438">1438</th><td>{</td></tr>
+<tr><th id="1439">1439</th><td>	blk_tr = tr;</td></tr>
+<tr><th id="1440">1440</th><td>	blk_tracer_start(tr);</td></tr>
+<tr><th id="1441">1441</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="1442">1442</th><td>}</td></tr>
+<tr><th id="1443">1443</th><td></td></tr>
+<tr><th id="1444">1444</th><td><em>static</em> <em>void</em> blk_tracer_stop(<b>struct</b> trace_array *tr)</td></tr>
+<tr><th id="1445">1445</th><td>{</td></tr>
+<tr><th id="1446">1446</th><td>	blk_tracer_enabled = false;</td></tr>
+<tr><th id="1447">1447</th><td>}</td></tr>
+<tr><th id="1448">1448</th><td></td></tr>
+<tr><th id="1449">1449</th><td><em>static</em> <em>void</em> blk_tracer_reset(<b>struct</b> trace_array *tr)</td></tr>
+<tr><th id="1450">1450</th><td>{</td></tr>
+<tr><th id="1451">1451</th><td>	blk_tracer_stop(tr);</td></tr>
+<tr><th id="1452">1452</th><td>}</td></tr>
+<tr><th id="1453">1453</th><td></td></tr>
+<tr><th id="1454">1454</th><td><em>static</em> <em>const</em> <b>struct</b> {</td></tr>
+<tr><th id="1455">1455</th><td>	<em>const</em> <em>char</em> *act[<var>2</var>];</td></tr>
+<tr><th id="1456">1456</th><td>	<em>void</em>	   (*print)(<b>struct</b> trace_seq *s, <em>const</em> <b>struct</b> trace_entry *ent,</td></tr>
+<tr><th id="1457">1457</th><td>			    bool has_cg);</td></tr>
+<tr><th id="1458">1458</th><td>} what2act[] = {</td></tr>
+<tr><th id="1459">1459</th><td>	[__BLK_TA_QUEUE]	= {{  <q>"Q"</q>, <q>"queue"</q> },	   blk_log_generic },</td></tr>
+<tr><th id="1460">1460</th><td>	[__BLK_TA_BACKMERGE]	= {{  <q>"M"</q>, <q>"backmerge"</q> },  blk_log_generic },</td></tr>
+<tr><th id="1461">1461</th><td>	[__BLK_TA_FRONTMERGE]	= {{  <q>"F"</q>, <q>"frontmerge"</q> }, blk_log_generic },</td></tr>
+<tr><th id="1462">1462</th><td>	[__BLK_TA_GETRQ]	= {{  <q>"G"</q>, <q>"getrq"</q> },	   blk_log_generic },</td></tr>
+<tr><th id="1463">1463</th><td>	[__BLK_TA_SLEEPRQ]	= {{  <q>"S"</q>, <q>"sleeprq"</q> },	   blk_log_generic },</td></tr>
+<tr><th id="1464">1464</th><td>	[__BLK_TA_REQUEUE]	= {{  <q>"R"</q>, <q>"requeue"</q> },	   blk_log_with_error },</td></tr>
+<tr><th id="1465">1465</th><td>	[__BLK_TA_ISSUE]	= {{  <q>"D"</q>, <q>"issue"</q> },	   blk_log_generic },</td></tr>
+<tr><th id="1466">1466</th><td>	[__BLK_TA_COMPLETE]	= {{  <q>"C"</q>, <q>"complete"</q> },   blk_log_with_error },</td></tr>
+<tr><th id="1467">1467</th><td>	[__BLK_TA_PLUG]		= {{  <q>"P"</q>, <q>"plug"</q> },	   blk_log_plug },</td></tr>
+<tr><th id="1468">1468</th><td>	[__BLK_TA_UNPLUG_IO]	= {{  <q>"U"</q>, <q>"unplug_io"</q> },  blk_log_unplug },</td></tr>
+<tr><th id="1469">1469</th><td>	[__BLK_TA_UNPLUG_TIMER]	= {{ <q>"UT"</q>, <q>"unplug_timer"</q> }, blk_log_unplug },</td></tr>
+<tr><th id="1470">1470</th><td>	[__BLK_TA_INSERT]	= {{  <q>"I"</q>, <q>"insert"</q> },	   blk_log_generic },</td></tr>
+<tr><th id="1471">1471</th><td>	[__BLK_TA_SPLIT]	= {{  <q>"X"</q>, <q>"split"</q> },	   blk_log_split },</td></tr>
+<tr><th id="1472">1472</th><td>	[__BLK_TA_BOUNCE]	= {{  <q>"B"</q>, <q>"bounce"</q> },	   blk_log_generic },</td></tr>
+<tr><th id="1473">1473</th><td>	[__BLK_TA_REMAP]	= {{  <q>"A"</q>, <q>"remap"</q> },	   blk_log_remap },</td></tr>
+<tr><th id="1474">1474</th><td>};</td></tr>
+<tr><th id="1475">1475</th><td></td></tr>
+<tr><th id="1476">1476</th><td><em>static</em> <b>enum</b> print_line_t print_one_line(<b>struct</b> trace_iterator *iter,</td></tr>
+<tr><th id="1477">1477</th><td>					bool classic)</td></tr>
+<tr><th id="1478">1478</th><td>{</td></tr>
+<tr><th id="1479">1479</th><td>	<b>struct</b> trace_array *tr = iter-&gt;tr;</td></tr>
+<tr><th id="1480">1480</th><td>	<b>struct</b> trace_seq *s = &amp;iter-&gt;seq;</td></tr>
+<tr><th id="1481">1481</th><td>	<em>const</em> <b>struct</b> blk_io_trace *t;</td></tr>
+<tr><th id="1482">1482</th><td>	u16 what;</td></tr>
+<tr><th id="1483">1483</th><td>	bool long_act;</td></tr>
+<tr><th id="1484">1484</th><td>	blk_log_action_t *log_action;</td></tr>
+<tr><th id="1485">1485</th><td>	bool has_cg;</td></tr>
+<tr><th id="1486">1486</th><td></td></tr>
+<tr><th id="1487">1487</th><td>	t	   = te_blk_io_trace(iter-&gt;ent);</td></tr>
+<tr><th id="1488">1488</th><td>	what	   = (t-&gt;action &amp; ((<var>1</var> &lt;&lt; BLK_TC_SHIFT) - <var>1</var>)) &amp; ~__BLK_TA_CGROUP;</td></tr>
+<tr><th id="1489">1489</th><td>	long_act   = !!(tr-&gt;trace_flags &amp; TRACE_ITER_VERBOSE);</td></tr>
+<tr><th id="1490">1490</th><td>	log_action = classic ? &amp;blk_log_action_classic : &amp;blk_log_action;</td></tr>
+<tr><th id="1491">1491</th><td>	has_cg	   = t-&gt;action &amp; __BLK_TA_CGROUP;</td></tr>
+<tr><th id="1492">1492</th><td></td></tr>
+<tr><th id="1493">1493</th><td>	<b>if</b> ((t-&gt;action &amp; ~__BLK_TN_CGROUP) == BLK_TN_MESSAGE) {</td></tr>
+<tr><th id="1494">1494</th><td>		log_action(iter, long_act ? <q>"message"</q> : <q>"m"</q>, has_cg);</td></tr>
+<tr><th id="1495">1495</th><td>		blk_log_msg(s, iter-&gt;ent, has_cg);</td></tr>
+<tr><th id="1496">1496</th><td>		<b>return</b> trace_handle_return(s);</td></tr>
+<tr><th id="1497">1497</th><td>	}</td></tr>
+<tr><th id="1498">1498</th><td></td></tr>
+<tr><th id="1499">1499</th><td>	<b>if</b> (unlikely(what == <var>0</var> || what &gt;= ARRAY_SIZE(what2act)))</td></tr>
+<tr><th id="1500">1500</th><td>		trace_seq_printf(s, <q>"Unknown action %x\n"</q>, what);</td></tr>
+<tr><th id="1501">1501</th><td>	<b>else</b> {</td></tr>
+<tr><th id="1502">1502</th><td>		log_action(iter, what2act[what].act[long_act], has_cg);</td></tr>
+<tr><th id="1503">1503</th><td>		what2act[what].print(s, iter-&gt;ent, has_cg);</td></tr>
+<tr><th id="1504">1504</th><td>	}</td></tr>
+<tr><th id="1505">1505</th><td></td></tr>
+<tr><th id="1506">1506</th><td>	<b>return</b> trace_handle_return(s);</td></tr>
+<tr><th id="1507">1507</th><td>}</td></tr>
+<tr><th id="1508">1508</th><td></td></tr>
+<tr><th id="1509">1509</th><td><em>static</em> <b>enum</b> print_line_t blk_trace_event_print(<b>struct</b> trace_iterator *iter,</td></tr>
+<tr><th id="1510">1510</th><td>					       <em>int</em> flags, <b>struct</b> trace_event *event)</td></tr>
+<tr><th id="1511">1511</th><td>{</td></tr>
+<tr><th id="1512">1512</th><td>	<b>return</b> print_one_line(iter, false);</td></tr>
+<tr><th id="1513">1513</th><td>}</td></tr>
+<tr><th id="1514">1514</th><td></td></tr>
+<tr><th id="1515">1515</th><td><em>static</em> <em>void</em> blk_trace_synthesize_old_trace(<b>struct</b> trace_iterator *iter)</td></tr>
+<tr><th id="1516">1516</th><td>{</td></tr>
+<tr><th id="1517">1517</th><td>	<b>struct</b> trace_seq *s = &amp;iter-&gt;seq;</td></tr>
+<tr><th id="1518">1518</th><td>	<b>struct</b> blk_io_trace *t = (<b>struct</b> blk_io_trace *)iter-&gt;ent;</td></tr>
+<tr><th id="1519">1519</th><td>	<em>const</em> <em>int</em> offset = offsetof(<b>struct</b> blk_io_trace, sector);</td></tr>
+<tr><th id="1520">1520</th><td>	<b>struct</b> blk_io_trace old = {</td></tr>
+<tr><th id="1521">1521</th><td>		.magic	  = BLK_IO_TRACE_MAGIC | BLK_IO_TRACE_VERSION,</td></tr>
+<tr><th id="1522">1522</th><td>		.time     = iter-&gt;ts,</td></tr>
+<tr><th id="1523">1523</th><td>	};</td></tr>
+<tr><th id="1524">1524</th><td></td></tr>
+<tr><th id="1525">1525</th><td>	trace_seq_putmem(s, &amp;old, offset);</td></tr>
+<tr><th id="1526">1526</th><td>	trace_seq_putmem(s, &amp;t-&gt;sector,</td></tr>
+<tr><th id="1527">1527</th><td>			 <b>sizeof</b>(old) - offset + t-&gt;pdu_len);</td></tr>
+<tr><th id="1528">1528</th><td>}</td></tr>
+<tr><th id="1529">1529</th><td></td></tr>
+<tr><th id="1530">1530</th><td><em>static</em> <b>enum</b> print_line_t</td></tr>
+<tr><th id="1531">1531</th><td>blk_trace_event_print_binary(<b>struct</b> trace_iterator *iter, <em>int</em> flags,</td></tr>
+<tr><th id="1532">1532</th><td>			     <b>struct</b> trace_event *event)</td></tr>
+<tr><th id="1533">1533</th><td>{</td></tr>
+<tr><th id="1534">1534</th><td>	blk_trace_synthesize_old_trace(iter);</td></tr>
+<tr><th id="1535">1535</th><td></td></tr>
+<tr><th id="1536">1536</th><td>	<b>return</b> trace_handle_return(&amp;iter-&gt;seq);</td></tr>
+<tr><th id="1537">1537</th><td>}</td></tr>
+<tr><th id="1538">1538</th><td></td></tr>
+<tr><th id="1539">1539</th><td><em>static</em> <b>enum</b> print_line_t blk_tracer_print_line(<b>struct</b> trace_iterator *iter)</td></tr>
+<tr><th id="1540">1540</th><td>{</td></tr>
+<tr><th id="1541">1541</th><td>	<b>if</b> (!(blk_tracer_flags.val &amp; TRACE_BLK_OPT_CLASSIC))</td></tr>
+<tr><th id="1542">1542</th><td>		<b>return</b> TRACE_TYPE_UNHANDLED;</td></tr>
+<tr><th id="1543">1543</th><td></td></tr>
+<tr><th id="1544">1544</th><td>	<b>return</b> print_one_line(iter, true);</td></tr>
+<tr><th id="1545">1545</th><td>}</td></tr>
+<tr><th id="1546">1546</th><td></td></tr>
+<tr><th id="1547">1547</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="1548">1548</th><td>blk_tracer_set_flag(<b>struct</b> trace_array *tr, u32 old_flags, u32 bit, <em>int</em> set)</td></tr>
+<tr><th id="1549">1549</th><td>{</td></tr>
+<tr><th id="1550">1550</th><td>	<i>/* don't output context-info for blk_classic output */</i></td></tr>
+<tr><th id="1551">1551</th><td>	<b>if</b> (bit == TRACE_BLK_OPT_CLASSIC) {</td></tr>
+<tr><th id="1552">1552</th><td>		<b>if</b> (set)</td></tr>
+<tr><th id="1553">1553</th><td>			tr-&gt;trace_flags &amp;= ~TRACE_ITER_CONTEXT_INFO;</td></tr>
+<tr><th id="1554">1554</th><td>		<b>else</b></td></tr>
+<tr><th id="1555">1555</th><td>			tr-&gt;trace_flags |= TRACE_ITER_CONTEXT_INFO;</td></tr>
+<tr><th id="1556">1556</th><td>	}</td></tr>
+<tr><th id="1557">1557</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="1558">1558</th><td>}</td></tr>
+<tr><th id="1559">1559</th><td></td></tr>
+<tr><th id="1560">1560</th><td><em>static</em> <b>struct</b> tracer blk_tracer __read_mostly = {</td></tr>
+<tr><th id="1561">1561</th><td>	.name		= <q>"blk"</q>,</td></tr>
+<tr><th id="1562">1562</th><td>	.init		= blk_tracer_init,</td></tr>
+<tr><th id="1563">1563</th><td>	.reset		= blk_tracer_reset,</td></tr>
+<tr><th id="1564">1564</th><td>	.start		= blk_tracer_start,</td></tr>
+<tr><th id="1565">1565</th><td>	.stop		= blk_tracer_stop,</td></tr>
+<tr><th id="1566">1566</th><td>	.print_header	= blk_tracer_print_header,</td></tr>
+<tr><th id="1567">1567</th><td>	.print_line	= blk_tracer_print_line,</td></tr>
+<tr><th id="1568">1568</th><td>	.flags		= &amp;blk_tracer_flags,</td></tr>
+<tr><th id="1569">1569</th><td>	.set_flag	= blk_tracer_set_flag,</td></tr>
+<tr><th id="1570">1570</th><td>};</td></tr>
+<tr><th id="1571">1571</th><td></td></tr>
+<tr><th id="1572">1572</th><td><em>static</em> <b>struct</b> trace_event_functions trace_blk_event_funcs = {</td></tr>
+<tr><th id="1573">1573</th><td>	.trace		= blk_trace_event_print,</td></tr>
+<tr><th id="1574">1574</th><td>	.binary		= blk_trace_event_print_binary,</td></tr>
+<tr><th id="1575">1575</th><td>};</td></tr>
+<tr><th id="1576">1576</th><td></td></tr>
+<tr><th id="1577">1577</th><td><em>static</em> <b>struct</b> trace_event trace_blk_event = {</td></tr>
+<tr><th id="1578">1578</th><td>	.type		= TRACE_BLK,</td></tr>
+<tr><th id="1579">1579</th><td>	.funcs		= &amp;trace_blk_event_funcs,</td></tr>
+<tr><th id="1580">1580</th><td>};</td></tr>
+<tr><th id="1581">1581</th><td></td></tr>
+<tr><th id="1582">1582</th><td><em>static</em> <em>int</em> __init init_blk_tracer(<em>void</em>)</td></tr>
+<tr><th id="1583">1583</th><td>{</td></tr>
+<tr><th id="1584">1584</th><td>	<b>if</b> (!register_trace_event(&amp;trace_blk_event)) {</td></tr>
+<tr><th id="1585">1585</th><td>		pr_warn(<q>"Warning: could not register block events\n"</q>);</td></tr>
+<tr><th id="1586">1586</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="1587">1587</th><td>	}</td></tr>
+<tr><th id="1588">1588</th><td></td></tr>
+<tr><th id="1589">1589</th><td>	<b>if</b> (register_tracer(&amp;blk_tracer) != <var>0</var>) {</td></tr>
+<tr><th id="1590">1590</th><td>		pr_warn(<q>"Warning: could not register the block tracer\n"</q>);</td></tr>
+<tr><th id="1591">1591</th><td>		unregister_trace_event(&amp;trace_blk_event);</td></tr>
+<tr><th id="1592">1592</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="1593">1593</th><td>	}</td></tr>
+<tr><th id="1594">1594</th><td></td></tr>
+<tr><th id="1595">1595</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="1596">1596</th><td>}</td></tr>
+<tr><th id="1597">1597</th><td></td></tr>
+<tr><th id="1598">1598</th><td>device_initcall(init_blk_tracer);</td></tr>
+<tr><th id="1599">1599</th><td></td></tr>
+<tr><th id="1600">1600</th><td><em>static</em> <em>int</em> blk_trace_remove_queue(<b>struct</b> request_queue *q)</td></tr>
+<tr><th id="1601">1601</th><td>{</td></tr>
+<tr><th id="1602">1602</th><td>	<b>struct</b> blk_trace *bt;</td></tr>
+<tr><th id="1603">1603</th><td></td></tr>
+<tr><th id="1604">1604</th><td>	bt = xchg(&amp;q-&gt;blk_trace, NULL);</td></tr>
+<tr><th id="1605">1605</th><td>	<b>if</b> (bt == NULL)</td></tr>
+<tr><th id="1606">1606</th><td>		<b>return</b> -EINVAL;</td></tr>
+<tr><th id="1607">1607</th><td></td></tr>
+<tr><th id="1608">1608</th><td>	put_probe_ref();</td></tr>
+<tr><th id="1609">1609</th><td>	blk_trace_free(bt);</td></tr>
+<tr><th id="1610">1610</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="1611">1611</th><td>}</td></tr>
+<tr><th id="1612">1612</th><td></td></tr>
+<tr><th id="1613">1613</th><td><i>/*</i></td></tr>
+<tr><th id="1614">1614</th><td><i> * Setup everything required to start tracing</i></td></tr>
+<tr><th id="1615">1615</th><td><i> */</i></td></tr>
+<tr><th id="1616">1616</th><td><em>static</em> <em>int</em> blk_trace_setup_queue(<b>struct</b> request_queue *q,</td></tr>
+<tr><th id="1617">1617</th><td>				 <b>struct</b> block_device *bdev)</td></tr>
+<tr><th id="1618">1618</th><td>{</td></tr>
+<tr><th id="1619">1619</th><td>	<b>struct</b> blk_trace *bt = NULL;</td></tr>
+<tr><th id="1620">1620</th><td>	<em>int</em> ret = -ENOMEM;</td></tr>
+<tr><th id="1621">1621</th><td></td></tr>
+<tr><th id="1622">1622</th><td>	bt = kzalloc(<b>sizeof</b>(*bt), GFP_KERNEL);</td></tr>
+<tr><th id="1623">1623</th><td>	<b>if</b> (!bt)</td></tr>
+<tr><th id="1624">1624</th><td>		<b>return</b> -ENOMEM;</td></tr>
+<tr><th id="1625">1625</th><td></td></tr>
+<tr><th id="1626">1626</th><td>	bt-&gt;msg_data = __alloc_percpu(BLK_TN_MAX_MSG, <b>__alignof__</b>(<em>char</em>));</td></tr>
+<tr><th id="1627">1627</th><td>	<b>if</b> (!bt-&gt;msg_data)</td></tr>
+<tr><th id="1628">1628</th><td>		<b>goto</b> free_bt;</td></tr>
+<tr><th id="1629">1629</th><td></td></tr>
+<tr><th id="1630">1630</th><td>	bt-&gt;dev = bdev-&gt;bd_dev;</td></tr>
+<tr><th id="1631">1631</th><td>	bt-&gt;act_mask = (u16)-<var>1</var>;</td></tr>
+<tr><th id="1632">1632</th><td></td></tr>
+<tr><th id="1633">1633</th><td>	blk_trace_setup_lba(bt, bdev);</td></tr>
+<tr><th id="1634">1634</th><td></td></tr>
+<tr><th id="1635">1635</th><td>	ret = -EBUSY;</td></tr>
+<tr><th id="1636">1636</th><td>	<b>if</b> (cmpxchg(&amp;q-&gt;blk_trace, NULL, bt))</td></tr>
+<tr><th id="1637">1637</th><td>		<b>goto</b> free_bt;</td></tr>
+<tr><th id="1638">1638</th><td></td></tr>
+<tr><th id="1639">1639</th><td>	get_probe_ref();</td></tr>
+<tr><th id="1640">1640</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="1641">1641</th><td></td></tr>
+<tr><th id="1642">1642</th><td>free_bt:</td></tr>
+<tr><th id="1643">1643</th><td>	blk_trace_free(bt);</td></tr>
+<tr><th id="1644">1644</th><td>	<b>return</b> ret;</td></tr>
+<tr><th id="1645">1645</th><td>}</td></tr>
+<tr><th id="1646">1646</th><td></td></tr>
+<tr><th id="1647">1647</th><td><i>/*</i></td></tr>
+<tr><th id="1648">1648</th><td><i> * sysfs interface to enable and configure tracing</i></td></tr>
+<tr><th id="1649">1649</th><td><i> */</i></td></tr>
+<tr><th id="1650">1650</th><td></td></tr>
+<tr><th id="1651">1651</th><td><em>static</em> ssize_t sysfs_blk_trace_attr_show(<b>struct</b> device *dev,</td></tr>
+<tr><th id="1652">1652</th><td>					 <b>struct</b> device_attribute *attr,</td></tr>
+<tr><th id="1653">1653</th><td>					 <em>char</em> *buf);</td></tr>
+<tr><th id="1654">1654</th><td><em>static</em> ssize_t sysfs_blk_trace_attr_store(<b>struct</b> device *dev,</td></tr>
+<tr><th id="1655">1655</th><td>					  <b>struct</b> device_attribute *attr,</td></tr>
+<tr><th id="1656">1656</th><td>					  <em>const</em> <em>char</em> *buf, size_t count);</td></tr>
+<tr><th id="1657">1657</th><td><u>#define BLK_TRACE_DEVICE_ATTR(_name) \</u></td></tr>
+<tr><th id="1658">1658</th><td><u>	DEVICE_ATTR(_name, S_IRUGO | S_IWUSR, \</u></td></tr>
+<tr><th id="1659">1659</th><td><u>		    sysfs_blk_trace_attr_show, \</u></td></tr>
+<tr><th id="1660">1660</th><td><u>		    sysfs_blk_trace_attr_store)</u></td></tr>
+<tr><th id="1661">1661</th><td></td></tr>
+<tr><th id="1662">1662</th><td><em>static</em> BLK_TRACE_DEVICE_ATTR(enable);</td></tr>
+<tr><th id="1663">1663</th><td><em>static</em> BLK_TRACE_DEVICE_ATTR(act_mask);</td></tr>
+<tr><th id="1664">1664</th><td><em>static</em> BLK_TRACE_DEVICE_ATTR(pid);</td></tr>
+<tr><th id="1665">1665</th><td><em>static</em> BLK_TRACE_DEVICE_ATTR(start_lba);</td></tr>
+<tr><th id="1666">1666</th><td><em>static</em> BLK_TRACE_DEVICE_ATTR(end_lba);</td></tr>
+<tr><th id="1667">1667</th><td></td></tr>
+<tr><th id="1668">1668</th><td><em>static</em> <b>struct</b> attribute *blk_trace_attrs[] = {</td></tr>
+<tr><th id="1669">1669</th><td>	&amp;dev_attr_enable.attr,</td></tr>
+<tr><th id="1670">1670</th><td>	&amp;dev_attr_act_mask.attr,</td></tr>
+<tr><th id="1671">1671</th><td>	&amp;dev_attr_pid.attr,</td></tr>
+<tr><th id="1672">1672</th><td>	&amp;dev_attr_start_lba.attr,</td></tr>
+<tr><th id="1673">1673</th><td>	&amp;dev_attr_end_lba.attr,</td></tr>
+<tr><th id="1674">1674</th><td>	NULL</td></tr>
+<tr><th id="1675">1675</th><td>};</td></tr>
+<tr><th id="1676">1676</th><td></td></tr>
+<tr><th id="1677">1677</th><td><b>struct</b> attribute_group blk_trace_attr_group = {</td></tr>
+<tr><th id="1678">1678</th><td>	.name  = <q>"trace"</q>,</td></tr>
+<tr><th id="1679">1679</th><td>	.attrs = blk_trace_attrs,</td></tr>
+<tr><th id="1680">1680</th><td>};</td></tr>
+<tr><th id="1681">1681</th><td></td></tr>
+<tr><th id="1682">1682</th><td><em>static</em> <em>const</em> <b>struct</b> {</td></tr>
+<tr><th id="1683">1683</th><td>	<em>int</em> mask;</td></tr>
+<tr><th id="1684">1684</th><td>	<em>const</em> <em>char</em> *str;</td></tr>
+<tr><th id="1685">1685</th><td>} mask_maps[] = {</td></tr>
+<tr><th id="1686">1686</th><td>	{ BLK_TC_READ,		<q>"read"</q>		},</td></tr>
+<tr><th id="1687">1687</th><td>	{ BLK_TC_WRITE,		<q>"write"</q>		},</td></tr>
+<tr><th id="1688">1688</th><td>	{ BLK_TC_FLUSH,		<q>"flush"</q>		},</td></tr>
+<tr><th id="1689">1689</th><td>	{ BLK_TC_SYNC,		<q>"sync"</q>		},</td></tr>
+<tr><th id="1690">1690</th><td>	{ BLK_TC_QUEUE,		<q>"queue"</q>		},</td></tr>
+<tr><th id="1691">1691</th><td>	{ BLK_TC_REQUEUE,	<q>"requeue"</q>	},</td></tr>
+<tr><th id="1692">1692</th><td>	{ BLK_TC_ISSUE,		<q>"issue"</q>		},</td></tr>
+<tr><th id="1693">1693</th><td>	{ BLK_TC_COMPLETE,	<q>"complete"</q>	},</td></tr>
+<tr><th id="1694">1694</th><td>	{ BLK_TC_FS,		<q>"fs"</q>		},</td></tr>
+<tr><th id="1695">1695</th><td>	{ BLK_TC_PC,		<q>"pc"</q>		},</td></tr>
+<tr><th id="1696">1696</th><td>	{ BLK_TC_NOTIFY,	<q>"notify"</q>	},</td></tr>
+<tr><th id="1697">1697</th><td>	{ BLK_TC_AHEAD,		<q>"ahead"</q>		},</td></tr>
+<tr><th id="1698">1698</th><td>	{ BLK_TC_META,		<q>"meta"</q>		},</td></tr>
+<tr><th id="1699">1699</th><td>	{ BLK_TC_DISCARD,	<q>"discard"</q>	},</td></tr>
+<tr><th id="1700">1700</th><td>	{ BLK_TC_DRV_DATA,	<q>"drv_data"</q>	},</td></tr>
+<tr><th id="1701">1701</th><td>	{ BLK_TC_FUA,		<q>"fua"</q>		},</td></tr>
+<tr><th id="1702">1702</th><td>};</td></tr>
+<tr><th id="1703">1703</th><td></td></tr>
+<tr><th id="1704">1704</th><td><em>static</em> <em>int</em> blk_trace_str2mask(<em>const</em> <em>char</em> *str)</td></tr>
+<tr><th id="1705">1705</th><td>{</td></tr>
+<tr><th id="1706">1706</th><td>	<em>int</em> i;</td></tr>
+<tr><th id="1707">1707</th><td>	<em>int</em> mask = <var>0</var>;</td></tr>
+<tr><th id="1708">1708</th><td>	<em>char</em> *buf, *s, *token;</td></tr>
+<tr><th id="1709">1709</th><td></td></tr>
+<tr><th id="1710">1710</th><td>	buf = kstrdup(str, GFP_KERNEL);</td></tr>
+<tr><th id="1711">1711</th><td>	<b>if</b> (buf == NULL)</td></tr>
+<tr><th id="1712">1712</th><td>		<b>return</b> -ENOMEM;</td></tr>
+<tr><th id="1713">1713</th><td>	s = strstrip(buf);</td></tr>
+<tr><th id="1714">1714</th><td></td></tr>
+<tr><th id="1715">1715</th><td>	<b>while</b> (<var>1</var>) {</td></tr>
+<tr><th id="1716">1716</th><td>		token = strsep(&amp;s, <q>","</q>);</td></tr>
+<tr><th id="1717">1717</th><td>		<b>if</b> (token == NULL)</td></tr>
+<tr><th id="1718">1718</th><td>			<b>break</b>;</td></tr>
+<tr><th id="1719">1719</th><td></td></tr>
+<tr><th id="1720">1720</th><td>		<b>if</b> (*token == <kbd>'\0'</kbd>)</td></tr>
+<tr><th id="1721">1721</th><td>			<b>continue</b>;</td></tr>
+<tr><th id="1722">1722</th><td></td></tr>
+<tr><th id="1723">1723</th><td>		<b>for</b> (i = <var>0</var>; i &lt; ARRAY_SIZE(mask_maps); i++) {</td></tr>
+<tr><th id="1724">1724</th><td>			<b>if</b> (strcasecmp(token, mask_maps[i].str) == <var>0</var>) {</td></tr>
+<tr><th id="1725">1725</th><td>				mask |= mask_maps[i].mask;</td></tr>
+<tr><th id="1726">1726</th><td>				<b>break</b>;</td></tr>
+<tr><th id="1727">1727</th><td>			}</td></tr>
+<tr><th id="1728">1728</th><td>		}</td></tr>
+<tr><th id="1729">1729</th><td>		<b>if</b> (i == ARRAY_SIZE(mask_maps)) {</td></tr>
+<tr><th id="1730">1730</th><td>			mask = -EINVAL;</td></tr>
+<tr><th id="1731">1731</th><td>			<b>break</b>;</td></tr>
+<tr><th id="1732">1732</th><td>		}</td></tr>
+<tr><th id="1733">1733</th><td>	}</td></tr>
+<tr><th id="1734">1734</th><td>	kfree(buf);</td></tr>
+<tr><th id="1735">1735</th><td></td></tr>
+<tr><th id="1736">1736</th><td>	<b>return</b> mask;</td></tr>
+<tr><th id="1737">1737</th><td>}</td></tr>
+<tr><th id="1738">1738</th><td></td></tr>
+<tr><th id="1739">1739</th><td><em>static</em> ssize_t blk_trace_mask2str(<em>char</em> *buf, <em>int</em> mask)</td></tr>
+<tr><th id="1740">1740</th><td>{</td></tr>
+<tr><th id="1741">1741</th><td>	<em>int</em> i;</td></tr>
+<tr><th id="1742">1742</th><td>	<em>char</em> *p = buf;</td></tr>
+<tr><th id="1743">1743</th><td></td></tr>
+<tr><th id="1744">1744</th><td>	<b>for</b> (i = <var>0</var>; i &lt; ARRAY_SIZE(mask_maps); i++) {</td></tr>
+<tr><th id="1745">1745</th><td>		<b>if</b> (mask &amp; mask_maps[i].mask) {</td></tr>
+<tr><th id="1746">1746</th><td>			p += sprintf(p, <q>"%s%s"</q>,</td></tr>
+<tr><th id="1747">1747</th><td>				    (p == buf) ? <q>""</q> : <q>","</q>, mask_maps[i].str);</td></tr>
+<tr><th id="1748">1748</th><td>		}</td></tr>
+<tr><th id="1749">1749</th><td>	}</td></tr>
+<tr><th id="1750">1750</th><td>	*p++ = <kbd>'\n'</kbd>;</td></tr>
+<tr><th id="1751">1751</th><td></td></tr>
+<tr><th id="1752">1752</th><td>	<b>return</b> p - buf;</td></tr>
+<tr><th id="1753">1753</th><td>}</td></tr>
+<tr><th id="1754">1754</th><td></td></tr>
+<tr><th id="1755">1755</th><td><em>static</em> <b>struct</b> request_queue *blk_trace_get_queue(<b>struct</b> block_device *bdev)</td></tr>
+<tr><th id="1756">1756</th><td>{</td></tr>
+<tr><th id="1757">1757</th><td>	<b>if</b> (bdev-&gt;bd_disk == NULL)</td></tr>
+<tr><th id="1758">1758</th><td>		<b>return</b> NULL;</td></tr>
+<tr><th id="1759">1759</th><td></td></tr>
+<tr><th id="1760">1760</th><td>	<b>return</b> bdev_get_queue(bdev);</td></tr>
+<tr><th id="1761">1761</th><td>}</td></tr>
+<tr><th id="1762">1762</th><td></td></tr>
+<tr><th id="1763">1763</th><td><em>static</em> ssize_t sysfs_blk_trace_attr_show(<b>struct</b> device *dev,</td></tr>
+<tr><th id="1764">1764</th><td>					 <b>struct</b> device_attribute *attr,</td></tr>
+<tr><th id="1765">1765</th><td>					 <em>char</em> *buf)</td></tr>
+<tr><th id="1766">1766</th><td>{</td></tr>
+<tr><th id="1767">1767</th><td>	<b>struct</b> hd_struct *p = dev_to_part(dev);</td></tr>
+<tr><th id="1768">1768</th><td>	<b>struct</b> request_queue *q;</td></tr>
+<tr><th id="1769">1769</th><td>	<b>struct</b> block_device *bdev;</td></tr>
+<tr><th id="1770">1770</th><td>	ssize_t ret = -ENXIO;</td></tr>
+<tr><th id="1771">1771</th><td></td></tr>
+<tr><th id="1772">1772</th><td>	bdev = bdget(part_devt(p));</td></tr>
+<tr><th id="1773">1773</th><td>	<b>if</b> (bdev == NULL)</td></tr>
+<tr><th id="1774">1774</th><td>		<b>goto</b> out;</td></tr>
+<tr><th id="1775">1775</th><td></td></tr>
+<tr><th id="1776">1776</th><td>	q = blk_trace_get_queue(bdev);</td></tr>
+<tr><th id="1777">1777</th><td>	<b>if</b> (q == NULL)</td></tr>
+<tr><th id="1778">1778</th><td>		<b>goto</b> out_bdput;</td></tr>
+<tr><th id="1779">1779</th><td></td></tr>
+<tr><th id="1780">1780</th><td>	mutex_lock(&amp;q-&gt;blk_trace_mutex);</td></tr>
+<tr><th id="1781">1781</th><td></td></tr>
+<tr><th id="1782">1782</th><td>	<b>if</b> (attr == &amp;dev_attr_enable) {</td></tr>
+<tr><th id="1783">1783</th><td>		ret = sprintf(buf, <q>"%u\n"</q>, !!q-&gt;blk_trace);</td></tr>
+<tr><th id="1784">1784</th><td>		<b>goto</b> out_unlock_bdev;</td></tr>
+<tr><th id="1785">1785</th><td>	}</td></tr>
+<tr><th id="1786">1786</th><td></td></tr>
+<tr><th id="1787">1787</th><td>	<b>if</b> (q-&gt;blk_trace == NULL)</td></tr>
+<tr><th id="1788">1788</th><td>		ret = sprintf(buf, <q>"disabled\n"</q>);</td></tr>
+<tr><th id="1789">1789</th><td>	<b>else</b> <b>if</b> (attr == &amp;dev_attr_act_mask)</td></tr>
+<tr><th id="1790">1790</th><td>		ret = blk_trace_mask2str(buf, q-&gt;blk_trace-&gt;act_mask);</td></tr>
+<tr><th id="1791">1791</th><td>	<b>else</b> <b>if</b> (attr == &amp;dev_attr_pid)</td></tr>
+<tr><th id="1792">1792</th><td>		ret = sprintf(buf, <q>"%u\n"</q>, q-&gt;blk_trace-&gt;pid);</td></tr>
+<tr><th id="1793">1793</th><td>	<b>else</b> <b>if</b> (attr == &amp;dev_attr_start_lba)</td></tr>
+<tr><th id="1794">1794</th><td>		ret = sprintf(buf, <q>"%llu\n"</q>, q-&gt;blk_trace-&gt;start_lba);</td></tr>
+<tr><th id="1795">1795</th><td>	<b>else</b> <b>if</b> (attr == &amp;dev_attr_end_lba)</td></tr>
+<tr><th id="1796">1796</th><td>		ret = sprintf(buf, <q>"%llu\n"</q>, q-&gt;blk_trace-&gt;end_lba);</td></tr>
+<tr><th id="1797">1797</th><td></td></tr>
+<tr><th id="1798">1798</th><td>out_unlock_bdev:</td></tr>
+<tr><th id="1799">1799</th><td>	mutex_unlock(&amp;q-&gt;blk_trace_mutex);</td></tr>
+<tr><th id="1800">1800</th><td>out_bdput:</td></tr>
+<tr><th id="1801">1801</th><td>	bdput(bdev);</td></tr>
+<tr><th id="1802">1802</th><td>out:</td></tr>
+<tr><th id="1803">1803</th><td>	<b>return</b> ret;</td></tr>
+<tr><th id="1804">1804</th><td>}</td></tr>
+<tr><th id="1805">1805</th><td></td></tr>
+<tr><th id="1806">1806</th><td><em>static</em> ssize_t sysfs_blk_trace_attr_store(<b>struct</b> device *dev,</td></tr>
+<tr><th id="1807">1807</th><td>					  <b>struct</b> device_attribute *attr,</td></tr>
+<tr><th id="1808">1808</th><td>					  <em>const</em> <em>char</em> *buf, size_t count)</td></tr>
+<tr><th id="1809">1809</th><td>{</td></tr>
+<tr><th id="1810">1810</th><td>	<b>struct</b> block_device *bdev;</td></tr>
+<tr><th id="1811">1811</th><td>	<b>struct</b> request_queue *q;</td></tr>
+<tr><th id="1812">1812</th><td>	<b>struct</b> hd_struct *p;</td></tr>
+<tr><th id="1813">1813</th><td>	u64 value;</td></tr>
+<tr><th id="1814">1814</th><td>	ssize_t ret = -EINVAL;</td></tr>
+<tr><th id="1815">1815</th><td></td></tr>
+<tr><th id="1816">1816</th><td>	<b>if</b> (count == <var>0</var>)</td></tr>
+<tr><th id="1817">1817</th><td>		<b>goto</b> out;</td></tr>
+<tr><th id="1818">1818</th><td></td></tr>
+<tr><th id="1819">1819</th><td>	<b>if</b> (attr == &amp;dev_attr_act_mask) {</td></tr>
+<tr><th id="1820">1820</th><td>		<b>if</b> (kstrtoull(buf, <var>0</var>, &amp;value)) {</td></tr>
+<tr><th id="1821">1821</th><td>			<i>/* Assume it is a list of trace category names */</i></td></tr>
+<tr><th id="1822">1822</th><td>			ret = blk_trace_str2mask(buf);</td></tr>
+<tr><th id="1823">1823</th><td>			<b>if</b> (ret &lt; <var>0</var>)</td></tr>
+<tr><th id="1824">1824</th><td>				<b>goto</b> out;</td></tr>
+<tr><th id="1825">1825</th><td>			value = ret;</td></tr>
+<tr><th id="1826">1826</th><td>		}</td></tr>
+<tr><th id="1827">1827</th><td>	} <b>else</b> <b>if</b> (kstrtoull(buf, <var>0</var>, &amp;value))</td></tr>
+<tr><th id="1828">1828</th><td>		<b>goto</b> out;</td></tr>
+<tr><th id="1829">1829</th><td></td></tr>
+<tr><th id="1830">1830</th><td>	ret = -ENXIO;</td></tr>
+<tr><th id="1831">1831</th><td></td></tr>
+<tr><th id="1832">1832</th><td>	p = dev_to_part(dev);</td></tr>
+<tr><th id="1833">1833</th><td>	bdev = bdget(part_devt(p));</td></tr>
+<tr><th id="1834">1834</th><td>	<b>if</b> (bdev == NULL)</td></tr>
+<tr><th id="1835">1835</th><td>		<b>goto</b> out;</td></tr>
+<tr><th id="1836">1836</th><td></td></tr>
+<tr><th id="1837">1837</th><td>	q = blk_trace_get_queue(bdev);</td></tr>
+<tr><th id="1838">1838</th><td>	<b>if</b> (q == NULL)</td></tr>
+<tr><th id="1839">1839</th><td>		<b>goto</b> out_bdput;</td></tr>
+<tr><th id="1840">1840</th><td></td></tr>
+<tr><th id="1841">1841</th><td>	mutex_lock(&amp;q-&gt;blk_trace_mutex);</td></tr>
+<tr><th id="1842">1842</th><td></td></tr>
+<tr><th id="1843">1843</th><td>	<b>if</b> (attr == &amp;dev_attr_enable) {</td></tr>
+<tr><th id="1844">1844</th><td>		<b>if</b> (!!value == !!q-&gt;blk_trace) {</td></tr>
+<tr><th id="1845">1845</th><td>			ret = <var>0</var>;</td></tr>
+<tr><th id="1846">1846</th><td>			<b>goto</b> out_unlock_bdev;</td></tr>
+<tr><th id="1847">1847</th><td>		}</td></tr>
+<tr><th id="1848">1848</th><td>		<b>if</b> (value)</td></tr>
+<tr><th id="1849">1849</th><td>			ret = blk_trace_setup_queue(q, bdev);</td></tr>
+<tr><th id="1850">1850</th><td>		<b>else</b></td></tr>
+<tr><th id="1851">1851</th><td>			ret = blk_trace_remove_queue(q);</td></tr>
+<tr><th id="1852">1852</th><td>		<b>goto</b> out_unlock_bdev;</td></tr>
+<tr><th id="1853">1853</th><td>	}</td></tr>
+<tr><th id="1854">1854</th><td></td></tr>
+<tr><th id="1855">1855</th><td>	ret = <var>0</var>;</td></tr>
+<tr><th id="1856">1856</th><td>	<b>if</b> (q-&gt;blk_trace == NULL)</td></tr>
+<tr><th id="1857">1857</th><td>		ret = blk_trace_setup_queue(q, bdev);</td></tr>
+<tr><th id="1858">1858</th><td></td></tr>
+<tr><th id="1859">1859</th><td>	<b>if</b> (ret == <var>0</var>) {</td></tr>
+<tr><th id="1860">1860</th><td>		<b>if</b> (attr == &amp;dev_attr_act_mask)</td></tr>
+<tr><th id="1861">1861</th><td>			q-&gt;blk_trace-&gt;act_mask = value;</td></tr>
+<tr><th id="1862">1862</th><td>		<b>else</b> <b>if</b> (attr == &amp;dev_attr_pid)</td></tr>
+<tr><th id="1863">1863</th><td>			q-&gt;blk_trace-&gt;pid = value;</td></tr>
+<tr><th id="1864">1864</th><td>		<b>else</b> <b>if</b> (attr == &amp;dev_attr_start_lba)</td></tr>
+<tr><th id="1865">1865</th><td>			q-&gt;blk_trace-&gt;start_lba = value;</td></tr>
+<tr><th id="1866">1866</th><td>		<b>else</b> <b>if</b> (attr == &amp;dev_attr_end_lba)</td></tr>
+<tr><th id="1867">1867</th><td>			q-&gt;blk_trace-&gt;end_lba = value;</td></tr>
+<tr><th id="1868">1868</th><td>	}</td></tr>
+<tr><th id="1869">1869</th><td></td></tr>
+<tr><th id="1870">1870</th><td>out_unlock_bdev:</td></tr>
+<tr><th id="1871">1871</th><td>	mutex_unlock(&amp;q-&gt;blk_trace_mutex);</td></tr>
+<tr><th id="1872">1872</th><td>out_bdput:</td></tr>
+<tr><th id="1873">1873</th><td>	bdput(bdev);</td></tr>
+<tr><th id="1874">1874</th><td>out:</td></tr>
+<tr><th id="1875">1875</th><td>	<b>return</b> ret ? ret : count;</td></tr>
+<tr><th id="1876">1876</th><td>}</td></tr>
+<tr><th id="1877">1877</th><td></td></tr>
+<tr><th id="1878">1878</th><td><em>int</em> blk_trace_init_sysfs(<b>struct</b> device *dev)</td></tr>
+<tr><th id="1879">1879</th><td>{</td></tr>
+<tr><th id="1880">1880</th><td>	<b>return</b> sysfs_create_group(&amp;dev-&gt;kobj, &amp;blk_trace_attr_group);</td></tr>
+<tr><th id="1881">1881</th><td>}</td></tr>
+<tr><th id="1882">1882</th><td></td></tr>
+<tr><th id="1883">1883</th><td><em>void</em> blk_trace_remove_sysfs(<b>struct</b> device *dev)</td></tr>
+<tr><th id="1884">1884</th><td>{</td></tr>
+<tr><th id="1885">1885</th><td>	sysfs_remove_group(&amp;dev-&gt;kobj, &amp;blk_trace_attr_group);</td></tr>
+<tr><th id="1886">1886</th><td>}</td></tr>
+<tr><th id="1887">1887</th><td></td></tr>
+<tr><th id="1888">1888</th><td><u>#<span data-ppcond="38">endif</span> /* CONFIG_BLK_DEV_IO_TRACE */</u></td></tr>
+<tr><th id="1889">1889</th><td></td></tr>
+<tr><th id="1890">1890</th><td><u>#<span data-ppcond="1890">ifdef</span> <a class="macro" href="../../include/generated/autoconf.h.html#344" data-ref="_M/CONFIG_EVENT_TRACING">CONFIG_EVENT_TRACING</a></u></td></tr>
+<tr><th id="1891">1891</th><td></td></tr>
+<tr><th id="1892">1892</th><td><em>void</em> <dfn class="decl def fn" id="blk_fill_rwbs" title='blk_fill_rwbs' data-ref="blk_fill_rwbs">blk_fill_rwbs</dfn>(<em>char</em> *<dfn class="local col0 decl" id="450rwbs" title='rwbs' data-type='char *' data-ref="450rwbs">rwbs</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col1 decl" id="451op" title='op' data-type='unsigned int' data-ref="451op">op</dfn>, <em>int</em> <dfn class="local col2 decl" id="452bytes" title='bytes' data-type='int' data-ref="452bytes">bytes</dfn>)</td></tr>
+<tr><th id="1893">1893</th><td>{</td></tr>
+<tr><th id="1894">1894</th><td>	<em>int</em> <dfn class="local col3 decl" id="453i" title='i' data-type='int' data-ref="453i">i</dfn> = <var>0</var>;</td></tr>
+<tr><th id="1895">1895</th><td></td></tr>
+<tr><th id="1896">1896</th><td>	<b>if</b> (<a class="local col1 ref" href="#451op" title='op' data-ref="451op">op</a> &amp; <a class="macro" href="../../include/linux/blk_types.h.html#346" title="(1ULL &lt;&lt; __REQ_PREFLUSH)" data-ref="_M/REQ_PREFLUSH">REQ_PREFLUSH</a>)</td></tr>
+<tr><th id="1897">1897</th><td>		<a class="local col0 ref" href="#450rwbs" title='rwbs' data-ref="450rwbs">rwbs</a>[<a class="local col3 ref" href="#453i" title='i' data-ref="453i">i</a>++] = <kbd>'F'</kbd>;</td></tr>
+<tr><th id="1898">1898</th><td></td></tr>
+<tr><th id="1899">1899</th><td>	<b>switch</b> (<a class="local col1 ref" href="#451op" title='op' data-ref="451op">op</a> &amp; <a class="macro" href="../../include/linux/blk_types.h.html#277" title="((1 &lt;&lt; 8) - 1)" data-ref="_M/REQ_OP_MASK">REQ_OP_MASK</a>) {</td></tr>
+<tr><th id="1900">1900</th><td>	<b>case</b> <a class="enum" href="../../include/linux/blk_types.h.html#REQ_OP_WRITE" title='REQ_OP_WRITE' data-ref="REQ_OP_WRITE">REQ_OP_WRITE</a>:</td></tr>
+<tr><th id="1901">1901</th><td>	<b>case</b> <a class="enum" href="../../include/linux/blk_types.h.html#REQ_OP_WRITE_SAME" title='REQ_OP_WRITE_SAME' data-ref="REQ_OP_WRITE_SAME">REQ_OP_WRITE_SAME</a>:</td></tr>
+<tr><th id="1902">1902</th><td>		<a class="local col0 ref" href="#450rwbs" title='rwbs' data-ref="450rwbs">rwbs</a>[<a class="local col3 ref" href="#453i" title='i' data-ref="453i">i</a>++] = <kbd>'W'</kbd>;</td></tr>
+<tr><th id="1903">1903</th><td>		<b>break</b>;</td></tr>
+<tr><th id="1904">1904</th><td>	<b>case</b> <a class="enum" href="../../include/linux/blk_types.h.html#REQ_OP_DISCARD" title='REQ_OP_DISCARD' data-ref="REQ_OP_DISCARD">REQ_OP_DISCARD</a>:</td></tr>
+<tr><th id="1905">1905</th><td>		<a class="local col0 ref" href="#450rwbs" title='rwbs' data-ref="450rwbs">rwbs</a>[<a class="local col3 ref" href="#453i" title='i' data-ref="453i">i</a>++] = <kbd>'D'</kbd>;</td></tr>
+<tr><th id="1906">1906</th><td>		<b>break</b>;</td></tr>
+<tr><th id="1907">1907</th><td>	<b>case</b> <a class="enum" href="../../include/linux/blk_types.h.html#REQ_OP_SECURE_ERASE" title='REQ_OP_SECURE_ERASE' data-ref="REQ_OP_SECURE_ERASE">REQ_OP_SECURE_ERASE</a>:</td></tr>
+<tr><th id="1908">1908</th><td>		<a class="local col0 ref" href="#450rwbs" title='rwbs' data-ref="450rwbs">rwbs</a>[<a class="local col3 ref" href="#453i" title='i' data-ref="453i">i</a>++] = <kbd>'D'</kbd>;</td></tr>
+<tr><th id="1909">1909</th><td>		<a class="local col0 ref" href="#450rwbs" title='rwbs' data-ref="450rwbs">rwbs</a>[<a class="local col3 ref" href="#453i" title='i' data-ref="453i">i</a>++] = <kbd>'E'</kbd>;</td></tr>
+<tr><th id="1910">1910</th><td>		<b>break</b>;</td></tr>
+<tr><th id="1911">1911</th><td>	<b>case</b> <a class="enum" href="../../include/linux/blk_types.h.html#REQ_OP_FLUSH" title='REQ_OP_FLUSH' data-ref="REQ_OP_FLUSH">REQ_OP_FLUSH</a>:</td></tr>
+<tr><th id="1912">1912</th><td>		<a class="local col0 ref" href="#450rwbs" title='rwbs' data-ref="450rwbs">rwbs</a>[<a class="local col3 ref" href="#453i" title='i' data-ref="453i">i</a>++] = <kbd>'F'</kbd>;</td></tr>
+<tr><th id="1913">1913</th><td>		<b>break</b>;</td></tr>
+<tr><th id="1914">1914</th><td>	<b>case</b> <a class="enum" href="../../include/linux/blk_types.h.html#REQ_OP_READ" title='REQ_OP_READ' data-ref="REQ_OP_READ">REQ_OP_READ</a>:</td></tr>
+<tr><th id="1915">1915</th><td>		<a class="local col0 ref" href="#450rwbs" title='rwbs' data-ref="450rwbs">rwbs</a>[<a class="local col3 ref" href="#453i" title='i' data-ref="453i">i</a>++] = <kbd>'R'</kbd>;</td></tr>
+<tr><th id="1916">1916</th><td>		<b>break</b>;</td></tr>
+<tr><th id="1917">1917</th><td>	<b>default</b>:</td></tr>
+<tr><th id="1918">1918</th><td>		<a class="local col0 ref" href="#450rwbs" title='rwbs' data-ref="450rwbs">rwbs</a>[<a class="local col3 ref" href="#453i" title='i' data-ref="453i">i</a>++] = <kbd>'N'</kbd>;</td></tr>
+<tr><th id="1919">1919</th><td>	}</td></tr>
+<tr><th id="1920">1920</th><td></td></tr>
+<tr><th id="1921">1921</th><td>	<b>if</b> (<a class="local col1 ref" href="#451op" title='op' data-ref="451op">op</a> &amp; <a class="macro" href="../../include/linux/blk_types.h.html#345" title="(1ULL &lt;&lt; __REQ_FUA)" data-ref="_M/REQ_FUA">REQ_FUA</a>)</td></tr>
+<tr><th id="1922">1922</th><td>		<a class="local col0 ref" href="#450rwbs" title='rwbs' data-ref="450rwbs">rwbs</a>[<a class="local col3 ref" href="#453i" title='i' data-ref="453i">i</a>++] = <kbd>'F'</kbd>;</td></tr>
+<tr><th id="1923">1923</th><td>	<b>if</b> (<a class="local col1 ref" href="#451op" title='op' data-ref="451op">op</a> &amp; <a class="macro" href="../../include/linux/blk_types.h.html#347" title="(1ULL &lt;&lt; __REQ_RAHEAD)" data-ref="_M/REQ_RAHEAD">REQ_RAHEAD</a>)</td></tr>
+<tr><th id="1924">1924</th><td>		<a class="local col0 ref" href="#450rwbs" title='rwbs' data-ref="450rwbs">rwbs</a>[<a class="local col3 ref" href="#453i" title='i' data-ref="453i">i</a>++] = <kbd>'A'</kbd>;</td></tr>
+<tr><th id="1925">1925</th><td>	<b>if</b> (<a class="local col1 ref" href="#451op" title='op' data-ref="451op">op</a> &amp; <a class="macro" href="../../include/linux/blk_types.h.html#339" title="(1ULL &lt;&lt; __REQ_SYNC)" data-ref="_M/REQ_SYNC">REQ_SYNC</a>)</td></tr>
+<tr><th id="1926">1926</th><td>		<a class="local col0 ref" href="#450rwbs" title='rwbs' data-ref="450rwbs">rwbs</a>[<a class="local col3 ref" href="#453i" title='i' data-ref="453i">i</a>++] = <kbd>'S'</kbd>;</td></tr>
+<tr><th id="1927">1927</th><td>	<b>if</b> (<a class="local col1 ref" href="#451op" title='op' data-ref="451op">op</a> &amp; <a class="macro" href="../../include/linux/blk_types.h.html#340" title="(1ULL &lt;&lt; __REQ_META)" data-ref="_M/REQ_META">REQ_META</a>)</td></tr>
+<tr><th id="1928">1928</th><td>		<a class="local col0 ref" href="#450rwbs" title='rwbs' data-ref="450rwbs">rwbs</a>[<a class="local col3 ref" href="#453i" title='i' data-ref="453i">i</a>++] = <kbd>'M'</kbd>;</td></tr>
+<tr><th id="1929">1929</th><td></td></tr>
+<tr><th id="1930">1930</th><td>	<a class="local col0 ref" href="#450rwbs" title='rwbs' data-ref="450rwbs">rwbs</a>[<a class="local col3 ref" href="#453i" title='i' data-ref="453i">i</a>] = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="1931">1931</th><td>}</td></tr>
+<tr><th id="1932">1932</th><td><a class="macro" href="../../include/linux/export.h.html#100" title="extern typeof(blk_fill_rwbs) blk_fill_rwbs; static const char __kstrtab_blk_fill_rwbs[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;blk_fill_rwbs&quot;; static const struct kernel_symbol __ksymtab_blk_fill_rwbs __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;blk_fill_rwbs&quot;), used)) = { (unsigned long)&amp;blk_fill_rwbs, __kstrtab_blk_fill_rwbs }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#blk_fill_rwbs" title='blk_fill_rwbs' data-ref="blk_fill_rwbs"><a class="ref fn" href="#blk_fill_rwbs" title='blk_fill_rwbs' data-ref="blk_fill_rwbs"><a class="ref fn" href="#blk_fill_rwbs" title='blk_fill_rwbs' data-ref="blk_fill_rwbs"><a class="ref fn" href="#blk_fill_rwbs" title='blk_fill_rwbs' data-ref="blk_fill_rwbs">blk_fill_rwbs</a></a></a></a>);</td></tr>
+<tr><th id="1933">1933</th><td></td></tr>
+<tr><th id="1934">1934</th><td><u>#<span data-ppcond="1890">endif</span> /* CONFIG_EVENT_TRACING */</u></td></tr>
+<tr><th id="1935">1935</th><td></td></tr>
+<tr><th id="1936">1936</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,667 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>dm-block-manager.c source code [linux-4.18.y/drivers/md/persistent-data/dm-block-manager.c] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="buffer_aux,dm_block_manager "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/drivers/md/persistent-data/dm-block-manager.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>linux-4.18.y</a>/<a href='../..'>drivers</a>/<a href='..'>md</a>/<a href='./'>persistent-data</a>/<a href='dm-block-manager.c.html'>dm-block-manager.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright (C) 2011 Red Hat, Inc.</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> * This file is released under the GPL.</i></td></tr>
+<tr><th id="5">5</th><td><i> */</i></td></tr>
+<tr><th id="6">6</th><td><u>#include <a href="dm-block-manager.h.html">"dm-block-manager.h"</a></u></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="dm-persistent-data-internal.h.html">"dm-persistent-data-internal.h"</a></u></td></tr>
+<tr><th id="8">8</th><td></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="../../../include/linux/dm-bufio.h.html">&lt;linux/dm-bufio.h&gt;</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../../include/linux/crc32c.h.html">&lt;linux/crc32c.h&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../../include/linux/module.h.html">&lt;linux/module.h&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../include/linux/slab.h.html">&lt;linux/slab.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../include/linux/rwsem.h.html">&lt;linux/rwsem.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../include/linux/device-mapper.h.html">&lt;linux/device-mapper.h&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../include/linux/stacktrace.h.html">&lt;linux/stacktrace.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../include/linux/sched/task.h.html">&lt;linux/sched/task.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><u>#define <dfn class="macro" id="_M/DM_MSG_PREFIX" data-ref="_M/DM_MSG_PREFIX">DM_MSG_PREFIX</dfn> "block manager"</u></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><i>/*----------------------------------------------------------------*/</i></td></tr>
+<tr><th id="21">21</th><td></td></tr>
+<tr><th id="22">22</th><td><u>#<span data-ppcond="22">ifdef</span> <span class="macro" data-ref="_M/CONFIG_DM_DEBUG_BLOCK_MANAGER_LOCKING">CONFIG_DM_DEBUG_BLOCK_MANAGER_LOCKING</span></u></td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><i>/*</i></td></tr>
+<tr><th id="25">25</th><td><i> * This is a read/write semaphore with a couple of differences.</i></td></tr>
+<tr><th id="26">26</th><td><i> *</i></td></tr>
+<tr><th id="27">27</th><td><i> * i) There is a restriction on the number of concurrent read locks that</i></td></tr>
+<tr><th id="28">28</th><td><i> * may be held at once.  This is just an implementation detail.</i></td></tr>
+<tr><th id="29">29</th><td><i> *</i></td></tr>
+<tr><th id="30">30</th><td><i> * ii) Recursive locking attempts are detected and return EINVAL.  A stack</i></td></tr>
+<tr><th id="31">31</th><td><i> * trace is also emitted for the previous lock acquisition.</i></td></tr>
+<tr><th id="32">32</th><td><i> *</i></td></tr>
+<tr><th id="33">33</th><td><i> * iii) Priority is given to write locks.</i></td></tr>
+<tr><th id="34">34</th><td><i> */</i></td></tr>
+<tr><th id="35">35</th><td><u>#define MAX_HOLDERS 4</u></td></tr>
+<tr><th id="36">36</th><td><u>#define MAX_STACK 10</u></td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><b>typedef</b> <em>unsigned</em> <em>long</em> stack_entries[MAX_STACK];</td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><b>struct</b> block_lock {</td></tr>
+<tr><th id="41">41</th><td>	spinlock_t lock;</td></tr>
+<tr><th id="42">42</th><td>	__s32 count;</td></tr>
+<tr><th id="43">43</th><td>	<b>struct</b> list_head waiters;</td></tr>
+<tr><th id="44">44</th><td>	<b>struct</b> task_struct *holders[MAX_HOLDERS];</td></tr>
+<tr><th id="45">45</th><td></td></tr>
+<tr><th id="46">46</th><td><u>#ifdef CONFIG_DM_DEBUG_BLOCK_STACK_TRACING</u></td></tr>
+<tr><th id="47">47</th><td>	<b>struct</b> stack_trace traces[MAX_HOLDERS];</td></tr>
+<tr><th id="48">48</th><td>	stack_entries entries[MAX_HOLDERS];</td></tr>
+<tr><th id="49">49</th><td><u>#endif</u></td></tr>
+<tr><th id="50">50</th><td>};</td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td><b>struct</b> waiter {</td></tr>
+<tr><th id="53">53</th><td>	<b>struct</b> list_head list;</td></tr>
+<tr><th id="54">54</th><td>	<b>struct</b> task_struct *task;</td></tr>
+<tr><th id="55">55</th><td>	<em>int</em> wants_write;</td></tr>
+<tr><th id="56">56</th><td>};</td></tr>
+<tr><th id="57">57</th><td></td></tr>
+<tr><th id="58">58</th><td><em>static</em> <em>unsigned</em> __find_holder(<b>struct</b> block_lock *lock,</td></tr>
+<tr><th id="59">59</th><td>			      <b>struct</b> task_struct *task)</td></tr>
+<tr><th id="60">60</th><td>{</td></tr>
+<tr><th id="61">61</th><td>	<em>unsigned</em> i;</td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td>	<b>for</b> (i = <var>0</var>; i &lt; MAX_HOLDERS; i++)</td></tr>
+<tr><th id="64">64</th><td>		<b>if</b> (lock-&gt;holders[i] == task)</td></tr>
+<tr><th id="65">65</th><td>			<b>break</b>;</td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td>	BUG_ON(i == MAX_HOLDERS);</td></tr>
+<tr><th id="68">68</th><td>	<b>return</b> i;</td></tr>
+<tr><th id="69">69</th><td>}</td></tr>
+<tr><th id="70">70</th><td></td></tr>
+<tr><th id="71">71</th><td><i>/* call this *after* you increment lock-&gt;count */</i></td></tr>
+<tr><th id="72">72</th><td><em>static</em> <em>void</em> __add_holder(<b>struct</b> block_lock *lock, <b>struct</b> task_struct *task)</td></tr>
+<tr><th id="73">73</th><td>{</td></tr>
+<tr><th id="74">74</th><td>	<em>unsigned</em> h = __find_holder(lock, NULL);</td></tr>
+<tr><th id="75">75</th><td><u>#ifdef CONFIG_DM_DEBUG_BLOCK_STACK_TRACING</u></td></tr>
+<tr><th id="76">76</th><td>	<b>struct</b> stack_trace *t;</td></tr>
+<tr><th id="77">77</th><td><u>#endif</u></td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td>	get_task_struct(task);</td></tr>
+<tr><th id="80">80</th><td>	lock-&gt;holders[h] = task;</td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td><u>#ifdef CONFIG_DM_DEBUG_BLOCK_STACK_TRACING</u></td></tr>
+<tr><th id="83">83</th><td>	t = lock-&gt;traces + h;</td></tr>
+<tr><th id="84">84</th><td>	t-&gt;nr_entries = <var>0</var>;</td></tr>
+<tr><th id="85">85</th><td>	t-&gt;max_entries = MAX_STACK;</td></tr>
+<tr><th id="86">86</th><td>	t-&gt;entries = lock-&gt;entries[h];</td></tr>
+<tr><th id="87">87</th><td>	t-&gt;skip = <var>2</var>;</td></tr>
+<tr><th id="88">88</th><td>	save_stack_trace(t);</td></tr>
+<tr><th id="89">89</th><td><u>#endif</u></td></tr>
+<tr><th id="90">90</th><td>}</td></tr>
+<tr><th id="91">91</th><td></td></tr>
+<tr><th id="92">92</th><td><i>/* call this *before* you decrement lock-&gt;count */</i></td></tr>
+<tr><th id="93">93</th><td><em>static</em> <em>void</em> __del_holder(<b>struct</b> block_lock *lock, <b>struct</b> task_struct *task)</td></tr>
+<tr><th id="94">94</th><td>{</td></tr>
+<tr><th id="95">95</th><td>	<em>unsigned</em> h = __find_holder(lock, task);</td></tr>
+<tr><th id="96">96</th><td>	lock-&gt;holders[h] = NULL;</td></tr>
+<tr><th id="97">97</th><td>	put_task_struct(task);</td></tr>
+<tr><th id="98">98</th><td>}</td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td><em>static</em> <em>int</em> __check_holder(<b>struct</b> block_lock *lock)</td></tr>
+<tr><th id="101">101</th><td>{</td></tr>
+<tr><th id="102">102</th><td>	<em>unsigned</em> i;</td></tr>
+<tr><th id="103">103</th><td></td></tr>
+<tr><th id="104">104</th><td>	<b>for</b> (i = <var>0</var>; i &lt; MAX_HOLDERS; i++) {</td></tr>
+<tr><th id="105">105</th><td>		<b>if</b> (lock-&gt;holders[i] == current) {</td></tr>
+<tr><th id="106">106</th><td>			DMERR(<q>"recursive lock detected in metadata"</q>);</td></tr>
+<tr><th id="107">107</th><td><u>#ifdef CONFIG_DM_DEBUG_BLOCK_STACK_TRACING</u></td></tr>
+<tr><th id="108">108</th><td>			DMERR(<q>"previously held here:"</q>);</td></tr>
+<tr><th id="109">109</th><td>			print_stack_trace(lock-&gt;traces + i, <var>4</var>);</td></tr>
+<tr><th id="110">110</th><td></td></tr>
+<tr><th id="111">111</th><td>			DMERR(<q>"subsequent acquisition attempted here:"</q>);</td></tr>
+<tr><th id="112">112</th><td>			dump_stack();</td></tr>
+<tr><th id="113">113</th><td><u>#endif</u></td></tr>
+<tr><th id="114">114</th><td>			<b>return</b> -EINVAL;</td></tr>
+<tr><th id="115">115</th><td>		}</td></tr>
+<tr><th id="116">116</th><td>	}</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="119">119</th><td>}</td></tr>
+<tr><th id="120">120</th><td></td></tr>
+<tr><th id="121">121</th><td><em>static</em> <em>void</em> __wait(<b>struct</b> waiter *w)</td></tr>
+<tr><th id="122">122</th><td>{</td></tr>
+<tr><th id="123">123</th><td>	<b>for</b> (;;) {</td></tr>
+<tr><th id="124">124</th><td>		set_current_state(TASK_UNINTERRUPTIBLE);</td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td>		<b>if</b> (!w-&gt;task)</td></tr>
+<tr><th id="127">127</th><td>			<b>break</b>;</td></tr>
+<tr><th id="128">128</th><td></td></tr>
+<tr><th id="129">129</th><td>		schedule();</td></tr>
+<tr><th id="130">130</th><td>	}</td></tr>
+<tr><th id="131">131</th><td></td></tr>
+<tr><th id="132">132</th><td>	set_current_state(TASK_RUNNING);</td></tr>
+<tr><th id="133">133</th><td>}</td></tr>
+<tr><th id="134">134</th><td></td></tr>
+<tr><th id="135">135</th><td><em>static</em> <em>void</em> __wake_waiter(<b>struct</b> waiter *w)</td></tr>
+<tr><th id="136">136</th><td>{</td></tr>
+<tr><th id="137">137</th><td>	<b>struct</b> task_struct *task;</td></tr>
+<tr><th id="138">138</th><td></td></tr>
+<tr><th id="139">139</th><td>	list_del(&amp;w-&gt;list);</td></tr>
+<tr><th id="140">140</th><td>	task = w-&gt;task;</td></tr>
+<tr><th id="141">141</th><td>	smp_mb();</td></tr>
+<tr><th id="142">142</th><td>	w-&gt;task = NULL;</td></tr>
+<tr><th id="143">143</th><td>	wake_up_process(task);</td></tr>
+<tr><th id="144">144</th><td>}</td></tr>
+<tr><th id="145">145</th><td></td></tr>
+<tr><th id="146">146</th><td><i>/*</i></td></tr>
+<tr><th id="147">147</th><td><i> * We either wake a few readers or a single writer.</i></td></tr>
+<tr><th id="148">148</th><td><i> */</i></td></tr>
+<tr><th id="149">149</th><td><em>static</em> <em>void</em> __wake_many(<b>struct</b> block_lock *lock)</td></tr>
+<tr><th id="150">150</th><td>{</td></tr>
+<tr><th id="151">151</th><td>	<b>struct</b> waiter *w, *tmp;</td></tr>
+<tr><th id="152">152</th><td></td></tr>
+<tr><th id="153">153</th><td>	BUG_ON(lock-&gt;count &lt; <var>0</var>);</td></tr>
+<tr><th id="154">154</th><td>	list_for_each_entry_safe(w, tmp, &amp;lock-&gt;waiters, list) {</td></tr>
+<tr><th id="155">155</th><td>		<b>if</b> (lock-&gt;count &gt;= MAX_HOLDERS)</td></tr>
+<tr><th id="156">156</th><td>			<b>return</b>;</td></tr>
+<tr><th id="157">157</th><td></td></tr>
+<tr><th id="158">158</th><td>		<b>if</b> (w-&gt;wants_write) {</td></tr>
+<tr><th id="159">159</th><td>			<b>if</b> (lock-&gt;count &gt; <var>0</var>)</td></tr>
+<tr><th id="160">160</th><td>				<b>return</b>; <i>/* still read locked */</i></td></tr>
+<tr><th id="161">161</th><td></td></tr>
+<tr><th id="162">162</th><td>			lock-&gt;count = -<var>1</var>;</td></tr>
+<tr><th id="163">163</th><td>			__add_holder(lock, w-&gt;task);</td></tr>
+<tr><th id="164">164</th><td>			__wake_waiter(w);</td></tr>
+<tr><th id="165">165</th><td>			<b>return</b>;</td></tr>
+<tr><th id="166">166</th><td>		}</td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td>		lock-&gt;count++;</td></tr>
+<tr><th id="169">169</th><td>		__add_holder(lock, w-&gt;task);</td></tr>
+<tr><th id="170">170</th><td>		__wake_waiter(w);</td></tr>
+<tr><th id="171">171</th><td>	}</td></tr>
+<tr><th id="172">172</th><td>}</td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td><em>static</em> <em>void</em> bl_init(<b>struct</b> block_lock *lock)</td></tr>
+<tr><th id="175">175</th><td>{</td></tr>
+<tr><th id="176">176</th><td>	<em>int</em> i;</td></tr>
+<tr><th id="177">177</th><td></td></tr>
+<tr><th id="178">178</th><td>	spin_lock_init(&amp;lock-&gt;lock);</td></tr>
+<tr><th id="179">179</th><td>	lock-&gt;count = <var>0</var>;</td></tr>
+<tr><th id="180">180</th><td>	INIT_LIST_HEAD(&amp;lock-&gt;waiters);</td></tr>
+<tr><th id="181">181</th><td>	<b>for</b> (i = <var>0</var>; i &lt; MAX_HOLDERS; i++)</td></tr>
+<tr><th id="182">182</th><td>		lock-&gt;holders[i] = NULL;</td></tr>
+<tr><th id="183">183</th><td>}</td></tr>
+<tr><th id="184">184</th><td></td></tr>
+<tr><th id="185">185</th><td><em>static</em> <em>int</em> __available_for_read(<b>struct</b> block_lock *lock)</td></tr>
+<tr><th id="186">186</th><td>{</td></tr>
+<tr><th id="187">187</th><td>	<b>return</b> lock-&gt;count &gt;= <var>0</var> &amp;&amp;</td></tr>
+<tr><th id="188">188</th><td>		lock-&gt;count &lt; MAX_HOLDERS &amp;&amp;</td></tr>
+<tr><th id="189">189</th><td>		list_empty(&amp;lock-&gt;waiters);</td></tr>
+<tr><th id="190">190</th><td>}</td></tr>
+<tr><th id="191">191</th><td></td></tr>
+<tr><th id="192">192</th><td><em>static</em> <em>int</em> bl_down_read(<b>struct</b> block_lock *lock)</td></tr>
+<tr><th id="193">193</th><td>{</td></tr>
+<tr><th id="194">194</th><td>	<em>int</em> r;</td></tr>
+<tr><th id="195">195</th><td>	<b>struct</b> waiter w;</td></tr>
+<tr><th id="196">196</th><td></td></tr>
+<tr><th id="197">197</th><td>	spin_lock(&amp;lock-&gt;lock);</td></tr>
+<tr><th id="198">198</th><td>	r = __check_holder(lock);</td></tr>
+<tr><th id="199">199</th><td>	<b>if</b> (r) {</td></tr>
+<tr><th id="200">200</th><td>		spin_unlock(&amp;lock-&gt;lock);</td></tr>
+<tr><th id="201">201</th><td>		<b>return</b> r;</td></tr>
+<tr><th id="202">202</th><td>	}</td></tr>
+<tr><th id="203">203</th><td></td></tr>
+<tr><th id="204">204</th><td>	<b>if</b> (__available_for_read(lock)) {</td></tr>
+<tr><th id="205">205</th><td>		lock-&gt;count++;</td></tr>
+<tr><th id="206">206</th><td>		__add_holder(lock, current);</td></tr>
+<tr><th id="207">207</th><td>		spin_unlock(&amp;lock-&gt;lock);</td></tr>
+<tr><th id="208">208</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="209">209</th><td>	}</td></tr>
+<tr><th id="210">210</th><td></td></tr>
+<tr><th id="211">211</th><td>	get_task_struct(current);</td></tr>
+<tr><th id="212">212</th><td></td></tr>
+<tr><th id="213">213</th><td>	w.task = current;</td></tr>
+<tr><th id="214">214</th><td>	w.wants_write = <var>0</var>;</td></tr>
+<tr><th id="215">215</th><td>	list_add_tail(&amp;w.list, &amp;lock-&gt;waiters);</td></tr>
+<tr><th id="216">216</th><td>	spin_unlock(&amp;lock-&gt;lock);</td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td>	__wait(&amp;w);</td></tr>
+<tr><th id="219">219</th><td>	put_task_struct(current);</td></tr>
+<tr><th id="220">220</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="221">221</th><td>}</td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td><em>static</em> <em>int</em> bl_down_read_nonblock(<b>struct</b> block_lock *lock)</td></tr>
+<tr><th id="224">224</th><td>{</td></tr>
+<tr><th id="225">225</th><td>	<em>int</em> r;</td></tr>
+<tr><th id="226">226</th><td></td></tr>
+<tr><th id="227">227</th><td>	spin_lock(&amp;lock-&gt;lock);</td></tr>
+<tr><th id="228">228</th><td>	r = __check_holder(lock);</td></tr>
+<tr><th id="229">229</th><td>	<b>if</b> (r)</td></tr>
+<tr><th id="230">230</th><td>		<b>goto</b> out;</td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td>	<b>if</b> (__available_for_read(lock)) {</td></tr>
+<tr><th id="233">233</th><td>		lock-&gt;count++;</td></tr>
+<tr><th id="234">234</th><td>		__add_holder(lock, current);</td></tr>
+<tr><th id="235">235</th><td>		r = <var>0</var>;</td></tr>
+<tr><th id="236">236</th><td>	} <b>else</b></td></tr>
+<tr><th id="237">237</th><td>		r = -EWOULDBLOCK;</td></tr>
+<tr><th id="238">238</th><td></td></tr>
+<tr><th id="239">239</th><td>out:</td></tr>
+<tr><th id="240">240</th><td>	spin_unlock(&amp;lock-&gt;lock);</td></tr>
+<tr><th id="241">241</th><td>	<b>return</b> r;</td></tr>
+<tr><th id="242">242</th><td>}</td></tr>
+<tr><th id="243">243</th><td></td></tr>
+<tr><th id="244">244</th><td><em>static</em> <em>void</em> bl_up_read(<b>struct</b> block_lock *lock)</td></tr>
+<tr><th id="245">245</th><td>{</td></tr>
+<tr><th id="246">246</th><td>	spin_lock(&amp;lock-&gt;lock);</td></tr>
+<tr><th id="247">247</th><td>	BUG_ON(lock-&gt;count &lt;= <var>0</var>);</td></tr>
+<tr><th id="248">248</th><td>	__del_holder(lock, current);</td></tr>
+<tr><th id="249">249</th><td>	--lock-&gt;count;</td></tr>
+<tr><th id="250">250</th><td>	<b>if</b> (!list_empty(&amp;lock-&gt;waiters))</td></tr>
+<tr><th id="251">251</th><td>		__wake_many(lock);</td></tr>
+<tr><th id="252">252</th><td>	spin_unlock(&amp;lock-&gt;lock);</td></tr>
+<tr><th id="253">253</th><td>}</td></tr>
+<tr><th id="254">254</th><td></td></tr>
+<tr><th id="255">255</th><td><em>static</em> <em>int</em> bl_down_write(<b>struct</b> block_lock *lock)</td></tr>
+<tr><th id="256">256</th><td>{</td></tr>
+<tr><th id="257">257</th><td>	<em>int</em> r;</td></tr>
+<tr><th id="258">258</th><td>	<b>struct</b> waiter w;</td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td>	spin_lock(&amp;lock-&gt;lock);</td></tr>
+<tr><th id="261">261</th><td>	r = __check_holder(lock);</td></tr>
+<tr><th id="262">262</th><td>	<b>if</b> (r) {</td></tr>
+<tr><th id="263">263</th><td>		spin_unlock(&amp;lock-&gt;lock);</td></tr>
+<tr><th id="264">264</th><td>		<b>return</b> r;</td></tr>
+<tr><th id="265">265</th><td>	}</td></tr>
+<tr><th id="266">266</th><td></td></tr>
+<tr><th id="267">267</th><td>	<b>if</b> (lock-&gt;count == <var>0</var> &amp;&amp; list_empty(&amp;lock-&gt;waiters)) {</td></tr>
+<tr><th id="268">268</th><td>		lock-&gt;count = -<var>1</var>;</td></tr>
+<tr><th id="269">269</th><td>		__add_holder(lock, current);</td></tr>
+<tr><th id="270">270</th><td>		spin_unlock(&amp;lock-&gt;lock);</td></tr>
+<tr><th id="271">271</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="272">272</th><td>	}</td></tr>
+<tr><th id="273">273</th><td></td></tr>
+<tr><th id="274">274</th><td>	get_task_struct(current);</td></tr>
+<tr><th id="275">275</th><td>	w.task = current;</td></tr>
+<tr><th id="276">276</th><td>	w.wants_write = <var>1</var>;</td></tr>
+<tr><th id="277">277</th><td></td></tr>
+<tr><th id="278">278</th><td>	<i>/*</i></td></tr>
+<tr><th id="279">279</th><td><i>	 * Writers given priority. We know there's only one mutator in the</i></td></tr>
+<tr><th id="280">280</th><td><i>	 * system, so ignoring the ordering reversal.</i></td></tr>
+<tr><th id="281">281</th><td><i>	 */</i></td></tr>
+<tr><th id="282">282</th><td>	list_add(&amp;w.list, &amp;lock-&gt;waiters);</td></tr>
+<tr><th id="283">283</th><td>	spin_unlock(&amp;lock-&gt;lock);</td></tr>
+<tr><th id="284">284</th><td></td></tr>
+<tr><th id="285">285</th><td>	__wait(&amp;w);</td></tr>
+<tr><th id="286">286</th><td>	put_task_struct(current);</td></tr>
+<tr><th id="287">287</th><td></td></tr>
+<tr><th id="288">288</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="289">289</th><td>}</td></tr>
+<tr><th id="290">290</th><td></td></tr>
+<tr><th id="291">291</th><td><em>static</em> <em>void</em> bl_up_write(<b>struct</b> block_lock *lock)</td></tr>
+<tr><th id="292">292</th><td>{</td></tr>
+<tr><th id="293">293</th><td>	spin_lock(&amp;lock-&gt;lock);</td></tr>
+<tr><th id="294">294</th><td>	__del_holder(lock, current);</td></tr>
+<tr><th id="295">295</th><td>	lock-&gt;count = <var>0</var>;</td></tr>
+<tr><th id="296">296</th><td>	<b>if</b> (!list_empty(&amp;lock-&gt;waiters))</td></tr>
+<tr><th id="297">297</th><td>		__wake_many(lock);</td></tr>
+<tr><th id="298">298</th><td>	spin_unlock(&amp;lock-&gt;lock);</td></tr>
+<tr><th id="299">299</th><td>}</td></tr>
+<tr><th id="300">300</th><td></td></tr>
+<tr><th id="301">301</th><td><em>static</em> <em>void</em> report_recursive_bug(dm_block_t b, <em>int</em> r)</td></tr>
+<tr><th id="302">302</th><td>{</td></tr>
+<tr><th id="303">303</th><td>	<b>if</b> (r == -EINVAL)</td></tr>
+<tr><th id="304">304</th><td>		DMERR(<q>"recursive acquisition of block %llu requested."</q>,</td></tr>
+<tr><th id="305">305</th><td>		      (<em>unsigned</em> <em>long</em> <em>long</em>) b);</td></tr>
+<tr><th id="306">306</th><td>}</td></tr>
+<tr><th id="307">307</th><td></td></tr>
+<tr><th id="308">308</th><td><u>#<span data-ppcond="22">else</span>  /* !CONFIG_DM_DEBUG_BLOCK_MANAGER_LOCKING */</u></td></tr>
+<tr><th id="309">309</th><td></td></tr>
+<tr><th id="310">310</th><td><u>#define <dfn class="macro" id="_M/bl_init" data-ref="_M/bl_init">bl_init</dfn>(x) do { } while (0)</u></td></tr>
+<tr><th id="311">311</th><td><u>#define <dfn class="macro" id="_M/bl_down_read" data-ref="_M/bl_down_read">bl_down_read</dfn>(x) 0</u></td></tr>
+<tr><th id="312">312</th><td><u>#define <dfn class="macro" id="_M/bl_down_read_nonblock" data-ref="_M/bl_down_read_nonblock">bl_down_read_nonblock</dfn>(x) 0</u></td></tr>
+<tr><th id="313">313</th><td><u>#define <dfn class="macro" id="_M/bl_up_read" data-ref="_M/bl_up_read">bl_up_read</dfn>(x) do { } while (0)</u></td></tr>
+<tr><th id="314">314</th><td><u>#define <dfn class="macro" id="_M/bl_down_write" data-ref="_M/bl_down_write">bl_down_write</dfn>(x) 0</u></td></tr>
+<tr><th id="315">315</th><td><u>#define <dfn class="macro" id="_M/bl_up_write" data-ref="_M/bl_up_write">bl_up_write</dfn>(x) do { } while (0)</u></td></tr>
+<tr><th id="316">316</th><td><u>#define <dfn class="macro" id="_M/report_recursive_bug" data-ref="_M/report_recursive_bug">report_recursive_bug</dfn>(x, y) do { } while (0)</u></td></tr>
+<tr><th id="317">317</th><td></td></tr>
+<tr><th id="318">318</th><td><u>#<span data-ppcond="22">endif</span> /* CONFIG_DM_DEBUG_BLOCK_MANAGER_LOCKING */</u></td></tr>
+<tr><th id="319">319</th><td></td></tr>
+<tr><th id="320">320</th><td><i>/*----------------------------------------------------------------*/</i></td></tr>
+<tr><th id="321">321</th><td></td></tr>
+<tr><th id="322">322</th><td><i  data-doc="to_buffer">/*</i></td></tr>
+<tr><th id="323">323</th><td><i  data-doc="to_buffer"> * Block manager is currently implemented using dm-bufio.  struct</i></td></tr>
+<tr><th id="324">324</th><td><i  data-doc="to_buffer"> * dm_block_manager and struct dm_block map directly onto a couple of</i></td></tr>
+<tr><th id="325">325</th><td><i  data-doc="to_buffer"> * structs in the bufio interface.  I want to retain the freedom to move</i></td></tr>
+<tr><th id="326">326</th><td><i  data-doc="to_buffer"> * away from bufio in the future.  So these structs are just cast within</i></td></tr>
+<tr><th id="327">327</th><td><i  data-doc="to_buffer"> * this .c file, rather than making it through to the public interface.</i></td></tr>
+<tr><th id="328">328</th><td><i  data-doc="to_buffer"> */</i></td></tr>
+<tr><th id="329">329</th><td><em>static</em> <b>struct</b> <a class="type" href="../../../include/linux/dm-bufio.h.html#dm_buffer" title='dm_buffer' data-ref="dm_buffer">dm_buffer</a> *<dfn class="tu decl def fn" id="to_buffer" title='to_buffer' data-type='struct dm_buffer * to_buffer(struct dm_block * b)' data-ref="to_buffer">to_buffer</dfn>(<b>struct</b> <a class="type" href="dm-block-manager.h.html#dm_block" title='dm_block' data-ref="dm_block">dm_block</a> *<dfn class="local col7 decl" id="7b" title='b' data-type='struct dm_block *' data-ref="7b">b</dfn>)</td></tr>
+<tr><th id="330">330</th><td>{</td></tr>
+<tr><th id="331">331</th><td>	<b>return</b> (<b>struct</b> <a class="type" href="../../../include/linux/dm-bufio.h.html#dm_buffer" title='dm_buffer' data-ref="dm_buffer">dm_buffer</a> *) <a class="local col7 ref" href="#7b" title='b' data-ref="7b">b</a>;</td></tr>
+<tr><th id="332">332</th><td>}</td></tr>
+<tr><th id="333">333</th><td></td></tr>
+<tr><th id="334">334</th><td><a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="decl def fn" id="dm_block_location" title='dm_block_location' data-ref="dm_block_location">dm_block_location</dfn>(<b>struct</b> <a class="type" href="dm-block-manager.h.html#dm_block" title='dm_block' data-ref="dm_block">dm_block</a> *<dfn class="local col8 decl" id="8b" title='b' data-type='struct dm_block *' data-ref="8b">b</dfn>)</td></tr>
+<tr><th id="335">335</th><td>{</td></tr>
+<tr><th id="336">336</th><td>	<b>return</b> <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_get_block_number" title='dm_bufio_get_block_number' data-ref="dm_bufio_get_block_number">dm_bufio_get_block_number</a>(<a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(<a class="local col8 ref" href="#8b" title='b' data-ref="8b">b</a>));</td></tr>
+<tr><th id="337">337</th><td>}</td></tr>
+<tr><th id="338">338</th><td><a class="macro" href="../../../include/linux/export.h.html#100" title="extern typeof(dm_block_location) dm_block_location; static const char __kstrtab_dm_block_location[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;dm_block_location&quot;; static const struct kernel_symbol __ksymtab_dm_block_location __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;dm_block_location&quot;), used)) = { (unsigned long)&amp;dm_block_location, __kstrtab_dm_block_location }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#dm_block_location" title='dm_block_location' data-ref="dm_block_location"><a class="ref fn" href="#dm_block_location" title='dm_block_location' data-ref="dm_block_location"><a class="ref fn" href="#dm_block_location" title='dm_block_location' data-ref="dm_block_location"><a class="ref fn" href="#dm_block_location" title='dm_block_location' data-ref="dm_block_location">dm_block_location</a></a></a></a>);</td></tr>
+<tr><th id="339">339</th><td></td></tr>
+<tr><th id="340">340</th><td><em>void</em> *<dfn class="decl def fn" id="dm_block_data" title='dm_block_data' data-ref="dm_block_data">dm_block_data</dfn>(<b>struct</b> <a class="type" href="dm-block-manager.h.html#dm_block" title='dm_block' data-ref="dm_block">dm_block</a> *<dfn class="local col9 decl" id="9b" title='b' data-type='struct dm_block *' data-ref="9b">b</dfn>)</td></tr>
+<tr><th id="341">341</th><td>{</td></tr>
+<tr><th id="342">342</th><td>	<b>return</b> <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_get_block_data" title='dm_bufio_get_block_data' data-ref="dm_bufio_get_block_data">dm_bufio_get_block_data</a>(<a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(<a class="local col9 ref" href="#9b" title='b' data-ref="9b">b</a>));</td></tr>
+<tr><th id="343">343</th><td>}</td></tr>
+<tr><th id="344">344</th><td><a class="macro" href="../../../include/linux/export.h.html#100" title="extern typeof(dm_block_data) dm_block_data; static const char __kstrtab_dm_block_data[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;dm_block_data&quot;; static const struct kernel_symbol __ksymtab_dm_block_data __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;dm_block_data&quot;), used)) = { (unsigned long)&amp;dm_block_data, __kstrtab_dm_block_data }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#dm_block_data" title='dm_block_data' data-ref="dm_block_data"><a class="ref fn" href="#dm_block_data" title='dm_block_data' data-ref="dm_block_data"><a class="ref fn" href="#dm_block_data" title='dm_block_data' data-ref="dm_block_data"><a class="ref fn" href="#dm_block_data" title='dm_block_data' data-ref="dm_block_data">dm_block_data</a></a></a></a>);</td></tr>
+<tr><th id="345">345</th><td></td></tr>
+<tr><th id="346">346</th><td><b>struct</b> <dfn class="type def" id="buffer_aux" title='buffer_aux' data-ref="buffer_aux">buffer_aux</dfn> {</td></tr>
+<tr><th id="347">347</th><td>	<b>struct</b> <a class="type" href="dm-block-manager.h.html#dm_block_validator" title='dm_block_validator' data-ref="dm_block_validator">dm_block_validator</a> *<dfn class="tu decl field" id="buffer_aux::validator" title='buffer_aux::validator' data-type='struct dm_block_validator *' data-ref="buffer_aux::validator">validator</dfn>;</td></tr>
+<tr><th id="348">348</th><td>	<em>int</em> <dfn class="tu decl field" id="buffer_aux::write_locked" title='buffer_aux::write_locked' data-type='int' data-ref="buffer_aux::write_locked">write_locked</dfn>;</td></tr>
+<tr><th id="349">349</th><td></td></tr>
+<tr><th id="350">350</th><td><u>#<span data-ppcond="350">ifdef</span> <span class="macro" data-ref="_M/CONFIG_DM_DEBUG_BLOCK_MANAGER_LOCKING">CONFIG_DM_DEBUG_BLOCK_MANAGER_LOCKING</span></u></td></tr>
+<tr><th id="351">351</th><td>	<b>struct</b> block_lock lock;</td></tr>
+<tr><th id="352">352</th><td><u>#<span data-ppcond="350">endif</span></u></td></tr>
+<tr><th id="353">353</th><td>};</td></tr>
+<tr><th id="354">354</th><td></td></tr>
+<tr><th id="355">355</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="dm_block_manager_alloc_callback" title='dm_block_manager_alloc_callback' data-type='void dm_block_manager_alloc_callback(struct dm_buffer * buf)' data-ref="dm_block_manager_alloc_callback">dm_block_manager_alloc_callback</dfn>(<b>struct</b> <a class="type" href="../../../include/linux/dm-bufio.h.html#dm_buffer" title='dm_buffer' data-ref="dm_buffer">dm_buffer</a> *<dfn class="local col0 decl" id="10buf" title='buf' data-type='struct dm_buffer *' data-ref="10buf">buf</dfn>)</td></tr>
+<tr><th id="356">356</th><td>{</td></tr>
+<tr><th id="357">357</th><td>	<b>struct</b> <a class="type" href="#buffer_aux" title='buffer_aux' data-ref="buffer_aux">buffer_aux</a> *<dfn class="local col1 decl" id="11aux" title='aux' data-type='struct buffer_aux *' data-ref="11aux">aux</dfn> = <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_get_aux_data" title='dm_bufio_get_aux_data' data-ref="dm_bufio_get_aux_data">dm_bufio_get_aux_data</a>(<a class="local col0 ref" href="#10buf" title='buf' data-ref="10buf">buf</a>);</td></tr>
+<tr><th id="358">358</th><td>	<a class="local col1 ref" href="#11aux" title='aux' data-ref="11aux">aux</a>-&gt;<a class="tu ref field" href="#buffer_aux::validator" title='buffer_aux::validator' data-use='w' data-ref="buffer_aux::validator">validator</a> = <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="359">359</th><td>	<a class="macro" href="#310" title="do { } while (0)" data-ref="_M/bl_init">bl_init</a>(&amp;aux-&gt;lock);</td></tr>
+<tr><th id="360">360</th><td>}</td></tr>
+<tr><th id="361">361</th><td></td></tr>
+<tr><th id="362">362</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="dm_block_manager_write_callback" title='dm_block_manager_write_callback' data-type='void dm_block_manager_write_callback(struct dm_buffer * buf)' data-ref="dm_block_manager_write_callback">dm_block_manager_write_callback</dfn>(<b>struct</b> <a class="type" href="../../../include/linux/dm-bufio.h.html#dm_buffer" title='dm_buffer' data-ref="dm_buffer">dm_buffer</a> *<dfn class="local col2 decl" id="12buf" title='buf' data-type='struct dm_buffer *' data-ref="12buf">buf</dfn>)</td></tr>
+<tr><th id="363">363</th><td>{</td></tr>
+<tr><th id="364">364</th><td>	<b>struct</b> <a class="type" href="#buffer_aux" title='buffer_aux' data-ref="buffer_aux">buffer_aux</a> *<dfn class="local col3 decl" id="13aux" title='aux' data-type='struct buffer_aux *' data-ref="13aux">aux</dfn> = <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_get_aux_data" title='dm_bufio_get_aux_data' data-ref="dm_bufio_get_aux_data">dm_bufio_get_aux_data</a>(<a class="local col2 ref" href="#12buf" title='buf' data-ref="12buf">buf</a>);</td></tr>
+<tr><th id="365">365</th><td>	<b>if</b> (<a class="local col3 ref" href="#13aux" title='aux' data-ref="13aux">aux</a>-&gt;<a class="tu ref field" href="#buffer_aux::validator" title='buffer_aux::validator' data-use='r' data-ref="buffer_aux::validator">validator</a>) {</td></tr>
+<tr><th id="366">366</th><td>		<a class="local col3 ref" href="#13aux" title='aux' data-ref="13aux">aux</a>-&gt;<a class="tu ref field" href="#buffer_aux::validator" title='buffer_aux::validator' data-use='r' data-ref="buffer_aux::validator">validator</a>-&gt;<a class="ref field" href="dm-block-manager.h.html#dm_block_validator::prepare_for_write" title='dm_block_validator::prepare_for_write' data-ref="dm_block_validator::prepare_for_write">prepare_for_write</a>(<a class="local col3 ref" href="#13aux" title='aux' data-ref="13aux">aux</a>-&gt;<a class="tu ref field" href="#buffer_aux::validator" title='buffer_aux::validator' data-use='r' data-ref="buffer_aux::validator">validator</a>, (<b>struct</b> <a class="type" href="dm-block-manager.h.html#dm_block" title='dm_block' data-ref="dm_block">dm_block</a> *) <a class="local col2 ref" href="#12buf" title='buf' data-ref="12buf">buf</a>,</td></tr>
+<tr><th id="367">367</th><td>			 <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_get_block_size" title='dm_bufio_get_block_size' data-ref="dm_bufio_get_block_size">dm_bufio_get_block_size</a>(<a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_get_client" title='dm_bufio_get_client' data-ref="dm_bufio_get_client">dm_bufio_get_client</a>(<a class="local col2 ref" href="#12buf" title='buf' data-ref="12buf">buf</a>)));</td></tr>
+<tr><th id="368">368</th><td>	}</td></tr>
+<tr><th id="369">369</th><td>}</td></tr>
+<tr><th id="370">370</th><td></td></tr>
+<tr><th id="371">371</th><td><i>/*----------------------------------------------------------------</i></td></tr>
+<tr><th id="372">372</th><td><i> * Public interface</i></td></tr>
+<tr><th id="373">373</th><td><i> *--------------------------------------------------------------*/</i></td></tr>
+<tr><th id="374">374</th><td><b>struct</b> <dfn class="type def" id="dm_block_manager" title='dm_block_manager' data-ref="dm_block_manager">dm_block_manager</dfn> {</td></tr>
+<tr><th id="375">375</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/dm-bufio.h.html#dm_bufio_client" title='dm_bufio_client' data-ref="dm_bufio_client">dm_bufio_client</a> *<dfn class="decl field" id="dm_block_manager::bufio" title='dm_block_manager::bufio' data-ref="dm_block_manager::bufio">bufio</dfn>;</td></tr>
+<tr><th id="376">376</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#bool" title='bool' data-type='_Bool' data-ref="bool">bool</a> <dfn class="decl field" id="dm_block_manager::read_only" title='dm_block_manager::read_only' data-ref="dm_block_manager::read_only">read_only</dfn>:<var>1</var>;</td></tr>
+<tr><th id="377">377</th><td>};</td></tr>
+<tr><th id="378">378</th><td></td></tr>
+<tr><th id="379">379</th><td><b>struct</b> <a class="type" href="#dm_block_manager" title='dm_block_manager' data-ref="dm_block_manager">dm_block_manager</a> *<dfn class="decl def fn" id="dm_block_manager_create" title='dm_block_manager_create' data-ref="dm_block_manager_create">dm_block_manager_create</dfn>(<b>struct</b> <a class="type" href="../../../include/linux/fs.h.html#block_device" title='block_device' data-ref="block_device">block_device</a> *<dfn class="local col4 decl" id="14bdev" title='bdev' data-type='struct block_device *' data-ref="14bdev">bdev</dfn>,</td></tr>
+<tr><th id="380">380</th><td>						 <em>unsigned</em> <dfn class="local col5 decl" id="15block_size" title='block_size' data-type='unsigned int' data-ref="15block_size">block_size</dfn>,</td></tr>
+<tr><th id="381">381</th><td>						 <em>unsigned</em> <dfn class="local col6 decl" id="16max_held_per_thread" title='max_held_per_thread' data-type='unsigned int' data-ref="16max_held_per_thread">max_held_per_thread</dfn>)</td></tr>
+<tr><th id="382">382</th><td>{</td></tr>
+<tr><th id="383">383</th><td>	<em>int</em> <dfn class="local col7 decl" id="17r" title='r' data-type='int' data-ref="17r">r</dfn>;</td></tr>
+<tr><th id="384">384</th><td>	<b>struct</b> <a class="type" href="#dm_block_manager" title='dm_block_manager' data-ref="dm_block_manager">dm_block_manager</a> *<dfn class="local col8 decl" id="18bm" title='bm' data-type='struct dm_block_manager *' data-ref="18bm">bm</dfn>;</td></tr>
+<tr><th id="385">385</th><td></td></tr>
+<tr><th id="386">386</th><td>	<a class="local col8 ref" href="#18bm" title='bm' data-ref="18bm">bm</a> = <a class="ref fn" href="../../../include/linux/slab.h.html#kmalloc" title='kmalloc' data-ref="kmalloc">kmalloc</a>(<b>sizeof</b>(*<a class="local col8 ref" href="#18bm" title='bm' data-ref="18bm">bm</a>), <a class="macro" href="../../../include/linux/gfp.h.html#273" title="((( gfp_t)(0x200000u|0x400000u)) | (( gfp_t)0x40u) | (( gfp_t)0x80u))" data-ref="_M/GFP_KERNEL">GFP_KERNEL</a>);</td></tr>
+<tr><th id="387">387</th><td>	<b>if</b> (!<a class="local col8 ref" href="#18bm" title='bm' data-ref="18bm">bm</a>) {</td></tr>
+<tr><th id="388">388</th><td>		<a class="local col7 ref" href="#17r" title='r' data-ref="17r">r</a> = -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#16" title="12" data-ref="_M/ENOMEM">ENOMEM</a>;</td></tr>
+<tr><th id="389">389</th><td>		<b>goto</b> <a class="lbl" href="#19bad" data-ref="19bad">bad</a>;</td></tr>
+<tr><th id="390">390</th><td>	}</td></tr>
+<tr><th id="391">391</th><td></td></tr>
+<tr><th id="392">392</th><td>	<a class="local col8 ref" href="#18bm" title='bm' data-ref="18bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::bufio" title='dm_block_manager::bufio' data-ref="dm_block_manager::bufio">bufio</a> = <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_client_create" title='dm_bufio_client_create' data-ref="dm_bufio_client_create">dm_bufio_client_create</a>(<a class="local col4 ref" href="#14bdev" title='bdev' data-ref="14bdev">bdev</a>, <a class="local col5 ref" href="#15block_size" title='block_size' data-ref="15block_size">block_size</a>, <a class="local col6 ref" href="#16max_held_per_thread" title='max_held_per_thread' data-ref="16max_held_per_thread">max_held_per_thread</a>,</td></tr>
+<tr><th id="393">393</th><td>					   <b>sizeof</b>(<b>struct</b> <a class="type" href="#buffer_aux" title='buffer_aux' data-ref="buffer_aux">buffer_aux</a>),</td></tr>
+<tr><th id="394">394</th><td>					   <a class="tu ref fn" href="#dm_block_manager_alloc_callback" title='dm_block_manager_alloc_callback' data-use='r' data-ref="dm_block_manager_alloc_callback">dm_block_manager_alloc_callback</a>,</td></tr>
+<tr><th id="395">395</th><td>					   <a class="tu ref fn" href="#dm_block_manager_write_callback" title='dm_block_manager_write_callback' data-use='r' data-ref="dm_block_manager_write_callback">dm_block_manager_write_callback</a>);</td></tr>
+<tr><th id="396">396</th><td>	<b>if</b> (<a class="ref fn" href="../../../include/linux/err.h.html#IS_ERR" title='IS_ERR' data-ref="IS_ERR">IS_ERR</a>(<a class="local col8 ref" href="#18bm" title='bm' data-ref="18bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::bufio" title='dm_block_manager::bufio' data-ref="dm_block_manager::bufio">bufio</a>)) {</td></tr>
+<tr><th id="397">397</th><td>		<a class="local col7 ref" href="#17r" title='r' data-ref="17r">r</a> = <a class="ref fn" href="../../../include/linux/err.h.html#PTR_ERR" title='PTR_ERR' data-ref="PTR_ERR">PTR_ERR</a>(<a class="local col8 ref" href="#18bm" title='bm' data-ref="18bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::bufio" title='dm_block_manager::bufio' data-ref="dm_block_manager::bufio">bufio</a>);</td></tr>
+<tr><th id="398">398</th><td>		<a class="ref fn" href="../../../include/linux/slab.h.html#kfree" title='kfree' data-ref="kfree">kfree</a>(<a class="local col8 ref" href="#18bm" title='bm' data-ref="18bm">bm</a>);</td></tr>
+<tr><th id="399">399</th><td>		<b>goto</b> <a class="lbl" href="#19bad" data-ref="19bad">bad</a>;</td></tr>
+<tr><th id="400">400</th><td>	}</td></tr>
+<tr><th id="401">401</th><td></td></tr>
+<tr><th id="402">402</th><td>	<a class="local col8 ref" href="#18bm" title='bm' data-ref="18bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::read_only" title='dm_block_manager::read_only' data-ref="dm_block_manager::read_only">read_only</a> = <a class="enum" href="../../../include/linux/stddef.h.html#false" title='false' data-ref="false">false</a>;</td></tr>
+<tr><th id="403">403</th><td></td></tr>
+<tr><th id="404">404</th><td>	<b>return</b> <a class="local col8 ref" href="#18bm" title='bm' data-ref="18bm">bm</a>;</td></tr>
+<tr><th id="405">405</th><td></td></tr>
+<tr><th id="406">406</th><td><dfn class="lbl" id="19bad" data-ref="19bad">bad</dfn>:</td></tr>
+<tr><th id="407">407</th><td>	<b>return</b> <a class="ref fn" href="../../../include/linux/err.h.html#ERR_PTR" title='ERR_PTR' data-ref="ERR_PTR">ERR_PTR</a>(<a class="local col7 ref" href="#17r" title='r' data-ref="17r">r</a>);</td></tr>
+<tr><th id="408">408</th><td>}</td></tr>
+<tr><th id="409">409</th><td><a class="macro" href="../../../include/linux/export.h.html#100" title="extern typeof(dm_block_manager_create) dm_block_manager_create; static const char __kstrtab_dm_block_manager_create[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;dm_block_manager_create&quot;; static const struct kernel_symbol __ksymtab_dm_block_manager_create __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;dm_block_manager_create&quot;), used)) = { (unsigned long)&amp;dm_block_manager_create, __kstrtab_dm_block_manager_create }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#dm_block_manager_create" title='dm_block_manager_create' data-ref="dm_block_manager_create"><a class="ref fn" href="#dm_block_manager_create" title='dm_block_manager_create' data-ref="dm_block_manager_create"><a class="ref fn" href="#dm_block_manager_create" title='dm_block_manager_create' data-ref="dm_block_manager_create"><a class="ref fn" href="#dm_block_manager_create" title='dm_block_manager_create' data-ref="dm_block_manager_create">dm_block_manager_create</a></a></a></a>);</td></tr>
+<tr><th id="410">410</th><td></td></tr>
+<tr><th id="411">411</th><td><em>void</em> <dfn class="decl def fn" id="dm_block_manager_destroy" title='dm_block_manager_destroy' data-ref="dm_block_manager_destroy">dm_block_manager_destroy</dfn>(<b>struct</b> <a class="type" href="#dm_block_manager" title='dm_block_manager' data-ref="dm_block_manager">dm_block_manager</a> *<dfn class="local col0 decl" id="20bm" title='bm' data-type='struct dm_block_manager *' data-ref="20bm">bm</dfn>)</td></tr>
+<tr><th id="412">412</th><td>{</td></tr>
+<tr><th id="413">413</th><td>	<a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_client_destroy" title='dm_bufio_client_destroy' data-ref="dm_bufio_client_destroy">dm_bufio_client_destroy</a>(<a class="local col0 ref" href="#20bm" title='bm' data-ref="20bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::bufio" title='dm_block_manager::bufio' data-ref="dm_block_manager::bufio">bufio</a>);</td></tr>
+<tr><th id="414">414</th><td>	<a class="ref fn" href="../../../include/linux/slab.h.html#kfree" title='kfree' data-ref="kfree">kfree</a>(<a class="local col0 ref" href="#20bm" title='bm' data-ref="20bm">bm</a>);</td></tr>
+<tr><th id="415">415</th><td>}</td></tr>
+<tr><th id="416">416</th><td><a class="macro" href="../../../include/linux/export.h.html#100" title="extern typeof(dm_block_manager_destroy) dm_block_manager_destroy; static const char __kstrtab_dm_block_manager_destroy[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;dm_block_manager_destroy&quot;; static const struct kernel_symbol __ksymtab_dm_block_manager_destroy __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;dm_block_manager_destroy&quot;), used)) = { (unsigned long)&amp;dm_block_manager_destroy, __kstrtab_dm_block_manager_destroy }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#dm_block_manager_destroy" title='dm_block_manager_destroy' data-ref="dm_block_manager_destroy"><a class="ref fn" href="#dm_block_manager_destroy" title='dm_block_manager_destroy' data-ref="dm_block_manager_destroy"><a class="ref fn" href="#dm_block_manager_destroy" title='dm_block_manager_destroy' data-ref="dm_block_manager_destroy"><a class="ref fn" href="#dm_block_manager_destroy" title='dm_block_manager_destroy' data-ref="dm_block_manager_destroy">dm_block_manager_destroy</a></a></a></a>);</td></tr>
+<tr><th id="417">417</th><td></td></tr>
+<tr><th id="418">418</th><td><em>unsigned</em> <dfn class="decl def fn" id="dm_bm_block_size" title='dm_bm_block_size' data-ref="dm_bm_block_size">dm_bm_block_size</dfn>(<b>struct</b> <a class="type" href="#dm_block_manager" title='dm_block_manager' data-ref="dm_block_manager">dm_block_manager</a> *<dfn class="local col1 decl" id="21bm" title='bm' data-type='struct dm_block_manager *' data-ref="21bm">bm</dfn>)</td></tr>
+<tr><th id="419">419</th><td>{</td></tr>
+<tr><th id="420">420</th><td>	<b>return</b> <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_get_block_size" title='dm_bufio_get_block_size' data-ref="dm_bufio_get_block_size">dm_bufio_get_block_size</a>(<a class="local col1 ref" href="#21bm" title='bm' data-ref="21bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::bufio" title='dm_block_manager::bufio' data-ref="dm_block_manager::bufio">bufio</a>);</td></tr>
+<tr><th id="421">421</th><td>}</td></tr>
+<tr><th id="422">422</th><td><a class="macro" href="../../../include/linux/export.h.html#100" title="extern typeof(dm_bm_block_size) dm_bm_block_size; static const char __kstrtab_dm_bm_block_size[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;dm_bm_block_size&quot;; static const struct kernel_symbol __ksymtab_dm_bm_block_size __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;dm_bm_block_size&quot;), used)) = { (unsigned long)&amp;dm_bm_block_size, __kstrtab_dm_bm_block_size }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#dm_bm_block_size" title='dm_bm_block_size' data-ref="dm_bm_block_size"><a class="ref fn" href="#dm_bm_block_size" title='dm_bm_block_size' data-ref="dm_bm_block_size"><a class="ref fn" href="#dm_bm_block_size" title='dm_bm_block_size' data-ref="dm_bm_block_size"><a class="ref fn" href="#dm_bm_block_size" title='dm_bm_block_size' data-ref="dm_bm_block_size">dm_bm_block_size</a></a></a></a>);</td></tr>
+<tr><th id="423">423</th><td></td></tr>
+<tr><th id="424">424</th><td><a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="decl def fn" id="dm_bm_nr_blocks" title='dm_bm_nr_blocks' data-ref="dm_bm_nr_blocks">dm_bm_nr_blocks</dfn>(<b>struct</b> <a class="type" href="#dm_block_manager" title='dm_block_manager' data-ref="dm_block_manager">dm_block_manager</a> *<dfn class="local col2 decl" id="22bm" title='bm' data-type='struct dm_block_manager *' data-ref="22bm">bm</dfn>)</td></tr>
+<tr><th id="425">425</th><td>{</td></tr>
+<tr><th id="426">426</th><td>	<b>return</b> <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_get_device_size" title='dm_bufio_get_device_size' data-ref="dm_bufio_get_device_size">dm_bufio_get_device_size</a>(<a class="local col2 ref" href="#22bm" title='bm' data-ref="22bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::bufio" title='dm_block_manager::bufio' data-ref="dm_block_manager::bufio">bufio</a>);</td></tr>
+<tr><th id="427">427</th><td>}</td></tr>
+<tr><th id="428">428</th><td></td></tr>
+<tr><th id="429">429</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="dm_bm_validate_buffer" title='dm_bm_validate_buffer' data-type='int dm_bm_validate_buffer(struct dm_block_manager * bm, struct dm_buffer * buf, struct buffer_aux * aux, struct dm_block_validator * v)' data-ref="dm_bm_validate_buffer">dm_bm_validate_buffer</dfn>(<b>struct</b> <a class="type" href="#dm_block_manager" title='dm_block_manager' data-ref="dm_block_manager">dm_block_manager</a> *<dfn class="local col3 decl" id="23bm" title='bm' data-type='struct dm_block_manager *' data-ref="23bm">bm</dfn>,</td></tr>
+<tr><th id="430">430</th><td>				 <b>struct</b> <a class="type" href="../../../include/linux/dm-bufio.h.html#dm_buffer" title='dm_buffer' data-ref="dm_buffer">dm_buffer</a> *<dfn class="local col4 decl" id="24buf" title='buf' data-type='struct dm_buffer *' data-ref="24buf">buf</dfn>,</td></tr>
+<tr><th id="431">431</th><td>				 <b>struct</b> <a class="type" href="#buffer_aux" title='buffer_aux' data-ref="buffer_aux">buffer_aux</a> *<dfn class="local col5 decl" id="25aux" title='aux' data-type='struct buffer_aux *' data-ref="25aux">aux</dfn>,</td></tr>
+<tr><th id="432">432</th><td>				 <b>struct</b> <a class="type" href="dm-block-manager.h.html#dm_block_validator" title='dm_block_validator' data-ref="dm_block_validator">dm_block_validator</a> *<dfn class="local col6 decl" id="26v" title='v' data-type='struct dm_block_validator *' data-ref="26v">v</dfn>)</td></tr>
+<tr><th id="433">433</th><td>{</td></tr>
+<tr><th id="434">434</th><td>	<b>if</b> (<a class="macro" href="../../../include/linux/compiler.h.html#77" title="__builtin_expect(!!(!aux-&gt;validator), 0)" data-ref="_M/unlikely">unlikely</a>(!<a class="local col5 ref" href="#25aux" title='aux' data-ref="25aux">aux</a>-&gt;<a class="tu ref field" href="#buffer_aux::validator" title='buffer_aux::validator' data-use='r' data-ref="buffer_aux::validator">validator</a>)) {</td></tr>
+<tr><th id="435">435</th><td>		<em>int</em> <dfn class="local col7 decl" id="27r" title='r' data-type='int' data-ref="27r">r</dfn>;</td></tr>
+<tr><th id="436">436</th><td>		<b>if</b> (!<a class="local col6 ref" href="#26v" title='v' data-ref="26v">v</a>)</td></tr>
+<tr><th id="437">437</th><td>			<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="438">438</th><td>		<a class="local col7 ref" href="#27r" title='r' data-ref="27r">r</a> = <a class="local col6 ref" href="#26v" title='v' data-ref="26v">v</a>-&gt;<a class="ref field" href="dm-block-manager.h.html#dm_block_validator::check" title='dm_block_validator::check' data-ref="dm_block_validator::check">check</a>(<a class="local col6 ref" href="#26v" title='v' data-ref="26v">v</a>, (<b>struct</b> <a class="type" href="dm-block-manager.h.html#dm_block" title='dm_block' data-ref="dm_block">dm_block</a> *) <a class="local col4 ref" href="#24buf" title='buf' data-ref="24buf">buf</a>, <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_get_block_size" title='dm_bufio_get_block_size' data-ref="dm_bufio_get_block_size">dm_bufio_get_block_size</a>(<a class="local col3 ref" href="#23bm" title='bm' data-ref="23bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::bufio" title='dm_block_manager::bufio' data-ref="dm_block_manager::bufio">bufio</a>));</td></tr>
+<tr><th id="439">439</th><td>		<b>if</b> (<a class="macro" href="../../../include/linux/compiler.h.html#77" title="__builtin_expect(!!(r), 0)" data-ref="_M/unlikely">unlikely</a>(<a class="local col7 ref" href="#27r" title='r' data-ref="27r">r</a>)) {</td></tr>
+<tr><th id="440">440</th><td>			<a class="macro" href="../../../include/linux/device-mapper.h.html#535" title="do { static struct ratelimit_state rs = { .lock = (raw_spinlock_t) { .raw_lock = { { .val = { (0) } } }, }, .interval = (5 * 100), .burst = 10, }; if (___ratelimit(&amp;rs, __func__)) printk(&quot;\001&quot; &quot;3&quot; &quot;device-mapper&quot; &quot;: &quot; &quot;block manager&quot; &quot;: &quot; &quot;%s validator check failed for block %llu&quot; &quot;\n&quot;, v-&gt;name, (unsigned long long) dm_bufio_get_block_number(buf)); } while (0)" data-ref="_M/DMERR_LIMIT">DMERR_LIMIT</a>(<q>"%s validator check failed for block %llu"</q>, <a class="local col6 ref" href="#26v" title='v' data-ref="26v">v</a>-&gt;<a class="ref field" href="dm-block-manager.h.html#dm_block_validator::name" title='dm_block_validator::name' data-ref="dm_block_validator::name">name</a>,</td></tr>
+<tr><th id="441">441</th><td>				    (<em>unsigned</em> <em>long</em> <em>long</em>) <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_get_block_number" title='dm_bufio_get_block_number' data-ref="dm_bufio_get_block_number">dm_bufio_get_block_number</a>(<a class="local col4 ref" href="#24buf" title='buf' data-ref="24buf">buf</a>));</td></tr>
+<tr><th id="442">442</th><td>			<b>return</b> <a class="local col7 ref" href="#27r" title='r' data-ref="27r">r</a>;</td></tr>
+<tr><th id="443">443</th><td>		}</td></tr>
+<tr><th id="444">444</th><td>		<a class="local col5 ref" href="#25aux" title='aux' data-ref="25aux">aux</a>-&gt;<a class="tu ref field" href="#buffer_aux::validator" title='buffer_aux::validator' data-use='w' data-ref="buffer_aux::validator">validator</a> = <a class="local col6 ref" href="#26v" title='v' data-ref="26v">v</a>;</td></tr>
+<tr><th id="445">445</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="446">446</th><td>		<b>if</b> (<a class="macro" href="../../../include/linux/compiler.h.html#77" title="__builtin_expect(!!(aux-&gt;validator != v), 0)" data-ref="_M/unlikely">unlikely</a>(<a class="local col5 ref" href="#25aux" title='aux' data-ref="25aux">aux</a>-&gt;<a class="tu ref field" href="#buffer_aux::validator" title='buffer_aux::validator' data-use='r' data-ref="buffer_aux::validator">validator</a> != <a class="local col6 ref" href="#26v" title='v' data-ref="26v">v</a>)) {</td></tr>
+<tr><th id="447">447</th><td>			<a class="macro" href="../../../include/linux/device-mapper.h.html#535" title="do { static struct ratelimit_state rs = { .lock = (raw_spinlock_t) { .raw_lock = { { .val = { (0) } } }, }, .interval = (5 * 100), .burst = 10, }; if (___ratelimit(&amp;rs, __func__)) printk(&quot;\001&quot; &quot;3&quot; &quot;device-mapper&quot; &quot;: &quot; &quot;block manager&quot; &quot;: &quot; &quot;validator mismatch (old=%s vs new=%s) for block %llu&quot; &quot;\n&quot;, aux-&gt;validator-&gt;name, v ? v-&gt;name : &quot;NULL&quot;, (unsigned long long) dm_bufio_get_block_number(buf)); } while (0)" data-ref="_M/DMERR_LIMIT">DMERR_LIMIT</a>(<q>"validator mismatch (old=%s vs new=%s) for block %llu"</q>,</td></tr>
+<tr><th id="448">448</th><td>				    <a class="local col5 ref" href="#25aux" title='aux' data-ref="25aux">aux</a>-&gt;<a class="tu ref field" href="#buffer_aux::validator" title='buffer_aux::validator' data-use='r' data-ref="buffer_aux::validator">validator</a>-&gt;<a class="ref field" href="dm-block-manager.h.html#dm_block_validator::name" title='dm_block_validator::name' data-ref="dm_block_validator::name">name</a>, <a class="local col6 ref" href="#26v" title='v' data-ref="26v">v</a> ? <a class="local col6 ref" href="#26v" title='v' data-ref="26v">v</a>-&gt;<a class="ref field" href="dm-block-manager.h.html#dm_block_validator::name" title='dm_block_validator::name' data-ref="dm_block_validator::name">name</a> : <q>"NULL"</q>,</td></tr>
+<tr><th id="449">449</th><td>				    (<em>unsigned</em> <em>long</em> <em>long</em>) <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_get_block_number" title='dm_bufio_get_block_number' data-ref="dm_bufio_get_block_number">dm_bufio_get_block_number</a>(<a class="local col4 ref" href="#24buf" title='buf' data-ref="24buf">buf</a>));</td></tr>
+<tr><th id="450">450</th><td>			<b>return</b> -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#26" title="22" data-ref="_M/EINVAL">EINVAL</a>;</td></tr>
+<tr><th id="451">451</th><td>		}</td></tr>
+<tr><th id="452">452</th><td>	}</td></tr>
+<tr><th id="453">453</th><td></td></tr>
+<tr><th id="454">454</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="455">455</th><td>}</td></tr>
+<tr><th id="456">456</th><td><em>int</em> <dfn class="decl def fn" id="dm_bm_read_lock" title='dm_bm_read_lock' data-ref="dm_bm_read_lock">dm_bm_read_lock</dfn>(<b>struct</b> <a class="type" href="#dm_block_manager" title='dm_block_manager' data-ref="dm_block_manager">dm_block_manager</a> *<dfn class="local col8 decl" id="28bm" title='bm' data-type='struct dm_block_manager *' data-ref="28bm">bm</dfn>, <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="local col9 decl" id="29b" title='b' data-type='dm_block_t' data-ref="29b">b</dfn>,</td></tr>
+<tr><th id="457">457</th><td>		    <b>struct</b> <a class="type" href="dm-block-manager.h.html#dm_block_validator" title='dm_block_validator' data-ref="dm_block_validator">dm_block_validator</a> *<dfn class="local col0 decl" id="30v" title='v' data-type='struct dm_block_validator *' data-ref="30v">v</dfn>,</td></tr>
+<tr><th id="458">458</th><td>		    <b>struct</b> <a class="type" href="dm-block-manager.h.html#dm_block" title='dm_block' data-ref="dm_block">dm_block</a> **<dfn class="local col1 decl" id="31result" title='result' data-type='struct dm_block **' data-ref="31result">result</dfn>)</td></tr>
+<tr><th id="459">459</th><td>{</td></tr>
+<tr><th id="460">460</th><td>	<b>struct</b> <a class="type" href="#buffer_aux" title='buffer_aux' data-ref="buffer_aux">buffer_aux</a> *<dfn class="local col2 decl" id="32aux" title='aux' data-type='struct buffer_aux *' data-ref="32aux">aux</dfn>;</td></tr>
+<tr><th id="461">461</th><td>	<em>void</em> *<dfn class="local col3 decl" id="33p" title='p' data-type='void *' data-ref="33p">p</dfn>;</td></tr>
+<tr><th id="462">462</th><td>	<em>int</em> <dfn class="local col4 decl" id="34r" title='r' data-type='int' data-ref="34r">r</dfn>;</td></tr>
+<tr><th id="463">463</th><td></td></tr>
+<tr><th id="464">464</th><td>	<a class="local col3 ref" href="#33p" title='p' data-ref="33p">p</a> = <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_read" title='dm_bufio_read' data-ref="dm_bufio_read">dm_bufio_read</a>(<a class="local col8 ref" href="#28bm" title='bm' data-ref="28bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::bufio" title='dm_block_manager::bufio' data-ref="dm_block_manager::bufio">bufio</a>, <a class="local col9 ref" href="#29b" title='b' data-ref="29b">b</a>, (<b>struct</b> <a class="type" href="../../../include/linux/dm-bufio.h.html#dm_buffer" title='dm_buffer' data-ref="dm_buffer">dm_buffer</a> **) <a class="local col1 ref" href="#31result" title='result' data-ref="31result">result</a>);</td></tr>
+<tr><th id="465">465</th><td>	<b>if</b> (<a class="macro" href="../../../include/linux/compiler.h.html#77" title="__builtin_expect(!!(IS_ERR(p)), 0)" data-ref="_M/unlikely">unlikely</a>(<a class="ref fn" href="../../../include/linux/err.h.html#IS_ERR" title='IS_ERR' data-ref="IS_ERR">IS_ERR</a>(<a class="local col3 ref" href="#33p" title='p' data-ref="33p">p</a>)))</td></tr>
+<tr><th id="466">466</th><td>		<b>return</b> <a class="ref fn" href="../../../include/linux/err.h.html#PTR_ERR" title='PTR_ERR' data-ref="PTR_ERR">PTR_ERR</a>(<a class="local col3 ref" href="#33p" title='p' data-ref="33p">p</a>);</td></tr>
+<tr><th id="467">467</th><td></td></tr>
+<tr><th id="468">468</th><td>	<a class="local col2 ref" href="#32aux" title='aux' data-ref="32aux">aux</a> = <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_get_aux_data" title='dm_bufio_get_aux_data' data-ref="dm_bufio_get_aux_data">dm_bufio_get_aux_data</a>(<a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(*<a class="local col1 ref" href="#31result" title='result' data-ref="31result">result</a>));</td></tr>
+<tr><th id="469">469</th><td>	<a class="local col4 ref" href="#34r" title='r' data-ref="34r">r</a> = <a class="macro" href="#311" title="0" data-ref="_M/bl_down_read">bl_down_read</a>(&amp;aux-&gt;lock);</td></tr>
+<tr><th id="470">470</th><td>	<b>if</b> (<a class="macro" href="../../../include/linux/compiler.h.html#77" title="__builtin_expect(!!(r), 0)" data-ref="_M/unlikely">unlikely</a>(<a class="local col4 ref" href="#34r" title='r' data-ref="34r">r</a>)) {</td></tr>
+<tr><th id="471">471</th><td>		<a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_release" title='dm_bufio_release' data-ref="dm_bufio_release">dm_bufio_release</a>(<a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(*<a class="local col1 ref" href="#31result" title='result' data-ref="31result">result</a>));</td></tr>
+<tr><th id="472">472</th><td>		<a class="macro" href="#316" title="do { } while (0)" data-ref="_M/report_recursive_bug">report_recursive_bug</a>(b, r);</td></tr>
+<tr><th id="473">473</th><td>		<b>return</b> <a class="local col4 ref" href="#34r" title='r' data-ref="34r">r</a>;</td></tr>
+<tr><th id="474">474</th><td>	}</td></tr>
+<tr><th id="475">475</th><td></td></tr>
+<tr><th id="476">476</th><td>	<a class="local col2 ref" href="#32aux" title='aux' data-ref="32aux">aux</a>-&gt;<a class="tu ref field" href="#buffer_aux::write_locked" title='buffer_aux::write_locked' data-use='w' data-ref="buffer_aux::write_locked">write_locked</a> = <var>0</var>;</td></tr>
+<tr><th id="477">477</th><td></td></tr>
+<tr><th id="478">478</th><td>	<a class="local col4 ref" href="#34r" title='r' data-ref="34r">r</a> = <a class="tu ref fn" href="#dm_bm_validate_buffer" title='dm_bm_validate_buffer' data-use='c' data-ref="dm_bm_validate_buffer">dm_bm_validate_buffer</a>(<a class="local col8 ref" href="#28bm" title='bm' data-ref="28bm">bm</a>, <a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(*<a class="local col1 ref" href="#31result" title='result' data-ref="31result">result</a>), <a class="local col2 ref" href="#32aux" title='aux' data-ref="32aux">aux</a>, <a class="local col0 ref" href="#30v" title='v' data-ref="30v">v</a>);</td></tr>
+<tr><th id="479">479</th><td>	<b>if</b> (<a class="macro" href="../../../include/linux/compiler.h.html#77" title="__builtin_expect(!!(r), 0)" data-ref="_M/unlikely">unlikely</a>(<a class="local col4 ref" href="#34r" title='r' data-ref="34r">r</a>)) {</td></tr>
+<tr><th id="480">480</th><td>		<a class="macro" href="#313" title="do { } while (0)" data-ref="_M/bl_up_read">bl_up_read</a>(&amp;aux-&gt;lock);</td></tr>
+<tr><th id="481">481</th><td>		<a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_release" title='dm_bufio_release' data-ref="dm_bufio_release">dm_bufio_release</a>(<a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(*<a class="local col1 ref" href="#31result" title='result' data-ref="31result">result</a>));</td></tr>
+<tr><th id="482">482</th><td>		<b>return</b> <a class="local col4 ref" href="#34r" title='r' data-ref="34r">r</a>;</td></tr>
+<tr><th id="483">483</th><td>	}</td></tr>
+<tr><th id="484">484</th><td></td></tr>
+<tr><th id="485">485</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="486">486</th><td>}</td></tr>
+<tr><th id="487">487</th><td><a class="macro" href="../../../include/linux/export.h.html#100" title="extern typeof(dm_bm_read_lock) dm_bm_read_lock; static const char __kstrtab_dm_bm_read_lock[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;dm_bm_read_lock&quot;; static const struct kernel_symbol __ksymtab_dm_bm_read_lock __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;dm_bm_read_lock&quot;), used)) = { (unsigned long)&amp;dm_bm_read_lock, __kstrtab_dm_bm_read_lock }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#dm_bm_read_lock" title='dm_bm_read_lock' data-ref="dm_bm_read_lock"><a class="ref fn" href="#dm_bm_read_lock" title='dm_bm_read_lock' data-ref="dm_bm_read_lock"><a class="ref fn" href="#dm_bm_read_lock" title='dm_bm_read_lock' data-ref="dm_bm_read_lock"><a class="ref fn" href="#dm_bm_read_lock" title='dm_bm_read_lock' data-ref="dm_bm_read_lock">dm_bm_read_lock</a></a></a></a>);</td></tr>
+<tr><th id="488">488</th><td></td></tr>
+<tr><th id="489">489</th><td><em>int</em> <dfn class="decl def fn" id="dm_bm_write_lock" title='dm_bm_write_lock' data-ref="dm_bm_write_lock">dm_bm_write_lock</dfn>(<b>struct</b> <a class="type" href="#dm_block_manager" title='dm_block_manager' data-ref="dm_block_manager">dm_block_manager</a> *<dfn class="local col5 decl" id="35bm" title='bm' data-type='struct dm_block_manager *' data-ref="35bm">bm</dfn>,</td></tr>
+<tr><th id="490">490</th><td>		     <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="local col6 decl" id="36b" title='b' data-type='dm_block_t' data-ref="36b">b</dfn>, <b>struct</b> <a class="type" href="dm-block-manager.h.html#dm_block_validator" title='dm_block_validator' data-ref="dm_block_validator">dm_block_validator</a> *<dfn class="local col7 decl" id="37v" title='v' data-type='struct dm_block_validator *' data-ref="37v">v</dfn>,</td></tr>
+<tr><th id="491">491</th><td>		     <b>struct</b> <a class="type" href="dm-block-manager.h.html#dm_block" title='dm_block' data-ref="dm_block">dm_block</a> **<dfn class="local col8 decl" id="38result" title='result' data-type='struct dm_block **' data-ref="38result">result</dfn>)</td></tr>
+<tr><th id="492">492</th><td>{</td></tr>
+<tr><th id="493">493</th><td>	<b>struct</b> <a class="type" href="#buffer_aux" title='buffer_aux' data-ref="buffer_aux">buffer_aux</a> *<dfn class="local col9 decl" id="39aux" title='aux' data-type='struct buffer_aux *' data-ref="39aux">aux</dfn>;</td></tr>
+<tr><th id="494">494</th><td>	<em>void</em> *<dfn class="local col0 decl" id="40p" title='p' data-type='void *' data-ref="40p">p</dfn>;</td></tr>
+<tr><th id="495">495</th><td>	<em>int</em> <dfn class="local col1 decl" id="41r" title='r' data-type='int' data-ref="41r">r</dfn>;</td></tr>
+<tr><th id="496">496</th><td></td></tr>
+<tr><th id="497">497</th><td>	<b>if</b> (<a class="local col5 ref" href="#35bm" title='bm' data-ref="35bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::read_only" title='dm_block_manager::read_only' data-ref="dm_block_manager::read_only">read_only</a>)</td></tr>
+<tr><th id="498">498</th><td>		<b>return</b> -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#5" title="1" data-ref="_M/EPERM">EPERM</a>;</td></tr>
+<tr><th id="499">499</th><td></td></tr>
+<tr><th id="500">500</th><td>	<a class="local col0 ref" href="#40p" title='p' data-ref="40p">p</a> = <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_read" title='dm_bufio_read' data-ref="dm_bufio_read">dm_bufio_read</a>(<a class="local col5 ref" href="#35bm" title='bm' data-ref="35bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::bufio" title='dm_block_manager::bufio' data-ref="dm_block_manager::bufio">bufio</a>, <a class="local col6 ref" href="#36b" title='b' data-ref="36b">b</a>, (<b>struct</b> <a class="type" href="../../../include/linux/dm-bufio.h.html#dm_buffer" title='dm_buffer' data-ref="dm_buffer">dm_buffer</a> **) <a class="local col8 ref" href="#38result" title='result' data-ref="38result">result</a>);</td></tr>
+<tr><th id="501">501</th><td>	<b>if</b> (<a class="macro" href="../../../include/linux/compiler.h.html#77" title="__builtin_expect(!!(IS_ERR(p)), 0)" data-ref="_M/unlikely">unlikely</a>(<a class="ref fn" href="../../../include/linux/err.h.html#IS_ERR" title='IS_ERR' data-ref="IS_ERR">IS_ERR</a>(<a class="local col0 ref" href="#40p" title='p' data-ref="40p">p</a>)))</td></tr>
+<tr><th id="502">502</th><td>		<b>return</b> <a class="ref fn" href="../../../include/linux/err.h.html#PTR_ERR" title='PTR_ERR' data-ref="PTR_ERR">PTR_ERR</a>(<a class="local col0 ref" href="#40p" title='p' data-ref="40p">p</a>);</td></tr>
+<tr><th id="503">503</th><td></td></tr>
+<tr><th id="504">504</th><td>	<a class="local col9 ref" href="#39aux" title='aux' data-ref="39aux">aux</a> = <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_get_aux_data" title='dm_bufio_get_aux_data' data-ref="dm_bufio_get_aux_data">dm_bufio_get_aux_data</a>(<a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(*<a class="local col8 ref" href="#38result" title='result' data-ref="38result">result</a>));</td></tr>
+<tr><th id="505">505</th><td>	<a class="local col1 ref" href="#41r" title='r' data-ref="41r">r</a> = <a class="macro" href="#314" title="0" data-ref="_M/bl_down_write">bl_down_write</a>(&amp;aux-&gt;lock);</td></tr>
+<tr><th id="506">506</th><td>	<b>if</b> (<a class="local col1 ref" href="#41r" title='r' data-ref="41r">r</a>) {</td></tr>
+<tr><th id="507">507</th><td>		<a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_release" title='dm_bufio_release' data-ref="dm_bufio_release">dm_bufio_release</a>(<a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(*<a class="local col8 ref" href="#38result" title='result' data-ref="38result">result</a>));</td></tr>
+<tr><th id="508">508</th><td>		<a class="macro" href="#316" title="do { } while (0)" data-ref="_M/report_recursive_bug">report_recursive_bug</a>(b, r);</td></tr>
+<tr><th id="509">509</th><td>		<b>return</b> <a class="local col1 ref" href="#41r" title='r' data-ref="41r">r</a>;</td></tr>
+<tr><th id="510">510</th><td>	}</td></tr>
+<tr><th id="511">511</th><td></td></tr>
+<tr><th id="512">512</th><td>	<a class="local col9 ref" href="#39aux" title='aux' data-ref="39aux">aux</a>-&gt;<a class="tu ref field" href="#buffer_aux::write_locked" title='buffer_aux::write_locked' data-use='w' data-ref="buffer_aux::write_locked">write_locked</a> = <var>1</var>;</td></tr>
+<tr><th id="513">513</th><td></td></tr>
+<tr><th id="514">514</th><td>	<a class="local col1 ref" href="#41r" title='r' data-ref="41r">r</a> = <a class="tu ref fn" href="#dm_bm_validate_buffer" title='dm_bm_validate_buffer' data-use='c' data-ref="dm_bm_validate_buffer">dm_bm_validate_buffer</a>(<a class="local col5 ref" href="#35bm" title='bm' data-ref="35bm">bm</a>, <a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(*<a class="local col8 ref" href="#38result" title='result' data-ref="38result">result</a>), <a class="local col9 ref" href="#39aux" title='aux' data-ref="39aux">aux</a>, <a class="local col7 ref" href="#37v" title='v' data-ref="37v">v</a>);</td></tr>
+<tr><th id="515">515</th><td>	<b>if</b> (<a class="macro" href="../../../include/linux/compiler.h.html#77" title="__builtin_expect(!!(r), 0)" data-ref="_M/unlikely">unlikely</a>(<a class="local col1 ref" href="#41r" title='r' data-ref="41r">r</a>)) {</td></tr>
+<tr><th id="516">516</th><td>		<a class="macro" href="#315" title="do { } while (0)" data-ref="_M/bl_up_write">bl_up_write</a>(&amp;aux-&gt;lock);</td></tr>
+<tr><th id="517">517</th><td>		<a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_release" title='dm_bufio_release' data-ref="dm_bufio_release">dm_bufio_release</a>(<a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(*<a class="local col8 ref" href="#38result" title='result' data-ref="38result">result</a>));</td></tr>
+<tr><th id="518">518</th><td>		<b>return</b> <a class="local col1 ref" href="#41r" title='r' data-ref="41r">r</a>;</td></tr>
+<tr><th id="519">519</th><td>	}</td></tr>
+<tr><th id="520">520</th><td></td></tr>
+<tr><th id="521">521</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="522">522</th><td>}</td></tr>
+<tr><th id="523">523</th><td><a class="macro" href="../../../include/linux/export.h.html#100" title="extern typeof(dm_bm_write_lock) dm_bm_write_lock; static const char __kstrtab_dm_bm_write_lock[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;dm_bm_write_lock&quot;; static const struct kernel_symbol __ksymtab_dm_bm_write_lock __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;dm_bm_write_lock&quot;), used)) = { (unsigned long)&amp;dm_bm_write_lock, __kstrtab_dm_bm_write_lock }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#dm_bm_write_lock" title='dm_bm_write_lock' data-ref="dm_bm_write_lock"><a class="ref fn" href="#dm_bm_write_lock" title='dm_bm_write_lock' data-ref="dm_bm_write_lock"><a class="ref fn" href="#dm_bm_write_lock" title='dm_bm_write_lock' data-ref="dm_bm_write_lock"><a class="ref fn" href="#dm_bm_write_lock" title='dm_bm_write_lock' data-ref="dm_bm_write_lock">dm_bm_write_lock</a></a></a></a>);</td></tr>
+<tr><th id="524">524</th><td></td></tr>
+<tr><th id="525">525</th><td><em>int</em> <dfn class="decl def fn" id="dm_bm_read_try_lock" title='dm_bm_read_try_lock' data-ref="dm_bm_read_try_lock">dm_bm_read_try_lock</dfn>(<b>struct</b> <a class="type" href="#dm_block_manager" title='dm_block_manager' data-ref="dm_block_manager">dm_block_manager</a> *<dfn class="local col2 decl" id="42bm" title='bm' data-type='struct dm_block_manager *' data-ref="42bm">bm</dfn>,</td></tr>
+<tr><th id="526">526</th><td>			<a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="local col3 decl" id="43b" title='b' data-type='dm_block_t' data-ref="43b">b</dfn>, <b>struct</b> <a class="type" href="dm-block-manager.h.html#dm_block_validator" title='dm_block_validator' data-ref="dm_block_validator">dm_block_validator</a> *<dfn class="local col4 decl" id="44v" title='v' data-type='struct dm_block_validator *' data-ref="44v">v</dfn>,</td></tr>
+<tr><th id="527">527</th><td>			<b>struct</b> <a class="type" href="dm-block-manager.h.html#dm_block" title='dm_block' data-ref="dm_block">dm_block</a> **<dfn class="local col5 decl" id="45result" title='result' data-type='struct dm_block **' data-ref="45result">result</dfn>)</td></tr>
+<tr><th id="528">528</th><td>{</td></tr>
+<tr><th id="529">529</th><td>	<b>struct</b> <a class="type" href="#buffer_aux" title='buffer_aux' data-ref="buffer_aux">buffer_aux</a> *<dfn class="local col6 decl" id="46aux" title='aux' data-type='struct buffer_aux *' data-ref="46aux">aux</dfn>;</td></tr>
+<tr><th id="530">530</th><td>	<em>void</em> *<dfn class="local col7 decl" id="47p" title='p' data-type='void *' data-ref="47p">p</dfn>;</td></tr>
+<tr><th id="531">531</th><td>	<em>int</em> <dfn class="local col8 decl" id="48r" title='r' data-type='int' data-ref="48r">r</dfn>;</td></tr>
+<tr><th id="532">532</th><td></td></tr>
+<tr><th id="533">533</th><td>	<a class="local col7 ref" href="#47p" title='p' data-ref="47p">p</a> = <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_get" title='dm_bufio_get' data-ref="dm_bufio_get">dm_bufio_get</a>(<a class="local col2 ref" href="#42bm" title='bm' data-ref="42bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::bufio" title='dm_block_manager::bufio' data-ref="dm_block_manager::bufio">bufio</a>, <a class="local col3 ref" href="#43b" title='b' data-ref="43b">b</a>, (<b>struct</b> <a class="type" href="../../../include/linux/dm-bufio.h.html#dm_buffer" title='dm_buffer' data-ref="dm_buffer">dm_buffer</a> **) <a class="local col5 ref" href="#45result" title='result' data-ref="45result">result</a>);</td></tr>
+<tr><th id="534">534</th><td>	<b>if</b> (<a class="macro" href="../../../include/linux/compiler.h.html#77" title="__builtin_expect(!!(IS_ERR(p)), 0)" data-ref="_M/unlikely">unlikely</a>(<a class="ref fn" href="../../../include/linux/err.h.html#IS_ERR" title='IS_ERR' data-ref="IS_ERR">IS_ERR</a>(<a class="local col7 ref" href="#47p" title='p' data-ref="47p">p</a>)))</td></tr>
+<tr><th id="535">535</th><td>		<b>return</b> <a class="ref fn" href="../../../include/linux/err.h.html#PTR_ERR" title='PTR_ERR' data-ref="PTR_ERR">PTR_ERR</a>(<a class="local col7 ref" href="#47p" title='p' data-ref="47p">p</a>);</td></tr>
+<tr><th id="536">536</th><td>	<b>if</b> (<a class="macro" href="../../../include/linux/compiler.h.html#77" title="__builtin_expect(!!(!p), 0)" data-ref="_M/unlikely">unlikely</a>(!<a class="local col7 ref" href="#47p" title='p' data-ref="47p">p</a>))</td></tr>
+<tr><th id="537">537</th><td>		<b>return</b> -<a class="macro" href="../../../include/uapi/asm-generic/errno.h.html#22" title="11" data-ref="_M/EWOULDBLOCK">EWOULDBLOCK</a>;</td></tr>
+<tr><th id="538">538</th><td></td></tr>
+<tr><th id="539">539</th><td>	<a class="local col6 ref" href="#46aux" title='aux' data-ref="46aux">aux</a> = <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_get_aux_data" title='dm_bufio_get_aux_data' data-ref="dm_bufio_get_aux_data">dm_bufio_get_aux_data</a>(<a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(*<a class="local col5 ref" href="#45result" title='result' data-ref="45result">result</a>));</td></tr>
+<tr><th id="540">540</th><td>	<a class="local col8 ref" href="#48r" title='r' data-ref="48r">r</a> = <a class="macro" href="#312" title="0" data-ref="_M/bl_down_read_nonblock">bl_down_read_nonblock</a>(&amp;aux-&gt;lock);</td></tr>
+<tr><th id="541">541</th><td>	<b>if</b> (<a class="local col8 ref" href="#48r" title='r' data-ref="48r">r</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="542">542</th><td>		<a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_release" title='dm_bufio_release' data-ref="dm_bufio_release">dm_bufio_release</a>(<a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(*<a class="local col5 ref" href="#45result" title='result' data-ref="45result">result</a>));</td></tr>
+<tr><th id="543">543</th><td>		<a class="macro" href="#316" title="do { } while (0)" data-ref="_M/report_recursive_bug">report_recursive_bug</a>(b, r);</td></tr>
+<tr><th id="544">544</th><td>		<b>return</b> <a class="local col8 ref" href="#48r" title='r' data-ref="48r">r</a>;</td></tr>
+<tr><th id="545">545</th><td>	}</td></tr>
+<tr><th id="546">546</th><td>	<a class="local col6 ref" href="#46aux" title='aux' data-ref="46aux">aux</a>-&gt;<a class="tu ref field" href="#buffer_aux::write_locked" title='buffer_aux::write_locked' data-use='w' data-ref="buffer_aux::write_locked">write_locked</a> = <var>0</var>;</td></tr>
+<tr><th id="547">547</th><td></td></tr>
+<tr><th id="548">548</th><td>	<a class="local col8 ref" href="#48r" title='r' data-ref="48r">r</a> = <a class="tu ref fn" href="#dm_bm_validate_buffer" title='dm_bm_validate_buffer' data-use='c' data-ref="dm_bm_validate_buffer">dm_bm_validate_buffer</a>(<a class="local col2 ref" href="#42bm" title='bm' data-ref="42bm">bm</a>, <a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(*<a class="local col5 ref" href="#45result" title='result' data-ref="45result">result</a>), <a class="local col6 ref" href="#46aux" title='aux' data-ref="46aux">aux</a>, <a class="local col4 ref" href="#44v" title='v' data-ref="44v">v</a>);</td></tr>
+<tr><th id="549">549</th><td>	<b>if</b> (<a class="macro" href="../../../include/linux/compiler.h.html#77" title="__builtin_expect(!!(r), 0)" data-ref="_M/unlikely">unlikely</a>(<a class="local col8 ref" href="#48r" title='r' data-ref="48r">r</a>)) {</td></tr>
+<tr><th id="550">550</th><td>		<a class="macro" href="#313" title="do { } while (0)" data-ref="_M/bl_up_read">bl_up_read</a>(&amp;aux-&gt;lock);</td></tr>
+<tr><th id="551">551</th><td>		<a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_release" title='dm_bufio_release' data-ref="dm_bufio_release">dm_bufio_release</a>(<a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(*<a class="local col5 ref" href="#45result" title='result' data-ref="45result">result</a>));</td></tr>
+<tr><th id="552">552</th><td>		<b>return</b> <a class="local col8 ref" href="#48r" title='r' data-ref="48r">r</a>;</td></tr>
+<tr><th id="553">553</th><td>	}</td></tr>
+<tr><th id="554">554</th><td></td></tr>
+<tr><th id="555">555</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="556">556</th><td>}</td></tr>
+<tr><th id="557">557</th><td></td></tr>
+<tr><th id="558">558</th><td><em>int</em> <dfn class="decl def fn" id="dm_bm_write_lock_zero" title='dm_bm_write_lock_zero' data-ref="dm_bm_write_lock_zero">dm_bm_write_lock_zero</dfn>(<b>struct</b> <a class="type" href="#dm_block_manager" title='dm_block_manager' data-ref="dm_block_manager">dm_block_manager</a> *<dfn class="local col9 decl" id="49bm" title='bm' data-type='struct dm_block_manager *' data-ref="49bm">bm</dfn>,</td></tr>
+<tr><th id="559">559</th><td>			  <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="local col0 decl" id="50b" title='b' data-type='dm_block_t' data-ref="50b">b</dfn>, <b>struct</b> <a class="type" href="dm-block-manager.h.html#dm_block_validator" title='dm_block_validator' data-ref="dm_block_validator">dm_block_validator</a> *<dfn class="local col1 decl" id="51v" title='v' data-type='struct dm_block_validator *' data-ref="51v">v</dfn>,</td></tr>
+<tr><th id="560">560</th><td>			  <b>struct</b> <a class="type" href="dm-block-manager.h.html#dm_block" title='dm_block' data-ref="dm_block">dm_block</a> **<dfn class="local col2 decl" id="52result" title='result' data-type='struct dm_block **' data-ref="52result">result</dfn>)</td></tr>
+<tr><th id="561">561</th><td>{</td></tr>
+<tr><th id="562">562</th><td>	<em>int</em> <dfn class="local col3 decl" id="53r" title='r' data-type='int' data-ref="53r">r</dfn>;</td></tr>
+<tr><th id="563">563</th><td>	<b>struct</b> <a class="type" href="#buffer_aux" title='buffer_aux' data-ref="buffer_aux">buffer_aux</a> *<dfn class="local col4 decl" id="54aux" title='aux' data-type='struct buffer_aux *' data-ref="54aux">aux</dfn>;</td></tr>
+<tr><th id="564">564</th><td>	<em>void</em> *<dfn class="local col5 decl" id="55p" title='p' data-type='void *' data-ref="55p">p</dfn>;</td></tr>
+<tr><th id="565">565</th><td></td></tr>
+<tr><th id="566">566</th><td>	<b>if</b> (<a class="local col9 ref" href="#49bm" title='bm' data-ref="49bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::read_only" title='dm_block_manager::read_only' data-ref="dm_block_manager::read_only">read_only</a>)</td></tr>
+<tr><th id="567">567</th><td>		<b>return</b> -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#5" title="1" data-ref="_M/EPERM">EPERM</a>;</td></tr>
+<tr><th id="568">568</th><td></td></tr>
+<tr><th id="569">569</th><td>	<a class="local col5 ref" href="#55p" title='p' data-ref="55p">p</a> = <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_new" title='dm_bufio_new' data-ref="dm_bufio_new">dm_bufio_new</a>(<a class="local col9 ref" href="#49bm" title='bm' data-ref="49bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::bufio" title='dm_block_manager::bufio' data-ref="dm_block_manager::bufio">bufio</a>, <a class="local col0 ref" href="#50b" title='b' data-ref="50b">b</a>, (<b>struct</b> <a class="type" href="../../../include/linux/dm-bufio.h.html#dm_buffer" title='dm_buffer' data-ref="dm_buffer">dm_buffer</a> **) <a class="local col2 ref" href="#52result" title='result' data-ref="52result">result</a>);</td></tr>
+<tr><th id="570">570</th><td>	<b>if</b> (<a class="macro" href="../../../include/linux/compiler.h.html#77" title="__builtin_expect(!!(IS_ERR(p)), 0)" data-ref="_M/unlikely">unlikely</a>(<a class="ref fn" href="../../../include/linux/err.h.html#IS_ERR" title='IS_ERR' data-ref="IS_ERR">IS_ERR</a>(<a class="local col5 ref" href="#55p" title='p' data-ref="55p">p</a>)))</td></tr>
+<tr><th id="571">571</th><td>		<b>return</b> <a class="ref fn" href="../../../include/linux/err.h.html#PTR_ERR" title='PTR_ERR' data-ref="PTR_ERR">PTR_ERR</a>(<a class="local col5 ref" href="#55p" title='p' data-ref="55p">p</a>);</td></tr>
+<tr><th id="572">572</th><td></td></tr>
+<tr><th id="573">573</th><td>	<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#memset" title='memset' data-ref="memset">memset</a>(<a class="local col5 ref" href="#55p" title='p' data-ref="55p">p</a>, <var>0</var>, <a class="ref fn" href="#dm_bm_block_size" title='dm_bm_block_size' data-ref="dm_bm_block_size">dm_bm_block_size</a>(<a class="local col9 ref" href="#49bm" title='bm' data-ref="49bm">bm</a>));</td></tr>
+<tr><th id="574">574</th><td></td></tr>
+<tr><th id="575">575</th><td>	<a class="local col4 ref" href="#54aux" title='aux' data-ref="54aux">aux</a> = <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_get_aux_data" title='dm_bufio_get_aux_data' data-ref="dm_bufio_get_aux_data">dm_bufio_get_aux_data</a>(<a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(*<a class="local col2 ref" href="#52result" title='result' data-ref="52result">result</a>));</td></tr>
+<tr><th id="576">576</th><td>	<a class="local col3 ref" href="#53r" title='r' data-ref="53r">r</a> = <a class="macro" href="#314" title="0" data-ref="_M/bl_down_write">bl_down_write</a>(&amp;aux-&gt;lock);</td></tr>
+<tr><th id="577">577</th><td>	<b>if</b> (<a class="local col3 ref" href="#53r" title='r' data-ref="53r">r</a>) {</td></tr>
+<tr><th id="578">578</th><td>		<a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_release" title='dm_bufio_release' data-ref="dm_bufio_release">dm_bufio_release</a>(<a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(*<a class="local col2 ref" href="#52result" title='result' data-ref="52result">result</a>));</td></tr>
+<tr><th id="579">579</th><td>		<b>return</b> <a class="local col3 ref" href="#53r" title='r' data-ref="53r">r</a>;</td></tr>
+<tr><th id="580">580</th><td>	}</td></tr>
+<tr><th id="581">581</th><td></td></tr>
+<tr><th id="582">582</th><td>	<a class="local col4 ref" href="#54aux" title='aux' data-ref="54aux">aux</a>-&gt;<a class="tu ref field" href="#buffer_aux::write_locked" title='buffer_aux::write_locked' data-use='w' data-ref="buffer_aux::write_locked">write_locked</a> = <var>1</var>;</td></tr>
+<tr><th id="583">583</th><td>	<a class="local col4 ref" href="#54aux" title='aux' data-ref="54aux">aux</a>-&gt;<a class="tu ref field" href="#buffer_aux::validator" title='buffer_aux::validator' data-use='w' data-ref="buffer_aux::validator">validator</a> = <a class="local col1 ref" href="#51v" title='v' data-ref="51v">v</a>;</td></tr>
+<tr><th id="584">584</th><td></td></tr>
+<tr><th id="585">585</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="586">586</th><td>}</td></tr>
+<tr><th id="587">587</th><td><a class="macro" href="../../../include/linux/export.h.html#100" title="extern typeof(dm_bm_write_lock_zero) dm_bm_write_lock_zero; static const char __kstrtab_dm_bm_write_lock_zero[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;dm_bm_write_lock_zero&quot;; static const struct kernel_symbol __ksymtab_dm_bm_write_lock_zero __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;dm_bm_write_lock_zero&quot;), used)) = { (unsigned long)&amp;dm_bm_write_lock_zero, __kstrtab_dm_bm_write_lock_zero }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#dm_bm_write_lock_zero" title='dm_bm_write_lock_zero' data-ref="dm_bm_write_lock_zero"><a class="ref fn" href="#dm_bm_write_lock_zero" title='dm_bm_write_lock_zero' data-ref="dm_bm_write_lock_zero"><a class="ref fn" href="#dm_bm_write_lock_zero" title='dm_bm_write_lock_zero' data-ref="dm_bm_write_lock_zero"><a class="ref fn" href="#dm_bm_write_lock_zero" title='dm_bm_write_lock_zero' data-ref="dm_bm_write_lock_zero">dm_bm_write_lock_zero</a></a></a></a>);</td></tr>
+<tr><th id="588">588</th><td></td></tr>
+<tr><th id="589">589</th><td><em>void</em> <dfn class="decl def fn" id="dm_bm_unlock" title='dm_bm_unlock' data-ref="dm_bm_unlock">dm_bm_unlock</dfn>(<b>struct</b> <a class="type" href="dm-block-manager.h.html#dm_block" title='dm_block' data-ref="dm_block">dm_block</a> *<dfn class="local col6 decl" id="56b" title='b' data-type='struct dm_block *' data-ref="56b">b</dfn>)</td></tr>
+<tr><th id="590">590</th><td>{</td></tr>
+<tr><th id="591">591</th><td>	<b>struct</b> <a class="type" href="#buffer_aux" title='buffer_aux' data-ref="buffer_aux">buffer_aux</a> *<dfn class="local col7 decl" id="57aux" title='aux' data-type='struct buffer_aux *' data-ref="57aux">aux</dfn>;</td></tr>
+<tr><th id="592">592</th><td>	<a class="local col7 ref" href="#57aux" title='aux' data-ref="57aux">aux</a> = <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_get_aux_data" title='dm_bufio_get_aux_data' data-ref="dm_bufio_get_aux_data">dm_bufio_get_aux_data</a>(<a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(<a class="local col6 ref" href="#56b" title='b' data-ref="56b">b</a>));</td></tr>
+<tr><th id="593">593</th><td></td></tr>
+<tr><th id="594">594</th><td>	<b>if</b> (<a class="local col7 ref" href="#57aux" title='aux' data-ref="57aux">aux</a>-&gt;<a class="tu ref field" href="#buffer_aux::write_locked" title='buffer_aux::write_locked' data-use='r' data-ref="buffer_aux::write_locked">write_locked</a>) {</td></tr>
+<tr><th id="595">595</th><td>		<a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_mark_buffer_dirty" title='dm_bufio_mark_buffer_dirty' data-ref="dm_bufio_mark_buffer_dirty">dm_bufio_mark_buffer_dirty</a>(<a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(<a class="local col6 ref" href="#56b" title='b' data-ref="56b">b</a>));</td></tr>
+<tr><th id="596">596</th><td>		<a class="macro" href="#315" title="do { } while (0)" data-ref="_M/bl_up_write">bl_up_write</a>(&amp;aux-&gt;lock);</td></tr>
+<tr><th id="597">597</th><td>	} <b>else</b></td></tr>
+<tr><th id="598">598</th><td>		<a class="macro" href="#313" title="do { } while (0)" data-ref="_M/bl_up_read">bl_up_read</a>(&amp;aux-&gt;lock);</td></tr>
+<tr><th id="599">599</th><td></td></tr>
+<tr><th id="600">600</th><td>	<a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_release" title='dm_bufio_release' data-ref="dm_bufio_release">dm_bufio_release</a>(<a class="tu ref fn" href="#to_buffer" title='to_buffer' data-use='c' data-ref="to_buffer">to_buffer</a>(<a class="local col6 ref" href="#56b" title='b' data-ref="56b">b</a>));</td></tr>
+<tr><th id="601">601</th><td>}</td></tr>
+<tr><th id="602">602</th><td><a class="macro" href="../../../include/linux/export.h.html#100" title="extern typeof(dm_bm_unlock) dm_bm_unlock; static const char __kstrtab_dm_bm_unlock[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;dm_bm_unlock&quot;; static const struct kernel_symbol __ksymtab_dm_bm_unlock __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;dm_bm_unlock&quot;), used)) = { (unsigned long)&amp;dm_bm_unlock, __kstrtab_dm_bm_unlock }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#dm_bm_unlock" title='dm_bm_unlock' data-ref="dm_bm_unlock"><a class="ref fn" href="#dm_bm_unlock" title='dm_bm_unlock' data-ref="dm_bm_unlock"><a class="ref fn" href="#dm_bm_unlock" title='dm_bm_unlock' data-ref="dm_bm_unlock"><a class="ref fn" href="#dm_bm_unlock" title='dm_bm_unlock' data-ref="dm_bm_unlock">dm_bm_unlock</a></a></a></a>);</td></tr>
+<tr><th id="603">603</th><td></td></tr>
+<tr><th id="604">604</th><td><em>int</em> <dfn class="decl def fn" id="dm_bm_flush" title='dm_bm_flush' data-ref="dm_bm_flush">dm_bm_flush</dfn>(<b>struct</b> <a class="type" href="#dm_block_manager" title='dm_block_manager' data-ref="dm_block_manager">dm_block_manager</a> *<dfn class="local col8 decl" id="58bm" title='bm' data-type='struct dm_block_manager *' data-ref="58bm">bm</dfn>)</td></tr>
+<tr><th id="605">605</th><td>{</td></tr>
+<tr><th id="606">606</th><td>	<b>if</b> (<a class="local col8 ref" href="#58bm" title='bm' data-ref="58bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::read_only" title='dm_block_manager::read_only' data-ref="dm_block_manager::read_only">read_only</a>)</td></tr>
+<tr><th id="607">607</th><td>		<b>return</b> -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#5" title="1" data-ref="_M/EPERM">EPERM</a>;</td></tr>
+<tr><th id="608">608</th><td></td></tr>
+<tr><th id="609">609</th><td>	<b>return</b> <a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_write_dirty_buffers" title='dm_bufio_write_dirty_buffers' data-ref="dm_bufio_write_dirty_buffers">dm_bufio_write_dirty_buffers</a>(<a class="local col8 ref" href="#58bm" title='bm' data-ref="58bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::bufio" title='dm_block_manager::bufio' data-ref="dm_block_manager::bufio">bufio</a>);</td></tr>
+<tr><th id="610">610</th><td>}</td></tr>
+<tr><th id="611">611</th><td><a class="macro" href="../../../include/linux/export.h.html#100" title="extern typeof(dm_bm_flush) dm_bm_flush; static const char __kstrtab_dm_bm_flush[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;dm_bm_flush&quot;; static const struct kernel_symbol __ksymtab_dm_bm_flush __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;dm_bm_flush&quot;), used)) = { (unsigned long)&amp;dm_bm_flush, __kstrtab_dm_bm_flush }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#dm_bm_flush" title='dm_bm_flush' data-ref="dm_bm_flush"><a class="ref fn" href="#dm_bm_flush" title='dm_bm_flush' data-ref="dm_bm_flush"><a class="ref fn" href="#dm_bm_flush" title='dm_bm_flush' data-ref="dm_bm_flush"><a class="ref fn" href="#dm_bm_flush" title='dm_bm_flush' data-ref="dm_bm_flush">dm_bm_flush</a></a></a></a>);</td></tr>
+<tr><th id="612">612</th><td></td></tr>
+<tr><th id="613">613</th><td><em>void</em> <dfn class="decl def fn" id="dm_bm_prefetch" title='dm_bm_prefetch' data-ref="dm_bm_prefetch">dm_bm_prefetch</dfn>(<b>struct</b> <a class="type" href="#dm_block_manager" title='dm_block_manager' data-ref="dm_block_manager">dm_block_manager</a> *<dfn class="local col9 decl" id="59bm" title='bm' data-type='struct dm_block_manager *' data-ref="59bm">bm</dfn>, <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="local col0 decl" id="60b" title='b' data-type='dm_block_t' data-ref="60b">b</dfn>)</td></tr>
+<tr><th id="614">614</th><td>{</td></tr>
+<tr><th id="615">615</th><td>	<a class="ref fn" href="../../../include/linux/dm-bufio.h.html#dm_bufio_prefetch" title='dm_bufio_prefetch' data-ref="dm_bufio_prefetch">dm_bufio_prefetch</a>(<a class="local col9 ref" href="#59bm" title='bm' data-ref="59bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::bufio" title='dm_block_manager::bufio' data-ref="dm_block_manager::bufio">bufio</a>, <a class="local col0 ref" href="#60b" title='b' data-ref="60b">b</a>, <var>1</var>);</td></tr>
+<tr><th id="616">616</th><td>}</td></tr>
+<tr><th id="617">617</th><td></td></tr>
+<tr><th id="618">618</th><td><a class="typedef" href="../../../include/linux/types.h.html#bool" title='bool' data-type='_Bool' data-ref="bool">bool</a> <dfn class="decl def fn" id="dm_bm_is_read_only" title='dm_bm_is_read_only' data-ref="dm_bm_is_read_only">dm_bm_is_read_only</dfn>(<b>struct</b> <a class="type" href="#dm_block_manager" title='dm_block_manager' data-ref="dm_block_manager">dm_block_manager</a> *<dfn class="local col1 decl" id="61bm" title='bm' data-type='struct dm_block_manager *' data-ref="61bm">bm</dfn>)</td></tr>
+<tr><th id="619">619</th><td>{</td></tr>
+<tr><th id="620">620</th><td>	<b>return</b> <a class="local col1 ref" href="#61bm" title='bm' data-ref="61bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::read_only" title='dm_block_manager::read_only' data-ref="dm_block_manager::read_only">read_only</a>;</td></tr>
+<tr><th id="621">621</th><td>}</td></tr>
+<tr><th id="622">622</th><td><a class="macro" href="../../../include/linux/export.h.html#100" title="extern typeof(dm_bm_is_read_only) dm_bm_is_read_only; static const char __kstrtab_dm_bm_is_read_only[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;dm_bm_is_read_only&quot;; static const struct kernel_symbol __ksymtab_dm_bm_is_read_only __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;dm_bm_is_read_only&quot;), used)) = { (unsigned long)&amp;dm_bm_is_read_only, __kstrtab_dm_bm_is_read_only }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#dm_bm_is_read_only" title='dm_bm_is_read_only' data-ref="dm_bm_is_read_only"><a class="ref fn" href="#dm_bm_is_read_only" title='dm_bm_is_read_only' data-ref="dm_bm_is_read_only"><a class="ref fn" href="#dm_bm_is_read_only" title='dm_bm_is_read_only' data-ref="dm_bm_is_read_only"><a class="ref fn" href="#dm_bm_is_read_only" title='dm_bm_is_read_only' data-ref="dm_bm_is_read_only">dm_bm_is_read_only</a></a></a></a>);</td></tr>
+<tr><th id="623">623</th><td></td></tr>
+<tr><th id="624">624</th><td><em>void</em> <dfn class="decl def fn" id="dm_bm_set_read_only" title='dm_bm_set_read_only' data-ref="dm_bm_set_read_only">dm_bm_set_read_only</dfn>(<b>struct</b> <a class="type" href="#dm_block_manager" title='dm_block_manager' data-ref="dm_block_manager">dm_block_manager</a> *<dfn class="local col2 decl" id="62bm" title='bm' data-type='struct dm_block_manager *' data-ref="62bm">bm</dfn>)</td></tr>
+<tr><th id="625">625</th><td>{</td></tr>
+<tr><th id="626">626</th><td>	<a class="local col2 ref" href="#62bm" title='bm' data-ref="62bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::read_only" title='dm_block_manager::read_only' data-ref="dm_block_manager::read_only">read_only</a> = <a class="enum" href="../../../include/linux/stddef.h.html#true" title='true' data-ref="true">true</a>;</td></tr>
+<tr><th id="627">627</th><td>}</td></tr>
+<tr><th id="628">628</th><td><a class="macro" href="../../../include/linux/export.h.html#100" title="extern typeof(dm_bm_set_read_only) dm_bm_set_read_only; static const char __kstrtab_dm_bm_set_read_only[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;dm_bm_set_read_only&quot;; static const struct kernel_symbol __ksymtab_dm_bm_set_read_only __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;dm_bm_set_read_only&quot;), used)) = { (unsigned long)&amp;dm_bm_set_read_only, __kstrtab_dm_bm_set_read_only }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#dm_bm_set_read_only" title='dm_bm_set_read_only' data-ref="dm_bm_set_read_only"><a class="ref fn" href="#dm_bm_set_read_only" title='dm_bm_set_read_only' data-ref="dm_bm_set_read_only"><a class="ref fn" href="#dm_bm_set_read_only" title='dm_bm_set_read_only' data-ref="dm_bm_set_read_only"><a class="ref fn" href="#dm_bm_set_read_only" title='dm_bm_set_read_only' data-ref="dm_bm_set_read_only">dm_bm_set_read_only</a></a></a></a>);</td></tr>
+<tr><th id="629">629</th><td></td></tr>
+<tr><th id="630">630</th><td><em>void</em> <dfn class="decl def fn" id="dm_bm_set_read_write" title='dm_bm_set_read_write' data-ref="dm_bm_set_read_write">dm_bm_set_read_write</dfn>(<b>struct</b> <a class="type" href="#dm_block_manager" title='dm_block_manager' data-ref="dm_block_manager">dm_block_manager</a> *<dfn class="local col3 decl" id="63bm" title='bm' data-type='struct dm_block_manager *' data-ref="63bm">bm</dfn>)</td></tr>
+<tr><th id="631">631</th><td>{</td></tr>
+<tr><th id="632">632</th><td>	<a class="local col3 ref" href="#63bm" title='bm' data-ref="63bm">bm</a>-&gt;<a class="ref field" href="#dm_block_manager::read_only" title='dm_block_manager::read_only' data-ref="dm_block_manager::read_only">read_only</a> = <a class="enum" href="../../../include/linux/stddef.h.html#false" title='false' data-ref="false">false</a>;</td></tr>
+<tr><th id="633">633</th><td>}</td></tr>
+<tr><th id="634">634</th><td><a class="macro" href="../../../include/linux/export.h.html#100" title="extern typeof(dm_bm_set_read_write) dm_bm_set_read_write; static const char __kstrtab_dm_bm_set_read_write[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;dm_bm_set_read_write&quot;; static const struct kernel_symbol __ksymtab_dm_bm_set_read_write __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;dm_bm_set_read_write&quot;), used)) = { (unsigned long)&amp;dm_bm_set_read_write, __kstrtab_dm_bm_set_read_write }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#dm_bm_set_read_write" title='dm_bm_set_read_write' data-ref="dm_bm_set_read_write"><a class="ref fn" href="#dm_bm_set_read_write" title='dm_bm_set_read_write' data-ref="dm_bm_set_read_write"><a class="ref fn" href="#dm_bm_set_read_write" title='dm_bm_set_read_write' data-ref="dm_bm_set_read_write"><a class="ref fn" href="#dm_bm_set_read_write" title='dm_bm_set_read_write' data-ref="dm_bm_set_read_write">dm_bm_set_read_write</a></a></a></a>);</td></tr>
+<tr><th id="635">635</th><td></td></tr>
+<tr><th id="636">636</th><td><a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="decl def fn" id="dm_bm_checksum" title='dm_bm_checksum' data-ref="dm_bm_checksum">dm_bm_checksum</dfn>(<em>const</em> <em>void</em> *<dfn class="local col4 decl" id="64data" title='data' data-type='const void *' data-ref="64data">data</dfn>, <a class="typedef" href="../../../include/linux/types.h.html#size_t" title='size_t' data-type='__kernel_size_t' data-ref="size_t">size_t</a> <dfn class="local col5 decl" id="65len" title='len' data-type='size_t' data-ref="65len">len</dfn>, <a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col6 decl" id="66init_xor" title='init_xor' data-type='u32' data-ref="66init_xor">init_xor</dfn>)</td></tr>
+<tr><th id="637">637</th><td>{</td></tr>
+<tr><th id="638">638</th><td>	<b>return</b> <a class="ref fn" href="../../../include/linux/crc32c.h.html#crc32c" title='crc32c' data-ref="crc32c">crc32c</a>(~(<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a>) <var>0</var>, <a class="local col4 ref" href="#64data" title='data' data-ref="64data">data</a>, <a class="local col5 ref" href="#65len" title='len' data-ref="65len">len</a>) ^ <a class="local col6 ref" href="#66init_xor" title='init_xor' data-ref="66init_xor">init_xor</a>;</td></tr>
+<tr><th id="639">639</th><td>}</td></tr>
+<tr><th id="640">640</th><td><a class="macro" href="../../../include/linux/export.h.html#100" title="extern typeof(dm_bm_checksum) dm_bm_checksum; static const char __kstrtab_dm_bm_checksum[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;dm_bm_checksum&quot;; static const struct kernel_symbol __ksymtab_dm_bm_checksum __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;dm_bm_checksum&quot;), used)) = { (unsigned long)&amp;dm_bm_checksum, __kstrtab_dm_bm_checksum }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#dm_bm_checksum" title='dm_bm_checksum' data-ref="dm_bm_checksum"><a class="ref fn" href="#dm_bm_checksum" title='dm_bm_checksum' data-ref="dm_bm_checksum"><a class="ref fn" href="#dm_bm_checksum" title='dm_bm_checksum' data-ref="dm_bm_checksum"><a class="ref fn" href="#dm_bm_checksum" title='dm_bm_checksum' data-ref="dm_bm_checksum">dm_bm_checksum</a></a></a></a>);</td></tr>
+<tr><th id="641">641</th><td></td></tr>
+<tr><th id="642">642</th><td><i>/*----------------------------------------------------------------*/</i></td></tr>
+<tr><th id="643">643</th><td></td></tr>
+<tr><th id="644">644</th><td><a class="macro" href="../../../include/linux/module.h.html#199" title="struct __UNIQUE_ID_license69 {}" data-ref="_M/MODULE_LICENSE">MODULE_LICENSE</a>(<q>"GPL"</q>);</td></tr>
+<tr><th id="645">645</th><td><a class="macro" href="../../../include/linux/module.h.html#205" title="struct __UNIQUE_ID_author71 {}" data-ref="_M/MODULE_AUTHOR">MODULE_AUTHOR</a>(<q>"Joe Thornber &lt;dm-devel@redhat.com&gt;"</q>);</td></tr>
+<tr><th id="646">646</th><td><a class="macro" href="../../../include/linux/module.h.html#208" title="struct __UNIQUE_ID_description73 {}" data-ref="_M/MODULE_DESCRIPTION">MODULE_DESCRIPTION</a>(<q>"Immutable metadata library for dm"</q>);</td></tr>
+<tr><th id="647">647</th><td></td></tr>
+<tr><th id="648">648</th><td><i>/*----------------------------------------------------------------*/</i></td></tr>
+<tr><th id="649">649</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

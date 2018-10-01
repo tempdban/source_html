@@ -1,0 +1,234 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>dm-btree.h source code [linux-4.18.y/drivers/md/persistent-data/dm-btree.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="cursor_node,dm_btree_cursor,dm_btree_info,dm_btree_value_type "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/drivers/md/persistent-data/dm-btree.h'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>linux-4.18.y</a>/<a href='../..'>drivers</a>/<a href='..'>md</a>/<a href='./'>persistent-data</a>/<a href='dm-btree.h.html'>dm-btree.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright (C) 2011 Red Hat, Inc.</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> * This file is released under the GPL.</i></td></tr>
+<tr><th id="5">5</th><td><i> */</i></td></tr>
+<tr><th id="6">6</th><td><u>#<span data-ppcond="6">ifndef</span> <span class="macro" data-ref="_M/_LINUX_DM_BTREE_H">_LINUX_DM_BTREE_H</span></u></td></tr>
+<tr><th id="7">7</th><td><u>#define <dfn class="macro" id="_M/_LINUX_DM_BTREE_H" data-ref="_M/_LINUX_DM_BTREE_H">_LINUX_DM_BTREE_H</dfn></u></td></tr>
+<tr><th id="8">8</th><td></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="dm-block-manager.h.html">"dm-block-manager.h"</a></u></td></tr>
+<tr><th id="10">10</th><td></td></tr>
+<tr><th id="11">11</th><td><b>struct</b> <a class="type" href="dm-transaction-manager.h.html#dm_transaction_manager" title='dm_transaction_manager' data-ref="dm_transaction_manager" id="dm_transaction_manager">dm_transaction_manager</a>;</td></tr>
+<tr><th id="12">12</th><td></td></tr>
+<tr><th id="13">13</th><td><i>/*----------------------------------------------------------------*/</i></td></tr>
+<tr><th id="14">14</th><td></td></tr>
+<tr><th id="15">15</th><td><i>/*</i></td></tr>
+<tr><th id="16">16</th><td><i> * Annotations used to check on-disk metadata is handled as little-endian.</i></td></tr>
+<tr><th id="17">17</th><td><i> */</i></td></tr>
+<tr><th id="18">18</th><td><u>#<span data-ppcond="18">ifdef</span> <span class="macro" data-ref="_M/__CHECKER__">__CHECKER__</span></u></td></tr>
+<tr><th id="19">19</th><td><u>#  define __dm_written_to_disk(x) __releases(x)</u></td></tr>
+<tr><th id="20">20</th><td><u>#  define __dm_reads_from_disk(x) __acquires(x)</u></td></tr>
+<tr><th id="21">21</th><td><u>#  define __dm_bless_for_disk(x) __acquire(x)</u></td></tr>
+<tr><th id="22">22</th><td><u>#  define __dm_unbless_for_disk(x) __release(x)</u></td></tr>
+<tr><th id="23">23</th><td><u>#<span data-ppcond="18">else</span></u></td></tr>
+<tr><th id="24">24</th><td><u>#  define <dfn class="macro" id="_M/__dm_written_to_disk" data-ref="_M/__dm_written_to_disk">__dm_written_to_disk</dfn>(x)</u></td></tr>
+<tr><th id="25">25</th><td><u>#  define <dfn class="macro" id="_M/__dm_reads_from_disk" data-ref="_M/__dm_reads_from_disk">__dm_reads_from_disk</dfn>(x)</u></td></tr>
+<tr><th id="26">26</th><td><u>#  define <dfn class="macro" id="_M/__dm_bless_for_disk" data-ref="_M/__dm_bless_for_disk">__dm_bless_for_disk</dfn>(x)</u></td></tr>
+<tr><th id="27">27</th><td><u>#  define <dfn class="macro" id="_M/__dm_unbless_for_disk" data-ref="_M/__dm_unbless_for_disk">__dm_unbless_for_disk</dfn>(x)</u></td></tr>
+<tr><th id="28">28</th><td><u>#<span data-ppcond="18">endif</span></u></td></tr>
+<tr><th id="29">29</th><td></td></tr>
+<tr><th id="30">30</th><td><i>/*----------------------------------------------------------------*/</i></td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><i>/*</i></td></tr>
+<tr><th id="33">33</th><td><i> * Manipulates hierarchical B+ trees with 64-bit keys and arbitrary-sized</i></td></tr>
+<tr><th id="34">34</th><td><i> * values.</i></td></tr>
+<tr><th id="35">35</th><td><i> */</i></td></tr>
+<tr><th id="36">36</th><td></td></tr>
+<tr><th id="37">37</th><td><i>/*</i></td></tr>
+<tr><th id="38">38</th><td><i> * Information about the values stored within the btree.</i></td></tr>
+<tr><th id="39">39</th><td><i> */</i></td></tr>
+<tr><th id="40">40</th><td><b>struct</b> <dfn class="type def" id="dm_btree_value_type" title='dm_btree_value_type' data-ref="dm_btree_value_type">dm_btree_value_type</dfn> {</td></tr>
+<tr><th id="41">41</th><td>	<em>void</em> *<dfn class="decl field" id="dm_btree_value_type::context" title='dm_btree_value_type::context' data-ref="dm_btree_value_type::context">context</dfn>;</td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td>	<i>/*</i></td></tr>
+<tr><th id="44">44</th><td><i>	 * The size in bytes of each value.</i></td></tr>
+<tr><th id="45">45</th><td><i>	 */</i></td></tr>
+<tr><th id="46">46</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="dm_btree_value_type::size" title='dm_btree_value_type::size' data-ref="dm_btree_value_type::size">size</dfn>;</td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td>	<i>/*</i></td></tr>
+<tr><th id="49">49</th><td><i>	 * Any of these methods can be safely set to NULL if you do not</i></td></tr>
+<tr><th id="50">50</th><td><i>	 * need the corresponding feature.</i></td></tr>
+<tr><th id="51">51</th><td><i>	 */</i></td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td>	<i>/*</i></td></tr>
+<tr><th id="54">54</th><td><i>	 * The btree is making a duplicate of the value, for instance</i></td></tr>
+<tr><th id="55">55</th><td><i>	 * because previously-shared btree nodes have now diverged.</i></td></tr>
+<tr><th id="56">56</th><td><i>	 * @value argument is the new copy that the copy function may modify.</i></td></tr>
+<tr><th id="57">57</th><td><i>	 * (Probably it just wants to increment a reference count</i></td></tr>
+<tr><th id="58">58</th><td><i>	 * somewhere.) This method is _not_ called for insertion of a new</i></td></tr>
+<tr><th id="59">59</th><td><i>	 * value: It is assumed the ref count is already 1.</i></td></tr>
+<tr><th id="60">60</th><td><i>	 */</i></td></tr>
+<tr><th id="61">61</th><td>	<em>void</em> (*<dfn class="decl field" id="dm_btree_value_type::inc" title='dm_btree_value_type::inc' data-ref="dm_btree_value_type::inc">inc</dfn>)(<em>void</em> *<dfn class="local col4 decl" id="124context" title='context' data-type='void *' data-ref="124context">context</dfn>, <em>const</em> <em>void</em> *<dfn class="local col5 decl" id="125value" title='value' data-type='const void *' data-ref="125value">value</dfn>);</td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td>	<i>/*</i></td></tr>
+<tr><th id="64">64</th><td><i>	 * This value is being deleted.  The btree takes care of freeing</i></td></tr>
+<tr><th id="65">65</th><td><i>	 * the memory pointed to by @value.  Often the del function just</i></td></tr>
+<tr><th id="66">66</th><td><i>	 * needs to decrement a reference count somewhere.</i></td></tr>
+<tr><th id="67">67</th><td><i>	 */</i></td></tr>
+<tr><th id="68">68</th><td>	<em>void</em> (*<dfn class="decl field" id="dm_btree_value_type::dec" title='dm_btree_value_type::dec' data-ref="dm_btree_value_type::dec">dec</dfn>)(<em>void</em> *<dfn class="local col6 decl" id="126context" title='context' data-type='void *' data-ref="126context">context</dfn>, <em>const</em> <em>void</em> *<dfn class="local col7 decl" id="127value" title='value' data-type='const void *' data-ref="127value">value</dfn>);</td></tr>
+<tr><th id="69">69</th><td></td></tr>
+<tr><th id="70">70</th><td>	<i>/*</i></td></tr>
+<tr><th id="71">71</th><td><i>	 * A test for equality between two values.  When a value is</i></td></tr>
+<tr><th id="72">72</th><td><i>	 * overwritten with a new one, the old one has the dec method</i></td></tr>
+<tr><th id="73">73</th><td><i>	 * called _unless_ the new and old value are deemed equal.</i></td></tr>
+<tr><th id="74">74</th><td><i>	 */</i></td></tr>
+<tr><th id="75">75</th><td>	<em>int</em> (*<dfn class="decl field" id="dm_btree_value_type::equal" title='dm_btree_value_type::equal' data-ref="dm_btree_value_type::equal">equal</dfn>)(<em>void</em> *<dfn class="local col8 decl" id="128context" title='context' data-type='void *' data-ref="128context">context</dfn>, <em>const</em> <em>void</em> *<dfn class="local col9 decl" id="129value1" title='value1' data-type='const void *' data-ref="129value1">value1</dfn>, <em>const</em> <em>void</em> *<dfn class="local col0 decl" id="130value2" title='value2' data-type='const void *' data-ref="130value2">value2</dfn>);</td></tr>
+<tr><th id="76">76</th><td>};</td></tr>
+<tr><th id="77">77</th><td></td></tr>
+<tr><th id="78">78</th><td><i>/*</i></td></tr>
+<tr><th id="79">79</th><td><i> * The shape and contents of a btree.</i></td></tr>
+<tr><th id="80">80</th><td><i> */</i></td></tr>
+<tr><th id="81">81</th><td><b>struct</b> <dfn class="type def" id="dm_btree_info" title='dm_btree_info' data-ref="dm_btree_info">dm_btree_info</dfn> {</td></tr>
+<tr><th id="82">82</th><td>	<b>struct</b> <a class="type" href="dm-transaction-manager.h.html#dm_transaction_manager" title='dm_transaction_manager' data-ref="dm_transaction_manager">dm_transaction_manager</a> *<dfn class="decl field" id="dm_btree_info::tm" title='dm_btree_info::tm' data-ref="dm_btree_info::tm">tm</dfn>;</td></tr>
+<tr><th id="83">83</th><td></td></tr>
+<tr><th id="84">84</th><td>	<i>/*</i></td></tr>
+<tr><th id="85">85</th><td><i>	 * Number of nested btrees. (Not the depth of a single tree.)</i></td></tr>
+<tr><th id="86">86</th><td><i>	 */</i></td></tr>
+<tr><th id="87">87</th><td>	<em>unsigned</em> <dfn class="decl field" id="dm_btree_info::levels" title='dm_btree_info::levels' data-ref="dm_btree_info::levels">levels</dfn>;</td></tr>
+<tr><th id="88">88</th><td>	<b>struct</b> <a class="type" href="#dm_btree_value_type" title='dm_btree_value_type' data-ref="dm_btree_value_type">dm_btree_value_type</a> <dfn class="decl field" id="dm_btree_info::value_type" title='dm_btree_info::value_type' data-ref="dm_btree_info::value_type">value_type</dfn>;</td></tr>
+<tr><th id="89">89</th><td>};</td></tr>
+<tr><th id="90">90</th><td></td></tr>
+<tr><th id="91">91</th><td><i>/*</i></td></tr>
+<tr><th id="92">92</th><td><i> * Set up an empty tree.  O(1).</i></td></tr>
+<tr><th id="93">93</th><td><i> */</i></td></tr>
+<tr><th id="94">94</th><td><em>int</em> <dfn class="decl fn" id="dm_btree_empty" title='dm_btree_empty' data-ref="dm_btree_empty">dm_btree_empty</dfn>(<b>struct</b> <a class="type" href="#dm_btree_info" title='dm_btree_info' data-ref="dm_btree_info">dm_btree_info</a> *<dfn class="local col1 decl" id="131info" title='info' data-type='struct dm_btree_info *' data-ref="131info">info</dfn>, <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> *<dfn class="local col2 decl" id="132root" title='root' data-type='dm_block_t *' data-ref="132root">root</dfn>);</td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td><i>/*</i></td></tr>
+<tr><th id="97">97</th><td><i> * Delete a tree.  O(n) - this is the slow one!  It can also block, so</i></td></tr>
+<tr><th id="98">98</th><td><i> * please don't call it on an IO path.</i></td></tr>
+<tr><th id="99">99</th><td><i> */</i></td></tr>
+<tr><th id="100">100</th><td><em>int</em> <dfn class="decl fn" id="dm_btree_del" title='dm_btree_del' data-ref="dm_btree_del">dm_btree_del</dfn>(<b>struct</b> <a class="type" href="#dm_btree_info" title='dm_btree_info' data-ref="dm_btree_info">dm_btree_info</a> *<dfn class="local col3 decl" id="133info" title='info' data-type='struct dm_btree_info *' data-ref="133info">info</dfn>, <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="local col4 decl" id="134root" title='root' data-type='dm_block_t' data-ref="134root">root</dfn>);</td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td><i>/*</i></td></tr>
+<tr><th id="103">103</th><td><i> * All the lookup functions return -ENODATA if the key cannot be found.</i></td></tr>
+<tr><th id="104">104</th><td><i> */</i></td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td><i>/*</i></td></tr>
+<tr><th id="107">107</th><td><i> * Tries to find a key that matches exactly.  O(ln(n))</i></td></tr>
+<tr><th id="108">108</th><td><i> */</i></td></tr>
+<tr><th id="109">109</th><td><em>int</em> <dfn class="decl fn" id="dm_btree_lookup" title='dm_btree_lookup' data-ref="dm_btree_lookup">dm_btree_lookup</dfn>(<b>struct</b> <a class="type" href="#dm_btree_info" title='dm_btree_info' data-ref="dm_btree_info">dm_btree_info</a> *<dfn class="local col5 decl" id="135info" title='info' data-type='struct dm_btree_info *' data-ref="135info">info</dfn>, <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="local col6 decl" id="136root" title='root' data-type='dm_block_t' data-ref="136root">root</dfn>,</td></tr>
+<tr><th id="110">110</th><td>		    <a class="typedef" href="../../../include/linux/types.h.html#uint64_t" title='uint64_t' data-type='u64' data-ref="uint64_t">uint64_t</a> *<dfn class="local col7 decl" id="137keys" title='keys' data-type='uint64_t *' data-ref="137keys">keys</dfn>, <em>void</em> *<dfn class="local col8 decl" id="138value_le" title='value_le' data-type='void *' data-ref="138value_le">value_le</dfn>);</td></tr>
+<tr><th id="111">111</th><td></td></tr>
+<tr><th id="112">112</th><td><i>/*</i></td></tr>
+<tr><th id="113">113</th><td><i> * Tries to find the first key where the bottom level key is &gt;= to that</i></td></tr>
+<tr><th id="114">114</th><td><i> * given.  Useful for skipping empty sections of the btree.</i></td></tr>
+<tr><th id="115">115</th><td><i> */</i></td></tr>
+<tr><th id="116">116</th><td><em>int</em> <dfn class="decl fn" id="dm_btree_lookup_next" title='dm_btree_lookup_next' data-ref="dm_btree_lookup_next">dm_btree_lookup_next</dfn>(<b>struct</b> <a class="type" href="#dm_btree_info" title='dm_btree_info' data-ref="dm_btree_info">dm_btree_info</a> *<dfn class="local col9 decl" id="139info" title='info' data-type='struct dm_btree_info *' data-ref="139info">info</dfn>, <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="local col0 decl" id="140root" title='root' data-type='dm_block_t' data-ref="140root">root</dfn>,</td></tr>
+<tr><th id="117">117</th><td>			 <a class="typedef" href="../../../include/linux/types.h.html#uint64_t" title='uint64_t' data-type='u64' data-ref="uint64_t">uint64_t</a> *<dfn class="local col1 decl" id="141keys" title='keys' data-type='uint64_t *' data-ref="141keys">keys</dfn>, <a class="typedef" href="../../../include/linux/types.h.html#uint64_t" title='uint64_t' data-type='u64' data-ref="uint64_t">uint64_t</a> *<dfn class="local col2 decl" id="142rkey" title='rkey' data-type='uint64_t *' data-ref="142rkey">rkey</dfn>, <em>void</em> *<dfn class="local col3 decl" id="143value_le" title='value_le' data-type='void *' data-ref="143value_le">value_le</dfn>);</td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td><i>/*</i></td></tr>
+<tr><th id="120">120</th><td><i> * Insertion (or overwrite an existing value).  O(ln(n))</i></td></tr>
+<tr><th id="121">121</th><td><i> */</i></td></tr>
+<tr><th id="122">122</th><td><em>int</em> <dfn class="decl fn" id="dm_btree_insert" title='dm_btree_insert' data-ref="dm_btree_insert">dm_btree_insert</dfn>(<b>struct</b> <a class="type" href="#dm_btree_info" title='dm_btree_info' data-ref="dm_btree_info">dm_btree_info</a> *<dfn class="local col4 decl" id="144info" title='info' data-type='struct dm_btree_info *' data-ref="144info">info</dfn>, <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="local col5 decl" id="145root" title='root' data-type='dm_block_t' data-ref="145root">root</dfn>,</td></tr>
+<tr><th id="123">123</th><td>		    <a class="typedef" href="../../../include/linux/types.h.html#uint64_t" title='uint64_t' data-type='u64' data-ref="uint64_t">uint64_t</a> *<dfn class="local col6 decl" id="146keys" title='keys' data-type='uint64_t *' data-ref="146keys">keys</dfn>, <em>void</em> *<dfn class="local col7 decl" id="147value" title='value' data-type='void *' data-ref="147value">value</dfn>, <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> *<dfn class="local col8 decl" id="148new_root" title='new_root' data-type='dm_block_t *' data-ref="148new_root">new_root</dfn>)</td></tr>
+<tr><th id="124">124</th><td>		    <a class="macro" href="#24" title="" data-ref="_M/__dm_written_to_disk">__dm_written_to_disk</a>(value);</td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td><i>/*</i></td></tr>
+<tr><th id="127">127</th><td><i> * A variant of insert that indicates whether it actually inserted or just</i></td></tr>
+<tr><th id="128">128</th><td><i> * overwrote.  Useful if you're keeping track of the number of entries in a</i></td></tr>
+<tr><th id="129">129</th><td><i> * tree.</i></td></tr>
+<tr><th id="130">130</th><td><i> */</i></td></tr>
+<tr><th id="131">131</th><td><em>int</em> <dfn class="decl fn" id="dm_btree_insert_notify" title='dm_btree_insert_notify' data-ref="dm_btree_insert_notify">dm_btree_insert_notify</dfn>(<b>struct</b> <a class="type" href="#dm_btree_info" title='dm_btree_info' data-ref="dm_btree_info">dm_btree_info</a> *<dfn class="local col9 decl" id="149info" title='info' data-type='struct dm_btree_info *' data-ref="149info">info</dfn>, <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="local col0 decl" id="150root" title='root' data-type='dm_block_t' data-ref="150root">root</dfn>,</td></tr>
+<tr><th id="132">132</th><td>			   <a class="typedef" href="../../../include/linux/types.h.html#uint64_t" title='uint64_t' data-type='u64' data-ref="uint64_t">uint64_t</a> *<dfn class="local col1 decl" id="151keys" title='keys' data-type='uint64_t *' data-ref="151keys">keys</dfn>, <em>void</em> *<dfn class="local col2 decl" id="152value" title='value' data-type='void *' data-ref="152value">value</dfn>, <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> *<dfn class="local col3 decl" id="153new_root" title='new_root' data-type='dm_block_t *' data-ref="153new_root">new_root</dfn>,</td></tr>
+<tr><th id="133">133</th><td>			   <em>int</em> *<dfn class="local col4 decl" id="154inserted" title='inserted' data-type='int *' data-ref="154inserted">inserted</dfn>)</td></tr>
+<tr><th id="134">134</th><td>			   <a class="macro" href="#24" title="" data-ref="_M/__dm_written_to_disk">__dm_written_to_disk</a>(value);</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td><i>/*</i></td></tr>
+<tr><th id="137">137</th><td><i> * Remove a key if present.  This doesn't remove empty sub trees.  Normally</i></td></tr>
+<tr><th id="138">138</th><td><i> * subtrees represent a separate entity, like a snapshot map, so this is</i></td></tr>
+<tr><th id="139">139</th><td><i> * correct behaviour.  O(ln(n)).</i></td></tr>
+<tr><th id="140">140</th><td><i> */</i></td></tr>
+<tr><th id="141">141</th><td><em>int</em> <dfn class="decl fn" id="dm_btree_remove" title='dm_btree_remove' data-ref="dm_btree_remove">dm_btree_remove</dfn>(<b>struct</b> <a class="type" href="#dm_btree_info" title='dm_btree_info' data-ref="dm_btree_info">dm_btree_info</a> *<dfn class="local col5 decl" id="155info" title='info' data-type='struct dm_btree_info *' data-ref="155info">info</dfn>, <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="local col6 decl" id="156root" title='root' data-type='dm_block_t' data-ref="156root">root</dfn>,</td></tr>
+<tr><th id="142">142</th><td>		    <a class="typedef" href="../../../include/linux/types.h.html#uint64_t" title='uint64_t' data-type='u64' data-ref="uint64_t">uint64_t</a> *<dfn class="local col7 decl" id="157keys" title='keys' data-type='uint64_t *' data-ref="157keys">keys</dfn>, <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> *<dfn class="local col8 decl" id="158new_root" title='new_root' data-type='dm_block_t *' data-ref="158new_root">new_root</dfn>);</td></tr>
+<tr><th id="143">143</th><td></td></tr>
+<tr><th id="144">144</th><td><i>/*</i></td></tr>
+<tr><th id="145">145</th><td><i> * Removes a _contiguous_ run of values starting from 'keys' and not</i></td></tr>
+<tr><th id="146">146</th><td><i> * reaching keys2 (where keys2 is keys with the final key replaced with</i></td></tr>
+<tr><th id="147">147</th><td><i> * 'end_key').  'end_key' is the one-past-the-end value.  'keys' may be</i></td></tr>
+<tr><th id="148">148</th><td><i> * altered.</i></td></tr>
+<tr><th id="149">149</th><td><i> */</i></td></tr>
+<tr><th id="150">150</th><td><em>int</em> <dfn class="decl fn" id="dm_btree_remove_leaves" title='dm_btree_remove_leaves' data-ref="dm_btree_remove_leaves">dm_btree_remove_leaves</dfn>(<b>struct</b> <a class="type" href="#dm_btree_info" title='dm_btree_info' data-ref="dm_btree_info">dm_btree_info</a> *<dfn class="local col9 decl" id="159info" title='info' data-type='struct dm_btree_info *' data-ref="159info">info</dfn>, <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="local col0 decl" id="160root" title='root' data-type='dm_block_t' data-ref="160root">root</dfn>,</td></tr>
+<tr><th id="151">151</th><td>			   <a class="typedef" href="../../../include/linux/types.h.html#uint64_t" title='uint64_t' data-type='u64' data-ref="uint64_t">uint64_t</a> *<dfn class="local col1 decl" id="161keys" title='keys' data-type='uint64_t *' data-ref="161keys">keys</dfn>, <a class="typedef" href="../../../include/linux/types.h.html#uint64_t" title='uint64_t' data-type='u64' data-ref="uint64_t">uint64_t</a> <dfn class="local col2 decl" id="162end_key" title='end_key' data-type='uint64_t' data-ref="162end_key">end_key</dfn>,</td></tr>
+<tr><th id="152">152</th><td>			   <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> *<dfn class="local col3 decl" id="163new_root" title='new_root' data-type='dm_block_t *' data-ref="163new_root">new_root</dfn>, <em>unsigned</em> *<dfn class="local col4 decl" id="164nr_removed" title='nr_removed' data-type='unsigned int *' data-ref="164nr_removed">nr_removed</dfn>);</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td><i>/*</i></td></tr>
+<tr><th id="155">155</th><td><i> * Returns &lt; 0 on failure.  Otherwise the number of key entries that have</i></td></tr>
+<tr><th id="156">156</th><td><i> * been filled out.  Remember trees can have zero entries, and as such have</i></td></tr>
+<tr><th id="157">157</th><td><i> * no lowest key.</i></td></tr>
+<tr><th id="158">158</th><td><i> */</i></td></tr>
+<tr><th id="159">159</th><td><em>int</em> <dfn class="decl fn" id="dm_btree_find_lowest_key" title='dm_btree_find_lowest_key' data-ref="dm_btree_find_lowest_key">dm_btree_find_lowest_key</dfn>(<b>struct</b> <a class="type" href="#dm_btree_info" title='dm_btree_info' data-ref="dm_btree_info">dm_btree_info</a> *<dfn class="local col5 decl" id="165info" title='info' data-type='struct dm_btree_info *' data-ref="165info">info</dfn>, <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="local col6 decl" id="166root" title='root' data-type='dm_block_t' data-ref="166root">root</dfn>,</td></tr>
+<tr><th id="160">160</th><td>			     <a class="typedef" href="../../../include/linux/types.h.html#uint64_t" title='uint64_t' data-type='u64' data-ref="uint64_t">uint64_t</a> *<dfn class="local col7 decl" id="167result_keys" title='result_keys' data-type='uint64_t *' data-ref="167result_keys">result_keys</dfn>);</td></tr>
+<tr><th id="161">161</th><td></td></tr>
+<tr><th id="162">162</th><td><i>/*</i></td></tr>
+<tr><th id="163">163</th><td><i> * Returns &lt; 0 on failure.  Otherwise the number of key entries that have</i></td></tr>
+<tr><th id="164">164</th><td><i> * been filled out.  Remember trees can have zero entries, and as such have</i></td></tr>
+<tr><th id="165">165</th><td><i> * no highest key.</i></td></tr>
+<tr><th id="166">166</th><td><i> */</i></td></tr>
+<tr><th id="167">167</th><td><em>int</em> <dfn class="decl fn" id="dm_btree_find_highest_key" title='dm_btree_find_highest_key' data-ref="dm_btree_find_highest_key">dm_btree_find_highest_key</dfn>(<b>struct</b> <a class="type" href="#dm_btree_info" title='dm_btree_info' data-ref="dm_btree_info">dm_btree_info</a> *<dfn class="local col8 decl" id="168info" title='info' data-type='struct dm_btree_info *' data-ref="168info">info</dfn>, <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="local col9 decl" id="169root" title='root' data-type='dm_block_t' data-ref="169root">root</dfn>,</td></tr>
+<tr><th id="168">168</th><td>			      <a class="typedef" href="../../../include/linux/types.h.html#uint64_t" title='uint64_t' data-type='u64' data-ref="uint64_t">uint64_t</a> *<dfn class="local col0 decl" id="170result_keys" title='result_keys' data-type='uint64_t *' data-ref="170result_keys">result_keys</dfn>);</td></tr>
+<tr><th id="169">169</th><td></td></tr>
+<tr><th id="170">170</th><td><i>/*</i></td></tr>
+<tr><th id="171">171</th><td><i> * Iterate through the a btree, calling fn() on each entry.</i></td></tr>
+<tr><th id="172">172</th><td><i> * It only works for single level trees and is internally recursive, so</i></td></tr>
+<tr><th id="173">173</th><td><i> * monitor stack usage carefully.</i></td></tr>
+<tr><th id="174">174</th><td><i> */</i></td></tr>
+<tr><th id="175">175</th><td><em>int</em> <dfn class="decl fn" id="dm_btree_walk" title='dm_btree_walk' data-ref="dm_btree_walk">dm_btree_walk</dfn>(<b>struct</b> <a class="type" href="#dm_btree_info" title='dm_btree_info' data-ref="dm_btree_info">dm_btree_info</a> *<dfn class="local col1 decl" id="171info" title='info' data-type='struct dm_btree_info *' data-ref="171info">info</dfn>, <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="local col2 decl" id="172root" title='root' data-type='dm_block_t' data-ref="172root">root</dfn>,</td></tr>
+<tr><th id="176">176</th><td>		  <em>int</em> (*<dfn class="local col3 decl" id="173fn" title='fn' data-type='int (*)(void *, uint64_t *, void *)' data-ref="173fn">fn</dfn>)(<em>void</em> *<dfn class="local col4 decl" id="174context" title='context' data-type='void *' data-ref="174context">context</dfn>, <a class="typedef" href="../../../include/linux/types.h.html#uint64_t" title='uint64_t' data-type='u64' data-ref="uint64_t">uint64_t</a> *<dfn class="local col5 decl" id="175keys" title='keys' data-type='uint64_t *' data-ref="175keys">keys</dfn>, <em>void</em> *<dfn class="local col6 decl" id="176leaf" title='leaf' data-type='void *' data-ref="176leaf">leaf</dfn>),</td></tr>
+<tr><th id="177">177</th><td>		  <em>void</em> *<dfn class="local col7 decl" id="177context" title='context' data-type='void *' data-ref="177context">context</dfn>);</td></tr>
+<tr><th id="178">178</th><td></td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td><i>/*----------------------------------------------------------------*/</i></td></tr>
+<tr><th id="181">181</th><td></td></tr>
+<tr><th id="182">182</th><td><i>/*</i></td></tr>
+<tr><th id="183">183</th><td><i> * Cursor API.  This does not follow the rolling lock convention.  Since we</i></td></tr>
+<tr><th id="184">184</th><td><i> * know the order that values are required we can issue prefetches to speed</i></td></tr>
+<tr><th id="185">185</th><td><i> * up iteration.  Use on a single level btree only.</i></td></tr>
+<tr><th id="186">186</th><td><i> */</i></td></tr>
+<tr><th id="187">187</th><td><u>#define <dfn class="macro" id="_M/DM_BTREE_CURSOR_MAX_DEPTH" data-ref="_M/DM_BTREE_CURSOR_MAX_DEPTH">DM_BTREE_CURSOR_MAX_DEPTH</dfn> 16</u></td></tr>
+<tr><th id="188">188</th><td></td></tr>
+<tr><th id="189">189</th><td><b>struct</b> <dfn class="type def" id="cursor_node" title='cursor_node' data-ref="cursor_node">cursor_node</dfn> {</td></tr>
+<tr><th id="190">190</th><td>	<b>struct</b> <a class="type" href="dm-block-manager.h.html#dm_block" title='dm_block' data-ref="dm_block">dm_block</a> *<dfn class="decl field" id="cursor_node::b" title='cursor_node::b' data-ref="cursor_node::b">b</dfn>;</td></tr>
+<tr><th id="191">191</th><td>	<em>unsigned</em> <dfn class="decl field" id="cursor_node::index" title='cursor_node::index' data-ref="cursor_node::index">index</dfn>;</td></tr>
+<tr><th id="192">192</th><td>};</td></tr>
+<tr><th id="193">193</th><td></td></tr>
+<tr><th id="194">194</th><td><b>struct</b> <dfn class="type def" id="dm_btree_cursor" title='dm_btree_cursor' data-ref="dm_btree_cursor">dm_btree_cursor</dfn> {</td></tr>
+<tr><th id="195">195</th><td>	<b>struct</b> <a class="type" href="#dm_btree_info" title='dm_btree_info' data-ref="dm_btree_info">dm_btree_info</a> *<dfn class="decl field" id="dm_btree_cursor::info" title='dm_btree_cursor::info' data-ref="dm_btree_cursor::info">info</dfn>;</td></tr>
+<tr><th id="196">196</th><td>	<a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="decl field" id="dm_btree_cursor::root" title='dm_btree_cursor::root' data-ref="dm_btree_cursor::root">root</dfn>;</td></tr>
+<tr><th id="197">197</th><td></td></tr>
+<tr><th id="198">198</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#bool" title='bool' data-type='_Bool' data-ref="bool">bool</a> <dfn class="decl field" id="dm_btree_cursor::prefetch_leaves" title='dm_btree_cursor::prefetch_leaves' data-ref="dm_btree_cursor::prefetch_leaves">prefetch_leaves</dfn>;</td></tr>
+<tr><th id="199">199</th><td>	<em>unsigned</em> <dfn class="decl field" id="dm_btree_cursor::depth" title='dm_btree_cursor::depth' data-ref="dm_btree_cursor::depth">depth</dfn>;</td></tr>
+<tr><th id="200">200</th><td>	<b>struct</b> <a class="type" href="#cursor_node" title='cursor_node' data-ref="cursor_node">cursor_node</a> <dfn class="decl field" id="dm_btree_cursor::nodes" title='dm_btree_cursor::nodes' data-ref="dm_btree_cursor::nodes">nodes</dfn>[<a class="macro" href="#187" title="16" data-ref="_M/DM_BTREE_CURSOR_MAX_DEPTH">DM_BTREE_CURSOR_MAX_DEPTH</a>];</td></tr>
+<tr><th id="201">201</th><td>};</td></tr>
+<tr><th id="202">202</th><td></td></tr>
+<tr><th id="203">203</th><td><i>/*</i></td></tr>
+<tr><th id="204">204</th><td><i> * Creates a fresh cursor.  If prefetch_leaves is set then it is assumed</i></td></tr>
+<tr><th id="205">205</th><td><i> * the btree contains block indexes that will be prefetched.  The cursor is</i></td></tr>
+<tr><th id="206">206</th><td><i> * quite large, so you probably don't want to put it on the stack.</i></td></tr>
+<tr><th id="207">207</th><td><i> */</i></td></tr>
+<tr><th id="208">208</th><td><em>int</em> <dfn class="decl fn" id="dm_btree_cursor_begin" title='dm_btree_cursor_begin' data-ref="dm_btree_cursor_begin">dm_btree_cursor_begin</dfn>(<b>struct</b> <a class="type" href="#dm_btree_info" title='dm_btree_info' data-ref="dm_btree_info">dm_btree_info</a> *<dfn class="local col8 decl" id="178info" title='info' data-type='struct dm_btree_info *' data-ref="178info">info</dfn>, <a class="typedef" href="dm-block-manager.h.html#dm_block_t" title='dm_block_t' data-type='uint64_t' data-ref="dm_block_t">dm_block_t</a> <dfn class="local col9 decl" id="179root" title='root' data-type='dm_block_t' data-ref="179root">root</dfn>,</td></tr>
+<tr><th id="209">209</th><td>			  <a class="typedef" href="../../../include/linux/types.h.html#bool" title='bool' data-type='_Bool' data-ref="bool">bool</a> <dfn class="local col0 decl" id="180prefetch_leaves" title='prefetch_leaves' data-type='bool' data-ref="180prefetch_leaves">prefetch_leaves</dfn>, <b>struct</b> <a class="type" href="#dm_btree_cursor" title='dm_btree_cursor' data-ref="dm_btree_cursor">dm_btree_cursor</a> *<dfn class="local col1 decl" id="181c" title='c' data-type='struct dm_btree_cursor *' data-ref="181c">c</dfn>);</td></tr>
+<tr><th id="210">210</th><td><em>void</em> <dfn class="decl fn" id="dm_btree_cursor_end" title='dm_btree_cursor_end' data-ref="dm_btree_cursor_end">dm_btree_cursor_end</dfn>(<b>struct</b> <a class="type" href="#dm_btree_cursor" title='dm_btree_cursor' data-ref="dm_btree_cursor">dm_btree_cursor</a> *<dfn class="local col2 decl" id="182c" title='c' data-type='struct dm_btree_cursor *' data-ref="182c">c</dfn>);</td></tr>
+<tr><th id="211">211</th><td><em>int</em> <dfn class="decl fn" id="dm_btree_cursor_next" title='dm_btree_cursor_next' data-ref="dm_btree_cursor_next">dm_btree_cursor_next</dfn>(<b>struct</b> <a class="type" href="#dm_btree_cursor" title='dm_btree_cursor' data-ref="dm_btree_cursor">dm_btree_cursor</a> *<dfn class="local col3 decl" id="183c" title='c' data-type='struct dm_btree_cursor *' data-ref="183c">c</dfn>);</td></tr>
+<tr><th id="212">212</th><td><em>int</em> <dfn class="decl fn" id="dm_btree_cursor_skip" title='dm_btree_cursor_skip' data-ref="dm_btree_cursor_skip">dm_btree_cursor_skip</dfn>(<b>struct</b> <a class="type" href="#dm_btree_cursor" title='dm_btree_cursor' data-ref="dm_btree_cursor">dm_btree_cursor</a> *<dfn class="local col4 decl" id="184c" title='c' data-type='struct dm_btree_cursor *' data-ref="184c">c</dfn>, <a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a> <dfn class="local col5 decl" id="185count" title='count' data-type='uint32_t' data-ref="185count">count</dfn>);</td></tr>
+<tr><th id="213">213</th><td><em>int</em> <dfn class="decl fn" id="dm_btree_cursor_get_value" title='dm_btree_cursor_get_value' data-ref="dm_btree_cursor_get_value">dm_btree_cursor_get_value</dfn>(<b>struct</b> <a class="type" href="#dm_btree_cursor" title='dm_btree_cursor' data-ref="dm_btree_cursor">dm_btree_cursor</a> *<dfn class="local col6 decl" id="186c" title='c' data-type='struct dm_btree_cursor *' data-ref="186c">c</dfn>, <a class="typedef" href="../../../include/linux/types.h.html#uint64_t" title='uint64_t' data-type='u64' data-ref="uint64_t">uint64_t</a> *<dfn class="local col7 decl" id="187key" title='key' data-type='uint64_t *' data-ref="187key">key</dfn>, <em>void</em> *<dfn class="local col8 decl" id="188value_le" title='value_le' data-type='void *' data-ref="188value_le">value_le</dfn>);</td></tr>
+<tr><th id="214">214</th><td></td></tr>
+<tr><th id="215">215</th><td><u>#<span data-ppcond="6">endif</span>	/* _LINUX_DM_BTREE_H */</u></td></tr>
+<tr><th id="216">216</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../dm-cache-metadata.c.html'>linux-4.18.y/drivers/md/dm-cache-metadata.c</a><br/>Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

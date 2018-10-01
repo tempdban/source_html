@@ -1,0 +1,308 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>xt_TPROXY.c source code [linux-4.18.y/net/netfilter/xt_TPROXY.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/net/netfilter/xt_TPROXY.c'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>linux-4.18.y</a>/<a href='..'>net</a>/<a href='./'>netfilter</a>/<a href='xt_TPROXY.c.html'>xt_TPROXY.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Transparent proxy support for Linux/iptables</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> * Copyright (c) 2006-2010 BalaBit IT Ltd.</i></td></tr>
+<tr><th id="5">5</th><td><i> * Author: Balazs Scheidler, Krisztian Kovacs</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> * This program is free software; you can redistribute it and/or modify</i></td></tr>
+<tr><th id="8">8</th><td><i> * it under the terms of the GNU General Public License version 2 as</i></td></tr>
+<tr><th id="9">9</th><td><i> * published by the Free Software Foundation.</i></td></tr>
+<tr><th id="10">10</th><td><i> *</i></td></tr>
+<tr><th id="11">11</th><td><i> */</i></td></tr>
+<tr><th id="12">12</th><td><u>#define <dfn class="macro" id="_M/pr_fmt" data-ref="_M/pr_fmt">pr_fmt</dfn>(fmt) KBUILD_MODNAME ": " fmt</u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../include/linux/module.h.html">&lt;linux/module.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../include/linux/skbuff.h.html">&lt;linux/skbuff.h&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../include/linux/ip.h.html">&lt;linux/ip.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../include/net/checksum.h.html">&lt;net/checksum.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../include/net/udp.h.html">&lt;net/udp.h&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../include/net/tcp.h.html">&lt;net/tcp.h&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../include/net/inet_sock.h.html">&lt;net/inet_sock.h&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../include/net/inet_hashtables.h.html">&lt;net/inet_hashtables.h&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../include/linux/inetdevice.h.html">&lt;linux/inetdevice.h&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../include/linux/netfilter/x_tables.h.html">&lt;linux/netfilter/x_tables.h&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../include/linux/netfilter_ipv4/ip_tables.h.html">&lt;linux/netfilter_ipv4/ip_tables.h&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../include/net/netfilter/ipv4/nf_defrag_ipv4.h.html">&lt;net/netfilter/ipv4/nf_defrag_ipv4.h&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td></td></tr>
+<tr><th id="27">27</th><td><u>#<span data-ppcond="27">if</span> <a class="macro" href="../../include/linux/kconfig.h.html#71" title="0" data-ref="_M/IS_ENABLED">IS_ENABLED</a>(CONFIG_IP6_NF_IPTABLES)</u></td></tr>
+<tr><th id="28">28</th><td><u>#define XT_TPROXY_HAVE_IPV6 1</u></td></tr>
+<tr><th id="29">29</th><td><u>#include &lt;net/if_inet6.h&gt;</u></td></tr>
+<tr><th id="30">30</th><td><u>#include &lt;net/addrconf.h&gt;</u></td></tr>
+<tr><th id="31">31</th><td><u>#include &lt;net/inet6_hashtables.h&gt;</u></td></tr>
+<tr><th id="32">32</th><td><u>#include &lt;linux/netfilter_ipv6/ip6_tables.h&gt;</u></td></tr>
+<tr><th id="33">33</th><td><u>#include &lt;net/netfilter/ipv6/nf_defrag_ipv6.h&gt;</u></td></tr>
+<tr><th id="34">34</th><td><u>#<span data-ppcond="27">endif</span></u></td></tr>
+<tr><th id="35">35</th><td></td></tr>
+<tr><th id="36">36</th><td><u>#include <a href="../../include/net/netfilter/nf_tproxy.h.html">&lt;net/netfilter/nf_tproxy.h&gt;</a></u></td></tr>
+<tr><th id="37">37</th><td><u>#include <a href="../../include/uapi/linux/netfilter/xt_TPROXY.h.html">&lt;linux/netfilter/xt_TPROXY.h&gt;</a></u></td></tr>
+<tr><th id="38">38</th><td></td></tr>
+<tr><th id="39">39</th><td><i  data-doc="nf_tproxy_assign_sock">/* assign a socket to the skb -- consumes sk */</i></td></tr>
+<tr><th id="40">40</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="41">41</th><td><dfn class="tu decl def fn" id="nf_tproxy_assign_sock" title='nf_tproxy_assign_sock' data-type='void nf_tproxy_assign_sock(struct sk_buff * skb, struct sock * sk)' data-ref="nf_tproxy_assign_sock">nf_tproxy_assign_sock</dfn>(<b>struct</b> <a class="type" href="../../include/linux/skbuff.h.html#sk_buff" title='sk_buff' data-ref="sk_buff">sk_buff</a> *<dfn class="local col1 decl" id="1skb" title='skb' data-type='struct sk_buff *' data-ref="1skb">skb</dfn>, <b>struct</b> <a class="type" href="../../include/net/sock.h.html#sock" title='sock' data-ref="sock">sock</a> *<dfn class="local col2 decl" id="2sk" title='sk' data-type='struct sock *' data-ref="2sk">sk</dfn>)</td></tr>
+<tr><th id="42">42</th><td>{</td></tr>
+<tr><th id="43">43</th><td>	<a class="ref fn" href="../../include/linux/skbuff.h.html#skb_orphan" title='skb_orphan' data-ref="skb_orphan">skb_orphan</a>(<a class="local col1 ref" href="#1skb" title='skb' data-ref="1skb">skb</a>);</td></tr>
+<tr><th id="44">44</th><td>	<a class="local col1 ref" href="#1skb" title='skb' data-ref="1skb">skb</a>-&gt;<a class="ref field" href="../../include/linux/skbuff.h.html#sk_buff::sk" title='sk_buff::sk' data-ref="sk_buff::sk">sk</a> = <a class="local col2 ref" href="#2sk" title='sk' data-ref="2sk">sk</a>;</td></tr>
+<tr><th id="45">45</th><td>	<a class="local col1 ref" href="#1skb" title='skb' data-ref="1skb">skb</a>-&gt;<a class="ref field" href="../../include/linux/skbuff.h.html#sk_buff::(anonymousunion)::(anonymous)::destructor" title='sk_buff::(anonymous union)::(anonymous struct)::destructor' data-ref="sk_buff::(anonymousunion)::(anonymous)::destructor">destructor</a> = <a class="ref fn" href="../../include/net/sock.h.html#sock_edemux" title='sock_edemux' data-ref="sock_edemux">sock_edemux</a>;</td></tr>
+<tr><th id="46">46</th><td>}</td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td><em>static</em> <em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="49">49</th><td><dfn class="tu decl def fn" id="tproxy_tg4" title='tproxy_tg4' data-type='unsigned int tproxy_tg4(struct net * net, struct sk_buff * skb, __be32 laddr, __be16 lport, u_int32_t mark_mask, u_int32_t mark_value)' data-ref="tproxy_tg4">tproxy_tg4</dfn>(<b>struct</b> <a class="type" href="../../include/net/net_namespace.h.html#net" title='net' data-ref="net">net</a> *<dfn class="local col3 decl" id="3net" title='net' data-type='struct net *' data-ref="3net">net</dfn>, <b>struct</b> <a class="type" href="../../include/linux/skbuff.h.html#sk_buff" title='sk_buff' data-ref="sk_buff">sk_buff</a> *<dfn class="local col4 decl" id="4skb" title='skb' data-type='struct sk_buff *' data-ref="4skb">skb</dfn>, <a class="typedef" href="../../include/uapi/linux/types.h.html#__be32" title='__be32' data-type='__u32' data-ref="__be32">__be32</a> <dfn class="local col5 decl" id="5laddr" title='laddr' data-type='__be32' data-ref="5laddr">laddr</dfn>, <a class="typedef" href="../../include/uapi/linux/types.h.html#__be16" title='__be16' data-type='__u16' data-ref="__be16">__be16</a> <dfn class="local col6 decl" id="6lport" title='lport' data-type='__be16' data-ref="6lport">lport</dfn>,</td></tr>
+<tr><th id="50">50</th><td>	   <a class="typedef" href="../../include/linux/types.h.html#u_int32_t" title='u_int32_t' data-type='u32' data-ref="u_int32_t">u_int32_t</a> <dfn class="local col7 decl" id="7mark_mask" title='mark_mask' data-type='u_int32_t' data-ref="7mark_mask">mark_mask</dfn>, <a class="typedef" href="../../include/linux/types.h.html#u_int32_t" title='u_int32_t' data-type='u32' data-ref="u_int32_t">u_int32_t</a> <dfn class="local col8 decl" id="8mark_value" title='mark_value' data-type='u_int32_t' data-ref="8mark_value">mark_value</dfn>)</td></tr>
+<tr><th id="51">51</th><td>{</td></tr>
+<tr><th id="52">52</th><td>	<em>const</em> <b>struct</b> <a class="type" href="../../include/uapi/linux/ip.h.html#iphdr" title='iphdr' data-ref="iphdr">iphdr</a> *<dfn class="local col9 decl" id="9iph" title='iph' data-type='const struct iphdr *' data-ref="9iph">iph</dfn> = <a class="ref fn" href="../../include/linux/ip.h.html#ip_hdr" title='ip_hdr' data-ref="ip_hdr">ip_hdr</a>(<a class="local col4 ref" href="#4skb" title='skb' data-ref="4skb">skb</a>);</td></tr>
+<tr><th id="53">53</th><td>	<b>struct</b> <a class="type" href="../../include/uapi/linux/udp.h.html#udphdr" title='udphdr' data-ref="udphdr">udphdr</a> <dfn class="local col0 decl" id="10_hdr" title='_hdr' data-type='struct udphdr' data-ref="10_hdr">_hdr</dfn>, *<dfn class="local col1 decl" id="11hp" title='hp' data-type='struct udphdr *' data-ref="11hp">hp</dfn>;</td></tr>
+<tr><th id="54">54</th><td>	<b>struct</b> <a class="type" href="../../include/net/sock.h.html#sock" title='sock' data-ref="sock">sock</a> *<dfn class="local col2 decl" id="12sk" title='sk' data-type='struct sock *' data-ref="12sk">sk</dfn>;</td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td>	<a class="local col1 ref" href="#11hp" title='hp' data-ref="11hp">hp</a> = <a class="ref fn" href="../../include/linux/skbuff.h.html#skb_header_pointer" title='skb_header_pointer' data-ref="skb_header_pointer">skb_header_pointer</a>(<a class="local col4 ref" href="#4skb" title='skb' data-ref="4skb">skb</a>, <a class="ref fn" href="../../include/net/ip.h.html#ip_hdrlen" title='ip_hdrlen' data-ref="ip_hdrlen">ip_hdrlen</a>(<a class="local col4 ref" href="#4skb" title='skb' data-ref="4skb">skb</a>), <b>sizeof</b>(<a class="local col0 ref" href="#10_hdr" title='_hdr' data-ref="10_hdr">_hdr</a>), &amp;<a class="local col0 ref" href="#10_hdr" title='_hdr' data-ref="10_hdr">_hdr</a>);</td></tr>
+<tr><th id="57">57</th><td>	<b>if</b> (<a class="local col1 ref" href="#11hp" title='hp' data-ref="11hp">hp</a> == <a class="macro" href="../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>)</td></tr>
+<tr><th id="58">58</th><td>		<b>return</b> <a class="macro" href="../../include/uapi/linux/netfilter.h.html#11" title="0" data-ref="_M/NF_DROP">NF_DROP</a>;</td></tr>
+<tr><th id="59">59</th><td></td></tr>
+<tr><th id="60">60</th><td>	<i>/* check if there's an ongoing connection on the packet</i></td></tr>
+<tr><th id="61">61</th><td><i>	 * addresses, this happens if the redirect already happened</i></td></tr>
+<tr><th id="62">62</th><td><i>	 * and the current packet belongs to an already established</i></td></tr>
+<tr><th id="63">63</th><td><i>	 * connection */</i></td></tr>
+<tr><th id="64">64</th><td>	<a class="local col2 ref" href="#12sk" title='sk' data-ref="12sk">sk</a> = <a class="ref fn" href="../../include/net/netfilter/nf_tproxy.h.html#nf_tproxy_get_sock_v4" title='nf_tproxy_get_sock_v4' data-ref="nf_tproxy_get_sock_v4">nf_tproxy_get_sock_v4</a>(<a class="local col3 ref" href="#3net" title='net' data-ref="3net">net</a>, <a class="local col4 ref" href="#4skb" title='skb' data-ref="4skb">skb</a>, <a class="local col9 ref" href="#9iph" title='iph' data-ref="9iph">iph</a>-&gt;<a class="ref field" href="../../include/uapi/linux/ip.h.html#iphdr::protocol" title='iphdr::protocol' data-ref="iphdr::protocol">protocol</a>,</td></tr>
+<tr><th id="65">65</th><td>				   <a class="local col9 ref" href="#9iph" title='iph' data-ref="9iph">iph</a>-&gt;<a class="ref field" href="../../include/uapi/linux/ip.h.html#iphdr::saddr" title='iphdr::saddr' data-ref="iphdr::saddr">saddr</a>, <a class="local col9 ref" href="#9iph" title='iph' data-ref="9iph">iph</a>-&gt;<a class="ref field" href="../../include/uapi/linux/ip.h.html#iphdr::daddr" title='iphdr::daddr' data-ref="iphdr::daddr">daddr</a>,</td></tr>
+<tr><th id="66">66</th><td>				   <a class="local col1 ref" href="#11hp" title='hp' data-ref="11hp">hp</a>-&gt;<a class="ref field" href="../../include/uapi/linux/udp.h.html#udphdr::source" title='udphdr::source' data-ref="udphdr::source">source</a>, <a class="local col1 ref" href="#11hp" title='hp' data-ref="11hp">hp</a>-&gt;<a class="ref field" href="../../include/uapi/linux/udp.h.html#udphdr::dest" title='udphdr::dest' data-ref="udphdr::dest">dest</a>,</td></tr>
+<tr><th id="67">67</th><td>				   <a class="local col4 ref" href="#4skb" title='skb' data-ref="4skb">skb</a>-&gt;<a class="ref field" href="../../include/linux/skbuff.h.html#sk_buff::(anonymousunion)::(anonymousstruct)::(anonymous)::dev" title='sk_buff::(anonymous union)::(anonymous struct)::(anonymous union)::dev' data-ref="sk_buff::(anonymousunion)::(anonymousstruct)::(anonymous)::dev">dev</a>, <a class="enum" href="../../include/net/netfilter/nf_tproxy.h.html#NF_TPROXY_LOOKUP_ESTABLISHED" title='NF_TPROXY_LOOKUP_ESTABLISHED' data-ref="NF_TPROXY_LOOKUP_ESTABLISHED">NF_TPROXY_LOOKUP_ESTABLISHED</a>);</td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td>	<a class="local col5 ref" href="#5laddr" title='laddr' data-ref="5laddr">laddr</a> = <a class="ref fn" href="../../include/net/netfilter/nf_tproxy.h.html#nf_tproxy_laddr4" title='nf_tproxy_laddr4' data-ref="nf_tproxy_laddr4">nf_tproxy_laddr4</a>(<a class="local col4 ref" href="#4skb" title='skb' data-ref="4skb">skb</a>, <a class="local col5 ref" href="#5laddr" title='laddr' data-ref="5laddr">laddr</a>, <a class="local col9 ref" href="#9iph" title='iph' data-ref="9iph">iph</a>-&gt;<a class="ref field" href="../../include/uapi/linux/ip.h.html#iphdr::daddr" title='iphdr::daddr' data-ref="iphdr::daddr">daddr</a>);</td></tr>
+<tr><th id="70">70</th><td>	<b>if</b> (!<a class="local col6 ref" href="#6lport" title='lport' data-ref="6lport">lport</a>)</td></tr>
+<tr><th id="71">71</th><td>		<a class="local col6 ref" href="#6lport" title='lport' data-ref="6lport">lport</a> = <a class="local col1 ref" href="#11hp" title='hp' data-ref="11hp">hp</a>-&gt;<a class="ref field" href="../../include/uapi/linux/udp.h.html#udphdr::dest" title='udphdr::dest' data-ref="udphdr::dest">dest</a>;</td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td>	<i>/* UDP has no TCP_TIME_WAIT state, so we never enter here */</i></td></tr>
+<tr><th id="74">74</th><td>	<b>if</b> (<a class="local col2 ref" href="#12sk" title='sk' data-ref="12sk">sk</a> &amp;&amp; <a class="local col2 ref" href="#12sk" title='sk' data-ref="12sk">sk</a>-&gt;<a class="macro" href="../../include/net/sock.h.html#340" title="__sk_common.skc_state" data-ref="_M/sk_state">sk_state</a> == <a class="enum" href="../../include/net/tcp_states.h.html#TCP_TIME_WAIT" title='TCP_TIME_WAIT' data-ref="TCP_TIME_WAIT">TCP_TIME_WAIT</a>)</td></tr>
+<tr><th id="75">75</th><td>		<i>/* reopening a TIME_WAIT connection needs special handling */</i></td></tr>
+<tr><th id="76">76</th><td>		<a class="local col2 ref" href="#12sk" title='sk' data-ref="12sk">sk</a> = <a class="ref fn" href="../../include/net/netfilter/nf_tproxy.h.html#nf_tproxy_handle_time_wait4" title='nf_tproxy_handle_time_wait4' data-ref="nf_tproxy_handle_time_wait4">nf_tproxy_handle_time_wait4</a>(<a class="local col3 ref" href="#3net" title='net' data-ref="3net">net</a>, <a class="local col4 ref" href="#4skb" title='skb' data-ref="4skb">skb</a>, <a class="local col5 ref" href="#5laddr" title='laddr' data-ref="5laddr">laddr</a>, <a class="local col6 ref" href="#6lport" title='lport' data-ref="6lport">lport</a>, <a class="local col2 ref" href="#12sk" title='sk' data-ref="12sk">sk</a>);</td></tr>
+<tr><th id="77">77</th><td>	<b>else</b> <b>if</b> (!<a class="local col2 ref" href="#12sk" title='sk' data-ref="12sk">sk</a>)</td></tr>
+<tr><th id="78">78</th><td>		<i>/* no, there's no established connection, check if</i></td></tr>
+<tr><th id="79">79</th><td><i>		 * there's a listener on the redirected addr/port */</i></td></tr>
+<tr><th id="80">80</th><td>		<a class="local col2 ref" href="#12sk" title='sk' data-ref="12sk">sk</a> = <a class="ref fn" href="../../include/net/netfilter/nf_tproxy.h.html#nf_tproxy_get_sock_v4" title='nf_tproxy_get_sock_v4' data-ref="nf_tproxy_get_sock_v4">nf_tproxy_get_sock_v4</a>(<a class="local col3 ref" href="#3net" title='net' data-ref="3net">net</a>, <a class="local col4 ref" href="#4skb" title='skb' data-ref="4skb">skb</a>, <a class="local col9 ref" href="#9iph" title='iph' data-ref="9iph">iph</a>-&gt;<a class="ref field" href="../../include/uapi/linux/ip.h.html#iphdr::protocol" title='iphdr::protocol' data-ref="iphdr::protocol">protocol</a>,</td></tr>
+<tr><th id="81">81</th><td>					   <a class="local col9 ref" href="#9iph" title='iph' data-ref="9iph">iph</a>-&gt;<a class="ref field" href="../../include/uapi/linux/ip.h.html#iphdr::saddr" title='iphdr::saddr' data-ref="iphdr::saddr">saddr</a>, <a class="local col5 ref" href="#5laddr" title='laddr' data-ref="5laddr">laddr</a>,</td></tr>
+<tr><th id="82">82</th><td>					   <a class="local col1 ref" href="#11hp" title='hp' data-ref="11hp">hp</a>-&gt;<a class="ref field" href="../../include/uapi/linux/udp.h.html#udphdr::source" title='udphdr::source' data-ref="udphdr::source">source</a>, <a class="local col6 ref" href="#6lport" title='lport' data-ref="6lport">lport</a>,</td></tr>
+<tr><th id="83">83</th><td>					   <a class="local col4 ref" href="#4skb" title='skb' data-ref="4skb">skb</a>-&gt;<a class="ref field" href="../../include/linux/skbuff.h.html#sk_buff::(anonymousunion)::(anonymousstruct)::(anonymous)::dev" title='sk_buff::(anonymous union)::(anonymous struct)::(anonymous union)::dev' data-ref="sk_buff::(anonymousunion)::(anonymousstruct)::(anonymous)::dev">dev</a>, <a class="enum" href="../../include/net/netfilter/nf_tproxy.h.html#NF_TPROXY_LOOKUP_LISTENER" title='NF_TPROXY_LOOKUP_LISTENER' data-ref="NF_TPROXY_LOOKUP_LISTENER">NF_TPROXY_LOOKUP_LISTENER</a>);</td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td>	<i>/* NOTE: assign_sock consumes our sk reference */</i></td></tr>
+<tr><th id="86">86</th><td>	<b>if</b> (<a class="local col2 ref" href="#12sk" title='sk' data-ref="12sk">sk</a> &amp;&amp; <a class="ref fn" href="../../include/net/netfilter/nf_tproxy.h.html#nf_tproxy_sk_is_transparent" title='nf_tproxy_sk_is_transparent' data-ref="nf_tproxy_sk_is_transparent">nf_tproxy_sk_is_transparent</a>(<a class="local col2 ref" href="#12sk" title='sk' data-ref="12sk">sk</a>)) {</td></tr>
+<tr><th id="87">87</th><td>		<i>/* This should be in a separate target, but we don't do multiple</i></td></tr>
+<tr><th id="88">88</th><td><i>		   targets on the same rule yet */</i></td></tr>
+<tr><th id="89">89</th><td>		<a class="local col4 ref" href="#4skb" title='skb' data-ref="4skb">skb</a>-&gt;<a class="ref field" href="../../include/linux/skbuff.h.html#sk_buff::(anonymous)::mark" title='sk_buff::(anonymous union)::mark' data-ref="sk_buff::(anonymous)::mark">mark</a> = (<a class="local col4 ref" href="#4skb" title='skb' data-ref="4skb">skb</a>-&gt;<a class="ref field" href="../../include/linux/skbuff.h.html#sk_buff::(anonymous)::mark" title='sk_buff::(anonymous union)::mark' data-ref="sk_buff::(anonymous)::mark">mark</a> &amp; ~<a class="local col7 ref" href="#7mark_mask" title='mark_mask' data-ref="7mark_mask">mark_mask</a>) ^ <a class="local col8 ref" href="#8mark_value" title='mark_value' data-ref="8mark_value">mark_value</a>;</td></tr>
+<tr><th id="90">90</th><td></td></tr>
+<tr><th id="91">91</th><td>		<a class="macro" href="../../include/linux/printk.h.html#345" title="({ if (0) printk(&quot;\001&quot; &quot;7&quot; &quot;xt_TPROXY&quot; &quot;: &quot; &quot;redirecting: proto %hhu %pI4:%hu -&gt; %pI4:%hu, mark: %x\n&quot;, iph-&gt;protocol, &amp;iph-&gt;daddr, (__builtin_constant_p((__u16)(( __u16)(__be16)(hp-&gt;dest))) ? ((__u16)( (((__u16)(( __u16)(__be16)(hp-&gt;dest)) &amp; (__u16)0x00ffU) &lt;&lt; 8) | (((__u16)(( __u16)(__be16)(hp-&gt;dest)) &amp; (__u16)0xff00U) &gt;&gt; 8))) : __fswab16(( __u16)(__be16)(hp-&gt;dest))), &amp;laddr, (__builtin_constant_p((__u16)(( __u16)(__be16)(lport))) ? ((__u16)( (((__u16)(( __u16)(__be16)(lport)) &amp; (__u16)0x00ffU) &lt;&lt; 8) | (((__u16)(( __u16)(__be16)(lport)) &amp; (__u16)0xff00U) &gt;&gt; 8))) : __fswab16(( __u16)(__be16)(lport))), skb-&gt;mark); 0; })" data-ref="_M/pr_debug">pr_debug</a>(<q>"redirecting: proto %hhu %pI4:%hu -&gt; %pI4:%hu, mark: %x\n"</q>,</td></tr>
+<tr><th id="92">92</th><td>			 <a class="local col9 ref" href="#9iph" title='iph' data-ref="9iph">iph</a>-&gt;<a class="ref field" href="../../include/uapi/linux/ip.h.html#iphdr::protocol" title='iphdr::protocol' data-ref="iphdr::protocol">protocol</a>, &amp;<a class="local col9 ref" href="#9iph" title='iph' data-ref="9iph">iph</a>-&gt;<a class="ref field" href="../../include/uapi/linux/ip.h.html#iphdr::daddr" title='iphdr::daddr' data-ref="iphdr::daddr">daddr</a>, ntohs(<a class="local col1 ref" href="#11hp" title='hp' data-ref="11hp">hp</a>-&gt;<a class="ref field" href="../../include/uapi/linux/udp.h.html#udphdr::dest" title='udphdr::dest' data-ref="udphdr::dest">dest</a>),</td></tr>
+<tr><th id="93">93</th><td>			 &amp;<a class="local col5 ref" href="#5laddr" title='laddr' data-ref="5laddr">laddr</a>, ntohs(<a class="local col6 ref" href="#6lport" title='lport' data-ref="6lport">lport</a>), <a class="local col4 ref" href="#4skb" title='skb' data-ref="4skb">skb</a>-&gt;<a class="ref field" href="../../include/linux/skbuff.h.html#sk_buff::(anonymous)::mark" title='sk_buff::(anonymous union)::mark' data-ref="sk_buff::(anonymous)::mark">mark</a>);</td></tr>
+<tr><th id="94">94</th><td></td></tr>
+<tr><th id="95">95</th><td>		<a class="tu ref fn" href="#nf_tproxy_assign_sock" title='nf_tproxy_assign_sock' data-use='c' data-ref="nf_tproxy_assign_sock">nf_tproxy_assign_sock</a>(<a class="local col4 ref" href="#4skb" title='skb' data-ref="4skb">skb</a>, <a class="local col2 ref" href="#12sk" title='sk' data-ref="12sk">sk</a>);</td></tr>
+<tr><th id="96">96</th><td>		<b>return</b> <a class="macro" href="../../include/uapi/linux/netfilter.h.html#12" title="1" data-ref="_M/NF_ACCEPT">NF_ACCEPT</a>;</td></tr>
+<tr><th id="97">97</th><td>	}</td></tr>
+<tr><th id="98">98</th><td></td></tr>
+<tr><th id="99">99</th><td>	<a class="macro" href="../../include/linux/printk.h.html#345" title="({ if (0) printk(&quot;\001&quot; &quot;7&quot; &quot;xt_TPROXY&quot; &quot;: &quot; &quot;no socket, dropping: proto %hhu %pI4:%hu -&gt; %pI4:%hu, mark: %x\n&quot;, iph-&gt;protocol, &amp;iph-&gt;saddr, (__builtin_constant_p((__u16)(( __u16)(__be16)(hp-&gt;source))) ? ((__u16)( (((__u16)(( __u16)(__be16)(hp-&gt;source)) &amp; (__u16)0x00ffU) &lt;&lt; 8) | (((__u16)(( __u16)(__be16)(hp-&gt;source)) &amp; (__u16)0xff00U) &gt;&gt; 8))) : __fswab16(( __u16)(__be16)(hp-&gt;source))), &amp;iph-&gt;daddr, (__builtin_constant_p((__u16)(( __u16)(__be16)(hp-&gt;dest))) ? ((__u16)( (((__u16)(( __u16)(__be16)(hp-&gt;dest)) &amp; (__u16)0x00ffU) &lt;&lt; 8) | (((__u16)(( __u16)(__be16)(hp-&gt;dest)) &amp; (__u16)0xff00U) &gt;&gt; 8))) : __fswab16(( __u16)(__be16)(hp-&gt;dest))), skb-&gt;mark); 0; })" data-ref="_M/pr_debug">pr_debug</a>(<q>"no socket, dropping: proto %hhu %pI4:%hu -&gt; %pI4:%hu, mark: %x\n"</q>,</td></tr>
+<tr><th id="100">100</th><td>		 <a class="local col9 ref" href="#9iph" title='iph' data-ref="9iph">iph</a>-&gt;<a class="ref field" href="../../include/uapi/linux/ip.h.html#iphdr::protocol" title='iphdr::protocol' data-ref="iphdr::protocol">protocol</a>, &amp;<a class="local col9 ref" href="#9iph" title='iph' data-ref="9iph">iph</a>-&gt;<a class="ref field" href="../../include/uapi/linux/ip.h.html#iphdr::saddr" title='iphdr::saddr' data-ref="iphdr::saddr">saddr</a>, ntohs(<a class="local col1 ref" href="#11hp" title='hp' data-ref="11hp">hp</a>-&gt;<a class="ref field" href="../../include/uapi/linux/udp.h.html#udphdr::source" title='udphdr::source' data-ref="udphdr::source">source</a>),</td></tr>
+<tr><th id="101">101</th><td>		 &amp;<a class="local col9 ref" href="#9iph" title='iph' data-ref="9iph">iph</a>-&gt;<a class="ref field" href="../../include/uapi/linux/ip.h.html#iphdr::daddr" title='iphdr::daddr' data-ref="iphdr::daddr">daddr</a>, ntohs(<a class="local col1 ref" href="#11hp" title='hp' data-ref="11hp">hp</a>-&gt;<a class="ref field" href="../../include/uapi/linux/udp.h.html#udphdr::dest" title='udphdr::dest' data-ref="udphdr::dest">dest</a>), <a class="local col4 ref" href="#4skb" title='skb' data-ref="4skb">skb</a>-&gt;<a class="ref field" href="../../include/linux/skbuff.h.html#sk_buff::(anonymous)::mark" title='sk_buff::(anonymous union)::mark' data-ref="sk_buff::(anonymous)::mark">mark</a>);</td></tr>
+<tr><th id="102">102</th><td>	<b>return</b> <a class="macro" href="../../include/uapi/linux/netfilter.h.html#11" title="0" data-ref="_M/NF_DROP">NF_DROP</a>;</td></tr>
+<tr><th id="103">103</th><td>}</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td><em>static</em> <em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="106">106</th><td><dfn class="tu decl def fn" id="tproxy_tg4_v0" title='tproxy_tg4_v0' data-type='unsigned int tproxy_tg4_v0(struct sk_buff * skb, const struct xt_action_param * par)' data-ref="tproxy_tg4_v0">tproxy_tg4_v0</dfn>(<b>struct</b> <a class="type" href="../../include/linux/skbuff.h.html#sk_buff" title='sk_buff' data-ref="sk_buff">sk_buff</a> *<dfn class="local col3 decl" id="13skb" title='skb' data-type='struct sk_buff *' data-ref="13skb">skb</dfn>, <em>const</em> <b>struct</b> <a class="type" href="../../include/linux/netfilter/x_tables.h.html#xt_action_param" title='xt_action_param' data-ref="xt_action_param">xt_action_param</a> *<dfn class="local col4 decl" id="14par" title='par' data-type='const struct xt_action_param *' data-ref="14par">par</dfn>)</td></tr>
+<tr><th id="107">107</th><td>{</td></tr>
+<tr><th id="108">108</th><td>	<em>const</em> <b>struct</b> <a class="type" href="../../include/uapi/linux/netfilter/xt_TPROXY.h.html#xt_tproxy_target_info" title='xt_tproxy_target_info' data-ref="xt_tproxy_target_info">xt_tproxy_target_info</a> *<dfn class="local col5 decl" id="15tgi" title='tgi' data-type='const struct xt_tproxy_target_info *' data-ref="15tgi">tgi</dfn> = <a class="local col4 ref" href="#14par" title='par' data-ref="14par">par</a>-&gt;<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_action_param::(anonymous)::targinfo" title='xt_action_param::(anonymous union)::targinfo' data-ref="xt_action_param::(anonymous)::targinfo">targinfo</a>;</td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td>	<b>return</b> <a class="tu ref fn" href="#tproxy_tg4" title='tproxy_tg4' data-use='c' data-ref="tproxy_tg4">tproxy_tg4</a>(<a class="ref fn" href="../../include/linux/netfilter/x_tables.h.html#xt_net" title='xt_net' data-ref="xt_net">xt_net</a>(<a class="local col4 ref" href="#14par" title='par' data-ref="14par">par</a>), <a class="local col3 ref" href="#13skb" title='skb' data-ref="13skb">skb</a>, <a class="local col5 ref" href="#15tgi" title='tgi' data-ref="15tgi">tgi</a>-&gt;<a class="ref field" href="../../include/uapi/linux/netfilter/xt_TPROXY.h.html#xt_tproxy_target_info::laddr" title='xt_tproxy_target_info::laddr' data-ref="xt_tproxy_target_info::laddr">laddr</a>, <a class="local col5 ref" href="#15tgi" title='tgi' data-ref="15tgi">tgi</a>-&gt;<a class="ref field" href="../../include/uapi/linux/netfilter/xt_TPROXY.h.html#xt_tproxy_target_info::lport" title='xt_tproxy_target_info::lport' data-ref="xt_tproxy_target_info::lport">lport</a>,</td></tr>
+<tr><th id="111">111</th><td>			  <a class="local col5 ref" href="#15tgi" title='tgi' data-ref="15tgi">tgi</a>-&gt;<a class="ref field" href="../../include/uapi/linux/netfilter/xt_TPROXY.h.html#xt_tproxy_target_info::mark_mask" title='xt_tproxy_target_info::mark_mask' data-ref="xt_tproxy_target_info::mark_mask">mark_mask</a>, <a class="local col5 ref" href="#15tgi" title='tgi' data-ref="15tgi">tgi</a>-&gt;<a class="ref field" href="../../include/uapi/linux/netfilter/xt_TPROXY.h.html#xt_tproxy_target_info::mark_value" title='xt_tproxy_target_info::mark_value' data-ref="xt_tproxy_target_info::mark_value">mark_value</a>);</td></tr>
+<tr><th id="112">112</th><td>}</td></tr>
+<tr><th id="113">113</th><td></td></tr>
+<tr><th id="114">114</th><td><em>static</em> <em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="115">115</th><td><dfn class="tu decl def fn" id="tproxy_tg4_v1" title='tproxy_tg4_v1' data-type='unsigned int tproxy_tg4_v1(struct sk_buff * skb, const struct xt_action_param * par)' data-ref="tproxy_tg4_v1">tproxy_tg4_v1</dfn>(<b>struct</b> <a class="type" href="../../include/linux/skbuff.h.html#sk_buff" title='sk_buff' data-ref="sk_buff">sk_buff</a> *<dfn class="local col6 decl" id="16skb" title='skb' data-type='struct sk_buff *' data-ref="16skb">skb</dfn>, <em>const</em> <b>struct</b> <a class="type" href="../../include/linux/netfilter/x_tables.h.html#xt_action_param" title='xt_action_param' data-ref="xt_action_param">xt_action_param</a> *<dfn class="local col7 decl" id="17par" title='par' data-type='const struct xt_action_param *' data-ref="17par">par</dfn>)</td></tr>
+<tr><th id="116">116</th><td>{</td></tr>
+<tr><th id="117">117</th><td>	<em>const</em> <b>struct</b> <a class="type" href="../../include/uapi/linux/netfilter/xt_TPROXY.h.html#xt_tproxy_target_info_v1" title='xt_tproxy_target_info_v1' data-ref="xt_tproxy_target_info_v1">xt_tproxy_target_info_v1</a> *<dfn class="local col8 decl" id="18tgi" title='tgi' data-type='const struct xt_tproxy_target_info_v1 *' data-ref="18tgi">tgi</dfn> = <a class="local col7 ref" href="#17par" title='par' data-ref="17par">par</a>-&gt;<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_action_param::(anonymous)::targinfo" title='xt_action_param::(anonymous union)::targinfo' data-ref="xt_action_param::(anonymous)::targinfo">targinfo</a>;</td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td>	<b>return</b> <a class="tu ref fn" href="#tproxy_tg4" title='tproxy_tg4' data-use='c' data-ref="tproxy_tg4">tproxy_tg4</a>(<a class="ref fn" href="../../include/linux/netfilter/x_tables.h.html#xt_net" title='xt_net' data-ref="xt_net">xt_net</a>(<a class="local col7 ref" href="#17par" title='par' data-ref="17par">par</a>), <a class="local col6 ref" href="#16skb" title='skb' data-ref="16skb">skb</a>, <a class="local col8 ref" href="#18tgi" title='tgi' data-ref="18tgi">tgi</a>-&gt;<a class="ref field" href="../../include/uapi/linux/netfilter/xt_TPROXY.h.html#xt_tproxy_target_info_v1::laddr" title='xt_tproxy_target_info_v1::laddr' data-ref="xt_tproxy_target_info_v1::laddr">laddr</a>.<a class="ref field" href="../../include/uapi/linux/netfilter.h.html#nf_inet_addr::ip" title='nf_inet_addr::ip' data-ref="nf_inet_addr::ip">ip</a>, <a class="local col8 ref" href="#18tgi" title='tgi' data-ref="18tgi">tgi</a>-&gt;<a class="ref field" href="../../include/uapi/linux/netfilter/xt_TPROXY.h.html#xt_tproxy_target_info_v1::lport" title='xt_tproxy_target_info_v1::lport' data-ref="xt_tproxy_target_info_v1::lport">lport</a>,</td></tr>
+<tr><th id="120">120</th><td>			  <a class="local col8 ref" href="#18tgi" title='tgi' data-ref="18tgi">tgi</a>-&gt;<a class="ref field" href="../../include/uapi/linux/netfilter/xt_TPROXY.h.html#xt_tproxy_target_info_v1::mark_mask" title='xt_tproxy_target_info_v1::mark_mask' data-ref="xt_tproxy_target_info_v1::mark_mask">mark_mask</a>, <a class="local col8 ref" href="#18tgi" title='tgi' data-ref="18tgi">tgi</a>-&gt;<a class="ref field" href="../../include/uapi/linux/netfilter/xt_TPROXY.h.html#xt_tproxy_target_info_v1::mark_value" title='xt_tproxy_target_info_v1::mark_value' data-ref="xt_tproxy_target_info_v1::mark_value">mark_value</a>);</td></tr>
+<tr><th id="121">121</th><td>}</td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td><u>#<span data-ppcond="123">ifdef</span> <span class="macro" data-ref="_M/XT_TPROXY_HAVE_IPV6">XT_TPROXY_HAVE_IPV6</span></u></td></tr>
+<tr><th id="124">124</th><td></td></tr>
+<tr><th id="125">125</th><td><em>static</em> <em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="126">126</th><td>tproxy_tg6_v1(<b>struct</b> sk_buff *skb, <em>const</em> <b>struct</b> xt_action_param *par)</td></tr>
+<tr><th id="127">127</th><td>{</td></tr>
+<tr><th id="128">128</th><td>	<em>const</em> <b>struct</b> ipv6hdr *iph = ipv6_hdr(skb);</td></tr>
+<tr><th id="129">129</th><td>	<em>const</em> <b>struct</b> xt_tproxy_target_info_v1 *tgi = par-&gt;targinfo;</td></tr>
+<tr><th id="130">130</th><td>	<b>struct</b> udphdr _hdr, *hp;</td></tr>
+<tr><th id="131">131</th><td>	<b>struct</b> sock *sk;</td></tr>
+<tr><th id="132">132</th><td>	<em>const</em> <b>struct</b> in6_addr *laddr;</td></tr>
+<tr><th id="133">133</th><td>	__be16 lport;</td></tr>
+<tr><th id="134">134</th><td>	<em>int</em> thoff = <var>0</var>;</td></tr>
+<tr><th id="135">135</th><td>	<em>int</em> tproto;</td></tr>
+<tr><th id="136">136</th><td></td></tr>
+<tr><th id="137">137</th><td>	tproto = ipv6_find_hdr(skb, &amp;thoff, -<var>1</var>, NULL, NULL);</td></tr>
+<tr><th id="138">138</th><td>	<b>if</b> (tproto &lt; <var>0</var>) {</td></tr>
+<tr><th id="139">139</th><td>		pr_debug(<q>"unable to find transport header in IPv6 packet, dropping\n"</q>);</td></tr>
+<tr><th id="140">140</th><td>		<b>return</b> NF_DROP;</td></tr>
+<tr><th id="141">141</th><td>	}</td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td>	hp = skb_header_pointer(skb, thoff, <b>sizeof</b>(_hdr), &amp;_hdr);</td></tr>
+<tr><th id="144">144</th><td>	<b>if</b> (hp == NULL) {</td></tr>
+<tr><th id="145">145</th><td>		pr_debug(<q>"unable to grab transport header contents in IPv6 packet, dropping\n"</q>);</td></tr>
+<tr><th id="146">146</th><td>		<b>return</b> NF_DROP;</td></tr>
+<tr><th id="147">147</th><td>	}</td></tr>
+<tr><th id="148">148</th><td></td></tr>
+<tr><th id="149">149</th><td>	<i>/* check if there's an ongoing connection on the packet</i></td></tr>
+<tr><th id="150">150</th><td><i>	 * addresses, this happens if the redirect already happened</i></td></tr>
+<tr><th id="151">151</th><td><i>	 * and the current packet belongs to an already established</i></td></tr>
+<tr><th id="152">152</th><td><i>	 * connection */</i></td></tr>
+<tr><th id="153">153</th><td>	sk = nf_tproxy_get_sock_v6(xt_net(par), skb, thoff, tproto,</td></tr>
+<tr><th id="154">154</th><td>				   &amp;iph-&gt;saddr, &amp;iph-&gt;daddr,</td></tr>
+<tr><th id="155">155</th><td>				   hp-&gt;source, hp-&gt;dest,</td></tr>
+<tr><th id="156">156</th><td>				   xt_in(par), NF_TPROXY_LOOKUP_ESTABLISHED);</td></tr>
+<tr><th id="157">157</th><td></td></tr>
+<tr><th id="158">158</th><td>	laddr = nf_tproxy_laddr6(skb, &amp;tgi-&gt;laddr.in6, &amp;iph-&gt;daddr);</td></tr>
+<tr><th id="159">159</th><td>	lport = tgi-&gt;lport ? tgi-&gt;lport : hp-&gt;dest;</td></tr>
+<tr><th id="160">160</th><td></td></tr>
+<tr><th id="161">161</th><td>	<i>/* UDP has no TCP_TIME_WAIT state, so we never enter here */</i></td></tr>
+<tr><th id="162">162</th><td>	<b>if</b> (sk &amp;&amp; sk-&gt;sk_state == TCP_TIME_WAIT) {</td></tr>
+<tr><th id="163">163</th><td>		<em>const</em> <b>struct</b> xt_tproxy_target_info_v1 *tgi = par-&gt;targinfo;</td></tr>
+<tr><th id="164">164</th><td>		<i>/* reopening a TIME_WAIT connection needs special handling */</i></td></tr>
+<tr><th id="165">165</th><td>		sk = nf_tproxy_handle_time_wait6(skb, tproto, thoff,</td></tr>
+<tr><th id="166">166</th><td>					      xt_net(par),</td></tr>
+<tr><th id="167">167</th><td>					      &amp;tgi-&gt;laddr.in6,</td></tr>
+<tr><th id="168">168</th><td>					      tgi-&gt;lport,</td></tr>
+<tr><th id="169">169</th><td>					      sk);</td></tr>
+<tr><th id="170">170</th><td>	}</td></tr>
+<tr><th id="171">171</th><td>	<b>else</b> <b>if</b> (!sk)</td></tr>
+<tr><th id="172">172</th><td>		<i>/* no there's no established connection, check if</i></td></tr>
+<tr><th id="173">173</th><td><i>		 * there's a listener on the redirected addr/port */</i></td></tr>
+<tr><th id="174">174</th><td>		sk = nf_tproxy_get_sock_v6(xt_net(par), skb, thoff,</td></tr>
+<tr><th id="175">175</th><td>					   tproto, &amp;iph-&gt;saddr, laddr,</td></tr>
+<tr><th id="176">176</th><td>					   hp-&gt;source, lport,</td></tr>
+<tr><th id="177">177</th><td>					   xt_in(par), NF_TPROXY_LOOKUP_LISTENER);</td></tr>
+<tr><th id="178">178</th><td></td></tr>
+<tr><th id="179">179</th><td>	<i>/* NOTE: assign_sock consumes our sk reference */</i></td></tr>
+<tr><th id="180">180</th><td>	<b>if</b> (sk &amp;&amp; nf_tproxy_sk_is_transparent(sk)) {</td></tr>
+<tr><th id="181">181</th><td>		<i>/* This should be in a separate target, but we don't do multiple</i></td></tr>
+<tr><th id="182">182</th><td><i>		   targets on the same rule yet */</i></td></tr>
+<tr><th id="183">183</th><td>		skb-&gt;mark = (skb-&gt;mark &amp; ~tgi-&gt;mark_mask) ^ tgi-&gt;mark_value;</td></tr>
+<tr><th id="184">184</th><td></td></tr>
+<tr><th id="185">185</th><td>		pr_debug(<q>"redirecting: proto %hhu %pI6:%hu -&gt; %pI6:%hu, mark: %x\n"</q>,</td></tr>
+<tr><th id="186">186</th><td>			 tproto, &amp;iph-&gt;saddr, ntohs(hp-&gt;source),</td></tr>
+<tr><th id="187">187</th><td>			 laddr, ntohs(lport), skb-&gt;mark);</td></tr>
+<tr><th id="188">188</th><td></td></tr>
+<tr><th id="189">189</th><td>		nf_tproxy_assign_sock(skb, sk);</td></tr>
+<tr><th id="190">190</th><td>		<b>return</b> NF_ACCEPT;</td></tr>
+<tr><th id="191">191</th><td>	}</td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td>	pr_debug(<q>"no socket, dropping: proto %hhu %pI6:%hu -&gt; %pI6:%hu, mark: %x\n"</q>,</td></tr>
+<tr><th id="194">194</th><td>		 tproto, &amp;iph-&gt;saddr, ntohs(hp-&gt;source),</td></tr>
+<tr><th id="195">195</th><td>		 &amp;iph-&gt;daddr, ntohs(hp-&gt;dest), skb-&gt;mark);</td></tr>
+<tr><th id="196">196</th><td></td></tr>
+<tr><th id="197">197</th><td>	<b>return</b> NF_DROP;</td></tr>
+<tr><th id="198">198</th><td>}</td></tr>
+<tr><th id="199">199</th><td></td></tr>
+<tr><th id="200">200</th><td><em>static</em> <em>int</em> tproxy_tg6_check(<em>const</em> <b>struct</b> xt_tgchk_param *par)</td></tr>
+<tr><th id="201">201</th><td>{</td></tr>
+<tr><th id="202">202</th><td>	<em>const</em> <b>struct</b> ip6t_ip6 *i = par-&gt;entryinfo;</td></tr>
+<tr><th id="203">203</th><td>	<em>int</em> err;</td></tr>
+<tr><th id="204">204</th><td></td></tr>
+<tr><th id="205">205</th><td>	err = nf_defrag_ipv6_enable(par-&gt;net);</td></tr>
+<tr><th id="206">206</th><td>	<b>if</b> (err)</td></tr>
+<tr><th id="207">207</th><td>		<b>return</b> err;</td></tr>
+<tr><th id="208">208</th><td></td></tr>
+<tr><th id="209">209</th><td>	<b>if</b> ((i-&gt;proto == IPPROTO_TCP || i-&gt;proto == IPPROTO_UDP) &amp;&amp;</td></tr>
+<tr><th id="210">210</th><td>	    !(i-&gt;invflags &amp; IP6T_INV_PROTO))</td></tr>
+<tr><th id="211">211</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="212">212</th><td></td></tr>
+<tr><th id="213">213</th><td>	pr_info_ratelimited(<q>"Can be used only with -p tcp or -p udp\n"</q>);</td></tr>
+<tr><th id="214">214</th><td>	<b>return</b> -EINVAL;</td></tr>
+<tr><th id="215">215</th><td>}</td></tr>
+<tr><th id="216">216</th><td><u>#<span data-ppcond="123">endif</span></u></td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="tproxy_tg4_check" title='tproxy_tg4_check' data-type='int tproxy_tg4_check(const struct xt_tgchk_param * par)' data-ref="tproxy_tg4_check">tproxy_tg4_check</dfn>(<em>const</em> <b>struct</b> <a class="type" href="../../include/linux/netfilter/x_tables.h.html#xt_tgchk_param" title='xt_tgchk_param' data-ref="xt_tgchk_param">xt_tgchk_param</a> *<dfn class="local col9 decl" id="19par" title='par' data-type='const struct xt_tgchk_param *' data-ref="19par">par</dfn>)</td></tr>
+<tr><th id="219">219</th><td>{</td></tr>
+<tr><th id="220">220</th><td>	<em>const</em> <b>struct</b> <a class="type" href="../../include/uapi/linux/netfilter_ipv4/ip_tables.h.html#ipt_ip" title='ipt_ip' data-ref="ipt_ip">ipt_ip</a> *<dfn class="local col0 decl" id="20i" title='i' data-type='const struct ipt_ip *' data-ref="20i">i</dfn> = <a class="local col9 ref" href="#19par" title='par' data-ref="19par">par</a>-&gt;<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_tgchk_param::entryinfo" title='xt_tgchk_param::entryinfo' data-ref="xt_tgchk_param::entryinfo">entryinfo</a>;</td></tr>
+<tr><th id="221">221</th><td>	<em>int</em> <dfn class="local col1 decl" id="21err" title='err' data-type='int' data-ref="21err">err</dfn>;</td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td>	<a class="local col1 ref" href="#21err" title='err' data-ref="21err">err</a> = <a class="ref fn" href="../../include/net/netfilter/ipv4/nf_defrag_ipv4.h.html#nf_defrag_ipv4_enable" title='nf_defrag_ipv4_enable' data-ref="nf_defrag_ipv4_enable">nf_defrag_ipv4_enable</a>(<a class="local col9 ref" href="#19par" title='par' data-ref="19par">par</a>-&gt;<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_tgchk_param::net" title='xt_tgchk_param::net' data-ref="xt_tgchk_param::net">net</a>);</td></tr>
+<tr><th id="224">224</th><td>	<b>if</b> (<a class="local col1 ref" href="#21err" title='err' data-ref="21err">err</a>)</td></tr>
+<tr><th id="225">225</th><td>		<b>return</b> <a class="local col1 ref" href="#21err" title='err' data-ref="21err">err</a>;</td></tr>
+<tr><th id="226">226</th><td></td></tr>
+<tr><th id="227">227</th><td>	<b>if</b> ((<a class="local col0 ref" href="#20i" title='i' data-ref="20i">i</a>-&gt;<a class="ref field" href="../../include/uapi/linux/netfilter_ipv4/ip_tables.h.html#ipt_ip::proto" title='ipt_ip::proto' data-ref="ipt_ip::proto">proto</a> == <a class="macro" href="../../include/uapi/linux/in.h.html#38" title="IPPROTO_TCP" data-ref="_M/IPPROTO_TCP">IPPROTO_TCP</a> || <a class="local col0 ref" href="#20i" title='i' data-ref="20i">i</a>-&gt;<a class="ref field" href="../../include/uapi/linux/netfilter_ipv4/ip_tables.h.html#ipt_ip::proto" title='ipt_ip::proto' data-ref="ipt_ip::proto">proto</a> == <a class="macro" href="../../include/uapi/linux/in.h.html#44" title="IPPROTO_UDP" data-ref="_M/IPPROTO_UDP">IPPROTO_UDP</a>)</td></tr>
+<tr><th id="228">228</th><td>	    &amp;&amp; !(<a class="local col0 ref" href="#20i" title='i' data-ref="20i">i</a>-&gt;<a class="ref field" href="../../include/uapi/linux/netfilter_ipv4/ip_tables.h.html#ipt_ip::invflags" title='ipt_ip::invflags' data-ref="ipt_ip::invflags">invflags</a> &amp; <a class="macro" href="../../include/uapi/linux/netfilter_ipv4/ip_tables.h.html#100" title="0x40" data-ref="_M/IPT_INV_PROTO">IPT_INV_PROTO</a>))</td></tr>
+<tr><th id="229">229</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="230">230</th><td></td></tr>
+<tr><th id="231">231</th><td>	<a class="macro" href="../../include/linux/printk.h.html#448" title="({ static struct ratelimit_state _rs = { .lock = (raw_spinlock_t) { .raw_lock = { { .val = { (0) } } }, }, .interval = (5 * 100), .burst = 10, }; if (___ratelimit(&amp;_rs, __func__)) printk(&quot;\001&quot; &quot;6&quot; &quot;xt_TPROXY&quot; &quot;: &quot; &quot;Can be used only with -p tcp or -p udp\n&quot;); })" data-ref="_M/pr_info_ratelimited">pr_info_ratelimited</a>(<q>"Can be used only with -p tcp or -p udp\n"</q>);</td></tr>
+<tr><th id="232">232</th><td>	<b>return</b> -<a class="macro" href="../../include/uapi/asm-generic/errno-base.h.html#26" title="22" data-ref="_M/EINVAL">EINVAL</a>;</td></tr>
+<tr><th id="233">233</th><td>}</td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td><em>static</em> <b>struct</b> <a class="type" href="../../include/linux/netfilter/x_tables.h.html#xt_target" title='xt_target' data-ref="xt_target">xt_target</a> <dfn class="tu decl def" id="tproxy_tg_reg" title='tproxy_tg_reg' data-type='struct xt_target [2]' data-ref="tproxy_tg_reg">tproxy_tg_reg</dfn>[] <a class="macro" href="../../arch/x86/include/asm/cache.h.html#11" title="__attribute__((__section__(&quot;.data..read_mostly&quot;)))" data-ref="_M/__read_mostly">__read_mostly</a> = {</td></tr>
+<tr><th id="236">236</th><td>	{</td></tr>
+<tr><th id="237">237</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::name" title='xt_target::name' data-ref="xt_target::name">name</a>		= <q>"TPROXY"</q>,</td></tr>
+<tr><th id="238">238</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::family" title='xt_target::family' data-ref="xt_target::family">family</a>		= <a class="enum" href="../../include/uapi/linux/netfilter.h.html#NFPROTO_IPV4" title='NFPROTO_IPV4' data-ref="NFPROTO_IPV4">NFPROTO_IPV4</a>,</td></tr>
+<tr><th id="239">239</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::table" title='xt_target::table' data-ref="xt_target::table">table</a>		= <q>"mangle"</q>,</td></tr>
+<tr><th id="240">240</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::target" title='xt_target::target' data-ref="xt_target::target">target</a>		= <a class="tu ref fn" href="#tproxy_tg4_v0" title='tproxy_tg4_v0' data-ref="tproxy_tg4_v0">tproxy_tg4_v0</a>,</td></tr>
+<tr><th id="241">241</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::revision" title='xt_target::revision' data-ref="xt_target::revision">revision</a>	= <var>0</var>,</td></tr>
+<tr><th id="242">242</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::targetsize" title='xt_target::targetsize' data-ref="xt_target::targetsize">targetsize</a>	= <b>sizeof</b>(<b>struct</b> <a class="type" href="../../include/uapi/linux/netfilter/xt_TPROXY.h.html#xt_tproxy_target_info" title='xt_tproxy_target_info' data-ref="xt_tproxy_target_info">xt_tproxy_target_info</a>),</td></tr>
+<tr><th id="243">243</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::checkentry" title='xt_target::checkentry' data-ref="xt_target::checkentry">checkentry</a>	= <a class="tu ref fn" href="#tproxy_tg4_check" title='tproxy_tg4_check' data-ref="tproxy_tg4_check">tproxy_tg4_check</a>,</td></tr>
+<tr><th id="244">244</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::hooks" title='xt_target::hooks' data-ref="xt_target::hooks">hooks</a>		= <var>1</var> &lt;&lt; <a class="enum" href="../../include/uapi/linux/netfilter.h.html#NF_INET_PRE_ROUTING" title='NF_INET_PRE_ROUTING' data-ref="NF_INET_PRE_ROUTING">NF_INET_PRE_ROUTING</a>,</td></tr>
+<tr><th id="245">245</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::me" title='xt_target::me' data-ref="xt_target::me">me</a>		= <a class="macro" href="../../include/linux/export.h.html#31" title="((struct module *)0)" data-ref="_M/THIS_MODULE">THIS_MODULE</a>,</td></tr>
+<tr><th id="246">246</th><td>	},</td></tr>
+<tr><th id="247">247</th><td>	{</td></tr>
+<tr><th id="248">248</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::name" title='xt_target::name' data-ref="xt_target::name">name</a>		= <q>"TPROXY"</q>,</td></tr>
+<tr><th id="249">249</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::family" title='xt_target::family' data-ref="xt_target::family">family</a>		= <a class="enum" href="../../include/uapi/linux/netfilter.h.html#NFPROTO_IPV4" title='NFPROTO_IPV4' data-ref="NFPROTO_IPV4">NFPROTO_IPV4</a>,</td></tr>
+<tr><th id="250">250</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::table" title='xt_target::table' data-ref="xt_target::table">table</a>		= <q>"mangle"</q>,</td></tr>
+<tr><th id="251">251</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::target" title='xt_target::target' data-ref="xt_target::target">target</a>		= <a class="tu ref fn" href="#tproxy_tg4_v1" title='tproxy_tg4_v1' data-ref="tproxy_tg4_v1">tproxy_tg4_v1</a>,</td></tr>
+<tr><th id="252">252</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::revision" title='xt_target::revision' data-ref="xt_target::revision">revision</a>	= <var>1</var>,</td></tr>
+<tr><th id="253">253</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::targetsize" title='xt_target::targetsize' data-ref="xt_target::targetsize">targetsize</a>	= <b>sizeof</b>(<b>struct</b> <a class="type" href="../../include/uapi/linux/netfilter/xt_TPROXY.h.html#xt_tproxy_target_info_v1" title='xt_tproxy_target_info_v1' data-ref="xt_tproxy_target_info_v1">xt_tproxy_target_info_v1</a>),</td></tr>
+<tr><th id="254">254</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::checkentry" title='xt_target::checkentry' data-ref="xt_target::checkentry">checkentry</a>	= <a class="tu ref fn" href="#tproxy_tg4_check" title='tproxy_tg4_check' data-ref="tproxy_tg4_check">tproxy_tg4_check</a>,</td></tr>
+<tr><th id="255">255</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::hooks" title='xt_target::hooks' data-ref="xt_target::hooks">hooks</a>		= <var>1</var> &lt;&lt; <a class="enum" href="../../include/uapi/linux/netfilter.h.html#NF_INET_PRE_ROUTING" title='NF_INET_PRE_ROUTING' data-ref="NF_INET_PRE_ROUTING">NF_INET_PRE_ROUTING</a>,</td></tr>
+<tr><th id="256">256</th><td>		.<a class="ref field" href="../../include/linux/netfilter/x_tables.h.html#xt_target::me" title='xt_target::me' data-ref="xt_target::me">me</a>		= <a class="macro" href="../../include/linux/export.h.html#31" title="((struct module *)0)" data-ref="_M/THIS_MODULE">THIS_MODULE</a>,</td></tr>
+<tr><th id="257">257</th><td>	},</td></tr>
+<tr><th id="258">258</th><td><u>#<span data-ppcond="258">ifdef</span> <span class="macro" data-ref="_M/XT_TPROXY_HAVE_IPV6">XT_TPROXY_HAVE_IPV6</span></u></td></tr>
+<tr><th id="259">259</th><td>	{</td></tr>
+<tr><th id="260">260</th><td>		.name		= <q>"TPROXY"</q>,</td></tr>
+<tr><th id="261">261</th><td>		.family		= NFPROTO_IPV6,</td></tr>
+<tr><th id="262">262</th><td>		.table		= <q>"mangle"</q>,</td></tr>
+<tr><th id="263">263</th><td>		.target		= tproxy_tg6_v1,</td></tr>
+<tr><th id="264">264</th><td>		.revision	= <var>1</var>,</td></tr>
+<tr><th id="265">265</th><td>		.targetsize	= <b>sizeof</b>(<b>struct</b> xt_tproxy_target_info_v1),</td></tr>
+<tr><th id="266">266</th><td>		.checkentry	= tproxy_tg6_check,</td></tr>
+<tr><th id="267">267</th><td>		.hooks		= <var>1</var> &lt;&lt; NF_INET_PRE_ROUTING,</td></tr>
+<tr><th id="268">268</th><td>		.me		= THIS_MODULE,</td></tr>
+<tr><th id="269">269</th><td>	},</td></tr>
+<tr><th id="270">270</th><td><u>#<span data-ppcond="258">endif</span></u></td></tr>
+<tr><th id="271">271</th><td></td></tr>
+<tr><th id="272">272</th><td>};</td></tr>
+<tr><th id="273">273</th><td></td></tr>
+<tr><th id="274">274</th><td><em>static</em> <em>int</em> <a class="macro" href="../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <dfn class="tu decl def fn" id="tproxy_tg_init" title='tproxy_tg_init' data-type='int tproxy_tg_init()' data-ref="tproxy_tg_init">tproxy_tg_init</dfn>(<em>void</em>)</td></tr>
+<tr><th id="275">275</th><td>{</td></tr>
+<tr><th id="276">276</th><td>	<b>return</b> <a class="ref fn" href="../../include/linux/netfilter/x_tables.h.html#xt_register_targets" title='xt_register_targets' data-ref="xt_register_targets">xt_register_targets</a>(<a class="tu ref" href="#tproxy_tg_reg" title='tproxy_tg_reg' data-use='r' data-ref="tproxy_tg_reg">tproxy_tg_reg</a>, <a class="macro" href="../../include/linux/kernel.h.html#72" title="(sizeof(tproxy_tg_reg) / sizeof((tproxy_tg_reg)[0]) + (sizeof(struct { int:(-!!(__builtin_types_compatible_p(typeof((tproxy_tg_reg)), typeof(&amp;(tproxy_tg_reg)[0])))); })))" data-ref="_M/ARRAY_SIZE">ARRAY_SIZE</a>(<a class="tu ref" href="#tproxy_tg_reg" title='tproxy_tg_reg' data-use='r' data-ref="tproxy_tg_reg">tproxy_tg_reg</a>));</td></tr>
+<tr><th id="277">277</th><td>}</td></tr>
+<tr><th id="278">278</th><td></td></tr>
+<tr><th id="279">279</th><td><em>static</em> <em>void</em> <a class="macro" href="../../include/linux/init.h.html#83" title="__attribute__ ((__section__(&quot;.exit.text&quot;))) __attribute__((__used__)) __attribute__((no_instrument_function))" data-ref="_M/__exit">__exit</a> <dfn class="tu decl def fn" id="tproxy_tg_exit" title='tproxy_tg_exit' data-type='void tproxy_tg_exit()' data-ref="tproxy_tg_exit">tproxy_tg_exit</dfn>(<em>void</em>)</td></tr>
+<tr><th id="280">280</th><td>{</td></tr>
+<tr><th id="281">281</th><td>	<a class="ref fn" href="../../include/linux/netfilter/x_tables.h.html#xt_unregister_targets" title='xt_unregister_targets' data-ref="xt_unregister_targets">xt_unregister_targets</a>(<a class="tu ref" href="#tproxy_tg_reg" title='tproxy_tg_reg' data-use='r' data-ref="tproxy_tg_reg">tproxy_tg_reg</a>, <a class="macro" href="../../include/linux/kernel.h.html#72" title="(sizeof(tproxy_tg_reg) / sizeof((tproxy_tg_reg)[0]) + (sizeof(struct { int:(-!!(__builtin_types_compatible_p(typeof((tproxy_tg_reg)), typeof(&amp;(tproxy_tg_reg)[0])))); })))" data-ref="_M/ARRAY_SIZE">ARRAY_SIZE</a>(<a class="tu ref" href="#tproxy_tg_reg" title='tproxy_tg_reg' data-use='r' data-ref="tproxy_tg_reg">tproxy_tg_reg</a>));</td></tr>
+<tr><th id="282">282</th><td>}</td></tr>
+<tr><th id="283">283</th><td></td></tr>
+<tr><th id="284">284</th><td><a class="macro" href="../../include/linux/module.h.html#86" title="static initcall_t __initcall_tproxy_tg_init6 __attribute__((__used__)) __attribute__((__section__(&quot;.initcall&quot; &quot;6&quot; &quot;.init&quot;))) = tproxy_tg_init;;" data-ref="_M/module_init">module_init</a>(<a class="tu ref fn" href="#tproxy_tg_init" title='tproxy_tg_init' data-ref="tproxy_tg_init">tproxy_tg_init</a>);</td></tr>
+<tr><th id="285">285</th><td><a class="macro" href="../../include/linux/module.h.html#98" title="static exitcall_t __exitcall_tproxy_tg_exit __attribute__((__used__)) __attribute__ ((__section__(&quot;.exitcall.exit&quot;))) = tproxy_tg_exit;" data-ref="_M/module_exit">module_exit</a>(<a class="tu ref fn" href="#tproxy_tg_exit" title='tproxy_tg_exit' data-ref="tproxy_tg_exit">tproxy_tg_exit</a>);</td></tr>
+<tr><th id="286">286</th><td><a class="macro" href="../../include/linux/module.h.html#199" title="struct __UNIQUE_ID_license155 {}" data-ref="_M/MODULE_LICENSE">MODULE_LICENSE</a>(<q>"GPL"</q>);</td></tr>
+<tr><th id="287">287</th><td><a class="macro" href="../../include/linux/module.h.html#205" title="struct __UNIQUE_ID_author157 {}" data-ref="_M/MODULE_AUTHOR">MODULE_AUTHOR</a>(<q>"Balazs Scheidler, Krisztian Kovacs"</q>);</td></tr>
+<tr><th id="288">288</th><td><a class="macro" href="../../include/linux/module.h.html#208" title="struct __UNIQUE_ID_description159 {}" data-ref="_M/MODULE_DESCRIPTION">MODULE_DESCRIPTION</a>(<q>"Netfilter transparent proxy (TPROXY) target module."</q>);</td></tr>
+<tr><th id="289">289</th><td><a class="macro" href="../../include/linux/module.h.html#164" title="struct __UNIQUE_ID_alias161 {}" data-ref="_M/MODULE_ALIAS">MODULE_ALIAS</a>(<q>"ipt_TPROXY"</q>);</td></tr>
+<tr><th id="290">290</th><td><a class="macro" href="../../include/linux/module.h.html#164" title="struct __UNIQUE_ID_alias163 {}" data-ref="_M/MODULE_ALIAS">MODULE_ALIAS</a>(<q>"ip6t_TPROXY"</q>);</td></tr>
+<tr><th id="291">291</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

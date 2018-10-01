@@ -1,0 +1,881 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>kdb_io.c source code [linux-4.18.y/kernel/debug/kdb/kdb_io.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/kernel/debug/kdb/kdb_io.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>linux-4.18.y</a>/<a href='../..'>kernel</a>/<a href='..'>debug</a>/<a href='./'>kdb</a>/<a href='kdb_io.c.html'>kdb_io.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Kernel Debugger Architecture Independent Console I/O handler</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> * This file is subject to the terms and conditions of the GNU General Public</i></td></tr>
+<tr><th id="5">5</th><td><i> * License.  See the file "COPYING" in the main directory of this archive</i></td></tr>
+<tr><th id="6">6</th><td><i> * for more details.</i></td></tr>
+<tr><th id="7">7</th><td><i> *</i></td></tr>
+<tr><th id="8">8</th><td><i> * Copyright (c) 1999-2006 Silicon Graphics, Inc.  All Rights Reserved.</i></td></tr>
+<tr><th id="9">9</th><td><i> * Copyright (c) 2009 Wind River Systems, Inc.  All Rights Reserved.</i></td></tr>
+<tr><th id="10">10</th><td><i> */</i></td></tr>
+<tr><th id="11">11</th><td></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../include/linux/module.h.html">&lt;linux/module.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../include/linux/types.h.html">&lt;linux/types.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../include/linux/ctype.h.html">&lt;linux/ctype.h&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../include/linux/kernel.h.html">&lt;linux/kernel.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../include/linux/init.h.html">&lt;linux/init.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../include/linux/kdev_t.h.html">&lt;linux/kdev_t.h&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../include/linux/console.h.html">&lt;linux/console.h&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../include/linux/string.h.html">&lt;linux/string.h&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../include/linux/sched.h.html">&lt;linux/sched.h&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../include/linux/smp.h.html">&lt;linux/smp.h&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../include/linux/nmi.h.html">&lt;linux/nmi.h&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../../include/linux/delay.h.html">&lt;linux/delay.h&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../../../include/linux/kgdb.h.html">&lt;linux/kgdb.h&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../../include/linux/kdb.h.html">&lt;linux/kdb.h&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../../../include/linux/kallsyms.h.html">&lt;linux/kallsyms.h&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="kdb_private.h.html">"kdb_private.h"</a></u></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><u>#define <dfn class="macro" id="_M/CMD_BUFLEN" data-ref="_M/CMD_BUFLEN">CMD_BUFLEN</dfn> 256</u></td></tr>
+<tr><th id="30">30</th><td><em>char</em> <dfn class="decl def" id="kdb_prompt_str" title='kdb_prompt_str' data-ref="kdb_prompt_str">kdb_prompt_str</dfn>[<a class="macro" href="#29" title="256" data-ref="_M/CMD_BUFLEN">CMD_BUFLEN</a>];</td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><em>int</em> <dfn class="decl def" id="kdb_trap_printk" title='kdb_trap_printk' data-ref="kdb_trap_printk">kdb_trap_printk</dfn>;</td></tr>
+<tr><th id="33">33</th><td><em>int</em> <dfn class="decl def" id="kdb_printf_cpu" title='kdb_printf_cpu' data-ref="kdb_printf_cpu">kdb_printf_cpu</dfn> = -<var>1</var>;</td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="kgdb_transition_check" title='kgdb_transition_check' data-type='int kgdb_transition_check(char * buffer)' data-ref="kgdb_transition_check">kgdb_transition_check</dfn>(<em>char</em> *<dfn class="local col1 decl" id="1buffer" title='buffer' data-type='char *' data-ref="1buffer">buffer</dfn>)</td></tr>
+<tr><th id="36">36</th><td>{</td></tr>
+<tr><th id="37">37</th><td>	<b>if</b> (<a class="local col1 ref" href="#1buffer" title='buffer' data-ref="1buffer">buffer</a>[<var>0</var>] != <kbd>'+'</kbd> &amp;&amp; <a class="local col1 ref" href="#1buffer" title='buffer' data-ref="1buffer">buffer</a>[<var>0</var>] != <kbd>'$'</kbd>) {</td></tr>
+<tr><th id="38">38</th><td>		<a class="macro" href="kdb_private.h.html#149" title="((void)(kdb_state |= 0x00200000))" data-ref="_M/KDB_STATE_SET">KDB_STATE_SET</a>(KGDB_TRANS);</td></tr>
+<tr><th id="39">39</th><td>		<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"%s"</q>, <a class="local col1 ref" href="#1buffer" title='buffer' data-ref="1buffer">buffer</a>);</td></tr>
+<tr><th id="40">40</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="41">41</th><td>		<em>int</em> <dfn class="local col2 decl" id="2slen" title='slen' data-type='int' data-ref="2slen">slen</dfn> = <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="local col1 ref" href="#1buffer" title='buffer' data-ref="1buffer">buffer</a>);</td></tr>
+<tr><th id="42">42</th><td>		<b>if</b> (<a class="local col2 ref" href="#2slen" title='slen' data-ref="2slen">slen</a> &gt; <var>3</var> &amp;&amp; <a class="local col1 ref" href="#1buffer" title='buffer' data-ref="1buffer">buffer</a>[<a class="local col2 ref" href="#2slen" title='slen' data-ref="2slen">slen</a> - <var>3</var>] == <kbd>'#'</kbd>) {</td></tr>
+<tr><th id="43">43</th><td>			<a class="ref fn" href="kdb_private.h.html#kdb_gdb_state_pass" title='kdb_gdb_state_pass' data-ref="kdb_gdb_state_pass">kdb_gdb_state_pass</a>(<a class="local col1 ref" href="#1buffer" title='buffer' data-ref="1buffer">buffer</a>);</td></tr>
+<tr><th id="44">44</th><td>			<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strcpy" title='strcpy' data-ref="strcpy">strcpy</a>(<a class="local col1 ref" href="#1buffer" title='buffer' data-ref="1buffer">buffer</a>, <q>"kgdb"</q>);</td></tr>
+<tr><th id="45">45</th><td>			<a class="macro" href="kdb_private.h.html#149" title="((void)(kdb_state |= 0x00080000))" data-ref="_M/KDB_STATE_SET">KDB_STATE_SET</a>(DOING_KGDB);</td></tr>
+<tr><th id="46">46</th><td>			<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="47">47</th><td>		}</td></tr>
+<tr><th id="48">48</th><td>	}</td></tr>
+<tr><th id="49">49</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="50">50</th><td>}</td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="kdb_read_get_key" title='kdb_read_get_key' data-type='int kdb_read_get_key(char * buffer, size_t bufsize)' data-ref="kdb_read_get_key">kdb_read_get_key</dfn>(<em>char</em> *<dfn class="local col3 decl" id="3buffer" title='buffer' data-type='char *' data-ref="3buffer">buffer</dfn>, <a class="typedef" href="../../../include/linux/types.h.html#size_t" title='size_t' data-type='__kernel_size_t' data-ref="size_t">size_t</a> <dfn class="local col4 decl" id="4bufsize" title='bufsize' data-type='size_t' data-ref="4bufsize">bufsize</dfn>)</td></tr>
+<tr><th id="53">53</th><td>{</td></tr>
+<tr><th id="54">54</th><td><u>#define <dfn class="macro" id="_M/ESCAPE_UDELAY" data-ref="_M/ESCAPE_UDELAY">ESCAPE_UDELAY</dfn> 1000</u></td></tr>
+<tr><th id="55">55</th><td><u>#define <dfn class="macro" id="_M/ESCAPE_DELAY" data-ref="_M/ESCAPE_DELAY">ESCAPE_DELAY</dfn> (2*1000000/ESCAPE_UDELAY) /* 2 seconds worth of udelays */</u></td></tr>
+<tr><th id="56">56</th><td>	<em>char</em> <dfn class="local col5 decl" id="5escape_data" title='escape_data' data-type='char [5]' data-ref="5escape_data">escape_data</dfn>[<var>5</var>];	<i>/* longest vt100 escape sequence is 4 bytes */</i></td></tr>
+<tr><th id="57">57</th><td>	<em>char</em> *<dfn class="local col6 decl" id="6ped" title='ped' data-type='char *' data-ref="6ped">ped</dfn> = <a class="local col5 ref" href="#5escape_data" title='escape_data' data-ref="5escape_data">escape_data</a>;</td></tr>
+<tr><th id="58">58</th><td>	<em>int</em> <dfn class="local col7 decl" id="7escape_delay" title='escape_delay' data-type='int' data-ref="7escape_delay">escape_delay</dfn> = <var>0</var>;</td></tr>
+<tr><th id="59">59</th><td>	<a class="typedef" href="../../../include/linux/kdb.h.html#get_char_func" title='get_char_func' data-type='int (*)(void)' data-ref="get_char_func">get_char_func</a> *<dfn class="local col8 decl" id="8f" title='f' data-type='get_char_func *' data-ref="8f">f</dfn>, *<dfn class="local col9 decl" id="9f_escape" title='f_escape' data-type='get_char_func *' data-ref="9f_escape">f_escape</dfn> = <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="60">60</th><td>	<em>int</em> <dfn class="local col0 decl" id="10key" title='key' data-type='int' data-ref="10key">key</dfn>;</td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td>	<b>for</b> (<a class="local col8 ref" href="#8f" title='f' data-ref="8f">f</a> = &amp;<a class="ref" href="../../../include/linux/kdb.h.html#kdb_poll_funcs" title='kdb_poll_funcs' data-ref="kdb_poll_funcs">kdb_poll_funcs</a>[<var>0</var>]; ; ++<a class="local col8 ref" href="#8f" title='f' data-ref="8f">f</a>) {</td></tr>
+<tr><th id="63">63</th><td>		<b>if</b> (*<a class="local col8 ref" href="#8f" title='f' data-ref="8f">f</a> == <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>) {</td></tr>
+<tr><th id="64">64</th><td>			<i>/* Reset NMI watchdog once per poll loop */</i></td></tr>
+<tr><th id="65">65</th><td>			<a class="ref fn" href="../../../include/linux/nmi.h.html#touch_nmi_watchdog" title='touch_nmi_watchdog' data-ref="touch_nmi_watchdog">touch_nmi_watchdog</a>();</td></tr>
+<tr><th id="66">66</th><td>			<a class="local col8 ref" href="#8f" title='f' data-ref="8f">f</a> = &amp;<a class="ref" href="../../../include/linux/kdb.h.html#kdb_poll_funcs" title='kdb_poll_funcs' data-ref="kdb_poll_funcs">kdb_poll_funcs</a>[<var>0</var>];</td></tr>
+<tr><th id="67">67</th><td>		}</td></tr>
+<tr><th id="68">68</th><td>		<b>if</b> (<a class="local col7 ref" href="#7escape_delay" title='escape_delay' data-ref="7escape_delay">escape_delay</a> == <var>2</var>) {</td></tr>
+<tr><th id="69">69</th><td>			*<a class="local col6 ref" href="#6ped" title='ped' data-ref="6ped">ped</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="70">70</th><td>			<a class="local col6 ref" href="#6ped" title='ped' data-ref="6ped">ped</a> = <a class="local col5 ref" href="#5escape_data" title='escape_data' data-ref="5escape_data">escape_data</a>;</td></tr>
+<tr><th id="71">71</th><td>			--<a class="local col7 ref" href="#7escape_delay" title='escape_delay' data-ref="7escape_delay">escape_delay</a>;</td></tr>
+<tr><th id="72">72</th><td>		}</td></tr>
+<tr><th id="73">73</th><td>		<b>if</b> (<a class="local col7 ref" href="#7escape_delay" title='escape_delay' data-ref="7escape_delay">escape_delay</a> == <var>1</var>) {</td></tr>
+<tr><th id="74">74</th><td>			<a class="local col0 ref" href="#10key" title='key' data-ref="10key">key</a> = *<a class="local col6 ref" href="#6ped" title='ped' data-ref="6ped">ped</a>++;</td></tr>
+<tr><th id="75">75</th><td>			<b>if</b> (!*<a class="local col6 ref" href="#6ped" title='ped' data-ref="6ped">ped</a>)</td></tr>
+<tr><th id="76">76</th><td>				--<a class="local col7 ref" href="#7escape_delay" title='escape_delay' data-ref="7escape_delay">escape_delay</a>;</td></tr>
+<tr><th id="77">77</th><td>			<b>break</b>;</td></tr>
+<tr><th id="78">78</th><td>		}</td></tr>
+<tr><th id="79">79</th><td>		<a class="local col0 ref" href="#10key" title='key' data-ref="10key">key</a> = (*<a class="local col8 ref" href="#8f" title='f' data-ref="8f">f</a>)();</td></tr>
+<tr><th id="80">80</th><td>		<b>if</b> (<a class="local col0 ref" href="#10key" title='key' data-ref="10key">key</a> == -<var>1</var>) {</td></tr>
+<tr><th id="81">81</th><td>			<b>if</b> (<a class="local col7 ref" href="#7escape_delay" title='escape_delay' data-ref="7escape_delay">escape_delay</a>) {</td></tr>
+<tr><th id="82">82</th><td>				<a class="macro" href="../../../include/asm-generic/delay.h.html#20" title="({ if (__builtin_constant_p(1000)) { if ((1000) / 20000 &gt;= 1) __bad_udelay(); else __const_udelay((1000) * 0x10c7ul); } else { __udelay(1000); } })" data-ref="_M/udelay">udelay</a>(<a class="macro" href="#54" title="1000" data-ref="_M/ESCAPE_UDELAY">ESCAPE_UDELAY</a>);</td></tr>
+<tr><th id="83">83</th><td>				--<a class="local col7 ref" href="#7escape_delay" title='escape_delay' data-ref="7escape_delay">escape_delay</a>;</td></tr>
+<tr><th id="84">84</th><td>			}</td></tr>
+<tr><th id="85">85</th><td>			<b>continue</b>;</td></tr>
+<tr><th id="86">86</th><td>		}</td></tr>
+<tr><th id="87">87</th><td>		<b>if</b> (<a class="local col4 ref" href="#4bufsize" title='bufsize' data-ref="4bufsize">bufsize</a> &lt;= <var>2</var>) {</td></tr>
+<tr><th id="88">88</th><td>			<b>if</b> (<a class="local col0 ref" href="#10key" title='key' data-ref="10key">key</a> == <kbd>'\r'</kbd>)</td></tr>
+<tr><th id="89">89</th><td>				<a class="local col0 ref" href="#10key" title='key' data-ref="10key">key</a> = <kbd>'\n'</kbd>;</td></tr>
+<tr><th id="90">90</th><td>			*<a class="local col3 ref" href="#3buffer" title='buffer' data-ref="3buffer">buffer</a>++ = <a class="local col0 ref" href="#10key" title='key' data-ref="10key">key</a>;</td></tr>
+<tr><th id="91">91</th><td>			*<a class="local col3 ref" href="#3buffer" title='buffer' data-ref="3buffer">buffer</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="92">92</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="93">93</th><td>		}</td></tr>
+<tr><th id="94">94</th><td>		<b>if</b> (<a class="local col7 ref" href="#7escape_delay" title='escape_delay' data-ref="7escape_delay">escape_delay</a> == <var>0</var> &amp;&amp; <a class="local col0 ref" href="#10key" title='key' data-ref="10key">key</a> == <kbd>'\e'</kbd>) {</td></tr>
+<tr><th id="95">95</th><td>			<a class="local col7 ref" href="#7escape_delay" title='escape_delay' data-ref="7escape_delay">escape_delay</a> = <a class="macro" href="#55" title="(2*1000000/1000)" data-ref="_M/ESCAPE_DELAY">ESCAPE_DELAY</a>;</td></tr>
+<tr><th id="96">96</th><td>			<a class="local col6 ref" href="#6ped" title='ped' data-ref="6ped">ped</a> = <a class="local col5 ref" href="#5escape_data" title='escape_data' data-ref="5escape_data">escape_data</a>;</td></tr>
+<tr><th id="97">97</th><td>			<a class="local col9 ref" href="#9f_escape" title='f_escape' data-ref="9f_escape">f_escape</a> = <a class="local col8 ref" href="#8f" title='f' data-ref="8f">f</a>;</td></tr>
+<tr><th id="98">98</th><td>		}</td></tr>
+<tr><th id="99">99</th><td>		<b>if</b> (<a class="local col7 ref" href="#7escape_delay" title='escape_delay' data-ref="7escape_delay">escape_delay</a>) {</td></tr>
+<tr><th id="100">100</th><td>			*<a class="local col6 ref" href="#6ped" title='ped' data-ref="6ped">ped</a>++ = <a class="local col0 ref" href="#10key" title='key' data-ref="10key">key</a>;</td></tr>
+<tr><th id="101">101</th><td>			<b>if</b> (<a class="local col9 ref" href="#9f_escape" title='f_escape' data-ref="9f_escape">f_escape</a> != <a class="local col8 ref" href="#8f" title='f' data-ref="8f">f</a>) {</td></tr>
+<tr><th id="102">102</th><td>				<a class="local col7 ref" href="#7escape_delay" title='escape_delay' data-ref="7escape_delay">escape_delay</a> = <var>2</var>;</td></tr>
+<tr><th id="103">103</th><td>				<b>continue</b>;</td></tr>
+<tr><th id="104">104</th><td>			}</td></tr>
+<tr><th id="105">105</th><td>			<b>if</b> (<a class="local col6 ref" href="#6ped" title='ped' data-ref="6ped">ped</a> - <a class="local col5 ref" href="#5escape_data" title='escape_data' data-ref="5escape_data">escape_data</a> == <var>1</var>) {</td></tr>
+<tr><th id="106">106</th><td>				<i>/* \e */</i></td></tr>
+<tr><th id="107">107</th><td>				<b>continue</b>;</td></tr>
+<tr><th id="108">108</th><td>			} <b>else</b> <b>if</b> (<a class="local col6 ref" href="#6ped" title='ped' data-ref="6ped">ped</a> - <a class="local col5 ref" href="#5escape_data" title='escape_data' data-ref="5escape_data">escape_data</a> == <var>2</var>) {</td></tr>
+<tr><th id="109">109</th><td>				<i>/* \e&lt;something&gt; */</i></td></tr>
+<tr><th id="110">110</th><td>				<b>if</b> (<a class="local col0 ref" href="#10key" title='key' data-ref="10key">key</a> != <kbd>'['</kbd>)</td></tr>
+<tr><th id="111">111</th><td>					<a class="local col7 ref" href="#7escape_delay" title='escape_delay' data-ref="7escape_delay">escape_delay</a> = <var>2</var>;</td></tr>
+<tr><th id="112">112</th><td>				<b>continue</b>;</td></tr>
+<tr><th id="113">113</th><td>			} <b>else</b> <b>if</b> (<a class="local col6 ref" href="#6ped" title='ped' data-ref="6ped">ped</a> - <a class="local col5 ref" href="#5escape_data" title='escape_data' data-ref="5escape_data">escape_data</a> == <var>3</var>) {</td></tr>
+<tr><th id="114">114</th><td>				<i>/* \e[&lt;something&gt; */</i></td></tr>
+<tr><th id="115">115</th><td>				<em>int</em> <dfn class="local col1 decl" id="11mapkey" title='mapkey' data-type='int' data-ref="11mapkey">mapkey</dfn> = <var>0</var>;</td></tr>
+<tr><th id="116">116</th><td>				<b>switch</b> (<a class="local col0 ref" href="#10key" title='key' data-ref="10key">key</a>) {</td></tr>
+<tr><th id="117">117</th><td>				<b>case</b> <kbd>'A'</kbd>: <i>/* \e[A, up arrow */</i></td></tr>
+<tr><th id="118">118</th><td>					<a class="local col1 ref" href="#11mapkey" title='mapkey' data-ref="11mapkey">mapkey</a> = <var>16</var>;</td></tr>
+<tr><th id="119">119</th><td>					<b>break</b>;</td></tr>
+<tr><th id="120">120</th><td>				<b>case</b> <kbd>'B'</kbd>: <i>/* \e[B, down arrow */</i></td></tr>
+<tr><th id="121">121</th><td>					<a class="local col1 ref" href="#11mapkey" title='mapkey' data-ref="11mapkey">mapkey</a> = <var>14</var>;</td></tr>
+<tr><th id="122">122</th><td>					<b>break</b>;</td></tr>
+<tr><th id="123">123</th><td>				<b>case</b> <kbd>'C'</kbd>: <i>/* \e[C, right arrow */</i></td></tr>
+<tr><th id="124">124</th><td>					<a class="local col1 ref" href="#11mapkey" title='mapkey' data-ref="11mapkey">mapkey</a> = <var>6</var>;</td></tr>
+<tr><th id="125">125</th><td>					<b>break</b>;</td></tr>
+<tr><th id="126">126</th><td>				<b>case</b> <kbd>'D'</kbd>: <i>/* \e[D, left arrow */</i></td></tr>
+<tr><th id="127">127</th><td>					<a class="local col1 ref" href="#11mapkey" title='mapkey' data-ref="11mapkey">mapkey</a> = <var>2</var>;</td></tr>
+<tr><th id="128">128</th><td>					<b>break</b>;</td></tr>
+<tr><th id="129">129</th><td>				<b>case</b> <kbd>'1'</kbd>: <i>/* dropthrough */</i></td></tr>
+<tr><th id="130">130</th><td>				<b>case</b> <kbd>'3'</kbd>: <i>/* dropthrough */</i></td></tr>
+<tr><th id="131">131</th><td>				<i>/* \e[&lt;1,3,4&gt;], may be home, del, end */</i></td></tr>
+<tr><th id="132">132</th><td>				<b>case</b> <kbd>'4'</kbd>:</td></tr>
+<tr><th id="133">133</th><td>					<a class="local col1 ref" href="#11mapkey" title='mapkey' data-ref="11mapkey">mapkey</a> = -<var>1</var>;</td></tr>
+<tr><th id="134">134</th><td>					<b>break</b>;</td></tr>
+<tr><th id="135">135</th><td>				}</td></tr>
+<tr><th id="136">136</th><td>				<b>if</b> (<a class="local col1 ref" href="#11mapkey" title='mapkey' data-ref="11mapkey">mapkey</a> != -<var>1</var>) {</td></tr>
+<tr><th id="137">137</th><td>					<b>if</b> (<a class="local col1 ref" href="#11mapkey" title='mapkey' data-ref="11mapkey">mapkey</a> &gt; <var>0</var>) {</td></tr>
+<tr><th id="138">138</th><td>						<a class="local col5 ref" href="#5escape_data" title='escape_data' data-ref="5escape_data">escape_data</a>[<var>0</var>] = <a class="local col1 ref" href="#11mapkey" title='mapkey' data-ref="11mapkey">mapkey</a>;</td></tr>
+<tr><th id="139">139</th><td>						<a class="local col5 ref" href="#5escape_data" title='escape_data' data-ref="5escape_data">escape_data</a>[<var>1</var>] = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="140">140</th><td>					}</td></tr>
+<tr><th id="141">141</th><td>					<a class="local col7 ref" href="#7escape_delay" title='escape_delay' data-ref="7escape_delay">escape_delay</a> = <var>2</var>;</td></tr>
+<tr><th id="142">142</th><td>				}</td></tr>
+<tr><th id="143">143</th><td>				<b>continue</b>;</td></tr>
+<tr><th id="144">144</th><td>			} <b>else</b> <b>if</b> (<a class="local col6 ref" href="#6ped" title='ped' data-ref="6ped">ped</a> - <a class="local col5 ref" href="#5escape_data" title='escape_data' data-ref="5escape_data">escape_data</a> == <var>4</var>) {</td></tr>
+<tr><th id="145">145</th><td>				<i>/* \e[&lt;1,3,4&gt;&lt;something&gt; */</i></td></tr>
+<tr><th id="146">146</th><td>				<em>int</em> <dfn class="local col2 decl" id="12mapkey" title='mapkey' data-type='int' data-ref="12mapkey">mapkey</dfn> = <var>0</var>;</td></tr>
+<tr><th id="147">147</th><td>				<b>if</b> (<a class="local col0 ref" href="#10key" title='key' data-ref="10key">key</a> == <kbd>'~'</kbd>) {</td></tr>
+<tr><th id="148">148</th><td>					<b>switch</b> (<a class="local col5 ref" href="#5escape_data" title='escape_data' data-ref="5escape_data">escape_data</a>[<var>2</var>]) {</td></tr>
+<tr><th id="149">149</th><td>					<b>case</b> <kbd>'1'</kbd>: <i>/* \e[1~, home */</i></td></tr>
+<tr><th id="150">150</th><td>						<a class="local col2 ref" href="#12mapkey" title='mapkey' data-ref="12mapkey">mapkey</a> = <var>1</var>;</td></tr>
+<tr><th id="151">151</th><td>						<b>break</b>;</td></tr>
+<tr><th id="152">152</th><td>					<b>case</b> <kbd>'3'</kbd>: <i>/* \e[3~, del */</i></td></tr>
+<tr><th id="153">153</th><td>						<a class="local col2 ref" href="#12mapkey" title='mapkey' data-ref="12mapkey">mapkey</a> = <var>4</var>;</td></tr>
+<tr><th id="154">154</th><td>						<b>break</b>;</td></tr>
+<tr><th id="155">155</th><td>					<b>case</b> <kbd>'4'</kbd>: <i>/* \e[4~, end */</i></td></tr>
+<tr><th id="156">156</th><td>						<a class="local col2 ref" href="#12mapkey" title='mapkey' data-ref="12mapkey">mapkey</a> = <var>5</var>;</td></tr>
+<tr><th id="157">157</th><td>						<b>break</b>;</td></tr>
+<tr><th id="158">158</th><td>					}</td></tr>
+<tr><th id="159">159</th><td>				}</td></tr>
+<tr><th id="160">160</th><td>				<b>if</b> (<a class="local col2 ref" href="#12mapkey" title='mapkey' data-ref="12mapkey">mapkey</a> &gt; <var>0</var>) {</td></tr>
+<tr><th id="161">161</th><td>					<a class="local col5 ref" href="#5escape_data" title='escape_data' data-ref="5escape_data">escape_data</a>[<var>0</var>] = <a class="local col2 ref" href="#12mapkey" title='mapkey' data-ref="12mapkey">mapkey</a>;</td></tr>
+<tr><th id="162">162</th><td>					<a class="local col5 ref" href="#5escape_data" title='escape_data' data-ref="5escape_data">escape_data</a>[<var>1</var>] = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="163">163</th><td>				}</td></tr>
+<tr><th id="164">164</th><td>				<a class="local col7 ref" href="#7escape_delay" title='escape_delay' data-ref="7escape_delay">escape_delay</a> = <var>2</var>;</td></tr>
+<tr><th id="165">165</th><td>				<b>continue</b>;</td></tr>
+<tr><th id="166">166</th><td>			}</td></tr>
+<tr><th id="167">167</th><td>		}</td></tr>
+<tr><th id="168">168</th><td>		<b>break</b>;	<i>/* A key to process */</i></td></tr>
+<tr><th id="169">169</th><td>	}</td></tr>
+<tr><th id="170">170</th><td>	<b>return</b> <a class="local col0 ref" href="#10key" title='key' data-ref="10key">key</a>;</td></tr>
+<tr><th id="171">171</th><td>}</td></tr>
+<tr><th id="172">172</th><td></td></tr>
+<tr><th id="173">173</th><td><i  data-doc="kdb_read">/*</i></td></tr>
+<tr><th id="174">174</th><td><i  data-doc="kdb_read"> * kdb_read</i></td></tr>
+<tr><th id="175">175</th><td><i  data-doc="kdb_read"> *</i></td></tr>
+<tr><th id="176">176</th><td><i  data-doc="kdb_read"> *	This function reads a string of characters, terminated by</i></td></tr>
+<tr><th id="177">177</th><td><i  data-doc="kdb_read"> *	a newline, or by reaching the end of the supplied buffer,</i></td></tr>
+<tr><th id="178">178</th><td><i  data-doc="kdb_read"> *	from the current kernel debugger console device.</i></td></tr>
+<tr><th id="179">179</th><td><i  data-doc="kdb_read"> * Parameters:</i></td></tr>
+<tr><th id="180">180</th><td><i  data-doc="kdb_read"> *	buffer	- Address of character buffer to receive input characters.</i></td></tr>
+<tr><th id="181">181</th><td><i  data-doc="kdb_read"> *	bufsize - size, in bytes, of the character buffer</i></td></tr>
+<tr><th id="182">182</th><td><i  data-doc="kdb_read"> * Returns:</i></td></tr>
+<tr><th id="183">183</th><td><i  data-doc="kdb_read"> *	Returns a pointer to the buffer containing the received</i></td></tr>
+<tr><th id="184">184</th><td><i  data-doc="kdb_read"> *	character string.  This string will be terminated by a</i></td></tr>
+<tr><th id="185">185</th><td><i  data-doc="kdb_read"> *	newline character.</i></td></tr>
+<tr><th id="186">186</th><td><i  data-doc="kdb_read"> * Locking:</i></td></tr>
+<tr><th id="187">187</th><td><i  data-doc="kdb_read"> *	No locks are required to be held upon entry to this</i></td></tr>
+<tr><th id="188">188</th><td><i  data-doc="kdb_read"> *	function.  It is not reentrant - it relies on the fact</i></td></tr>
+<tr><th id="189">189</th><td><i  data-doc="kdb_read"> *	that while kdb is running on only one "master debug" cpu.</i></td></tr>
+<tr><th id="190">190</th><td><i  data-doc="kdb_read"> * Remarks:</i></td></tr>
+<tr><th id="191">191</th><td><i  data-doc="kdb_read"> *</i></td></tr>
+<tr><th id="192">192</th><td><i  data-doc="kdb_read"> * The buffer size must be &gt;= 2.  A buffer size of 2 means that the caller only</i></td></tr>
+<tr><th id="193">193</th><td><i  data-doc="kdb_read"> * wants a single key.</i></td></tr>
+<tr><th id="194">194</th><td><i  data-doc="kdb_read"> *</i></td></tr>
+<tr><th id="195">195</th><td><i  data-doc="kdb_read"> * An escape key could be the start of a vt100 control sequence such as \e[D</i></td></tr>
+<tr><th id="196">196</th><td><i  data-doc="kdb_read"> * (left arrow) or it could be a character in its own right.  The standard</i></td></tr>
+<tr><th id="197">197</th><td><i  data-doc="kdb_read"> * method for detecting the difference is to wait for 2 seconds to see if there</i></td></tr>
+<tr><th id="198">198</th><td><i  data-doc="kdb_read"> * are any other characters.  kdb is complicated by the lack of a timer service</i></td></tr>
+<tr><th id="199">199</th><td><i  data-doc="kdb_read"> * (interrupts are off), by multiple input sources and by the need to sometimes</i></td></tr>
+<tr><th id="200">200</th><td><i  data-doc="kdb_read"> * return after just one key.  Escape sequence processing has to be done as</i></td></tr>
+<tr><th id="201">201</th><td><i  data-doc="kdb_read"> * states in the polling loop.</i></td></tr>
+<tr><th id="202">202</th><td><i  data-doc="kdb_read"> */</i></td></tr>
+<tr><th id="203">203</th><td></td></tr>
+<tr><th id="204">204</th><td><em>static</em> <em>char</em> *<dfn class="tu decl def fn" id="kdb_read" title='kdb_read' data-type='char * kdb_read(char * buffer, size_t bufsize)' data-ref="kdb_read">kdb_read</dfn>(<em>char</em> *<dfn class="local col3 decl" id="13buffer" title='buffer' data-type='char *' data-ref="13buffer">buffer</dfn>, <a class="typedef" href="../../../include/linux/types.h.html#size_t" title='size_t' data-type='__kernel_size_t' data-ref="size_t">size_t</a> <dfn class="local col4 decl" id="14bufsize" title='bufsize' data-type='size_t' data-ref="14bufsize">bufsize</dfn>)</td></tr>
+<tr><th id="205">205</th><td>{</td></tr>
+<tr><th id="206">206</th><td>	<em>char</em> *<dfn class="local col5 decl" id="15cp" title='cp' data-type='char *' data-ref="15cp">cp</dfn> = <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>;</td></tr>
+<tr><th id="207">207</th><td>	<em>char</em> *<dfn class="local col6 decl" id="16bufend" title='bufend' data-type='char *' data-ref="16bufend">bufend</dfn> = <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>+<a class="local col4 ref" href="#14bufsize" title='bufsize' data-ref="14bufsize">bufsize</a>-<var>2</var>;	<i>/* Reserve space for newline</i></td></tr>
+<tr><th id="208">208</th><td><i>						 * and null byte */</i></td></tr>
+<tr><th id="209">209</th><td>	<em>char</em> *<dfn class="local col7 decl" id="17lastchar" title='lastchar' data-type='char *' data-ref="17lastchar">lastchar</dfn>;</td></tr>
+<tr><th id="210">210</th><td>	<em>char</em> *<dfn class="local col8 decl" id="18p_tmp" title='p_tmp' data-type='char *' data-ref="18p_tmp">p_tmp</dfn>;</td></tr>
+<tr><th id="211">211</th><td>	<em>char</em> <dfn class="local col9 decl" id="19tmp" title='tmp' data-type='char' data-ref="19tmp">tmp</dfn>;</td></tr>
+<tr><th id="212">212</th><td>	<em>static</em> <em>char</em> <dfn class="local col0 decl" id="20tmpbuffer" title='tmpbuffer' data-type='char [256]' data-ref="20tmpbuffer">tmpbuffer</dfn>[<a class="macro" href="#29" title="256" data-ref="_M/CMD_BUFLEN">CMD_BUFLEN</a>];</td></tr>
+<tr><th id="213">213</th><td>	<em>int</em> <dfn class="local col1 decl" id="21len" title='len' data-type='int' data-ref="21len">len</dfn> = <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>);</td></tr>
+<tr><th id="214">214</th><td>	<em>int</em> <dfn class="local col2 decl" id="22len_tmp" title='len_tmp' data-type='int' data-ref="22len_tmp">len_tmp</dfn>;</td></tr>
+<tr><th id="215">215</th><td>	<em>int</em> <dfn class="local col3 decl" id="23tab" title='tab' data-type='int' data-ref="23tab">tab</dfn> = <var>0</var>;</td></tr>
+<tr><th id="216">216</th><td>	<em>int</em> <dfn class="local col4 decl" id="24count" title='count' data-type='int' data-ref="24count">count</dfn>;</td></tr>
+<tr><th id="217">217</th><td>	<em>int</em> <dfn class="local col5 decl" id="25i" title='i' data-type='int' data-ref="25i">i</dfn>;</td></tr>
+<tr><th id="218">218</th><td>	<em>int</em> <dfn class="local col6 decl" id="26diag" title='diag' data-type='int' data-ref="26diag">diag</dfn>, <dfn class="local col7 decl" id="27dtab_count" title='dtab_count' data-type='int' data-ref="27dtab_count">dtab_count</dfn>;</td></tr>
+<tr><th id="219">219</th><td>	<em>int</em> <dfn class="local col8 decl" id="28key" title='key' data-type='int' data-ref="28key">key</dfn>;</td></tr>
+<tr><th id="220">220</th><td></td></tr>
+<tr><th id="221">221</th><td></td></tr>
+<tr><th id="222">222</th><td>	<a class="local col6 ref" href="#26diag" title='diag' data-ref="26diag">diag</a> = <a class="ref fn" href="../../../include/linux/kdb.h.html#kdbgetintenv" title='kdbgetintenv' data-ref="kdbgetintenv">kdbgetintenv</a>(<q>"DTABCOUNT"</q>, &amp;<a class="local col7 ref" href="#27dtab_count" title='dtab_count' data-ref="27dtab_count">dtab_count</a>);</td></tr>
+<tr><th id="223">223</th><td>	<b>if</b> (<a class="local col6 ref" href="#26diag" title='diag' data-ref="26diag">diag</a>)</td></tr>
+<tr><th id="224">224</th><td>		<a class="local col7 ref" href="#27dtab_count" title='dtab_count' data-ref="27dtab_count">dtab_count</a> = <var>30</var>;</td></tr>
+<tr><th id="225">225</th><td></td></tr>
+<tr><th id="226">226</th><td>	<b>if</b> (<a class="local col1 ref" href="#21len" title='len' data-ref="21len">len</a> &gt; <var>0</var>) {</td></tr>
+<tr><th id="227">227</th><td>		<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> += <a class="local col1 ref" href="#21len" title='len' data-ref="21len">len</a>;</td></tr>
+<tr><th id="228">228</th><td>		<b>if</b> (*(<a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>+<a class="local col1 ref" href="#21len" title='len' data-ref="21len">len</a>-<var>1</var>) == <kbd>'\n'</kbd>)</td></tr>
+<tr><th id="229">229</th><td>			<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>--;</td></tr>
+<tr><th id="230">230</th><td>	}</td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td>	<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> = <a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>;</td></tr>
+<tr><th id="233">233</th><td>	*<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="234">234</th><td>	<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"%s"</q>, <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>);</td></tr>
+<tr><th id="235">235</th><td><dfn class="lbl" id="29poll_again" data-ref="29poll_again">poll_again</dfn>:</td></tr>
+<tr><th id="236">236</th><td>	<a class="local col8 ref" href="#28key" title='key' data-ref="28key">key</a> = <a class="tu ref fn" href="#kdb_read_get_key" title='kdb_read_get_key' data-use='c' data-ref="kdb_read_get_key">kdb_read_get_key</a>(<a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>, <a class="local col4 ref" href="#14bufsize" title='bufsize' data-ref="14bufsize">bufsize</a>);</td></tr>
+<tr><th id="237">237</th><td>	<b>if</b> (<a class="local col8 ref" href="#28key" title='key' data-ref="28key">key</a> == -<var>1</var>)</td></tr>
+<tr><th id="238">238</th><td>		<b>return</b> <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>;</td></tr>
+<tr><th id="239">239</th><td>	<b>if</b> (<a class="local col8 ref" href="#28key" title='key' data-ref="28key">key</a> != <var>9</var>)</td></tr>
+<tr><th id="240">240</th><td>		<a class="local col3 ref" href="#23tab" title='tab' data-ref="23tab">tab</a> = <var>0</var>;</td></tr>
+<tr><th id="241">241</th><td>	<b>switch</b> (<a class="local col8 ref" href="#28key" title='key' data-ref="28key">key</a>) {</td></tr>
+<tr><th id="242">242</th><td>	<b>case</b> <var>8</var>: <i>/* backspace */</i></td></tr>
+<tr><th id="243">243</th><td>		<b>if</b> (<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> &gt; <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>) {</td></tr>
+<tr><th id="244">244</th><td>			<b>if</b> (<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> &lt; <a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>) {</td></tr>
+<tr><th id="245">245</th><td>				<a class="macro" href="../../../arch/x86/include/asm/string_64.h.html#37" title="({ size_t __len = (lastchar - cp); void *__ret; if (__builtin_constant_p(lastchar - cp) &amp;&amp; __len &gt;= 64) __ret = __memcpy((tmpbuffer), (cp), __len); else __ret = __builtin_memcpy((tmpbuffer), (cp), __len); __ret; })" data-ref="_M/memcpy">memcpy</a>(<a class="local col0 ref" href="#20tmpbuffer" title='tmpbuffer' data-ref="20tmpbuffer">tmpbuffer</a>, <a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>, <a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> - <a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>);</td></tr>
+<tr><th id="246">246</th><td>				<a class="macro" href="../../../arch/x86/include/asm/string_64.h.html#37" title="({ size_t __len = (lastchar - cp); void *__ret; if (__builtin_constant_p(lastchar - cp) &amp;&amp; __len &gt;= 64) __ret = __memcpy((cp-1), (tmpbuffer), __len); else __ret = __builtin_memcpy((cp-1), (tmpbuffer), __len); __ret; })" data-ref="_M/memcpy">memcpy</a>(<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>-<var>1</var>, <a class="local col0 ref" href="#20tmpbuffer" title='tmpbuffer' data-ref="20tmpbuffer">tmpbuffer</a>, <a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> - <a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>);</td></tr>
+<tr><th id="247">247</th><td>			}</td></tr>
+<tr><th id="248">248</th><td>			*(--<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>) = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="249">249</th><td>			--<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>;</td></tr>
+<tr><th id="250">250</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"\b%s \r"</q>, <a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>);</td></tr>
+<tr><th id="251">251</th><td>			<a class="local col9 ref" href="#19tmp" title='tmp' data-ref="19tmp">tmp</a> = *<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>;</td></tr>
+<tr><th id="252">252</th><td>			*<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="253">253</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<a class="ref" href="kdb_private.h.html#kdb_prompt_str" title='kdb_prompt_str' data-ref="kdb_prompt_str">kdb_prompt_str</a>);</td></tr>
+<tr><th id="254">254</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"%s"</q>, <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>);</td></tr>
+<tr><th id="255">255</th><td>			*<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> = <a class="local col9 ref" href="#19tmp" title='tmp' data-ref="19tmp">tmp</a>;</td></tr>
+<tr><th id="256">256</th><td>		}</td></tr>
+<tr><th id="257">257</th><td>		<b>break</b>;</td></tr>
+<tr><th id="258">258</th><td>	<b>case</b> <var>13</var>: <i>/* enter */</i></td></tr>
+<tr><th id="259">259</th><td>		*<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>++ = <kbd>'\n'</kbd>;</td></tr>
+<tr><th id="260">260</th><td>		*<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>++ = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="261">261</th><td>		<b>if</b> (!<a class="macro" href="kdb_private.h.html#148" title="(kdb_state &amp; 0x00200000)" data-ref="_M/KDB_STATE">KDB_STATE</a>(KGDB_TRANS)) {</td></tr>
+<tr><th id="262">262</th><td>			<a class="macro" href="kdb_private.h.html#149" title="((void)(kdb_state |= 0x00200000))" data-ref="_M/KDB_STATE_SET">KDB_STATE_SET</a>(KGDB_TRANS);</td></tr>
+<tr><th id="263">263</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"%s"</q>, <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>);</td></tr>
+<tr><th id="264">264</th><td>		}</td></tr>
+<tr><th id="265">265</th><td>		<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"\n"</q>);</td></tr>
+<tr><th id="266">266</th><td>		<b>return</b> <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>;</td></tr>
+<tr><th id="267">267</th><td>	<b>case</b> <var>4</var>: <i>/* Del */</i></td></tr>
+<tr><th id="268">268</th><td>		<b>if</b> (<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> &lt; <a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>) {</td></tr>
+<tr><th id="269">269</th><td>			<a class="macro" href="../../../arch/x86/include/asm/string_64.h.html#37" title="({ size_t __len = (lastchar - cp - 1); void *__ret; if (__builtin_constant_p(lastchar - cp - 1) &amp;&amp; __len &gt;= 64) __ret = __memcpy((tmpbuffer), (cp+1), __len); else __ret = __builtin_memcpy((tmpbuffer), (cp+1), __len); __ret; })" data-ref="_M/memcpy">memcpy</a>(<a class="local col0 ref" href="#20tmpbuffer" title='tmpbuffer' data-ref="20tmpbuffer">tmpbuffer</a>, <a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>+<var>1</var>, <a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> - <a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> - <var>1</var>);</td></tr>
+<tr><th id="270">270</th><td>			<a class="macro" href="../../../arch/x86/include/asm/string_64.h.html#37" title="({ size_t __len = (lastchar - cp - 1); void *__ret; if (__builtin_constant_p(lastchar - cp - 1) &amp;&amp; __len &gt;= 64) __ret = __memcpy((cp), (tmpbuffer), __len); else __ret = __builtin_memcpy((cp), (tmpbuffer), __len); __ret; })" data-ref="_M/memcpy">memcpy</a>(<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>, <a class="local col0 ref" href="#20tmpbuffer" title='tmpbuffer' data-ref="20tmpbuffer">tmpbuffer</a>, <a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> - <a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> - <var>1</var>);</td></tr>
+<tr><th id="271">271</th><td>			*(--<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>) = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="272">272</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"%s \r"</q>, <a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>);</td></tr>
+<tr><th id="273">273</th><td>			<a class="local col9 ref" href="#19tmp" title='tmp' data-ref="19tmp">tmp</a> = *<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>;</td></tr>
+<tr><th id="274">274</th><td>			*<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="275">275</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<a class="ref" href="kdb_private.h.html#kdb_prompt_str" title='kdb_prompt_str' data-ref="kdb_prompt_str">kdb_prompt_str</a>);</td></tr>
+<tr><th id="276">276</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"%s"</q>, <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>);</td></tr>
+<tr><th id="277">277</th><td>			*<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> = <a class="local col9 ref" href="#19tmp" title='tmp' data-ref="19tmp">tmp</a>;</td></tr>
+<tr><th id="278">278</th><td>		}</td></tr>
+<tr><th id="279">279</th><td>		<b>break</b>;</td></tr>
+<tr><th id="280">280</th><td>	<b>case</b> <var>1</var>: <i>/* Home */</i></td></tr>
+<tr><th id="281">281</th><td>		<b>if</b> (<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> &gt; <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>) {</td></tr>
+<tr><th id="282">282</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"\r"</q>);</td></tr>
+<tr><th id="283">283</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<a class="ref" href="kdb_private.h.html#kdb_prompt_str" title='kdb_prompt_str' data-ref="kdb_prompt_str">kdb_prompt_str</a>);</td></tr>
+<tr><th id="284">284</th><td>			<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> = <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>;</td></tr>
+<tr><th id="285">285</th><td>		}</td></tr>
+<tr><th id="286">286</th><td>		<b>break</b>;</td></tr>
+<tr><th id="287">287</th><td>	<b>case</b> <var>5</var>: <i>/* End */</i></td></tr>
+<tr><th id="288">288</th><td>		<b>if</b> (<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> &lt; <a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>) {</td></tr>
+<tr><th id="289">289</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"%s"</q>, <a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>);</td></tr>
+<tr><th id="290">290</th><td>			<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> = <a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>;</td></tr>
+<tr><th id="291">291</th><td>		}</td></tr>
+<tr><th id="292">292</th><td>		<b>break</b>;</td></tr>
+<tr><th id="293">293</th><td>	<b>case</b> <var>2</var>: <i>/* Left */</i></td></tr>
+<tr><th id="294">294</th><td>		<b>if</b> (<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> &gt; <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>) {</td></tr>
+<tr><th id="295">295</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"\b"</q>);</td></tr>
+<tr><th id="296">296</th><td>			--<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>;</td></tr>
+<tr><th id="297">297</th><td>		}</td></tr>
+<tr><th id="298">298</th><td>		<b>break</b>;</td></tr>
+<tr><th id="299">299</th><td>	<b>case</b> <var>14</var>: <i>/* Down */</i></td></tr>
+<tr><th id="300">300</th><td>		<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#memset" title='memset' data-ref="memset">memset</a>(<a class="local col0 ref" href="#20tmpbuffer" title='tmpbuffer' data-ref="20tmpbuffer">tmpbuffer</a>, <kbd>' '</kbd>,</td></tr>
+<tr><th id="301">301</th><td>		       <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="ref" href="kdb_private.h.html#kdb_prompt_str" title='kdb_prompt_str' data-ref="kdb_prompt_str">kdb_prompt_str</a>) + (<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>-<a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>));</td></tr>
+<tr><th id="302">302</th><td>		*(<a class="local col0 ref" href="#20tmpbuffer" title='tmpbuffer' data-ref="20tmpbuffer">tmpbuffer</a>+<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="ref" href="kdb_private.h.html#kdb_prompt_str" title='kdb_prompt_str' data-ref="kdb_prompt_str">kdb_prompt_str</a>) +</td></tr>
+<tr><th id="303">303</th><td>		  (<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>-<a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>)) = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="304">304</th><td>		<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"\r%s\r"</q>, <a class="local col0 ref" href="#20tmpbuffer" title='tmpbuffer' data-ref="20tmpbuffer">tmpbuffer</a>);</td></tr>
+<tr><th id="305">305</th><td>		*<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> = (<em>char</em>)<a class="local col8 ref" href="#28key" title='key' data-ref="28key">key</a>;</td></tr>
+<tr><th id="306">306</th><td>		*(<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>+<var>1</var>) = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="307">307</th><td>		<b>return</b> <a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>;</td></tr>
+<tr><th id="308">308</th><td>	<b>case</b> <var>6</var>: <i>/* Right */</i></td></tr>
+<tr><th id="309">309</th><td>		<b>if</b> (<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> &lt; <a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>) {</td></tr>
+<tr><th id="310">310</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"%c"</q>, *<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>);</td></tr>
+<tr><th id="311">311</th><td>			++<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>;</td></tr>
+<tr><th id="312">312</th><td>		}</td></tr>
+<tr><th id="313">313</th><td>		<b>break</b>;</td></tr>
+<tr><th id="314">314</th><td>	<b>case</b> <var>16</var>: <i>/* Up */</i></td></tr>
+<tr><th id="315">315</th><td>		<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#memset" title='memset' data-ref="memset">memset</a>(<a class="local col0 ref" href="#20tmpbuffer" title='tmpbuffer' data-ref="20tmpbuffer">tmpbuffer</a>, <kbd>' '</kbd>,</td></tr>
+<tr><th id="316">316</th><td>		       <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="ref" href="kdb_private.h.html#kdb_prompt_str" title='kdb_prompt_str' data-ref="kdb_prompt_str">kdb_prompt_str</a>) + (<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>-<a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>));</td></tr>
+<tr><th id="317">317</th><td>		*(<a class="local col0 ref" href="#20tmpbuffer" title='tmpbuffer' data-ref="20tmpbuffer">tmpbuffer</a>+<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="ref" href="kdb_private.h.html#kdb_prompt_str" title='kdb_prompt_str' data-ref="kdb_prompt_str">kdb_prompt_str</a>) +</td></tr>
+<tr><th id="318">318</th><td>		  (<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>-<a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>)) = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="319">319</th><td>		<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"\r%s\r"</q>, <a class="local col0 ref" href="#20tmpbuffer" title='tmpbuffer' data-ref="20tmpbuffer">tmpbuffer</a>);</td></tr>
+<tr><th id="320">320</th><td>		*<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> = (<em>char</em>)<a class="local col8 ref" href="#28key" title='key' data-ref="28key">key</a>;</td></tr>
+<tr><th id="321">321</th><td>		*(<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>+<var>1</var>) = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="322">322</th><td>		<b>return</b> <a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>;</td></tr>
+<tr><th id="323">323</th><td>	<b>case</b> <var>9</var>: <i>/* Tab */</i></td></tr>
+<tr><th id="324">324</th><td>		<b>if</b> (<a class="local col3 ref" href="#23tab" title='tab' data-ref="23tab">tab</a> &lt; <var>2</var>)</td></tr>
+<tr><th id="325">325</th><td>			++<a class="local col3 ref" href="#23tab" title='tab' data-ref="23tab">tab</a>;</td></tr>
+<tr><th id="326">326</th><td>		<a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a> = <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>;</td></tr>
+<tr><th id="327">327</th><td>		<b>while</b> (*<a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a> == <kbd>' '</kbd>)</td></tr>
+<tr><th id="328">328</th><td>			<a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a>++;</td></tr>
+<tr><th id="329">329</th><td>		<b>if</b> (<a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a> &gt; <a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>)</td></tr>
+<tr><th id="330">330</th><td>			<b>break</b>;</td></tr>
+<tr><th id="331">331</th><td>		<a class="macro" href="../../../arch/x86/include/asm/string_64.h.html#37" title="({ size_t __len = (cp-p_tmp); void *__ret; if (__builtin_constant_p(cp-p_tmp) &amp;&amp; __len &gt;= 64) __ret = __memcpy((tmpbuffer), (p_tmp), __len); else __ret = __builtin_memcpy((tmpbuffer), (p_tmp), __len); __ret; })" data-ref="_M/memcpy">memcpy</a>(<a class="local col0 ref" href="#20tmpbuffer" title='tmpbuffer' data-ref="20tmpbuffer">tmpbuffer</a>, <a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a>, <a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>-<a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a>);</td></tr>
+<tr><th id="332">332</th><td>		*(<a class="local col0 ref" href="#20tmpbuffer" title='tmpbuffer' data-ref="20tmpbuffer">tmpbuffer</a> + (<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>-<a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a>)) = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="333">333</th><td>		<a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a> = <a class="ref fn" href="../../../include/linux/string.h.html#strrchr" title='strrchr' data-ref="strrchr">strrchr</a>(<a class="local col0 ref" href="#20tmpbuffer" title='tmpbuffer' data-ref="20tmpbuffer">tmpbuffer</a>, <kbd>' '</kbd>);</td></tr>
+<tr><th id="334">334</th><td>		<b>if</b> (<a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a>)</td></tr>
+<tr><th id="335">335</th><td>			++<a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a>;</td></tr>
+<tr><th id="336">336</th><td>		<b>else</b></td></tr>
+<tr><th id="337">337</th><td>			<a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a> = <a class="local col0 ref" href="#20tmpbuffer" title='tmpbuffer' data-ref="20tmpbuffer">tmpbuffer</a>;</td></tr>
+<tr><th id="338">338</th><td>		<a class="local col1 ref" href="#21len" title='len' data-ref="21len">len</a> = <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a>);</td></tr>
+<tr><th id="339">339</th><td>		<a class="local col4 ref" href="#24count" title='count' data-ref="24count">count</a> = <a class="ref fn" href="kdb_private.h.html#kallsyms_symbol_complete" title='kallsyms_symbol_complete' data-ref="kallsyms_symbol_complete">kallsyms_symbol_complete</a>(<a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a>,</td></tr>
+<tr><th id="340">340</th><td>						 <b>sizeof</b>(<a class="local col0 ref" href="#20tmpbuffer" title='tmpbuffer' data-ref="20tmpbuffer">tmpbuffer</a>) -</td></tr>
+<tr><th id="341">341</th><td>						 (<a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a> - <a class="local col0 ref" href="#20tmpbuffer" title='tmpbuffer' data-ref="20tmpbuffer">tmpbuffer</a>));</td></tr>
+<tr><th id="342">342</th><td>		<b>if</b> (<a class="local col3 ref" href="#23tab" title='tab' data-ref="23tab">tab</a> == <var>2</var> &amp;&amp; <a class="local col4 ref" href="#24count" title='count' data-ref="24count">count</a> &gt; <var>0</var>) {</td></tr>
+<tr><th id="343">343</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"\n%d symbols are found."</q>, <a class="local col4 ref" href="#24count" title='count' data-ref="24count">count</a>);</td></tr>
+<tr><th id="344">344</th><td>			<b>if</b> (<a class="local col4 ref" href="#24count" title='count' data-ref="24count">count</a> &gt; <a class="local col7 ref" href="#27dtab_count" title='dtab_count' data-ref="27dtab_count">dtab_count</a>) {</td></tr>
+<tr><th id="345">345</th><td>				<a class="local col4 ref" href="#24count" title='count' data-ref="24count">count</a> = <a class="local col7 ref" href="#27dtab_count" title='dtab_count' data-ref="27dtab_count">dtab_count</a>;</td></tr>
+<tr><th id="346">346</th><td>				<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>" But only first %d symbols will"</q></td></tr>
+<tr><th id="347">347</th><td>					   <q>" be printed.\nYou can change the"</q></td></tr>
+<tr><th id="348">348</th><td>					   <q>" environment variable DTABCOUNT."</q>,</td></tr>
+<tr><th id="349">349</th><td>					   <a class="local col4 ref" href="#24count" title='count' data-ref="24count">count</a>);</td></tr>
+<tr><th id="350">350</th><td>			}</td></tr>
+<tr><th id="351">351</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"\n"</q>);</td></tr>
+<tr><th id="352">352</th><td>			<b>for</b> (<a class="local col5 ref" href="#25i" title='i' data-ref="25i">i</a> = <var>0</var>; <a class="local col5 ref" href="#25i" title='i' data-ref="25i">i</a> &lt; <a class="local col4 ref" href="#24count" title='count' data-ref="24count">count</a>; <a class="local col5 ref" href="#25i" title='i' data-ref="25i">i</a>++) {</td></tr>
+<tr><th id="353">353</th><td>				<b>if</b> (<a class="macro" href="../../../include/asm-generic/bug.h.html#111" title="({ int __ret_warn_on = !!(!kallsyms_symbol_next(p_tmp, i)); if (__builtin_expect(!!(__ret_warn_on), 0)) do { do { asm volatile(&quot;1:\t&quot; &quot;.byte 0x0f, 0x0b&quot; &quot;\n&quot; &quot;.pushsection __bug_table,\&quot;aw\&quot;\n&quot; &quot;2:\t&quot; &quot;.long &quot; &quot;1b&quot; &quot; - 2b&quot; &quot;\t# bug_entry::bug_addr\n&quot; &quot;\t&quot; &quot;.long &quot; &quot;%c0&quot; &quot; - 2b&quot; &quot;\t# bug_entry::file\n&quot; &quot;\t.word %c1&quot; &quot;\t# bug_entry::line\n&quot; &quot;\t.word %c2&quot; &quot;\t# bug_entry::flags\n&quot; &quot;\t.org 2b+%c3\n&quot; &quot;.popsection&quot; : : &quot;i&quot; (&quot;/home/tempdban/kernel/stable/kernel/debug/kdb/kdb_io.c&quot;), &quot;i&quot; (353), &quot;i&quot; ((1 &lt;&lt; 0)|(((9) &lt;&lt; 8))), &quot;i&quot; (sizeof(struct bug_entry))); } while (0); ({ asm volatile(&quot;%c0:\n\t&quot; &quot;.pushsection .discard.reachable\n\t&quot; &quot;.long %c0b - .\n\t&quot; &quot;.popsection\n\t&quot; : : &quot;i&quot; (35)); }); } while (0); __builtin_expect(!!(__ret_warn_on), 0); })" data-ref="_M/WARN_ON">WARN_ON</a>(!<a class="ref fn" href="kdb_private.h.html#kallsyms_symbol_next" title='kallsyms_symbol_next' data-ref="kallsyms_symbol_next">kallsyms_symbol_next</a>(<a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a>, <a class="local col5 ref" href="#25i" title='i' data-ref="25i">i</a>)))</td></tr>
+<tr><th id="354">354</th><td>					<b>break</b>;</td></tr>
+<tr><th id="355">355</th><td>				<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"%s "</q>, <a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a>);</td></tr>
+<tr><th id="356">356</th><td>				*(<a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a> + <a class="local col1 ref" href="#21len" title='len' data-ref="21len">len</a>) = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="357">357</th><td>			}</td></tr>
+<tr><th id="358">358</th><td>			<b>if</b> (<a class="local col5 ref" href="#25i" title='i' data-ref="25i">i</a> &gt;= <a class="local col7 ref" href="#27dtab_count" title='dtab_count' data-ref="27dtab_count">dtab_count</a>)</td></tr>
+<tr><th id="359">359</th><td>				<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"..."</q>);</td></tr>
+<tr><th id="360">360</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"\n"</q>);</td></tr>
+<tr><th id="361">361</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<a class="ref" href="kdb_private.h.html#kdb_prompt_str" title='kdb_prompt_str' data-ref="kdb_prompt_str">kdb_prompt_str</a>);</td></tr>
+<tr><th id="362">362</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"%s"</q>, <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>);</td></tr>
+<tr><th id="363">363</th><td>		} <b>else</b> <b>if</b> (<a class="local col3 ref" href="#23tab" title='tab' data-ref="23tab">tab</a> != <var>2</var> &amp;&amp; <a class="local col4 ref" href="#24count" title='count' data-ref="24count">count</a> &gt; <var>0</var>) {</td></tr>
+<tr><th id="364">364</th><td>			<a class="local col2 ref" href="#22len_tmp" title='len_tmp' data-ref="22len_tmp">len_tmp</a> = <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a>);</td></tr>
+<tr><th id="365">365</th><td>			<a class="ref fn" href="../../../include/linux/string.h.html#strncpy" title='strncpy' data-ref="strncpy">strncpy</a>(<a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a>+<a class="local col2 ref" href="#22len_tmp" title='len_tmp' data-ref="22len_tmp">len_tmp</a>, <a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>, <a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>-<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>+<var>1</var>);</td></tr>
+<tr><th id="366">366</th><td>			<a class="local col2 ref" href="#22len_tmp" title='len_tmp' data-ref="22len_tmp">len_tmp</a> = <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a>);</td></tr>
+<tr><th id="367">367</th><td>			<a class="ref fn" href="../../../include/linux/string.h.html#strncpy" title='strncpy' data-ref="strncpy">strncpy</a>(<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>, <a class="local col8 ref" href="#18p_tmp" title='p_tmp' data-ref="18p_tmp">p_tmp</a>+<a class="local col1 ref" href="#21len" title='len' data-ref="21len">len</a>, <a class="local col2 ref" href="#22len_tmp" title='len_tmp' data-ref="22len_tmp">len_tmp</a>-<a class="local col1 ref" href="#21len" title='len' data-ref="21len">len</a> + <var>1</var>);</td></tr>
+<tr><th id="368">368</th><td>			<a class="local col1 ref" href="#21len" title='len' data-ref="21len">len</a> = <a class="local col2 ref" href="#22len_tmp" title='len_tmp' data-ref="22len_tmp">len_tmp</a> - <a class="local col1 ref" href="#21len" title='len' data-ref="21len">len</a>;</td></tr>
+<tr><th id="369">369</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"%s"</q>, <a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>);</td></tr>
+<tr><th id="370">370</th><td>			<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> += <a class="local col1 ref" href="#21len" title='len' data-ref="21len">len</a>;</td></tr>
+<tr><th id="371">371</th><td>			<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> += <a class="local col1 ref" href="#21len" title='len' data-ref="21len">len</a>;</td></tr>
+<tr><th id="372">372</th><td>		}</td></tr>
+<tr><th id="373">373</th><td>		<a class="ref" href="kdb_private.h.html#kdb_nextline" title='kdb_nextline' data-ref="kdb_nextline">kdb_nextline</a> = <var>1</var>; <i>/* reset output line number */</i></td></tr>
+<tr><th id="374">374</th><td>		<b>break</b>;</td></tr>
+<tr><th id="375">375</th><td>	<b>default</b>:</td></tr>
+<tr><th id="376">376</th><td>		<b>if</b> (<a class="local col8 ref" href="#28key" title='key' data-ref="28key">key</a> &gt;= <var>32</var> &amp;&amp; <a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> &lt; <a class="local col6 ref" href="#16bufend" title='bufend' data-ref="16bufend">bufend</a>) {</td></tr>
+<tr><th id="377">377</th><td>			<b>if</b> (<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> &lt; <a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a>) {</td></tr>
+<tr><th id="378">378</th><td>				<a class="macro" href="../../../arch/x86/include/asm/string_64.h.html#37" title="({ size_t __len = (lastchar - cp); void *__ret; if (__builtin_constant_p(lastchar - cp) &amp;&amp; __len &gt;= 64) __ret = __memcpy((tmpbuffer), (cp), __len); else __ret = __builtin_memcpy((tmpbuffer), (cp), __len); __ret; })" data-ref="_M/memcpy">memcpy</a>(<a class="local col0 ref" href="#20tmpbuffer" title='tmpbuffer' data-ref="20tmpbuffer">tmpbuffer</a>, <a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>, <a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> - <a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>);</td></tr>
+<tr><th id="379">379</th><td>				<a class="macro" href="../../../arch/x86/include/asm/string_64.h.html#37" title="({ size_t __len = (lastchar - cp); void *__ret; if (__builtin_constant_p(lastchar - cp) &amp;&amp; __len &gt;= 64) __ret = __memcpy((cp+1), (tmpbuffer), __len); else __ret = __builtin_memcpy((cp+1), (tmpbuffer), __len); __ret; })" data-ref="_M/memcpy">memcpy</a>(<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>+<var>1</var>, <a class="local col0 ref" href="#20tmpbuffer" title='tmpbuffer' data-ref="20tmpbuffer">tmpbuffer</a>, <a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> - <a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>);</td></tr>
+<tr><th id="380">380</th><td>				*++<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="381">381</th><td>				*<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> = <a class="local col8 ref" href="#28key" title='key' data-ref="28key">key</a>;</td></tr>
+<tr><th id="382">382</th><td>				<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"%s\r"</q>, <a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>);</td></tr>
+<tr><th id="383">383</th><td>				++<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>;</td></tr>
+<tr><th id="384">384</th><td>				<a class="local col9 ref" href="#19tmp" title='tmp' data-ref="19tmp">tmp</a> = *<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>;</td></tr>
+<tr><th id="385">385</th><td>				*<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="386">386</th><td>				<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<a class="ref" href="kdb_private.h.html#kdb_prompt_str" title='kdb_prompt_str' data-ref="kdb_prompt_str">kdb_prompt_str</a>);</td></tr>
+<tr><th id="387">387</th><td>				<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"%s"</q>, <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>);</td></tr>
+<tr><th id="388">388</th><td>				*<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a> = <a class="local col9 ref" href="#19tmp" title='tmp' data-ref="19tmp">tmp</a>;</td></tr>
+<tr><th id="389">389</th><td>			} <b>else</b> {</td></tr>
+<tr><th id="390">390</th><td>				*++<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="391">391</th><td>				*<a class="local col5 ref" href="#15cp" title='cp' data-ref="15cp">cp</a>++ = <a class="local col8 ref" href="#28key" title='key' data-ref="28key">key</a>;</td></tr>
+<tr><th id="392">392</th><td>				<i>/* The kgdb transition check will hide</i></td></tr>
+<tr><th id="393">393</th><td><i>				 * printed characters if we think that</i></td></tr>
+<tr><th id="394">394</th><td><i>				 * kgdb is connecting, until the check</i></td></tr>
+<tr><th id="395">395</th><td><i>				 * fails */</i></td></tr>
+<tr><th id="396">396</th><td>				<b>if</b> (!<a class="macro" href="kdb_private.h.html#148" title="(kdb_state &amp; 0x00200000)" data-ref="_M/KDB_STATE">KDB_STATE</a>(KGDB_TRANS)) {</td></tr>
+<tr><th id="397">397</th><td>					<b>if</b> (<a class="tu ref fn" href="#kgdb_transition_check" title='kgdb_transition_check' data-use='c' data-ref="kgdb_transition_check">kgdb_transition_check</a>(<a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>))</td></tr>
+<tr><th id="398">398</th><td>						<b>return</b> <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>;</td></tr>
+<tr><th id="399">399</th><td>				} <b>else</b> {</td></tr>
+<tr><th id="400">400</th><td>					<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"%c"</q>, <a class="local col8 ref" href="#28key" title='key' data-ref="28key">key</a>);</td></tr>
+<tr><th id="401">401</th><td>				}</td></tr>
+<tr><th id="402">402</th><td>			}</td></tr>
+<tr><th id="403">403</th><td>			<i>/* Special escape to kgdb */</i></td></tr>
+<tr><th id="404">404</th><td>			<b>if</b> (<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> - <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a> &gt;= <var>5</var> &amp;&amp;</td></tr>
+<tr><th id="405">405</th><td>			    <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strcmp" title='strcmp' data-ref="strcmp">strcmp</a>(<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> - <var>5</var>, <q>"$?#3f"</q>) == <var>0</var>) {</td></tr>
+<tr><th id="406">406</th><td>				<a class="ref fn" href="kdb_private.h.html#kdb_gdb_state_pass" title='kdb_gdb_state_pass' data-ref="kdb_gdb_state_pass">kdb_gdb_state_pass</a>(<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> - <var>5</var>);</td></tr>
+<tr><th id="407">407</th><td>				<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strcpy" title='strcpy' data-ref="strcpy">strcpy</a>(<a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>, <q>"kgdb"</q>);</td></tr>
+<tr><th id="408">408</th><td>				<a class="macro" href="kdb_private.h.html#149" title="((void)(kdb_state |= 0x00080000))" data-ref="_M/KDB_STATE_SET">KDB_STATE_SET</a>(DOING_KGDB);</td></tr>
+<tr><th id="409">409</th><td>				<b>return</b> <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>;</td></tr>
+<tr><th id="410">410</th><td>			}</td></tr>
+<tr><th id="411">411</th><td>			<b>if</b> (<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> - <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a> &gt;= <var>11</var> &amp;&amp;</td></tr>
+<tr><th id="412">412</th><td>			    <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strcmp" title='strcmp' data-ref="strcmp">strcmp</a>(<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> - <var>11</var>, <q>"$qSupported"</q>) == <var>0</var>) {</td></tr>
+<tr><th id="413">413</th><td>				<a class="ref fn" href="kdb_private.h.html#kdb_gdb_state_pass" title='kdb_gdb_state_pass' data-ref="kdb_gdb_state_pass">kdb_gdb_state_pass</a>(<a class="local col7 ref" href="#17lastchar" title='lastchar' data-ref="17lastchar">lastchar</a> - <var>11</var>);</td></tr>
+<tr><th id="414">414</th><td>				<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strcpy" title='strcpy' data-ref="strcpy">strcpy</a>(<a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>, <q>"kgdb"</q>);</td></tr>
+<tr><th id="415">415</th><td>				<a class="macro" href="kdb_private.h.html#149" title="((void)(kdb_state |= 0x00080000))" data-ref="_M/KDB_STATE_SET">KDB_STATE_SET</a>(DOING_KGDB);</td></tr>
+<tr><th id="416">416</th><td>				<b>return</b> <a class="local col3 ref" href="#13buffer" title='buffer' data-ref="13buffer">buffer</a>;</td></tr>
+<tr><th id="417">417</th><td>			}</td></tr>
+<tr><th id="418">418</th><td>		}</td></tr>
+<tr><th id="419">419</th><td>		<b>break</b>;</td></tr>
+<tr><th id="420">420</th><td>	}</td></tr>
+<tr><th id="421">421</th><td>	<b>goto</b> <a class="lbl" href="#29poll_again" data-ref="29poll_again">poll_again</a>;</td></tr>
+<tr><th id="422">422</th><td>}</td></tr>
+<tr><th id="423">423</th><td></td></tr>
+<tr><th id="424">424</th><td><i>/*</i></td></tr>
+<tr><th id="425">425</th><td><i> * kdb_getstr</i></td></tr>
+<tr><th id="426">426</th><td><i> *</i></td></tr>
+<tr><th id="427">427</th><td><i> *	Print the prompt string and read a command from the</i></td></tr>
+<tr><th id="428">428</th><td><i> *	input device.</i></td></tr>
+<tr><th id="429">429</th><td><i> *</i></td></tr>
+<tr><th id="430">430</th><td><i> * Parameters:</i></td></tr>
+<tr><th id="431">431</th><td><i> *	buffer	Address of buffer to receive command</i></td></tr>
+<tr><th id="432">432</th><td><i> *	bufsize Size of buffer in bytes</i></td></tr>
+<tr><th id="433">433</th><td><i> *	prompt	Pointer to string to use as prompt string</i></td></tr>
+<tr><th id="434">434</th><td><i> * Returns:</i></td></tr>
+<tr><th id="435">435</th><td><i> *	Pointer to command buffer.</i></td></tr>
+<tr><th id="436">436</th><td><i> * Locking:</i></td></tr>
+<tr><th id="437">437</th><td><i> *	None.</i></td></tr>
+<tr><th id="438">438</th><td><i> * Remarks:</i></td></tr>
+<tr><th id="439">439</th><td><i> *	For SMP kernels, the processor number will be</i></td></tr>
+<tr><th id="440">440</th><td><i> *	substituted for %d, %x or %o in the prompt.</i></td></tr>
+<tr><th id="441">441</th><td><i> */</i></td></tr>
+<tr><th id="442">442</th><td></td></tr>
+<tr><th id="443">443</th><td><em>char</em> *<dfn class="decl def fn" id="kdb_getstr" title='kdb_getstr' data-ref="kdb_getstr">kdb_getstr</dfn>(<em>char</em> *<dfn class="local col0 decl" id="30buffer" title='buffer' data-type='char *' data-ref="30buffer">buffer</dfn>, <a class="typedef" href="../../../include/linux/types.h.html#size_t" title='size_t' data-type='__kernel_size_t' data-ref="size_t">size_t</a> <dfn class="local col1 decl" id="31bufsize" title='bufsize' data-type='size_t' data-ref="31bufsize">bufsize</dfn>, <em>const</em> <em>char</em> *<dfn class="local col2 decl" id="32prompt" title='prompt' data-type='const char *' data-ref="32prompt">prompt</dfn>)</td></tr>
+<tr><th id="444">444</th><td>{</td></tr>
+<tr><th id="445">445</th><td>	<b>if</b> (<a class="local col2 ref" href="#32prompt" title='prompt' data-ref="32prompt">prompt</a> &amp;&amp; <a class="ref" href="kdb_private.h.html#kdb_prompt_str" title='kdb_prompt_str' data-ref="kdb_prompt_str">kdb_prompt_str</a> != <a class="local col2 ref" href="#32prompt" title='prompt' data-ref="32prompt">prompt</a>)</td></tr>
+<tr><th id="446">446</th><td>		<a class="ref fn" href="../../../include/linux/string.h.html#strncpy" title='strncpy' data-ref="strncpy">strncpy</a>(<a class="ref" href="kdb_private.h.html#kdb_prompt_str" title='kdb_prompt_str' data-ref="kdb_prompt_str">kdb_prompt_str</a>, <a class="local col2 ref" href="#32prompt" title='prompt' data-ref="32prompt">prompt</a>, <a class="macro" href="#29" title="256" data-ref="_M/CMD_BUFLEN">CMD_BUFLEN</a>);</td></tr>
+<tr><th id="447">447</th><td>	<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<a class="ref" href="kdb_private.h.html#kdb_prompt_str" title='kdb_prompt_str' data-ref="kdb_prompt_str">kdb_prompt_str</a>);</td></tr>
+<tr><th id="448">448</th><td>	<a class="ref" href="kdb_private.h.html#kdb_nextline" title='kdb_nextline' data-ref="kdb_nextline">kdb_nextline</a> = <var>1</var>;	<i>/* Prompt and input resets line number */</i></td></tr>
+<tr><th id="449">449</th><td>	<b>return</b> <a class="tu ref fn" href="#kdb_read" title='kdb_read' data-use='c' data-ref="kdb_read">kdb_read</a>(<a class="local col0 ref" href="#30buffer" title='buffer' data-ref="30buffer">buffer</a>, <a class="local col1 ref" href="#31bufsize" title='bufsize' data-ref="31bufsize">bufsize</a>);</td></tr>
+<tr><th id="450">450</th><td>}</td></tr>
+<tr><th id="451">451</th><td></td></tr>
+<tr><th id="452">452</th><td><i  data-doc="kdb_input_flush">/*</i></td></tr>
+<tr><th id="453">453</th><td><i  data-doc="kdb_input_flush"> * kdb_input_flush</i></td></tr>
+<tr><th id="454">454</th><td><i  data-doc="kdb_input_flush"> *</i></td></tr>
+<tr><th id="455">455</th><td><i  data-doc="kdb_input_flush"> *	Get rid of any buffered console input.</i></td></tr>
+<tr><th id="456">456</th><td><i  data-doc="kdb_input_flush"> *</i></td></tr>
+<tr><th id="457">457</th><td><i  data-doc="kdb_input_flush"> * Parameters:</i></td></tr>
+<tr><th id="458">458</th><td><i  data-doc="kdb_input_flush"> *	none</i></td></tr>
+<tr><th id="459">459</th><td><i  data-doc="kdb_input_flush"> * Returns:</i></td></tr>
+<tr><th id="460">460</th><td><i  data-doc="kdb_input_flush"> *	nothing</i></td></tr>
+<tr><th id="461">461</th><td><i  data-doc="kdb_input_flush"> * Locking:</i></td></tr>
+<tr><th id="462">462</th><td><i  data-doc="kdb_input_flush"> *	none</i></td></tr>
+<tr><th id="463">463</th><td><i  data-doc="kdb_input_flush"> * Remarks:</i></td></tr>
+<tr><th id="464">464</th><td><i  data-doc="kdb_input_flush"> *	Call this function whenever you want to flush input.  If there is any</i></td></tr>
+<tr><th id="465">465</th><td><i  data-doc="kdb_input_flush"> *	outstanding input, it ignores all characters until there has been no</i></td></tr>
+<tr><th id="466">466</th><td><i  data-doc="kdb_input_flush"> *	data for approximately 1ms.</i></td></tr>
+<tr><th id="467">467</th><td><i  data-doc="kdb_input_flush"> */</i></td></tr>
+<tr><th id="468">468</th><td></td></tr>
+<tr><th id="469">469</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="kdb_input_flush" title='kdb_input_flush' data-type='void kdb_input_flush()' data-ref="kdb_input_flush">kdb_input_flush</dfn>(<em>void</em>)</td></tr>
+<tr><th id="470">470</th><td>{</td></tr>
+<tr><th id="471">471</th><td>	<a class="typedef" href="../../../include/linux/kdb.h.html#get_char_func" title='get_char_func' data-type='int (*)(void)' data-ref="get_char_func">get_char_func</a> *<dfn class="local col3 decl" id="33f" title='f' data-type='get_char_func *' data-ref="33f">f</dfn>;</td></tr>
+<tr><th id="472">472</th><td>	<em>int</em> <dfn class="local col4 decl" id="34res" title='res' data-type='int' data-ref="34res">res</dfn>;</td></tr>
+<tr><th id="473">473</th><td>	<em>int</em> <dfn class="local col5 decl" id="35flush_delay" title='flush_delay' data-type='int' data-ref="35flush_delay">flush_delay</dfn> = <var>1</var>;</td></tr>
+<tr><th id="474">474</th><td>	<b>while</b> (<a class="local col5 ref" href="#35flush_delay" title='flush_delay' data-ref="35flush_delay">flush_delay</a>) {</td></tr>
+<tr><th id="475">475</th><td>		<a class="local col5 ref" href="#35flush_delay" title='flush_delay' data-ref="35flush_delay">flush_delay</a>--;</td></tr>
+<tr><th id="476">476</th><td><dfn class="lbl" id="36empty" data-ref="36empty">empty</dfn>:</td></tr>
+<tr><th id="477">477</th><td>		<a class="ref fn" href="../../../include/linux/nmi.h.html#touch_nmi_watchdog" title='touch_nmi_watchdog' data-ref="touch_nmi_watchdog">touch_nmi_watchdog</a>();</td></tr>
+<tr><th id="478">478</th><td>		<b>for</b> (<a class="local col3 ref" href="#33f" title='f' data-ref="33f">f</a> = &amp;<a class="ref" href="../../../include/linux/kdb.h.html#kdb_poll_funcs" title='kdb_poll_funcs' data-ref="kdb_poll_funcs">kdb_poll_funcs</a>[<var>0</var>]; *<a class="local col3 ref" href="#33f" title='f' data-ref="33f">f</a>; ++<a class="local col3 ref" href="#33f" title='f' data-ref="33f">f</a>) {</td></tr>
+<tr><th id="479">479</th><td>			<a class="local col4 ref" href="#34res" title='res' data-ref="34res">res</a> = (*<a class="local col3 ref" href="#33f" title='f' data-ref="33f">f</a>)();</td></tr>
+<tr><th id="480">480</th><td>			<b>if</b> (<a class="local col4 ref" href="#34res" title='res' data-ref="34res">res</a> != -<var>1</var>) {</td></tr>
+<tr><th id="481">481</th><td>				<a class="local col5 ref" href="#35flush_delay" title='flush_delay' data-ref="35flush_delay">flush_delay</a> = <var>1</var>;</td></tr>
+<tr><th id="482">482</th><td>				<b>goto</b> <a class="lbl" href="#36empty" data-ref="36empty">empty</a>;</td></tr>
+<tr><th id="483">483</th><td>			}</td></tr>
+<tr><th id="484">484</th><td>		}</td></tr>
+<tr><th id="485">485</th><td>		<b>if</b> (<a class="local col5 ref" href="#35flush_delay" title='flush_delay' data-ref="35flush_delay">flush_delay</a>)</td></tr>
+<tr><th id="486">486</th><td>			<a class="macro" href="../../../include/linux/delay.h.html#43" title="( (__builtin_constant_p(1) &amp;&amp; (1)&lt;=5) ? ({ if (__builtin_constant_p((1)*1000)) { if (((1)*1000) / 20000 &gt;= 1) __bad_udelay(); else __const_udelay(((1)*1000) * 0x10c7ul); } else { __udelay((1)*1000); } }) : ({unsigned long __ms=(1); while (__ms--) ({ if (__builtin_constant_p(1000)) { if ((1000) / 20000 &gt;= 1) __bad_udelay(); else __const_udelay((1000) * 0x10c7ul); } else { __udelay(1000); } });}))" data-ref="_M/mdelay">mdelay</a>(<var>1</var>);</td></tr>
+<tr><th id="487">487</th><td>	}</td></tr>
+<tr><th id="488">488</th><td>}</td></tr>
+<tr><th id="489">489</th><td></td></tr>
+<tr><th id="490">490</th><td><i  data-doc="kdb_buffer">/*</i></td></tr>
+<tr><th id="491">491</th><td><i  data-doc="kdb_buffer"> * kdb_printf</i></td></tr>
+<tr><th id="492">492</th><td><i  data-doc="kdb_buffer"> *</i></td></tr>
+<tr><th id="493">493</th><td><i  data-doc="kdb_buffer"> *	Print a string to the output device(s).</i></td></tr>
+<tr><th id="494">494</th><td><i  data-doc="kdb_buffer"> *</i></td></tr>
+<tr><th id="495">495</th><td><i  data-doc="kdb_buffer"> * Parameters:</i></td></tr>
+<tr><th id="496">496</th><td><i  data-doc="kdb_buffer"> *	printf-like format and optional args.</i></td></tr>
+<tr><th id="497">497</th><td><i  data-doc="kdb_buffer"> * Returns:</i></td></tr>
+<tr><th id="498">498</th><td><i  data-doc="kdb_buffer"> *	0</i></td></tr>
+<tr><th id="499">499</th><td><i  data-doc="kdb_buffer"> * Locking:</i></td></tr>
+<tr><th id="500">500</th><td><i  data-doc="kdb_buffer"> *	None.</i></td></tr>
+<tr><th id="501">501</th><td><i  data-doc="kdb_buffer"> * Remarks:</i></td></tr>
+<tr><th id="502">502</th><td><i  data-doc="kdb_buffer"> *	use 'kdbcons-&gt;write()' to avoid polluting 'log_buf' with</i></td></tr>
+<tr><th id="503">503</th><td><i  data-doc="kdb_buffer"> *	kdb output.</i></td></tr>
+<tr><th id="504">504</th><td><i  data-doc="kdb_buffer"> *</i></td></tr>
+<tr><th id="505">505</th><td><i  data-doc="kdb_buffer"> *  If the user is doing a cmd args | grep srch</i></td></tr>
+<tr><th id="506">506</th><td><i  data-doc="kdb_buffer"> *  then kdb_grepping_flag is set.</i></td></tr>
+<tr><th id="507">507</th><td><i  data-doc="kdb_buffer"> *  In that case we need to accumulate full lines (ending in \n) before</i></td></tr>
+<tr><th id="508">508</th><td><i  data-doc="kdb_buffer"> *  searching for the pattern.</i></td></tr>
+<tr><th id="509">509</th><td><i  data-doc="kdb_buffer"> */</i></td></tr>
+<tr><th id="510">510</th><td></td></tr>
+<tr><th id="511">511</th><td><em>static</em> <em>char</em> <dfn class="tu decl def" id="kdb_buffer" title='kdb_buffer' data-type='char [256]' data-ref="kdb_buffer">kdb_buffer</dfn>[<var>256</var>];	<i  data-doc="kdb_buffer">/* A bit too big to go on stack */</i></td></tr>
+<tr><th id="512">512</th><td><em>static</em> <em>char</em> *<dfn class="tu decl def" id="next_avail" title='next_avail' data-type='char *' data-ref="next_avail">next_avail</dfn> = <a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-ref="kdb_buffer">kdb_buffer</a>;</td></tr>
+<tr><th id="513">513</th><td><em>static</em> <em>int</em>  <dfn class="tu decl def" id="size_avail" title='size_avail' data-type='int' data-ref="size_avail">size_avail</dfn>;</td></tr>
+<tr><th id="514">514</th><td><em>static</em> <em>int</em>  <dfn class="tu decl def" id="suspend_grep" title='suspend_grep' data-type='int' data-ref="suspend_grep">suspend_grep</dfn>;</td></tr>
+<tr><th id="515">515</th><td></td></tr>
+<tr><th id="516">516</th><td><i  data-doc="kdb_search_string">/*</i></td></tr>
+<tr><th id="517">517</th><td><i  data-doc="kdb_search_string"> * search arg1 to see if it contains arg2</i></td></tr>
+<tr><th id="518">518</th><td><i  data-doc="kdb_search_string"> * (kdmain.c provides flags for ^pat and pat$)</i></td></tr>
+<tr><th id="519">519</th><td><i  data-doc="kdb_search_string"> *</i></td></tr>
+<tr><th id="520">520</th><td><i  data-doc="kdb_search_string"> * return 1 for found, 0 for not found</i></td></tr>
+<tr><th id="521">521</th><td><i  data-doc="kdb_search_string"> */</i></td></tr>
+<tr><th id="522">522</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="kdb_search_string" title='kdb_search_string' data-type='int kdb_search_string(char * searched, char * searchfor)' data-ref="kdb_search_string">kdb_search_string</dfn>(<em>char</em> *<dfn class="local col7 decl" id="37searched" title='searched' data-type='char *' data-ref="37searched">searched</dfn>, <em>char</em> *<dfn class="local col8 decl" id="38searchfor" title='searchfor' data-type='char *' data-ref="38searchfor">searchfor</dfn>)</td></tr>
+<tr><th id="523">523</th><td>{</td></tr>
+<tr><th id="524">524</th><td>	<em>char</em> <dfn class="local col9 decl" id="39firstchar" title='firstchar' data-type='char' data-ref="39firstchar">firstchar</dfn>, *<dfn class="local col0 decl" id="40cp" title='cp' data-type='char *' data-ref="40cp">cp</dfn>;</td></tr>
+<tr><th id="525">525</th><td>	<em>int</em> <dfn class="local col1 decl" id="41len1" title='len1' data-type='int' data-ref="41len1">len1</dfn>, <dfn class="local col2 decl" id="42len2" title='len2' data-type='int' data-ref="42len2">len2</dfn>;</td></tr>
+<tr><th id="526">526</th><td></td></tr>
+<tr><th id="527">527</th><td>	<i>/* not counting the newline at the end of "searched" */</i></td></tr>
+<tr><th id="528">528</th><td>	<a class="local col1 ref" href="#41len1" title='len1' data-ref="41len1">len1</a> = <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="local col7 ref" href="#37searched" title='searched' data-ref="37searched">searched</a>)-<var>1</var>;</td></tr>
+<tr><th id="529">529</th><td>	<a class="local col2 ref" href="#42len2" title='len2' data-ref="42len2">len2</a> = <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="local col8 ref" href="#38searchfor" title='searchfor' data-ref="38searchfor">searchfor</a>);</td></tr>
+<tr><th id="530">530</th><td>	<b>if</b> (<a class="local col1 ref" href="#41len1" title='len1' data-ref="41len1">len1</a> &lt; <a class="local col2 ref" href="#42len2" title='len2' data-ref="42len2">len2</a>)</td></tr>
+<tr><th id="531">531</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="532">532</th><td>	<b>if</b> (<a class="ref" href="kdb_private.h.html#kdb_grep_leading" title='kdb_grep_leading' data-ref="kdb_grep_leading">kdb_grep_leading</a> &amp;&amp; <a class="ref" href="kdb_private.h.html#kdb_grep_trailing" title='kdb_grep_trailing' data-ref="kdb_grep_trailing">kdb_grep_trailing</a> &amp;&amp; <a class="local col1 ref" href="#41len1" title='len1' data-ref="41len1">len1</a> != <a class="local col2 ref" href="#42len2" title='len2' data-ref="42len2">len2</a>)</td></tr>
+<tr><th id="533">533</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="534">534</th><td>	<b>if</b> (<a class="ref" href="kdb_private.h.html#kdb_grep_leading" title='kdb_grep_leading' data-ref="kdb_grep_leading">kdb_grep_leading</a>) {</td></tr>
+<tr><th id="535">535</th><td>		<b>if</b> (!<a class="ref fn" href="../../../include/linux/string.h.html#strncmp" title='strncmp' data-ref="strncmp">strncmp</a>(<a class="local col7 ref" href="#37searched" title='searched' data-ref="37searched">searched</a>, <a class="local col8 ref" href="#38searchfor" title='searchfor' data-ref="38searchfor">searchfor</a>, <a class="local col2 ref" href="#42len2" title='len2' data-ref="42len2">len2</a>))</td></tr>
+<tr><th id="536">536</th><td>			<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="537">537</th><td>	} <b>else</b> <b>if</b> (<a class="ref" href="kdb_private.h.html#kdb_grep_trailing" title='kdb_grep_trailing' data-ref="kdb_grep_trailing">kdb_grep_trailing</a>) {</td></tr>
+<tr><th id="538">538</th><td>		<b>if</b> (!<a class="ref fn" href="../../../include/linux/string.h.html#strncmp" title='strncmp' data-ref="strncmp">strncmp</a>(<a class="local col7 ref" href="#37searched" title='searched' data-ref="37searched">searched</a>+<a class="local col1 ref" href="#41len1" title='len1' data-ref="41len1">len1</a>-<a class="local col2 ref" href="#42len2" title='len2' data-ref="42len2">len2</a>, <a class="local col8 ref" href="#38searchfor" title='searchfor' data-ref="38searchfor">searchfor</a>, <a class="local col2 ref" href="#42len2" title='len2' data-ref="42len2">len2</a>))</td></tr>
+<tr><th id="539">539</th><td>			<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="540">540</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="541">541</th><td>		<a class="local col9 ref" href="#39firstchar" title='firstchar' data-ref="39firstchar">firstchar</a> = *<a class="local col8 ref" href="#38searchfor" title='searchfor' data-ref="38searchfor">searchfor</a>;</td></tr>
+<tr><th id="542">542</th><td>		<a class="local col0 ref" href="#40cp" title='cp' data-ref="40cp">cp</a> = <a class="local col7 ref" href="#37searched" title='searched' data-ref="37searched">searched</a>;</td></tr>
+<tr><th id="543">543</th><td>		<b>while</b> ((<a class="local col0 ref" href="#40cp" title='cp' data-ref="40cp">cp</a> = <a class="ref fn" href="../../../include/linux/string.h.html#strchr" title='strchr' data-ref="strchr">strchr</a>(<a class="local col0 ref" href="#40cp" title='cp' data-ref="40cp">cp</a>, <a class="local col9 ref" href="#39firstchar" title='firstchar' data-ref="39firstchar">firstchar</a>))) {</td></tr>
+<tr><th id="544">544</th><td>			<b>if</b> (!<a class="ref fn" href="../../../include/linux/string.h.html#strncmp" title='strncmp' data-ref="strncmp">strncmp</a>(<a class="local col0 ref" href="#40cp" title='cp' data-ref="40cp">cp</a>, <a class="local col8 ref" href="#38searchfor" title='searchfor' data-ref="38searchfor">searchfor</a>, <a class="local col2 ref" href="#42len2" title='len2' data-ref="42len2">len2</a>))</td></tr>
+<tr><th id="545">545</th><td>				<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="546">546</th><td>			<a class="local col0 ref" href="#40cp" title='cp' data-ref="40cp">cp</a>++;</td></tr>
+<tr><th id="547">547</th><td>		}</td></tr>
+<tr><th id="548">548</th><td>	}</td></tr>
+<tr><th id="549">549</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="550">550</th><td>}</td></tr>
+<tr><th id="551">551</th><td></td></tr>
+<tr><th id="552">552</th><td><em>int</em> <dfn class="decl def fn" id="vkdb_printf" title='vkdb_printf' data-ref="vkdb_printf">vkdb_printf</dfn>(<b>enum</b> <a class="type" href="../../../include/linux/kdb.h.html#kdb_msgsrc" title='kdb_msgsrc' data-ref="kdb_msgsrc">kdb_msgsrc</a> <dfn class="local col3 decl" id="43src" title='src' data-type='enum kdb_msgsrc' data-ref="43src">src</dfn>, <em>const</em> <em>char</em> *<dfn class="local col4 decl" id="44fmt" title='fmt' data-type='const char *' data-ref="44fmt">fmt</dfn>, <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> <dfn class="local col5 decl" id="45ap" title='ap' data-type='struct __va_list_tag *' data-ref="45ap">ap</dfn>)</td></tr>
+<tr><th id="553">553</th><td>{</td></tr>
+<tr><th id="554">554</th><td>	<em>int</em> <dfn class="local col6 decl" id="46diag" title='diag' data-type='int' data-ref="46diag">diag</dfn>;</td></tr>
+<tr><th id="555">555</th><td>	<em>int</em> <dfn class="local col7 decl" id="47linecount" title='linecount' data-type='int' data-ref="47linecount">linecount</dfn>;</td></tr>
+<tr><th id="556">556</th><td>	<em>int</em> <dfn class="local col8 decl" id="48colcount" title='colcount' data-type='int' data-ref="48colcount">colcount</dfn>;</td></tr>
+<tr><th id="557">557</th><td>	<em>int</em> <dfn class="local col9 decl" id="49logging" title='logging' data-type='int' data-ref="49logging">logging</dfn>, <dfn class="local col0 decl" id="50saved_loglevel" title='saved_loglevel' data-type='int' data-ref="50saved_loglevel">saved_loglevel</dfn> = <var>0</var>;</td></tr>
+<tr><th id="558">558</th><td>	<em>int</em> <dfn class="local col1 decl" id="51retlen" title='retlen' data-type='int' data-ref="51retlen">retlen</dfn> = <var>0</var>;</td></tr>
+<tr><th id="559">559</th><td>	<em>int</em> <dfn class="local col2 decl" id="52fnd" title='fnd' data-type='int' data-ref="52fnd">fnd</dfn>, <dfn class="local col3 decl" id="53len" title='len' data-type='int' data-ref="53len">len</dfn>;</td></tr>
+<tr><th id="560">560</th><td>	<em>int</em> <dfn class="local col4 decl" id="54this_cpu" title='this_cpu' data-type='int' data-ref="54this_cpu">this_cpu</dfn>, <dfn class="local col5 decl" id="55old_cpu" title='old_cpu' data-type='int' data-ref="55old_cpu">old_cpu</dfn>;</td></tr>
+<tr><th id="561">561</th><td>	<em>char</em> *<dfn class="local col6 decl" id="56cp" title='cp' data-type='char *' data-ref="56cp">cp</dfn>, *<dfn class="local col7 decl" id="57cp2" title='cp2' data-type='char *' data-ref="57cp2">cp2</dfn>, *<dfn class="local col8 decl" id="58cphold" title='cphold' data-type='char *' data-ref="58cphold">cphold</dfn> = <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>, <dfn class="local col9 decl" id="59replaced_byte" title='replaced_byte' data-type='char' data-ref="59replaced_byte">replaced_byte</dfn> = <kbd>' '</kbd>;</td></tr>
+<tr><th id="562">562</th><td>	<em>char</em> *<dfn class="local col0 decl" id="60moreprompt" title='moreprompt' data-type='char *' data-ref="60moreprompt">moreprompt</dfn> = <q>"more&gt; "</q>;</td></tr>
+<tr><th id="563">563</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/console.h.html#console" title='console' data-ref="console">console</a> *<dfn class="local col1 decl" id="61c" title='c' data-type='struct console *' data-ref="61c">c</dfn> = <a class="ref" href="../../../include/linux/console.h.html#console_drivers" title='console_drivers' data-ref="console_drivers">console_drivers</a>;</td></tr>
+<tr><th id="564">564</th><td>	<em>unsigned</em> <em>long</em> <a class="macro" href="../../../include/linux/compiler-clang.h.html#12" title="flags = *(&amp;(flags))" data-ref="_M/uninitialized_var">uninitialized_var</a>(<dfn class="local col2 decl" id="62flags" title='flags' data-type='unsigned long' data-ref="62flags"><a class="local col2 ref" href="#564" title='flags' data-ref="62flags">flags</a></dfn>);</td></tr>
+<tr><th id="565">565</th><td></td></tr>
+<tr><th id="566">566</th><td>	<i>/* Serialize kdb_printf if multiple cpus try to write at once.</i></td></tr>
+<tr><th id="567">567</th><td><i>	 * But if any cpu goes recursive in kdb, just print the output,</i></td></tr>
+<tr><th id="568">568</th><td><i>	 * even if it is interleaved with any other text.</i></td></tr>
+<tr><th id="569">569</th><td><i>	 */</i></td></tr>
+<tr><th id="570">570</th><td>	<a class="macro" href="../../../include/linux/irqflags.h.html#133" title="do { do { ({ unsigned long __dummy; typeof(flags) __dummy2; (void)(&amp;__dummy == &amp;__dummy2); 1; }); flags = arch_local_irq_save(); } while (0); } while (0)" data-ref="_M/local_irq_save">local_irq_save</a>(<a class="local col2 ref" href="#564" title='flags' data-ref="62flags">flags</a>);</td></tr>
+<tr><th id="571">571</th><td>	<a class="local col4 ref" href="#54this_cpu" title='this_cpu' data-ref="54this_cpu">this_cpu</a> = <a class="macro" href="../../../include/linux/smp.h.html#199" title="(({ typeof(cpu_number) pscr_ret__; do { const void *__vpp_verify = (typeof((&amp;(cpu_number)) + 0))((void *)0); (void)__vpp_verify; } while (0); switch(sizeof(cpu_number)) { case 1: pscr_ret__ = ({ typeof(cpu_number) pfo_ret__; switch (sizeof(cpu_number)) { case 1: asm(&quot;mov&quot; &quot;b &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=q&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 2: asm(&quot;mov&quot; &quot;w &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 4: asm(&quot;mov&quot; &quot;l &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 8: asm(&quot;mov&quot; &quot;q &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; default: __bad_percpu_size(); } pfo_ret__; }); break; case 2: pscr_ret__ = ({ typeof(cpu_number) pfo_ret__; switch (sizeof(cpu_number)) { case 1: asm(&quot;mov&quot; &quot;b &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=q&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 2: asm(&quot;mov&quot; &quot;w &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 4: asm(&quot;mov&quot; &quot;l &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 8: asm(&quot;mov&quot; &quot;q &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; default: __bad_percpu_size(); } pfo_ret__; }); break; case 4: pscr_ret__ = ({ typeof(cpu_number) pfo_ret__; switch (sizeof(cpu_number)) { case 1: asm(&quot;mov&quot; &quot;b &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=q&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 2: asm(&quot;mov&quot; &quot;w &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 4: asm(&quot;mov&quot; &quot;l &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 8: asm(&quot;mov&quot; &quot;q &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; default: __bad_percpu_size(); } pfo_ret__; }); break; case 8: pscr_ret__ = ({ typeof(cpu_number) pfo_ret__; switch (sizeof(cpu_number)) { case 1: asm(&quot;mov&quot; &quot;b &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=q&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 2: asm(&quot;mov&quot; &quot;w &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 4: asm(&quot;mov&quot; &quot;l &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 8: asm(&quot;mov&quot; &quot;q &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; default: __bad_percpu_size(); } pfo_ret__; }); break; default: __bad_size_call_parameter(); break; } pscr_ret__; }))" data-ref="_M/smp_processor_id">smp_processor_id</a>();</td></tr>
+<tr><th id="572">572</th><td>	<b>for</b> (;;) {</td></tr>
+<tr><th id="573">573</th><td>		<a class="local col5 ref" href="#55old_cpu" title='old_cpu' data-ref="55old_cpu">old_cpu</a> = <a class="macro" href="../../../include/asm-generic/atomic-instrumented.h.html#371" title="({ ((__typeof__(*(&amp;kdb_printf_cpu)))cmpxchg_size((&amp;kdb_printf_cpu), (unsigned long)(-1), (unsigned long)(this_cpu), sizeof(*(&amp;kdb_printf_cpu)))); })" data-ref="_M/cmpxchg">cmpxchg</a>(&amp;<a class="ref" href="../../../include/linux/kdb.h.html#kdb_printf_cpu" title='kdb_printf_cpu' data-ref="kdb_printf_cpu">kdb_printf_cpu</a>, -<var>1</var>, <a class="local col4 ref" href="#54this_cpu" title='this_cpu' data-ref="54this_cpu">this_cpu</a>);</td></tr>
+<tr><th id="574">574</th><td>		<b>if</b> (<a class="local col5 ref" href="#55old_cpu" title='old_cpu' data-ref="55old_cpu">old_cpu</a> == -<var>1</var> || <a class="local col5 ref" href="#55old_cpu" title='old_cpu' data-ref="55old_cpu">old_cpu</a> == <a class="local col4 ref" href="#54this_cpu" title='this_cpu' data-ref="54this_cpu">this_cpu</a>)</td></tr>
+<tr><th id="575">575</th><td>			<b>break</b>;</td></tr>
+<tr><th id="576">576</th><td></td></tr>
+<tr><th id="577">577</th><td>		<a class="ref fn" href="../../../arch/x86/include/asm/processor.h.html#cpu_relax" title='cpu_relax' data-ref="cpu_relax">cpu_relax</a>();</td></tr>
+<tr><th id="578">578</th><td>	}</td></tr>
+<tr><th id="579">579</th><td></td></tr>
+<tr><th id="580">580</th><td>	<a class="local col6 ref" href="#46diag" title='diag' data-ref="46diag">diag</a> = <a class="ref fn" href="../../../include/linux/kdb.h.html#kdbgetintenv" title='kdbgetintenv' data-ref="kdbgetintenv">kdbgetintenv</a>(<q>"LINES"</q>, &amp;<a class="local col7 ref" href="#47linecount" title='linecount' data-ref="47linecount">linecount</a>);</td></tr>
+<tr><th id="581">581</th><td>	<b>if</b> (<a class="local col6 ref" href="#46diag" title='diag' data-ref="46diag">diag</a> || <a class="local col7 ref" href="#47linecount" title='linecount' data-ref="47linecount">linecount</a> &lt;= <var>1</var>)</td></tr>
+<tr><th id="582">582</th><td>		<a class="local col7 ref" href="#47linecount" title='linecount' data-ref="47linecount">linecount</a> = <var>24</var>;</td></tr>
+<tr><th id="583">583</th><td></td></tr>
+<tr><th id="584">584</th><td>	<a class="local col6 ref" href="#46diag" title='diag' data-ref="46diag">diag</a> = <a class="ref fn" href="../../../include/linux/kdb.h.html#kdbgetintenv" title='kdbgetintenv' data-ref="kdbgetintenv">kdbgetintenv</a>(<q>"COLUMNS"</q>, &amp;<a class="local col8 ref" href="#48colcount" title='colcount' data-ref="48colcount">colcount</a>);</td></tr>
+<tr><th id="585">585</th><td>	<b>if</b> (<a class="local col6 ref" href="#46diag" title='diag' data-ref="46diag">diag</a> || <a class="local col8 ref" href="#48colcount" title='colcount' data-ref="48colcount">colcount</a> &lt;= <var>1</var>)</td></tr>
+<tr><th id="586">586</th><td>		<a class="local col8 ref" href="#48colcount" title='colcount' data-ref="48colcount">colcount</a> = <var>80</var>;</td></tr>
+<tr><th id="587">587</th><td></td></tr>
+<tr><th id="588">588</th><td>	<a class="local col6 ref" href="#46diag" title='diag' data-ref="46diag">diag</a> = <a class="ref fn" href="../../../include/linux/kdb.h.html#kdbgetintenv" title='kdbgetintenv' data-ref="kdbgetintenv">kdbgetintenv</a>(<q>"LOGGING"</q>, &amp;<a class="local col9 ref" href="#49logging" title='logging' data-ref="49logging">logging</a>);</td></tr>
+<tr><th id="589">589</th><td>	<b>if</b> (<a class="local col6 ref" href="#46diag" title='diag' data-ref="46diag">diag</a>)</td></tr>
+<tr><th id="590">590</th><td>		<a class="local col9 ref" href="#49logging" title='logging' data-ref="49logging">logging</a> = <var>0</var>;</td></tr>
+<tr><th id="591">591</th><td></td></tr>
+<tr><th id="592">592</th><td>	<b>if</b> (!<a class="ref" href="kdb_private.h.html#kdb_grepping_flag" title='kdb_grepping_flag' data-ref="kdb_grepping_flag">kdb_grepping_flag</a> || <a class="tu ref" href="#suspend_grep" title='suspend_grep' data-use='r' data-ref="suspend_grep">suspend_grep</a>) {</td></tr>
+<tr><th id="593">593</th><td>		<i>/* normally, every vsnprintf starts a new buffer */</i></td></tr>
+<tr><th id="594">594</th><td>		<a class="tu ref" href="#next_avail" title='next_avail' data-use='w' data-ref="next_avail">next_avail</a> = <a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>;</td></tr>
+<tr><th id="595">595</th><td>		<a class="tu ref" href="#size_avail" title='size_avail' data-use='w' data-ref="size_avail">size_avail</a> = <b>sizeof</b>(<a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>);</td></tr>
+<tr><th id="596">596</th><td>	}</td></tr>
+<tr><th id="597">597</th><td>	<a class="ref fn" href="../../../include/linux/kernel.h.html#vsnprintf" title='vsnprintf' data-ref="vsnprintf">vsnprintf</a>(<a class="tu ref" href="#next_avail" title='next_avail' data-use='r' data-ref="next_avail">next_avail</a>, <a class="tu ref" href="#size_avail" title='size_avail' data-use='r' data-ref="size_avail">size_avail</a>, <a class="local col4 ref" href="#44fmt" title='fmt' data-ref="44fmt">fmt</a>, <a class="local col5 ref" href="#45ap" title='ap' data-ref="45ap">ap</a>);</td></tr>
+<tr><th id="598">598</th><td></td></tr>
+<tr><th id="599">599</th><td>	<i>/*</i></td></tr>
+<tr><th id="600">600</th><td><i>	 * If kdb_parse() found that the command was cmd xxx | grep yyy</i></td></tr>
+<tr><th id="601">601</th><td><i>	 * then kdb_grepping_flag is set, and kdb_grep_string contains yyy</i></td></tr>
+<tr><th id="602">602</th><td><i>	 *</i></td></tr>
+<tr><th id="603">603</th><td><i>	 * Accumulate the print data up to a newline before searching it.</i></td></tr>
+<tr><th id="604">604</th><td><i>	 * (vsnprintf does null-terminate the string that it generates)</i></td></tr>
+<tr><th id="605">605</th><td><i>	 */</i></td></tr>
+<tr><th id="606">606</th><td></td></tr>
+<tr><th id="607">607</th><td>	<i>/* skip the search if prints are temporarily unconditional */</i></td></tr>
+<tr><th id="608">608</th><td>	<b>if</b> (!<a class="tu ref" href="#suspend_grep" title='suspend_grep' data-use='r' data-ref="suspend_grep">suspend_grep</a> &amp;&amp; <a class="ref" href="kdb_private.h.html#kdb_grepping_flag" title='kdb_grepping_flag' data-ref="kdb_grepping_flag">kdb_grepping_flag</a>) {</td></tr>
+<tr><th id="609">609</th><td>		<a class="local col6 ref" href="#56cp" title='cp' data-ref="56cp">cp</a> = <a class="ref fn" href="../../../include/linux/string.h.html#strchr" title='strchr' data-ref="strchr">strchr</a>(<a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>, <kbd>'\n'</kbd>);</td></tr>
+<tr><th id="610">610</th><td>		<b>if</b> (!<a class="local col6 ref" href="#56cp" title='cp' data-ref="56cp">cp</a>) {</td></tr>
+<tr><th id="611">611</th><td>			<i>/*</i></td></tr>
+<tr><th id="612">612</th><td><i>			 * Special cases that don't end with newlines</i></td></tr>
+<tr><th id="613">613</th><td><i>			 * but should be written without one:</i></td></tr>
+<tr><th id="614">614</th><td><i>			 *   The "[nn]kdb&gt; " prompt should</i></td></tr>
+<tr><th id="615">615</th><td><i>			 *   appear at the front of the buffer.</i></td></tr>
+<tr><th id="616">616</th><td><i>			 *</i></td></tr>
+<tr><th id="617">617</th><td><i>			 *   The "[nn]more " prompt should also be</i></td></tr>
+<tr><th id="618">618</th><td><i>			 *     (MOREPROMPT -&gt; moreprompt)</i></td></tr>
+<tr><th id="619">619</th><td><i>			 *   written *   but we print that ourselves,</i></td></tr>
+<tr><th id="620">620</th><td><i>			 *   we set the suspend_grep flag to make</i></td></tr>
+<tr><th id="621">621</th><td><i>			 *   it unconditional.</i></td></tr>
+<tr><th id="622">622</th><td><i>			 *</i></td></tr>
+<tr><th id="623">623</th><td><i>			 */</i></td></tr>
+<tr><th id="624">624</th><td>			<b>if</b> (<a class="tu ref" href="#next_avail" title='next_avail' data-use='r' data-ref="next_avail">next_avail</a> == <a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>) {</td></tr>
+<tr><th id="625">625</th><td>				<i>/*</i></td></tr>
+<tr><th id="626">626</th><td><i>				 * these should occur after a newline,</i></td></tr>
+<tr><th id="627">627</th><td><i>				 * so they will be at the front of the</i></td></tr>
+<tr><th id="628">628</th><td><i>				 * buffer</i></td></tr>
+<tr><th id="629">629</th><td><i>				 */</i></td></tr>
+<tr><th id="630">630</th><td>				<a class="local col7 ref" href="#57cp2" title='cp2' data-ref="57cp2">cp2</a> = <a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>;</td></tr>
+<tr><th id="631">631</th><td>				<a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a> = <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="ref" href="kdb_private.h.html#kdb_prompt_str" title='kdb_prompt_str' data-ref="kdb_prompt_str">kdb_prompt_str</a>);</td></tr>
+<tr><th id="632">632</th><td>				<b>if</b> (!<a class="ref fn" href="../../../include/linux/string.h.html#strncmp" title='strncmp' data-ref="strncmp">strncmp</a>(<a class="local col7 ref" href="#57cp2" title='cp2' data-ref="57cp2">cp2</a>, <a class="ref" href="kdb_private.h.html#kdb_prompt_str" title='kdb_prompt_str' data-ref="kdb_prompt_str">kdb_prompt_str</a>, <a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a>)) {</td></tr>
+<tr><th id="633">633</th><td>					<i>/*</i></td></tr>
+<tr><th id="634">634</th><td><i>					 * We're about to start a new</i></td></tr>
+<tr><th id="635">635</th><td><i>					 * command, so we can go back</i></td></tr>
+<tr><th id="636">636</th><td><i>					 * to normal mode.</i></td></tr>
+<tr><th id="637">637</th><td><i>					 */</i></td></tr>
+<tr><th id="638">638</th><td>					<a class="ref" href="kdb_private.h.html#kdb_grepping_flag" title='kdb_grepping_flag' data-ref="kdb_grepping_flag">kdb_grepping_flag</a> = <var>0</var>;</td></tr>
+<tr><th id="639">639</th><td>					<b>goto</b> <a class="lbl" href="#63kdb_printit" data-ref="63kdb_printit">kdb_printit</a>;</td></tr>
+<tr><th id="640">640</th><td>				}</td></tr>
+<tr><th id="641">641</th><td>			}</td></tr>
+<tr><th id="642">642</th><td>			<i>/* no newline; don't search/write the buffer</i></td></tr>
+<tr><th id="643">643</th><td><i>			   until one is there */</i></td></tr>
+<tr><th id="644">644</th><td>			<a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a> = <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>);</td></tr>
+<tr><th id="645">645</th><td>			<a class="tu ref" href="#next_avail" title='next_avail' data-use='w' data-ref="next_avail">next_avail</a> = <a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a> + <a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a>;</td></tr>
+<tr><th id="646">646</th><td>			<a class="tu ref" href="#size_avail" title='size_avail' data-use='w' data-ref="size_avail">size_avail</a> = <b>sizeof</b>(<a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>) - <a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a>;</td></tr>
+<tr><th id="647">647</th><td>			<b>goto</b> <a class="lbl" href="#64kdb_print_out" data-ref="64kdb_print_out">kdb_print_out</a>;</td></tr>
+<tr><th id="648">648</th><td>		}</td></tr>
+<tr><th id="649">649</th><td></td></tr>
+<tr><th id="650">650</th><td>		<i>/*</i></td></tr>
+<tr><th id="651">651</th><td><i>		 * The newline is present; print through it or discard</i></td></tr>
+<tr><th id="652">652</th><td><i>		 * it, depending on the results of the search.</i></td></tr>
+<tr><th id="653">653</th><td><i>		 */</i></td></tr>
+<tr><th id="654">654</th><td>		<a class="local col6 ref" href="#56cp" title='cp' data-ref="56cp">cp</a>++;	 	     <i>/* to byte after the newline */</i></td></tr>
+<tr><th id="655">655</th><td>		<a class="local col9 ref" href="#59replaced_byte" title='replaced_byte' data-ref="59replaced_byte">replaced_byte</a> = *<a class="local col6 ref" href="#56cp" title='cp' data-ref="56cp">cp</a>; <i>/* remember what/where it was */</i></td></tr>
+<tr><th id="656">656</th><td>		<a class="local col8 ref" href="#58cphold" title='cphold' data-ref="58cphold">cphold</a> = <a class="local col6 ref" href="#56cp" title='cp' data-ref="56cp">cp</a>;</td></tr>
+<tr><th id="657">657</th><td>		*<a class="local col6 ref" href="#56cp" title='cp' data-ref="56cp">cp</a> = <kbd>'\0'</kbd>;	     <i>/* end the string for our search */</i></td></tr>
+<tr><th id="658">658</th><td></td></tr>
+<tr><th id="659">659</th><td>		<i>/*</i></td></tr>
+<tr><th id="660">660</th><td><i>		 * We now have a newline at the end of the string</i></td></tr>
+<tr><th id="661">661</th><td><i>		 * Only continue with this output if it contains the</i></td></tr>
+<tr><th id="662">662</th><td><i>		 * search string.</i></td></tr>
+<tr><th id="663">663</th><td><i>		 */</i></td></tr>
+<tr><th id="664">664</th><td>		<a class="local col2 ref" href="#52fnd" title='fnd' data-ref="52fnd">fnd</a> = <a class="tu ref fn" href="#kdb_search_string" title='kdb_search_string' data-use='c' data-ref="kdb_search_string">kdb_search_string</a>(<a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>, <a class="ref" href="kdb_private.h.html#kdb_grep_string" title='kdb_grep_string' data-ref="kdb_grep_string">kdb_grep_string</a>);</td></tr>
+<tr><th id="665">665</th><td>		<b>if</b> (!<a class="local col2 ref" href="#52fnd" title='fnd' data-ref="52fnd">fnd</a>) {</td></tr>
+<tr><th id="666">666</th><td>			<i>/*</i></td></tr>
+<tr><th id="667">667</th><td><i>			 * At this point the complete line at the start</i></td></tr>
+<tr><th id="668">668</th><td><i>			 * of kdb_buffer can be discarded, as it does</i></td></tr>
+<tr><th id="669">669</th><td><i>			 * not contain what the user is looking for.</i></td></tr>
+<tr><th id="670">670</th><td><i>			 * Shift the buffer left.</i></td></tr>
+<tr><th id="671">671</th><td><i>			 */</i></td></tr>
+<tr><th id="672">672</th><td>			*<a class="local col8 ref" href="#58cphold" title='cphold' data-ref="58cphold">cphold</a> = <a class="local col9 ref" href="#59replaced_byte" title='replaced_byte' data-ref="59replaced_byte">replaced_byte</a>;</td></tr>
+<tr><th id="673">673</th><td>			<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strcpy" title='strcpy' data-ref="strcpy">strcpy</a>(<a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>, <a class="local col8 ref" href="#58cphold" title='cphold' data-ref="58cphold">cphold</a>);</td></tr>
+<tr><th id="674">674</th><td>			<a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a> = <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>);</td></tr>
+<tr><th id="675">675</th><td>			<a class="tu ref" href="#next_avail" title='next_avail' data-use='w' data-ref="next_avail">next_avail</a> = <a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a> + <a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a>;</td></tr>
+<tr><th id="676">676</th><td>			<a class="tu ref" href="#size_avail" title='size_avail' data-use='w' data-ref="size_avail">size_avail</a> = <b>sizeof</b>(<a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>) - <a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a>;</td></tr>
+<tr><th id="677">677</th><td>			<b>goto</b> <a class="lbl" href="#64kdb_print_out" data-ref="64kdb_print_out">kdb_print_out</a>;</td></tr>
+<tr><th id="678">678</th><td>		}</td></tr>
+<tr><th id="679">679</th><td>		<b>if</b> (<a class="ref" href="kdb_private.h.html#kdb_grepping_flag" title='kdb_grepping_flag' data-ref="kdb_grepping_flag">kdb_grepping_flag</a> &gt;= <a class="macro" href="kdb_private.h.html#198" title="0x8000" data-ref="_M/KDB_GREPPING_FLAG_SEARCH">KDB_GREPPING_FLAG_SEARCH</a>)</td></tr>
+<tr><th id="680">680</th><td>			<i>/*</i></td></tr>
+<tr><th id="681">681</th><td><i>			 * This was a interactive search (using '/' at more</i></td></tr>
+<tr><th id="682">682</th><td><i>			 * prompt) and it has completed. Clear the flag.</i></td></tr>
+<tr><th id="683">683</th><td><i>			 */</i></td></tr>
+<tr><th id="684">684</th><td>			<a class="ref" href="kdb_private.h.html#kdb_grepping_flag" title='kdb_grepping_flag' data-ref="kdb_grepping_flag">kdb_grepping_flag</a> = <var>0</var>;</td></tr>
+<tr><th id="685">685</th><td>		<i>/*</i></td></tr>
+<tr><th id="686">686</th><td><i>		 * at this point the string is a full line and</i></td></tr>
+<tr><th id="687">687</th><td><i>		 * should be printed, up to the null.</i></td></tr>
+<tr><th id="688">688</th><td><i>		 */</i></td></tr>
+<tr><th id="689">689</th><td>	}</td></tr>
+<tr><th id="690">690</th><td><dfn class="lbl" id="63kdb_printit" data-ref="63kdb_printit">kdb_printit</dfn>:</td></tr>
+<tr><th id="691">691</th><td></td></tr>
+<tr><th id="692">692</th><td>	<i>/*</i></td></tr>
+<tr><th id="693">693</th><td><i>	 * Write to all consoles.</i></td></tr>
+<tr><th id="694">694</th><td><i>	 */</i></td></tr>
+<tr><th id="695">695</th><td>	<a class="local col1 ref" href="#51retlen" title='retlen' data-ref="51retlen">retlen</a> = <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>);</td></tr>
+<tr><th id="696">696</th><td>	<a class="local col6 ref" href="#56cp" title='cp' data-ref="56cp">cp</a> = (<em>char</em> *) <a class="ref fn" href="../../../include/linux/printk.h.html#printk_skip_headers" title='printk_skip_headers' data-ref="printk_skip_headers">printk_skip_headers</a>(<a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>);</td></tr>
+<tr><th id="697">697</th><td>	<b>if</b> (!<a class="ref" href="../debug_core.h.html#dbg_kdb_mode" title='dbg_kdb_mode' data-ref="dbg_kdb_mode">dbg_kdb_mode</a> &amp;&amp; <a class="ref" href="../../../include/linux/kgdb.h.html#kgdb_connected" title='kgdb_connected' data-ref="kgdb_connected">kgdb_connected</a>) {</td></tr>
+<tr><th id="698">698</th><td>		<a class="ref fn" href="../debug_core.h.html#gdbstub_msg_write" title='gdbstub_msg_write' data-ref="gdbstub_msg_write">gdbstub_msg_write</a>(<a class="local col6 ref" href="#56cp" title='cp' data-ref="56cp">cp</a>, <a class="local col1 ref" href="#51retlen" title='retlen' data-ref="51retlen">retlen</a> - (<a class="local col6 ref" href="#56cp" title='cp' data-ref="56cp">cp</a> - <a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>));</td></tr>
+<tr><th id="699">699</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="700">700</th><td>		<b>if</b> (<a class="ref" href="../../../include/linux/kgdb.h.html#dbg_io_ops" title='dbg_io_ops' data-ref="dbg_io_ops">dbg_io_ops</a> &amp;&amp; !<a class="ref" href="../../../include/linux/kgdb.h.html#dbg_io_ops" title='dbg_io_ops' data-ref="dbg_io_ops">dbg_io_ops</a>-&gt;<a class="ref field" href="../../../include/linux/kgdb.h.html#kgdb_io::is_console" title='kgdb_io::is_console' data-ref="kgdb_io::is_console">is_console</a>) {</td></tr>
+<tr><th id="701">701</th><td>			<a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a> = <a class="local col1 ref" href="#51retlen" title='retlen' data-ref="51retlen">retlen</a> - (<a class="local col6 ref" href="#56cp" title='cp' data-ref="56cp">cp</a> - <a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>);</td></tr>
+<tr><th id="702">702</th><td>			<a class="local col7 ref" href="#57cp2" title='cp2' data-ref="57cp2">cp2</a> = <a class="local col6 ref" href="#56cp" title='cp' data-ref="56cp">cp</a>;</td></tr>
+<tr><th id="703">703</th><td>			<b>while</b> (<a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a>--) {</td></tr>
+<tr><th id="704">704</th><td>				<a class="ref" href="../../../include/linux/kgdb.h.html#dbg_io_ops" title='dbg_io_ops' data-ref="dbg_io_ops">dbg_io_ops</a>-&gt;<a class="ref field" href="../../../include/linux/kgdb.h.html#kgdb_io::write_char" title='kgdb_io::write_char' data-ref="kgdb_io::write_char">write_char</a>(*<a class="local col7 ref" href="#57cp2" title='cp2' data-ref="57cp2">cp2</a>);</td></tr>
+<tr><th id="705">705</th><td>				<a class="local col7 ref" href="#57cp2" title='cp2' data-ref="57cp2">cp2</a>++;</td></tr>
+<tr><th id="706">706</th><td>			}</td></tr>
+<tr><th id="707">707</th><td>		}</td></tr>
+<tr><th id="708">708</th><td>		<b>while</b> (<a class="local col1 ref" href="#61c" title='c' data-ref="61c">c</a>) {</td></tr>
+<tr><th id="709">709</th><td>			<a class="local col1 ref" href="#61c" title='c' data-ref="61c">c</a>-&gt;<a class="ref field" href="../../../include/linux/console.h.html#console::write" title='console::write' data-ref="console::write">write</a>(<a class="local col1 ref" href="#61c" title='c' data-ref="61c">c</a>, <a class="local col6 ref" href="#56cp" title='cp' data-ref="56cp">cp</a>, <a class="local col1 ref" href="#51retlen" title='retlen' data-ref="51retlen">retlen</a> - (<a class="local col6 ref" href="#56cp" title='cp' data-ref="56cp">cp</a> - <a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>));</td></tr>
+<tr><th id="710">710</th><td>			<a class="ref fn" href="../../../include/linux/nmi.h.html#touch_nmi_watchdog" title='touch_nmi_watchdog' data-ref="touch_nmi_watchdog">touch_nmi_watchdog</a>();</td></tr>
+<tr><th id="711">711</th><td>			<a class="local col1 ref" href="#61c" title='c' data-ref="61c">c</a> = <a class="local col1 ref" href="#61c" title='c' data-ref="61c">c</a>-&gt;<a class="ref field" href="../../../include/linux/console.h.html#console::next" title='console::next' data-ref="console::next">next</a>;</td></tr>
+<tr><th id="712">712</th><td>		}</td></tr>
+<tr><th id="713">713</th><td>	}</td></tr>
+<tr><th id="714">714</th><td>	<b>if</b> (<a class="local col9 ref" href="#49logging" title='logging' data-ref="49logging">logging</a>) {</td></tr>
+<tr><th id="715">715</th><td>		<a class="local col0 ref" href="#50saved_loglevel" title='saved_loglevel' data-ref="50saved_loglevel">saved_loglevel</a> = <a class="macro" href="../../../include/linux/printk.h.html#65" title="(console_printk[0])" data-ref="_M/console_loglevel">console_loglevel</a>;</td></tr>
+<tr><th id="716">716</th><td>		<a class="macro" href="../../../include/linux/printk.h.html#65" title="(console_printk[0])" data-ref="_M/console_loglevel">console_loglevel</a> = <a class="macro" href="../../../include/linux/printk.h.html#51" title="0" data-ref="_M/CONSOLE_LOGLEVEL_SILENT">CONSOLE_LOGLEVEL_SILENT</a>;</td></tr>
+<tr><th id="717">717</th><td>		<b>if</b> (<a class="ref fn" href="../../../include/linux/printk.h.html#printk_get_level" title='printk_get_level' data-ref="printk_get_level">printk_get_level</a>(<a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>) || <a class="local col3 ref" href="#43src" title='src' data-ref="43src">src</a> == <a class="enum" href="../../../include/linux/kdb.h.html#KDB_MSGSRC_PRINTK" title='KDB_MSGSRC_PRINTK' data-ref="KDB_MSGSRC_PRINTK">KDB_MSGSRC_PRINTK</a>)</td></tr>
+<tr><th id="718">718</th><td>			<a class="ref fn" href="../../../include/linux/printk.h.html#printk" title='printk' data-ref="printk">printk</a>(<q>"%s"</q>, <a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-ref="kdb_buffer">kdb_buffer</a>);</td></tr>
+<tr><th id="719">719</th><td>		<b>else</b></td></tr>
+<tr><th id="720">720</th><td>			<a class="macro" href="../../../include/linux/printk.h.html#314" title="printk(&quot;\001&quot; &quot;6&quot; &quot;%s&quot;, kdb_buffer)" data-ref="_M/pr_info">pr_info</a>(<q>"%s"</q>, <a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-ref="kdb_buffer">kdb_buffer</a>);</td></tr>
+<tr><th id="721">721</th><td>	}</td></tr>
+<tr><th id="722">722</th><td></td></tr>
+<tr><th id="723">723</th><td>	<b>if</b> (<a class="macro" href="kdb_private.h.html#148" title="(kdb_state &amp; 0x00000400)" data-ref="_M/KDB_STATE">KDB_STATE</a>(PAGER)) {</td></tr>
+<tr><th id="724">724</th><td>		<i>/*</i></td></tr>
+<tr><th id="725">725</th><td><i>		 * Check printed string to decide how to bump the</i></td></tr>
+<tr><th id="726">726</th><td><i>		 * kdb_nextline to control when the more prompt should</i></td></tr>
+<tr><th id="727">727</th><td><i>		 * show up.</i></td></tr>
+<tr><th id="728">728</th><td><i>		 */</i></td></tr>
+<tr><th id="729">729</th><td>		<em>int</em> <dfn class="local col5 decl" id="65got" title='got' data-type='int' data-ref="65got">got</dfn> = <var>0</var>;</td></tr>
+<tr><th id="730">730</th><td>		<a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a> = <a class="local col1 ref" href="#51retlen" title='retlen' data-ref="51retlen">retlen</a>;</td></tr>
+<tr><th id="731">731</th><td>		<b>while</b> (<a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a>--) {</td></tr>
+<tr><th id="732">732</th><td>			<b>if</b> (<a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>[<a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a>] == <kbd>'\n'</kbd>) {</td></tr>
+<tr><th id="733">733</th><td>				<a class="ref" href="kdb_private.h.html#kdb_nextline" title='kdb_nextline' data-ref="kdb_nextline">kdb_nextline</a>++;</td></tr>
+<tr><th id="734">734</th><td>				<a class="local col5 ref" href="#65got" title='got' data-ref="65got">got</a> = <var>0</var>;</td></tr>
+<tr><th id="735">735</th><td>			} <b>else</b> <b>if</b> (<a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>[<a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a>] == <kbd>'\r'</kbd>) {</td></tr>
+<tr><th id="736">736</th><td>				<a class="local col5 ref" href="#65got" title='got' data-ref="65got">got</a> = <var>0</var>;</td></tr>
+<tr><th id="737">737</th><td>			} <b>else</b> {</td></tr>
+<tr><th id="738">738</th><td>				<a class="local col5 ref" href="#65got" title='got' data-ref="65got">got</a>++;</td></tr>
+<tr><th id="739">739</th><td>			}</td></tr>
+<tr><th id="740">740</th><td>		}</td></tr>
+<tr><th id="741">741</th><td>		<a class="ref" href="kdb_private.h.html#kdb_nextline" title='kdb_nextline' data-ref="kdb_nextline">kdb_nextline</a> += <a class="local col5 ref" href="#65got" title='got' data-ref="65got">got</a> / (<a class="local col8 ref" href="#48colcount" title='colcount' data-ref="48colcount">colcount</a> + <var>1</var>);</td></tr>
+<tr><th id="742">742</th><td>	}</td></tr>
+<tr><th id="743">743</th><td></td></tr>
+<tr><th id="744">744</th><td>	<i>/* check for having reached the LINES number of printed lines */</i></td></tr>
+<tr><th id="745">745</th><td>	<b>if</b> (<a class="ref" href="kdb_private.h.html#kdb_nextline" title='kdb_nextline' data-ref="kdb_nextline">kdb_nextline</a> &gt;= <a class="local col7 ref" href="#47linecount" title='linecount' data-ref="47linecount">linecount</a>) {</td></tr>
+<tr><th id="746">746</th><td>		<em>char</em> <dfn class="local col6 decl" id="66buf1" title='buf1' data-type='char [16]' data-ref="66buf1">buf1</dfn>[<var>16</var>] = <q>""</q>;</td></tr>
+<tr><th id="747">747</th><td></td></tr>
+<tr><th id="748">748</th><td>		<i>/* Watch out for recursion here.  Any routine that calls</i></td></tr>
+<tr><th id="749">749</th><td><i>		 * kdb_printf will come back through here.  And kdb_read</i></td></tr>
+<tr><th id="750">750</th><td><i>		 * uses kdb_printf to echo on serial consoles ...</i></td></tr>
+<tr><th id="751">751</th><td><i>		 */</i></td></tr>
+<tr><th id="752">752</th><td>		<a class="ref" href="kdb_private.h.html#kdb_nextline" title='kdb_nextline' data-ref="kdb_nextline">kdb_nextline</a> = <var>1</var>;	<i>/* In case of recursion */</i></td></tr>
+<tr><th id="753">753</th><td></td></tr>
+<tr><th id="754">754</th><td>		<i>/*</i></td></tr>
+<tr><th id="755">755</th><td><i>		 * Pause until cr.</i></td></tr>
+<tr><th id="756">756</th><td><i>		 */</i></td></tr>
+<tr><th id="757">757</th><td>		<a class="local col0 ref" href="#60moreprompt" title='moreprompt' data-ref="60moreprompt">moreprompt</a> = <a class="ref fn" href="kdb_private.h.html#kdbgetenv" title='kdbgetenv' data-ref="kdbgetenv">kdbgetenv</a>(<q>"MOREPROMPT"</q>);</td></tr>
+<tr><th id="758">758</th><td>		<b>if</b> (<a class="local col0 ref" href="#60moreprompt" title='moreprompt' data-ref="60moreprompt">moreprompt</a> == <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>)</td></tr>
+<tr><th id="759">759</th><td>			<a class="local col0 ref" href="#60moreprompt" title='moreprompt' data-ref="60moreprompt">moreprompt</a> = <q>"more&gt; "</q>;</td></tr>
+<tr><th id="760">760</th><td></td></tr>
+<tr><th id="761">761</th><td>		<a class="tu ref fn" href="#kdb_input_flush" title='kdb_input_flush' data-use='c' data-ref="kdb_input_flush">kdb_input_flush</a>();</td></tr>
+<tr><th id="762">762</th><td>		<a class="local col1 ref" href="#61c" title='c' data-ref="61c">c</a> = <a class="ref" href="../../../include/linux/console.h.html#console_drivers" title='console_drivers' data-ref="console_drivers">console_drivers</a>;</td></tr>
+<tr><th id="763">763</th><td></td></tr>
+<tr><th id="764">764</th><td>		<b>if</b> (<a class="ref" href="../../../include/linux/kgdb.h.html#dbg_io_ops" title='dbg_io_ops' data-ref="dbg_io_ops">dbg_io_ops</a> &amp;&amp; !<a class="ref" href="../../../include/linux/kgdb.h.html#dbg_io_ops" title='dbg_io_ops' data-ref="dbg_io_ops">dbg_io_ops</a>-&gt;<a class="ref field" href="../../../include/linux/kgdb.h.html#kgdb_io::is_console" title='kgdb_io::is_console' data-ref="kgdb_io::is_console">is_console</a>) {</td></tr>
+<tr><th id="765">765</th><td>			<a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a> = <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="local col0 ref" href="#60moreprompt" title='moreprompt' data-ref="60moreprompt">moreprompt</a>);</td></tr>
+<tr><th id="766">766</th><td>			<a class="local col6 ref" href="#56cp" title='cp' data-ref="56cp">cp</a> = <a class="local col0 ref" href="#60moreprompt" title='moreprompt' data-ref="60moreprompt">moreprompt</a>;</td></tr>
+<tr><th id="767">767</th><td>			<b>while</b> (<a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a>--) {</td></tr>
+<tr><th id="768">768</th><td>				<a class="ref" href="../../../include/linux/kgdb.h.html#dbg_io_ops" title='dbg_io_ops' data-ref="dbg_io_ops">dbg_io_ops</a>-&gt;<a class="ref field" href="../../../include/linux/kgdb.h.html#kgdb_io::write_char" title='kgdb_io::write_char' data-ref="kgdb_io::write_char">write_char</a>(*<a class="local col6 ref" href="#56cp" title='cp' data-ref="56cp">cp</a>);</td></tr>
+<tr><th id="769">769</th><td>				<a class="local col6 ref" href="#56cp" title='cp' data-ref="56cp">cp</a>++;</td></tr>
+<tr><th id="770">770</th><td>			}</td></tr>
+<tr><th id="771">771</th><td>		}</td></tr>
+<tr><th id="772">772</th><td>		<b>while</b> (<a class="local col1 ref" href="#61c" title='c' data-ref="61c">c</a>) {</td></tr>
+<tr><th id="773">773</th><td>			<a class="local col1 ref" href="#61c" title='c' data-ref="61c">c</a>-&gt;<a class="ref field" href="../../../include/linux/console.h.html#console::write" title='console::write' data-ref="console::write">write</a>(<a class="local col1 ref" href="#61c" title='c' data-ref="61c">c</a>, <a class="local col0 ref" href="#60moreprompt" title='moreprompt' data-ref="60moreprompt">moreprompt</a>, <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="local col0 ref" href="#60moreprompt" title='moreprompt' data-ref="60moreprompt">moreprompt</a>));</td></tr>
+<tr><th id="774">774</th><td>			<a class="ref fn" href="../../../include/linux/nmi.h.html#touch_nmi_watchdog" title='touch_nmi_watchdog' data-ref="touch_nmi_watchdog">touch_nmi_watchdog</a>();</td></tr>
+<tr><th id="775">775</th><td>			<a class="local col1 ref" href="#61c" title='c' data-ref="61c">c</a> = <a class="local col1 ref" href="#61c" title='c' data-ref="61c">c</a>-&gt;<a class="ref field" href="../../../include/linux/console.h.html#console::next" title='console::next' data-ref="console::next">next</a>;</td></tr>
+<tr><th id="776">776</th><td>		}</td></tr>
+<tr><th id="777">777</th><td></td></tr>
+<tr><th id="778">778</th><td>		<b>if</b> (<a class="local col9 ref" href="#49logging" title='logging' data-ref="49logging">logging</a>)</td></tr>
+<tr><th id="779">779</th><td>			<a class="ref fn" href="../../../include/linux/printk.h.html#printk" title='printk' data-ref="printk">printk</a>(<q>"%s"</q>, <a class="local col0 ref" href="#60moreprompt" title='moreprompt' data-ref="60moreprompt">moreprompt</a>);</td></tr>
+<tr><th id="780">780</th><td></td></tr>
+<tr><th id="781">781</th><td>		<a class="tu ref fn" href="#kdb_read" title='kdb_read' data-use='c' data-ref="kdb_read">kdb_read</a>(<a class="local col6 ref" href="#66buf1" title='buf1' data-ref="66buf1">buf1</a>, <var>2</var>); <i>/* '2' indicates to return</i></td></tr>
+<tr><th id="782">782</th><td><i>				    * immediately after getting one key. */</i></td></tr>
+<tr><th id="783">783</th><td>		<a class="ref" href="kdb_private.h.html#kdb_nextline" title='kdb_nextline' data-ref="kdb_nextline">kdb_nextline</a> = <var>1</var>;	<i>/* Really set output line 1 */</i></td></tr>
+<tr><th id="784">784</th><td></td></tr>
+<tr><th id="785">785</th><td>		<i>/* empty and reset the buffer: */</i></td></tr>
+<tr><th id="786">786</th><td>		<a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='w' data-ref="kdb_buffer">kdb_buffer</a>[<var>0</var>] = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="787">787</th><td>		<a class="tu ref" href="#next_avail" title='next_avail' data-use='w' data-ref="next_avail">next_avail</a> = <a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>;</td></tr>
+<tr><th id="788">788</th><td>		<a class="tu ref" href="#size_avail" title='size_avail' data-use='w' data-ref="size_avail">size_avail</a> = <b>sizeof</b>(<a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>);</td></tr>
+<tr><th id="789">789</th><td>		<b>if</b> ((<a class="local col6 ref" href="#66buf1" title='buf1' data-ref="66buf1">buf1</a>[<var>0</var>] == <kbd>'q'</kbd>) || (<a class="local col6 ref" href="#66buf1" title='buf1' data-ref="66buf1">buf1</a>[<var>0</var>] == <kbd>'Q'</kbd>)) {</td></tr>
+<tr><th id="790">790</th><td>			<i>/* user hit q or Q */</i></td></tr>
+<tr><th id="791">791</th><td>			<a class="macro" href="../../../include/linux/kdb.h.html#134" title="((void)(kdb_flags |= (1 &lt;&lt; 2)))" data-ref="_M/KDB_FLAG_SET">KDB_FLAG_SET</a>(CMD_INTERRUPT); <i>/* command interrupted */</i></td></tr>
+<tr><th id="792">792</th><td>			<a class="macro" href="kdb_private.h.html#150" title="((void)(kdb_state &amp;= ~0x00000400))" data-ref="_M/KDB_STATE_CLEAR">KDB_STATE_CLEAR</a>(PAGER);</td></tr>
+<tr><th id="793">793</th><td>			<i>/* end of command output; back to normal mode */</i></td></tr>
+<tr><th id="794">794</th><td>			<a class="ref" href="kdb_private.h.html#kdb_grepping_flag" title='kdb_grepping_flag' data-ref="kdb_grepping_flag">kdb_grepping_flag</a> = <var>0</var>;</td></tr>
+<tr><th id="795">795</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"\n"</q>);</td></tr>
+<tr><th id="796">796</th><td>		} <b>else</b> <b>if</b> (<a class="local col6 ref" href="#66buf1" title='buf1' data-ref="66buf1">buf1</a>[<var>0</var>] == <kbd>' '</kbd>) {</td></tr>
+<tr><th id="797">797</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"\r"</q>);</td></tr>
+<tr><th id="798">798</th><td>			<a class="tu ref" href="#suspend_grep" title='suspend_grep' data-use='w' data-ref="suspend_grep">suspend_grep</a> = <var>1</var>; <i>/* for this recursion */</i></td></tr>
+<tr><th id="799">799</th><td>		} <b>else</b> <b>if</b> (<a class="local col6 ref" href="#66buf1" title='buf1' data-ref="66buf1">buf1</a>[<var>0</var>] == <kbd>'\n'</kbd>) {</td></tr>
+<tr><th id="800">800</th><td>			<a class="ref" href="kdb_private.h.html#kdb_nextline" title='kdb_nextline' data-ref="kdb_nextline">kdb_nextline</a> = <a class="local col7 ref" href="#47linecount" title='linecount' data-ref="47linecount">linecount</a> - <var>1</var>;</td></tr>
+<tr><th id="801">801</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"\r"</q>);</td></tr>
+<tr><th id="802">802</th><td>			<a class="tu ref" href="#suspend_grep" title='suspend_grep' data-use='w' data-ref="suspend_grep">suspend_grep</a> = <var>1</var>; <i>/* for this recursion */</i></td></tr>
+<tr><th id="803">803</th><td>		} <b>else</b> <b>if</b> (<a class="local col6 ref" href="#66buf1" title='buf1' data-ref="66buf1">buf1</a>[<var>0</var>] == <kbd>'/'</kbd> &amp;&amp; !<a class="ref" href="kdb_private.h.html#kdb_grepping_flag" title='kdb_grepping_flag' data-ref="kdb_grepping_flag">kdb_grepping_flag</a>) {</td></tr>
+<tr><th id="804">804</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"\r"</q>);</td></tr>
+<tr><th id="805">805</th><td>			<a class="ref fn" href="#kdb_getstr" title='kdb_getstr' data-ref="kdb_getstr">kdb_getstr</a>(<a class="ref" href="kdb_private.h.html#kdb_grep_string" title='kdb_grep_string' data-ref="kdb_grep_string">kdb_grep_string</a>, <a class="macro" href="kdb_private.h.html#200" title="256" data-ref="_M/KDB_GREP_STRLEN">KDB_GREP_STRLEN</a>,</td></tr>
+<tr><th id="806">806</th><td>				   <a class="ref fn" href="kdb_private.h.html#kdbgetenv" title='kdbgetenv' data-ref="kdbgetenv">kdbgetenv</a>(<q>"SEARCHPROMPT"</q>) ?: <q>"search&gt; "</q>);</td></tr>
+<tr><th id="807">807</th><td>			*<a class="ref fn" href="../../../include/linux/string.h.html#strchrnul" title='strchrnul' data-ref="strchrnul">strchrnul</a>(<a class="ref" href="kdb_private.h.html#kdb_grep_string" title='kdb_grep_string' data-ref="kdb_grep_string">kdb_grep_string</a>, <kbd>'\n'</kbd>) = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="808">808</th><td>			<a class="ref" href="kdb_private.h.html#kdb_grepping_flag" title='kdb_grepping_flag' data-ref="kdb_grepping_flag">kdb_grepping_flag</a> += <a class="macro" href="kdb_private.h.html#198" title="0x8000" data-ref="_M/KDB_GREPPING_FLAG_SEARCH">KDB_GREPPING_FLAG_SEARCH</a>;</td></tr>
+<tr><th id="809">809</th><td>			<a class="tu ref" href="#suspend_grep" title='suspend_grep' data-use='w' data-ref="suspend_grep">suspend_grep</a> = <var>1</var>; <i>/* for this recursion */</i></td></tr>
+<tr><th id="810">810</th><td>		} <b>else</b> <b>if</b> (<a class="local col6 ref" href="#66buf1" title='buf1' data-ref="66buf1">buf1</a>[<var>0</var>] &amp;&amp; <a class="local col6 ref" href="#66buf1" title='buf1' data-ref="66buf1">buf1</a>[<var>0</var>] != <kbd>'\n'</kbd>) {</td></tr>
+<tr><th id="811">811</th><td>			<i>/* user hit something other than enter */</i></td></tr>
+<tr><th id="812">812</th><td>			<a class="tu ref" href="#suspend_grep" title='suspend_grep' data-use='w' data-ref="suspend_grep">suspend_grep</a> = <var>1</var>; <i>/* for this recursion */</i></td></tr>
+<tr><th id="813">813</th><td>			<b>if</b> (<a class="local col6 ref" href="#66buf1" title='buf1' data-ref="66buf1">buf1</a>[<var>0</var>] != <kbd>'/'</kbd>)</td></tr>
+<tr><th id="814">814</th><td>				<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(</td></tr>
+<tr><th id="815">815</th><td>				    <q>"\nOnly 'q', 'Q' or '/' are processed at "</q></td></tr>
+<tr><th id="816">816</th><td>				    <q>"more prompt, input ignored\n"</q>);</td></tr>
+<tr><th id="817">817</th><td>			<b>else</b></td></tr>
+<tr><th id="818">818</th><td>				<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"\n'/' cannot be used during | "</q></td></tr>
+<tr><th id="819">819</th><td>					   <q>"grep filtering, input ignored\n"</q>);</td></tr>
+<tr><th id="820">820</th><td>		} <b>else</b> <b>if</b> (<a class="ref" href="kdb_private.h.html#kdb_grepping_flag" title='kdb_grepping_flag' data-ref="kdb_grepping_flag">kdb_grepping_flag</a>) {</td></tr>
+<tr><th id="821">821</th><td>			<i>/* user hit enter */</i></td></tr>
+<tr><th id="822">822</th><td>			<a class="tu ref" href="#suspend_grep" title='suspend_grep' data-use='w' data-ref="suspend_grep">suspend_grep</a> = <var>1</var>; <i>/* for this recursion */</i></td></tr>
+<tr><th id="823">823</th><td>			<a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"\n"</q>);</td></tr>
+<tr><th id="824">824</th><td>		}</td></tr>
+<tr><th id="825">825</th><td>		<a class="tu ref fn" href="#kdb_input_flush" title='kdb_input_flush' data-use='c' data-ref="kdb_input_flush">kdb_input_flush</a>();</td></tr>
+<tr><th id="826">826</th><td>	}</td></tr>
+<tr><th id="827">827</th><td></td></tr>
+<tr><th id="828">828</th><td>	<i>/*</i></td></tr>
+<tr><th id="829">829</th><td><i>	 * For grep searches, shift the printed string left.</i></td></tr>
+<tr><th id="830">830</th><td><i>	 *  replaced_byte contains the character that was overwritten with</i></td></tr>
+<tr><th id="831">831</th><td><i>	 *  the terminating null, and cphold points to the null.</i></td></tr>
+<tr><th id="832">832</th><td><i>	 * Then adjust the notion of available space in the buffer.</i></td></tr>
+<tr><th id="833">833</th><td><i>	 */</i></td></tr>
+<tr><th id="834">834</th><td>	<b>if</b> (<a class="ref" href="kdb_private.h.html#kdb_grepping_flag" title='kdb_grepping_flag' data-ref="kdb_grepping_flag">kdb_grepping_flag</a> &amp;&amp; !<a class="tu ref" href="#suspend_grep" title='suspend_grep' data-use='r' data-ref="suspend_grep">suspend_grep</a>) {</td></tr>
+<tr><th id="835">835</th><td>		*<a class="local col8 ref" href="#58cphold" title='cphold' data-ref="58cphold">cphold</a> = <a class="local col9 ref" href="#59replaced_byte" title='replaced_byte' data-ref="59replaced_byte">replaced_byte</a>;</td></tr>
+<tr><th id="836">836</th><td>		<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strcpy" title='strcpy' data-ref="strcpy">strcpy</a>(<a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>, <a class="local col8 ref" href="#58cphold" title='cphold' data-ref="58cphold">cphold</a>);</td></tr>
+<tr><th id="837">837</th><td>		<a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a> = <a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>);</td></tr>
+<tr><th id="838">838</th><td>		<a class="tu ref" href="#next_avail" title='next_avail' data-use='w' data-ref="next_avail">next_avail</a> = <a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a> + <a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a>;</td></tr>
+<tr><th id="839">839</th><td>		<a class="tu ref" href="#size_avail" title='size_avail' data-use='w' data-ref="size_avail">size_avail</a> = <b>sizeof</b>(<a class="tu ref" href="#kdb_buffer" title='kdb_buffer' data-use='r' data-ref="kdb_buffer">kdb_buffer</a>) - <a class="local col3 ref" href="#53len" title='len' data-ref="53len">len</a>;</td></tr>
+<tr><th id="840">840</th><td>	}</td></tr>
+<tr><th id="841">841</th><td></td></tr>
+<tr><th id="842">842</th><td><dfn class="lbl" id="64kdb_print_out" data-ref="64kdb_print_out">kdb_print_out</dfn>:</td></tr>
+<tr><th id="843">843</th><td>	<a class="tu ref" href="#suspend_grep" title='suspend_grep' data-use='w' data-ref="suspend_grep">suspend_grep</a> = <var>0</var>; <i>/* end of what may have been a recursive call */</i></td></tr>
+<tr><th id="844">844</th><td>	<b>if</b> (<a class="local col9 ref" href="#49logging" title='logging' data-ref="49logging">logging</a>)</td></tr>
+<tr><th id="845">845</th><td>		<a class="macro" href="../../../include/linux/printk.h.html#65" title="(console_printk[0])" data-ref="_M/console_loglevel">console_loglevel</a> = <a class="local col0 ref" href="#50saved_loglevel" title='saved_loglevel' data-ref="50saved_loglevel">saved_loglevel</a>;</td></tr>
+<tr><th id="846">846</th><td>	<i>/* kdb_printf_cpu locked the code above. */</i></td></tr>
+<tr><th id="847">847</th><td>	<a class="macro" href="../../../include/asm-generic/barrier.h.html#157" title="do { do { bool __cond = !((sizeof(*&amp;kdb_printf_cpu) == sizeof(char) || sizeof(*&amp;kdb_printf_cpu) == sizeof(short) || sizeof(*&amp;kdb_printf_cpu) == sizeof(int) || sizeof(*&amp;kdb_printf_cpu) == sizeof(long))); extern void __compiletime_assert_847(void) ; if (__cond) __compiletime_assert_847(); do { ((void)sizeof(char[1 - 2 * __cond])); } while (0); } while (0); __asm__ __volatile__(&quot;&quot;: : :&quot;memory&quot;); ({ union { typeof(*&amp;kdb_printf_cpu) __val; char __c[1]; } __u = { .__val = ( typeof(*&amp;kdb_printf_cpu)) (old_cpu) }; __write_once_size(&amp;(*&amp;kdb_printf_cpu), __u.__c, sizeof(*&amp;kdb_printf_cpu)); __u.__val; }); } while (0)" data-ref="_M/smp_store_release">smp_store_release</a>(&amp;<a class="ref" href="../../../include/linux/kdb.h.html#kdb_printf_cpu" title='kdb_printf_cpu' data-ref="kdb_printf_cpu">kdb_printf_cpu</a>, <a class="local col5 ref" href="#55old_cpu" title='old_cpu' data-ref="55old_cpu">old_cpu</a>);</td></tr>
+<tr><th id="848">848</th><td>	<a class="macro" href="../../../include/linux/irqflags.h.html#137" title="do { do { ({ unsigned long __dummy; typeof(flags) __dummy2; (void)(&amp;__dummy == &amp;__dummy2); 1; }); arch_local_irq_restore(flags); } while (0); } while (0)" data-ref="_M/local_irq_restore">local_irq_restore</a>(<a class="local col2 ref" href="#564" title='flags' data-ref="62flags">flags</a>);</td></tr>
+<tr><th id="849">849</th><td>	<b>return</b> <a class="local col1 ref" href="#51retlen" title='retlen' data-ref="51retlen">retlen</a>;</td></tr>
+<tr><th id="850">850</th><td>}</td></tr>
+<tr><th id="851">851</th><td></td></tr>
+<tr><th id="852">852</th><td><em>int</em> <dfn class="decl def fn" id="kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</dfn>(<em>const</em> <em>char</em> *<dfn class="local col7 decl" id="67fmt" title='fmt' data-type='const char *' data-ref="67fmt">fmt</dfn>, ...)</td></tr>
+<tr><th id="853">853</th><td>{</td></tr>
+<tr><th id="854">854</th><td>	<span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> <dfn class="local col8 decl" id="68ap" title='ap' data-type='va_list' data-ref="68ap">ap</dfn>;</td></tr>
+<tr><th id="855">855</th><td>	<em>int</em> <dfn class="local col9 decl" id="69r" title='r' data-type='int' data-ref="69r">r</dfn>;</td></tr>
+<tr><th id="856">856</th><td></td></tr>
+<tr><th id="857">857</th><td>	<span class="macro" title="__builtin_va_start(ap,fmt)" data-ref="_M/va_start">va_start</span>(<a class="local col8 ref" href="#68ap" title='ap' data-ref="68ap">ap</a>, <a class="local col7 ref" href="#67fmt" title='fmt' data-ref="67fmt">fmt</a>);</td></tr>
+<tr><th id="858">858</th><td>	<a class="local col9 ref" href="#69r" title='r' data-ref="69r">r</a> = <a class="ref fn" href="#vkdb_printf" title='vkdb_printf' data-ref="vkdb_printf">vkdb_printf</a>(<a class="enum" href="../../../include/linux/kdb.h.html#KDB_MSGSRC_INTERNAL" title='KDB_MSGSRC_INTERNAL' data-ref="KDB_MSGSRC_INTERNAL">KDB_MSGSRC_INTERNAL</a>, <a class="local col7 ref" href="#67fmt" title='fmt' data-ref="67fmt">fmt</a>, <a class="local col8 ref" href="#68ap" title='ap' data-ref="68ap">ap</a>);</td></tr>
+<tr><th id="859">859</th><td>	<span class="macro" title="__builtin_va_end(ap)" data-ref="_M/va_end">va_end</span>(<a class="local col8 ref" href="#68ap" title='ap' data-ref="68ap">ap</a>);</td></tr>
+<tr><th id="860">860</th><td></td></tr>
+<tr><th id="861">861</th><td>	<b>return</b> <a class="local col9 ref" href="#69r" title='r' data-ref="69r">r</a>;</td></tr>
+<tr><th id="862">862</th><td>}</td></tr>
+<tr><th id="863">863</th><td><a class="macro" href="../../../include/linux/export.h.html#100" title="extern typeof(kdb_printf) kdb_printf; static const char __kstrtab_kdb_printf[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;kdb_printf&quot;; static const struct kernel_symbol __ksymtab_kdb_printf __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;kdb_printf&quot;), used)) = { (unsigned long)&amp;kdb_printf, __kstrtab_kdb_printf }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf"><a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf"><a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf"><a class="ref fn" href="#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a></a></a></a>);</td></tr>
+<tr><th id="864">864</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

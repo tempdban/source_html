@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>usnjrnl.c source code [linux-4.18.y/fs/ntfs/usnjrnl.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/fs/ntfs/usnjrnl.c'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>linux-4.18.y</a>/<a href='..'>fs</a>/<a href='./'>ntfs</a>/<a href='usnjrnl.c.html'>usnjrnl.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * usnjrnl.h - NTFS kernel transaction log ($UsnJrnl) handling.  Part of the</i></td></tr>
+<tr><th id="3">3</th><td><i> *	       Linux-NTFS project.</i></td></tr>
+<tr><th id="4">4</th><td><i> *</i></td></tr>
+<tr><th id="5">5</th><td><i> * Copyright (c) 2005 Anton Altaparmakov</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> * This program/include file is free software; you can redistribute it and/or</i></td></tr>
+<tr><th id="8">8</th><td><i> * modify it under the terms of the GNU General Public License as published</i></td></tr>
+<tr><th id="9">9</th><td><i> * by the Free Software Foundation; either version 2 of the License, or</i></td></tr>
+<tr><th id="10">10</th><td><i> * (at your option) any later version.</i></td></tr>
+<tr><th id="11">11</th><td><i> *</i></td></tr>
+<tr><th id="12">12</th><td><i> * This program/include file is distributed in the hope that it will be</i></td></tr>
+<tr><th id="13">13</th><td><i> * useful, but WITHOUT ANY WARRANTY; without even the implied warranty</i></td></tr>
+<tr><th id="14">14</th><td><i> * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</i></td></tr>
+<tr><th id="15">15</th><td><i> * GNU General Public License for more details.</i></td></tr>
+<tr><th id="16">16</th><td><i> *</i></td></tr>
+<tr><th id="17">17</th><td><i> * You should have received a copy of the GNU General Public License</i></td></tr>
+<tr><th id="18">18</th><td><i> * along with this program (in the main directory of the Linux-NTFS</i></td></tr>
+<tr><th id="19">19</th><td><i> * distribution in the file COPYING); if not, write to the Free Software</i></td></tr>
+<tr><th id="20">20</th><td><i> * Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</i></td></tr>
+<tr><th id="21">21</th><td><i> */</i></td></tr>
+<tr><th id="22">22</th><td></td></tr>
+<tr><th id="23">23</th><td><u>#<span data-ppcond="23">ifdef</span> <span class="macro" data-ref="_M/NTFS_RW">NTFS_RW</span></u></td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../include/linux/fs.h.html">&lt;linux/fs.h&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../../include/linux/highmem.h.html">&lt;linux/highmem.h&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../../include/linux/mm.h.html">&lt;linux/mm.h&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="aops.h.html">"aops.h"</a></u></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="debug.h.html">"debug.h"</a></u></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="endian.h.html">"endian.h"</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="time.h.html">"time.h"</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="types.h.html">"types.h"</a></u></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="usnjrnl.h.html">"usnjrnl.h"</a></u></td></tr>
+<tr><th id="35">35</th><td><u>#include <a href="volume.h.html">"volume.h"</a></u></td></tr>
+<tr><th id="36">36</th><td></td></tr>
+<tr><th id="37">37</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="38">38</th><td><i class="doc"> * ntfs_stamp_usnjrnl - stamp the transaction log ($UsnJrnl) on an ntfs volume</i></td></tr>
+<tr><th id="39">39</th><td><i class="doc"> *<span class="command"> @vol</span>:	ntfs volume on which to stamp the transaction log</i></td></tr>
+<tr><th id="40">40</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="41">41</th><td><i class="doc"> * Stamp the transaction log ($UsnJrnl) on the ntfs volume<span class="command"> @vol</span> and return</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc"> * 'true' on success and 'false' on error.</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc"> * This function assumes that the transaction log has already been loaded and</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc"> * consistency checked by a call to fs/ntfs/super.c::load_and_init_usnjrnl().</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="47">47</th><td><a class="typedef" href="../../include/linux/types.h.html#bool" title='bool' data-type='_Bool' data-ref="bool">bool</a> <dfn class="decl def fn" id="ntfs_stamp_usnjrnl" title='ntfs_stamp_usnjrnl' data-ref="ntfs_stamp_usnjrnl">ntfs_stamp_usnjrnl</dfn>(<a class="typedef" href="volume.h.html#ntfs_volume" title='ntfs_volume' data-type='struct ntfs_volume' data-ref="ntfs_volume">ntfs_volume</a> *<dfn class="local col1 decl" id="1vol" title='vol' data-type='ntfs_volume *' data-ref="1vol">vol</dfn>)</td></tr>
+<tr><th id="48">48</th><td>{</td></tr>
+<tr><th id="49">49</th><td>	<a class="macro" href="debug.h.html#44" title="__ntfs_debug(&quot;/home/tempdban/kernel/stable/fs/ntfs/usnjrnl.c&quot;, 49, __func__, &quot;Entering.&quot;)" data-ref="_M/ntfs_debug">ntfs_debug</a>(<q>"Entering."</q>);</td></tr>
+<tr><th id="50">50</th><td>	<b>if</b> (<a class="macro" href="../../include/linux/compiler.h.html#76" title="__builtin_expect(!!(!NVolUsnJrnlStamped(vol)), 1)" data-ref="_M/likely">likely</a>(!<a class="ref fn" href="volume.h.html#175" title='NVolUsnJrnlStamped' data-ref="NVolUsnJrnlStamped">NVolUsnJrnlStamped</a>(<a class="local col1 ref" href="#1vol" title='vol' data-ref="1vol">vol</a>))) {</td></tr>
+<tr><th id="51">51</th><td>		<a class="typedef" href="types.h.html#sle64" title='sle64' data-type='__u64' data-ref="sle64">sle64</a> <dfn class="local col2 decl" id="2stamp" title='stamp' data-type='sle64' data-ref="2stamp">stamp</dfn>;</td></tr>
+<tr><th id="52">52</th><td>		<b>struct</b> <a class="type" href="../../include/linux/mm_types.h.html#page" title='page' data-ref="page">page</a> *<dfn class="local col3 decl" id="3page" title='page' data-type='struct page *' data-ref="3page">page</dfn>;</td></tr>
+<tr><th id="53">53</th><td>		<a class="typedef" href="usnjrnl.h.html#USN_HEADER" title='USN_HEADER' data-type='struct USN_HEADER' data-ref="USN_HEADER">USN_HEADER</a> *<dfn class="local col4 decl" id="4uh" title='uh' data-type='USN_HEADER *' data-ref="4uh">uh</dfn>;</td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td>		<a class="local col3 ref" href="#3page" title='page' data-ref="3page">page</a> = <a class="ref fn" href="aops.h.html#ntfs_map_page" title='ntfs_map_page' data-ref="ntfs_map_page">ntfs_map_page</a>(<a class="local col1 ref" href="#1vol" title='vol' data-ref="1vol">vol</a>-&gt;<a class="ref field" href="volume.h.html#(anonymous)::usnjrnl_max_ino" title='(anonymous struct)::usnjrnl_max_ino' data-ref="(anonymous)::usnjrnl_max_ino">usnjrnl_max_ino</a>-&gt;<a class="ref field" href="../../include/linux/fs.h.html#inode::i_mapping" title='inode::i_mapping' data-ref="inode::i_mapping">i_mapping</a>, <var>0</var>);</td></tr>
+<tr><th id="56">56</th><td>		<b>if</b> (<a class="ref fn" href="../../include/linux/err.h.html#IS_ERR" title='IS_ERR' data-ref="IS_ERR">IS_ERR</a>(<a class="local col3 ref" href="#3page" title='page' data-ref="3page">page</a>)) {</td></tr>
+<tr><th id="57">57</th><td>			<a class="macro" href="debug.h.html#69" title="__ntfs_error(__func__, vol-&gt;sb, &quot;Failed to read from &quot; &quot;$UsnJrnl/$DATA/$Max attribute.&quot;)" data-ref="_M/ntfs_error">ntfs_error</a>(<a class="local col1 ref" href="#1vol" title='vol' data-ref="1vol">vol</a>-&gt;<a class="ref field" href="volume.h.html#(anonymous)::sb" title='(anonymous struct)::sb' data-ref="(anonymous)::sb">sb</a>, <q>"Failed to read from "</q></td></tr>
+<tr><th id="58">58</th><td>					<q>"$UsnJrnl/$DATA/$Max attribute."</q>);</td></tr>
+<tr><th id="59">59</th><td>			<b>return</b> <a class="enum" href="../../include/linux/stddef.h.html#false" title='false' data-ref="false">false</a>;</td></tr>
+<tr><th id="60">60</th><td>		}</td></tr>
+<tr><th id="61">61</th><td>		<a class="local col4 ref" href="#4uh" title='uh' data-ref="4uh">uh</a> = (<a class="typedef" href="usnjrnl.h.html#USN_HEADER" title='USN_HEADER' data-type='struct USN_HEADER' data-ref="USN_HEADER">USN_HEADER</a>*)<a class="macro" href="../../include/linux/mm.h.html#1192" title="lowmem_page_address(page)" data-ref="_M/page_address">page_address</a>(<a class="local col3 ref" href="#3page" title='page' data-ref="3page">page</a>);</td></tr>
+<tr><th id="62">62</th><td>		<a class="local col2 ref" href="#2stamp" title='stamp' data-ref="2stamp">stamp</a> = <a class="ref fn" href="time.h.html#get_current_ntfs_time" title='get_current_ntfs_time' data-ref="get_current_ntfs_time">get_current_ntfs_time</a>();</td></tr>
+<tr><th id="63">63</th><td>		<a class="macro" href="debug.h.html#44" title="__ntfs_debug(&quot;/home/tempdban/kernel/stable/fs/ntfs/usnjrnl.c&quot;, 70, __func__, &quot;Stamping transaction log ($UsnJrnl): old &quot; &quot;journal_id 0x%llx, old lowest_valid_usn &quot; &quot;0x%llx, new journal_id 0x%llx, new &quot; &quot;lowest_valid_usn 0x%llx.&quot;, (long long)sle64_to_cpu(uh-&gt;journal_id), (long long)sle64_to_cpu(uh-&gt;lowest_valid_usn), (long long)sle64_to_cpu(stamp), i_size_read(vol-&gt;usnjrnl_j_ino))" data-ref="_M/ntfs_debug">ntfs_debug</a>(<q>"Stamping transaction log ($UsnJrnl): old "</q></td></tr>
+<tr><th id="64">64</th><td>				<q>"journal_id 0x%llx, old lowest_valid_usn "</q></td></tr>
+<tr><th id="65">65</th><td>				<q>"0x%llx, new journal_id 0x%llx, new "</q></td></tr>
+<tr><th id="66">66</th><td>				<q>"lowest_valid_usn 0x%llx."</q>,</td></tr>
+<tr><th id="67">67</th><td>				(<em>long</em> <em>long</em>)<a class="ref fn" href="endian.h.html#sle64_to_cpu" title='sle64_to_cpu' data-ref="sle64_to_cpu">sle64_to_cpu</a>(<a class="local col4 ref" href="#4uh" title='uh' data-ref="4uh">uh</a>-&gt;<a class="ref field" href="usnjrnl.h.html#(anonymous)::journal_id" title='(anonymous struct)::journal_id' data-ref="(anonymous)::journal_id">journal_id</a>),</td></tr>
+<tr><th id="68">68</th><td>				(<em>long</em> <em>long</em>)<a class="ref fn" href="endian.h.html#sle64_to_cpu" title='sle64_to_cpu' data-ref="sle64_to_cpu">sle64_to_cpu</a>(<a class="local col4 ref" href="#4uh" title='uh' data-ref="4uh">uh</a>-&gt;<a class="ref field" href="usnjrnl.h.html#(anonymous)::lowest_valid_usn" title='(anonymous struct)::lowest_valid_usn' data-ref="(anonymous)::lowest_valid_usn">lowest_valid_usn</a>),</td></tr>
+<tr><th id="69">69</th><td>				(<em>long</em> <em>long</em>)<a class="ref fn" href="endian.h.html#sle64_to_cpu" title='sle64_to_cpu' data-ref="sle64_to_cpu">sle64_to_cpu</a>(<a class="local col2 ref" href="#2stamp" title='stamp' data-ref="2stamp">stamp</a>),</td></tr>
+<tr><th id="70">70</th><td>				<a class="ref fn" href="../../include/linux/fs.h.html#i_size_read" title='i_size_read' data-ref="i_size_read">i_size_read</a>(<a class="local col1 ref" href="#1vol" title='vol' data-ref="1vol">vol</a>-&gt;<a class="ref field" href="volume.h.html#(anonymous)::usnjrnl_j_ino" title='(anonymous struct)::usnjrnl_j_ino' data-ref="(anonymous)::usnjrnl_j_ino">usnjrnl_j_ino</a>));</td></tr>
+<tr><th id="71">71</th><td>		<a class="local col4 ref" href="#4uh" title='uh' data-ref="4uh">uh</a>-&gt;<a class="ref field" href="usnjrnl.h.html#(anonymous)::lowest_valid_usn" title='(anonymous struct)::lowest_valid_usn' data-ref="(anonymous)::lowest_valid_usn">lowest_valid_usn</a> =</td></tr>
+<tr><th id="72">72</th><td>				<a class="ref fn" href="endian.h.html#cpu_to_sle64" title='cpu_to_sle64' data-ref="cpu_to_sle64">cpu_to_sle64</a>(<a class="ref fn" href="../../include/linux/fs.h.html#i_size_read" title='i_size_read' data-ref="i_size_read">i_size_read</a>(<a class="local col1 ref" href="#1vol" title='vol' data-ref="1vol">vol</a>-&gt;<a class="ref field" href="volume.h.html#(anonymous)::usnjrnl_j_ino" title='(anonymous struct)::usnjrnl_j_ino' data-ref="(anonymous)::usnjrnl_j_ino">usnjrnl_j_ino</a>));</td></tr>
+<tr><th id="73">73</th><td>		<a class="local col4 ref" href="#4uh" title='uh' data-ref="4uh">uh</a>-&gt;<a class="ref field" href="usnjrnl.h.html#(anonymous)::journal_id" title='(anonymous struct)::journal_id' data-ref="(anonymous)::journal_id">journal_id</a> = <a class="local col2 ref" href="#2stamp" title='stamp' data-ref="2stamp">stamp</a>;</td></tr>
+<tr><th id="74">74</th><td>		<a class="macro" href="../../include/asm-generic/cacheflush.h.html#18" title="do { } while (0)" data-ref="_M/flush_dcache_page">flush_dcache_page</a>(page);</td></tr>
+<tr><th id="75">75</th><td>		<a class="ref fn" href="../../include/linux/mm.h.html#set_page_dirty" title='set_page_dirty' data-ref="set_page_dirty">set_page_dirty</a>(<a class="local col3 ref" href="#3page" title='page' data-ref="3page">page</a>);</td></tr>
+<tr><th id="76">76</th><td>		<a class="ref fn" href="aops.h.html#ntfs_unmap_page" title='ntfs_unmap_page' data-ref="ntfs_unmap_page">ntfs_unmap_page</a>(<a class="local col3 ref" href="#3page" title='page' data-ref="3page">page</a>);</td></tr>
+<tr><th id="77">77</th><td>		<i>/* Set the flag so we do not have to do it again on remount. */</i></td></tr>
+<tr><th id="78">78</th><td>		<a class="ref fn" href="volume.h.html#175" title='NVolSetUsnJrnlStamped' data-ref="NVolSetUsnJrnlStamped">NVolSetUsnJrnlStamped</a>(<a class="local col1 ref" href="#1vol" title='vol' data-ref="1vol">vol</a>);</td></tr>
+<tr><th id="79">79</th><td>	}</td></tr>
+<tr><th id="80">80</th><td>	<a class="macro" href="debug.h.html#44" title="__ntfs_debug(&quot;/home/tempdban/kernel/stable/fs/ntfs/usnjrnl.c&quot;, 80, __func__, &quot;Done.&quot;)" data-ref="_M/ntfs_debug">ntfs_debug</a>(<q>"Done."</q>);</td></tr>
+<tr><th id="81">81</th><td>	<b>return</b> <a class="enum" href="../../include/linux/stddef.h.html#true" title='true' data-ref="true">true</a>;</td></tr>
+<tr><th id="82">82</th><td>}</td></tr>
+<tr><th id="83">83</th><td></td></tr>
+<tr><th id="84">84</th><td><u>#<span data-ppcond="23">endif</span> /* NTFS_RW */</u></td></tr>
+<tr><th id="85">85</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

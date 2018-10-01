@@ -1,0 +1,658 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>xgbe-platform.c source code [linux-4.18.y/drivers/net/ethernet/amd/xgbe/xgbe-platform.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/drivers/net/ethernet/amd/xgbe/xgbe-platform.c'; var root_path = '../../../../../..'; var data_path = '../../../../../../../data';</script>
+<script src='../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../..'>linux-4.18.y</a>/<a href='../../../..'>drivers</a>/<a href='../../..'>net</a>/<a href='../..'>ethernet</a>/<a href='..'>amd</a>/<a href='./'>xgbe</a>/<a href='xgbe-platform.c.html'>xgbe-platform.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * AMD 10Gb Ethernet driver</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> * This file is available to you under your choice of the following two</i></td></tr>
+<tr><th id="5">5</th><td><i> * licenses:</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> * License 1: GPLv2</i></td></tr>
+<tr><th id="8">8</th><td><i> *</i></td></tr>
+<tr><th id="9">9</th><td><i> * Copyright (c) 2014-2016 Advanced Micro Devices, Inc.</i></td></tr>
+<tr><th id="10">10</th><td><i> *</i></td></tr>
+<tr><th id="11">11</th><td><i> * This file is free software; you may copy, redistribute and/or modify</i></td></tr>
+<tr><th id="12">12</th><td><i> * it under the terms of the GNU General Public License as published by</i></td></tr>
+<tr><th id="13">13</th><td><i> * the Free Software Foundation, either version 2 of the License, or (at</i></td></tr>
+<tr><th id="14">14</th><td><i> * your option) any later version.</i></td></tr>
+<tr><th id="15">15</th><td><i> *</i></td></tr>
+<tr><th id="16">16</th><td><i> * This file is distributed in the hope that it will be useful, but</i></td></tr>
+<tr><th id="17">17</th><td><i> * WITHOUT ANY WARRANTY; without even the implied warranty of</i></td></tr>
+<tr><th id="18">18</th><td><i> * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU</i></td></tr>
+<tr><th id="19">19</th><td><i> * General Public License for more details.</i></td></tr>
+<tr><th id="20">20</th><td><i> *</i></td></tr>
+<tr><th id="21">21</th><td><i> * You should have received a copy of the GNU General Public License</i></td></tr>
+<tr><th id="22">22</th><td><i> * along with this program.  If not, see &lt;<a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>&gt;.</i></td></tr>
+<tr><th id="23">23</th><td><i> *</i></td></tr>
+<tr><th id="24">24</th><td><i> * This file incorporates work covered by the following copyright and</i></td></tr>
+<tr><th id="25">25</th><td><i> * permission notice:</i></td></tr>
+<tr><th id="26">26</th><td><i> *     The Synopsys DWC ETHER XGMAC Software Driver and documentation</i></td></tr>
+<tr><th id="27">27</th><td><i> *     (hereinafter "Software") is an unsupported proprietary work of Synopsys,</i></td></tr>
+<tr><th id="28">28</th><td><i> *     Inc. unless otherwise expressly agreed to in writing between Synopsys</i></td></tr>
+<tr><th id="29">29</th><td><i> *     and you.</i></td></tr>
+<tr><th id="30">30</th><td><i> *</i></td></tr>
+<tr><th id="31">31</th><td><i> *     The Software IS NOT an item of Licensed Software or Licensed Product</i></td></tr>
+<tr><th id="32">32</th><td><i> *     under any End User Software License Agreement or Agreement for Licensed</i></td></tr>
+<tr><th id="33">33</th><td><i> *     Product with Synopsys or any supplement thereto.  Permission is hereby</i></td></tr>
+<tr><th id="34">34</th><td><i> *     granted, free of charge, to any person obtaining a copy of this software</i></td></tr>
+<tr><th id="35">35</th><td><i> *     annotated with this license and the Software, to deal in the Software</i></td></tr>
+<tr><th id="36">36</th><td><i> *     without restriction, including without limitation the rights to use,</i></td></tr>
+<tr><th id="37">37</th><td><i> *     copy, modify, merge, publish, distribute, sublicense, and/or sell copies</i></td></tr>
+<tr><th id="38">38</th><td><i> *     of the Software, and to permit persons to whom the Software is furnished</i></td></tr>
+<tr><th id="39">39</th><td><i> *     to do so, subject to the following conditions:</i></td></tr>
+<tr><th id="40">40</th><td><i> *</i></td></tr>
+<tr><th id="41">41</th><td><i> *     The above copyright notice and this permission notice shall be included</i></td></tr>
+<tr><th id="42">42</th><td><i> *     in all copies or substantial portions of the Software.</i></td></tr>
+<tr><th id="43">43</th><td><i> *</i></td></tr>
+<tr><th id="44">44</th><td><i> *     THIS SOFTWARE IS BEING DISTRIBUTED BY SYNOPSYS SOLELY ON AN "AS IS"</i></td></tr>
+<tr><th id="45">45</th><td><i> *     BASIS AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED</i></td></tr>
+<tr><th id="46">46</th><td><i> *     TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A</i></td></tr>
+<tr><th id="47">47</th><td><i> *     PARTICULAR PURPOSE ARE HEREBY DISCLAIMED. IN NO EVENT SHALL SYNOPSYS</i></td></tr>
+<tr><th id="48">48</th><td><i> *     BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR</i></td></tr>
+<tr><th id="49">49</th><td><i> *     CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF</i></td></tr>
+<tr><th id="50">50</th><td><i> *     SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS</i></td></tr>
+<tr><th id="51">51</th><td><i> *     INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN</i></td></tr>
+<tr><th id="52">52</th><td><i> *     CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)</i></td></tr>
+<tr><th id="53">53</th><td><i> *     ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF</i></td></tr>
+<tr><th id="54">54</th><td><i> *     THE POSSIBILITY OF SUCH DAMAGE.</i></td></tr>
+<tr><th id="55">55</th><td><i> *</i></td></tr>
+<tr><th id="56">56</th><td><i> *</i></td></tr>
+<tr><th id="57">57</th><td><i> * License 2: Modified BSD</i></td></tr>
+<tr><th id="58">58</th><td><i> *</i></td></tr>
+<tr><th id="59">59</th><td><i> * Copyright (c) 2014-2016 Advanced Micro Devices, Inc.</i></td></tr>
+<tr><th id="60">60</th><td><i> * All rights reserved.</i></td></tr>
+<tr><th id="61">61</th><td><i> *</i></td></tr>
+<tr><th id="62">62</th><td><i> * Redistribution and use in source and binary forms, with or without</i></td></tr>
+<tr><th id="63">63</th><td><i> * modification, are permitted provided that the following conditions are met:</i></td></tr>
+<tr><th id="64">64</th><td><i> *     * Redistributions of source code must retain the above copyright</i></td></tr>
+<tr><th id="65">65</th><td><i> *       notice, this list of conditions and the following disclaimer.</i></td></tr>
+<tr><th id="66">66</th><td><i> *     * Redistributions in binary form must reproduce the above copyright</i></td></tr>
+<tr><th id="67">67</th><td><i> *       notice, this list of conditions and the following disclaimer in the</i></td></tr>
+<tr><th id="68">68</th><td><i> *       documentation and/or other materials provided with the distribution.</i></td></tr>
+<tr><th id="69">69</th><td><i> *     * Neither the name of Advanced Micro Devices, Inc. nor the</i></td></tr>
+<tr><th id="70">70</th><td><i> *       names of its contributors may be used to endorse or promote products</i></td></tr>
+<tr><th id="71">71</th><td><i> *       derived from this software without specific prior written permission.</i></td></tr>
+<tr><th id="72">72</th><td><i> *</i></td></tr>
+<tr><th id="73">73</th><td><i> * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"</i></td></tr>
+<tr><th id="74">74</th><td><i> * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE</i></td></tr>
+<tr><th id="75">75</th><td><i> * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE</i></td></tr>
+<tr><th id="76">76</th><td><i> * ARE DISCLAIMED. IN NO EVENT SHALL &lt;COPYRIGHT HOLDER&gt; BE LIABLE FOR ANY</i></td></tr>
+<tr><th id="77">77</th><td><i> * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES</i></td></tr>
+<tr><th id="78">78</th><td><i> * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</i></td></tr>
+<tr><th id="79">79</th><td><i> * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND</i></td></tr>
+<tr><th id="80">80</th><td><i> * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</i></td></tr>
+<tr><th id="81">81</th><td><i> * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF</i></td></tr>
+<tr><th id="82">82</th><td><i> * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</i></td></tr>
+<tr><th id="83">83</th><td><i> *</i></td></tr>
+<tr><th id="84">84</th><td><i> * This file incorporates work covered by the following copyright and</i></td></tr>
+<tr><th id="85">85</th><td><i> * permission notice:</i></td></tr>
+<tr><th id="86">86</th><td><i> *     The Synopsys DWC ETHER XGMAC Software Driver and documentation</i></td></tr>
+<tr><th id="87">87</th><td><i> *     (hereinafter "Software") is an unsupported proprietary work of Synopsys,</i></td></tr>
+<tr><th id="88">88</th><td><i> *     Inc. unless otherwise expressly agreed to in writing between Synopsys</i></td></tr>
+<tr><th id="89">89</th><td><i> *     and you.</i></td></tr>
+<tr><th id="90">90</th><td><i> *</i></td></tr>
+<tr><th id="91">91</th><td><i> *     The Software IS NOT an item of Licensed Software or Licensed Product</i></td></tr>
+<tr><th id="92">92</th><td><i> *     under any End User Software License Agreement or Agreement for Licensed</i></td></tr>
+<tr><th id="93">93</th><td><i> *     Product with Synopsys or any supplement thereto.  Permission is hereby</i></td></tr>
+<tr><th id="94">94</th><td><i> *     granted, free of charge, to any person obtaining a copy of this software</i></td></tr>
+<tr><th id="95">95</th><td><i> *     annotated with this license and the Software, to deal in the Software</i></td></tr>
+<tr><th id="96">96</th><td><i> *     without restriction, including without limitation the rights to use,</i></td></tr>
+<tr><th id="97">97</th><td><i> *     copy, modify, merge, publish, distribute, sublicense, and/or sell copies</i></td></tr>
+<tr><th id="98">98</th><td><i> *     of the Software, and to permit persons to whom the Software is furnished</i></td></tr>
+<tr><th id="99">99</th><td><i> *     to do so, subject to the following conditions:</i></td></tr>
+<tr><th id="100">100</th><td><i> *</i></td></tr>
+<tr><th id="101">101</th><td><i> *     The above copyright notice and this permission notice shall be included</i></td></tr>
+<tr><th id="102">102</th><td><i> *     in all copies or substantial portions of the Software.</i></td></tr>
+<tr><th id="103">103</th><td><i> *</i></td></tr>
+<tr><th id="104">104</th><td><i> *     THIS SOFTWARE IS BEING DISTRIBUTED BY SYNOPSYS SOLELY ON AN "AS IS"</i></td></tr>
+<tr><th id="105">105</th><td><i> *     BASIS AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED</i></td></tr>
+<tr><th id="106">106</th><td><i> *     TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A</i></td></tr>
+<tr><th id="107">107</th><td><i> *     PARTICULAR PURPOSE ARE HEREBY DISCLAIMED. IN NO EVENT SHALL SYNOPSYS</i></td></tr>
+<tr><th id="108">108</th><td><i> *     BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR</i></td></tr>
+<tr><th id="109">109</th><td><i> *     CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF</i></td></tr>
+<tr><th id="110">110</th><td><i> *     SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS</i></td></tr>
+<tr><th id="111">111</th><td><i> *     INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN</i></td></tr>
+<tr><th id="112">112</th><td><i> *     CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)</i></td></tr>
+<tr><th id="113">113</th><td><i> *     ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF</i></td></tr>
+<tr><th id="114">114</th><td><i> *     THE POSSIBILITY OF SUCH DAMAGE.</i></td></tr>
+<tr><th id="115">115</th><td><i> */</i></td></tr>
+<tr><th id="116">116</th><td></td></tr>
+<tr><th id="117">117</th><td><u>#include <a href="../../../../../include/linux/module.h.html">&lt;linux/module.h&gt;</a></u></td></tr>
+<tr><th id="118">118</th><td><u>#include <a href="../../../../../include/linux/device.h.html">&lt;linux/device.h&gt;</a></u></td></tr>
+<tr><th id="119">119</th><td><u>#include <a href="../../../../../include/linux/platform_device.h.html">&lt;linux/platform_device.h&gt;</a></u></td></tr>
+<tr><th id="120">120</th><td><u>#include <a href="../../../../../include/linux/spinlock.h.html">&lt;linux/spinlock.h&gt;</a></u></td></tr>
+<tr><th id="121">121</th><td><u>#include <a href="../../../../../include/linux/netdevice.h.html">&lt;linux/netdevice.h&gt;</a></u></td></tr>
+<tr><th id="122">122</th><td><u>#include <a href="../../../../../include/linux/etherdevice.h.html">&lt;linux/etherdevice.h&gt;</a></u></td></tr>
+<tr><th id="123">123</th><td><u>#include <a href="../../../../../include/linux/io.h.html">&lt;linux/io.h&gt;</a></u></td></tr>
+<tr><th id="124">124</th><td><u>#include <a href="../../../../../include/linux/of.h.html">&lt;linux/of.h&gt;</a></u></td></tr>
+<tr><th id="125">125</th><td><u>#include <a href="../../../../../include/linux/of_net.h.html">&lt;linux/of_net.h&gt;</a></u></td></tr>
+<tr><th id="126">126</th><td><u>#include <a href="../../../../../include/linux/of_address.h.html">&lt;linux/of_address.h&gt;</a></u></td></tr>
+<tr><th id="127">127</th><td><u>#include <a href="../../../../../include/linux/of_platform.h.html">&lt;linux/of_platform.h&gt;</a></u></td></tr>
+<tr><th id="128">128</th><td><u>#include <a href="../../../../../include/linux/of_device.h.html">&lt;linux/of_device.h&gt;</a></u></td></tr>
+<tr><th id="129">129</th><td><u>#include <a href="../../../../../include/linux/clk.h.html">&lt;linux/clk.h&gt;</a></u></td></tr>
+<tr><th id="130">130</th><td><u>#include <a href="../../../../../include/linux/property.h.html">&lt;linux/property.h&gt;</a></u></td></tr>
+<tr><th id="131">131</th><td><u>#include <a href="../../../../../include/linux/acpi.h.html">&lt;linux/acpi.h&gt;</a></u></td></tr>
+<tr><th id="132">132</th><td><u>#include <a href="../../../../../include/linux/mdio.h.html">&lt;linux/mdio.h&gt;</a></u></td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td><u>#include <a href="xgbe.h.html">"xgbe.h"</a></u></td></tr>
+<tr><th id="135">135</th><td><u>#include <a href="xgbe-common.h.html">"xgbe-common.h"</a></u></td></tr>
+<tr><th id="136">136</th><td></td></tr>
+<tr><th id="137">137</th><td><u>#<span data-ppcond="137">ifdef</span> <a class="macro" href="../../../../../include/generated/autoconf.h.html#238" data-ref="_M/CONFIG_ACPI">CONFIG_ACPI</a></u></td></tr>
+<tr><th id="138">138</th><td><em>static</em> <em>const</em> <b>struct</b> <a class="type" href="../../../../../include/linux/mod_devicetable.h.html#acpi_device_id" title='acpi_device_id' data-ref="acpi_device_id">acpi_device_id</a> <dfn class="tu decl def" id="xgbe_acpi_match" title='xgbe_acpi_match' data-type='const struct acpi_device_id []' data-ref="xgbe_acpi_match">xgbe_acpi_match</dfn>[];</td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td><em>static</em> <b>struct</b> <a class="type" href="xgbe.h.html#xgbe_version_data" title='xgbe_version_data' data-ref="xgbe_version_data">xgbe_version_data</a> *<dfn class="tu decl def fn" id="xgbe_acpi_vdata" title='xgbe_acpi_vdata' data-type='struct xgbe_version_data * xgbe_acpi_vdata(struct xgbe_prv_data * pdata)' data-ref="xgbe_acpi_vdata">xgbe_acpi_vdata</dfn>(<b>struct</b> <a class="type" href="xgbe.h.html#xgbe_prv_data" title='xgbe_prv_data' data-ref="xgbe_prv_data">xgbe_prv_data</a> *<dfn class="local col6 decl" id="6pdata" title='pdata' data-type='struct xgbe_prv_data *' data-ref="6pdata">pdata</dfn>)</td></tr>
+<tr><th id="141">141</th><td>{</td></tr>
+<tr><th id="142">142</th><td>	<em>const</em> <b>struct</b> <a class="type" href="../../../../../include/linux/mod_devicetable.h.html#acpi_device_id" title='acpi_device_id' data-ref="acpi_device_id">acpi_device_id</a> *<dfn class="local col7 decl" id="7id" title='id' data-type='const struct acpi_device_id *' data-ref="7id">id</dfn>;</td></tr>
+<tr><th id="143">143</th><td></td></tr>
+<tr><th id="144">144</th><td>	<a class="local col7 ref" href="#7id" title='id' data-ref="7id">id</a> = <a class="ref fn" href="../../../../../include/linux/acpi.h.html#acpi_match_device" title='acpi_match_device' data-ref="acpi_match_device">acpi_match_device</a>(<a class="tu ref" href="#xgbe_acpi_match" title='xgbe_acpi_match' data-use='r' data-ref="xgbe_acpi_match">xgbe_acpi_match</a>, <a class="local col6 ref" href="#6pdata" title='pdata' data-ref="6pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::dev" title='xgbe_prv_data::dev' data-ref="xgbe_prv_data::dev">dev</a>);</td></tr>
+<tr><th id="145">145</th><td></td></tr>
+<tr><th id="146">146</th><td>	<b>return</b> <a class="local col7 ref" href="#7id" title='id' data-ref="7id">id</a> ? (<b>struct</b> <a class="type" href="xgbe.h.html#xgbe_version_data" title='xgbe_version_data' data-ref="xgbe_version_data">xgbe_version_data</a> *)<a class="local col7 ref" href="#7id" title='id' data-ref="7id">id</a>-&gt;<a class="ref field" href="../../../../../include/linux/mod_devicetable.h.html#acpi_device_id::driver_data" title='acpi_device_id::driver_data' data-ref="acpi_device_id::driver_data">driver_data</a> : <a class="macro" href="../../../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="147">147</th><td>}</td></tr>
+<tr><th id="148">148</th><td></td></tr>
+<tr><th id="149">149</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="xgbe_acpi_support" title='xgbe_acpi_support' data-type='int xgbe_acpi_support(struct xgbe_prv_data * pdata)' data-ref="xgbe_acpi_support">xgbe_acpi_support</dfn>(<b>struct</b> <a class="type" href="xgbe.h.html#xgbe_prv_data" title='xgbe_prv_data' data-ref="xgbe_prv_data">xgbe_prv_data</a> *<dfn class="local col8 decl" id="8pdata" title='pdata' data-type='struct xgbe_prv_data *' data-ref="8pdata">pdata</dfn>)</td></tr>
+<tr><th id="150">150</th><td>{</td></tr>
+<tr><th id="151">151</th><td>	<b>struct</b> <a class="type" href="../../../../../include/linux/device.h.html#device" title='device' data-ref="device">device</a> *<dfn class="local col9 decl" id="9dev" title='dev' data-type='struct device *' data-ref="9dev">dev</dfn> = <a class="local col8 ref" href="#8pdata" title='pdata' data-ref="8pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::dev" title='xgbe_prv_data::dev' data-ref="xgbe_prv_data::dev">dev</a>;</td></tr>
+<tr><th id="152">152</th><td>	<a class="typedef" href="../../../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col0 decl" id="10property" title='property' data-type='u32' data-ref="10property">property</dfn>;</td></tr>
+<tr><th id="153">153</th><td>	<em>int</em> <dfn class="local col1 decl" id="11ret" title='ret' data-type='int' data-ref="11ret">ret</dfn>;</td></tr>
+<tr><th id="154">154</th><td></td></tr>
+<tr><th id="155">155</th><td>	<i>/* Obtain the system clock setting */</i></td></tr>
+<tr><th id="156">156</th><td>	<a class="local col1 ref" href="#11ret" title='ret' data-ref="11ret">ret</a> = <a class="ref fn" href="../../../../../include/linux/property.h.html#device_property_read_u32" title='device_property_read_u32' data-ref="device_property_read_u32">device_property_read_u32</a>(<a class="local col9 ref" href="#9dev" title='dev' data-ref="9dev">dev</a>, <a class="macro" href="xgbe.h.html#216" title="&quot;amd,dma-freq&quot;" data-ref="_M/XGBE_ACPI_DMA_FREQ">XGBE_ACPI_DMA_FREQ</a>, &amp;<a class="local col0 ref" href="#10property" title='property' data-ref="10property">property</a>);</td></tr>
+<tr><th id="157">157</th><td>	<b>if</b> (<a class="local col1 ref" href="#11ret" title='ret' data-ref="11ret">ret</a>) {</td></tr>
+<tr><th id="158">158</th><td>		<a class="ref fn" href="../../../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(<a class="local col9 ref" href="#9dev" title='dev' data-ref="9dev">dev</a>, <q>"unable to obtain %s property\n"</q>,</td></tr>
+<tr><th id="159">159</th><td>			<a class="macro" href="xgbe.h.html#216" title="&quot;amd,dma-freq&quot;" data-ref="_M/XGBE_ACPI_DMA_FREQ">XGBE_ACPI_DMA_FREQ</a>);</td></tr>
+<tr><th id="160">160</th><td>		<b>return</b> <a class="local col1 ref" href="#11ret" title='ret' data-ref="11ret">ret</a>;</td></tr>
+<tr><th id="161">161</th><td>	}</td></tr>
+<tr><th id="162">162</th><td>	<a class="local col8 ref" href="#8pdata" title='pdata' data-ref="8pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::sysclk_rate" title='xgbe_prv_data::sysclk_rate' data-ref="xgbe_prv_data::sysclk_rate">sysclk_rate</a> = <a class="local col0 ref" href="#10property" title='property' data-ref="10property">property</a>;</td></tr>
+<tr><th id="163">163</th><td></td></tr>
+<tr><th id="164">164</th><td>	<i>/* Obtain the PTP clock setting */</i></td></tr>
+<tr><th id="165">165</th><td>	<a class="local col1 ref" href="#11ret" title='ret' data-ref="11ret">ret</a> = <a class="ref fn" href="../../../../../include/linux/property.h.html#device_property_read_u32" title='device_property_read_u32' data-ref="device_property_read_u32">device_property_read_u32</a>(<a class="local col9 ref" href="#9dev" title='dev' data-ref="9dev">dev</a>, <a class="macro" href="xgbe.h.html#217" title="&quot;amd,ptp-freq&quot;" data-ref="_M/XGBE_ACPI_PTP_FREQ">XGBE_ACPI_PTP_FREQ</a>, &amp;<a class="local col0 ref" href="#10property" title='property' data-ref="10property">property</a>);</td></tr>
+<tr><th id="166">166</th><td>	<b>if</b> (<a class="local col1 ref" href="#11ret" title='ret' data-ref="11ret">ret</a>) {</td></tr>
+<tr><th id="167">167</th><td>		<a class="ref fn" href="../../../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(<a class="local col9 ref" href="#9dev" title='dev' data-ref="9dev">dev</a>, <q>"unable to obtain %s property\n"</q>,</td></tr>
+<tr><th id="168">168</th><td>			<a class="macro" href="xgbe.h.html#217" title="&quot;amd,ptp-freq&quot;" data-ref="_M/XGBE_ACPI_PTP_FREQ">XGBE_ACPI_PTP_FREQ</a>);</td></tr>
+<tr><th id="169">169</th><td>		<b>return</b> <a class="local col1 ref" href="#11ret" title='ret' data-ref="11ret">ret</a>;</td></tr>
+<tr><th id="170">170</th><td>	}</td></tr>
+<tr><th id="171">171</th><td>	<a class="local col8 ref" href="#8pdata" title='pdata' data-ref="8pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::ptpclk_rate" title='xgbe_prv_data::ptpclk_rate' data-ref="xgbe_prv_data::ptpclk_rate">ptpclk_rate</a> = <a class="local col0 ref" href="#10property" title='property' data-ref="10property">property</a>;</td></tr>
+<tr><th id="172">172</th><td></td></tr>
+<tr><th id="173">173</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="174">174</th><td>}</td></tr>
+<tr><th id="175">175</th><td><u>#<span data-ppcond="137">else</span>   /* CONFIG_ACPI */</u></td></tr>
+<tr><th id="176">176</th><td><em>static</em> <b>struct</b> xgbe_version_data *xgbe_acpi_vdata(<b>struct</b> xgbe_prv_data *pdata)</td></tr>
+<tr><th id="177">177</th><td>{</td></tr>
+<tr><th id="178">178</th><td>	<b>return</b> NULL;</td></tr>
+<tr><th id="179">179</th><td>}</td></tr>
+<tr><th id="180">180</th><td></td></tr>
+<tr><th id="181">181</th><td><em>static</em> <em>int</em> xgbe_acpi_support(<b>struct</b> xgbe_prv_data *pdata)</td></tr>
+<tr><th id="182">182</th><td>{</td></tr>
+<tr><th id="183">183</th><td>	<b>return</b> -EINVAL;</td></tr>
+<tr><th id="184">184</th><td>}</td></tr>
+<tr><th id="185">185</th><td><u>#<span data-ppcond="137">endif</span>  /* CONFIG_ACPI */</u></td></tr>
+<tr><th id="186">186</th><td></td></tr>
+<tr><th id="187">187</th><td><u>#<span data-ppcond="187">ifdef</span> <span class="macro" data-ref="_M/CONFIG_OF">CONFIG_OF</span></u></td></tr>
+<tr><th id="188">188</th><td><em>static</em> <em>const</em> <b>struct</b> of_device_id xgbe_of_match[];</td></tr>
+<tr><th id="189">189</th><td></td></tr>
+<tr><th id="190">190</th><td><em>static</em> <b>struct</b> xgbe_version_data *xgbe_of_vdata(<b>struct</b> xgbe_prv_data *pdata)</td></tr>
+<tr><th id="191">191</th><td>{</td></tr>
+<tr><th id="192">192</th><td>	<em>const</em> <b>struct</b> of_device_id *id;</td></tr>
+<tr><th id="193">193</th><td></td></tr>
+<tr><th id="194">194</th><td>	id = of_match_device(xgbe_of_match, pdata-&gt;dev);</td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td>	<b>return</b> id ? (<b>struct</b> xgbe_version_data *)id-&gt;data : NULL;</td></tr>
+<tr><th id="197">197</th><td>}</td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td><em>static</em> <em>int</em> xgbe_of_support(<b>struct</b> xgbe_prv_data *pdata)</td></tr>
+<tr><th id="200">200</th><td>{</td></tr>
+<tr><th id="201">201</th><td>	<b>struct</b> device *dev = pdata-&gt;dev;</td></tr>
+<tr><th id="202">202</th><td></td></tr>
+<tr><th id="203">203</th><td>	<i>/* Obtain the system clock setting */</i></td></tr>
+<tr><th id="204">204</th><td>	pdata-&gt;sysclk = devm_clk_get(dev, XGBE_DMA_CLOCK);</td></tr>
+<tr><th id="205">205</th><td>	<b>if</b> (IS_ERR(pdata-&gt;sysclk)) {</td></tr>
+<tr><th id="206">206</th><td>		dev_err(dev, <q>"dma devm_clk_get failed\n"</q>);</td></tr>
+<tr><th id="207">207</th><td>		<b>return</b> PTR_ERR(pdata-&gt;sysclk);</td></tr>
+<tr><th id="208">208</th><td>	}</td></tr>
+<tr><th id="209">209</th><td>	pdata-&gt;sysclk_rate = clk_get_rate(pdata-&gt;sysclk);</td></tr>
+<tr><th id="210">210</th><td></td></tr>
+<tr><th id="211">211</th><td>	<i>/* Obtain the PTP clock setting */</i></td></tr>
+<tr><th id="212">212</th><td>	pdata-&gt;ptpclk = devm_clk_get(dev, XGBE_PTP_CLOCK);</td></tr>
+<tr><th id="213">213</th><td>	<b>if</b> (IS_ERR(pdata-&gt;ptpclk)) {</td></tr>
+<tr><th id="214">214</th><td>		dev_err(dev, <q>"ptp devm_clk_get failed\n"</q>);</td></tr>
+<tr><th id="215">215</th><td>		<b>return</b> PTR_ERR(pdata-&gt;ptpclk);</td></tr>
+<tr><th id="216">216</th><td>	}</td></tr>
+<tr><th id="217">217</th><td>	pdata-&gt;ptpclk_rate = clk_get_rate(pdata-&gt;ptpclk);</td></tr>
+<tr><th id="218">218</th><td></td></tr>
+<tr><th id="219">219</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="220">220</th><td>}</td></tr>
+<tr><th id="221">221</th><td></td></tr>
+<tr><th id="222">222</th><td><em>static</em> <b>struct</b> platform_device *xgbe_of_get_phy_pdev(<b>struct</b> xgbe_prv_data *pdata)</td></tr>
+<tr><th id="223">223</th><td>{</td></tr>
+<tr><th id="224">224</th><td>	<b>struct</b> device *dev = pdata-&gt;dev;</td></tr>
+<tr><th id="225">225</th><td>	<b>struct</b> device_node *phy_node;</td></tr>
+<tr><th id="226">226</th><td>	<b>struct</b> platform_device *phy_pdev;</td></tr>
+<tr><th id="227">227</th><td></td></tr>
+<tr><th id="228">228</th><td>	phy_node = of_parse_phandle(dev-&gt;of_node, <q>"phy-handle"</q>, <var>0</var>);</td></tr>
+<tr><th id="229">229</th><td>	<b>if</b> (phy_node) {</td></tr>
+<tr><th id="230">230</th><td>		<i>/* Old style device tree:</i></td></tr>
+<tr><th id="231">231</th><td><i>		 *   The XGBE and PHY resources are separate</i></td></tr>
+<tr><th id="232">232</th><td><i>		 */</i></td></tr>
+<tr><th id="233">233</th><td>		phy_pdev = of_find_device_by_node(phy_node);</td></tr>
+<tr><th id="234">234</th><td>		of_node_put(phy_node);</td></tr>
+<tr><th id="235">235</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="236">236</th><td>		<i>/* New style device tree:</i></td></tr>
+<tr><th id="237">237</th><td><i>		 *   The XGBE and PHY resources are grouped together with</i></td></tr>
+<tr><th id="238">238</th><td><i>		 *   the PHY resources listed last</i></td></tr>
+<tr><th id="239">239</th><td><i>		 */</i></td></tr>
+<tr><th id="240">240</th><td>		get_device(dev);</td></tr>
+<tr><th id="241">241</th><td>		phy_pdev = pdata-&gt;platdev;</td></tr>
+<tr><th id="242">242</th><td>	}</td></tr>
+<tr><th id="243">243</th><td></td></tr>
+<tr><th id="244">244</th><td>	<b>return</b> phy_pdev;</td></tr>
+<tr><th id="245">245</th><td>}</td></tr>
+<tr><th id="246">246</th><td><u>#<span data-ppcond="187">else</span>   /* CONFIG_OF */</u></td></tr>
+<tr><th id="247">247</th><td><em>static</em> <b>struct</b> <a class="type" href="xgbe.h.html#xgbe_version_data" title='xgbe_version_data' data-ref="xgbe_version_data">xgbe_version_data</a> *<dfn class="tu decl def fn" id="xgbe_of_vdata" title='xgbe_of_vdata' data-type='struct xgbe_version_data * xgbe_of_vdata(struct xgbe_prv_data * pdata)' data-ref="xgbe_of_vdata">xgbe_of_vdata</dfn>(<b>struct</b> <a class="type" href="xgbe.h.html#xgbe_prv_data" title='xgbe_prv_data' data-ref="xgbe_prv_data">xgbe_prv_data</a> *<dfn class="local col2 decl" id="12pdata" title='pdata' data-type='struct xgbe_prv_data *' data-ref="12pdata">pdata</dfn>)</td></tr>
+<tr><th id="248">248</th><td>{</td></tr>
+<tr><th id="249">249</th><td>	<b>return</b> <a class="macro" href="../../../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="250">250</th><td>}</td></tr>
+<tr><th id="251">251</th><td></td></tr>
+<tr><th id="252">252</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="xgbe_of_support" title='xgbe_of_support' data-type='int xgbe_of_support(struct xgbe_prv_data * pdata)' data-ref="xgbe_of_support">xgbe_of_support</dfn>(<b>struct</b> <a class="type" href="xgbe.h.html#xgbe_prv_data" title='xgbe_prv_data' data-ref="xgbe_prv_data">xgbe_prv_data</a> *<dfn class="local col3 decl" id="13pdata" title='pdata' data-type='struct xgbe_prv_data *' data-ref="13pdata">pdata</dfn>)</td></tr>
+<tr><th id="253">253</th><td>{</td></tr>
+<tr><th id="254">254</th><td>	<b>return</b> -<a class="macro" href="../../../../../include/uapi/asm-generic/errno-base.h.html#26" title="22" data-ref="_M/EINVAL">EINVAL</a>;</td></tr>
+<tr><th id="255">255</th><td>}</td></tr>
+<tr><th id="256">256</th><td></td></tr>
+<tr><th id="257">257</th><td><em>static</em> <b>struct</b> <a class="type" href="../../../../../include/linux/platform_device.h.html#platform_device" title='platform_device' data-ref="platform_device">platform_device</a> *<dfn class="tu decl def fn" id="xgbe_of_get_phy_pdev" title='xgbe_of_get_phy_pdev' data-type='struct platform_device * xgbe_of_get_phy_pdev(struct xgbe_prv_data * pdata)' data-ref="xgbe_of_get_phy_pdev">xgbe_of_get_phy_pdev</dfn>(<b>struct</b> <a class="type" href="xgbe.h.html#xgbe_prv_data" title='xgbe_prv_data' data-ref="xgbe_prv_data">xgbe_prv_data</a> *<dfn class="local col4 decl" id="14pdata" title='pdata' data-type='struct xgbe_prv_data *' data-ref="14pdata">pdata</dfn>)</td></tr>
+<tr><th id="258">258</th><td>{</td></tr>
+<tr><th id="259">259</th><td>	<b>return</b> <a class="macro" href="../../../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="260">260</th><td>}</td></tr>
+<tr><th id="261">261</th><td><u>#<span data-ppcond="187">endif</span>  /* CONFIG_OF */</u></td></tr>
+<tr><th id="262">262</th><td></td></tr>
+<tr><th id="263">263</th><td><em>static</em> <em>unsigned</em> <em>int</em> <dfn class="tu decl def fn" id="xgbe_resource_count" title='xgbe_resource_count' data-type='unsigned int xgbe_resource_count(struct platform_device * pdev, unsigned int type)' data-ref="xgbe_resource_count">xgbe_resource_count</dfn>(<b>struct</b> <a class="type" href="../../../../../include/linux/platform_device.h.html#platform_device" title='platform_device' data-ref="platform_device">platform_device</a> *<dfn class="local col5 decl" id="15pdev" title='pdev' data-type='struct platform_device *' data-ref="15pdev">pdev</dfn>,</td></tr>
+<tr><th id="264">264</th><td>					<em>unsigned</em> <em>int</em> <dfn class="local col6 decl" id="16type" title='type' data-type='unsigned int' data-ref="16type">type</dfn>)</td></tr>
+<tr><th id="265">265</th><td>{</td></tr>
+<tr><th id="266">266</th><td>	<em>unsigned</em> <em>int</em> <dfn class="local col7 decl" id="17count" title='count' data-type='unsigned int' data-ref="17count">count</dfn>;</td></tr>
+<tr><th id="267">267</th><td>	<em>int</em> <dfn class="local col8 decl" id="18i" title='i' data-type='int' data-ref="18i">i</dfn>;</td></tr>
+<tr><th id="268">268</th><td></td></tr>
+<tr><th id="269">269</th><td>	<b>for</b> (<a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a> = <var>0</var>, <a class="local col7 ref" href="#17count" title='count' data-ref="17count">count</a> = <var>0</var>; <a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a> &lt; <a class="local col5 ref" href="#15pdev" title='pdev' data-ref="15pdev">pdev</a>-&gt;<a class="ref field" href="../../../../../include/linux/platform_device.h.html#platform_device::num_resources" title='platform_device::num_resources' data-ref="platform_device::num_resources">num_resources</a>; <a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>++) {</td></tr>
+<tr><th id="270">270</th><td>		<b>struct</b> <a class="type" href="../../../../../include/linux/ioport.h.html#resource" title='resource' data-ref="resource">resource</a> *<dfn class="local col9 decl" id="19res" title='res' data-type='struct resource *' data-ref="19res">res</dfn> = &amp;<a class="local col5 ref" href="#15pdev" title='pdev' data-ref="15pdev">pdev</a>-&gt;<a class="ref field" href="../../../../../include/linux/platform_device.h.html#platform_device::resource" title='platform_device::resource' data-ref="platform_device::resource">resource</a>[<a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>];</td></tr>
+<tr><th id="271">271</th><td></td></tr>
+<tr><th id="272">272</th><td>		<b>if</b> (<a class="local col6 ref" href="#16type" title='type' data-ref="16type">type</a> == <a class="ref fn" href="../../../../../include/linux/ioport.h.html#resource_type" title='resource_type' data-ref="resource_type">resource_type</a>(<a class="local col9 ref" href="#19res" title='res' data-ref="19res">res</a>))</td></tr>
+<tr><th id="273">273</th><td>			<a class="local col7 ref" href="#17count" title='count' data-ref="17count">count</a>++;</td></tr>
+<tr><th id="274">274</th><td>	}</td></tr>
+<tr><th id="275">275</th><td></td></tr>
+<tr><th id="276">276</th><td>	<b>return</b> <a class="local col7 ref" href="#17count" title='count' data-ref="17count">count</a>;</td></tr>
+<tr><th id="277">277</th><td>}</td></tr>
+<tr><th id="278">278</th><td></td></tr>
+<tr><th id="279">279</th><td><em>static</em> <b>struct</b> <a class="type" href="../../../../../include/linux/platform_device.h.html#platform_device" title='platform_device' data-ref="platform_device">platform_device</a> *<dfn class="tu decl def fn" id="xgbe_get_phy_pdev" title='xgbe_get_phy_pdev' data-type='struct platform_device * xgbe_get_phy_pdev(struct xgbe_prv_data * pdata)' data-ref="xgbe_get_phy_pdev">xgbe_get_phy_pdev</dfn>(<b>struct</b> <a class="type" href="xgbe.h.html#xgbe_prv_data" title='xgbe_prv_data' data-ref="xgbe_prv_data">xgbe_prv_data</a> *<dfn class="local col0 decl" id="20pdata" title='pdata' data-type='struct xgbe_prv_data *' data-ref="20pdata">pdata</dfn>)</td></tr>
+<tr><th id="280">280</th><td>{</td></tr>
+<tr><th id="281">281</th><td>	<b>struct</b> <a class="type" href="../../../../../include/linux/platform_device.h.html#platform_device" title='platform_device' data-ref="platform_device">platform_device</a> *<dfn class="local col1 decl" id="21phy_pdev" title='phy_pdev' data-type='struct platform_device *' data-ref="21phy_pdev">phy_pdev</dfn>;</td></tr>
+<tr><th id="282">282</th><td></td></tr>
+<tr><th id="283">283</th><td>	<b>if</b> (<a class="local col0 ref" href="#20pdata" title='pdata' data-ref="20pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::use_acpi" title='xgbe_prv_data::use_acpi' data-ref="xgbe_prv_data::use_acpi">use_acpi</a>) {</td></tr>
+<tr><th id="284">284</th><td>		<a class="ref fn" href="../../../../../include/linux/device.h.html#get_device" title='get_device' data-ref="get_device">get_device</a>(<a class="local col0 ref" href="#20pdata" title='pdata' data-ref="20pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::dev" title='xgbe_prv_data::dev' data-ref="xgbe_prv_data::dev">dev</a>);</td></tr>
+<tr><th id="285">285</th><td>		<a class="local col1 ref" href="#21phy_pdev" title='phy_pdev' data-ref="21phy_pdev">phy_pdev</a> = <a class="local col0 ref" href="#20pdata" title='pdata' data-ref="20pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::platdev" title='xgbe_prv_data::platdev' data-ref="xgbe_prv_data::platdev">platdev</a>;</td></tr>
+<tr><th id="286">286</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="287">287</th><td>		<a class="local col1 ref" href="#21phy_pdev" title='phy_pdev' data-ref="21phy_pdev">phy_pdev</a> = <a class="tu ref fn" href="#xgbe_of_get_phy_pdev" title='xgbe_of_get_phy_pdev' data-use='c' data-ref="xgbe_of_get_phy_pdev">xgbe_of_get_phy_pdev</a>(<a class="local col0 ref" href="#20pdata" title='pdata' data-ref="20pdata">pdata</a>);</td></tr>
+<tr><th id="288">288</th><td>	}</td></tr>
+<tr><th id="289">289</th><td></td></tr>
+<tr><th id="290">290</th><td>	<b>return</b> <a class="local col1 ref" href="#21phy_pdev" title='phy_pdev' data-ref="21phy_pdev">phy_pdev</a>;</td></tr>
+<tr><th id="291">291</th><td>}</td></tr>
+<tr><th id="292">292</th><td></td></tr>
+<tr><th id="293">293</th><td><em>static</em> <b>struct</b> <a class="type" href="xgbe.h.html#xgbe_version_data" title='xgbe_version_data' data-ref="xgbe_version_data">xgbe_version_data</a> *<dfn class="tu decl def fn" id="xgbe_get_vdata" title='xgbe_get_vdata' data-type='struct xgbe_version_data * xgbe_get_vdata(struct xgbe_prv_data * pdata)' data-ref="xgbe_get_vdata">xgbe_get_vdata</dfn>(<b>struct</b> <a class="type" href="xgbe.h.html#xgbe_prv_data" title='xgbe_prv_data' data-ref="xgbe_prv_data">xgbe_prv_data</a> *<dfn class="local col2 decl" id="22pdata" title='pdata' data-type='struct xgbe_prv_data *' data-ref="22pdata">pdata</dfn>)</td></tr>
+<tr><th id="294">294</th><td>{</td></tr>
+<tr><th id="295">295</th><td>	<b>return</b> <a class="local col2 ref" href="#22pdata" title='pdata' data-ref="22pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::use_acpi" title='xgbe_prv_data::use_acpi' data-ref="xgbe_prv_data::use_acpi">use_acpi</a> ? <a class="tu ref fn" href="#xgbe_acpi_vdata" title='xgbe_acpi_vdata' data-use='c' data-ref="xgbe_acpi_vdata">xgbe_acpi_vdata</a>(<a class="local col2 ref" href="#22pdata" title='pdata' data-ref="22pdata">pdata</a>)</td></tr>
+<tr><th id="296">296</th><td>			       : <a class="tu ref fn" href="#xgbe_of_vdata" title='xgbe_of_vdata' data-use='c' data-ref="xgbe_of_vdata">xgbe_of_vdata</a>(<a class="local col2 ref" href="#22pdata" title='pdata' data-ref="22pdata">pdata</a>);</td></tr>
+<tr><th id="297">297</th><td>}</td></tr>
+<tr><th id="298">298</th><td></td></tr>
+<tr><th id="299">299</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="xgbe_platform_probe" title='xgbe_platform_probe' data-type='int xgbe_platform_probe(struct platform_device * pdev)' data-ref="xgbe_platform_probe">xgbe_platform_probe</dfn>(<b>struct</b> <a class="type" href="../../../../../include/linux/platform_device.h.html#platform_device" title='platform_device' data-ref="platform_device">platform_device</a> *<dfn class="local col3 decl" id="23pdev" title='pdev' data-type='struct platform_device *' data-ref="23pdev">pdev</dfn>)</td></tr>
+<tr><th id="300">300</th><td>{</td></tr>
+<tr><th id="301">301</th><td>	<b>struct</b> <a class="type" href="xgbe.h.html#xgbe_prv_data" title='xgbe_prv_data' data-ref="xgbe_prv_data">xgbe_prv_data</a> *<dfn class="local col4 decl" id="24pdata" title='pdata' data-type='struct xgbe_prv_data *' data-ref="24pdata">pdata</dfn>;</td></tr>
+<tr><th id="302">302</th><td>	<b>struct</b> <a class="type" href="../../../../../include/linux/device.h.html#device" title='device' data-ref="device">device</a> *<dfn class="local col5 decl" id="25dev" title='dev' data-type='struct device *' data-ref="25dev">dev</dfn> = &amp;<a class="local col3 ref" href="#23pdev" title='pdev' data-ref="23pdev">pdev</a>-&gt;<a class="ref field" href="../../../../../include/linux/platform_device.h.html#platform_device::dev" title='platform_device::dev' data-ref="platform_device::dev">dev</a>;</td></tr>
+<tr><th id="303">303</th><td>	<b>struct</b> <a class="type" href="../../../../../include/linux/platform_device.h.html#platform_device" title='platform_device' data-ref="platform_device">platform_device</a> *<dfn class="local col6 decl" id="26phy_pdev" title='phy_pdev' data-type='struct platform_device *' data-ref="26phy_pdev">phy_pdev</dfn>;</td></tr>
+<tr><th id="304">304</th><td>	<b>struct</b> <a class="type" href="../../../../../include/linux/ioport.h.html#resource" title='resource' data-ref="resource">resource</a> *<dfn class="local col7 decl" id="27res" title='res' data-type='struct resource *' data-ref="27res">res</dfn>;</td></tr>
+<tr><th id="305">305</th><td>	<em>const</em> <em>char</em> *<dfn class="local col8 decl" id="28phy_mode" title='phy_mode' data-type='const char *' data-ref="28phy_mode">phy_mode</dfn>;</td></tr>
+<tr><th id="306">306</th><td>	<em>unsigned</em> <em>int</em> <dfn class="local col9 decl" id="29phy_memnum" title='phy_memnum' data-type='unsigned int' data-ref="29phy_memnum">phy_memnum</dfn>, <dfn class="local col0 decl" id="30phy_irqnum" title='phy_irqnum' data-type='unsigned int' data-ref="30phy_irqnum">phy_irqnum</dfn>;</td></tr>
+<tr><th id="307">307</th><td>	<em>unsigned</em> <em>int</em> <dfn class="local col1 decl" id="31dma_irqnum" title='dma_irqnum' data-type='unsigned int' data-ref="31dma_irqnum">dma_irqnum</dfn>, <dfn class="local col2 decl" id="32dma_irqend" title='dma_irqend' data-type='unsigned int' data-ref="32dma_irqend">dma_irqend</dfn>;</td></tr>
+<tr><th id="308">308</th><td>	<b>enum</b> <a class="type" href="../../../../../include/linux/property.h.html#dev_dma_attr" title='dev_dma_attr' data-ref="dev_dma_attr">dev_dma_attr</a> <dfn class="local col3 decl" id="33attr" title='attr' data-type='enum dev_dma_attr' data-ref="33attr">attr</dfn>;</td></tr>
+<tr><th id="309">309</th><td>	<em>int</em> <dfn class="local col4 decl" id="34ret" title='ret' data-type='int' data-ref="34ret">ret</dfn>;</td></tr>
+<tr><th id="310">310</th><td></td></tr>
+<tr><th id="311">311</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a> = <a class="ref fn" href="xgbe.h.html#xgbe_alloc_pdata" title='xgbe_alloc_pdata' data-ref="xgbe_alloc_pdata">xgbe_alloc_pdata</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>);</td></tr>
+<tr><th id="312">312</th><td>	<b>if</b> (<a class="ref fn" href="../../../../../include/linux/err.h.html#IS_ERR" title='IS_ERR' data-ref="IS_ERR">IS_ERR</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>)) {</td></tr>
+<tr><th id="313">313</th><td>		<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> = <a class="ref fn" href="../../../../../include/linux/err.h.html#PTR_ERR" title='PTR_ERR' data-ref="PTR_ERR">PTR_ERR</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>);</td></tr>
+<tr><th id="314">314</th><td>		<b>goto</b> <a class="lbl" href="#35err_alloc" data-ref="35err_alloc">err_alloc</a>;</td></tr>
+<tr><th id="315">315</th><td>	}</td></tr>
+<tr><th id="316">316</th><td></td></tr>
+<tr><th id="317">317</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::platdev" title='xgbe_prv_data::platdev' data-ref="xgbe_prv_data::platdev">platdev</a> = <a class="local col3 ref" href="#23pdev" title='pdev' data-ref="23pdev">pdev</a>;</td></tr>
+<tr><th id="318">318</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::adev" title='xgbe_prv_data::adev' data-ref="xgbe_prv_data::adev">adev</a> = <a class="macro" href="../../../../../include/linux/acpi.h.html#55" title="({ typeof((dev)-&gt;fwnode) __to_acpi_device_node_fwnode = (dev)-&gt;fwnode; is_acpi_device_node(__to_acpi_device_node_fwnode) ? ({ void *__mptr = (void *)(__to_acpi_device_node_fwnode); do { bool __cond = !(!(!__builtin_types_compatible_p(typeof(*(__to_acpi_device_node_fwnode)), typeof(((struct acpi_device *)0)-&gt;fwnode)) &amp;&amp; !__builtin_types_compatible_p(typeof(*(__to_acpi_device_node_fwnode)), typeof(void)))); extern void __compiletime_assert_318(void) ; if (__cond) __compiletime_assert_318(); do { ((void)sizeof(char[1 - 2 * __cond])); } while (0); } while (0); ((struct acpi_device *)(__mptr - __builtin_offsetof(struct acpi_device, fwnode))); }) : ((void *)0); })" data-ref="_M/ACPI_COMPANION">ACPI_COMPANION</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>);</td></tr>
+<tr><th id="319">319</th><td>	<a class="ref fn" href="../../../../../include/linux/platform_device.h.html#platform_set_drvdata" title='platform_set_drvdata' data-ref="platform_set_drvdata">platform_set_drvdata</a>(<a class="local col3 ref" href="#23pdev" title='pdev' data-ref="23pdev">pdev</a>, <a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>);</td></tr>
+<tr><th id="320">320</th><td></td></tr>
+<tr><th id="321">321</th><td>	<i>/* Check if we should use ACPI or DT */</i></td></tr>
+<tr><th id="322">322</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::use_acpi" title='xgbe_prv_data::use_acpi' data-ref="xgbe_prv_data::use_acpi">use_acpi</a> = <a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>-&gt;<a class="ref field" href="../../../../../include/linux/device.h.html#device::of_node" title='device::of_node' data-ref="device::of_node">of_node</a> ? <var>0</var> : <var>1</var>;</td></tr>
+<tr><th id="323">323</th><td></td></tr>
+<tr><th id="324">324</th><td>	<i>/* Get the version data */</i></td></tr>
+<tr><th id="325">325</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::vdata" title='xgbe_prv_data::vdata' data-ref="xgbe_prv_data::vdata">vdata</a> = <a class="tu ref fn" href="#xgbe_get_vdata" title='xgbe_get_vdata' data-use='c' data-ref="xgbe_get_vdata">xgbe_get_vdata</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>);</td></tr>
+<tr><th id="326">326</th><td></td></tr>
+<tr><th id="327">327</th><td>	<a class="local col6 ref" href="#26phy_pdev" title='phy_pdev' data-ref="26phy_pdev">phy_pdev</a> = <a class="tu ref fn" href="#xgbe_get_phy_pdev" title='xgbe_get_phy_pdev' data-use='c' data-ref="xgbe_get_phy_pdev">xgbe_get_phy_pdev</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>);</td></tr>
+<tr><th id="328">328</th><td>	<b>if</b> (!<a class="local col6 ref" href="#26phy_pdev" title='phy_pdev' data-ref="26phy_pdev">phy_pdev</a>) {</td></tr>
+<tr><th id="329">329</th><td>		<a class="ref fn" href="../../../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <q>"unable to obtain phy device\n"</q>);</td></tr>
+<tr><th id="330">330</th><td>		<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> = -<a class="macro" href="../../../../../include/uapi/asm-generic/errno-base.h.html#26" title="22" data-ref="_M/EINVAL">EINVAL</a>;</td></tr>
+<tr><th id="331">331</th><td>		<b>goto</b> <a class="lbl" href="#36err_phydev" data-ref="36err_phydev">err_phydev</a>;</td></tr>
+<tr><th id="332">332</th><td>	}</td></tr>
+<tr><th id="333">333</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::phy_platdev" title='xgbe_prv_data::phy_platdev' data-ref="xgbe_prv_data::phy_platdev">phy_platdev</a> = <a class="local col6 ref" href="#26phy_pdev" title='phy_pdev' data-ref="26phy_pdev">phy_pdev</a>;</td></tr>
+<tr><th id="334">334</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::phy_dev" title='xgbe_prv_data::phy_dev' data-ref="xgbe_prv_data::phy_dev">phy_dev</a> = &amp;<a class="local col6 ref" href="#26phy_pdev" title='phy_pdev' data-ref="26phy_pdev">phy_pdev</a>-&gt;<a class="ref field" href="../../../../../include/linux/platform_device.h.html#platform_device::dev" title='platform_device::dev' data-ref="platform_device::dev">dev</a>;</td></tr>
+<tr><th id="335">335</th><td></td></tr>
+<tr><th id="336">336</th><td>	<b>if</b> (<a class="local col3 ref" href="#23pdev" title='pdev' data-ref="23pdev">pdev</a> == <a class="local col6 ref" href="#26phy_pdev" title='phy_pdev' data-ref="26phy_pdev">phy_pdev</a>) {</td></tr>
+<tr><th id="337">337</th><td>		<i>/* New style device tree or ACPI:</i></td></tr>
+<tr><th id="338">338</th><td><i>		 *   The XGBE and PHY resources are grouped together with</i></td></tr>
+<tr><th id="339">339</th><td><i>		 *   the PHY resources listed last</i></td></tr>
+<tr><th id="340">340</th><td><i>		 */</i></td></tr>
+<tr><th id="341">341</th><td>		<a class="local col9 ref" href="#29phy_memnum" title='phy_memnum' data-ref="29phy_memnum">phy_memnum</a> = <a class="tu ref fn" href="#xgbe_resource_count" title='xgbe_resource_count' data-use='c' data-ref="xgbe_resource_count">xgbe_resource_count</a>(<a class="local col3 ref" href="#23pdev" title='pdev' data-ref="23pdev">pdev</a>, <a class="macro" href="../../../../../include/linux/ioport.h.html#38" title="0x00000200" data-ref="_M/IORESOURCE_MEM">IORESOURCE_MEM</a>) - <var>3</var>;</td></tr>
+<tr><th id="342">342</th><td>		<a class="local col0 ref" href="#30phy_irqnum" title='phy_irqnum' data-ref="30phy_irqnum">phy_irqnum</a> = <a class="tu ref fn" href="#xgbe_resource_count" title='xgbe_resource_count' data-use='c' data-ref="xgbe_resource_count">xgbe_resource_count</a>(<a class="local col3 ref" href="#23pdev" title='pdev' data-ref="23pdev">pdev</a>, <a class="macro" href="../../../../../include/linux/ioport.h.html#40" title="0x00000400" data-ref="_M/IORESOURCE_IRQ">IORESOURCE_IRQ</a>) - <var>1</var>;</td></tr>
+<tr><th id="343">343</th><td>		<a class="local col1 ref" href="#31dma_irqnum" title='dma_irqnum' data-ref="31dma_irqnum">dma_irqnum</a> = <var>1</var>;</td></tr>
+<tr><th id="344">344</th><td>		<a class="local col2 ref" href="#32dma_irqend" title='dma_irqend' data-ref="32dma_irqend">dma_irqend</a> = <a class="local col0 ref" href="#30phy_irqnum" title='phy_irqnum' data-ref="30phy_irqnum">phy_irqnum</a>;</td></tr>
+<tr><th id="345">345</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="346">346</th><td>		<i>/* Old style device tree:</i></td></tr>
+<tr><th id="347">347</th><td><i>		 *   The XGBE and PHY resources are separate</i></td></tr>
+<tr><th id="348">348</th><td><i>		 */</i></td></tr>
+<tr><th id="349">349</th><td>		<a class="local col9 ref" href="#29phy_memnum" title='phy_memnum' data-ref="29phy_memnum">phy_memnum</a> = <var>0</var>;</td></tr>
+<tr><th id="350">350</th><td>		<a class="local col0 ref" href="#30phy_irqnum" title='phy_irqnum' data-ref="30phy_irqnum">phy_irqnum</a> = <var>0</var>;</td></tr>
+<tr><th id="351">351</th><td>		<a class="local col1 ref" href="#31dma_irqnum" title='dma_irqnum' data-ref="31dma_irqnum">dma_irqnum</a> = <var>1</var>;</td></tr>
+<tr><th id="352">352</th><td>		<a class="local col2 ref" href="#32dma_irqend" title='dma_irqend' data-ref="32dma_irqend">dma_irqend</a> = <a class="tu ref fn" href="#xgbe_resource_count" title='xgbe_resource_count' data-use='c' data-ref="xgbe_resource_count">xgbe_resource_count</a>(<a class="local col3 ref" href="#23pdev" title='pdev' data-ref="23pdev">pdev</a>, <a class="macro" href="../../../../../include/linux/ioport.h.html#40" title="0x00000400" data-ref="_M/IORESOURCE_IRQ">IORESOURCE_IRQ</a>);</td></tr>
+<tr><th id="353">353</th><td>	}</td></tr>
+<tr><th id="354">354</th><td></td></tr>
+<tr><th id="355">355</th><td>	<i>/* Obtain the mmio areas for the device */</i></td></tr>
+<tr><th id="356">356</th><td>	<a class="local col7 ref" href="#27res" title='res' data-ref="27res">res</a> = <a class="ref fn" href="../../../../../include/linux/platform_device.h.html#platform_get_resource" title='platform_get_resource' data-ref="platform_get_resource">platform_get_resource</a>(<a class="local col3 ref" href="#23pdev" title='pdev' data-ref="23pdev">pdev</a>, <a class="macro" href="../../../../../include/linux/ioport.h.html#38" title="0x00000200" data-ref="_M/IORESOURCE_MEM">IORESOURCE_MEM</a>, <var>0</var>);</td></tr>
+<tr><th id="357">357</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::xgmac_regs" title='xgbe_prv_data::xgmac_regs' data-ref="xgbe_prv_data::xgmac_regs">xgmac_regs</a> = <a class="ref fn" href="../../../../../include/linux/device.h.html#devm_ioremap_resource" title='devm_ioremap_resource' data-ref="devm_ioremap_resource">devm_ioremap_resource</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <a class="local col7 ref" href="#27res" title='res' data-ref="27res">res</a>);</td></tr>
+<tr><th id="358">358</th><td>	<b>if</b> (<a class="ref fn" href="../../../../../include/linux/err.h.html#IS_ERR" title='IS_ERR' data-ref="IS_ERR">IS_ERR</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::xgmac_regs" title='xgbe_prv_data::xgmac_regs' data-ref="xgbe_prv_data::xgmac_regs">xgmac_regs</a>)) {</td></tr>
+<tr><th id="359">359</th><td>		<a class="ref fn" href="../../../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <q>"xgmac ioremap failed\n"</q>);</td></tr>
+<tr><th id="360">360</th><td>		<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> = <a class="ref fn" href="../../../../../include/linux/err.h.html#PTR_ERR" title='PTR_ERR' data-ref="PTR_ERR">PTR_ERR</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::xgmac_regs" title='xgbe_prv_data::xgmac_regs' data-ref="xgbe_prv_data::xgmac_regs">xgmac_regs</a>);</td></tr>
+<tr><th id="361">361</th><td>		<b>goto</b> <a class="lbl" href="#37err_io" data-ref="37err_io">err_io</a>;</td></tr>
+<tr><th id="362">362</th><td>	}</td></tr>
+<tr><th id="363">363</th><td>	<b>if</b> (<a class="macro" href="../../../../../include/linux/netdevice.h.html#3615" title="((pdata)-&gt;msg_enable &amp; NETIF_MSG_PROBE)" data-ref="_M/netif_msg_probe">netif_msg_probe</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>))</td></tr>
+<tr><th id="364">364</th><td>		<a class="macro" href="../../../../../include/linux/device.h.html#1406" title="({ if (0) dev_printk(&quot;\001&quot; &quot;7&quot;, dev, &quot;xgmac_regs = %p\n&quot;, pdata-&gt;xgmac_regs); })" data-ref="_M/dev_dbg">dev_dbg</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <q>"xgmac_regs = %p\n"</q>, <a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::xgmac_regs" title='xgbe_prv_data::xgmac_regs' data-ref="xgbe_prv_data::xgmac_regs">xgmac_regs</a>);</td></tr>
+<tr><th id="365">365</th><td></td></tr>
+<tr><th id="366">366</th><td>	<a class="local col7 ref" href="#27res" title='res' data-ref="27res">res</a> = <a class="ref fn" href="../../../../../include/linux/platform_device.h.html#platform_get_resource" title='platform_get_resource' data-ref="platform_get_resource">platform_get_resource</a>(<a class="local col3 ref" href="#23pdev" title='pdev' data-ref="23pdev">pdev</a>, <a class="macro" href="../../../../../include/linux/ioport.h.html#38" title="0x00000200" data-ref="_M/IORESOURCE_MEM">IORESOURCE_MEM</a>, <var>1</var>);</td></tr>
+<tr><th id="367">367</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::xpcs_regs" title='xgbe_prv_data::xpcs_regs' data-ref="xgbe_prv_data::xpcs_regs">xpcs_regs</a> = <a class="ref fn" href="../../../../../include/linux/device.h.html#devm_ioremap_resource" title='devm_ioremap_resource' data-ref="devm_ioremap_resource">devm_ioremap_resource</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <a class="local col7 ref" href="#27res" title='res' data-ref="27res">res</a>);</td></tr>
+<tr><th id="368">368</th><td>	<b>if</b> (<a class="ref fn" href="../../../../../include/linux/err.h.html#IS_ERR" title='IS_ERR' data-ref="IS_ERR">IS_ERR</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::xpcs_regs" title='xgbe_prv_data::xpcs_regs' data-ref="xgbe_prv_data::xpcs_regs">xpcs_regs</a>)) {</td></tr>
+<tr><th id="369">369</th><td>		<a class="ref fn" href="../../../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <q>"xpcs ioremap failed\n"</q>);</td></tr>
+<tr><th id="370">370</th><td>		<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> = <a class="ref fn" href="../../../../../include/linux/err.h.html#PTR_ERR" title='PTR_ERR' data-ref="PTR_ERR">PTR_ERR</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::xpcs_regs" title='xgbe_prv_data::xpcs_regs' data-ref="xgbe_prv_data::xpcs_regs">xpcs_regs</a>);</td></tr>
+<tr><th id="371">371</th><td>		<b>goto</b> <a class="lbl" href="#37err_io" data-ref="37err_io">err_io</a>;</td></tr>
+<tr><th id="372">372</th><td>	}</td></tr>
+<tr><th id="373">373</th><td>	<b>if</b> (<a class="macro" href="../../../../../include/linux/netdevice.h.html#3615" title="((pdata)-&gt;msg_enable &amp; NETIF_MSG_PROBE)" data-ref="_M/netif_msg_probe">netif_msg_probe</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>))</td></tr>
+<tr><th id="374">374</th><td>		<a class="macro" href="../../../../../include/linux/device.h.html#1406" title="({ if (0) dev_printk(&quot;\001&quot; &quot;7&quot;, dev, &quot;xpcs_regs  = %p\n&quot;, pdata-&gt;xpcs_regs); })" data-ref="_M/dev_dbg">dev_dbg</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <q>"xpcs_regs  = %p\n"</q>, <a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::xpcs_regs" title='xgbe_prv_data::xpcs_regs' data-ref="xgbe_prv_data::xpcs_regs">xpcs_regs</a>);</td></tr>
+<tr><th id="375">375</th><td></td></tr>
+<tr><th id="376">376</th><td>	<a class="local col7 ref" href="#27res" title='res' data-ref="27res">res</a> = <a class="ref fn" href="../../../../../include/linux/platform_device.h.html#platform_get_resource" title='platform_get_resource' data-ref="platform_get_resource">platform_get_resource</a>(<a class="local col6 ref" href="#26phy_pdev" title='phy_pdev' data-ref="26phy_pdev">phy_pdev</a>, <a class="macro" href="../../../../../include/linux/ioport.h.html#38" title="0x00000200" data-ref="_M/IORESOURCE_MEM">IORESOURCE_MEM</a>, <a class="local col9 ref" href="#29phy_memnum" title='phy_memnum' data-ref="29phy_memnum">phy_memnum</a>++);</td></tr>
+<tr><th id="377">377</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::rxtx_regs" title='xgbe_prv_data::rxtx_regs' data-ref="xgbe_prv_data::rxtx_regs">rxtx_regs</a> = <a class="ref fn" href="../../../../../include/linux/device.h.html#devm_ioremap_resource" title='devm_ioremap_resource' data-ref="devm_ioremap_resource">devm_ioremap_resource</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <a class="local col7 ref" href="#27res" title='res' data-ref="27res">res</a>);</td></tr>
+<tr><th id="378">378</th><td>	<b>if</b> (<a class="ref fn" href="../../../../../include/linux/err.h.html#IS_ERR" title='IS_ERR' data-ref="IS_ERR">IS_ERR</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::rxtx_regs" title='xgbe_prv_data::rxtx_regs' data-ref="xgbe_prv_data::rxtx_regs">rxtx_regs</a>)) {</td></tr>
+<tr><th id="379">379</th><td>		<a class="ref fn" href="../../../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <q>"rxtx ioremap failed\n"</q>);</td></tr>
+<tr><th id="380">380</th><td>		<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> = <a class="ref fn" href="../../../../../include/linux/err.h.html#PTR_ERR" title='PTR_ERR' data-ref="PTR_ERR">PTR_ERR</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::rxtx_regs" title='xgbe_prv_data::rxtx_regs' data-ref="xgbe_prv_data::rxtx_regs">rxtx_regs</a>);</td></tr>
+<tr><th id="381">381</th><td>		<b>goto</b> <a class="lbl" href="#37err_io" data-ref="37err_io">err_io</a>;</td></tr>
+<tr><th id="382">382</th><td>	}</td></tr>
+<tr><th id="383">383</th><td>	<b>if</b> (<a class="macro" href="../../../../../include/linux/netdevice.h.html#3615" title="((pdata)-&gt;msg_enable &amp; NETIF_MSG_PROBE)" data-ref="_M/netif_msg_probe">netif_msg_probe</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>))</td></tr>
+<tr><th id="384">384</th><td>		<a class="macro" href="../../../../../include/linux/device.h.html#1406" title="({ if (0) dev_printk(&quot;\001&quot; &quot;7&quot;, dev, &quot;rxtx_regs  = %p\n&quot;, pdata-&gt;rxtx_regs); })" data-ref="_M/dev_dbg">dev_dbg</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <q>"rxtx_regs  = %p\n"</q>, <a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::rxtx_regs" title='xgbe_prv_data::rxtx_regs' data-ref="xgbe_prv_data::rxtx_regs">rxtx_regs</a>);</td></tr>
+<tr><th id="385">385</th><td></td></tr>
+<tr><th id="386">386</th><td>	<a class="local col7 ref" href="#27res" title='res' data-ref="27res">res</a> = <a class="ref fn" href="../../../../../include/linux/platform_device.h.html#platform_get_resource" title='platform_get_resource' data-ref="platform_get_resource">platform_get_resource</a>(<a class="local col6 ref" href="#26phy_pdev" title='phy_pdev' data-ref="26phy_pdev">phy_pdev</a>, <a class="macro" href="../../../../../include/linux/ioport.h.html#38" title="0x00000200" data-ref="_M/IORESOURCE_MEM">IORESOURCE_MEM</a>, <a class="local col9 ref" href="#29phy_memnum" title='phy_memnum' data-ref="29phy_memnum">phy_memnum</a>++);</td></tr>
+<tr><th id="387">387</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::sir0_regs" title='xgbe_prv_data::sir0_regs' data-ref="xgbe_prv_data::sir0_regs">sir0_regs</a> = <a class="ref fn" href="../../../../../include/linux/device.h.html#devm_ioremap_resource" title='devm_ioremap_resource' data-ref="devm_ioremap_resource">devm_ioremap_resource</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <a class="local col7 ref" href="#27res" title='res' data-ref="27res">res</a>);</td></tr>
+<tr><th id="388">388</th><td>	<b>if</b> (<a class="ref fn" href="../../../../../include/linux/err.h.html#IS_ERR" title='IS_ERR' data-ref="IS_ERR">IS_ERR</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::sir0_regs" title='xgbe_prv_data::sir0_regs' data-ref="xgbe_prv_data::sir0_regs">sir0_regs</a>)) {</td></tr>
+<tr><th id="389">389</th><td>		<a class="ref fn" href="../../../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <q>"sir0 ioremap failed\n"</q>);</td></tr>
+<tr><th id="390">390</th><td>		<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> = <a class="ref fn" href="../../../../../include/linux/err.h.html#PTR_ERR" title='PTR_ERR' data-ref="PTR_ERR">PTR_ERR</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::sir0_regs" title='xgbe_prv_data::sir0_regs' data-ref="xgbe_prv_data::sir0_regs">sir0_regs</a>);</td></tr>
+<tr><th id="391">391</th><td>		<b>goto</b> <a class="lbl" href="#37err_io" data-ref="37err_io">err_io</a>;</td></tr>
+<tr><th id="392">392</th><td>	}</td></tr>
+<tr><th id="393">393</th><td>	<b>if</b> (<a class="macro" href="../../../../../include/linux/netdevice.h.html#3615" title="((pdata)-&gt;msg_enable &amp; NETIF_MSG_PROBE)" data-ref="_M/netif_msg_probe">netif_msg_probe</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>))</td></tr>
+<tr><th id="394">394</th><td>		<a class="macro" href="../../../../../include/linux/device.h.html#1406" title="({ if (0) dev_printk(&quot;\001&quot; &quot;7&quot;, dev, &quot;sir0_regs  = %p\n&quot;, pdata-&gt;sir0_regs); })" data-ref="_M/dev_dbg">dev_dbg</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <q>"sir0_regs  = %p\n"</q>, <a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::sir0_regs" title='xgbe_prv_data::sir0_regs' data-ref="xgbe_prv_data::sir0_regs">sir0_regs</a>);</td></tr>
+<tr><th id="395">395</th><td></td></tr>
+<tr><th id="396">396</th><td>	<a class="local col7 ref" href="#27res" title='res' data-ref="27res">res</a> = <a class="ref fn" href="../../../../../include/linux/platform_device.h.html#platform_get_resource" title='platform_get_resource' data-ref="platform_get_resource">platform_get_resource</a>(<a class="local col6 ref" href="#26phy_pdev" title='phy_pdev' data-ref="26phy_pdev">phy_pdev</a>, <a class="macro" href="../../../../../include/linux/ioport.h.html#38" title="0x00000200" data-ref="_M/IORESOURCE_MEM">IORESOURCE_MEM</a>, <a class="local col9 ref" href="#29phy_memnum" title='phy_memnum' data-ref="29phy_memnum">phy_memnum</a>++);</td></tr>
+<tr><th id="397">397</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::sir1_regs" title='xgbe_prv_data::sir1_regs' data-ref="xgbe_prv_data::sir1_regs">sir1_regs</a> = <a class="ref fn" href="../../../../../include/linux/device.h.html#devm_ioremap_resource" title='devm_ioremap_resource' data-ref="devm_ioremap_resource">devm_ioremap_resource</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <a class="local col7 ref" href="#27res" title='res' data-ref="27res">res</a>);</td></tr>
+<tr><th id="398">398</th><td>	<b>if</b> (<a class="ref fn" href="../../../../../include/linux/err.h.html#IS_ERR" title='IS_ERR' data-ref="IS_ERR">IS_ERR</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::sir1_regs" title='xgbe_prv_data::sir1_regs' data-ref="xgbe_prv_data::sir1_regs">sir1_regs</a>)) {</td></tr>
+<tr><th id="399">399</th><td>		<a class="ref fn" href="../../../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <q>"sir1 ioremap failed\n"</q>);</td></tr>
+<tr><th id="400">400</th><td>		<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> = <a class="ref fn" href="../../../../../include/linux/err.h.html#PTR_ERR" title='PTR_ERR' data-ref="PTR_ERR">PTR_ERR</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::sir1_regs" title='xgbe_prv_data::sir1_regs' data-ref="xgbe_prv_data::sir1_regs">sir1_regs</a>);</td></tr>
+<tr><th id="401">401</th><td>		<b>goto</b> <a class="lbl" href="#37err_io" data-ref="37err_io">err_io</a>;</td></tr>
+<tr><th id="402">402</th><td>	}</td></tr>
+<tr><th id="403">403</th><td>	<b>if</b> (<a class="macro" href="../../../../../include/linux/netdevice.h.html#3615" title="((pdata)-&gt;msg_enable &amp; NETIF_MSG_PROBE)" data-ref="_M/netif_msg_probe">netif_msg_probe</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>))</td></tr>
+<tr><th id="404">404</th><td>		<a class="macro" href="../../../../../include/linux/device.h.html#1406" title="({ if (0) dev_printk(&quot;\001&quot; &quot;7&quot;, dev, &quot;sir1_regs  = %p\n&quot;, pdata-&gt;sir1_regs); })" data-ref="_M/dev_dbg">dev_dbg</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <q>"sir1_regs  = %p\n"</q>, <a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::sir1_regs" title='xgbe_prv_data::sir1_regs' data-ref="xgbe_prv_data::sir1_regs">sir1_regs</a>);</td></tr>
+<tr><th id="405">405</th><td></td></tr>
+<tr><th id="406">406</th><td>	<i>/* Retrieve the MAC address */</i></td></tr>
+<tr><th id="407">407</th><td>	<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> = <a class="ref fn" href="../../../../../include/linux/property.h.html#device_property_read_u8_array" title='device_property_read_u8_array' data-ref="device_property_read_u8_array">device_property_read_u8_array</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <a class="macro" href="xgbe.h.html#206" title="&quot;mac-address&quot;" data-ref="_M/XGBE_MAC_ADDR_PROPERTY">XGBE_MAC_ADDR_PROPERTY</a>,</td></tr>
+<tr><th id="408">408</th><td>					    <a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::mac_addr" title='xgbe_prv_data::mac_addr' data-ref="xgbe_prv_data::mac_addr">mac_addr</a>,</td></tr>
+<tr><th id="409">409</th><td>					    <b>sizeof</b>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::mac_addr" title='xgbe_prv_data::mac_addr' data-ref="xgbe_prv_data::mac_addr">mac_addr</a>));</td></tr>
+<tr><th id="410">410</th><td>	<b>if</b> (<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> || !<a class="ref fn" href="../../../../../include/linux/etherdevice.h.html#is_valid_ether_addr" title='is_valid_ether_addr' data-ref="is_valid_ether_addr">is_valid_ether_addr</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::mac_addr" title='xgbe_prv_data::mac_addr' data-ref="xgbe_prv_data::mac_addr">mac_addr</a>)) {</td></tr>
+<tr><th id="411">411</th><td>		<a class="ref fn" href="../../../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <q>"invalid %s property\n"</q>, <a class="macro" href="xgbe.h.html#206" title="&quot;mac-address&quot;" data-ref="_M/XGBE_MAC_ADDR_PROPERTY">XGBE_MAC_ADDR_PROPERTY</a>);</td></tr>
+<tr><th id="412">412</th><td>		<b>if</b> (!<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a>)</td></tr>
+<tr><th id="413">413</th><td>			<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> = -<a class="macro" href="../../../../../include/uapi/asm-generic/errno-base.h.html#26" title="22" data-ref="_M/EINVAL">EINVAL</a>;</td></tr>
+<tr><th id="414">414</th><td>		<b>goto</b> <a class="lbl" href="#37err_io" data-ref="37err_io">err_io</a>;</td></tr>
+<tr><th id="415">415</th><td>	}</td></tr>
+<tr><th id="416">416</th><td></td></tr>
+<tr><th id="417">417</th><td>	<i>/* Retrieve the PHY mode - it must be "xgmii" */</i></td></tr>
+<tr><th id="418">418</th><td>	<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> = <a class="ref fn" href="../../../../../include/linux/property.h.html#device_property_read_string" title='device_property_read_string' data-ref="device_property_read_string">device_property_read_string</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <a class="macro" href="xgbe.h.html#207" title="&quot;phy-mode&quot;" data-ref="_M/XGBE_PHY_MODE_PROPERTY">XGBE_PHY_MODE_PROPERTY</a>,</td></tr>
+<tr><th id="419">419</th><td>					  &amp;<a class="local col8 ref" href="#28phy_mode" title='phy_mode' data-ref="28phy_mode">phy_mode</a>);</td></tr>
+<tr><th id="420">420</th><td>	<b>if</b> (<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> || <a class="ref fn" href="../../../../../arch/x86/include/asm/string_64.h.html#strcmp" title='strcmp' data-ref="strcmp">strcmp</a>(<a class="local col8 ref" href="#28phy_mode" title='phy_mode' data-ref="28phy_mode">phy_mode</a>, <a class="ref fn" href="../../../../../include/linux/phy.h.html#phy_modes" title='phy_modes' data-ref="phy_modes">phy_modes</a>(<a class="enum" href="../../../../../include/linux/phy.h.html#PHY_INTERFACE_MODE_XGMII" title='PHY_INTERFACE_MODE_XGMII' data-ref="PHY_INTERFACE_MODE_XGMII">PHY_INTERFACE_MODE_XGMII</a>))) {</td></tr>
+<tr><th id="421">421</th><td>		<a class="ref fn" href="../../../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <q>"invalid %s property\n"</q>, <a class="macro" href="xgbe.h.html#207" title="&quot;phy-mode&quot;" data-ref="_M/XGBE_PHY_MODE_PROPERTY">XGBE_PHY_MODE_PROPERTY</a>);</td></tr>
+<tr><th id="422">422</th><td>		<b>if</b> (!<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a>)</td></tr>
+<tr><th id="423">423</th><td>			<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> = -<a class="macro" href="../../../../../include/uapi/asm-generic/errno-base.h.html#26" title="22" data-ref="_M/EINVAL">EINVAL</a>;</td></tr>
+<tr><th id="424">424</th><td>		<b>goto</b> <a class="lbl" href="#37err_io" data-ref="37err_io">err_io</a>;</td></tr>
+<tr><th id="425">425</th><td>	}</td></tr>
+<tr><th id="426">426</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::phy_mode" title='xgbe_prv_data::phy_mode' data-ref="xgbe_prv_data::phy_mode">phy_mode</a> = <a class="enum" href="../../../../../include/linux/phy.h.html#PHY_INTERFACE_MODE_XGMII" title='PHY_INTERFACE_MODE_XGMII' data-ref="PHY_INTERFACE_MODE_XGMII">PHY_INTERFACE_MODE_XGMII</a>;</td></tr>
+<tr><th id="427">427</th><td></td></tr>
+<tr><th id="428">428</th><td>	<i>/* Check for per channel interrupt support */</i></td></tr>
+<tr><th id="429">429</th><td>	<b>if</b> (<a class="ref fn" href="../../../../../include/linux/property.h.html#device_property_present" title='device_property_present' data-ref="device_property_present">device_property_present</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <a class="macro" href="xgbe.h.html#208" title="&quot;amd,per-channel-interrupt&quot;" data-ref="_M/XGBE_DMA_IRQS_PROPERTY">XGBE_DMA_IRQS_PROPERTY</a>)) {</td></tr>
+<tr><th id="430">430</th><td>		<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::per_channel_irq" title='xgbe_prv_data::per_channel_irq' data-ref="xgbe_prv_data::per_channel_irq">per_channel_irq</a> = <var>1</var>;</td></tr>
+<tr><th id="431">431</th><td>		<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::channel_irq_mode" title='xgbe_prv_data::channel_irq_mode' data-ref="xgbe_prv_data::channel_irq_mode">channel_irq_mode</a> = <a class="macro" href="xgbe.h.html#189" title="0" data-ref="_M/XGBE_IRQ_MODE_EDGE">XGBE_IRQ_MODE_EDGE</a>;</td></tr>
+<tr><th id="432">432</th><td>	}</td></tr>
+<tr><th id="433">433</th><td></td></tr>
+<tr><th id="434">434</th><td>	<i>/* Obtain device settings unique to ACPI/OF */</i></td></tr>
+<tr><th id="435">435</th><td>	<b>if</b> (<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::use_acpi" title='xgbe_prv_data::use_acpi' data-ref="xgbe_prv_data::use_acpi">use_acpi</a>)</td></tr>
+<tr><th id="436">436</th><td>		<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> = <a class="tu ref fn" href="#xgbe_acpi_support" title='xgbe_acpi_support' data-use='c' data-ref="xgbe_acpi_support">xgbe_acpi_support</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>);</td></tr>
+<tr><th id="437">437</th><td>	<b>else</b></td></tr>
+<tr><th id="438">438</th><td>		<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> = <a class="tu ref fn" href="#xgbe_of_support" title='xgbe_of_support' data-use='c' data-ref="xgbe_of_support">xgbe_of_support</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>);</td></tr>
+<tr><th id="439">439</th><td>	<b>if</b> (<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a>)</td></tr>
+<tr><th id="440">440</th><td>		<b>goto</b> <a class="lbl" href="#37err_io" data-ref="37err_io">err_io</a>;</td></tr>
+<tr><th id="441">441</th><td></td></tr>
+<tr><th id="442">442</th><td>	<i>/* Set the DMA coherency values */</i></td></tr>
+<tr><th id="443">443</th><td>	<a class="local col3 ref" href="#33attr" title='attr' data-ref="33attr">attr</a> = <a class="ref fn" href="../../../../../include/linux/property.h.html#device_get_dma_attr" title='device_get_dma_attr' data-ref="device_get_dma_attr">device_get_dma_attr</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>);</td></tr>
+<tr><th id="444">444</th><td>	<b>if</b> (<a class="local col3 ref" href="#33attr" title='attr' data-ref="33attr">attr</a> == <a class="enum" href="../../../../../include/linux/property.h.html#DEV_DMA_NOT_SUPPORTED" title='DEV_DMA_NOT_SUPPORTED' data-ref="DEV_DMA_NOT_SUPPORTED">DEV_DMA_NOT_SUPPORTED</a>) {</td></tr>
+<tr><th id="445">445</th><td>		<a class="ref fn" href="../../../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <q>"DMA is not supported"</q>);</td></tr>
+<tr><th id="446">446</th><td>		<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> = -<a class="macro" href="../../../../../include/uapi/asm-generic/errno-base.h.html#23" title="19" data-ref="_M/ENODEV">ENODEV</a>;</td></tr>
+<tr><th id="447">447</th><td>		<b>goto</b> <a class="lbl" href="#37err_io" data-ref="37err_io">err_io</a>;</td></tr>
+<tr><th id="448">448</th><td>	}</td></tr>
+<tr><th id="449">449</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::coherent" title='xgbe_prv_data::coherent' data-ref="xgbe_prv_data::coherent">coherent</a> = (<a class="local col3 ref" href="#33attr" title='attr' data-ref="33attr">attr</a> == <a class="enum" href="../../../../../include/linux/property.h.html#DEV_DMA_COHERENT" title='DEV_DMA_COHERENT' data-ref="DEV_DMA_COHERENT">DEV_DMA_COHERENT</a>);</td></tr>
+<tr><th id="450">450</th><td>	<b>if</b> (<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::coherent" title='xgbe_prv_data::coherent' data-ref="xgbe_prv_data::coherent">coherent</a>) {</td></tr>
+<tr><th id="451">451</th><td>		<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::arcr" title='xgbe_prv_data::arcr' data-ref="xgbe_prv_data::arcr">arcr</a> = <a class="macro" href="xgbe.h.html#176" title="0x002b2b2b" data-ref="_M/XGBE_DMA_OS_ARCR">XGBE_DMA_OS_ARCR</a>;</td></tr>
+<tr><th id="452">452</th><td>		<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::awcr" title='xgbe_prv_data::awcr' data-ref="xgbe_prv_data::awcr">awcr</a> = <a class="macro" href="xgbe.h.html#177" title="0x2f2f2f2f" data-ref="_M/XGBE_DMA_OS_AWCR">XGBE_DMA_OS_AWCR</a>;</td></tr>
+<tr><th id="453">453</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="454">454</th><td>		<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::arcr" title='xgbe_prv_data::arcr' data-ref="xgbe_prv_data::arcr">arcr</a> = <a class="macro" href="xgbe.h.html#180" title="0x00303030" data-ref="_M/XGBE_DMA_SYS_ARCR">XGBE_DMA_SYS_ARCR</a>;</td></tr>
+<tr><th id="455">455</th><td>		<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::awcr" title='xgbe_prv_data::awcr' data-ref="xgbe_prv_data::awcr">awcr</a> = <a class="macro" href="xgbe.h.html#181" title="0x30303030" data-ref="_M/XGBE_DMA_SYS_AWCR">XGBE_DMA_SYS_AWCR</a>;</td></tr>
+<tr><th id="456">456</th><td>	}</td></tr>
+<tr><th id="457">457</th><td></td></tr>
+<tr><th id="458">458</th><td>	<i>/* Set the maximum fifo amounts */</i></td></tr>
+<tr><th id="459">459</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::tx_max_fifo_size" title='xgbe_prv_data::tx_max_fifo_size' data-ref="xgbe_prv_data::tx_max_fifo_size">tx_max_fifo_size</a> = <a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::vdata" title='xgbe_prv_data::vdata' data-ref="xgbe_prv_data::vdata">vdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_version_data::tx_max_fifo_size" title='xgbe_version_data::tx_max_fifo_size' data-ref="xgbe_version_data::tx_max_fifo_size">tx_max_fifo_size</a>;</td></tr>
+<tr><th id="460">460</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::rx_max_fifo_size" title='xgbe_prv_data::rx_max_fifo_size' data-ref="xgbe_prv_data::rx_max_fifo_size">rx_max_fifo_size</a> = <a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::vdata" title='xgbe_prv_data::vdata' data-ref="xgbe_prv_data::vdata">vdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_version_data::rx_max_fifo_size" title='xgbe_version_data::rx_max_fifo_size' data-ref="xgbe_version_data::rx_max_fifo_size">rx_max_fifo_size</a>;</td></tr>
+<tr><th id="461">461</th><td></td></tr>
+<tr><th id="462">462</th><td>	<i>/* Set the hardware channel and queue counts */</i></td></tr>
+<tr><th id="463">463</th><td>	<a class="ref fn" href="xgbe.h.html#xgbe_set_counts" title='xgbe_set_counts' data-ref="xgbe_set_counts">xgbe_set_counts</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>);</td></tr>
+<tr><th id="464">464</th><td></td></tr>
+<tr><th id="465">465</th><td>	<i>/* Always have XGMAC and XPCS (auto-negotiation) interrupts */</i></td></tr>
+<tr><th id="466">466</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::irq_count" title='xgbe_prv_data::irq_count' data-ref="xgbe_prv_data::irq_count">irq_count</a> = <var>2</var>;</td></tr>
+<tr><th id="467">467</th><td></td></tr>
+<tr><th id="468">468</th><td>	<i>/* Get the device interrupt */</i></td></tr>
+<tr><th id="469">469</th><td>	<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> = <a class="ref fn" href="../../../../../include/linux/platform_device.h.html#platform_get_irq" title='platform_get_irq' data-ref="platform_get_irq">platform_get_irq</a>(<a class="local col3 ref" href="#23pdev" title='pdev' data-ref="23pdev">pdev</a>, <var>0</var>);</td></tr>
+<tr><th id="470">470</th><td>	<b>if</b> (<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="471">471</th><td>		<a class="ref fn" href="../../../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <q>"platform_get_irq 0 failed\n"</q>);</td></tr>
+<tr><th id="472">472</th><td>		<b>goto</b> <a class="lbl" href="#37err_io" data-ref="37err_io">err_io</a>;</td></tr>
+<tr><th id="473">473</th><td>	}</td></tr>
+<tr><th id="474">474</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::dev_irq" title='xgbe_prv_data::dev_irq' data-ref="xgbe_prv_data::dev_irq">dev_irq</a> = <a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a>;</td></tr>
+<tr><th id="475">475</th><td></td></tr>
+<tr><th id="476">476</th><td>	<i>/* Get the per channel DMA interrupts */</i></td></tr>
+<tr><th id="477">477</th><td>	<b>if</b> (<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::per_channel_irq" title='xgbe_prv_data::per_channel_irq' data-ref="xgbe_prv_data::per_channel_irq">per_channel_irq</a>) {</td></tr>
+<tr><th id="478">478</th><td>		<em>unsigned</em> <em>int</em> <dfn class="local col8 decl" id="38i" title='i' data-type='unsigned int' data-ref="38i">i</dfn>, <dfn class="local col9 decl" id="39max" title='max' data-type='unsigned int' data-ref="39max">max</dfn> = <a class="macro" href="../../../../../include/linux/kernel.h.html#72" title="(sizeof(pdata-&gt;channel_irq) / sizeof((pdata-&gt;channel_irq)[0]) + (sizeof(struct { int:(-!!(__builtin_types_compatible_p(typeof((pdata-&gt;channel_irq)), typeof(&amp;(pdata-&gt;channel_irq)[0])))); })))" data-ref="_M/ARRAY_SIZE">ARRAY_SIZE</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::channel_irq" title='xgbe_prv_data::channel_irq' data-ref="xgbe_prv_data::channel_irq">channel_irq</a>);</td></tr>
+<tr><th id="479">479</th><td></td></tr>
+<tr><th id="480">480</th><td>		<b>for</b> (<a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a> = <var>0</var>; (<a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a> &lt; <a class="local col9 ref" href="#39max" title='max' data-ref="39max">max</a>) &amp;&amp; (<a class="local col1 ref" href="#31dma_irqnum" title='dma_irqnum' data-ref="31dma_irqnum">dma_irqnum</a> &lt; <a class="local col2 ref" href="#32dma_irqend" title='dma_irqend' data-ref="32dma_irqend">dma_irqend</a>); <a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a>++) {</td></tr>
+<tr><th id="481">481</th><td>			<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> = <a class="ref fn" href="../../../../../include/linux/platform_device.h.html#platform_get_irq" title='platform_get_irq' data-ref="platform_get_irq">platform_get_irq</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::platdev" title='xgbe_prv_data::platdev' data-ref="xgbe_prv_data::platdev">platdev</a>, <a class="local col1 ref" href="#31dma_irqnum" title='dma_irqnum' data-ref="31dma_irqnum">dma_irqnum</a>++);</td></tr>
+<tr><th id="482">482</th><td>			<b>if</b> (<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="483">483</th><td>				<a class="ref fn" href="../../../../../include/linux/netdevice.h.html#netdev_err" title='netdev_err' data-ref="netdev_err">netdev_err</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::netdev" title='xgbe_prv_data::netdev' data-ref="xgbe_prv_data::netdev">netdev</a>,</td></tr>
+<tr><th id="484">484</th><td>					   <q>"platform_get_irq %u failed\n"</q>,</td></tr>
+<tr><th id="485">485</th><td>					   <a class="local col1 ref" href="#31dma_irqnum" title='dma_irqnum' data-ref="31dma_irqnum">dma_irqnum</a> - <var>1</var>);</td></tr>
+<tr><th id="486">486</th><td>				<b>goto</b> <a class="lbl" href="#37err_io" data-ref="37err_io">err_io</a>;</td></tr>
+<tr><th id="487">487</th><td>			}</td></tr>
+<tr><th id="488">488</th><td></td></tr>
+<tr><th id="489">489</th><td>			<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::channel_irq" title='xgbe_prv_data::channel_irq' data-ref="xgbe_prv_data::channel_irq">channel_irq</a>[<a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a>] = <a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a>;</td></tr>
+<tr><th id="490">490</th><td>		}</td></tr>
+<tr><th id="491">491</th><td></td></tr>
+<tr><th id="492">492</th><td>		<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::channel_irq_count" title='xgbe_prv_data::channel_irq_count' data-ref="xgbe_prv_data::channel_irq_count">channel_irq_count</a> = <a class="local col9 ref" href="#39max" title='max' data-ref="39max">max</a>;</td></tr>
+<tr><th id="493">493</th><td></td></tr>
+<tr><th id="494">494</th><td>		<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::irq_count" title='xgbe_prv_data::irq_count' data-ref="xgbe_prv_data::irq_count">irq_count</a> += <a class="local col9 ref" href="#39max" title='max' data-ref="39max">max</a>;</td></tr>
+<tr><th id="495">495</th><td>	}</td></tr>
+<tr><th id="496">496</th><td></td></tr>
+<tr><th id="497">497</th><td>	<i>/* Get the auto-negotiation interrupt */</i></td></tr>
+<tr><th id="498">498</th><td>	<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> = <a class="ref fn" href="../../../../../include/linux/platform_device.h.html#platform_get_irq" title='platform_get_irq' data-ref="platform_get_irq">platform_get_irq</a>(<a class="local col6 ref" href="#26phy_pdev" title='phy_pdev' data-ref="26phy_pdev">phy_pdev</a>, <a class="local col0 ref" href="#30phy_irqnum" title='phy_irqnum' data-ref="30phy_irqnum">phy_irqnum</a>++);</td></tr>
+<tr><th id="499">499</th><td>	<b>if</b> (<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="500">500</th><td>		<a class="ref fn" href="../../../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <q>"platform_get_irq phy 0 failed\n"</q>);</td></tr>
+<tr><th id="501">501</th><td>		<b>goto</b> <a class="lbl" href="#37err_io" data-ref="37err_io">err_io</a>;</td></tr>
+<tr><th id="502">502</th><td>	}</td></tr>
+<tr><th id="503">503</th><td>	<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::an_irq" title='xgbe_prv_data::an_irq' data-ref="xgbe_prv_data::an_irq">an_irq</a> = <a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a>;</td></tr>
+<tr><th id="504">504</th><td></td></tr>
+<tr><th id="505">505</th><td>	<i>/* Configure the netdev resource */</i></td></tr>
+<tr><th id="506">506</th><td>	<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a> = <a class="ref fn" href="xgbe.h.html#xgbe_config_netdev" title='xgbe_config_netdev' data-ref="xgbe_config_netdev">xgbe_config_netdev</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>);</td></tr>
+<tr><th id="507">507</th><td>	<b>if</b> (<a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a>)</td></tr>
+<tr><th id="508">508</th><td>		<b>goto</b> <a class="lbl" href="#37err_io" data-ref="37err_io">err_io</a>;</td></tr>
+<tr><th id="509">509</th><td></td></tr>
+<tr><th id="510">510</th><td>	<a class="ref fn" href="../../../../../include/linux/netdevice.h.html#netdev_notice" title='netdev_notice' data-ref="netdev_notice">netdev_notice</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::netdev" title='xgbe_prv_data::netdev' data-ref="xgbe_prv_data::netdev">netdev</a>, <q>"net device enabled\n"</q>);</td></tr>
+<tr><th id="511">511</th><td></td></tr>
+<tr><th id="512">512</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="513">513</th><td></td></tr>
+<tr><th id="514">514</th><td><dfn class="lbl" id="37err_io" data-ref="37err_io">err_io</dfn>:</td></tr>
+<tr><th id="515">515</th><td>	<a class="ref fn" href="../../../../../include/linux/platform_device.h.html#platform_device_put" title='platform_device_put' data-ref="platform_device_put">platform_device_put</a>(<a class="local col6 ref" href="#26phy_pdev" title='phy_pdev' data-ref="26phy_pdev">phy_pdev</a>);</td></tr>
+<tr><th id="516">516</th><td></td></tr>
+<tr><th id="517">517</th><td><dfn class="lbl" id="36err_phydev" data-ref="36err_phydev">err_phydev</dfn>:</td></tr>
+<tr><th id="518">518</th><td>	<a class="ref fn" href="xgbe.h.html#xgbe_free_pdata" title='xgbe_free_pdata' data-ref="xgbe_free_pdata">xgbe_free_pdata</a>(<a class="local col4 ref" href="#24pdata" title='pdata' data-ref="24pdata">pdata</a>);</td></tr>
+<tr><th id="519">519</th><td></td></tr>
+<tr><th id="520">520</th><td><dfn class="lbl" id="35err_alloc" data-ref="35err_alloc">err_alloc</dfn>:</td></tr>
+<tr><th id="521">521</th><td>	<a class="ref fn" href="../../../../../include/linux/device.h.html#dev_notice" title='dev_notice' data-ref="dev_notice">dev_notice</a>(<a class="local col5 ref" href="#25dev" title='dev' data-ref="25dev">dev</a>, <q>"net device not enabled\n"</q>);</td></tr>
+<tr><th id="522">522</th><td></td></tr>
+<tr><th id="523">523</th><td>	<b>return</b> <a class="local col4 ref" href="#34ret" title='ret' data-ref="34ret">ret</a>;</td></tr>
+<tr><th id="524">524</th><td>}</td></tr>
+<tr><th id="525">525</th><td></td></tr>
+<tr><th id="526">526</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="xgbe_platform_remove" title='xgbe_platform_remove' data-type='int xgbe_platform_remove(struct platform_device * pdev)' data-ref="xgbe_platform_remove">xgbe_platform_remove</dfn>(<b>struct</b> <a class="type" href="../../../../../include/linux/platform_device.h.html#platform_device" title='platform_device' data-ref="platform_device">platform_device</a> *<dfn class="local col0 decl" id="40pdev" title='pdev' data-type='struct platform_device *' data-ref="40pdev">pdev</dfn>)</td></tr>
+<tr><th id="527">527</th><td>{</td></tr>
+<tr><th id="528">528</th><td>	<b>struct</b> <a class="type" href="xgbe.h.html#xgbe_prv_data" title='xgbe_prv_data' data-ref="xgbe_prv_data">xgbe_prv_data</a> *<dfn class="local col1 decl" id="41pdata" title='pdata' data-type='struct xgbe_prv_data *' data-ref="41pdata">pdata</dfn> = <a class="ref fn" href="../../../../../include/linux/platform_device.h.html#platform_get_drvdata" title='platform_get_drvdata' data-ref="platform_get_drvdata">platform_get_drvdata</a>(<a class="local col0 ref" href="#40pdev" title='pdev' data-ref="40pdev">pdev</a>);</td></tr>
+<tr><th id="529">529</th><td></td></tr>
+<tr><th id="530">530</th><td>	<a class="ref fn" href="xgbe.h.html#xgbe_deconfig_netdev" title='xgbe_deconfig_netdev' data-ref="xgbe_deconfig_netdev">xgbe_deconfig_netdev</a>(<a class="local col1 ref" href="#41pdata" title='pdata' data-ref="41pdata">pdata</a>);</td></tr>
+<tr><th id="531">531</th><td></td></tr>
+<tr><th id="532">532</th><td>	<a class="ref fn" href="../../../../../include/linux/platform_device.h.html#platform_device_put" title='platform_device_put' data-ref="platform_device_put">platform_device_put</a>(<a class="local col1 ref" href="#41pdata" title='pdata' data-ref="41pdata">pdata</a>-&gt;<a class="ref field" href="xgbe.h.html#xgbe_prv_data::phy_platdev" title='xgbe_prv_data::phy_platdev' data-ref="xgbe_prv_data::phy_platdev">phy_platdev</a>);</td></tr>
+<tr><th id="533">533</th><td></td></tr>
+<tr><th id="534">534</th><td>	<a class="ref fn" href="xgbe.h.html#xgbe_free_pdata" title='xgbe_free_pdata' data-ref="xgbe_free_pdata">xgbe_free_pdata</a>(<a class="local col1 ref" href="#41pdata" title='pdata' data-ref="41pdata">pdata</a>);</td></tr>
+<tr><th id="535">535</th><td></td></tr>
+<tr><th id="536">536</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="537">537</th><td>}</td></tr>
+<tr><th id="538">538</th><td></td></tr>
+<tr><th id="539">539</th><td><u>#<span data-ppcond="539">ifdef</span> <span class="macro" data-ref="_M/CONFIG_PM_SLEEP">CONFIG_PM_SLEEP</span></u></td></tr>
+<tr><th id="540">540</th><td><em>static</em> <em>int</em> xgbe_platform_suspend(<b>struct</b> device *dev)</td></tr>
+<tr><th id="541">541</th><td>{</td></tr>
+<tr><th id="542">542</th><td>	<b>struct</b> xgbe_prv_data *pdata = dev_get_drvdata(dev);</td></tr>
+<tr><th id="543">543</th><td>	<b>struct</b> net_device *netdev = pdata-&gt;netdev;</td></tr>
+<tr><th id="544">544</th><td>	<em>int</em> ret = <var>0</var>;</td></tr>
+<tr><th id="545">545</th><td></td></tr>
+<tr><th id="546">546</th><td>	DBGPR(<q>"--&gt;xgbe_suspend\n"</q>);</td></tr>
+<tr><th id="547">547</th><td></td></tr>
+<tr><th id="548">548</th><td>	<b>if</b> (netif_running(netdev))</td></tr>
+<tr><th id="549">549</th><td>		ret = xgbe_powerdown(netdev, XGMAC_DRIVER_CONTEXT);</td></tr>
+<tr><th id="550">550</th><td></td></tr>
+<tr><th id="551">551</th><td>	pdata-&gt;lpm_ctrl = XMDIO_READ(pdata, MDIO_MMD_PCS, MDIO_CTRL1);</td></tr>
+<tr><th id="552">552</th><td>	pdata-&gt;lpm_ctrl |= MDIO_CTRL1_LPOWER;</td></tr>
+<tr><th id="553">553</th><td>	XMDIO_WRITE(pdata, MDIO_MMD_PCS, MDIO_CTRL1, pdata-&gt;lpm_ctrl);</td></tr>
+<tr><th id="554">554</th><td></td></tr>
+<tr><th id="555">555</th><td>	DBGPR(<q>"&lt;--xgbe_suspend\n"</q>);</td></tr>
+<tr><th id="556">556</th><td></td></tr>
+<tr><th id="557">557</th><td>	<b>return</b> ret;</td></tr>
+<tr><th id="558">558</th><td>}</td></tr>
+<tr><th id="559">559</th><td></td></tr>
+<tr><th id="560">560</th><td><em>static</em> <em>int</em> xgbe_platform_resume(<b>struct</b> device *dev)</td></tr>
+<tr><th id="561">561</th><td>{</td></tr>
+<tr><th id="562">562</th><td>	<b>struct</b> xgbe_prv_data *pdata = dev_get_drvdata(dev);</td></tr>
+<tr><th id="563">563</th><td>	<b>struct</b> net_device *netdev = pdata-&gt;netdev;</td></tr>
+<tr><th id="564">564</th><td>	<em>int</em> ret = <var>0</var>;</td></tr>
+<tr><th id="565">565</th><td></td></tr>
+<tr><th id="566">566</th><td>	DBGPR(<q>"--&gt;xgbe_resume\n"</q>);</td></tr>
+<tr><th id="567">567</th><td></td></tr>
+<tr><th id="568">568</th><td>	pdata-&gt;lpm_ctrl &amp;= ~MDIO_CTRL1_LPOWER;</td></tr>
+<tr><th id="569">569</th><td>	XMDIO_WRITE(pdata, MDIO_MMD_PCS, MDIO_CTRL1, pdata-&gt;lpm_ctrl);</td></tr>
+<tr><th id="570">570</th><td></td></tr>
+<tr><th id="571">571</th><td>	<b>if</b> (netif_running(netdev)) {</td></tr>
+<tr><th id="572">572</th><td>		ret = xgbe_powerup(netdev, XGMAC_DRIVER_CONTEXT);</td></tr>
+<tr><th id="573">573</th><td></td></tr>
+<tr><th id="574">574</th><td>		<i>/* Schedule a restart in case the link or phy state changed</i></td></tr>
+<tr><th id="575">575</th><td><i>		 * while we were powered down.</i></td></tr>
+<tr><th id="576">576</th><td><i>		 */</i></td></tr>
+<tr><th id="577">577</th><td>		schedule_work(&amp;pdata-&gt;restart_work);</td></tr>
+<tr><th id="578">578</th><td>	}</td></tr>
+<tr><th id="579">579</th><td></td></tr>
+<tr><th id="580">580</th><td>	DBGPR(<q>"&lt;--xgbe_resume\n"</q>);</td></tr>
+<tr><th id="581">581</th><td></td></tr>
+<tr><th id="582">582</th><td>	<b>return</b> ret;</td></tr>
+<tr><th id="583">583</th><td>}</td></tr>
+<tr><th id="584">584</th><td><u>#<span data-ppcond="539">endif</span> /* CONFIG_PM_SLEEP */</u></td></tr>
+<tr><th id="585">585</th><td></td></tr>
+<tr><th id="586">586</th><td><em>static</em> <em>const</em> <b>struct</b> <a class="type" href="xgbe.h.html#xgbe_version_data" title='xgbe_version_data' data-ref="xgbe_version_data">xgbe_version_data</a> <dfn class="tu decl def" id="xgbe_v1" title='xgbe_v1' data-type='const struct xgbe_version_data' data-ref="xgbe_v1">xgbe_v1</dfn> = {</td></tr>
+<tr><th id="587">587</th><td>	.<a class="ref field" href="xgbe.h.html#xgbe_version_data::init_function_ptrs_phy_impl" title='xgbe_version_data::init_function_ptrs_phy_impl' data-ref="xgbe_version_data::init_function_ptrs_phy_impl">init_function_ptrs_phy_impl</a>	= <a class="ref fn" href="xgbe.h.html#xgbe_init_function_ptrs_phy_v1" title='xgbe_init_function_ptrs_phy_v1' data-ref="xgbe_init_function_ptrs_phy_v1">xgbe_init_function_ptrs_phy_v1</a>,</td></tr>
+<tr><th id="588">588</th><td>	.<a class="ref field" href="xgbe.h.html#xgbe_version_data::xpcs_access" title='xgbe_version_data::xpcs_access' data-ref="xgbe_version_data::xpcs_access">xpcs_access</a>			= <a class="enum" href="xgbe.h.html#XGBE_XPCS_ACCESS_V1" title='XGBE_XPCS_ACCESS_V1' data-ref="XGBE_XPCS_ACCESS_V1">XGBE_XPCS_ACCESS_V1</a>,</td></tr>
+<tr><th id="589">589</th><td>	.<a class="ref field" href="xgbe.h.html#xgbe_version_data::tx_max_fifo_size" title='xgbe_version_data::tx_max_fifo_size' data-ref="xgbe_version_data::tx_max_fifo_size">tx_max_fifo_size</a>		= <var>81920</var>,</td></tr>
+<tr><th id="590">590</th><td>	.<a class="ref field" href="xgbe.h.html#xgbe_version_data::rx_max_fifo_size" title='xgbe_version_data::rx_max_fifo_size' data-ref="xgbe_version_data::rx_max_fifo_size">rx_max_fifo_size</a>		= <var>81920</var>,</td></tr>
+<tr><th id="591">591</th><td>	.<a class="ref field" href="xgbe.h.html#xgbe_version_data::tx_tstamp_workaround" title='xgbe_version_data::tx_tstamp_workaround' data-ref="xgbe_version_data::tx_tstamp_workaround">tx_tstamp_workaround</a>		= <var>1</var>,</td></tr>
+<tr><th id="592">592</th><td>};</td></tr>
+<tr><th id="593">593</th><td></td></tr>
+<tr><th id="594">594</th><td><u>#<span data-ppcond="594">ifdef</span> <a class="macro" href="../../../../../include/generated/autoconf.h.html#238" data-ref="_M/CONFIG_ACPI">CONFIG_ACPI</a></u></td></tr>
+<tr><th id="595">595</th><td><em>static</em> <em>const</em> <b>struct</b> <a class="type" href="../../../../../include/linux/mod_devicetable.h.html#acpi_device_id" title='acpi_device_id' data-ref="acpi_device_id">acpi_device_id</a> <dfn class="tu decl def" id="xgbe_acpi_match" title='xgbe_acpi_match' data-type='const struct acpi_device_id [2]' data-ref="xgbe_acpi_match">xgbe_acpi_match</dfn>[] = {</td></tr>
+<tr><th id="596">596</th><td>	{ .<a class="ref field" href="../../../../../include/linux/mod_devicetable.h.html#acpi_device_id::id" title='acpi_device_id::id' data-ref="acpi_device_id::id">id</a> = <q>"AMDI8001"</q>,</td></tr>
+<tr><th id="597">597</th><td>	  .<a class="ref field" href="../../../../../include/linux/mod_devicetable.h.html#acpi_device_id::driver_data" title='acpi_device_id::driver_data' data-ref="acpi_device_id::driver_data">driver_data</a> = (<a class="typedef" href="../../../../../include/linux/mod_devicetable.h.html#kernel_ulong_t" title='kernel_ulong_t' data-type='unsigned long' data-ref="kernel_ulong_t">kernel_ulong_t</a>)&amp;<a class="tu ref" href="#xgbe_v1" title='xgbe_v1' data-use='a' data-ref="xgbe_v1">xgbe_v1</a> },</td></tr>
+<tr><th id="598">598</th><td>	{},</td></tr>
+<tr><th id="599">599</th><td>};</td></tr>
+<tr><th id="600">600</th><td></td></tr>
+<tr><th id="601">601</th><td><a class="macro" href="../../../../../include/linux/module.h.html#216" title="" data-ref="_M/MODULE_DEVICE_TABLE">MODULE_DEVICE_TABLE</a>(acpi, xgbe_acpi_match);</td></tr>
+<tr><th id="602">602</th><td><u>#<span data-ppcond="594">endif</span></u></td></tr>
+<tr><th id="603">603</th><td></td></tr>
+<tr><th id="604">604</th><td><u>#<span data-ppcond="604">ifdef</span> <span class="macro" data-ref="_M/CONFIG_OF">CONFIG_OF</span></u></td></tr>
+<tr><th id="605">605</th><td><em>static</em> <em>const</em> <b>struct</b> of_device_id xgbe_of_match[] = {</td></tr>
+<tr><th id="606">606</th><td>	{ .compatible = <q>"amd,xgbe-seattle-v1a"</q>,</td></tr>
+<tr><th id="607">607</th><td>	  .data = &amp;xgbe_v1 },</td></tr>
+<tr><th id="608">608</th><td>	{},</td></tr>
+<tr><th id="609">609</th><td>};</td></tr>
+<tr><th id="610">610</th><td></td></tr>
+<tr><th id="611">611</th><td>MODULE_DEVICE_TABLE(of, xgbe_of_match);</td></tr>
+<tr><th id="612">612</th><td><u>#<span data-ppcond="604">endif</span></u></td></tr>
+<tr><th id="613">613</th><td></td></tr>
+<tr><th id="614">614</th><td><em>static</em> <a class="macro" href="../../../../../include/linux/pm.h.html#365" title="const struct dev_pm_ops xgbe_platform_pm_ops = { }" data-ref="_M/SIMPLE_DEV_PM_OPS">SIMPLE_DEV_PM_OPS</a>(<dfn class="tu decl def" id="xgbe_platform_pm_ops" title='xgbe_platform_pm_ops' data-type='const struct dev_pm_ops' data-ref="xgbe_platform_pm_ops">xgbe_platform_pm_ops</dfn>,</td></tr>
+<tr><th id="615">615</th><td>			 xgbe_platform_suspend, xgbe_platform_resume);</td></tr>
+<tr><th id="616">616</th><td></td></tr>
+<tr><th id="617">617</th><td><em>static</em> <b>struct</b> <a class="type" href="../../../../../include/linux/platform_device.h.html#platform_driver" title='platform_driver' data-ref="platform_driver">platform_driver</a> <dfn class="tu decl def" id="xgbe_driver" title='xgbe_driver' data-type='struct platform_driver' data-ref="xgbe_driver">xgbe_driver</dfn> = {</td></tr>
+<tr><th id="618">618</th><td>	.<a class="ref field" href="../../../../../include/linux/platform_device.h.html#platform_driver::driver" title='platform_driver::driver' data-ref="platform_driver::driver">driver</a> = {</td></tr>
+<tr><th id="619">619</th><td>		.<a class="ref field" href="../../../../../include/linux/device.h.html#device_driver::name" title='device_driver::name' data-ref="device_driver::name">name</a> = <a class="macro" href="xgbe.h.html#137" title="&quot;amd-xgbe&quot;" data-ref="_M/XGBE_DRV_NAME">XGBE_DRV_NAME</a>,</td></tr>
+<tr><th id="620">620</th><td><u>#<span data-ppcond="620">ifdef</span> <a class="macro" href="../../../../../include/generated/autoconf.h.html#238" data-ref="_M/CONFIG_ACPI">CONFIG_ACPI</a></u></td></tr>
+<tr><th id="621">621</th><td>		.<a class="ref field" href="../../../../../include/linux/device.h.html#device_driver::acpi_match_table" title='device_driver::acpi_match_table' data-ref="device_driver::acpi_match_table">acpi_match_table</a> = <a class="tu ref" href="#xgbe_acpi_match" title='xgbe_acpi_match' data-ref="xgbe_acpi_match">xgbe_acpi_match</a>,</td></tr>
+<tr><th id="622">622</th><td><u>#<span data-ppcond="620">endif</span></u></td></tr>
+<tr><th id="623">623</th><td><u>#<span data-ppcond="623">ifdef</span> <span class="macro" data-ref="_M/CONFIG_OF">CONFIG_OF</span></u></td></tr>
+<tr><th id="624">624</th><td>		.of_match_table = xgbe_of_match,</td></tr>
+<tr><th id="625">625</th><td><u>#<span data-ppcond="623">endif</span></u></td></tr>
+<tr><th id="626">626</th><td>		.<a class="ref field" href="../../../../../include/linux/device.h.html#device_driver::pm" title='device_driver::pm' data-ref="device_driver::pm">pm</a> = &amp;<a class="tu ref" href="#614" title='xgbe_platform_pm_ops' data-use='a' data-ref="xgbe_platform_pm_ops">xgbe_platform_pm_ops</a>,</td></tr>
+<tr><th id="627">627</th><td>	},</td></tr>
+<tr><th id="628">628</th><td>	.<a class="ref field" href="../../../../../include/linux/platform_device.h.html#platform_driver::probe" title='platform_driver::probe' data-ref="platform_driver::probe">probe</a> = <a class="tu ref fn" href="#xgbe_platform_probe" title='xgbe_platform_probe' data-ref="xgbe_platform_probe">xgbe_platform_probe</a>,</td></tr>
+<tr><th id="629">629</th><td>	.<a class="ref field" href="../../../../../include/linux/platform_device.h.html#platform_driver::remove" title='platform_driver::remove' data-ref="platform_driver::remove">remove</a> = <a class="tu ref fn" href="#xgbe_platform_remove" title='xgbe_platform_remove' data-ref="xgbe_platform_remove">xgbe_platform_remove</a>,</td></tr>
+<tr><th id="630">630</th><td>};</td></tr>
+<tr><th id="631">631</th><td></td></tr>
+<tr><th id="632">632</th><td><em>int</em> <dfn class="decl def fn" id="xgbe_platform_init" title='xgbe_platform_init' data-ref="xgbe_platform_init">xgbe_platform_init</dfn>(<em>void</em>)</td></tr>
+<tr><th id="633">633</th><td>{</td></tr>
+<tr><th id="634">634</th><td>	<b>return</b> <a class="macro" href="../../../../../include/linux/platform_device.h.html#197" title="__platform_driver_register(&amp;xgbe_driver, ((struct module *)0))" data-ref="_M/platform_driver_register">platform_driver_register</a>(&amp;<a class="tu ref" href="#xgbe_driver" title='xgbe_driver' data-use='a' data-ref="xgbe_driver">xgbe_driver</a>);</td></tr>
+<tr><th id="635">635</th><td>}</td></tr>
+<tr><th id="636">636</th><td></td></tr>
+<tr><th id="637">637</th><td><em>void</em> <dfn class="decl def fn" id="xgbe_platform_exit" title='xgbe_platform_exit' data-ref="xgbe_platform_exit">xgbe_platform_exit</dfn>(<em>void</em>)</td></tr>
+<tr><th id="638">638</th><td>{</td></tr>
+<tr><th id="639">639</th><td>	<a class="ref fn" href="../../../../../include/linux/platform_device.h.html#platform_driver_unregister" title='platform_driver_unregister' data-ref="platform_driver_unregister">platform_driver_unregister</a>(&amp;<a class="tu ref" href="#xgbe_driver" title='xgbe_driver' data-use='a' data-ref="xgbe_driver">xgbe_driver</a>);</td></tr>
+<tr><th id="640">640</th><td>}</td></tr>
+<tr><th id="641">641</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

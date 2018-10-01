@@ -1,0 +1,332 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>mshyperv.c source code [linux-4.18.y/arch/x86/kernel/cpu/mshyperv.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/arch/x86/kernel/cpu/mshyperv.c'; var root_path = '../../../../..'; var data_path = '../../../../../../data';</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>linux-4.18.y</a>/<a href='../../..'>arch</a>/<a href='../..'>x86</a>/<a href='..'>kernel</a>/<a href='./'>cpu</a>/<a href='mshyperv.c.html'>mshyperv.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * HyperV  Detection code.</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> * Copyright (C) 2010, Novell, Inc.</i></td></tr>
+<tr><th id="5">5</th><td><i> * Author : K. Y. Srinivasan &lt;ksrinivasan@novell.com&gt;</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> * This program is free software; you can redistribute it and/or modify</i></td></tr>
+<tr><th id="8">8</th><td><i> * it under the terms of the GNU General Public License as published by</i></td></tr>
+<tr><th id="9">9</th><td><i> * the Free Software Foundation; version 2 of the License.</i></td></tr>
+<tr><th id="10">10</th><td><i> *</i></td></tr>
+<tr><th id="11">11</th><td><i> */</i></td></tr>
+<tr><th id="12">12</th><td></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../../include/linux/types.h.html">&lt;linux/types.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../../include/linux/time.h.html">&lt;linux/time.h&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../../include/linux/clocksource.h.html">&lt;linux/clocksource.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../../include/linux/init.h.html">&lt;linux/init.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../../include/linux/export.h.html">&lt;linux/export.h&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../../include/linux/hardirq.h.html">&lt;linux/hardirq.h&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../../include/linux/efi.h.html">&lt;linux/efi.h&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../../include/linux/interrupt.h.html">&lt;linux/interrupt.h&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../../include/linux/irq.h.html">&lt;linux/irq.h&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../../include/linux/kexec.h.html">&lt;linux/kexec.h&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../include/asm/processor.h.html">&lt;asm/processor.h&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../../include/asm/hypervisor.h.html">&lt;asm/hypervisor.h&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../include/asm/hyperv-tlfs.h.html">&lt;asm/hyperv-tlfs.h&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../../include/asm/mshyperv.h.html">&lt;asm/mshyperv.h&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../../include/asm/desc.h.html">&lt;asm/desc.h&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../../include/asm/irq_regs.h.html">&lt;asm/irq_regs.h&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../../include/asm/i8259.h.html">&lt;asm/i8259.h&gt;</a></u></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="../../include/asm/apic.h.html">&lt;asm/apic.h&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="../../include/asm/timer.h.html">&lt;asm/timer.h&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="../../include/asm/reboot.h.html">&lt;asm/reboot.h&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="../../include/asm/nmi.h.html">&lt;asm/nmi.h&gt;</a></u></td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td><b>struct</b> <a class="type" href="../../include/asm/mshyperv.h.html#ms_hyperv_info" title='ms_hyperv_info' data-ref="ms_hyperv_info">ms_hyperv_info</a> <dfn class="decl def" id="ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv">ms_hyperv</dfn>;</td></tr>
+<tr><th id="36">36</th><td><a class="macro" href="../../../../include/linux/export.h.html#100" title="extern typeof(ms_hyperv) ms_hyperv; static const char __kstrtab_ms_hyperv[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;ms_hyperv&quot;; static const struct kernel_symbol __ksymtab_ms_hyperv __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;ms_hyperv&quot;), used)) = { (unsigned long)&amp;ms_hyperv, __kstrtab_ms_hyperv }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv" id="ms_hyperv"><a class="ref" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv"><a class="ref" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv"><a class="ref" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv">ms_hyperv</a></a></a></a>);</td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><u>#<span data-ppcond="38">if</span> <a class="macro" href="../../../../include/linux/kconfig.h.html#71" title="0" data-ref="_M/IS_ENABLED">IS_ENABLED</a>(CONFIG_HYPERV)</u></td></tr>
+<tr><th id="39">39</th><td><em>static</em> <em>void</em> (*vmbus_handler)(<em>void</em>);</td></tr>
+<tr><th id="40">40</th><td><em>static</em> <em>void</em> (*hv_stimer0_handler)(<em>void</em>);</td></tr>
+<tr><th id="41">41</th><td><em>static</em> <em>void</em> (*hv_kexec_handler)(<em>void</em>);</td></tr>
+<tr><th id="42">42</th><td><em>static</em> <em>void</em> (*hv_crash_handler)(<b>struct</b> pt_regs *regs);</td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td><em>void</em> hyperv_vector_handler(<b>struct</b> pt_regs *regs)</td></tr>
+<tr><th id="45">45</th><td>{</td></tr>
+<tr><th id="46">46</th><td>	<b>struct</b> pt_regs *old_regs = set_irq_regs(regs);</td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td>	entering_irq();</td></tr>
+<tr><th id="49">49</th><td>	inc_irq_stat(irq_hv_callback_count);</td></tr>
+<tr><th id="50">50</th><td>	<b>if</b> (vmbus_handler)</td></tr>
+<tr><th id="51">51</th><td>		vmbus_handler();</td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td>	<b>if</b> (ms_hyperv.hints &amp; HV_X64_DEPRECATING_AEOI_RECOMMENDED)</td></tr>
+<tr><th id="54">54</th><td>		ack_APIC_irq();</td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td>	exiting_irq();</td></tr>
+<tr><th id="57">57</th><td>	set_irq_regs(old_regs);</td></tr>
+<tr><th id="58">58</th><td>}</td></tr>
+<tr><th id="59">59</th><td></td></tr>
+<tr><th id="60">60</th><td><em>void</em> hv_setup_vmbus_irq(<em>void</em> (*handler)(<em>void</em>))</td></tr>
+<tr><th id="61">61</th><td>{</td></tr>
+<tr><th id="62">62</th><td>	vmbus_handler = handler;</td></tr>
+<tr><th id="63">63</th><td>}</td></tr>
+<tr><th id="64">64</th><td></td></tr>
+<tr><th id="65">65</th><td><em>void</em> hv_remove_vmbus_irq(<em>void</em>)</td></tr>
+<tr><th id="66">66</th><td>{</td></tr>
+<tr><th id="67">67</th><td>	<i>/* We have no way to deallocate the interrupt gate */</i></td></tr>
+<tr><th id="68">68</th><td>	vmbus_handler = NULL;</td></tr>
+<tr><th id="69">69</th><td>}</td></tr>
+<tr><th id="70">70</th><td>EXPORT_SYMBOL_GPL(hv_setup_vmbus_irq);</td></tr>
+<tr><th id="71">71</th><td>EXPORT_SYMBOL_GPL(hv_remove_vmbus_irq);</td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td><i>/*</i></td></tr>
+<tr><th id="74">74</th><td><i> * Routines to do per-architecture handling of stimer0</i></td></tr>
+<tr><th id="75">75</th><td><i> * interrupts when in Direct Mode</i></td></tr>
+<tr><th id="76">76</th><td><i> */</i></td></tr>
+<tr><th id="77">77</th><td></td></tr>
+<tr><th id="78">78</th><td>__visible <em>void</em> __irq_entry hv_stimer0_vector_handler(<b>struct</b> pt_regs *regs)</td></tr>
+<tr><th id="79">79</th><td>{</td></tr>
+<tr><th id="80">80</th><td>	<b>struct</b> pt_regs *old_regs = set_irq_regs(regs);</td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td>	entering_irq();</td></tr>
+<tr><th id="83">83</th><td>	inc_irq_stat(hyperv_stimer0_count);</td></tr>
+<tr><th id="84">84</th><td>	<b>if</b> (hv_stimer0_handler)</td></tr>
+<tr><th id="85">85</th><td>		hv_stimer0_handler();</td></tr>
+<tr><th id="86">86</th><td>	ack_APIC_irq();</td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td>	exiting_irq();</td></tr>
+<tr><th id="89">89</th><td>	set_irq_regs(old_regs);</td></tr>
+<tr><th id="90">90</th><td>}</td></tr>
+<tr><th id="91">91</th><td></td></tr>
+<tr><th id="92">92</th><td><em>int</em> hv_setup_stimer0_irq(<em>int</em> *irq, <em>int</em> *vector, <em>void</em> (*handler)(<em>void</em>))</td></tr>
+<tr><th id="93">93</th><td>{</td></tr>
+<tr><th id="94">94</th><td>	*vector = HYPERV_STIMER0_VECTOR;</td></tr>
+<tr><th id="95">95</th><td>	*irq = <var>0</var>;   <i>/* Unused on x86/x64 */</i></td></tr>
+<tr><th id="96">96</th><td>	hv_stimer0_handler = handler;</td></tr>
+<tr><th id="97">97</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="98">98</th><td>}</td></tr>
+<tr><th id="99">99</th><td>EXPORT_SYMBOL_GPL(hv_setup_stimer0_irq);</td></tr>
+<tr><th id="100">100</th><td></td></tr>
+<tr><th id="101">101</th><td><em>void</em> hv_remove_stimer0_irq(<em>int</em> irq)</td></tr>
+<tr><th id="102">102</th><td>{</td></tr>
+<tr><th id="103">103</th><td>	<i>/* We have no way to deallocate the interrupt gate */</i></td></tr>
+<tr><th id="104">104</th><td>	hv_stimer0_handler = NULL;</td></tr>
+<tr><th id="105">105</th><td>}</td></tr>
+<tr><th id="106">106</th><td>EXPORT_SYMBOL_GPL(hv_remove_stimer0_irq);</td></tr>
+<tr><th id="107">107</th><td></td></tr>
+<tr><th id="108">108</th><td><em>void</em> hv_setup_kexec_handler(<em>void</em> (*handler)(<em>void</em>))</td></tr>
+<tr><th id="109">109</th><td>{</td></tr>
+<tr><th id="110">110</th><td>	hv_kexec_handler = handler;</td></tr>
+<tr><th id="111">111</th><td>}</td></tr>
+<tr><th id="112">112</th><td>EXPORT_SYMBOL_GPL(hv_setup_kexec_handler);</td></tr>
+<tr><th id="113">113</th><td></td></tr>
+<tr><th id="114">114</th><td><em>void</em> hv_remove_kexec_handler(<em>void</em>)</td></tr>
+<tr><th id="115">115</th><td>{</td></tr>
+<tr><th id="116">116</th><td>	hv_kexec_handler = NULL;</td></tr>
+<tr><th id="117">117</th><td>}</td></tr>
+<tr><th id="118">118</th><td>EXPORT_SYMBOL_GPL(hv_remove_kexec_handler);</td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td><em>void</em> hv_setup_crash_handler(<em>void</em> (*handler)(<b>struct</b> pt_regs *regs))</td></tr>
+<tr><th id="121">121</th><td>{</td></tr>
+<tr><th id="122">122</th><td>	hv_crash_handler = handler;</td></tr>
+<tr><th id="123">123</th><td>}</td></tr>
+<tr><th id="124">124</th><td>EXPORT_SYMBOL_GPL(hv_setup_crash_handler);</td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td><em>void</em> hv_remove_crash_handler(<em>void</em>)</td></tr>
+<tr><th id="127">127</th><td>{</td></tr>
+<tr><th id="128">128</th><td>	hv_crash_handler = NULL;</td></tr>
+<tr><th id="129">129</th><td>}</td></tr>
+<tr><th id="130">130</th><td>EXPORT_SYMBOL_GPL(hv_remove_crash_handler);</td></tr>
+<tr><th id="131">131</th><td></td></tr>
+<tr><th id="132">132</th><td><u>#ifdef CONFIG_KEXEC_CORE</u></td></tr>
+<tr><th id="133">133</th><td><em>static</em> <em>void</em> hv_machine_shutdown(<em>void</em>)</td></tr>
+<tr><th id="134">134</th><td>{</td></tr>
+<tr><th id="135">135</th><td>	<b>if</b> (kexec_in_progress &amp;&amp; hv_kexec_handler)</td></tr>
+<tr><th id="136">136</th><td>		hv_kexec_handler();</td></tr>
+<tr><th id="137">137</th><td>	native_machine_shutdown();</td></tr>
+<tr><th id="138">138</th><td>}</td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td><em>static</em> <em>void</em> hv_machine_crash_shutdown(<b>struct</b> pt_regs *regs)</td></tr>
+<tr><th id="141">141</th><td>{</td></tr>
+<tr><th id="142">142</th><td>	<b>if</b> (hv_crash_handler)</td></tr>
+<tr><th id="143">143</th><td>		hv_crash_handler(regs);</td></tr>
+<tr><th id="144">144</th><td>	native_machine_crash_shutdown(regs);</td></tr>
+<tr><th id="145">145</th><td>}</td></tr>
+<tr><th id="146">146</th><td><u>#endif /* CONFIG_KEXEC_CORE */</u></td></tr>
+<tr><th id="147">147</th><td><u>#<span data-ppcond="38">endif</span> /* CONFIG_HYPERV */</u></td></tr>
+<tr><th id="148">148</th><td></td></tr>
+<tr><th id="149">149</th><td><em>static</em> <a class="typedef" href="../../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a>  <a class="macro" href="../../../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <dfn class="tu decl def fn" id="ms_hyperv_platform" title='ms_hyperv_platform' data-type='uint32_t ms_hyperv_platform()' data-ref="ms_hyperv_platform">ms_hyperv_platform</dfn>(<em>void</em>)</td></tr>
+<tr><th id="150">150</th><td>{</td></tr>
+<tr><th id="151">151</th><td>	<a class="typedef" href="../../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col0 decl" id="110eax" title='eax' data-type='u32' data-ref="110eax">eax</dfn>;</td></tr>
+<tr><th id="152">152</th><td>	<a class="typedef" href="../../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col1 decl" id="111hyp_signature" title='hyp_signature' data-type='u32 [3]' data-ref="111hyp_signature">hyp_signature</dfn>[<var>3</var>];</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td>	<b>if</b> (!<a class="macro" href="../../include/asm/cpufeature.h.html#129" title="(__builtin_constant_p(( 4*32+31)) &amp;&amp; ( (((( 4*32+31))&gt;&gt;5)==(0) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; ((1&lt;&lt;(( 0*32+ 0) &amp; 31))|0|(1&lt;&lt;(( 0*32+ 5) &amp; 31))|(1&lt;&lt;(( 0*32+ 6) &amp; 31))| (1&lt;&lt;(( 0*32+ 8) &amp; 31))|0|(1&lt;&lt;(( 0*32+24) &amp; 31))|(1&lt;&lt;(( 0*32+15) &amp; 31))| (1&lt;&lt;(( 0*32+25) &amp; 31))|(1&lt;&lt;(( 0*32+26) &amp; 31))) )) || (((( 4*32+31))&gt;&gt;5)==(1) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; ((1&lt;&lt;(( 1*32+29) &amp; 31))|0) )) || (((( 4*32+31))&gt;&gt;5)==(2) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(3) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; ((1&lt;&lt;(( 3*32+20) &amp; 31))) )) || (((( 4*32+31))&gt;&gt;5)==(4) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; (0) )) || (((( 4*32+31))&gt;&gt;5)==(5) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(6) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(7) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(8) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(9) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(10) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(11) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(12) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(13) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(14) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(15) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(16) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(17) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(18) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (sizeof(struct { int:(-!!(19 != 19)); })) || (sizeof(struct { int:(-!!(19 != 19)); }))) ? 1 : (__builtin_constant_p((( 4*32+31))) ? constant_test_bit((( 4*32+31)), ((unsigned long *)((&amp;boot_cpu_data)-&gt;x86_capability))) : variable_test_bit((( 4*32+31)), ((unsigned long *)((&amp;boot_cpu_data)-&gt;x86_capability)))))" data-ref="_M/boot_cpu_has">boot_cpu_has</a>(<a class="macro" href="../../include/asm/cpufeatures.h.html#145" title="( 4*32+31)" data-ref="_M/X86_FEATURE_HYPERVISOR">X86_FEATURE_HYPERVISOR</a>))</td></tr>
+<tr><th id="155">155</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="156">156</th><td></td></tr>
+<tr><th id="157">157</th><td>	<a class="ref fn" href="../../include/asm/processor.h.html#cpuid" title='cpuid' data-ref="cpuid">cpuid</a>(<a class="macro" href="../../include/asm/hyperv-tlfs.h.html#18" title="0x40000000" data-ref="_M/HYPERV_CPUID_VENDOR_AND_MAX_FUNCTIONS">HYPERV_CPUID_VENDOR_AND_MAX_FUNCTIONS</a>,</td></tr>
+<tr><th id="158">158</th><td>	      &amp;<a class="local col0 ref" href="#110eax" title='eax' data-ref="110eax">eax</a>, &amp;<a class="local col1 ref" href="#111hyp_signature" title='hyp_signature' data-ref="111hyp_signature">hyp_signature</a>[<var>0</var>], &amp;<a class="local col1 ref" href="#111hyp_signature" title='hyp_signature' data-ref="111hyp_signature">hyp_signature</a>[<var>1</var>], &amp;<a class="local col1 ref" href="#111hyp_signature" title='hyp_signature' data-ref="111hyp_signature">hyp_signature</a>[<var>2</var>]);</td></tr>
+<tr><th id="159">159</th><td></td></tr>
+<tr><th id="160">160</th><td>	<b>if</b> (<a class="local col0 ref" href="#110eax" title='eax' data-ref="110eax">eax</a> &gt;= <a class="macro" href="../../include/asm/hyperv-tlfs.h.html#27" title="0x40000005" data-ref="_M/HYPERV_CPUID_MIN">HYPERV_CPUID_MIN</a> &amp;&amp;</td></tr>
+<tr><th id="161">161</th><td>	    <a class="local col0 ref" href="#110eax" title='eax' data-ref="110eax">eax</a> &lt;= <a class="macro" href="../../include/asm/hyperv-tlfs.h.html#28" title="0x4000ffff" data-ref="_M/HYPERV_CPUID_MAX">HYPERV_CPUID_MAX</a> &amp;&amp;</td></tr>
+<tr><th id="162">162</th><td>	    !<a class="ref fn" href="../../include/asm/string_64.h.html#memcmp" title='memcmp' data-ref="memcmp">memcmp</a>(<q>"Microsoft Hv"</q>, <a class="local col1 ref" href="#111hyp_signature" title='hyp_signature' data-ref="111hyp_signature">hyp_signature</a>, <var>12</var>))</td></tr>
+<tr><th id="163">163</th><td>		<b>return</b> <a class="macro" href="../../include/asm/hyperv-tlfs.h.html#18" title="0x40000000" data-ref="_M/HYPERV_CPUID_VENDOR_AND_MAX_FUNCTIONS">HYPERV_CPUID_VENDOR_AND_MAX_FUNCTIONS</a>;</td></tr>
+<tr><th id="164">164</th><td></td></tr>
+<tr><th id="165">165</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="166">166</th><td>}</td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td><em>static</em> <em>unsigned</em> <em>char</em> <dfn class="tu decl def fn" id="hv_get_nmi_reason" title='hv_get_nmi_reason' data-type='unsigned char hv_get_nmi_reason()' data-ref="hv_get_nmi_reason">hv_get_nmi_reason</dfn>(<em>void</em>)</td></tr>
+<tr><th id="169">169</th><td>{</td></tr>
+<tr><th id="170">170</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="171">171</th><td>}</td></tr>
+<tr><th id="172">172</th><td></td></tr>
+<tr><th id="173">173</th><td><u>#<span data-ppcond="173">ifdef</span> <a class="macro" href="../../../../include/generated/autoconf.h.html#794" data-ref="_M/CONFIG_X86_LOCAL_APIC">CONFIG_X86_LOCAL_APIC</a></u></td></tr>
+<tr><th id="174">174</th><td><i  data-doc="hv_nmi_unknown">/*</i></td></tr>
+<tr><th id="175">175</th><td><i  data-doc="hv_nmi_unknown"> * Prior to WS2016 Debug-VM sends NMIs to all CPUs which makes</i></td></tr>
+<tr><th id="176">176</th><td><i  data-doc="hv_nmi_unknown"> * it dificult to process CHANNELMSG_UNLOAD in case of crash. Handle</i></td></tr>
+<tr><th id="177">177</th><td><i  data-doc="hv_nmi_unknown"> * unknown NMI on the first CPU which gets it.</i></td></tr>
+<tr><th id="178">178</th><td><i  data-doc="hv_nmi_unknown"> */</i></td></tr>
+<tr><th id="179">179</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="hv_nmi_unknown" title='hv_nmi_unknown' data-type='int hv_nmi_unknown(unsigned int val, struct pt_regs * regs)' data-ref="hv_nmi_unknown">hv_nmi_unknown</dfn>(<em>unsigned</em> <em>int</em> <dfn class="local col2 decl" id="112val" title='val' data-type='unsigned int' data-ref="112val">val</dfn>, <b>struct</b> <a class="type" href="../../include/asm/ptrace.h.html#pt_regs" title='pt_regs' data-ref="pt_regs">pt_regs</a> *<dfn class="local col3 decl" id="113regs" title='regs' data-type='struct pt_regs *' data-ref="113regs">regs</dfn>)</td></tr>
+<tr><th id="180">180</th><td>{</td></tr>
+<tr><th id="181">181</th><td>	<em>static</em> <a class="typedef" href="../../../../include/linux/types.h.html#atomic_t" title='atomic_t' data-type='struct atomic_t' data-ref="atomic_t">atomic_t</a> <dfn class="local col4 decl" id="114nmi_cpu" title='nmi_cpu' data-type='atomic_t' data-ref="114nmi_cpu">nmi_cpu</dfn> = <a class="macro" href="../../include/asm/atomic.h.html#17" title="{ (-1) }" data-ref="_M/ATOMIC_INIT">ATOMIC_INIT</a>(-<var>1</var>);</td></tr>
+<tr><th id="182">182</th><td></td></tr>
+<tr><th id="183">183</th><td>	<b>if</b> (!<a class="ref" href="../../include/asm/nmi.h.html#unknown_nmi_panic" title='unknown_nmi_panic' data-ref="unknown_nmi_panic">unknown_nmi_panic</a>)</td></tr>
+<tr><th id="184">184</th><td>		<b>return</b> <a class="macro" href="../../include/asm/nmi.h.html#35" title="0" data-ref="_M/NMI_DONE">NMI_DONE</a>;</td></tr>
+<tr><th id="185">185</th><td></td></tr>
+<tr><th id="186">186</th><td>	<b>if</b> (<a class="ref fn" href="../../../../include/asm-generic/atomic-instrumented.h.html#atomic_cmpxchg" title='atomic_cmpxchg' data-ref="atomic_cmpxchg">atomic_cmpxchg</a>(&amp;<a class="local col4 ref" href="#114nmi_cpu" title='nmi_cpu' data-ref="114nmi_cpu">nmi_cpu</a>, -<var>1</var>, <a class="macro" href="../../include/asm/smp.h.html#159" title="(({ typeof(cpu_number) pscr_ret__; do { const void *__vpp_verify = (typeof((&amp;(cpu_number)) + 0))((void *)0); (void)__vpp_verify; } while (0); switch(sizeof(cpu_number)) { case 1: pscr_ret__ = ({ typeof(cpu_number) pfo_ret__; switch (sizeof(cpu_number)) { case 1: asm(&quot;mov&quot; &quot;b &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=q&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 2: asm(&quot;mov&quot; &quot;w &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 4: asm(&quot;mov&quot; &quot;l &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 8: asm(&quot;mov&quot; &quot;q &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; default: __bad_percpu_size(); } pfo_ret__; }); break; case 2: pscr_ret__ = ({ typeof(cpu_number) pfo_ret__; switch (sizeof(cpu_number)) { case 1: asm(&quot;mov&quot; &quot;b &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=q&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 2: asm(&quot;mov&quot; &quot;w &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 4: asm(&quot;mov&quot; &quot;l &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 8: asm(&quot;mov&quot; &quot;q &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; default: __bad_percpu_size(); } pfo_ret__; }); break; case 4: pscr_ret__ = ({ typeof(cpu_number) pfo_ret__; switch (sizeof(cpu_number)) { case 1: asm(&quot;mov&quot; &quot;b &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=q&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 2: asm(&quot;mov&quot; &quot;w &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 4: asm(&quot;mov&quot; &quot;l &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 8: asm(&quot;mov&quot; &quot;q &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; default: __bad_percpu_size(); } pfo_ret__; }); break; case 8: pscr_ret__ = ({ typeof(cpu_number) pfo_ret__; switch (sizeof(cpu_number)) { case 1: asm(&quot;mov&quot; &quot;b &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=q&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 2: asm(&quot;mov&quot; &quot;w &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 4: asm(&quot;mov&quot; &quot;l &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; case 8: asm(&quot;mov&quot; &quot;q &quot;&quot;%%&quot;&quot;gs&quot;&quot;:&quot; &quot;%&quot; &quot;1&quot;&quot;,%0&quot; : &quot;=r&quot; (pfo_ret__) : &quot;m&quot; (cpu_number)); break; default: __bad_percpu_size(); } pfo_ret__; }); break; default: __bad_size_call_parameter(); break; } pscr_ret__; }))" data-ref="_M/raw_smp_processor_id">raw_smp_processor_id</a>()) != -<var>1</var>)</td></tr>
+<tr><th id="187">187</th><td>		<b>return</b> <a class="macro" href="../../include/asm/nmi.h.html#36" title="1" data-ref="_M/NMI_HANDLED">NMI_HANDLED</a>;</td></tr>
+<tr><th id="188">188</th><td></td></tr>
+<tr><th id="189">189</th><td>	<b>return</b> <a class="macro" href="../../include/asm/nmi.h.html#35" title="0" data-ref="_M/NMI_DONE">NMI_DONE</a>;</td></tr>
+<tr><th id="190">190</th><td>}</td></tr>
+<tr><th id="191">191</th><td><u>#<span data-ppcond="173">endif</span></u></td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td><em>static</em> <em>unsigned</em> <em>long</em> <dfn class="tu decl def fn" id="hv_get_tsc_khz" title='hv_get_tsc_khz' data-type='unsigned long hv_get_tsc_khz()' data-ref="hv_get_tsc_khz">hv_get_tsc_khz</dfn>(<em>void</em>)</td></tr>
+<tr><th id="194">194</th><td>{</td></tr>
+<tr><th id="195">195</th><td>	<em>unsigned</em> <em>long</em> <dfn class="local col5 decl" id="115freq" title='freq' data-type='unsigned long' data-ref="115freq">freq</dfn>;</td></tr>
+<tr><th id="196">196</th><td></td></tr>
+<tr><th id="197">197</th><td>	<a class="macro" href="../../include/asm/paravirt.h.html#143" title="do { freq = paravirt_read_msr(0x40000022); } while (0)" data-ref="_M/rdmsrl">rdmsrl</a>(<a class="macro" href="../../include/asm/hyperv-tlfs.h.html#202" title="0x40000022" data-ref="_M/HV_X64_MSR_TSC_FREQUENCY">HV_X64_MSR_TSC_FREQUENCY</a>, <a class="local col5 ref" href="#115freq" title='freq' data-ref="115freq">freq</a>);</td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td>	<b>return</b> <a class="local col5 ref" href="#115freq" title='freq' data-ref="115freq">freq</a> / <var>1000</var>;</td></tr>
+<tr><th id="200">200</th><td>}</td></tr>
+<tr><th id="201">201</th><td></td></tr>
+<tr><th id="202">202</th><td><em>static</em> <em>void</em> <a class="macro" href="../../../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <dfn class="tu decl def fn" id="ms_hyperv_init_platform" title='ms_hyperv_init_platform' data-type='void ms_hyperv_init_platform()' data-ref="ms_hyperv_init_platform">ms_hyperv_init_platform</dfn>(<em>void</em>)</td></tr>
+<tr><th id="203">203</th><td>{</td></tr>
+<tr><th id="204">204</th><td>	<em>int</em> <dfn class="local col6 decl" id="116hv_host_info_eax" title='hv_host_info_eax' data-type='int' data-ref="116hv_host_info_eax">hv_host_info_eax</dfn>;</td></tr>
+<tr><th id="205">205</th><td>	<em>int</em> <dfn class="local col7 decl" id="117hv_host_info_ebx" title='hv_host_info_ebx' data-type='int' data-ref="117hv_host_info_ebx">hv_host_info_ebx</dfn>;</td></tr>
+<tr><th id="206">206</th><td>	<em>int</em> <dfn class="local col8 decl" id="118hv_host_info_ecx" title='hv_host_info_ecx' data-type='int' data-ref="118hv_host_info_ecx">hv_host_info_ecx</dfn>;</td></tr>
+<tr><th id="207">207</th><td>	<em>int</em> <dfn class="local col9 decl" id="119hv_host_info_edx" title='hv_host_info_edx' data-type='int' data-ref="119hv_host_info_edx">hv_host_info_edx</dfn>;</td></tr>
+<tr><th id="208">208</th><td></td></tr>
+<tr><th id="209">209</th><td>	<i>/*</i></td></tr>
+<tr><th id="210">210</th><td><i>	 * Extract the features and hints</i></td></tr>
+<tr><th id="211">211</th><td><i>	 */</i></td></tr>
+<tr><th id="212">212</th><td>	<a class="ref" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv">ms_hyperv</a>.<a class="ref field" href="../../include/asm/mshyperv.h.html#ms_hyperv_info::features" title='ms_hyperv_info::features' data-ref="ms_hyperv_info::features">features</a> = <a class="ref fn" href="../../include/asm/processor.h.html#cpuid_eax" title='cpuid_eax' data-ref="cpuid_eax">cpuid_eax</a>(<a class="macro" href="../../include/asm/hyperv-tlfs.h.html#21" title="0x40000003" data-ref="_M/HYPERV_CPUID_FEATURES">HYPERV_CPUID_FEATURES</a>);</td></tr>
+<tr><th id="213">213</th><td>	<a class="ref" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv">ms_hyperv</a>.<a class="ref field" href="../../include/asm/mshyperv.h.html#ms_hyperv_info::misc_features" title='ms_hyperv_info::misc_features' data-ref="ms_hyperv_info::misc_features">misc_features</a> = <a class="ref fn" href="../../include/asm/processor.h.html#cpuid_edx" title='cpuid_edx' data-ref="cpuid_edx">cpuid_edx</a>(<a class="macro" href="../../include/asm/hyperv-tlfs.h.html#21" title="0x40000003" data-ref="_M/HYPERV_CPUID_FEATURES">HYPERV_CPUID_FEATURES</a>);</td></tr>
+<tr><th id="214">214</th><td>	<a class="ref" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv">ms_hyperv</a>.<a class="ref field" href="../../include/asm/mshyperv.h.html#ms_hyperv_info::hints" title='ms_hyperv_info::hints' data-ref="ms_hyperv_info::hints">hints</a>    = <a class="ref fn" href="../../include/asm/processor.h.html#cpuid_eax" title='cpuid_eax' data-ref="cpuid_eax">cpuid_eax</a>(<a class="macro" href="../../include/asm/hyperv-tlfs.h.html#22" title="0x40000004" data-ref="_M/HYPERV_CPUID_ENLIGHTMENT_INFO">HYPERV_CPUID_ENLIGHTMENT_INFO</a>);</td></tr>
+<tr><th id="215">215</th><td></td></tr>
+<tr><th id="216">216</th><td>	<a class="macro" href="../../../../include/linux/printk.h.html#314" title="printk(&quot;\001&quot; &quot;6&quot; &quot;Hyper-V: features 0x%x, hints 0x%x\n&quot;, ms_hyperv.features, ms_hyperv.hints)" data-ref="_M/pr_info">pr_info</a>(<q>"Hyper-V: features 0x%x, hints 0x%x\n"</q>,</td></tr>
+<tr><th id="217">217</th><td>		<a class="ref" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv">ms_hyperv</a>.<a class="ref field" href="../../include/asm/mshyperv.h.html#ms_hyperv_info::features" title='ms_hyperv_info::features' data-ref="ms_hyperv_info::features">features</a>, <a class="ref" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv">ms_hyperv</a>.<a class="ref field" href="../../include/asm/mshyperv.h.html#ms_hyperv_info::hints" title='ms_hyperv_info::hints' data-ref="ms_hyperv_info::hints">hints</a>);</td></tr>
+<tr><th id="218">218</th><td></td></tr>
+<tr><th id="219">219</th><td>	<a class="ref" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv">ms_hyperv</a>.<a class="ref field" href="../../include/asm/mshyperv.h.html#ms_hyperv_info::max_vp_index" title='ms_hyperv_info::max_vp_index' data-ref="ms_hyperv_info::max_vp_index">max_vp_index</a> = <a class="ref fn" href="../../include/asm/processor.h.html#cpuid_eax" title='cpuid_eax' data-ref="cpuid_eax">cpuid_eax</a>(<a class="macro" href="../../include/asm/hyperv-tlfs.h.html#23" title="0x40000005" data-ref="_M/HYPERV_CPUID_IMPLEMENT_LIMITS">HYPERV_CPUID_IMPLEMENT_LIMITS</a>);</td></tr>
+<tr><th id="220">220</th><td>	<a class="ref" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv">ms_hyperv</a>.<a class="ref field" href="../../include/asm/mshyperv.h.html#ms_hyperv_info::max_lp_index" title='ms_hyperv_info::max_lp_index' data-ref="ms_hyperv_info::max_lp_index">max_lp_index</a> = <a class="ref fn" href="../../include/asm/processor.h.html#cpuid_ebx" title='cpuid_ebx' data-ref="cpuid_ebx">cpuid_ebx</a>(<a class="macro" href="../../include/asm/hyperv-tlfs.h.html#23" title="0x40000005" data-ref="_M/HYPERV_CPUID_IMPLEMENT_LIMITS">HYPERV_CPUID_IMPLEMENT_LIMITS</a>);</td></tr>
+<tr><th id="221">221</th><td></td></tr>
+<tr><th id="222">222</th><td>	<a class="macro" href="../../../../include/linux/printk.h.html#345" title="({ if (0) printk(&quot;\001&quot; &quot;7&quot; &quot;Hyper-V: max %u virtual processors, %u logical processors\n&quot;, ms_hyperv.max_vp_index, ms_hyperv.max_lp_index); 0; })" data-ref="_M/pr_debug">pr_debug</a>(<q>"Hyper-V: max %u virtual processors, %u logical processors\n"</q>,</td></tr>
+<tr><th id="223">223</th><td>		 <a class="ref" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv">ms_hyperv</a>.<a class="ref field" href="../../include/asm/mshyperv.h.html#ms_hyperv_info::max_vp_index" title='ms_hyperv_info::max_vp_index' data-ref="ms_hyperv_info::max_vp_index">max_vp_index</a>, <a class="ref" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv">ms_hyperv</a>.<a class="ref field" href="../../include/asm/mshyperv.h.html#ms_hyperv_info::max_lp_index" title='ms_hyperv_info::max_lp_index' data-ref="ms_hyperv_info::max_lp_index">max_lp_index</a>);</td></tr>
+<tr><th id="224">224</th><td></td></tr>
+<tr><th id="225">225</th><td>	<i>/*</i></td></tr>
+<tr><th id="226">226</th><td><i>	 * Extract host information.</i></td></tr>
+<tr><th id="227">227</th><td><i>	 */</i></td></tr>
+<tr><th id="228">228</th><td>	<b>if</b> (<a class="ref fn" href="../../include/asm/processor.h.html#cpuid_eax" title='cpuid_eax' data-ref="cpuid_eax">cpuid_eax</a>(<a class="macro" href="../../include/asm/hyperv-tlfs.h.html#18" title="0x40000000" data-ref="_M/HYPERV_CPUID_VENDOR_AND_MAX_FUNCTIONS">HYPERV_CPUID_VENDOR_AND_MAX_FUNCTIONS</a>) &gt;=</td></tr>
+<tr><th id="229">229</th><td>	    <a class="macro" href="../../include/asm/hyperv-tlfs.h.html#20" title="0x40000002" data-ref="_M/HYPERV_CPUID_VERSION">HYPERV_CPUID_VERSION</a>) {</td></tr>
+<tr><th id="230">230</th><td>		<a class="local col6 ref" href="#116hv_host_info_eax" title='hv_host_info_eax' data-ref="116hv_host_info_eax">hv_host_info_eax</a> = <a class="ref fn" href="../../include/asm/processor.h.html#cpuid_eax" title='cpuid_eax' data-ref="cpuid_eax">cpuid_eax</a>(<a class="macro" href="../../include/asm/hyperv-tlfs.h.html#20" title="0x40000002" data-ref="_M/HYPERV_CPUID_VERSION">HYPERV_CPUID_VERSION</a>);</td></tr>
+<tr><th id="231">231</th><td>		<a class="local col7 ref" href="#117hv_host_info_ebx" title='hv_host_info_ebx' data-ref="117hv_host_info_ebx">hv_host_info_ebx</a> = <a class="ref fn" href="../../include/asm/processor.h.html#cpuid_ebx" title='cpuid_ebx' data-ref="cpuid_ebx">cpuid_ebx</a>(<a class="macro" href="../../include/asm/hyperv-tlfs.h.html#20" title="0x40000002" data-ref="_M/HYPERV_CPUID_VERSION">HYPERV_CPUID_VERSION</a>);</td></tr>
+<tr><th id="232">232</th><td>		<a class="local col8 ref" href="#118hv_host_info_ecx" title='hv_host_info_ecx' data-ref="118hv_host_info_ecx">hv_host_info_ecx</a> = <a class="ref fn" href="../../include/asm/processor.h.html#cpuid_ecx" title='cpuid_ecx' data-ref="cpuid_ecx">cpuid_ecx</a>(<a class="macro" href="../../include/asm/hyperv-tlfs.h.html#20" title="0x40000002" data-ref="_M/HYPERV_CPUID_VERSION">HYPERV_CPUID_VERSION</a>);</td></tr>
+<tr><th id="233">233</th><td>		<a class="local col9 ref" href="#119hv_host_info_edx" title='hv_host_info_edx' data-ref="119hv_host_info_edx">hv_host_info_edx</a> = <a class="ref fn" href="../../include/asm/processor.h.html#cpuid_edx" title='cpuid_edx' data-ref="cpuid_edx">cpuid_edx</a>(<a class="macro" href="../../include/asm/hyperv-tlfs.h.html#20" title="0x40000002" data-ref="_M/HYPERV_CPUID_VERSION">HYPERV_CPUID_VERSION</a>);</td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td>		<a class="macro" href="../../../../include/linux/printk.h.html#314" title="printk(&quot;\001&quot; &quot;6&quot; &quot;Hyper-V Host Build:%d-%d.%d-%d-%d.%d\n&quot;, hv_host_info_eax, hv_host_info_ebx &gt;&gt; 16, hv_host_info_ebx &amp; 0xFFFF, hv_host_info_ecx, hv_host_info_edx &gt;&gt; 24, hv_host_info_edx &amp; 0xFFFFFF)" data-ref="_M/pr_info">pr_info</a>(<q>"Hyper-V Host Build:%d-%d.%d-%d-%d.%d\n"</q>,</td></tr>
+<tr><th id="236">236</th><td>			<a class="local col6 ref" href="#116hv_host_info_eax" title='hv_host_info_eax' data-ref="116hv_host_info_eax">hv_host_info_eax</a>, <a class="local col7 ref" href="#117hv_host_info_ebx" title='hv_host_info_ebx' data-ref="117hv_host_info_ebx">hv_host_info_ebx</a> &gt;&gt; <var>16</var>,</td></tr>
+<tr><th id="237">237</th><td>			<a class="local col7 ref" href="#117hv_host_info_ebx" title='hv_host_info_ebx' data-ref="117hv_host_info_ebx">hv_host_info_ebx</a> &amp; <var>0xFFFF</var>, <a class="local col8 ref" href="#118hv_host_info_ecx" title='hv_host_info_ecx' data-ref="118hv_host_info_ecx">hv_host_info_ecx</a>,</td></tr>
+<tr><th id="238">238</th><td>			<a class="local col9 ref" href="#119hv_host_info_edx" title='hv_host_info_edx' data-ref="119hv_host_info_edx">hv_host_info_edx</a> &gt;&gt; <var>24</var>, <a class="local col9 ref" href="#119hv_host_info_edx" title='hv_host_info_edx' data-ref="119hv_host_info_edx">hv_host_info_edx</a> &amp; <var>0xFFFFFF</var>);</td></tr>
+<tr><th id="239">239</th><td>	}</td></tr>
+<tr><th id="240">240</th><td></td></tr>
+<tr><th id="241">241</th><td>	<b>if</b> (<a class="ref" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv">ms_hyperv</a>.<a class="ref field" href="../../include/asm/mshyperv.h.html#ms_hyperv_info::features" title='ms_hyperv_info::features' data-ref="ms_hyperv_info::features">features</a> &amp; <a class="macro" href="../../include/asm/hyperv-tlfs.h.html#49" title="(1 &lt;&lt; 11)" data-ref="_M/HV_X64_ACCESS_FREQUENCY_MSRS">HV_X64_ACCESS_FREQUENCY_MSRS</a> &amp;&amp;</td></tr>
+<tr><th id="242">242</th><td>	    <a class="ref" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv">ms_hyperv</a>.<a class="ref field" href="../../include/asm/mshyperv.h.html#ms_hyperv_info::misc_features" title='ms_hyperv_info::misc_features' data-ref="ms_hyperv_info::misc_features">misc_features</a> &amp; <a class="macro" href="../../include/asm/hyperv-tlfs.h.html#83" title="(1 &lt;&lt; 8)" data-ref="_M/HV_FEATURE_FREQUENCY_MSRS_AVAILABLE">HV_FEATURE_FREQUENCY_MSRS_AVAILABLE</a>) {</td></tr>
+<tr><th id="243">243</th><td>		<a class="ref" href="../../include/asm/x86_init.h.html#x86_platform" title='x86_platform' data-ref="x86_platform">x86_platform</a>.<a class="ref field" href="../../include/asm/x86_init.h.html#x86_platform_ops::calibrate_tsc" title='x86_platform_ops::calibrate_tsc' data-ref="x86_platform_ops::calibrate_tsc">calibrate_tsc</a> = <a class="tu ref fn" href="#hv_get_tsc_khz" title='hv_get_tsc_khz' data-use='r' data-ref="hv_get_tsc_khz">hv_get_tsc_khz</a>;</td></tr>
+<tr><th id="244">244</th><td>		<a class="ref" href="../../include/asm/x86_init.h.html#x86_platform" title='x86_platform' data-ref="x86_platform">x86_platform</a>.<a class="ref field" href="../../include/asm/x86_init.h.html#x86_platform_ops::calibrate_cpu" title='x86_platform_ops::calibrate_cpu' data-ref="x86_platform_ops::calibrate_cpu">calibrate_cpu</a> = <a class="tu ref fn" href="#hv_get_tsc_khz" title='hv_get_tsc_khz' data-use='r' data-ref="hv_get_tsc_khz">hv_get_tsc_khz</a>;</td></tr>
+<tr><th id="245">245</th><td>	}</td></tr>
+<tr><th id="246">246</th><td></td></tr>
+<tr><th id="247">247</th><td>	<b>if</b> (<a class="ref" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv">ms_hyperv</a>.<a class="ref field" href="../../include/asm/mshyperv.h.html#ms_hyperv_info::hints" title='ms_hyperv_info::hints' data-ref="ms_hyperv_info::hints">hints</a> &amp; <a class="macro" href="../../include/asm/hyperv-tlfs.h.html#176" title="(1 &lt;&lt; 14)" data-ref="_M/HV_X64_ENLIGHTENED_VMCS_RECOMMENDED">HV_X64_ENLIGHTENED_VMCS_RECOMMENDED</a>) {</td></tr>
+<tr><th id="248">248</th><td>		<a class="ref" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv">ms_hyperv</a>.<a class="ref field" href="../../include/asm/mshyperv.h.html#ms_hyperv_info::nested_features" title='ms_hyperv_info::nested_features' data-ref="ms_hyperv_info::nested_features">nested_features</a> =</td></tr>
+<tr><th id="249">249</th><td>			<a class="ref fn" href="../../include/asm/processor.h.html#cpuid_eax" title='cpuid_eax' data-ref="cpuid_eax">cpuid_eax</a>(<a class="macro" href="../../include/asm/hyperv-tlfs.h.html#24" title="0x4000000A" data-ref="_M/HYPERV_CPUID_NESTED_FEATURES">HYPERV_CPUID_NESTED_FEATURES</a>);</td></tr>
+<tr><th id="250">250</th><td>	}</td></tr>
+<tr><th id="251">251</th><td></td></tr>
+<tr><th id="252">252</th><td><u>#<span data-ppcond="252">ifdef</span> <a class="macro" href="../../../../include/generated/autoconf.h.html#794" data-ref="_M/CONFIG_X86_LOCAL_APIC">CONFIG_X86_LOCAL_APIC</a></u></td></tr>
+<tr><th id="253">253</th><td>	<b>if</b> (<a class="ref" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv">ms_hyperv</a>.<a class="ref field" href="../../include/asm/mshyperv.h.html#ms_hyperv_info::features" title='ms_hyperv_info::features' data-ref="ms_hyperv_info::features">features</a> &amp; <a class="macro" href="../../include/asm/hyperv-tlfs.h.html#49" title="(1 &lt;&lt; 11)" data-ref="_M/HV_X64_ACCESS_FREQUENCY_MSRS">HV_X64_ACCESS_FREQUENCY_MSRS</a> &amp;&amp;</td></tr>
+<tr><th id="254">254</th><td>	    <a class="ref" href="../../include/asm/mshyperv.h.html#ms_hyperv" title='ms_hyperv' data-ref="ms_hyperv">ms_hyperv</a>.<a class="ref field" href="../../include/asm/mshyperv.h.html#ms_hyperv_info::misc_features" title='ms_hyperv_info::misc_features' data-ref="ms_hyperv_info::misc_features">misc_features</a> &amp; <a class="macro" href="../../include/asm/hyperv-tlfs.h.html#83" title="(1 &lt;&lt; 8)" data-ref="_M/HV_FEATURE_FREQUENCY_MSRS_AVAILABLE">HV_FEATURE_FREQUENCY_MSRS_AVAILABLE</a>) {</td></tr>
+<tr><th id="255">255</th><td>		<i>/*</i></td></tr>
+<tr><th id="256">256</th><td><i>		 * Get the APIC frequency.</i></td></tr>
+<tr><th id="257">257</th><td><i>		 */</i></td></tr>
+<tr><th id="258">258</th><td>		<a class="typedef" href="../../../../include/asm-generic/int-ll64.h.html#u64" title='u64' data-type='__u64' data-ref="u64">u64</a>	<dfn class="local col0 decl" id="120hv_lapic_frequency" title='hv_lapic_frequency' data-type='u64' data-ref="120hv_lapic_frequency">hv_lapic_frequency</dfn>;</td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td>		<a class="macro" href="../../include/asm/paravirt.h.html#143" title="do { hv_lapic_frequency = paravirt_read_msr(0x40000023); } while (0)" data-ref="_M/rdmsrl">rdmsrl</a>(<a class="macro" href="../../include/asm/hyperv-tlfs.h.html#205" title="0x40000023" data-ref="_M/HV_X64_MSR_APIC_FREQUENCY">HV_X64_MSR_APIC_FREQUENCY</a>, <a class="local col0 ref" href="#120hv_lapic_frequency" title='hv_lapic_frequency' data-ref="120hv_lapic_frequency">hv_lapic_frequency</a>);</td></tr>
+<tr><th id="261">261</th><td>		<a class="local col0 ref" href="#120hv_lapic_frequency" title='hv_lapic_frequency' data-ref="120hv_lapic_frequency">hv_lapic_frequency</a> = <a class="ref fn" href="../../../../include/linux/math64.h.html#div_u64" title='div_u64' data-ref="div_u64">div_u64</a>(<a class="local col0 ref" href="#120hv_lapic_frequency" title='hv_lapic_frequency' data-ref="120hv_lapic_frequency">hv_lapic_frequency</a>, <a class="macro" href="../../../../include/asm-generic/param.h.html#8" title="100" data-ref="_M/HZ">HZ</a>);</td></tr>
+<tr><th id="262">262</th><td>		<a class="ref" href="../../include/asm/apic.h.html#lapic_timer_frequency" title='lapic_timer_frequency' data-ref="lapic_timer_frequency">lapic_timer_frequency</a> = <a class="local col0 ref" href="#120hv_lapic_frequency" title='hv_lapic_frequency' data-ref="120hv_lapic_frequency">hv_lapic_frequency</a>;</td></tr>
+<tr><th id="263">263</th><td>		<a class="macro" href="../../../../include/linux/printk.h.html#314" title="printk(&quot;\001&quot; &quot;6&quot; &quot;Hyper-V: LAPIC Timer Frequency: %#x\n&quot;, lapic_timer_frequency)" data-ref="_M/pr_info">pr_info</a>(<q>"Hyper-V: LAPIC Timer Frequency: %#x\n"</q>,</td></tr>
+<tr><th id="264">264</th><td>			<a class="ref" href="../../include/asm/apic.h.html#lapic_timer_frequency" title='lapic_timer_frequency' data-ref="lapic_timer_frequency">lapic_timer_frequency</a>);</td></tr>
+<tr><th id="265">265</th><td>	}</td></tr>
+<tr><th id="266">266</th><td></td></tr>
+<tr><th id="267">267</th><td>	<a class="macro" href="../../include/asm/nmi.h.html#49" title="({ static struct nmiaction hv_nmi_unknown_na = { .handler = (hv_nmi_unknown), .name = (&quot;hv_nmi_unknown&quot;), .flags = (1), }; __register_nmi_handler((NMI_UNKNOWN), &amp;hv_nmi_unknown_na); })" data-ref="_M/register_nmi_handler">register_nmi_handler</a>(<a class="enum" href="../../include/asm/nmi.h.html#NMI_UNKNOWN" title='NMI_UNKNOWN' data-ref="NMI_UNKNOWN">NMI_UNKNOWN</a>, <a class="tu ref fn" href="#hv_nmi_unknown" title='hv_nmi_unknown' data-use='r' data-ref="hv_nmi_unknown">hv_nmi_unknown</a>, <a class="macro" href="../../include/asm/nmi.h.html#25" title="1" data-ref="_M/NMI_FLAG_FIRST">NMI_FLAG_FIRST</a>,</td></tr>
+<tr><th id="268">268</th><td>			     <q>"hv_nmi_unknown"</q>);</td></tr>
+<tr><th id="269">269</th><td><u>#<span data-ppcond="252">endif</span></u></td></tr>
+<tr><th id="270">270</th><td></td></tr>
+<tr><th id="271">271</th><td><u>#<span data-ppcond="271">ifdef</span> <a class="macro" href="../../../../include/generated/autoconf.h.html#1058" data-ref="_M/CONFIG_X86_IO_APIC">CONFIG_X86_IO_APIC</a></u></td></tr>
+<tr><th id="272">272</th><td>	<a class="ref" href="../../include/asm/timer.h.html#no_timer_check" title='no_timer_check' data-ref="no_timer_check">no_timer_check</a> = <var>1</var>;</td></tr>
+<tr><th id="273">273</th><td><u>#<span data-ppcond="271">endif</span></u></td></tr>
+<tr><th id="274">274</th><td></td></tr>
+<tr><th id="275">275</th><td><u>#<span data-ppcond="275">if</span> <a class="macro" href="../../../../include/linux/kconfig.h.html#71" title="0" data-ref="_M/IS_ENABLED">IS_ENABLED</a>(CONFIG_HYPERV) &amp;&amp; defined(<a class="macro" href="../../../../include/generated/autoconf.h.html#718" data-ref="_M/CONFIG_KEXEC_CORE">CONFIG_KEXEC_CORE</a>)</u></td></tr>
+<tr><th id="276">276</th><td>	machine_ops.shutdown = hv_machine_shutdown;</td></tr>
+<tr><th id="277">277</th><td>	machine_ops.crash_shutdown = hv_machine_crash_shutdown;</td></tr>
+<tr><th id="278">278</th><td><u>#<span data-ppcond="275">endif</span></u></td></tr>
+<tr><th id="279">279</th><td>	<a class="ref fn" href="../../include/asm/tsc.h.html#mark_tsc_unstable" title='mark_tsc_unstable' data-ref="mark_tsc_unstable">mark_tsc_unstable</a>(<q>"running on Hyper-V"</q>);</td></tr>
+<tr><th id="280">280</th><td></td></tr>
+<tr><th id="281">281</th><td>	<i>/*</i></td></tr>
+<tr><th id="282">282</th><td><i>	 * Generation 2 instances don't support reading the NMI status from</i></td></tr>
+<tr><th id="283">283</th><td><i>	 * 0x61 port.</i></td></tr>
+<tr><th id="284">284</th><td><i>	 */</i></td></tr>
+<tr><th id="285">285</th><td>	<b>if</b> (<a class="ref fn" href="../../../../include/linux/efi.h.html#efi_enabled" title='efi_enabled' data-ref="efi_enabled">efi_enabled</a>(<a class="macro" href="../../../../include/linux/efi.h.html#1137" title="0" data-ref="_M/EFI_BOOT">EFI_BOOT</a>))</td></tr>
+<tr><th id="286">286</th><td>		<a class="ref" href="../../include/asm/x86_init.h.html#x86_platform" title='x86_platform' data-ref="x86_platform">x86_platform</a>.<a class="ref field" href="../../include/asm/x86_init.h.html#x86_platform_ops::get_nmi_reason" title='x86_platform_ops::get_nmi_reason' data-ref="x86_platform_ops::get_nmi_reason">get_nmi_reason</a> = <a class="tu ref fn" href="#hv_get_nmi_reason" title='hv_get_nmi_reason' data-use='r' data-ref="hv_get_nmi_reason">hv_get_nmi_reason</a>;</td></tr>
+<tr><th id="287">287</th><td></td></tr>
+<tr><th id="288">288</th><td><u>#<span data-ppcond="288">if</span> <a class="macro" href="../../../../include/linux/kconfig.h.html#71" title="0" data-ref="_M/IS_ENABLED">IS_ENABLED</a>(CONFIG_HYPERV)</u></td></tr>
+<tr><th id="289">289</th><td>	<i>/*</i></td></tr>
+<tr><th id="290">290</th><td><i>	 * Setup the hook to get control post apic initialization.</i></td></tr>
+<tr><th id="291">291</th><td><i>	 */</i></td></tr>
+<tr><th id="292">292</th><td>	x86_platform.apic_post_init = hyperv_init;</td></tr>
+<tr><th id="293">293</th><td>	hyperv_setup_mmu_ops();</td></tr>
+<tr><th id="294">294</th><td>	<i>/* Setup the IDT for hypervisor callback */</i></td></tr>
+<tr><th id="295">295</th><td>	alloc_intr_gate(HYPERVISOR_CALLBACK_VECTOR, hyperv_callback_vector);</td></tr>
+<tr><th id="296">296</th><td></td></tr>
+<tr><th id="297">297</th><td>	<i>/* Setup the IDT for reenlightenment notifications */</i></td></tr>
+<tr><th id="298">298</th><td>	<b>if</b> (ms_hyperv.features &amp; HV_X64_ACCESS_REENLIGHTENMENT)</td></tr>
+<tr><th id="299">299</th><td>		alloc_intr_gate(HYPERV_REENLIGHTENMENT_VECTOR,</td></tr>
+<tr><th id="300">300</th><td>				hyperv_reenlightenment_vector);</td></tr>
+<tr><th id="301">301</th><td></td></tr>
+<tr><th id="302">302</th><td>	<i>/* Setup the IDT for stimer0 */</i></td></tr>
+<tr><th id="303">303</th><td>	<b>if</b> (ms_hyperv.misc_features &amp; HV_X64_STIMER_DIRECT_MODE_AVAILABLE)</td></tr>
+<tr><th id="304">304</th><td>		alloc_intr_gate(HYPERV_STIMER0_VECTOR,</td></tr>
+<tr><th id="305">305</th><td>				hv_stimer0_callback_vector);</td></tr>
+<tr><th id="306">306</th><td><u>#<span data-ppcond="288">endif</span></u></td></tr>
+<tr><th id="307">307</th><td>}</td></tr>
+<tr><th id="308">308</th><td></td></tr>
+<tr><th id="309">309</th><td><em>const</em> <a class="macro" href="../../../../include/linux/init.h.html#52" title="__attribute__ ((__section__(&quot;.init.rodata&quot;)))" data-ref="_M/__initconst">__initconst</a> <b>struct</b> <a class="type" href="../../include/asm/hypervisor.h.html#hypervisor_x86" title='hypervisor_x86' data-ref="hypervisor_x86">hypervisor_x86</a> <dfn class="decl def" id="x86_hyper_ms_hyperv" title='x86_hyper_ms_hyperv' data-ref="x86_hyper_ms_hyperv">x86_hyper_ms_hyperv</dfn> = {</td></tr>
+<tr><th id="310">310</th><td>	.<a class="ref field" href="../../include/asm/hypervisor.h.html#hypervisor_x86::name" title='hypervisor_x86::name' data-ref="hypervisor_x86::name">name</a>			= <q>"Microsoft Hyper-V"</q>,</td></tr>
+<tr><th id="311">311</th><td>	.<a class="ref field" href="../../include/asm/hypervisor.h.html#hypervisor_x86::detect" title='hypervisor_x86::detect' data-ref="hypervisor_x86::detect">detect</a>			= <a class="tu ref fn" href="#ms_hyperv_platform" title='ms_hyperv_platform' data-ref="ms_hyperv_platform">ms_hyperv_platform</a>,</td></tr>
+<tr><th id="312">312</th><td>	.<a class="ref field" href="../../include/asm/hypervisor.h.html#hypervisor_x86::type" title='hypervisor_x86::type' data-ref="hypervisor_x86::type">type</a>			= <a class="enum" href="../../include/asm/hypervisor.h.html#X86_HYPER_MS_HYPERV" title='X86_HYPER_MS_HYPERV' data-ref="X86_HYPER_MS_HYPERV">X86_HYPER_MS_HYPERV</a>,</td></tr>
+<tr><th id="313">313</th><td>	.<a class="ref field" href="../../include/asm/hypervisor.h.html#hypervisor_x86::init" title='hypervisor_x86::init' data-ref="hypervisor_x86::init">init</a>.<a class="ref field" href="../../include/asm/x86_init.h.html#x86_hyper_init::init_platform" title='x86_hyper_init::init_platform' data-ref="x86_hyper_init::init_platform">init_platform</a>	= <a class="tu ref fn" href="#ms_hyperv_init_platform" title='ms_hyperv_init_platform' data-ref="ms_hyperv_init_platform">ms_hyperv_init_platform</a>,</td></tr>
+<tr><th id="314">314</th><td>};</td></tr>
+<tr><th id="315">315</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

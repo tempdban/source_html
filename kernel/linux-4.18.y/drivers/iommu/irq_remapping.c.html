@@ -1,0 +1,210 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>irq_remapping.c source code [linux-4.18.y/drivers/iommu/irq_remapping.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/drivers/iommu/irq_remapping.c'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>linux-4.18.y</a>/<a href='..'>drivers</a>/<a href='./'>iommu</a>/<a href='irq_remapping.c.html'>irq_remapping.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><u>#include <a href="../../include/linux/seq_file.h.html">&lt;linux/seq_file.h&gt;</a></u></td></tr>
+<tr><th id="2">2</th><td><u>#include <a href="../../include/linux/cpumask.h.html">&lt;linux/cpumask.h&gt;</a></u></td></tr>
+<tr><th id="3">3</th><td><u>#include <a href="../../include/linux/kernel.h.html">&lt;linux/kernel.h&gt;</a></u></td></tr>
+<tr><th id="4">4</th><td><u>#include <a href="../../include/linux/string.h.html">&lt;linux/string.h&gt;</a></u></td></tr>
+<tr><th id="5">5</th><td><u>#include <a href="../../include/linux/errno.h.html">&lt;linux/errno.h&gt;</a></u></td></tr>
+<tr><th id="6">6</th><td><u>#include <a href="../../include/linux/msi.h.html">&lt;linux/msi.h&gt;</a></u></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="../../include/linux/irq.h.html">&lt;linux/irq.h&gt;</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="../../include/linux/pci.h.html">&lt;linux/pci.h&gt;</a></u></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="../../include/linux/irqdomain.h.html">&lt;linux/irqdomain.h&gt;</a></u></td></tr>
+<tr><th id="10">10</th><td></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../arch/x86/include/asm/hw_irq.h.html">&lt;asm/hw_irq.h&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../arch/x86/include/asm/irq_remapping.h.html">&lt;asm/irq_remapping.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../arch/x86/include/asm/processor.h.html">&lt;asm/processor.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../arch/x86/include/asm/x86_init.h.html">&lt;asm/x86_init.h&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../arch/x86/include/asm/apic.h.html">&lt;asm/apic.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../arch/x86/include/asm/hpet.h.html">&lt;asm/hpet.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="irq_remapping.h.html">"irq_remapping.h"</a></u></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><em>int</em> <dfn class="decl def" id="irq_remapping_enabled" title='irq_remapping_enabled' data-ref="irq_remapping_enabled">irq_remapping_enabled</dfn>;</td></tr>
+<tr><th id="21">21</th><td><em>int</em> <dfn class="decl def" id="irq_remap_broken" title='irq_remap_broken' data-ref="irq_remap_broken">irq_remap_broken</dfn>;</td></tr>
+<tr><th id="22">22</th><td><em>int</em> <dfn class="decl def" id="disable_sourceid_checking" title='disable_sourceid_checking' data-ref="disable_sourceid_checking">disable_sourceid_checking</dfn>;</td></tr>
+<tr><th id="23">23</th><td><em>int</em> <dfn class="decl def" id="no_x2apic_optout" title='no_x2apic_optout' data-ref="no_x2apic_optout">no_x2apic_optout</dfn>;</td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td><em>int</em> <dfn class="decl def" id="disable_irq_post" title='disable_irq_post' data-ref="disable_irq_post">disable_irq_post</dfn> = <var>0</var>;</td></tr>
+<tr><th id="26">26</th><td></td></tr>
+<tr><th id="27">27</th><td><em>static</em> <em>int</em> <dfn class="tu decl def" id="disable_irq_remap" title='disable_irq_remap' data-type='int' data-ref="disable_irq_remap">disable_irq_remap</dfn>;</td></tr>
+<tr><th id="28">28</th><td><em>static</em> <b>struct</b> <a class="type" href="irq_remapping.h.html#irq_remap_ops" title='irq_remap_ops' data-ref="irq_remap_ops">irq_remap_ops</a> *<dfn class="tu decl def" id="remap_ops" title='remap_ops' data-type='struct irq_remap_ops *' data-ref="remap_ops">remap_ops</dfn>;</td></tr>
+<tr><th id="29">29</th><td></td></tr>
+<tr><th id="30">30</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="irq_remapping_restore_boot_irq_mode" title='irq_remapping_restore_boot_irq_mode' data-type='void irq_remapping_restore_boot_irq_mode()' data-ref="irq_remapping_restore_boot_irq_mode">irq_remapping_restore_boot_irq_mode</dfn>(<em>void</em>)</td></tr>
+<tr><th id="31">31</th><td>{</td></tr>
+<tr><th id="32">32</th><td>	<i>/*</i></td></tr>
+<tr><th id="33">33</th><td><i>	 * With interrupt-remapping, for now we will use virtual wire A</i></td></tr>
+<tr><th id="34">34</th><td><i>	 * mode, as virtual wire B is little complex (need to configure</i></td></tr>
+<tr><th id="35">35</th><td><i>	 * both IOAPIC RTE as well as interrupt-remapping table entry).</i></td></tr>
+<tr><th id="36">36</th><td><i>	 * As this gets called during crash dump, keep this simple for</i></td></tr>
+<tr><th id="37">37</th><td><i>	 * now.</i></td></tr>
+<tr><th id="38">38</th><td><i>	 */</i></td></tr>
+<tr><th id="39">39</th><td>	<b>if</b> (<a class="macro" href="../../arch/x86/include/asm/cpufeature.h.html#129" title="(__builtin_constant_p(( 0*32+ 9)) &amp;&amp; ( (((( 0*32+ 9))&gt;&gt;5)==(0) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; ((1&lt;&lt;(( 0*32+ 0) &amp; 31))|0|(1&lt;&lt;(( 0*32+ 5) &amp; 31))|(1&lt;&lt;(( 0*32+ 6) &amp; 31))| (1&lt;&lt;(( 0*32+ 8) &amp; 31))|0|(1&lt;&lt;(( 0*32+24) &amp; 31))|(1&lt;&lt;(( 0*32+15) &amp; 31))| (1&lt;&lt;(( 0*32+25) &amp; 31))|(1&lt;&lt;(( 0*32+26) &amp; 31))) )) || (((( 0*32+ 9))&gt;&gt;5)==(1) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; ((1&lt;&lt;(( 1*32+29) &amp; 31))|0) )) || (((( 0*32+ 9))&gt;&gt;5)==(2) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; 0 )) || (((( 0*32+ 9))&gt;&gt;5)==(3) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; ((1&lt;&lt;(( 3*32+20) &amp; 31))) )) || (((( 0*32+ 9))&gt;&gt;5)==(4) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; (0) )) || (((( 0*32+ 9))&gt;&gt;5)==(5) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; 0 )) || (((( 0*32+ 9))&gt;&gt;5)==(6) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; 0 )) || (((( 0*32+ 9))&gt;&gt;5)==(7) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; 0 )) || (((( 0*32+ 9))&gt;&gt;5)==(8) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; 0 )) || (((( 0*32+ 9))&gt;&gt;5)==(9) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; 0 )) || (((( 0*32+ 9))&gt;&gt;5)==(10) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; 0 )) || (((( 0*32+ 9))&gt;&gt;5)==(11) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; 0 )) || (((( 0*32+ 9))&gt;&gt;5)==(12) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; 0 )) || (((( 0*32+ 9))&gt;&gt;5)==(13) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; 0 )) || (((( 0*32+ 9))&gt;&gt;5)==(14) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; 0 )) || (((( 0*32+ 9))&gt;&gt;5)==(15) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; 0 )) || (((( 0*32+ 9))&gt;&gt;5)==(16) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; 0 )) || (((( 0*32+ 9))&gt;&gt;5)==(17) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; 0 )) || (((( 0*32+ 9))&gt;&gt;5)==(18) &amp;&amp; (1UL&lt;&lt;((( 0*32+ 9))&amp;31) &amp; 0 )) || (sizeof(struct { int:(-!!(19 != 19)); })) || (sizeof(struct { int:(-!!(19 != 19)); }))) ? 1 : (__builtin_constant_p((( 0*32+ 9))) ? constant_test_bit((( 0*32+ 9)), ((unsigned long *)((&amp;boot_cpu_data)-&gt;x86_capability))) : variable_test_bit((( 0*32+ 9)), ((unsigned long *)((&amp;boot_cpu_data)-&gt;x86_capability)))))" data-ref="_M/boot_cpu_has">boot_cpu_has</a>(<a class="macro" href="../../arch/x86/include/asm/cpufeatures.h.html#38" title="( 0*32+ 9)" data-ref="_M/X86_FEATURE_APIC">X86_FEATURE_APIC</a>) || <a class="ref fn" href="../../arch/x86/include/asm/apic.h.html#apic_from_smp_config" title='apic_from_smp_config' data-ref="apic_from_smp_config">apic_from_smp_config</a>())</td></tr>
+<tr><th id="40">40</th><td>		<a class="ref fn" href="../../arch/x86/include/asm/apic.h.html#disconnect_bsp_APIC" title='disconnect_bsp_APIC' data-ref="disconnect_bsp_APIC">disconnect_bsp_APIC</a>(<var>0</var>);</td></tr>
+<tr><th id="41">41</th><td>}</td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><em>static</em> <em>void</em> <a class="macro" href="../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <dfn class="tu decl def fn" id="irq_remapping_modify_x86_ops" title='irq_remapping_modify_x86_ops' data-type='void irq_remapping_modify_x86_ops()' data-ref="irq_remapping_modify_x86_ops">irq_remapping_modify_x86_ops</dfn>(<em>void</em>)</td></tr>
+<tr><th id="44">44</th><td>{</td></tr>
+<tr><th id="45">45</th><td>	<a class="ref" href="../../arch/x86/include/asm/x86_init.h.html#x86_apic_ops" title='x86_apic_ops' data-ref="x86_apic_ops">x86_apic_ops</a>.<a class="ref field" href="../../arch/x86/include/asm/x86_init.h.html#x86_apic_ops::restore" title='x86_apic_ops::restore' data-ref="x86_apic_ops::restore">restore</a> = <a class="tu ref fn" href="#irq_remapping_restore_boot_irq_mode" title='irq_remapping_restore_boot_irq_mode' data-use='r' data-ref="irq_remapping_restore_boot_irq_mode">irq_remapping_restore_boot_irq_mode</a>;</td></tr>
+<tr><th id="46">46</th><td>}</td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td><em>static</em> <a class="macro" href="../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <em>int</em> <dfn class="tu decl def fn" id="setup_nointremap" title='setup_nointremap' data-type='int setup_nointremap(char * str)' data-ref="setup_nointremap">setup_nointremap</dfn>(<em>char</em> *<dfn class="local col1 decl" id="1str" title='str' data-type='char *' data-ref="1str">str</dfn>)</td></tr>
+<tr><th id="49">49</th><td>{</td></tr>
+<tr><th id="50">50</th><td>	<a class="tu ref" href="#disable_irq_remap" title='disable_irq_remap' data-use='w' data-ref="disable_irq_remap">disable_irq_remap</a> = <var>1</var>;</td></tr>
+<tr><th id="51">51</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="52">52</th><td>}</td></tr>
+<tr><th id="53">53</th><td><a class="macro" href="../../include/linux/init.h.html#246" title="static const char __setup_str_setup_nointremap[] __attribute__ ((__section__(&quot;.init.rodata&quot;))) __attribute__((aligned(1))) = &quot;nointremap&quot;; static struct obs_kernel_param __setup_setup_nointremap __attribute__((__used__)) __attribute__ ((__section__(&quot;.init.setup&quot;))) __attribute__((aligned((sizeof(long))))) = { __setup_str_setup_nointremap, setup_nointremap, 1 }" data-ref="_M/early_param">early_param</a>(<q>"nointremap"</q>, <a class="tu ref fn" href="#setup_nointremap" title='setup_nointremap' data-ref="setup_nointremap">setup_nointremap</a>);</td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td><em>static</em> <a class="macro" href="../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <em>int</em> <dfn class="tu decl def fn" id="setup_irqremap" title='setup_irqremap' data-type='int setup_irqremap(char * str)' data-ref="setup_irqremap">setup_irqremap</dfn>(<em>char</em> *<dfn class="local col2 decl" id="2str" title='str' data-type='char *' data-ref="2str">str</dfn>)</td></tr>
+<tr><th id="56">56</th><td>{</td></tr>
+<tr><th id="57">57</th><td>	<b>if</b> (!<a class="local col2 ref" href="#2str" title='str' data-ref="2str">str</a>)</td></tr>
+<tr><th id="58">58</th><td>		<b>return</b> -<a class="macro" href="../../include/uapi/asm-generic/errno-base.h.html#26" title="22" data-ref="_M/EINVAL">EINVAL</a>;</td></tr>
+<tr><th id="59">59</th><td></td></tr>
+<tr><th id="60">60</th><td>	<b>while</b> (*<a class="local col2 ref" href="#2str" title='str' data-ref="2str">str</a>) {</td></tr>
+<tr><th id="61">61</th><td>		<b>if</b> (!<a class="ref fn" href="../../include/linux/string.h.html#strncmp" title='strncmp' data-ref="strncmp">strncmp</a>(<a class="local col2 ref" href="#2str" title='str' data-ref="2str">str</a>, <q>"on"</q>, <var>2</var>)) {</td></tr>
+<tr><th id="62">62</th><td>			<a class="tu ref" href="#disable_irq_remap" title='disable_irq_remap' data-use='w' data-ref="disable_irq_remap">disable_irq_remap</a> = <var>0</var>;</td></tr>
+<tr><th id="63">63</th><td>			<a class="ref" href="irq_remapping.h.html#disable_irq_post" title='disable_irq_post' data-ref="disable_irq_post">disable_irq_post</a> = <var>0</var>;</td></tr>
+<tr><th id="64">64</th><td>		} <b>else</b> <b>if</b> (!<a class="ref fn" href="../../include/linux/string.h.html#strncmp" title='strncmp' data-ref="strncmp">strncmp</a>(<a class="local col2 ref" href="#2str" title='str' data-ref="2str">str</a>, <q>"off"</q>, <var>3</var>)) {</td></tr>
+<tr><th id="65">65</th><td>			<a class="tu ref" href="#disable_irq_remap" title='disable_irq_remap' data-use='w' data-ref="disable_irq_remap">disable_irq_remap</a> = <var>1</var>;</td></tr>
+<tr><th id="66">66</th><td>			<a class="ref" href="irq_remapping.h.html#disable_irq_post" title='disable_irq_post' data-ref="disable_irq_post">disable_irq_post</a> = <var>1</var>;</td></tr>
+<tr><th id="67">67</th><td>		} <b>else</b> <b>if</b> (!<a class="ref fn" href="../../include/linux/string.h.html#strncmp" title='strncmp' data-ref="strncmp">strncmp</a>(<a class="local col2 ref" href="#2str" title='str' data-ref="2str">str</a>, <q>"nosid"</q>, <var>5</var>))</td></tr>
+<tr><th id="68">68</th><td>			<a class="ref" href="irq_remapping.h.html#disable_sourceid_checking" title='disable_sourceid_checking' data-ref="disable_sourceid_checking">disable_sourceid_checking</a> = <var>1</var>;</td></tr>
+<tr><th id="69">69</th><td>		<b>else</b> <b>if</b> (!<a class="ref fn" href="../../include/linux/string.h.html#strncmp" title='strncmp' data-ref="strncmp">strncmp</a>(<a class="local col2 ref" href="#2str" title='str' data-ref="2str">str</a>, <q>"no_x2apic_optout"</q>, <var>16</var>))</td></tr>
+<tr><th id="70">70</th><td>			<a class="ref" href="irq_remapping.h.html#no_x2apic_optout" title='no_x2apic_optout' data-ref="no_x2apic_optout">no_x2apic_optout</a> = <var>1</var>;</td></tr>
+<tr><th id="71">71</th><td>		<b>else</b> <b>if</b> (!<a class="ref fn" href="../../include/linux/string.h.html#strncmp" title='strncmp' data-ref="strncmp">strncmp</a>(<a class="local col2 ref" href="#2str" title='str' data-ref="2str">str</a>, <q>"nopost"</q>, <var>6</var>))</td></tr>
+<tr><th id="72">72</th><td>			<a class="ref" href="irq_remapping.h.html#disable_irq_post" title='disable_irq_post' data-ref="disable_irq_post">disable_irq_post</a> = <var>1</var>;</td></tr>
+<tr><th id="73">73</th><td></td></tr>
+<tr><th id="74">74</th><td>		<a class="local col2 ref" href="#2str" title='str' data-ref="2str">str</a> += <a class="ref fn" href="../../include/linux/string.h.html#strcspn" title='strcspn' data-ref="strcspn">strcspn</a>(<a class="local col2 ref" href="#2str" title='str' data-ref="2str">str</a>, <q>","</q>);</td></tr>
+<tr><th id="75">75</th><td>		<b>while</b> (*<a class="local col2 ref" href="#2str" title='str' data-ref="2str">str</a> == <kbd>','</kbd>)</td></tr>
+<tr><th id="76">76</th><td>			<a class="local col2 ref" href="#2str" title='str' data-ref="2str">str</a>++;</td></tr>
+<tr><th id="77">77</th><td>	}</td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="80">80</th><td>}</td></tr>
+<tr><th id="81">81</th><td><a class="macro" href="../../include/linux/init.h.html#246" title="static const char __setup_str_setup_irqremap[] __attribute__ ((__section__(&quot;.init.rodata&quot;))) __attribute__((aligned(1))) = &quot;intremap&quot;; static struct obs_kernel_param __setup_setup_irqremap __attribute__((__used__)) __attribute__ ((__section__(&quot;.init.setup&quot;))) __attribute__((aligned((sizeof(long))))) = { __setup_str_setup_irqremap, setup_irqremap, 1 }" data-ref="_M/early_param">early_param</a>(<q>"intremap"</q>, <a class="tu ref fn" href="#setup_irqremap" title='setup_irqremap' data-ref="setup_irqremap">setup_irqremap</a>);</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td><em>void</em> <dfn class="decl def fn" id="set_irq_remapping_broken" title='set_irq_remapping_broken' data-ref="set_irq_remapping_broken">set_irq_remapping_broken</dfn>(<em>void</em>)</td></tr>
+<tr><th id="84">84</th><td>{</td></tr>
+<tr><th id="85">85</th><td>	<a class="ref" href="irq_remapping.h.html#irq_remap_broken" title='irq_remap_broken' data-ref="irq_remap_broken">irq_remap_broken</a> = <var>1</var>;</td></tr>
+<tr><th id="86">86</th><td>}</td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td><a class="typedef" href="../../include/linux/types.h.html#bool" title='bool' data-type='_Bool' data-ref="bool">bool</a> <dfn class="decl def fn" id="irq_remapping_cap" title='irq_remapping_cap' data-ref="irq_remapping_cap">irq_remapping_cap</dfn>(<b>enum</b> <a class="type" href="../../arch/x86/include/asm/irq_remapping.h.html#irq_remap_cap" title='irq_remap_cap' data-ref="irq_remap_cap">irq_remap_cap</a> <dfn class="local col3 decl" id="3cap" title='cap' data-type='enum irq_remap_cap' data-ref="3cap">cap</dfn>)</td></tr>
+<tr><th id="89">89</th><td>{</td></tr>
+<tr><th id="90">90</th><td>	<b>if</b> (!<a class="tu ref" href="#remap_ops" title='remap_ops' data-use='r' data-ref="remap_ops">remap_ops</a> || <a class="ref" href="irq_remapping.h.html#disable_irq_post" title='disable_irq_post' data-ref="disable_irq_post">disable_irq_post</a>)</td></tr>
+<tr><th id="91">91</th><td>		<b>return</b> <a class="enum" href="../../include/linux/stddef.h.html#false" title='false' data-ref="false">false</a>;</td></tr>
+<tr><th id="92">92</th><td></td></tr>
+<tr><th id="93">93</th><td>	<b>return</b> (<a class="tu ref" href="#remap_ops" title='remap_ops' data-use='r' data-ref="remap_ops">remap_ops</a>-&gt;<a class="ref field" href="irq_remapping.h.html#irq_remap_ops::capability" title='irq_remap_ops::capability' data-ref="irq_remap_ops::capability">capability</a> &amp; (<var>1</var> &lt;&lt; <a class="local col3 ref" href="#3cap" title='cap' data-ref="3cap">cap</a>));</td></tr>
+<tr><th id="94">94</th><td>}</td></tr>
+<tr><th id="95">95</th><td><a class="macro" href="../../include/linux/export.h.html#100" title="extern typeof(irq_remapping_cap) irq_remapping_cap; static const char __kstrtab_irq_remapping_cap[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;irq_remapping_cap&quot;; static const struct kernel_symbol __ksymtab_irq_remapping_cap __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;_gpl&quot; &quot;+&quot; &quot;irq_remapping_cap&quot;), used)) = { (unsigned long)&amp;irq_remapping_cap, __kstrtab_irq_remapping_cap }" data-ref="_M/EXPORT_SYMBOL_GPL">EXPORT_SYMBOL_GPL</a>(<a class="decl fn" href="#irq_remapping_cap" title='irq_remapping_cap' data-ref="irq_remapping_cap"><a class="ref fn" href="#irq_remapping_cap" title='irq_remapping_cap' data-ref="irq_remapping_cap"><a class="ref fn" href="#irq_remapping_cap" title='irq_remapping_cap' data-ref="irq_remapping_cap"><a class="ref fn" href="#irq_remapping_cap" title='irq_remapping_cap' data-ref="irq_remapping_cap">irq_remapping_cap</a></a></a></a>);</td></tr>
+<tr><th id="96">96</th><td></td></tr>
+<tr><th id="97">97</th><td><em>int</em> <a class="macro" href="../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <dfn class="decl def fn" id="irq_remapping_prepare" title='irq_remapping_prepare' data-ref="irq_remapping_prepare">irq_remapping_prepare</dfn>(<em>void</em>)</td></tr>
+<tr><th id="98">98</th><td>{</td></tr>
+<tr><th id="99">99</th><td>	<b>if</b> (<a class="tu ref" href="#disable_irq_remap" title='disable_irq_remap' data-use='r' data-ref="disable_irq_remap">disable_irq_remap</a>)</td></tr>
+<tr><th id="100">100</th><td>		<b>return</b> -<a class="macro" href="../../include/uapi/asm-generic/errno.h.html#18" title="38" data-ref="_M/ENOSYS">ENOSYS</a>;</td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td>	<b>if</b> (<a class="ref" href="irq_remapping.h.html#intel_irq_remap_ops" title='intel_irq_remap_ops' data-ref="intel_irq_remap_ops">intel_irq_remap_ops</a>.<a class="ref field" href="irq_remapping.h.html#irq_remap_ops::prepare" title='irq_remap_ops::prepare' data-ref="irq_remap_ops::prepare">prepare</a>() == <var>0</var>)</td></tr>
+<tr><th id="103">103</th><td>		<a class="tu ref" href="#remap_ops" title='remap_ops' data-use='w' data-ref="remap_ops">remap_ops</a> = &amp;<a class="ref" href="irq_remapping.h.html#intel_irq_remap_ops" title='intel_irq_remap_ops' data-ref="intel_irq_remap_ops">intel_irq_remap_ops</a>;</td></tr>
+<tr><th id="104">104</th><td>	<b>else</b> <b>if</b> (<a class="macro" href="../../include/linux/kconfig.h.html#71" title="1" data-ref="_M/IS_ENABLED">IS_ENABLED</a>(<a class="macro" href="../../include/generated/autoconf.h.html#1154" title="1" data-ref="_M/CONFIG_AMD_IOMMU">CONFIG_AMD_IOMMU</a>) &amp;&amp;</td></tr>
+<tr><th id="105">105</th><td>		 <a class="ref" href="irq_remapping.h.html#amd_iommu_irq_ops" title='amd_iommu_irq_ops' data-ref="amd_iommu_irq_ops">amd_iommu_irq_ops</a>.<a class="ref field" href="irq_remapping.h.html#irq_remap_ops::prepare" title='irq_remap_ops::prepare' data-ref="irq_remap_ops::prepare">prepare</a>() == <var>0</var>)</td></tr>
+<tr><th id="106">106</th><td>		<a class="tu ref" href="#remap_ops" title='remap_ops' data-use='w' data-ref="remap_ops">remap_ops</a> = &amp;<a class="ref" href="irq_remapping.h.html#amd_iommu_irq_ops" title='amd_iommu_irq_ops' data-ref="amd_iommu_irq_ops">amd_iommu_irq_ops</a>;</td></tr>
+<tr><th id="107">107</th><td>	<b>else</b></td></tr>
+<tr><th id="108">108</th><td>		<b>return</b> -<a class="macro" href="../../include/uapi/asm-generic/errno.h.html#18" title="38" data-ref="_M/ENOSYS">ENOSYS</a>;</td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="111">111</th><td>}</td></tr>
+<tr><th id="112">112</th><td></td></tr>
+<tr><th id="113">113</th><td><em>int</em> <a class="macro" href="../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <dfn class="decl def fn" id="irq_remapping_enable" title='irq_remapping_enable' data-ref="irq_remapping_enable">irq_remapping_enable</dfn>(<em>void</em>)</td></tr>
+<tr><th id="114">114</th><td>{</td></tr>
+<tr><th id="115">115</th><td>	<em>int</em> <dfn class="local col4 decl" id="4ret" title='ret' data-type='int' data-ref="4ret">ret</dfn>;</td></tr>
+<tr><th id="116">116</th><td></td></tr>
+<tr><th id="117">117</th><td>	<b>if</b> (!<a class="tu ref" href="#remap_ops" title='remap_ops' data-use='r' data-ref="remap_ops">remap_ops</a>-&gt;<a class="ref field" href="irq_remapping.h.html#irq_remap_ops::enable" title='irq_remap_ops::enable' data-ref="irq_remap_ops::enable">enable</a>)</td></tr>
+<tr><th id="118">118</th><td>		<b>return</b> -<a class="macro" href="../../include/uapi/asm-generic/errno-base.h.html#23" title="19" data-ref="_M/ENODEV">ENODEV</a>;</td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td>	<a class="local col4 ref" href="#4ret" title='ret' data-ref="4ret">ret</a> = <a class="tu ref" href="#remap_ops" title='remap_ops' data-use='r' data-ref="remap_ops">remap_ops</a>-&gt;<a class="ref field" href="irq_remapping.h.html#irq_remap_ops::enable" title='irq_remap_ops::enable' data-ref="irq_remap_ops::enable">enable</a>();</td></tr>
+<tr><th id="121">121</th><td></td></tr>
+<tr><th id="122">122</th><td>	<b>if</b> (<a class="ref" href="irq_remapping.h.html#irq_remapping_enabled" title='irq_remapping_enabled' data-ref="irq_remapping_enabled">irq_remapping_enabled</a>)</td></tr>
+<tr><th id="123">123</th><td>		<a class="tu ref fn" href="#irq_remapping_modify_x86_ops" title='irq_remapping_modify_x86_ops' data-use='c' data-ref="irq_remapping_modify_x86_ops">irq_remapping_modify_x86_ops</a>();</td></tr>
+<tr><th id="124">124</th><td></td></tr>
+<tr><th id="125">125</th><td>	<b>return</b> <a class="local col4 ref" href="#4ret" title='ret' data-ref="4ret">ret</a>;</td></tr>
+<tr><th id="126">126</th><td>}</td></tr>
+<tr><th id="127">127</th><td></td></tr>
+<tr><th id="128">128</th><td><em>void</em> <dfn class="decl def fn" id="irq_remapping_disable" title='irq_remapping_disable' data-ref="irq_remapping_disable">irq_remapping_disable</dfn>(<em>void</em>)</td></tr>
+<tr><th id="129">129</th><td>{</td></tr>
+<tr><th id="130">130</th><td>	<b>if</b> (<a class="ref" href="irq_remapping.h.html#irq_remapping_enabled" title='irq_remapping_enabled' data-ref="irq_remapping_enabled">irq_remapping_enabled</a> &amp;&amp; <a class="tu ref" href="#remap_ops" title='remap_ops' data-use='r' data-ref="remap_ops">remap_ops</a>-&gt;<a class="ref field" href="irq_remapping.h.html#irq_remap_ops::disable" title='irq_remap_ops::disable' data-ref="irq_remap_ops::disable">disable</a>)</td></tr>
+<tr><th id="131">131</th><td>		<a class="tu ref" href="#remap_ops" title='remap_ops' data-use='r' data-ref="remap_ops">remap_ops</a>-&gt;<a class="ref field" href="irq_remapping.h.html#irq_remap_ops::disable" title='irq_remap_ops::disable' data-ref="irq_remap_ops::disable">disable</a>();</td></tr>
+<tr><th id="132">132</th><td>}</td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td><em>int</em> <dfn class="decl def fn" id="irq_remapping_reenable" title='irq_remapping_reenable' data-ref="irq_remapping_reenable">irq_remapping_reenable</dfn>(<em>int</em> <dfn class="local col5 decl" id="5mode" title='mode' data-type='int' data-ref="5mode">mode</dfn>)</td></tr>
+<tr><th id="135">135</th><td>{</td></tr>
+<tr><th id="136">136</th><td>	<b>if</b> (<a class="ref" href="irq_remapping.h.html#irq_remapping_enabled" title='irq_remapping_enabled' data-ref="irq_remapping_enabled">irq_remapping_enabled</a> &amp;&amp; <a class="tu ref" href="#remap_ops" title='remap_ops' data-use='r' data-ref="remap_ops">remap_ops</a>-&gt;<a class="ref field" href="irq_remapping.h.html#irq_remap_ops::reenable" title='irq_remap_ops::reenable' data-ref="irq_remap_ops::reenable">reenable</a>)</td></tr>
+<tr><th id="137">137</th><td>		<b>return</b> <a class="tu ref" href="#remap_ops" title='remap_ops' data-use='r' data-ref="remap_ops">remap_ops</a>-&gt;<a class="ref field" href="irq_remapping.h.html#irq_remap_ops::reenable" title='irq_remap_ops::reenable' data-ref="irq_remap_ops::reenable">reenable</a>(<a class="local col5 ref" href="#5mode" title='mode' data-ref="5mode">mode</a>);</td></tr>
+<tr><th id="138">138</th><td></td></tr>
+<tr><th id="139">139</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="140">140</th><td>}</td></tr>
+<tr><th id="141">141</th><td></td></tr>
+<tr><th id="142">142</th><td><em>int</em> <a class="macro" href="../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <dfn class="decl def fn" id="irq_remap_enable_fault_handling" title='irq_remap_enable_fault_handling' data-ref="irq_remap_enable_fault_handling">irq_remap_enable_fault_handling</dfn>(<em>void</em>)</td></tr>
+<tr><th id="143">143</th><td>{</td></tr>
+<tr><th id="144">144</th><td>	<b>if</b> (!<a class="ref" href="irq_remapping.h.html#irq_remapping_enabled" title='irq_remapping_enabled' data-ref="irq_remapping_enabled">irq_remapping_enabled</a>)</td></tr>
+<tr><th id="145">145</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td>	<b>if</b> (!<a class="tu ref" href="#remap_ops" title='remap_ops' data-use='r' data-ref="remap_ops">remap_ops</a>-&gt;<a class="ref field" href="irq_remapping.h.html#irq_remap_ops::enable_faulting" title='irq_remap_ops::enable_faulting' data-ref="irq_remap_ops::enable_faulting">enable_faulting</a>)</td></tr>
+<tr><th id="148">148</th><td>		<b>return</b> -<a class="macro" href="../../include/uapi/asm-generic/errno-base.h.html#23" title="19" data-ref="_M/ENODEV">ENODEV</a>;</td></tr>
+<tr><th id="149">149</th><td></td></tr>
+<tr><th id="150">150</th><td>	<b>return</b> <a class="tu ref" href="#remap_ops" title='remap_ops' data-use='r' data-ref="remap_ops">remap_ops</a>-&gt;<a class="ref field" href="irq_remapping.h.html#irq_remap_ops::enable_faulting" title='irq_remap_ops::enable_faulting' data-ref="irq_remap_ops::enable_faulting">enable_faulting</a>();</td></tr>
+<tr><th id="151">151</th><td>}</td></tr>
+<tr><th id="152">152</th><td></td></tr>
+<tr><th id="153">153</th><td><em>void</em> <dfn class="decl def fn" id="panic_if_irq_remap" title='panic_if_irq_remap' data-ref="panic_if_irq_remap">panic_if_irq_remap</dfn>(<em>const</em> <em>char</em> *<dfn class="local col6 decl" id="6msg" title='msg' data-type='const char *' data-ref="6msg">msg</dfn>)</td></tr>
+<tr><th id="154">154</th><td>{</td></tr>
+<tr><th id="155">155</th><td>	<b>if</b> (<a class="ref" href="irq_remapping.h.html#irq_remapping_enabled" title='irq_remapping_enabled' data-ref="irq_remapping_enabled">irq_remapping_enabled</a>)</td></tr>
+<tr><th id="156">156</th><td>		<a class="ref fn" href="../../include/linux/kernel.h.html#panic" title='panic' data-ref="panic">panic</a>(<a class="local col6 ref" href="#6msg" title='msg' data-ref="6msg">msg</a>);</td></tr>
+<tr><th id="157">157</th><td>}</td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="160">160</th><td><i class="doc"> * irq_remapping_get_ir_irq_domain - Get the irqdomain associated with the IOMMU</i></td></tr>
+<tr><th id="161">161</th><td><i class="doc"> *				     device serving request<span class="command"> @info</span></i></td></tr>
+<tr><th id="162">162</th><td><i class="doc"> *<span class="command"> @info</span>: interrupt allocation information, used to identify the IOMMU device</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc"> * It's used to get parent irqdomain for HPET and IOAPIC irqdomains.</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc"> * Returns pointer to IRQ domain, or NULL on failure.</i></td></tr>
+<tr><th id="166">166</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="167">167</th><td><b>struct</b> <a class="type" href="../../include/linux/irqdomain.h.html#irq_domain" title='irq_domain' data-ref="irq_domain">irq_domain</a> *</td></tr>
+<tr><th id="168">168</th><td><dfn class="decl def fn" id="irq_remapping_get_ir_irq_domain" title='irq_remapping_get_ir_irq_domain' data-ref="irq_remapping_get_ir_irq_domain">irq_remapping_get_ir_irq_domain</dfn>(<b>struct</b> <a class="type" href="../../arch/x86/include/asm/hw_irq.h.html#irq_alloc_info" title='irq_alloc_info' data-ref="irq_alloc_info">irq_alloc_info</a> *<dfn class="local col7 decl" id="7info" title='info' data-type='struct irq_alloc_info *' data-ref="7info">info</dfn>)</td></tr>
+<tr><th id="169">169</th><td>{</td></tr>
+<tr><th id="170">170</th><td>	<b>if</b> (!<a class="tu ref" href="#remap_ops" title='remap_ops' data-use='r' data-ref="remap_ops">remap_ops</a> || !<a class="tu ref" href="#remap_ops" title='remap_ops' data-use='r' data-ref="remap_ops">remap_ops</a>-&gt;<a class="ref field" href="irq_remapping.h.html#irq_remap_ops::get_ir_irq_domain" title='irq_remap_ops::get_ir_irq_domain' data-ref="irq_remap_ops::get_ir_irq_domain">get_ir_irq_domain</a>)</td></tr>
+<tr><th id="171">171</th><td>		<b>return</b> <a class="macro" href="../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="172">172</th><td></td></tr>
+<tr><th id="173">173</th><td>	<b>return</b> <a class="tu ref" href="#remap_ops" title='remap_ops' data-use='r' data-ref="remap_ops">remap_ops</a>-&gt;<a class="ref field" href="irq_remapping.h.html#irq_remap_ops::get_ir_irq_domain" title='irq_remap_ops::get_ir_irq_domain' data-ref="irq_remap_ops::get_ir_irq_domain">get_ir_irq_domain</a>(<a class="local col7 ref" href="#7info" title='info' data-ref="7info">info</a>);</td></tr>
+<tr><th id="174">174</th><td>}</td></tr>
+<tr><th id="175">175</th><td></td></tr>
+<tr><th id="176">176</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="177">177</th><td><i class="doc"> * irq_remapping_get_irq_domain - Get the irqdomain serving the request<span class="command"> @info</span></i></td></tr>
+<tr><th id="178">178</th><td><i class="doc"> *<span class="command"> @info</span>: interrupt allocation information, used to identify the IOMMU device</i></td></tr>
+<tr><th id="179">179</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc"> * There will be one PCI MSI/MSIX irqdomain associated with each interrupt</i></td></tr>
+<tr><th id="181">181</th><td><i class="doc"> * remapping device, so this interface is used to retrieve the PCI MSI/MSIX</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc"> * irqdomain serving request<span class="command"> @info</span>.</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc"> * Returns pointer to IRQ domain, or NULL on failure.</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="185">185</th><td><b>struct</b> <a class="type" href="../../include/linux/irqdomain.h.html#irq_domain" title='irq_domain' data-ref="irq_domain">irq_domain</a> *</td></tr>
+<tr><th id="186">186</th><td><dfn class="decl def fn" id="irq_remapping_get_irq_domain" title='irq_remapping_get_irq_domain' data-ref="irq_remapping_get_irq_domain">irq_remapping_get_irq_domain</dfn>(<b>struct</b> <a class="type" href="../../arch/x86/include/asm/hw_irq.h.html#irq_alloc_info" title='irq_alloc_info' data-ref="irq_alloc_info">irq_alloc_info</a> *<dfn class="local col8 decl" id="8info" title='info' data-type='struct irq_alloc_info *' data-ref="8info">info</dfn>)</td></tr>
+<tr><th id="187">187</th><td>{</td></tr>
+<tr><th id="188">188</th><td>	<b>if</b> (!<a class="tu ref" href="#remap_ops" title='remap_ops' data-use='r' data-ref="remap_ops">remap_ops</a> || !<a class="tu ref" href="#remap_ops" title='remap_ops' data-use='r' data-ref="remap_ops">remap_ops</a>-&gt;<a class="ref field" href="irq_remapping.h.html#irq_remap_ops::get_irq_domain" title='irq_remap_ops::get_irq_domain' data-ref="irq_remap_ops::get_irq_domain">get_irq_domain</a>)</td></tr>
+<tr><th id="189">189</th><td>		<b>return</b> <a class="macro" href="../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td>	<b>return</b> <a class="tu ref" href="#remap_ops" title='remap_ops' data-use='r' data-ref="remap_ops">remap_ops</a>-&gt;<a class="ref field" href="irq_remapping.h.html#irq_remap_ops::get_irq_domain" title='irq_remap_ops::get_irq_domain' data-ref="irq_remap_ops::get_irq_domain">get_irq_domain</a>(<a class="local col8 ref" href="#8info" title='info' data-ref="8info">info</a>);</td></tr>
+<tr><th id="192">192</th><td>}</td></tr>
+<tr><th id="193">193</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

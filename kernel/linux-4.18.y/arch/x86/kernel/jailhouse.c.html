@@ -1,0 +1,237 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>jailhouse.c source code [linux-4.18.y/arch/x86/kernel/jailhouse.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/arch/x86/kernel/jailhouse.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>linux-4.18.y</a>/<a href='../..'>arch</a>/<a href='..'>x86</a>/<a href='./'>kernel</a>/<a href='jailhouse.c.html'>jailhouse.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// SPDX-License-Identifier: GPL-2.0</i></td></tr>
+<tr><th id="2">2</th><td><i>/*</i></td></tr>
+<tr><th id="3">3</th><td><i> * Jailhouse paravirt_ops implementation</i></td></tr>
+<tr><th id="4">4</th><td><i> *</i></td></tr>
+<tr><th id="5">5</th><td><i> * Copyright (c) Siemens AG, 2015-2017</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> * Authors:</i></td></tr>
+<tr><th id="8">8</th><td><i> *  Jan Kiszka &lt;jan.kiszka@siemens.com&gt;</i></td></tr>
+<tr><th id="9">9</th><td><i> */</i></td></tr>
+<tr><th id="10">10</th><td></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../../include/linux/acpi_pmtmr.h.html">&lt;linux/acpi_pmtmr.h&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../include/linux/kernel.h.html">&lt;linux/kernel.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../include/linux/reboot.h.html">&lt;linux/reboot.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../include/asm/apic.h.html">&lt;asm/apic.h&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../include/asm/cpu.h.html">&lt;asm/cpu.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../include/asm/hypervisor.h.html">&lt;asm/hypervisor.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../include/asm/i8259.h.html">&lt;asm/i8259.h&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../include/asm/irqdomain.h.html">&lt;asm/irqdomain.h&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../include/asm/pci_x86.h.html">&lt;asm/pci_x86.h&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../include/asm/reboot.h.html">&lt;asm/reboot.h&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../include/asm/setup.h.html">&lt;asm/setup.h&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td></td></tr>
+<tr><th id="23">23</th><td><em>static</em> <a class="macro" href="../../../include/linux/init.h.html#51" title="__attribute__ ((__section__(&quot;.init.data&quot;)))" data-ref="_M/__initdata">__initdata</a> <b>struct</b> <a class="type" href="../include/uapi/asm/bootparam.h.html#jailhouse_setup_data" title='jailhouse_setup_data' data-ref="jailhouse_setup_data">jailhouse_setup_data</a> <dfn class="tu decl def" id="setup_data" title='setup_data' data-type='struct jailhouse_setup_data' data-ref="setup_data">setup_data</dfn>;</td></tr>
+<tr><th id="24">24</th><td><em>static</em> <em>unsigned</em> <em>int</em> <dfn class="tu decl def" id="precalibrated_tsc_khz" title='precalibrated_tsc_khz' data-type='unsigned int' data-ref="precalibrated_tsc_khz">precalibrated_tsc_khz</dfn>;</td></tr>
+<tr><th id="25">25</th><td></td></tr>
+<tr><th id="26">26</th><td><em>static</em> <a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a> <dfn class="tu decl def fn" id="jailhouse_cpuid_base" title='jailhouse_cpuid_base' data-type='uint32_t jailhouse_cpuid_base()' data-ref="jailhouse_cpuid_base">jailhouse_cpuid_base</dfn>(<em>void</em>)</td></tr>
+<tr><th id="27">27</th><td>{</td></tr>
+<tr><th id="28">28</th><td>	<b>if</b> (<a class="ref" href="../include/asm/processor.h.html#boot_cpu_data" title='boot_cpu_data' data-ref="boot_cpu_data">boot_cpu_data</a>.<a class="ref field" href="../include/asm/processor.h.html#cpuinfo_x86::cpuid_level" title='cpuinfo_x86::cpuid_level' data-ref="cpuinfo_x86::cpuid_level">cpuid_level</a> &lt; <var>0</var> ||</td></tr>
+<tr><th id="29">29</th><td>	    !<a class="macro" href="../include/asm/cpufeature.h.html#129" title="(__builtin_constant_p(( 4*32+31)) &amp;&amp; ( (((( 4*32+31))&gt;&gt;5)==(0) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; ((1&lt;&lt;(( 0*32+ 0) &amp; 31))|0|(1&lt;&lt;(( 0*32+ 5) &amp; 31))|(1&lt;&lt;(( 0*32+ 6) &amp; 31))| (1&lt;&lt;(( 0*32+ 8) &amp; 31))|0|(1&lt;&lt;(( 0*32+24) &amp; 31))|(1&lt;&lt;(( 0*32+15) &amp; 31))| (1&lt;&lt;(( 0*32+25) &amp; 31))|(1&lt;&lt;(( 0*32+26) &amp; 31))) )) || (((( 4*32+31))&gt;&gt;5)==(1) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; ((1&lt;&lt;(( 1*32+29) &amp; 31))|0) )) || (((( 4*32+31))&gt;&gt;5)==(2) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(3) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; ((1&lt;&lt;(( 3*32+20) &amp; 31))) )) || (((( 4*32+31))&gt;&gt;5)==(4) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; (0) )) || (((( 4*32+31))&gt;&gt;5)==(5) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(6) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(7) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(8) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(9) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(10) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(11) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(12) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(13) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(14) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(15) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(16) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(17) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (((( 4*32+31))&gt;&gt;5)==(18) &amp;&amp; (1UL&lt;&lt;((( 4*32+31))&amp;31) &amp; 0 )) || (sizeof(struct { int:(-!!(19 != 19)); })) || (sizeof(struct { int:(-!!(19 != 19)); }))) ? 1 : (__builtin_constant_p((( 4*32+31))) ? constant_test_bit((( 4*32+31)), ((unsigned long *)((&amp;boot_cpu_data)-&gt;x86_capability))) : variable_test_bit((( 4*32+31)), ((unsigned long *)((&amp;boot_cpu_data)-&gt;x86_capability)))))" data-ref="_M/boot_cpu_has">boot_cpu_has</a>(<a class="macro" href="../include/asm/cpufeatures.h.html#145" title="( 4*32+31)" data-ref="_M/X86_FEATURE_HYPERVISOR">X86_FEATURE_HYPERVISOR</a>))</td></tr>
+<tr><th id="30">30</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td>	<b>return</b> <a class="ref fn" href="../include/asm/processor.h.html#hypervisor_cpuid_base" title='hypervisor_cpuid_base' data-ref="hypervisor_cpuid_base">hypervisor_cpuid_base</a>(<q>"Jailhouse\0\0\0"</q>, <var>0</var>);</td></tr>
+<tr><th id="33">33</th><td>}</td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td><em>static</em> <a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a> <a class="macro" href="../../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <dfn class="tu decl def fn" id="jailhouse_detect" title='jailhouse_detect' data-type='uint32_t jailhouse_detect()' data-ref="jailhouse_detect">jailhouse_detect</dfn>(<em>void</em>)</td></tr>
+<tr><th id="36">36</th><td>{</td></tr>
+<tr><th id="37">37</th><td>	<b>return</b> <a class="tu ref fn" href="#jailhouse_cpuid_base" title='jailhouse_cpuid_base' data-use='c' data-ref="jailhouse_cpuid_base">jailhouse_cpuid_base</a>();</td></tr>
+<tr><th id="38">38</th><td>}</td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="jailhouse_get_wallclock" title='jailhouse_get_wallclock' data-type='void jailhouse_get_wallclock(struct timespec64 * now)' data-ref="jailhouse_get_wallclock">jailhouse_get_wallclock</dfn>(<b>struct</b> <a class="type" href="../../../include/linux/time64.h.html#timespec64" title='timespec64' data-ref="timespec64">timespec64</a> *<dfn class="local col1 decl" id="1now" title='now' data-type='struct timespec64 *' data-ref="1now">now</dfn>)</td></tr>
+<tr><th id="41">41</th><td>{</td></tr>
+<tr><th id="42">42</th><td>	<a class="ref fn" href="../include/asm/string_64.h.html#memset" title='memset' data-ref="memset">memset</a>(<a class="local col1 ref" href="#1now" title='now' data-ref="1now">now</a>, <var>0</var>, <b>sizeof</b>(*<a class="local col1 ref" href="#1now" title='now' data-ref="1now">now</a>));</td></tr>
+<tr><th id="43">43</th><td>}</td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td><em>static</em> <em>void</em> <a class="macro" href="../../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <dfn class="tu decl def fn" id="jailhouse_timer_init" title='jailhouse_timer_init' data-type='void jailhouse_timer_init()' data-ref="jailhouse_timer_init">jailhouse_timer_init</dfn>(<em>void</em>)</td></tr>
+<tr><th id="46">46</th><td>{</td></tr>
+<tr><th id="47">47</th><td>	<a class="ref" href="../include/asm/apic.h.html#lapic_timer_frequency" title='lapic_timer_frequency' data-ref="lapic_timer_frequency">lapic_timer_frequency</a> = <a class="tu ref" href="#setup_data" title='setup_data' data-use='m' data-ref="setup_data">setup_data</a>.<a class="ref field" href="../include/uapi/asm/bootparam.h.html#jailhouse_setup_data::apic_khz" title='jailhouse_setup_data::apic_khz' data-ref="jailhouse_setup_data::apic_khz">apic_khz</a> * (<var>1000</var> / <a class="macro" href="../../../include/asm-generic/param.h.html#8" title="100" data-ref="_M/HZ">HZ</a>);</td></tr>
+<tr><th id="48">48</th><td>}</td></tr>
+<tr><th id="49">49</th><td></td></tr>
+<tr><th id="50">50</th><td><em>static</em> <em>unsigned</em> <em>long</em> <dfn class="tu decl def fn" id="jailhouse_get_tsc" title='jailhouse_get_tsc' data-type='unsigned long jailhouse_get_tsc()' data-ref="jailhouse_get_tsc">jailhouse_get_tsc</dfn>(<em>void</em>)</td></tr>
+<tr><th id="51">51</th><td>{</td></tr>
+<tr><th id="52">52</th><td>	<b>return</b> <a class="tu ref" href="#precalibrated_tsc_khz" title='precalibrated_tsc_khz' data-use='r' data-ref="precalibrated_tsc_khz">precalibrated_tsc_khz</a>;</td></tr>
+<tr><th id="53">53</th><td>}</td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td><em>static</em> <em>void</em> <a class="macro" href="../../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <dfn class="tu decl def fn" id="jailhouse_x2apic_init" title='jailhouse_x2apic_init' data-type='void jailhouse_x2apic_init()' data-ref="jailhouse_x2apic_init">jailhouse_x2apic_init</dfn>(<em>void</em>)</td></tr>
+<tr><th id="56">56</th><td>{</td></tr>
+<tr><th id="57">57</th><td><u>#<span data-ppcond="57">ifdef</span> <span class="macro" data-ref="_M/CONFIG_X86_X2APIC">CONFIG_X86_X2APIC</span></u></td></tr>
+<tr><th id="58">58</th><td>	<b>if</b> (!x2apic_enabled())</td></tr>
+<tr><th id="59">59</th><td>		<b>return</b>;</td></tr>
+<tr><th id="60">60</th><td>	<i>/*</i></td></tr>
+<tr><th id="61">61</th><td><i>	 * We do not have access to IR inside Jailhouse non-root cells.  So</i></td></tr>
+<tr><th id="62">62</th><td><i>	 * we have to run in physical mode.</i></td></tr>
+<tr><th id="63">63</th><td><i>	 */</i></td></tr>
+<tr><th id="64">64</th><td>	x2apic_phys = <var>1</var>;</td></tr>
+<tr><th id="65">65</th><td>	<i>/*</i></td></tr>
+<tr><th id="66">66</th><td><i>	 * This will trigger the switch to apic_x2apic_phys.  Empty OEM IDs</i></td></tr>
+<tr><th id="67">67</th><td><i>	 * ensure that only this APIC driver picks up the call.</i></td></tr>
+<tr><th id="68">68</th><td><i>	 */</i></td></tr>
+<tr><th id="69">69</th><td>	default_acpi_madt_oem_check(<q>""</q>, <q>""</q>);</td></tr>
+<tr><th id="70">70</th><td><u>#<span data-ppcond="57">endif</span></u></td></tr>
+<tr><th id="71">71</th><td>}</td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td><em>static</em> <em>void</em> <a class="macro" href="../../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <dfn class="tu decl def fn" id="jailhouse_get_smp_config" title='jailhouse_get_smp_config' data-type='void jailhouse_get_smp_config(unsigned int early)' data-ref="jailhouse_get_smp_config">jailhouse_get_smp_config</dfn>(<em>unsigned</em> <em>int</em> <dfn class="local col2 decl" id="2early" title='early' data-type='unsigned int' data-ref="2early">early</dfn>)</td></tr>
+<tr><th id="74">74</th><td>{</td></tr>
+<tr><th id="75">75</th><td>	<b>struct</b> <a class="type" href="../include/asm/irqdomain.h.html#ioapic_domain_cfg" title='ioapic_domain_cfg' data-ref="ioapic_domain_cfg">ioapic_domain_cfg</a> <dfn class="local col3 decl" id="3ioapic_cfg" title='ioapic_cfg' data-type='struct ioapic_domain_cfg' data-ref="3ioapic_cfg">ioapic_cfg</dfn> = {</td></tr>
+<tr><th id="76">76</th><td>		.<a class="ref field" href="../include/asm/irqdomain.h.html#ioapic_domain_cfg::type" title='ioapic_domain_cfg::type' data-ref="ioapic_domain_cfg::type">type</a> = <a class="enum" href="../include/asm/irqdomain.h.html#IOAPIC_DOMAIN_STRICT" title='IOAPIC_DOMAIN_STRICT' data-ref="IOAPIC_DOMAIN_STRICT">IOAPIC_DOMAIN_STRICT</a>,</td></tr>
+<tr><th id="77">77</th><td>		.<a class="ref field" href="../include/asm/irqdomain.h.html#ioapic_domain_cfg::ops" title='ioapic_domain_cfg::ops' data-ref="ioapic_domain_cfg::ops">ops</a> = &amp;<a class="ref" href="../include/asm/irqdomain.h.html#mp_ioapic_irqdomain_ops" title='mp_ioapic_irqdomain_ops' data-ref="mp_ioapic_irqdomain_ops">mp_ioapic_irqdomain_ops</a>,</td></tr>
+<tr><th id="78">78</th><td>	};</td></tr>
+<tr><th id="79">79</th><td>	<b>struct</b> <a class="type" href="../include/asm/mpspec_def.h.html#mpc_intsrc" title='mpc_intsrc' data-ref="mpc_intsrc">mpc_intsrc</a> <dfn class="local col4 decl" id="4mp_irq" title='mp_irq' data-type='struct mpc_intsrc' data-ref="4mp_irq">mp_irq</dfn> = {</td></tr>
+<tr><th id="80">80</th><td>		.<a class="ref field" href="../include/asm/mpspec_def.h.html#mpc_intsrc::type" title='mpc_intsrc::type' data-ref="mpc_intsrc::type">type</a> = <a class="macro" href="../include/asm/mpspec_def.h.html#56" title="3" data-ref="_M/MP_INTSRC">MP_INTSRC</a>,</td></tr>
+<tr><th id="81">81</th><td>		.<a class="ref field" href="../include/asm/mpspec_def.h.html#mpc_intsrc::irqtype" title='mpc_intsrc::irqtype' data-ref="mpc_intsrc::irqtype">irqtype</a> = <a class="enum" href="../include/asm/mpspec_def.h.html#mp_INT" title='mp_INT' data-ref="mp_INT">mp_INT</a>,</td></tr>
+<tr><th id="82">82</th><td>		.<a class="ref field" href="../include/asm/mpspec_def.h.html#mpc_intsrc::irqflag" title='mpc_intsrc::irqflag' data-ref="mpc_intsrc::irqflag">irqflag</a> = <a class="macro" href="../include/asm/mpspec_def.h.html#132" title="0x1" data-ref="_M/MP_IRQPOL_ACTIVE_HIGH">MP_IRQPOL_ACTIVE_HIGH</a> | <a class="macro" href="../include/asm/mpspec_def.h.html#138" title="0x4" data-ref="_M/MP_IRQTRIG_EDGE">MP_IRQTRIG_EDGE</a>,</td></tr>
+<tr><th id="83">83</th><td>	};</td></tr>
+<tr><th id="84">84</th><td>	<em>unsigned</em> <em>int</em> <dfn class="local col5 decl" id="5cpu" title='cpu' data-type='unsigned int' data-ref="5cpu">cpu</dfn>;</td></tr>
+<tr><th id="85">85</th><td></td></tr>
+<tr><th id="86">86</th><td>	<a class="tu ref fn" href="#jailhouse_x2apic_init" title='jailhouse_x2apic_init' data-use='c' data-ref="jailhouse_x2apic_init">jailhouse_x2apic_init</a>();</td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td>	<a class="ref fn" href="../include/asm/apic.h.html#register_lapic_address" title='register_lapic_address' data-ref="register_lapic_address">register_lapic_address</a>(<var>0xfee00000</var>);</td></tr>
+<tr><th id="89">89</th><td></td></tr>
+<tr><th id="90">90</th><td>	<b>for</b> (<a class="local col5 ref" href="#5cpu" title='cpu' data-ref="5cpu">cpu</a> = <var>0</var>; <a class="local col5 ref" href="#5cpu" title='cpu' data-ref="5cpu">cpu</a> &lt; <a class="tu ref" href="#setup_data" title='setup_data' data-use='m' data-ref="setup_data">setup_data</a>.<a class="ref field" href="../include/uapi/asm/bootparam.h.html#jailhouse_setup_data::num_cpus" title='jailhouse_setup_data::num_cpus' data-ref="jailhouse_setup_data::num_cpus">num_cpus</a>; <a class="local col5 ref" href="#5cpu" title='cpu' data-ref="5cpu">cpu</a>++) {</td></tr>
+<tr><th id="91">91</th><td>		<a class="ref fn" href="../include/asm/mpspec.h.html#generic_processor_info" title='generic_processor_info' data-ref="generic_processor_info">generic_processor_info</a>(<a class="tu ref" href="#setup_data" title='setup_data' data-use='m' data-ref="setup_data">setup_data</a>.<a class="ref field" href="../include/uapi/asm/bootparam.h.html#jailhouse_setup_data::cpu_ids" title='jailhouse_setup_data::cpu_ids' data-ref="jailhouse_setup_data::cpu_ids">cpu_ids</a>[<a class="local col5 ref" href="#5cpu" title='cpu' data-ref="5cpu">cpu</a>],</td></tr>
+<tr><th id="92">92</th><td>				       <a class="ref" href="../include/asm/mpspec.h.html#boot_cpu_apic_version" title='boot_cpu_apic_version' data-ref="boot_cpu_apic_version">boot_cpu_apic_version</a>);</td></tr>
+<tr><th id="93">93</th><td>	}</td></tr>
+<tr><th id="94">94</th><td></td></tr>
+<tr><th id="95">95</th><td>	<a class="ref" href="../include/asm/mpspec.h.html#smp_found_config" title='smp_found_config' data-ref="smp_found_config">smp_found_config</a> = <var>1</var>;</td></tr>
+<tr><th id="96">96</th><td></td></tr>
+<tr><th id="97">97</th><td>	<b>if</b> (<a class="tu ref" href="#setup_data" title='setup_data' data-use='m' data-ref="setup_data">setup_data</a>.<a class="ref field" href="../include/uapi/asm/bootparam.h.html#jailhouse_setup_data::standard_ioapic" title='jailhouse_setup_data::standard_ioapic' data-ref="jailhouse_setup_data::standard_ioapic">standard_ioapic</a>) {</td></tr>
+<tr><th id="98">98</th><td>		<a class="ref fn" href="../include/asm/io_apic.h.html#mp_register_ioapic" title='mp_register_ioapic' data-ref="mp_register_ioapic">mp_register_ioapic</a>(<var>0</var>, <var>0xfec00000</var>, <a class="ref" href="../include/asm/io_apic.h.html#gsi_top" title='gsi_top' data-ref="gsi_top">gsi_top</a>, &amp;<a class="local col3 ref" href="#3ioapic_cfg" title='ioapic_cfg' data-ref="3ioapic_cfg">ioapic_cfg</a>);</td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td>		<i>/* Register 1:1 mapping for legacy UART IRQs 3 and 4 */</i></td></tr>
+<tr><th id="101">101</th><td>		<a class="local col4 ref" href="#4mp_irq" title='mp_irq' data-ref="4mp_irq">mp_irq</a>.<a class="ref field" href="../include/asm/mpspec_def.h.html#mpc_intsrc::srcbusirq" title='mpc_intsrc::srcbusirq' data-ref="mpc_intsrc::srcbusirq">srcbusirq</a> = <a class="local col4 ref" href="#4mp_irq" title='mp_irq' data-ref="4mp_irq">mp_irq</a>.<a class="ref field" href="../include/asm/mpspec_def.h.html#mpc_intsrc::dstirq" title='mpc_intsrc::dstirq' data-ref="mpc_intsrc::dstirq">dstirq</a> = <var>3</var>;</td></tr>
+<tr><th id="102">102</th><td>		<a class="ref fn" href="../include/asm/io_apic.h.html#mp_save_irq" title='mp_save_irq' data-ref="mp_save_irq">mp_save_irq</a>(&amp;<a class="local col4 ref" href="#4mp_irq" title='mp_irq' data-ref="4mp_irq">mp_irq</a>);</td></tr>
+<tr><th id="103">103</th><td></td></tr>
+<tr><th id="104">104</th><td>		<a class="local col4 ref" href="#4mp_irq" title='mp_irq' data-ref="4mp_irq">mp_irq</a>.<a class="ref field" href="../include/asm/mpspec_def.h.html#mpc_intsrc::srcbusirq" title='mpc_intsrc::srcbusirq' data-ref="mpc_intsrc::srcbusirq">srcbusirq</a> = <a class="local col4 ref" href="#4mp_irq" title='mp_irq' data-ref="4mp_irq">mp_irq</a>.<a class="ref field" href="../include/asm/mpspec_def.h.html#mpc_intsrc::dstirq" title='mpc_intsrc::dstirq' data-ref="mpc_intsrc::dstirq">dstirq</a> = <var>4</var>;</td></tr>
+<tr><th id="105">105</th><td>		<a class="ref fn" href="../include/asm/io_apic.h.html#mp_save_irq" title='mp_save_irq' data-ref="mp_save_irq">mp_save_irq</a>(&amp;<a class="local col4 ref" href="#4mp_irq" title='mp_irq' data-ref="4mp_irq">mp_irq</a>);</td></tr>
+<tr><th id="106">106</th><td>	}</td></tr>
+<tr><th id="107">107</th><td>}</td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="jailhouse_no_restart" title='jailhouse_no_restart' data-type='void jailhouse_no_restart()' data-ref="jailhouse_no_restart">jailhouse_no_restart</dfn>(<em>void</em>)</td></tr>
+<tr><th id="110">110</th><td>{</td></tr>
+<tr><th id="111">111</th><td>	<a class="macro" href="../../../include/linux/printk.h.html#312" title="printk(&quot;\001&quot; &quot;5&quot; &quot;Jailhouse: Restart not supported, halting\n&quot;)" data-ref="_M/pr_notice">pr_notice</a>(<q>"Jailhouse: Restart not supported, halting\n"</q>);</td></tr>
+<tr><th id="112">112</th><td>	<a class="ref fn" href="../../../include/linux/reboot.h.html#machine_halt" title='machine_halt' data-ref="machine_halt">machine_halt</a>();</td></tr>
+<tr><th id="113">113</th><td>}</td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td><em>static</em> <em>int</em> <a class="macro" href="../../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <dfn class="tu decl def fn" id="jailhouse_pci_arch_init" title='jailhouse_pci_arch_init' data-type='int jailhouse_pci_arch_init()' data-ref="jailhouse_pci_arch_init">jailhouse_pci_arch_init</dfn>(<em>void</em>)</td></tr>
+<tr><th id="116">116</th><td>{</td></tr>
+<tr><th id="117">117</th><td>	<a class="ref fn" href="../include/asm/pci_x86.h.html#pci_direct_init" title='pci_direct_init' data-ref="pci_direct_init">pci_direct_init</a>(<var>1</var>);</td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td>	<i>/*</i></td></tr>
+<tr><th id="120">120</th><td><i>	 * There are no bridges on the virtual PCI root bus under Jailhouse,</i></td></tr>
+<tr><th id="121">121</th><td><i>	 * thus no other way to discover all devices than a full scan.</i></td></tr>
+<tr><th id="122">122</th><td><i>	 * Respect any overrides via the command line, though.</i></td></tr>
+<tr><th id="123">123</th><td><i>	 */</i></td></tr>
+<tr><th id="124">124</th><td>	<b>if</b> (<a class="ref" href="../include/asm/pci_x86.h.html#pcibios_last_bus" title='pcibios_last_bus' data-ref="pcibios_last_bus">pcibios_last_bus</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="125">125</th><td>		<a class="ref" href="../include/asm/pci_x86.h.html#pcibios_last_bus" title='pcibios_last_bus' data-ref="pcibios_last_bus">pcibios_last_bus</a> = <var>0xff</var>;</td></tr>
+<tr><th id="126">126</th><td></td></tr>
+<tr><th id="127">127</th><td><u>#<span data-ppcond="127">ifdef</span> <span class="macro" data-ref="_M/CONFIG_PCI_MMCONFIG">CONFIG_PCI_MMCONFIG</span></u></td></tr>
+<tr><th id="128">128</th><td>	<b>if</b> (setup_data.pci_mmconfig_base) {</td></tr>
+<tr><th id="129">129</th><td>		pci_mmconfig_add(<var>0</var>, <var>0</var>, pcibios_last_bus,</td></tr>
+<tr><th id="130">130</th><td>				 setup_data.pci_mmconfig_base);</td></tr>
+<tr><th id="131">131</th><td>		pci_mmcfg_arch_init();</td></tr>
+<tr><th id="132">132</th><td>	}</td></tr>
+<tr><th id="133">133</th><td><u>#<span data-ppcond="127">endif</span></u></td></tr>
+<tr><th id="134">134</th><td></td></tr>
+<tr><th id="135">135</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="136">136</th><td>}</td></tr>
+<tr><th id="137">137</th><td></td></tr>
+<tr><th id="138">138</th><td><em>static</em> <em>void</em> <a class="macro" href="../../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <dfn class="tu decl def fn" id="jailhouse_init_platform" title='jailhouse_init_platform' data-type='void jailhouse_init_platform()' data-ref="jailhouse_init_platform">jailhouse_init_platform</dfn>(<em>void</em>)</td></tr>
+<tr><th id="139">139</th><td>{</td></tr>
+<tr><th id="140">140</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u64" title='u64' data-type='__u64' data-ref="u64">u64</a> <dfn class="local col6 decl" id="6pa_data" title='pa_data' data-type='u64' data-ref="6pa_data">pa_data</dfn> = <a class="ref" href="../include/asm/setup.h.html#boot_params" title='boot_params' data-ref="boot_params">boot_params</a>.<a class="ref field" href="../include/uapi/asm/bootparam.h.html#boot_params::hdr" title='boot_params::hdr' data-ref="boot_params::hdr">hdr</a>.<a class="ref field" href="../include/uapi/asm/bootparam.h.html#setup_header::setup_data" title='setup_header::setup_data' data-ref="setup_header::setup_data">setup_data</a>;</td></tr>
+<tr><th id="141">141</th><td>	<b>struct</b> <a class="type" href="../include/uapi/asm/bootparam.h.html#setup_data" title='setup_data' data-ref="setup_data">setup_data</a> <dfn class="local col7 decl" id="7header" title='header' data-type='struct setup_data' data-ref="7header">header</dfn>;</td></tr>
+<tr><th id="142">142</th><td>	<em>void</em> *<dfn class="local col8 decl" id="8mapping" title='mapping' data-type='void *' data-ref="8mapping">mapping</dfn>;</td></tr>
+<tr><th id="143">143</th><td></td></tr>
+<tr><th id="144">144</th><td>	<a class="ref" href="../include/asm/x86_init.h.html#x86_init" title='x86_init' data-ref="x86_init">x86_init</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_init_ops::irqs" title='x86_init_ops::irqs' data-ref="x86_init_ops::irqs">irqs</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_init_irqs::pre_vector_init" title='x86_init_irqs::pre_vector_init' data-ref="x86_init_irqs::pre_vector_init">pre_vector_init</a>	= <a class="ref fn" href="../include/asm/x86_init.h.html#x86_init_noop" title='x86_init_noop' data-ref="x86_init_noop">x86_init_noop</a>;</td></tr>
+<tr><th id="145">145</th><td>	<a class="ref" href="../include/asm/x86_init.h.html#x86_init" title='x86_init' data-ref="x86_init">x86_init</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_init_ops::timers" title='x86_init_ops::timers' data-ref="x86_init_ops::timers">timers</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_init_timers::timer_init" title='x86_init_timers::timer_init' data-ref="x86_init_timers::timer_init">timer_init</a>	= <a class="tu ref fn" href="#jailhouse_timer_init" title='jailhouse_timer_init' data-use='r' data-ref="jailhouse_timer_init">jailhouse_timer_init</a>;</td></tr>
+<tr><th id="146">146</th><td>	<a class="ref" href="../include/asm/x86_init.h.html#x86_init" title='x86_init' data-ref="x86_init">x86_init</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_init_ops::mpparse" title='x86_init_ops::mpparse' data-ref="x86_init_ops::mpparse">mpparse</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_init_mpparse::get_smp_config" title='x86_init_mpparse::get_smp_config' data-ref="x86_init_mpparse::get_smp_config">get_smp_config</a>	= <a class="tu ref fn" href="#jailhouse_get_smp_config" title='jailhouse_get_smp_config' data-use='r' data-ref="jailhouse_get_smp_config">jailhouse_get_smp_config</a>;</td></tr>
+<tr><th id="147">147</th><td>	<a class="ref" href="../include/asm/x86_init.h.html#x86_init" title='x86_init' data-ref="x86_init">x86_init</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_init_ops::pci" title='x86_init_ops::pci' data-ref="x86_init_ops::pci">pci</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_init_pci::arch_init" title='x86_init_pci::arch_init' data-ref="x86_init_pci::arch_init">arch_init</a>		= <a class="tu ref fn" href="#jailhouse_pci_arch_init" title='jailhouse_pci_arch_init' data-use='r' data-ref="jailhouse_pci_arch_init">jailhouse_pci_arch_init</a>;</td></tr>
+<tr><th id="148">148</th><td></td></tr>
+<tr><th id="149">149</th><td>	<a class="ref" href="../include/asm/x86_init.h.html#x86_platform" title='x86_platform' data-ref="x86_platform">x86_platform</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_platform_ops::calibrate_cpu" title='x86_platform_ops::calibrate_cpu' data-ref="x86_platform_ops::calibrate_cpu">calibrate_cpu</a>	= <a class="tu ref fn" href="#jailhouse_get_tsc" title='jailhouse_get_tsc' data-use='r' data-ref="jailhouse_get_tsc">jailhouse_get_tsc</a>;</td></tr>
+<tr><th id="150">150</th><td>	<a class="ref" href="../include/asm/x86_init.h.html#x86_platform" title='x86_platform' data-ref="x86_platform">x86_platform</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_platform_ops::calibrate_tsc" title='x86_platform_ops::calibrate_tsc' data-ref="x86_platform_ops::calibrate_tsc">calibrate_tsc</a>	= <a class="tu ref fn" href="#jailhouse_get_tsc" title='jailhouse_get_tsc' data-use='r' data-ref="jailhouse_get_tsc">jailhouse_get_tsc</a>;</td></tr>
+<tr><th id="151">151</th><td>	<a class="ref" href="../include/asm/x86_init.h.html#x86_platform" title='x86_platform' data-ref="x86_platform">x86_platform</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_platform_ops::get_wallclock" title='x86_platform_ops::get_wallclock' data-ref="x86_platform_ops::get_wallclock">get_wallclock</a>	= <a class="tu ref fn" href="#jailhouse_get_wallclock" title='jailhouse_get_wallclock' data-use='r' data-ref="jailhouse_get_wallclock">jailhouse_get_wallclock</a>;</td></tr>
+<tr><th id="152">152</th><td>	<a class="ref" href="../include/asm/x86_init.h.html#x86_platform" title='x86_platform' data-ref="x86_platform">x86_platform</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_platform_ops::legacy" title='x86_platform_ops::legacy' data-ref="x86_platform_ops::legacy">legacy</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_legacy_features::rtc" title='x86_legacy_features::rtc' data-ref="x86_legacy_features::rtc">rtc</a>		= <var>0</var>;</td></tr>
+<tr><th id="153">153</th><td>	<a class="ref" href="../include/asm/x86_init.h.html#x86_platform" title='x86_platform' data-ref="x86_platform">x86_platform</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_platform_ops::legacy" title='x86_platform_ops::legacy' data-ref="x86_platform_ops::legacy">legacy</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_legacy_features::warm_reset" title='x86_legacy_features::warm_reset' data-ref="x86_legacy_features::warm_reset">warm_reset</a>	= <var>0</var>;</td></tr>
+<tr><th id="154">154</th><td>	<a class="ref" href="../include/asm/x86_init.h.html#x86_platform" title='x86_platform' data-ref="x86_platform">x86_platform</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_platform_ops::legacy" title='x86_platform_ops::legacy' data-ref="x86_platform_ops::legacy">legacy</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_legacy_features::i8042" title='x86_legacy_features::i8042' data-ref="x86_legacy_features::i8042">i8042</a>	= <a class="enum" href="../include/asm/x86_init.h.html#X86_LEGACY_I8042_PLATFORM_ABSENT" title='X86_LEGACY_I8042_PLATFORM_ABSENT' data-ref="X86_LEGACY_I8042_PLATFORM_ABSENT">X86_LEGACY_I8042_PLATFORM_ABSENT</a>;</td></tr>
+<tr><th id="155">155</th><td></td></tr>
+<tr><th id="156">156</th><td>	<a class="ref" href="../include/asm/i8259.h.html#legacy_pic" title='legacy_pic' data-ref="legacy_pic">legacy_pic</a>			= &amp;<a class="ref" href="../include/asm/i8259.h.html#null_legacy_pic" title='null_legacy_pic' data-ref="null_legacy_pic">null_legacy_pic</a>;</td></tr>
+<tr><th id="157">157</th><td></td></tr>
+<tr><th id="158">158</th><td>	<a class="ref" href="../include/asm/reboot.h.html#machine_ops" title='machine_ops' data-ref="machine_ops">machine_ops</a>.<a class="ref field" href="../include/asm/reboot.h.html#machine_ops::emergency_restart" title='machine_ops::emergency_restart' data-ref="machine_ops::emergency_restart">emergency_restart</a>	= <a class="tu ref fn" href="#jailhouse_no_restart" title='jailhouse_no_restart' data-use='r' data-ref="jailhouse_no_restart">jailhouse_no_restart</a>;</td></tr>
+<tr><th id="159">159</th><td></td></tr>
+<tr><th id="160">160</th><td>	<b>while</b> (<a class="local col6 ref" href="#6pa_data" title='pa_data' data-ref="6pa_data">pa_data</a>) {</td></tr>
+<tr><th id="161">161</th><td>		<a class="local col8 ref" href="#8mapping" title='mapping' data-ref="8mapping">mapping</a> = <a class="ref fn" href="../../../include/asm-generic/early_ioremap.h.html#early_memremap" title='early_memremap' data-ref="early_memremap">early_memremap</a>(<a class="local col6 ref" href="#6pa_data" title='pa_data' data-ref="6pa_data">pa_data</a>, <b>sizeof</b>(<a class="local col7 ref" href="#7header" title='header' data-ref="7header">header</a>));</td></tr>
+<tr><th id="162">162</th><td>		<a class="macro" href="../include/asm/string_64.h.html#37" title="({ size_t __len = (sizeof(header)); void *__ret; if (__builtin_constant_p(sizeof(header)) &amp;&amp; __len &gt;= 64) __ret = __memcpy((&amp;header), (mapping), __len); else __ret = __builtin_memcpy((&amp;header), (mapping), __len); __ret; })" data-ref="_M/memcpy">memcpy</a>(&amp;<a class="local col7 ref" href="#7header" title='header' data-ref="7header">header</a>, <a class="local col8 ref" href="#8mapping" title='mapping' data-ref="8mapping">mapping</a>, <b>sizeof</b>(<a class="local col7 ref" href="#7header" title='header' data-ref="7header">header</a>));</td></tr>
+<tr><th id="163">163</th><td>		<a class="ref fn" href="../../../include/asm-generic/early_ioremap.h.html#early_memunmap" title='early_memunmap' data-ref="early_memunmap">early_memunmap</a>(<a class="local col8 ref" href="#8mapping" title='mapping' data-ref="8mapping">mapping</a>, <b>sizeof</b>(<a class="local col7 ref" href="#7header" title='header' data-ref="7header">header</a>));</td></tr>
+<tr><th id="164">164</th><td></td></tr>
+<tr><th id="165">165</th><td>		<b>if</b> (<a class="local col7 ref" href="#7header" title='header' data-ref="7header">header</a>.<a class="ref field" href="../include/uapi/asm/bootparam.h.html#setup_data::type" title='setup_data::type' data-ref="setup_data::type">type</a> == <a class="macro" href="../include/uapi/asm/bootparam.h.html#12" title="6" data-ref="_M/SETUP_JAILHOUSE">SETUP_JAILHOUSE</a> &amp;&amp;</td></tr>
+<tr><th id="166">166</th><td>		    <a class="local col7 ref" href="#7header" title='header' data-ref="7header">header</a>.<a class="ref field" href="../include/uapi/asm/bootparam.h.html#setup_data::len" title='setup_data::len' data-ref="setup_data::len">len</a> &gt;= <b>sizeof</b>(<a class="tu ref" href="#setup_data" title='setup_data' data-use='r' data-ref="setup_data">setup_data</a>)) {</td></tr>
+<tr><th id="167">167</th><td>			<a class="local col6 ref" href="#6pa_data" title='pa_data' data-ref="6pa_data">pa_data</a> += <a class="macro" href="../../../include/linux/stddef.h.html#17" title="__builtin_offsetof(struct setup_data, data)" data-ref="_M/offsetof">offsetof</a>(<b>struct</b> <a class="type" href="../include/uapi/asm/bootparam.h.html#setup_data" title='setup_data' data-ref="setup_data">setup_data</a>, data);</td></tr>
+<tr><th id="168">168</th><td></td></tr>
+<tr><th id="169">169</th><td>			<a class="local col8 ref" href="#8mapping" title='mapping' data-ref="8mapping">mapping</a> = <a class="ref fn" href="../../../include/asm-generic/early_ioremap.h.html#early_memremap" title='early_memremap' data-ref="early_memremap">early_memremap</a>(<a class="local col6 ref" href="#6pa_data" title='pa_data' data-ref="6pa_data">pa_data</a>, <b>sizeof</b>(<a class="tu ref" href="#setup_data" title='setup_data' data-use='r' data-ref="setup_data">setup_data</a>));</td></tr>
+<tr><th id="170">170</th><td>			<a class="macro" href="../include/asm/string_64.h.html#37" title="({ size_t __len = (sizeof(setup_data)); void *__ret; if (__builtin_constant_p(sizeof(setup_data)) &amp;&amp; __len &gt;= 64) __ret = __memcpy((&amp;setup_data), (mapping), __len); else __ret = __builtin_memcpy((&amp;setup_data), (mapping), __len); __ret; })" data-ref="_M/memcpy">memcpy</a>(&amp;<a class="tu ref" href="#setup_data" title='setup_data' data-use='a' data-ref="setup_data">setup_data</a>, <a class="local col8 ref" href="#8mapping" title='mapping' data-ref="8mapping">mapping</a>, <b>sizeof</b>(<a class="tu ref" href="#setup_data" title='setup_data' data-use='r' data-ref="setup_data"><a class="tu ref" href="#setup_data" title='setup_data' data-ref="setup_data">setup_data</a></a>));</td></tr>
+<tr><th id="171">171</th><td>			<a class="ref fn" href="../../../include/asm-generic/early_ioremap.h.html#early_memunmap" title='early_memunmap' data-ref="early_memunmap">early_memunmap</a>(<a class="local col8 ref" href="#8mapping" title='mapping' data-ref="8mapping">mapping</a>, <b>sizeof</b>(<a class="tu ref" href="#setup_data" title='setup_data' data-use='r' data-ref="setup_data">setup_data</a>));</td></tr>
+<tr><th id="172">172</th><td></td></tr>
+<tr><th id="173">173</th><td>			<b>break</b>;</td></tr>
+<tr><th id="174">174</th><td>		}</td></tr>
+<tr><th id="175">175</th><td></td></tr>
+<tr><th id="176">176</th><td>		<a class="local col6 ref" href="#6pa_data" title='pa_data' data-ref="6pa_data">pa_data</a> = <a class="local col7 ref" href="#7header" title='header' data-ref="7header">header</a>.<a class="ref field" href="../include/uapi/asm/bootparam.h.html#setup_data::next" title='setup_data::next' data-ref="setup_data::next">next</a>;</td></tr>
+<tr><th id="177">177</th><td>	}</td></tr>
+<tr><th id="178">178</th><td></td></tr>
+<tr><th id="179">179</th><td>	<b>if</b> (!<a class="local col6 ref" href="#6pa_data" title='pa_data' data-ref="6pa_data">pa_data</a>)</td></tr>
+<tr><th id="180">180</th><td>		<a class="ref fn" href="../../../include/linux/kernel.h.html#panic" title='panic' data-ref="panic">panic</a>(<q>"Jailhouse: No valid setup data found"</q>);</td></tr>
+<tr><th id="181">181</th><td></td></tr>
+<tr><th id="182">182</th><td>	<b>if</b> (<a class="tu ref" href="#setup_data" title='setup_data' data-use='m' data-ref="setup_data">setup_data</a>.<a class="ref field" href="../include/uapi/asm/bootparam.h.html#jailhouse_setup_data::compatible_version" title='jailhouse_setup_data::compatible_version' data-ref="jailhouse_setup_data::compatible_version">compatible_version</a> &gt; <a class="macro" href="../include/uapi/asm/bootparam.h.html#133" title="1" data-ref="_M/JAILHOUSE_SETUP_REQUIRED_VERSION">JAILHOUSE_SETUP_REQUIRED_VERSION</a>)</td></tr>
+<tr><th id="183">183</th><td>		<a class="ref fn" href="../../../include/linux/kernel.h.html#panic" title='panic' data-ref="panic">panic</a>(<q>"Jailhouse: Unsupported setup data structure"</q>);</td></tr>
+<tr><th id="184">184</th><td></td></tr>
+<tr><th id="185">185</th><td>	<a class="ref" href="../../../include/linux/acpi_pmtmr.h.html#pmtmr_ioport" title='pmtmr_ioport' data-ref="pmtmr_ioport">pmtmr_ioport</a> = <a class="tu ref" href="#setup_data" title='setup_data' data-use='m' data-ref="setup_data">setup_data</a>.<a class="ref field" href="../include/uapi/asm/bootparam.h.html#jailhouse_setup_data::pm_timer_address" title='jailhouse_setup_data::pm_timer_address' data-ref="jailhouse_setup_data::pm_timer_address">pm_timer_address</a>;</td></tr>
+<tr><th id="186">186</th><td>	<a class="macro" href="../../../include/linux/printk.h.html#345" title="({ if (0) printk(&quot;\001&quot; &quot;7&quot; &quot;Jailhouse: PM-Timer IO Port: %#x\n&quot;, pmtmr_ioport); 0; })" data-ref="_M/pr_debug">pr_debug</a>(<q>"Jailhouse: PM-Timer IO Port: %#x\n"</q>, <a class="ref" href="../../../include/linux/acpi_pmtmr.h.html#pmtmr_ioport" title='pmtmr_ioport' data-ref="pmtmr_ioport">pmtmr_ioport</a>);</td></tr>
+<tr><th id="187">187</th><td></td></tr>
+<tr><th id="188">188</th><td>	<a class="tu ref" href="#precalibrated_tsc_khz" title='precalibrated_tsc_khz' data-use='w' data-ref="precalibrated_tsc_khz">precalibrated_tsc_khz</a> = <a class="tu ref" href="#setup_data" title='setup_data' data-use='m' data-ref="setup_data">setup_data</a>.<a class="ref field" href="../include/uapi/asm/bootparam.h.html#jailhouse_setup_data::tsc_khz" title='jailhouse_setup_data::tsc_khz' data-ref="jailhouse_setup_data::tsc_khz">tsc_khz</a>;</td></tr>
+<tr><th id="189">189</th><td>	<a class="macro" href="../include/asm/cpufeature.h.html#136" title="do { set_bit(( 3*32+31), (unsigned long *)((&amp;boot_cpu_data)-&gt;x86_capability)); set_bit(( 3*32+31), (unsigned long *)cpu_caps_set); } while (0)" data-ref="_M/setup_force_cpu_cap">setup_force_cpu_cap</a>(<a class="macro" href="../include/asm/cpufeatures.h.html#112" title="( 3*32+31)" data-ref="_M/X86_FEATURE_TSC_KNOWN_FREQ">X86_FEATURE_TSC_KNOWN_FREQ</a>);</td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td>	<a class="ref" href="../include/asm/pci_x86.h.html#pci_probe" title='pci_probe' data-ref="pci_probe">pci_probe</a> = <var>0</var>;</td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td>	<i>/*</i></td></tr>
+<tr><th id="194">194</th><td><i>	 * Avoid that the kernel complains about missing ACPI tables - there</i></td></tr>
+<tr><th id="195">195</th><td><i>	 * are none in a non-root cell.</i></td></tr>
+<tr><th id="196">196</th><td><i>	 */</i></td></tr>
+<tr><th id="197">197</th><td>	<a class="ref fn" href="../include/asm/acpi.h.html#disable_acpi" title='disable_acpi' data-ref="disable_acpi">disable_acpi</a>();</td></tr>
+<tr><th id="198">198</th><td>}</td></tr>
+<tr><th id="199">199</th><td></td></tr>
+<tr><th id="200">200</th><td><a class="typedef" href="../../../include/linux/types.h.html#bool" title='bool' data-type='_Bool' data-ref="bool">bool</a> <dfn class="decl def fn" id="jailhouse_paravirt" title='jailhouse_paravirt' data-ref="jailhouse_paravirt">jailhouse_paravirt</dfn>(<em>void</em>)</td></tr>
+<tr><th id="201">201</th><td>{</td></tr>
+<tr><th id="202">202</th><td>	<b>return</b> <a class="tu ref fn" href="#jailhouse_cpuid_base" title='jailhouse_cpuid_base' data-use='c' data-ref="jailhouse_cpuid_base">jailhouse_cpuid_base</a>() != <var>0</var>;</td></tr>
+<tr><th id="203">203</th><td>}</td></tr>
+<tr><th id="204">204</th><td></td></tr>
+<tr><th id="205">205</th><td><em>static</em> <a class="typedef" href="../../../include/linux/types.h.html#bool" title='bool' data-type='_Bool' data-ref="bool">bool</a> <dfn class="tu decl def fn" id="jailhouse_x2apic_available" title='jailhouse_x2apic_available' data-type='bool jailhouse_x2apic_available()' data-ref="jailhouse_x2apic_available">jailhouse_x2apic_available</dfn>(<em>void</em>)</td></tr>
+<tr><th id="206">206</th><td>{</td></tr>
+<tr><th id="207">207</th><td>	<i>/*</i></td></tr>
+<tr><th id="208">208</th><td><i>	 * The x2APIC is only available if the root cell enabled it. Jailhouse</i></td></tr>
+<tr><th id="209">209</th><td><i>	 * does not support switching between xAPIC and x2APIC.</i></td></tr>
+<tr><th id="210">210</th><td><i>	 */</i></td></tr>
+<tr><th id="211">211</th><td>	<b>return</b> <a class="ref fn" href="../include/asm/apic.h.html#x2apic_enabled" title='x2apic_enabled' data-ref="x2apic_enabled">x2apic_enabled</a>();</td></tr>
+<tr><th id="212">212</th><td>}</td></tr>
+<tr><th id="213">213</th><td></td></tr>
+<tr><th id="214">214</th><td><em>const</em> <b>struct</b> <a class="type" href="../include/asm/hypervisor.h.html#hypervisor_x86" title='hypervisor_x86' data-ref="hypervisor_x86">hypervisor_x86</a> <dfn class="decl def" id="x86_hyper_jailhouse" title='x86_hyper_jailhouse' data-ref="x86_hyper_jailhouse">x86_hyper_jailhouse</dfn> <a class="macro" href="../../../include/linux/init.h.html#75" title="__attribute__ ((__section__(&quot;.ref.rodata&quot;)))" data-ref="_M/__refconst">__refconst</a> = {</td></tr>
+<tr><th id="215">215</th><td>	.<a class="ref field" href="../include/asm/hypervisor.h.html#hypervisor_x86::name" title='hypervisor_x86::name' data-ref="hypervisor_x86::name">name</a>			= <q>"Jailhouse"</q>,</td></tr>
+<tr><th id="216">216</th><td>	.<a class="ref field" href="../include/asm/hypervisor.h.html#hypervisor_x86::detect" title='hypervisor_x86::detect' data-ref="hypervisor_x86::detect">detect</a>			= <a class="tu ref fn" href="#jailhouse_detect" title='jailhouse_detect' data-use='r' data-ref="jailhouse_detect">jailhouse_detect</a>,</td></tr>
+<tr><th id="217">217</th><td>	.<a class="ref field" href="../include/asm/hypervisor.h.html#hypervisor_x86::init" title='hypervisor_x86::init' data-ref="hypervisor_x86::init">init</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_hyper_init::init_platform" title='x86_hyper_init::init_platform' data-ref="x86_hyper_init::init_platform">init_platform</a>	= <a class="tu ref fn" href="#jailhouse_init_platform" title='jailhouse_init_platform' data-use='r' data-ref="jailhouse_init_platform">jailhouse_init_platform</a>,</td></tr>
+<tr><th id="218">218</th><td>	.<a class="ref field" href="../include/asm/hypervisor.h.html#hypervisor_x86::init" title='hypervisor_x86::init' data-ref="hypervisor_x86::init">init</a>.<a class="ref field" href="../include/asm/x86_init.h.html#x86_hyper_init::x2apic_available" title='x86_hyper_init::x2apic_available' data-ref="x86_hyper_init::x2apic_available">x2apic_available</a>	= <a class="tu ref fn" href="#jailhouse_x2apic_available" title='jailhouse_x2apic_available' data-use='r' data-ref="jailhouse_x2apic_available">jailhouse_x2apic_available</a>,</td></tr>
+<tr><th id="219">219</th><td>};</td></tr>
+<tr><th id="220">220</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

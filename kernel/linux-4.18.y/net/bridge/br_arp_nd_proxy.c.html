@@ -1,0 +1,487 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>br_arp_nd_proxy.c source code [linux-4.18.y/net/bridge/br_arp_nd_proxy.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/net/bridge/br_arp_nd_proxy.c'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>linux-4.18.y</a>/<a href='..'>net</a>/<a href='./'>bridge</a>/<a href='br_arp_nd_proxy.c.html'>br_arp_nd_proxy.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> *  Handle bridge arp/nd proxy/suppress</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> *  Copyright (C) 2017 Cumulus Networks</i></td></tr>
+<tr><th id="5">5</th><td><i> *  Copyright (c) 2017 Roopa Prabhu &lt;roopa@cumulusnetworks.com&gt;</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> *  Authors:</i></td></tr>
+<tr><th id="8">8</th><td><i> *	Roopa Prabhu &lt;roopa@cumulusnetworks.com&gt;</i></td></tr>
+<tr><th id="9">9</th><td><i> *</i></td></tr>
+<tr><th id="10">10</th><td><i> *  This program is free software; you can redistribute it and/or</i></td></tr>
+<tr><th id="11">11</th><td><i> *  modify it under the terms of the GNU General Public License</i></td></tr>
+<tr><th id="12">12</th><td><i> *  as published by the Free Software Foundation; either version</i></td></tr>
+<tr><th id="13">13</th><td><i> *  2 of the License, or (at your option) any later version.</i></td></tr>
+<tr><th id="14">14</th><td><i> */</i></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../include/linux/kernel.h.html">&lt;linux/kernel.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../include/linux/netdevice.h.html">&lt;linux/netdevice.h&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../include/linux/etherdevice.h.html">&lt;linux/etherdevice.h&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../include/uapi/linux/neighbour.h.html">&lt;linux/neighbour.h&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../include/net/arp.h.html">&lt;net/arp.h&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../include/linux/if_vlan.h.html">&lt;linux/if_vlan.h&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../include/linux/inetdevice.h.html">&lt;linux/inetdevice.h&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../include/net/addrconf.h.html">&lt;net/addrconf.h&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#<span data-ppcond="24">if</span> <a class="macro" href="../../include/linux/kconfig.h.html#71" title="0" data-ref="_M/IS_ENABLED">IS_ENABLED</a>(CONFIG_IPV6)</u></td></tr>
+<tr><th id="25">25</th><td><u>#include &lt;net/ip6_checksum.h&gt;</u></td></tr>
+<tr><th id="26">26</th><td><u>#<span data-ppcond="24">endif</span></u></td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="br_private.h.html">"br_private.h"</a></u></td></tr>
+<tr><th id="29">29</th><td></td></tr>
+<tr><th id="30">30</th><td><em>void</em> <dfn class="decl def fn" id="br_recalculate_neigh_suppress_enabled" title='br_recalculate_neigh_suppress_enabled' data-ref="br_recalculate_neigh_suppress_enabled">br_recalculate_neigh_suppress_enabled</dfn>(<b>struct</b> <a class="type" href="br_private.h.html#net_bridge" title='net_bridge' data-ref="net_bridge">net_bridge</a> *<dfn class="local col1 decl" id="1br" title='br' data-type='struct net_bridge *' data-ref="1br">br</dfn>)</td></tr>
+<tr><th id="31">31</th><td>{</td></tr>
+<tr><th id="32">32</th><td>	<b>struct</b> <a class="type" href="br_private.h.html#net_bridge_port" title='net_bridge_port' data-ref="net_bridge_port">net_bridge_port</a> *<dfn class="local col2 decl" id="2p" title='p' data-type='struct net_bridge_port *' data-ref="2p">p</dfn>;</td></tr>
+<tr><th id="33">33</th><td>	<a class="typedef" href="../../include/linux/types.h.html#bool" title='bool' data-type='_Bool' data-ref="bool">bool</a> <dfn class="local col3 decl" id="3neigh_suppress" title='neigh_suppress' data-type='bool' data-ref="3neigh_suppress">neigh_suppress</dfn> = <a class="enum" href="../../include/linux/stddef.h.html#false" title='false' data-ref="false">false</a>;</td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td>	<a class="macro" href="../../include/linux/list.h.html#463" title="for (p = ({ void *__mptr = (void *)((&amp;br-&gt;port_list)-&gt;next); do { bool __cond = !(!(!__builtin_types_compatible_p(typeof(*((&amp;br-&gt;port_list)-&gt;next)), typeof(((typeof(*p) *)0)-&gt;list)) &amp;&amp; !__builtin_types_compatible_p(typeof(*((&amp;br-&gt;port_list)-&gt;next)), typeof(void)))); extern void __compiletime_assert_35(void) ; if (__cond) __compiletime_assert_35(); do { ((void)sizeof(char[1 - 2 * __cond])); } while (0); } while (0); ((typeof(*p) *)(__mptr - __builtin_offsetof(typeof(*p), list))); }); &amp;p-&gt;list != (&amp;br-&gt;port_list); p = ({ void *__mptr = (void *)((p)-&gt;list.next); do { bool __cond = !(!(!__builtin_types_compatible_p(typeof(*((p)-&gt;list.next)), typeof(((typeof(*(p)) *)0)-&gt;list)) &amp;&amp; !__builtin_types_compatible_p(typeof(*((p)-&gt;list.next)), typeof(void)))); extern void __compiletime_assert_35(void) ; if (__cond) __compiletime_assert_35(); do { ((void)sizeof(char[1 - 2 * __cond])); } while (0); } while (0); ((typeof(*(p)) *)(__mptr - __builtin_offsetof(typeof(*(p)), list))); }))" data-ref="_M/list_for_each_entry">list_for_each_entry</a>(<a class="local col2 ref" href="#2p" title='p' data-ref="2p">p</a>, &amp;<a class="local col1 ref" href="#1br" title='br' data-ref="1br">br</a>-&gt;<a class="ref field" href="br_private.h.html#net_bridge::port_list" title='net_bridge::port_list' data-ref="net_bridge::port_list">port_list</a>, <a class="ref field" href="br_private.h.html#net_bridge_port::list" title='net_bridge_port::list' data-ref="net_bridge_port::list">list</a>) {</td></tr>
+<tr><th id="36">36</th><td>		<b>if</b> (<a class="local col2 ref" href="#2p" title='p' data-ref="2p">p</a>-&gt;<a class="ref field" href="br_private.h.html#net_bridge_port::flags" title='net_bridge_port::flags' data-ref="net_bridge_port::flags">flags</a> &amp; <a class="macro" href="../../include/linux/if_bridge.h.html#52" title="(1UL &lt;&lt; (15))" data-ref="_M/BR_NEIGH_SUPPRESS">BR_NEIGH_SUPPRESS</a>) {</td></tr>
+<tr><th id="37">37</th><td>			<a class="local col3 ref" href="#3neigh_suppress" title='neigh_suppress' data-ref="3neigh_suppress">neigh_suppress</a> = <a class="enum" href="../../include/linux/stddef.h.html#true" title='true' data-ref="true">true</a>;</td></tr>
+<tr><th id="38">38</th><td>			<b>break</b>;</td></tr>
+<tr><th id="39">39</th><td>		}</td></tr>
+<tr><th id="40">40</th><td>	}</td></tr>
+<tr><th id="41">41</th><td></td></tr>
+<tr><th id="42">42</th><td>	<a class="local col1 ref" href="#1br" title='br' data-ref="1br">br</a>-&gt;<a class="ref field" href="br_private.h.html#net_bridge::neigh_suppress_enabled" title='net_bridge::neigh_suppress_enabled' data-ref="net_bridge::neigh_suppress_enabled">neigh_suppress_enabled</a> = <a class="local col3 ref" href="#3neigh_suppress" title='neigh_suppress' data-ref="3neigh_suppress">neigh_suppress</a>;</td></tr>
+<tr><th id="43">43</th><td>}</td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td><u>#<span data-ppcond="45">if</span> <a class="macro" href="../../include/linux/kconfig.h.html#71" title="1" data-ref="_M/IS_ENABLED">IS_ENABLED</a>(<a class="macro" href="../../include/generated/autoconf.h.html#778" title="1" data-ref="_M/CONFIG_INET">CONFIG_INET</a>)</u></td></tr>
+<tr><th id="46">46</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="br_arp_send" title='br_arp_send' data-type='void br_arp_send(struct net_bridge * br, struct net_bridge_port * p, struct net_device * dev, __be32 dest_ip, __be32 src_ip, const unsigned char * dest_hw, const unsigned char * src_hw, const unsigned char * target_hw, __be16 vlan_proto, u16 vlan_tci)' data-ref="br_arp_send">br_arp_send</dfn>(<b>struct</b> <a class="type" href="br_private.h.html#net_bridge" title='net_bridge' data-ref="net_bridge">net_bridge</a> *<dfn class="local col4 decl" id="4br" title='br' data-type='struct net_bridge *' data-ref="4br">br</dfn>, <b>struct</b> <a class="type" href="br_private.h.html#net_bridge_port" title='net_bridge_port' data-ref="net_bridge_port">net_bridge_port</a> *<dfn class="local col5 decl" id="5p" title='p' data-type='struct net_bridge_port *' data-ref="5p">p</dfn>,</td></tr>
+<tr><th id="47">47</th><td>			<b>struct</b> <a class="type" href="../../include/linux/netdevice.h.html#net_device" title='net_device' data-ref="net_device">net_device</a> *<dfn class="local col6 decl" id="6dev" title='dev' data-type='struct net_device *' data-ref="6dev">dev</dfn>, <a class="typedef" href="../../include/uapi/linux/types.h.html#__be32" title='__be32' data-type='__u32' data-ref="__be32">__be32</a> <dfn class="local col7 decl" id="7dest_ip" title='dest_ip' data-type='__be32' data-ref="7dest_ip">dest_ip</dfn>, <a class="typedef" href="../../include/uapi/linux/types.h.html#__be32" title='__be32' data-type='__u32' data-ref="__be32">__be32</a> <dfn class="local col8 decl" id="8src_ip" title='src_ip' data-type='__be32' data-ref="8src_ip">src_ip</dfn>,</td></tr>
+<tr><th id="48">48</th><td>			<em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col9 decl" id="9dest_hw" title='dest_hw' data-type='const unsigned char *' data-ref="9dest_hw">dest_hw</dfn>,</td></tr>
+<tr><th id="49">49</th><td>			<em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col0 decl" id="10src_hw" title='src_hw' data-type='const unsigned char *' data-ref="10src_hw">src_hw</dfn>,</td></tr>
+<tr><th id="50">50</th><td>			<em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col1 decl" id="11target_hw" title='target_hw' data-type='const unsigned char *' data-ref="11target_hw">target_hw</dfn>,</td></tr>
+<tr><th id="51">51</th><td>			<a class="typedef" href="../../include/uapi/linux/types.h.html#__be16" title='__be16' data-type='__u16' data-ref="__be16">__be16</a> <dfn class="local col2 decl" id="12vlan_proto" title='vlan_proto' data-type='__be16' data-ref="12vlan_proto">vlan_proto</dfn>, <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a> <dfn class="local col3 decl" id="13vlan_tci" title='vlan_tci' data-type='u16' data-ref="13vlan_tci">vlan_tci</dfn>)</td></tr>
+<tr><th id="52">52</th><td>{</td></tr>
+<tr><th id="53">53</th><td>	<b>struct</b> <a class="type" href="br_private.h.html#net_bridge_vlan_group" title='net_bridge_vlan_group' data-ref="net_bridge_vlan_group">net_bridge_vlan_group</a> *<dfn class="local col4 decl" id="14vg" title='vg' data-type='struct net_bridge_vlan_group *' data-ref="14vg">vg</dfn>;</td></tr>
+<tr><th id="54">54</th><td>	<b>struct</b> <a class="type" href="../../include/linux/skbuff.h.html#sk_buff" title='sk_buff' data-ref="sk_buff">sk_buff</a> *<dfn class="local col5 decl" id="15skb" title='skb' data-type='struct sk_buff *' data-ref="15skb">skb</dfn>;</td></tr>
+<tr><th id="55">55</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a> <dfn class="local col6 decl" id="16pvid" title='pvid' data-type='u16' data-ref="16pvid">pvid</dfn>;</td></tr>
+<tr><th id="56">56</th><td></td></tr>
+<tr><th id="57">57</th><td>	<a class="macro" href="../../include/linux/netdevice.h.html#4484" title="({ if (0) netdev_printk(&quot;\001&quot; &quot;7&quot;, dev, &quot;arp send dev %s dst %pI4 dst_hw %pM src %pI4 src_hw %pM\n&quot;, dev-&gt;name, &amp;dest_ip, dest_hw, &amp;src_ip, src_hw); })" data-ref="_M/netdev_dbg">netdev_dbg</a>(<a class="local col6 ref" href="#6dev" title='dev' data-ref="6dev">dev</a>, <q>"arp send dev %s dst %pI4 dst_hw %pM src %pI4 src_hw %pM\n"</q>,</td></tr>
+<tr><th id="58">58</th><td>		   <a class="local col6 ref" href="#6dev" title='dev' data-ref="6dev">dev</a>-&gt;<a class="ref field" href="../../include/linux/netdevice.h.html#net_device::name" title='net_device::name' data-ref="net_device::name">name</a>, &amp;<a class="local col7 ref" href="#7dest_ip" title='dest_ip' data-ref="7dest_ip">dest_ip</a>, <a class="local col9 ref" href="#9dest_hw" title='dest_hw' data-ref="9dest_hw">dest_hw</a>, &amp;<a class="local col8 ref" href="#8src_ip" title='src_ip' data-ref="8src_ip">src_ip</a>, <a class="local col0 ref" href="#10src_hw" title='src_hw' data-ref="10src_hw">src_hw</a>);</td></tr>
+<tr><th id="59">59</th><td></td></tr>
+<tr><th id="60">60</th><td>	<b>if</b> (!<a class="local col3 ref" href="#13vlan_tci" title='vlan_tci' data-ref="13vlan_tci">vlan_tci</a>) {</td></tr>
+<tr><th id="61">61</th><td>		<a class="ref fn" href="../../include/net/arp.h.html#arp_send" title='arp_send' data-ref="arp_send">arp_send</a>(<a class="macro" href="../../include/uapi/linux/if_arp.h.html#107" title="2" data-ref="_M/ARPOP_REPLY">ARPOP_REPLY</a>, <a class="macro" href="../../include/uapi/linux/if_ether.h.html#54" title="0x0806" data-ref="_M/ETH_P_ARP">ETH_P_ARP</a>, <a class="local col7 ref" href="#7dest_ip" title='dest_ip' data-ref="7dest_ip">dest_ip</a>, <a class="local col6 ref" href="#6dev" title='dev' data-ref="6dev">dev</a>, <a class="local col8 ref" href="#8src_ip" title='src_ip' data-ref="8src_ip">src_ip</a>,</td></tr>
+<tr><th id="62">62</th><td>			 <a class="local col9 ref" href="#9dest_hw" title='dest_hw' data-ref="9dest_hw">dest_hw</a>, <a class="local col0 ref" href="#10src_hw" title='src_hw' data-ref="10src_hw">src_hw</a>, <a class="local col1 ref" href="#11target_hw" title='target_hw' data-ref="11target_hw">target_hw</a>);</td></tr>
+<tr><th id="63">63</th><td>		<b>return</b>;</td></tr>
+<tr><th id="64">64</th><td>	}</td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td>	<a class="local col5 ref" href="#15skb" title='skb' data-ref="15skb">skb</a> = <a class="ref fn" href="../../include/net/arp.h.html#arp_create" title='arp_create' data-ref="arp_create">arp_create</a>(<a class="macro" href="../../include/uapi/linux/if_arp.h.html#107" title="2" data-ref="_M/ARPOP_REPLY">ARPOP_REPLY</a>, <a class="macro" href="../../include/uapi/linux/if_ether.h.html#54" title="0x0806" data-ref="_M/ETH_P_ARP">ETH_P_ARP</a>, <a class="local col7 ref" href="#7dest_ip" title='dest_ip' data-ref="7dest_ip">dest_ip</a>, <a class="local col6 ref" href="#6dev" title='dev' data-ref="6dev">dev</a>, <a class="local col8 ref" href="#8src_ip" title='src_ip' data-ref="8src_ip">src_ip</a>,</td></tr>
+<tr><th id="67">67</th><td>			 <a class="local col9 ref" href="#9dest_hw" title='dest_hw' data-ref="9dest_hw">dest_hw</a>, <a class="local col0 ref" href="#10src_hw" title='src_hw' data-ref="10src_hw">src_hw</a>, <a class="local col1 ref" href="#11target_hw" title='target_hw' data-ref="11target_hw">target_hw</a>);</td></tr>
+<tr><th id="68">68</th><td>	<b>if</b> (!<a class="local col5 ref" href="#15skb" title='skb' data-ref="15skb">skb</a>)</td></tr>
+<tr><th id="69">69</th><td>		<b>return</b>;</td></tr>
+<tr><th id="70">70</th><td></td></tr>
+<tr><th id="71">71</th><td>	<b>if</b> (<a class="local col5 ref" href="#5p" title='p' data-ref="5p">p</a>)</td></tr>
+<tr><th id="72">72</th><td>		<a class="local col4 ref" href="#14vg" title='vg' data-ref="14vg">vg</a> = <a class="ref fn" href="br_private.h.html#nbp_vlan_group_rcu" title='nbp_vlan_group_rcu' data-ref="nbp_vlan_group_rcu">nbp_vlan_group_rcu</a>(<a class="local col5 ref" href="#5p" title='p' data-ref="5p">p</a>);</td></tr>
+<tr><th id="73">73</th><td>	<b>else</b></td></tr>
+<tr><th id="74">74</th><td>		<a class="local col4 ref" href="#14vg" title='vg' data-ref="14vg">vg</a> = <a class="ref fn" href="br_private.h.html#br_vlan_group_rcu" title='br_vlan_group_rcu' data-ref="br_vlan_group_rcu">br_vlan_group_rcu</a>(<a class="local col4 ref" href="#4br" title='br' data-ref="4br">br</a>);</td></tr>
+<tr><th id="75">75</th><td>	<a class="local col6 ref" href="#16pvid" title='pvid' data-ref="16pvid">pvid</a> = <a class="ref fn" href="br_private.h.html#br_get_pvid" title='br_get_pvid' data-ref="br_get_pvid">br_get_pvid</a>(<a class="local col4 ref" href="#14vg" title='vg' data-ref="14vg">vg</a>);</td></tr>
+<tr><th id="76">76</th><td>	<b>if</b> (<a class="local col6 ref" href="#16pvid" title='pvid' data-ref="16pvid">pvid</a> == (<a class="local col3 ref" href="#13vlan_tci" title='vlan_tci' data-ref="13vlan_tci">vlan_tci</a> &amp; <a class="macro" href="../../include/linux/if_vlan.h.html#70" title="0x0fff" data-ref="_M/VLAN_VID_MASK">VLAN_VID_MASK</a>))</td></tr>
+<tr><th id="77">77</th><td>		<a class="local col3 ref" href="#13vlan_tci" title='vlan_tci' data-ref="13vlan_tci">vlan_tci</a> = <var>0</var>;</td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td>	<b>if</b> (<a class="local col3 ref" href="#13vlan_tci" title='vlan_tci' data-ref="13vlan_tci">vlan_tci</a>)</td></tr>
+<tr><th id="80">80</th><td>		<a class="ref fn" href="../../include/linux/if_vlan.h.html#__vlan_hwaccel_put_tag" title='__vlan_hwaccel_put_tag' data-ref="__vlan_hwaccel_put_tag">__vlan_hwaccel_put_tag</a>(<a class="local col5 ref" href="#15skb" title='skb' data-ref="15skb">skb</a>, <a class="local col2 ref" href="#12vlan_proto" title='vlan_proto' data-ref="12vlan_proto">vlan_proto</a>, <a class="local col3 ref" href="#13vlan_tci" title='vlan_tci' data-ref="13vlan_tci">vlan_tci</a>);</td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td>	<b>if</b> (<a class="local col5 ref" href="#5p" title='p' data-ref="5p">p</a>) {</td></tr>
+<tr><th id="83">83</th><td>		<a class="ref fn" href="../../include/net/arp.h.html#arp_xmit" title='arp_xmit' data-ref="arp_xmit">arp_xmit</a>(<a class="local col5 ref" href="#15skb" title='skb' data-ref="15skb">skb</a>);</td></tr>
+<tr><th id="84">84</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="85">85</th><td>		<a class="ref fn" href="../../include/linux/skbuff.h.html#skb_reset_mac_header" title='skb_reset_mac_header' data-ref="skb_reset_mac_header">skb_reset_mac_header</a>(<a class="local col5 ref" href="#15skb" title='skb' data-ref="15skb">skb</a>);</td></tr>
+<tr><th id="86">86</th><td>		<a class="ref fn" href="../../include/linux/skbuff.h.html#__skb_pull" title='__skb_pull' data-ref="__skb_pull">__skb_pull</a>(<a class="local col5 ref" href="#15skb" title='skb' data-ref="15skb">skb</a>, <a class="ref fn" href="../../include/linux/skbuff.h.html#skb_network_offset" title='skb_network_offset' data-ref="skb_network_offset">skb_network_offset</a>(<a class="local col5 ref" href="#15skb" title='skb' data-ref="15skb">skb</a>));</td></tr>
+<tr><th id="87">87</th><td>		<a class="local col5 ref" href="#15skb" title='skb' data-ref="15skb">skb</a>-&gt;<a class="ref field" href="../../include/linux/skbuff.h.html#sk_buff::ip_summed" title='sk_buff::ip_summed' data-ref="sk_buff::ip_summed">ip_summed</a> = <a class="macro" href="../../include/linux/skbuff.h.html#221" title="1" data-ref="_M/CHECKSUM_UNNECESSARY">CHECKSUM_UNNECESSARY</a>;</td></tr>
+<tr><th id="88">88</th><td>		<a class="local col5 ref" href="#15skb" title='skb' data-ref="15skb">skb</a>-&gt;<a class="ref field" href="../../include/linux/skbuff.h.html#sk_buff::pkt_type" title='sk_buff::pkt_type' data-ref="sk_buff::pkt_type">pkt_type</a> = <a class="macro" href="../../include/uapi/linux/if_packet.h.html#25" title="0" data-ref="_M/PACKET_HOST">PACKET_HOST</a>;</td></tr>
+<tr><th id="89">89</th><td></td></tr>
+<tr><th id="90">90</th><td>		<a class="ref fn" href="../../include/linux/netdevice.h.html#netif_rx_ni" title='netif_rx_ni' data-ref="netif_rx_ni">netif_rx_ni</a>(<a class="local col5 ref" href="#15skb" title='skb' data-ref="15skb">skb</a>);</td></tr>
+<tr><th id="91">91</th><td>	}</td></tr>
+<tr><th id="92">92</th><td>}</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="br_chk_addr_ip" title='br_chk_addr_ip' data-type='int br_chk_addr_ip(struct net_device * dev, void * data)' data-ref="br_chk_addr_ip">br_chk_addr_ip</dfn>(<b>struct</b> <a class="type" href="../../include/linux/netdevice.h.html#net_device" title='net_device' data-ref="net_device">net_device</a> *<dfn class="local col7 decl" id="17dev" title='dev' data-type='struct net_device *' data-ref="17dev">dev</dfn>, <em>void</em> *<dfn class="local col8 decl" id="18data" title='data' data-type='void *' data-ref="18data">data</dfn>)</td></tr>
+<tr><th id="95">95</th><td>{</td></tr>
+<tr><th id="96">96</th><td>	<a class="typedef" href="../../include/uapi/linux/types.h.html#__be32" title='__be32' data-type='__u32' data-ref="__be32">__be32</a> <dfn class="local col9 decl" id="19ip" title='ip' data-type='__be32' data-ref="19ip">ip</dfn> = *(<a class="typedef" href="../../include/uapi/linux/types.h.html#__be32" title='__be32' data-type='__u32' data-ref="__be32">__be32</a> *)<a class="local col8 ref" href="#18data" title='data' data-ref="18data">data</a>;</td></tr>
+<tr><th id="97">97</th><td>	<b>struct</b> <a class="type" href="../../include/linux/inetdevice.h.html#in_device" title='in_device' data-ref="in_device">in_device</a> *<dfn class="local col0 decl" id="20in_dev" title='in_dev' data-type='struct in_device *' data-ref="20in_dev">in_dev</dfn>;</td></tr>
+<tr><th id="98">98</th><td>	<a class="typedef" href="../../include/uapi/linux/types.h.html#__be32" title='__be32' data-type='__u32' data-ref="__be32">__be32</a> <dfn class="local col1 decl" id="21addr" title='addr' data-type='__be32' data-ref="21addr">addr</dfn> = <var>0</var>;</td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td>	<a class="local col0 ref" href="#20in_dev" title='in_dev' data-ref="20in_dev">in_dev</a> = <a class="ref fn" href="../../include/linux/inetdevice.h.html#__in_dev_get_rcu" title='__in_dev_get_rcu' data-ref="__in_dev_get_rcu">__in_dev_get_rcu</a>(<a class="local col7 ref" href="#17dev" title='dev' data-ref="17dev">dev</a>);</td></tr>
+<tr><th id="101">101</th><td>	<b>if</b> (<a class="local col0 ref" href="#20in_dev" title='in_dev' data-ref="20in_dev">in_dev</a>)</td></tr>
+<tr><th id="102">102</th><td>		<a class="local col1 ref" href="#21addr" title='addr' data-ref="21addr">addr</a> = <a class="ref fn" href="../../include/linux/inetdevice.h.html#inet_confirm_addr" title='inet_confirm_addr' data-ref="inet_confirm_addr">inet_confirm_addr</a>(<a class="ref fn" href="../../include/linux/netdevice.h.html#dev_net" title='dev_net' data-ref="dev_net">dev_net</a>(<a class="local col7 ref" href="#17dev" title='dev' data-ref="17dev">dev</a>), <a class="local col0 ref" href="#20in_dev" title='in_dev' data-ref="20in_dev">in_dev</a>, <var>0</var>, <a class="local col9 ref" href="#19ip" title='ip' data-ref="19ip">ip</a>,</td></tr>
+<tr><th id="103">103</th><td>					 <a class="enum" href="../../include/uapi/linux/rtnetlink.h.html#RT_SCOPE_HOST" title='RT_SCOPE_HOST' data-ref="RT_SCOPE_HOST">RT_SCOPE_HOST</a>);</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td>	<b>if</b> (<a class="local col1 ref" href="#21addr" title='addr' data-ref="21addr">addr</a> == <a class="local col9 ref" href="#19ip" title='ip' data-ref="19ip">ip</a>)</td></tr>
+<tr><th id="106">106</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="107">107</th><td></td></tr>
+<tr><th id="108">108</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="109">109</th><td>}</td></tr>
+<tr><th id="110">110</th><td></td></tr>
+<tr><th id="111">111</th><td><em>static</em> <a class="typedef" href="../../include/linux/types.h.html#bool" title='bool' data-type='_Bool' data-ref="bool">bool</a> <dfn class="tu decl def fn" id="br_is_local_ip" title='br_is_local_ip' data-type='bool br_is_local_ip(struct net_device * dev, __be32 ip)' data-ref="br_is_local_ip">br_is_local_ip</dfn>(<b>struct</b> <a class="type" href="../../include/linux/netdevice.h.html#net_device" title='net_device' data-ref="net_device">net_device</a> *<dfn class="local col2 decl" id="22dev" title='dev' data-type='struct net_device *' data-ref="22dev">dev</dfn>, <a class="typedef" href="../../include/uapi/linux/types.h.html#__be32" title='__be32' data-type='__u32' data-ref="__be32">__be32</a> <dfn class="local col3 decl" id="23ip" title='ip' data-type='__be32' data-ref="23ip">ip</dfn>)</td></tr>
+<tr><th id="112">112</th><td>{</td></tr>
+<tr><th id="113">113</th><td>	<b>if</b> (<a class="tu ref fn" href="#br_chk_addr_ip" title='br_chk_addr_ip' data-use='c' data-ref="br_chk_addr_ip">br_chk_addr_ip</a>(<a class="local col2 ref" href="#22dev" title='dev' data-ref="22dev">dev</a>, &amp;<a class="local col3 ref" href="#23ip" title='ip' data-ref="23ip">ip</a>))</td></tr>
+<tr><th id="114">114</th><td>		<b>return</b> <a class="enum" href="../../include/linux/stddef.h.html#true" title='true' data-ref="true">true</a>;</td></tr>
+<tr><th id="115">115</th><td></td></tr>
+<tr><th id="116">116</th><td>	<i>/* check if ip is configured on upper dev */</i></td></tr>
+<tr><th id="117">117</th><td>	<b>if</b> (<a class="ref fn" href="../../include/linux/netdevice.h.html#netdev_walk_all_upper_dev_rcu" title='netdev_walk_all_upper_dev_rcu' data-ref="netdev_walk_all_upper_dev_rcu">netdev_walk_all_upper_dev_rcu</a>(<a class="local col2 ref" href="#22dev" title='dev' data-ref="22dev">dev</a>, <a class="tu ref fn" href="#br_chk_addr_ip" title='br_chk_addr_ip' data-use='r' data-ref="br_chk_addr_ip">br_chk_addr_ip</a>, &amp;<a class="local col3 ref" href="#23ip" title='ip' data-ref="23ip">ip</a>))</td></tr>
+<tr><th id="118">118</th><td>		<b>return</b> <a class="enum" href="../../include/linux/stddef.h.html#true" title='true' data-ref="true">true</a>;</td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td>	<b>return</b> <a class="enum" href="../../include/linux/stddef.h.html#false" title='false' data-ref="false">false</a>;</td></tr>
+<tr><th id="121">121</th><td>}</td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td><em>void</em> <dfn class="decl def fn" id="br_do_proxy_suppress_arp" title='br_do_proxy_suppress_arp' data-ref="br_do_proxy_suppress_arp">br_do_proxy_suppress_arp</dfn>(<b>struct</b> <a class="type" href="../../include/linux/skbuff.h.html#sk_buff" title='sk_buff' data-ref="sk_buff">sk_buff</a> *<dfn class="local col4 decl" id="24skb" title='skb' data-type='struct sk_buff *' data-ref="24skb">skb</dfn>, <b>struct</b> <a class="type" href="br_private.h.html#net_bridge" title='net_bridge' data-ref="net_bridge">net_bridge</a> *<dfn class="local col5 decl" id="25br" title='br' data-type='struct net_bridge *' data-ref="25br">br</dfn>,</td></tr>
+<tr><th id="124">124</th><td>			      <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a> <dfn class="local col6 decl" id="26vid" title='vid' data-type='u16' data-ref="26vid">vid</dfn>, <b>struct</b> <a class="type" href="br_private.h.html#net_bridge_port" title='net_bridge_port' data-ref="net_bridge_port">net_bridge_port</a> *<dfn class="local col7 decl" id="27p" title='p' data-type='struct net_bridge_port *' data-ref="27p">p</dfn>)</td></tr>
+<tr><th id="125">125</th><td>{</td></tr>
+<tr><th id="126">126</th><td>	<b>struct</b> <a class="type" href="../../include/linux/netdevice.h.html#net_device" title='net_device' data-ref="net_device">net_device</a> *<dfn class="local col8 decl" id="28dev" title='dev' data-type='struct net_device *' data-ref="28dev">dev</dfn> = <a class="local col5 ref" href="#25br" title='br' data-ref="25br">br</a>-&gt;<a class="ref field" href="br_private.h.html#net_bridge::dev" title='net_bridge::dev' data-ref="net_bridge::dev">dev</a>;</td></tr>
+<tr><th id="127">127</th><td>	<b>struct</b> <a class="type" href="../../include/linux/netdevice.h.html#net_device" title='net_device' data-ref="net_device">net_device</a> *<dfn class="local col9 decl" id="29vlandev" title='vlandev' data-type='struct net_device *' data-ref="29vlandev">vlandev</dfn> = <a class="local col8 ref" href="#28dev" title='dev' data-ref="28dev">dev</a>;</td></tr>
+<tr><th id="128">128</th><td>	<b>struct</b> <a class="type" href="../../include/net/neighbour.h.html#neighbour" title='neighbour' data-ref="neighbour">neighbour</a> *<dfn class="local col0 decl" id="30n" title='n' data-type='struct neighbour *' data-ref="30n">n</dfn>;</td></tr>
+<tr><th id="129">129</th><td>	<b>struct</b> <a class="type" href="../../include/uapi/linux/if_arp.h.html#arphdr" title='arphdr' data-ref="arphdr">arphdr</a> *<dfn class="local col1 decl" id="31parp" title='parp' data-type='struct arphdr *' data-ref="31parp">parp</dfn>;</td></tr>
+<tr><th id="130">130</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a> *<dfn class="local col2 decl" id="32arpptr" title='arpptr' data-type='u8 *' data-ref="32arpptr">arpptr</dfn>, *<dfn class="local col3 decl" id="33sha" title='sha' data-type='u8 *' data-ref="33sha">sha</dfn>;</td></tr>
+<tr><th id="131">131</th><td>	<a class="typedef" href="../../include/uapi/linux/types.h.html#__be32" title='__be32' data-type='__u32' data-ref="__be32">__be32</a> <dfn class="local col4 decl" id="34sip" title='sip' data-type='__be32' data-ref="34sip">sip</dfn>, <dfn class="local col5 decl" id="35tip" title='tip' data-type='__be32' data-ref="35tip">tip</dfn>;</td></tr>
+<tr><th id="132">132</th><td></td></tr>
+<tr><th id="133">133</th><td>	<a class="macro" href="br_private.h.html#437" title="((struct br_input_skb_cb *)(skb)-&gt;cb)" data-ref="_M/BR_INPUT_SKB_CB">BR_INPUT_SKB_CB</a>(<a class="local col4 ref" href="#24skb" title='skb' data-ref="24skb">skb</a>)-&gt;<a class="ref field" href="br_private.h.html#br_input_skb_cb::proxyarp_replied" title='br_input_skb_cb::proxyarp_replied' data-ref="br_input_skb_cb::proxyarp_replied">proxyarp_replied</a> = <a class="enum" href="../../include/linux/stddef.h.html#false" title='false' data-ref="false">false</a>;</td></tr>
+<tr><th id="134">134</th><td></td></tr>
+<tr><th id="135">135</th><td>	<b>if</b> ((<a class="local col8 ref" href="#28dev" title='dev' data-ref="28dev">dev</a>-&gt;<a class="ref field" href="../../include/linux/netdevice.h.html#net_device::flags" title='net_device::flags' data-ref="net_device::flags">flags</a> &amp; <a class="macro" href="../../include/uapi/linux/if.h.html#118" title="IFF_NOARP" data-ref="_M/IFF_NOARP">IFF_NOARP</a>) ||</td></tr>
+<tr><th id="136">136</th><td>	    !<a class="ref fn" href="../../include/linux/skbuff.h.html#pskb_may_pull" title='pskb_may_pull' data-ref="pskb_may_pull">pskb_may_pull</a>(<a class="local col4 ref" href="#24skb" title='skb' data-ref="24skb">skb</a>, <a class="ref fn" href="../../include/linux/if_arp.h.html#arp_hdr_len" title='arp_hdr_len' data-ref="arp_hdr_len">arp_hdr_len</a>(<a class="local col8 ref" href="#28dev" title='dev' data-ref="28dev">dev</a>)))</td></tr>
+<tr><th id="137">137</th><td>		<b>return</b>;</td></tr>
+<tr><th id="138">138</th><td></td></tr>
+<tr><th id="139">139</th><td>	<a class="local col1 ref" href="#31parp" title='parp' data-ref="31parp">parp</a> = <a class="ref fn" href="../../include/linux/if_arp.h.html#arp_hdr" title='arp_hdr' data-ref="arp_hdr">arp_hdr</a>(<a class="local col4 ref" href="#24skb" title='skb' data-ref="24skb">skb</a>);</td></tr>
+<tr><th id="140">140</th><td></td></tr>
+<tr><th id="141">141</th><td>	<b>if</b> (<a class="local col1 ref" href="#31parp" title='parp' data-ref="31parp">parp</a>-&gt;<a class="ref field" href="../../include/uapi/linux/if_arp.h.html#arphdr::ar_pro" title='arphdr::ar_pro' data-ref="arphdr::ar_pro">ar_pro</a> != <a class="macro" href="../../include/linux/byteorder/generic.h.html#141" title="(( __be16)(__builtin_constant_p((__u16)((0x0800))) ? ((__u16)( (((__u16)((0x0800)) &amp; (__u16)0x00ffU) &lt;&lt; 8) | (((__u16)((0x0800)) &amp; (__u16)0xff00U) &gt;&gt; 8))) : __fswab16((0x0800))))" data-ref="_M/htons">htons</a>(<a class="macro" href="../../include/uapi/linux/if_ether.h.html#52" title="0x0800" data-ref="_M/ETH_P_IP">ETH_P_IP</a>) ||</td></tr>
+<tr><th id="142">142</th><td>	    <a class="local col1 ref" href="#31parp" title='parp' data-ref="31parp">parp</a>-&gt;<a class="ref field" href="../../include/uapi/linux/if_arp.h.html#arphdr::ar_hln" title='arphdr::ar_hln' data-ref="arphdr::ar_hln">ar_hln</a> != <a class="local col8 ref" href="#28dev" title='dev' data-ref="28dev">dev</a>-&gt;<a class="ref field" href="../../include/linux/netdevice.h.html#net_device::addr_len" title='net_device::addr_len' data-ref="net_device::addr_len">addr_len</a> ||</td></tr>
+<tr><th id="143">143</th><td>	    <a class="local col1 ref" href="#31parp" title='parp' data-ref="31parp">parp</a>-&gt;<a class="ref field" href="../../include/uapi/linux/if_arp.h.html#arphdr::ar_pln" title='arphdr::ar_pln' data-ref="arphdr::ar_pln">ar_pln</a> != <var>4</var>)</td></tr>
+<tr><th id="144">144</th><td>		<b>return</b>;</td></tr>
+<tr><th id="145">145</th><td></td></tr>
+<tr><th id="146">146</th><td>	<a class="local col2 ref" href="#32arpptr" title='arpptr' data-ref="32arpptr">arpptr</a> = (<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a> *)<a class="local col1 ref" href="#31parp" title='parp' data-ref="31parp">parp</a> + <b>sizeof</b>(<b>struct</b> <a class="type" href="../../include/uapi/linux/if_arp.h.html#arphdr" title='arphdr' data-ref="arphdr">arphdr</a>);</td></tr>
+<tr><th id="147">147</th><td>	<a class="local col3 ref" href="#33sha" title='sha' data-ref="33sha">sha</a> = <a class="local col2 ref" href="#32arpptr" title='arpptr' data-ref="32arpptr">arpptr</a>;</td></tr>
+<tr><th id="148">148</th><td>	<a class="local col2 ref" href="#32arpptr" title='arpptr' data-ref="32arpptr">arpptr</a> += <a class="local col8 ref" href="#28dev" title='dev' data-ref="28dev">dev</a>-&gt;<a class="ref field" href="../../include/linux/netdevice.h.html#net_device::addr_len" title='net_device::addr_len' data-ref="net_device::addr_len">addr_len</a>;	<i>/* sha */</i></td></tr>
+<tr><th id="149">149</th><td>	<a class="macro" href="../../arch/x86/include/asm/string_64.h.html#37" title="({ size_t __len = (sizeof(sip)); void *__ret; if (__builtin_constant_p(sizeof(sip)) &amp;&amp; __len &gt;= 64) __ret = __memcpy((&amp;sip), (arpptr), __len); else __ret = __builtin_memcpy((&amp;sip), (arpptr), __len); __ret; })" data-ref="_M/memcpy">memcpy</a>(&amp;<a class="local col4 ref" href="#34sip" title='sip' data-ref="34sip">sip</a>, <a class="local col2 ref" href="#32arpptr" title='arpptr' data-ref="32arpptr">arpptr</a>, <b>sizeof</b>(<a class="local col4 ref" href="#34sip" title='sip' data-ref="34sip">sip</a>));</td></tr>
+<tr><th id="150">150</th><td>	<a class="local col2 ref" href="#32arpptr" title='arpptr' data-ref="32arpptr">arpptr</a> += <b>sizeof</b>(<a class="local col4 ref" href="#34sip" title='sip' data-ref="34sip">sip</a>);</td></tr>
+<tr><th id="151">151</th><td>	<a class="local col2 ref" href="#32arpptr" title='arpptr' data-ref="32arpptr">arpptr</a> += <a class="local col8 ref" href="#28dev" title='dev' data-ref="28dev">dev</a>-&gt;<a class="ref field" href="../../include/linux/netdevice.h.html#net_device::addr_len" title='net_device::addr_len' data-ref="net_device::addr_len">addr_len</a>;	<i>/* tha */</i></td></tr>
+<tr><th id="152">152</th><td>	<a class="macro" href="../../arch/x86/include/asm/string_64.h.html#37" title="({ size_t __len = (sizeof(tip)); void *__ret; if (__builtin_constant_p(sizeof(tip)) &amp;&amp; __len &gt;= 64) __ret = __memcpy((&amp;tip), (arpptr), __len); else __ret = __builtin_memcpy((&amp;tip), (arpptr), __len); __ret; })" data-ref="_M/memcpy">memcpy</a>(&amp;<a class="local col5 ref" href="#35tip" title='tip' data-ref="35tip">tip</a>, <a class="local col2 ref" href="#32arpptr" title='arpptr' data-ref="32arpptr">arpptr</a>, <b>sizeof</b>(<a class="local col5 ref" href="#35tip" title='tip' data-ref="35tip">tip</a>));</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td>	<b>if</b> (<a class="ref fn" href="../../include/linux/in.h.html#ipv4_is_loopback" title='ipv4_is_loopback' data-ref="ipv4_is_loopback">ipv4_is_loopback</a>(<a class="local col5 ref" href="#35tip" title='tip' data-ref="35tip">tip</a>) ||</td></tr>
+<tr><th id="155">155</th><td>	    <a class="ref fn" href="../../include/linux/in.h.html#ipv4_is_multicast" title='ipv4_is_multicast' data-ref="ipv4_is_multicast">ipv4_is_multicast</a>(<a class="local col5 ref" href="#35tip" title='tip' data-ref="35tip">tip</a>))</td></tr>
+<tr><th id="156">156</th><td>		<b>return</b>;</td></tr>
+<tr><th id="157">157</th><td></td></tr>
+<tr><th id="158">158</th><td>	<b>if</b> (<a class="local col5 ref" href="#25br" title='br' data-ref="25br">br</a>-&gt;<a class="ref field" href="br_private.h.html#net_bridge::neigh_suppress_enabled" title='net_bridge::neigh_suppress_enabled' data-ref="net_bridge::neigh_suppress_enabled">neigh_suppress_enabled</a>) {</td></tr>
+<tr><th id="159">159</th><td>		<b>if</b> (<a class="local col7 ref" href="#27p" title='p' data-ref="27p">p</a> &amp;&amp; (<a class="local col7 ref" href="#27p" title='p' data-ref="27p">p</a>-&gt;<a class="ref field" href="br_private.h.html#net_bridge_port::flags" title='net_bridge_port::flags' data-ref="net_bridge_port::flags">flags</a> &amp; <a class="macro" href="../../include/linux/if_bridge.h.html#52" title="(1UL &lt;&lt; (15))" data-ref="_M/BR_NEIGH_SUPPRESS">BR_NEIGH_SUPPRESS</a>))</td></tr>
+<tr><th id="160">160</th><td>			<b>return</b>;</td></tr>
+<tr><th id="161">161</th><td>		<b>if</b> (<a class="ref fn" href="../../include/linux/in.h.html#ipv4_is_zeronet" title='ipv4_is_zeronet' data-ref="ipv4_is_zeronet">ipv4_is_zeronet</a>(<a class="local col4 ref" href="#34sip" title='sip' data-ref="34sip">sip</a>) || <a class="local col4 ref" href="#34sip" title='sip' data-ref="34sip">sip</a> == <a class="local col5 ref" href="#35tip" title='tip' data-ref="35tip">tip</a>) {</td></tr>
+<tr><th id="162">162</th><td>			<i>/* prevent flooding to neigh suppress ports */</i></td></tr>
+<tr><th id="163">163</th><td>			<a class="macro" href="br_private.h.html#437" title="((struct br_input_skb_cb *)(skb)-&gt;cb)" data-ref="_M/BR_INPUT_SKB_CB">BR_INPUT_SKB_CB</a>(<a class="local col4 ref" href="#24skb" title='skb' data-ref="24skb">skb</a>)-&gt;<a class="ref field" href="br_private.h.html#br_input_skb_cb::proxyarp_replied" title='br_input_skb_cb::proxyarp_replied' data-ref="br_input_skb_cb::proxyarp_replied">proxyarp_replied</a> = <a class="enum" href="../../include/linux/stddef.h.html#true" title='true' data-ref="true">true</a>;</td></tr>
+<tr><th id="164">164</th><td>			<b>return</b>;</td></tr>
+<tr><th id="165">165</th><td>		}</td></tr>
+<tr><th id="166">166</th><td>	}</td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td>	<b>if</b> (<a class="local col1 ref" href="#31parp" title='parp' data-ref="31parp">parp</a>-&gt;<a class="ref field" href="../../include/uapi/linux/if_arp.h.html#arphdr::ar_op" title='arphdr::ar_op' data-ref="arphdr::ar_op">ar_op</a> != <a class="macro" href="../../include/linux/byteorder/generic.h.html#141" title="(( __be16)(__builtin_constant_p((__u16)((1))) ? ((__u16)( (((__u16)((1)) &amp; (__u16)0x00ffU) &lt;&lt; 8) | (((__u16)((1)) &amp; (__u16)0xff00U) &gt;&gt; 8))) : __fswab16((1))))" data-ref="_M/htons">htons</a>(<a class="macro" href="../../include/uapi/linux/if_arp.h.html#106" title="1" data-ref="_M/ARPOP_REQUEST">ARPOP_REQUEST</a>))</td></tr>
+<tr><th id="169">169</th><td>		<b>return</b>;</td></tr>
+<tr><th id="170">170</th><td></td></tr>
+<tr><th id="171">171</th><td>	<b>if</b> (<a class="local col6 ref" href="#26vid" title='vid' data-ref="26vid">vid</a> != <var>0</var>) {</td></tr>
+<tr><th id="172">172</th><td>		<a class="local col9 ref" href="#29vlandev" title='vlandev' data-ref="29vlandev">vlandev</a> = <a class="ref fn" href="../../include/linux/if_vlan.h.html#__vlan_find_dev_deep_rcu" title='__vlan_find_dev_deep_rcu' data-ref="__vlan_find_dev_deep_rcu">__vlan_find_dev_deep_rcu</a>(<a class="local col5 ref" href="#25br" title='br' data-ref="25br">br</a>-&gt;<a class="ref field" href="br_private.h.html#net_bridge::dev" title='net_bridge::dev' data-ref="net_bridge::dev">dev</a>, <a class="local col4 ref" href="#24skb" title='skb' data-ref="24skb">skb</a>-&gt;<a class="ref field" href="../../include/linux/skbuff.h.html#sk_buff::vlan_proto" title='sk_buff::vlan_proto' data-ref="sk_buff::vlan_proto">vlan_proto</a>,</td></tr>
+<tr><th id="173">173</th><td>						   <a class="local col6 ref" href="#26vid" title='vid' data-ref="26vid">vid</a>);</td></tr>
+<tr><th id="174">174</th><td>		<b>if</b> (!<a class="local col9 ref" href="#29vlandev" title='vlandev' data-ref="29vlandev">vlandev</a>)</td></tr>
+<tr><th id="175">175</th><td>			<b>return</b>;</td></tr>
+<tr><th id="176">176</th><td>	}</td></tr>
+<tr><th id="177">177</th><td></td></tr>
+<tr><th id="178">178</th><td>	<b>if</b> (<a class="local col5 ref" href="#25br" title='br' data-ref="25br">br</a>-&gt;<a class="ref field" href="br_private.h.html#net_bridge::neigh_suppress_enabled" title='net_bridge::neigh_suppress_enabled' data-ref="net_bridge::neigh_suppress_enabled">neigh_suppress_enabled</a> &amp;&amp; <a class="tu ref fn" href="#br_is_local_ip" title='br_is_local_ip' data-use='c' data-ref="br_is_local_ip">br_is_local_ip</a>(<a class="local col9 ref" href="#29vlandev" title='vlandev' data-ref="29vlandev">vlandev</a>, <a class="local col5 ref" href="#35tip" title='tip' data-ref="35tip">tip</a>)) {</td></tr>
+<tr><th id="179">179</th><td>		<i>/* its our local ip, so don't proxy reply</i></td></tr>
+<tr><th id="180">180</th><td><i>		 * and don't forward to neigh suppress ports</i></td></tr>
+<tr><th id="181">181</th><td><i>		 */</i></td></tr>
+<tr><th id="182">182</th><td>		<a class="macro" href="br_private.h.html#437" title="((struct br_input_skb_cb *)(skb)-&gt;cb)" data-ref="_M/BR_INPUT_SKB_CB">BR_INPUT_SKB_CB</a>(<a class="local col4 ref" href="#24skb" title='skb' data-ref="24skb">skb</a>)-&gt;<a class="ref field" href="br_private.h.html#br_input_skb_cb::proxyarp_replied" title='br_input_skb_cb::proxyarp_replied' data-ref="br_input_skb_cb::proxyarp_replied">proxyarp_replied</a> = <a class="enum" href="../../include/linux/stddef.h.html#true" title='true' data-ref="true">true</a>;</td></tr>
+<tr><th id="183">183</th><td>		<b>return</b>;</td></tr>
+<tr><th id="184">184</th><td>	}</td></tr>
+<tr><th id="185">185</th><td></td></tr>
+<tr><th id="186">186</th><td>	<a class="local col0 ref" href="#30n" title='n' data-ref="30n">n</a> = <a class="ref fn" href="../../include/net/neighbour.h.html#neigh_lookup" title='neigh_lookup' data-ref="neigh_lookup">neigh_lookup</a>(&amp;<a class="ref" href="../../include/net/arp.h.html#arp_tbl" title='arp_tbl' data-ref="arp_tbl">arp_tbl</a>, &amp;<a class="local col5 ref" href="#35tip" title='tip' data-ref="35tip">tip</a>, <a class="local col9 ref" href="#29vlandev" title='vlandev' data-ref="29vlandev">vlandev</a>);</td></tr>
+<tr><th id="187">187</th><td>	<b>if</b> (<a class="local col0 ref" href="#30n" title='n' data-ref="30n">n</a>) {</td></tr>
+<tr><th id="188">188</th><td>		<b>struct</b> <a class="type" href="br_private.h.html#net_bridge_fdb_entry" title='net_bridge_fdb_entry' data-ref="net_bridge_fdb_entry">net_bridge_fdb_entry</a> *<dfn class="local col6 decl" id="36f" title='f' data-type='struct net_bridge_fdb_entry *' data-ref="36f">f</dfn>;</td></tr>
+<tr><th id="189">189</th><td></td></tr>
+<tr><th id="190">190</th><td>		<b>if</b> (!(<a class="local col0 ref" href="#30n" title='n' data-ref="30n">n</a>-&gt;<a class="ref field" href="../../include/net/neighbour.h.html#neighbour::nud_state" title='neighbour::nud_state' data-ref="neighbour::nud_state">nud_state</a> &amp; <a class="macro" href="../../include/net/neighbour.h.html#38" title="(0x80|0x40|0x02|0x10|0x04|0x08)" data-ref="_M/NUD_VALID">NUD_VALID</a>)) {</td></tr>
+<tr><th id="191">191</th><td>			<a class="ref fn" href="../../include/net/neighbour.h.html#neigh_release" title='neigh_release' data-ref="neigh_release">neigh_release</a>(<a class="local col0 ref" href="#30n" title='n' data-ref="30n">n</a>);</td></tr>
+<tr><th id="192">192</th><td>			<b>return</b>;</td></tr>
+<tr><th id="193">193</th><td>		}</td></tr>
+<tr><th id="194">194</th><td></td></tr>
+<tr><th id="195">195</th><td>		<a class="local col6 ref" href="#36f" title='f' data-ref="36f">f</a> = <a class="ref fn" href="br_private.h.html#br_fdb_find_rcu" title='br_fdb_find_rcu' data-ref="br_fdb_find_rcu">br_fdb_find_rcu</a>(<a class="local col5 ref" href="#25br" title='br' data-ref="25br">br</a>, <a class="local col0 ref" href="#30n" title='n' data-ref="30n">n</a>-&gt;<a class="ref field" href="../../include/net/neighbour.h.html#neighbour::ha" title='neighbour::ha' data-ref="neighbour::ha">ha</a>, <a class="local col6 ref" href="#26vid" title='vid' data-ref="26vid">vid</a>);</td></tr>
+<tr><th id="196">196</th><td>		<b>if</b> (<a class="local col6 ref" href="#36f" title='f' data-ref="36f">f</a>) {</td></tr>
+<tr><th id="197">197</th><td>			<a class="typedef" href="../../include/linux/types.h.html#bool" title='bool' data-type='_Bool' data-ref="bool">bool</a> <dfn class="local col7 decl" id="37replied" title='replied' data-type='bool' data-ref="37replied">replied</dfn> = <a class="enum" href="../../include/linux/stddef.h.html#false" title='false' data-ref="false">false</a>;</td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td>			<b>if</b> ((<a class="local col7 ref" href="#27p" title='p' data-ref="27p">p</a> &amp;&amp; (<a class="local col7 ref" href="#27p" title='p' data-ref="27p">p</a>-&gt;<a class="ref field" href="br_private.h.html#net_bridge_port::flags" title='net_bridge_port::flags' data-ref="net_bridge_port::flags">flags</a> &amp; <a class="macro" href="../../include/linux/if_bridge.h.html#45" title="(1UL &lt;&lt; (8))" data-ref="_M/BR_PROXYARP">BR_PROXYARP</a>)) ||</td></tr>
+<tr><th id="200">200</th><td>			    (<a class="local col6 ref" href="#36f" title='f' data-ref="36f">f</a>-&gt;<a class="ref field" href="br_private.h.html#net_bridge_fdb_entry::dst" title='net_bridge_fdb_entry::dst' data-ref="net_bridge_fdb_entry::dst">dst</a> &amp;&amp; (<a class="local col6 ref" href="#36f" title='f' data-ref="36f">f</a>-&gt;<a class="ref field" href="br_private.h.html#net_bridge_fdb_entry::dst" title='net_bridge_fdb_entry::dst' data-ref="net_bridge_fdb_entry::dst">dst</a>-&gt;<a class="ref field" href="br_private.h.html#net_bridge_port::flags" title='net_bridge_port::flags' data-ref="net_bridge_port::flags">flags</a> &amp; (<a class="macro" href="../../include/linux/if_bridge.h.html#47" title="(1UL &lt;&lt; (10))" data-ref="_M/BR_PROXYARP_WIFI">BR_PROXYARP_WIFI</a> |</td></tr>
+<tr><th id="201">201</th><td>							 <a class="macro" href="../../include/linux/if_bridge.h.html#52" title="(1UL &lt;&lt; (15))" data-ref="_M/BR_NEIGH_SUPPRESS">BR_NEIGH_SUPPRESS</a>)))) {</td></tr>
+<tr><th id="202">202</th><td>				<b>if</b> (!<a class="local col6 ref" href="#26vid" title='vid' data-ref="26vid">vid</a>)</td></tr>
+<tr><th id="203">203</th><td>					<a class="tu ref fn" href="#br_arp_send" title='br_arp_send' data-use='c' data-ref="br_arp_send">br_arp_send</a>(<a class="local col5 ref" href="#25br" title='br' data-ref="25br">br</a>, <a class="local col7 ref" href="#27p" title='p' data-ref="27p">p</a>, <a class="local col4 ref" href="#24skb" title='skb' data-ref="24skb">skb</a>-&gt;<a class="ref field" href="../../include/linux/skbuff.h.html#sk_buff::(anonymousunion)::(anonymousstruct)::(anonymous)::dev" title='sk_buff::(anonymous union)::(anonymous struct)::(anonymous union)::dev' data-ref="sk_buff::(anonymousunion)::(anonymousstruct)::(anonymous)::dev">dev</a>, <a class="local col4 ref" href="#34sip" title='sip' data-ref="34sip">sip</a>, <a class="local col5 ref" href="#35tip" title='tip' data-ref="35tip">tip</a>,</td></tr>
+<tr><th id="204">204</th><td>						    <a class="local col3 ref" href="#33sha" title='sha' data-ref="33sha">sha</a>, <a class="local col0 ref" href="#30n" title='n' data-ref="30n">n</a>-&gt;<a class="ref field" href="../../include/net/neighbour.h.html#neighbour::ha" title='neighbour::ha' data-ref="neighbour::ha">ha</a>, <a class="local col3 ref" href="#33sha" title='sha' data-ref="33sha">sha</a>, <var>0</var>, <var>0</var>);</td></tr>
+<tr><th id="205">205</th><td>				<b>else</b></td></tr>
+<tr><th id="206">206</th><td>					<a class="tu ref fn" href="#br_arp_send" title='br_arp_send' data-use='c' data-ref="br_arp_send">br_arp_send</a>(<a class="local col5 ref" href="#25br" title='br' data-ref="25br">br</a>, <a class="local col7 ref" href="#27p" title='p' data-ref="27p">p</a>, <a class="local col4 ref" href="#24skb" title='skb' data-ref="24skb">skb</a>-&gt;<a class="ref field" href="../../include/linux/skbuff.h.html#sk_buff::(anonymousunion)::(anonymousstruct)::(anonymous)::dev" title='sk_buff::(anonymous union)::(anonymous struct)::(anonymous union)::dev' data-ref="sk_buff::(anonymousunion)::(anonymousstruct)::(anonymous)::dev">dev</a>, <a class="local col4 ref" href="#34sip" title='sip' data-ref="34sip">sip</a>, <a class="local col5 ref" href="#35tip" title='tip' data-ref="35tip">tip</a>,</td></tr>
+<tr><th id="207">207</th><td>						    <a class="local col3 ref" href="#33sha" title='sha' data-ref="33sha">sha</a>, <a class="local col0 ref" href="#30n" title='n' data-ref="30n">n</a>-&gt;<a class="ref field" href="../../include/net/neighbour.h.html#neighbour::ha" title='neighbour::ha' data-ref="neighbour::ha">ha</a>, <a class="local col3 ref" href="#33sha" title='sha' data-ref="33sha">sha</a>,</td></tr>
+<tr><th id="208">208</th><td>						    <a class="local col4 ref" href="#24skb" title='skb' data-ref="24skb">skb</a>-&gt;<a class="ref field" href="../../include/linux/skbuff.h.html#sk_buff::vlan_proto" title='sk_buff::vlan_proto' data-ref="sk_buff::vlan_proto">vlan_proto</a>,</td></tr>
+<tr><th id="209">209</th><td>						    <a class="macro" href="../../include/linux/if_vlan.h.html#82" title="((skb)-&gt;vlan_tci &amp; ~0x1000)" data-ref="_M/skb_vlan_tag_get">skb_vlan_tag_get</a>(<a class="local col4 ref" href="#24skb" title='skb' data-ref="24skb">skb</a>));</td></tr>
+<tr><th id="210">210</th><td>				<a class="local col7 ref" href="#37replied" title='replied' data-ref="37replied">replied</a> = <a class="enum" href="../../include/linux/stddef.h.html#true" title='true' data-ref="true">true</a>;</td></tr>
+<tr><th id="211">211</th><td>			}</td></tr>
+<tr><th id="212">212</th><td></td></tr>
+<tr><th id="213">213</th><td>			<i>/* If we have replied or as long as we know the</i></td></tr>
+<tr><th id="214">214</th><td><i>			 * mac, indicate to arp replied</i></td></tr>
+<tr><th id="215">215</th><td><i>			 */</i></td></tr>
+<tr><th id="216">216</th><td>			<b>if</b> (<a class="local col7 ref" href="#37replied" title='replied' data-ref="37replied">replied</a> || <a class="local col5 ref" href="#25br" title='br' data-ref="25br">br</a>-&gt;<a class="ref field" href="br_private.h.html#net_bridge::neigh_suppress_enabled" title='net_bridge::neigh_suppress_enabled' data-ref="net_bridge::neigh_suppress_enabled">neigh_suppress_enabled</a>)</td></tr>
+<tr><th id="217">217</th><td>				<a class="macro" href="br_private.h.html#437" title="((struct br_input_skb_cb *)(skb)-&gt;cb)" data-ref="_M/BR_INPUT_SKB_CB">BR_INPUT_SKB_CB</a>(<a class="local col4 ref" href="#24skb" title='skb' data-ref="24skb">skb</a>)-&gt;<a class="ref field" href="br_private.h.html#br_input_skb_cb::proxyarp_replied" title='br_input_skb_cb::proxyarp_replied' data-ref="br_input_skb_cb::proxyarp_replied">proxyarp_replied</a> = <a class="enum" href="../../include/linux/stddef.h.html#true" title='true' data-ref="true">true</a>;</td></tr>
+<tr><th id="218">218</th><td>		}</td></tr>
+<tr><th id="219">219</th><td></td></tr>
+<tr><th id="220">220</th><td>		<a class="ref fn" href="../../include/net/neighbour.h.html#neigh_release" title='neigh_release' data-ref="neigh_release">neigh_release</a>(<a class="local col0 ref" href="#30n" title='n' data-ref="30n">n</a>);</td></tr>
+<tr><th id="221">221</th><td>	}</td></tr>
+<tr><th id="222">222</th><td>}</td></tr>
+<tr><th id="223">223</th><td><u>#<span data-ppcond="45">endif</span></u></td></tr>
+<tr><th id="224">224</th><td></td></tr>
+<tr><th id="225">225</th><td><u>#<span data-ppcond="225">if</span> <a class="macro" href="../../include/linux/kconfig.h.html#71" title="0" data-ref="_M/IS_ENABLED">IS_ENABLED</a>(CONFIG_IPV6)</u></td></tr>
+<tr><th id="226">226</th><td><b>struct</b> nd_msg *br_is_nd_neigh_msg(<b>struct</b> sk_buff *skb, <b>struct</b> nd_msg *msg)</td></tr>
+<tr><th id="227">227</th><td>{</td></tr>
+<tr><th id="228">228</th><td>	<b>struct</b> nd_msg *m;</td></tr>
+<tr><th id="229">229</th><td></td></tr>
+<tr><th id="230">230</th><td>	m = skb_header_pointer(skb, skb_network_offset(skb) +</td></tr>
+<tr><th id="231">231</th><td>			       <b>sizeof</b>(<b>struct</b> ipv6hdr), <b>sizeof</b>(*msg), msg);</td></tr>
+<tr><th id="232">232</th><td>	<b>if</b> (!m)</td></tr>
+<tr><th id="233">233</th><td>		<b>return</b> NULL;</td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td>	<b>if</b> (m-&gt;icmph.icmp6_code != <var>0</var> ||</td></tr>
+<tr><th id="236">236</th><td>	    (m-&gt;icmph.icmp6_type != NDISC_NEIGHBOUR_SOLICITATION &amp;&amp;</td></tr>
+<tr><th id="237">237</th><td>	     m-&gt;icmph.icmp6_type != NDISC_NEIGHBOUR_ADVERTISEMENT))</td></tr>
+<tr><th id="238">238</th><td>		<b>return</b> NULL;</td></tr>
+<tr><th id="239">239</th><td></td></tr>
+<tr><th id="240">240</th><td>	<b>return</b> m;</td></tr>
+<tr><th id="241">241</th><td>}</td></tr>
+<tr><th id="242">242</th><td></td></tr>
+<tr><th id="243">243</th><td><em>static</em> <em>void</em> br_nd_send(<b>struct</b> net_bridge *br, <b>struct</b> net_bridge_port *p,</td></tr>
+<tr><th id="244">244</th><td>		       <b>struct</b> sk_buff *request, <b>struct</b> neighbour *n,</td></tr>
+<tr><th id="245">245</th><td>		       __be16 vlan_proto, u16 vlan_tci, <b>struct</b> nd_msg *ns)</td></tr>
+<tr><th id="246">246</th><td>{</td></tr>
+<tr><th id="247">247</th><td>	<b>struct</b> net_device *dev = request-&gt;dev;</td></tr>
+<tr><th id="248">248</th><td>	<b>struct</b> net_bridge_vlan_group *vg;</td></tr>
+<tr><th id="249">249</th><td>	<b>struct</b> sk_buff *reply;</td></tr>
+<tr><th id="250">250</th><td>	<b>struct</b> nd_msg *na;</td></tr>
+<tr><th id="251">251</th><td>	<b>struct</b> ipv6hdr *pip6;</td></tr>
+<tr><th id="252">252</th><td>	<em>int</em> na_olen = <var>8</var>; <i>/* opt hdr + ETH_ALEN for target */</i></td></tr>
+<tr><th id="253">253</th><td>	<em>int</em> ns_olen;</td></tr>
+<tr><th id="254">254</th><td>	<em>int</em> i, len;</td></tr>
+<tr><th id="255">255</th><td>	u8 *daddr;</td></tr>
+<tr><th id="256">256</th><td>	u16 pvid;</td></tr>
+<tr><th id="257">257</th><td></td></tr>
+<tr><th id="258">258</th><td>	<b>if</b> (!dev)</td></tr>
+<tr><th id="259">259</th><td>		<b>return</b>;</td></tr>
+<tr><th id="260">260</th><td></td></tr>
+<tr><th id="261">261</th><td>	len = LL_RESERVED_SPACE(dev) + <b>sizeof</b>(<b>struct</b> ipv6hdr) +</td></tr>
+<tr><th id="262">262</th><td>		<b>sizeof</b>(*na) + na_olen + dev-&gt;needed_tailroom;</td></tr>
+<tr><th id="263">263</th><td></td></tr>
+<tr><th id="264">264</th><td>	reply = alloc_skb(len, GFP_ATOMIC);</td></tr>
+<tr><th id="265">265</th><td>	<b>if</b> (!reply)</td></tr>
+<tr><th id="266">266</th><td>		<b>return</b>;</td></tr>
+<tr><th id="267">267</th><td></td></tr>
+<tr><th id="268">268</th><td>	reply-&gt;protocol = htons(ETH_P_IPV6);</td></tr>
+<tr><th id="269">269</th><td>	reply-&gt;dev = dev;</td></tr>
+<tr><th id="270">270</th><td>	skb_reserve(reply, LL_RESERVED_SPACE(dev));</td></tr>
+<tr><th id="271">271</th><td>	skb_push(reply, <b>sizeof</b>(<b>struct</b> ethhdr));</td></tr>
+<tr><th id="272">272</th><td>	skb_set_mac_header(reply, <var>0</var>);</td></tr>
+<tr><th id="273">273</th><td></td></tr>
+<tr><th id="274">274</th><td>	daddr = eth_hdr(request)-&gt;h_source;</td></tr>
+<tr><th id="275">275</th><td></td></tr>
+<tr><th id="276">276</th><td>	<i>/* Do we need option processing ? */</i></td></tr>
+<tr><th id="277">277</th><td>	ns_olen = request-&gt;len - (skb_network_offset(request) +</td></tr>
+<tr><th id="278">278</th><td>				  <b>sizeof</b>(<b>struct</b> ipv6hdr)) - <b>sizeof</b>(*ns);</td></tr>
+<tr><th id="279">279</th><td>	<b>for</b> (i = <var>0</var>; i &lt; ns_olen - <var>1</var>; i += (ns-&gt;opt[i + <var>1</var>] &lt;&lt; <var>3</var>)) {</td></tr>
+<tr><th id="280">280</th><td>		<b>if</b> (ns-&gt;opt[i] == ND_OPT_SOURCE_LL_ADDR) {</td></tr>
+<tr><th id="281">281</th><td>			daddr = ns-&gt;opt + i + <b>sizeof</b>(<b>struct</b> nd_opt_hdr);</td></tr>
+<tr><th id="282">282</th><td>			<b>break</b>;</td></tr>
+<tr><th id="283">283</th><td>		}</td></tr>
+<tr><th id="284">284</th><td>	}</td></tr>
+<tr><th id="285">285</th><td></td></tr>
+<tr><th id="286">286</th><td>	<i>/* Ethernet header */</i></td></tr>
+<tr><th id="287">287</th><td>	ether_addr_copy(eth_hdr(reply)-&gt;h_dest, daddr);</td></tr>
+<tr><th id="288">288</th><td>	ether_addr_copy(eth_hdr(reply)-&gt;h_source, n-&gt;ha);</td></tr>
+<tr><th id="289">289</th><td>	eth_hdr(reply)-&gt;h_proto = htons(ETH_P_IPV6);</td></tr>
+<tr><th id="290">290</th><td>	reply-&gt;protocol = htons(ETH_P_IPV6);</td></tr>
+<tr><th id="291">291</th><td></td></tr>
+<tr><th id="292">292</th><td>	skb_pull(reply, <b>sizeof</b>(<b>struct</b> ethhdr));</td></tr>
+<tr><th id="293">293</th><td>	skb_set_network_header(reply, <var>0</var>);</td></tr>
+<tr><th id="294">294</th><td>	skb_put(reply, <b>sizeof</b>(<b>struct</b> ipv6hdr));</td></tr>
+<tr><th id="295">295</th><td></td></tr>
+<tr><th id="296">296</th><td>	<i>/* IPv6 header */</i></td></tr>
+<tr><th id="297">297</th><td>	pip6 = ipv6_hdr(reply);</td></tr>
+<tr><th id="298">298</th><td>	memset(pip6, <var>0</var>, <b>sizeof</b>(<b>struct</b> ipv6hdr));</td></tr>
+<tr><th id="299">299</th><td>	pip6-&gt;version = <var>6</var>;</td></tr>
+<tr><th id="300">300</th><td>	pip6-&gt;priority = ipv6_hdr(request)-&gt;priority;</td></tr>
+<tr><th id="301">301</th><td>	pip6-&gt;nexthdr = IPPROTO_ICMPV6;</td></tr>
+<tr><th id="302">302</th><td>	pip6-&gt;hop_limit = <var>255</var>;</td></tr>
+<tr><th id="303">303</th><td>	pip6-&gt;daddr = ipv6_hdr(request)-&gt;saddr;</td></tr>
+<tr><th id="304">304</th><td>	pip6-&gt;saddr = *(<b>struct</b> in6_addr *)n-&gt;primary_key;</td></tr>
+<tr><th id="305">305</th><td></td></tr>
+<tr><th id="306">306</th><td>	skb_pull(reply, <b>sizeof</b>(<b>struct</b> ipv6hdr));</td></tr>
+<tr><th id="307">307</th><td>	skb_set_transport_header(reply, <var>0</var>);</td></tr>
+<tr><th id="308">308</th><td></td></tr>
+<tr><th id="309">309</th><td>	na = (<b>struct</b> nd_msg *)skb_put(reply, <b>sizeof</b>(*na) + na_olen);</td></tr>
+<tr><th id="310">310</th><td></td></tr>
+<tr><th id="311">311</th><td>	<i>/* Neighbor Advertisement */</i></td></tr>
+<tr><th id="312">312</th><td>	memset(na, <var>0</var>, <b>sizeof</b>(*na) + na_olen);</td></tr>
+<tr><th id="313">313</th><td>	na-&gt;icmph.icmp6_type = NDISC_NEIGHBOUR_ADVERTISEMENT;</td></tr>
+<tr><th id="314">314</th><td>	na-&gt;icmph.icmp6_router = <var>0</var>; <i>/* XXX: should be 1 ? */</i></td></tr>
+<tr><th id="315">315</th><td>	na-&gt;icmph.icmp6_override = <var>1</var>;</td></tr>
+<tr><th id="316">316</th><td>	na-&gt;icmph.icmp6_solicited = <var>1</var>;</td></tr>
+<tr><th id="317">317</th><td>	na-&gt;target = ns-&gt;target;</td></tr>
+<tr><th id="318">318</th><td>	ether_addr_copy(&amp;na-&gt;opt[<var>2</var>], n-&gt;ha);</td></tr>
+<tr><th id="319">319</th><td>	na-&gt;opt[<var>0</var>] = ND_OPT_TARGET_LL_ADDR;</td></tr>
+<tr><th id="320">320</th><td>	na-&gt;opt[<var>1</var>] = na_olen &gt;&gt; <var>3</var>;</td></tr>
+<tr><th id="321">321</th><td></td></tr>
+<tr><th id="322">322</th><td>	na-&gt;icmph.icmp6_cksum = csum_ipv6_magic(&amp;pip6-&gt;saddr,</td></tr>
+<tr><th id="323">323</th><td>						&amp;pip6-&gt;daddr,</td></tr>
+<tr><th id="324">324</th><td>						<b>sizeof</b>(*na) + na_olen,</td></tr>
+<tr><th id="325">325</th><td>						IPPROTO_ICMPV6,</td></tr>
+<tr><th id="326">326</th><td>						csum_partial(na, <b>sizeof</b>(*na) + na_olen, <var>0</var>));</td></tr>
+<tr><th id="327">327</th><td></td></tr>
+<tr><th id="328">328</th><td>	pip6-&gt;payload_len = htons(<b>sizeof</b>(*na) + na_olen);</td></tr>
+<tr><th id="329">329</th><td></td></tr>
+<tr><th id="330">330</th><td>	skb_push(reply, <b>sizeof</b>(<b>struct</b> ipv6hdr));</td></tr>
+<tr><th id="331">331</th><td>	skb_push(reply, <b>sizeof</b>(<b>struct</b> ethhdr));</td></tr>
+<tr><th id="332">332</th><td></td></tr>
+<tr><th id="333">333</th><td>	reply-&gt;ip_summed = CHECKSUM_UNNECESSARY;</td></tr>
+<tr><th id="334">334</th><td></td></tr>
+<tr><th id="335">335</th><td>	<b>if</b> (p)</td></tr>
+<tr><th id="336">336</th><td>		vg = nbp_vlan_group_rcu(p);</td></tr>
+<tr><th id="337">337</th><td>	<b>else</b></td></tr>
+<tr><th id="338">338</th><td>		vg = br_vlan_group_rcu(br);</td></tr>
+<tr><th id="339">339</th><td>	pvid = br_get_pvid(vg);</td></tr>
+<tr><th id="340">340</th><td>	<b>if</b> (pvid == (vlan_tci &amp; VLAN_VID_MASK))</td></tr>
+<tr><th id="341">341</th><td>		vlan_tci = <var>0</var>;</td></tr>
+<tr><th id="342">342</th><td></td></tr>
+<tr><th id="343">343</th><td>	<b>if</b> (vlan_tci)</td></tr>
+<tr><th id="344">344</th><td>		__vlan_hwaccel_put_tag(reply, vlan_proto, vlan_tci);</td></tr>
+<tr><th id="345">345</th><td></td></tr>
+<tr><th id="346">346</th><td>	netdev_dbg(dev, <q>"nd send dev %s dst %pI6 dst_hw %pM src %pI6 src_hw %pM\n"</q>,</td></tr>
+<tr><th id="347">347</th><td>		   dev-&gt;name, &amp;pip6-&gt;daddr, daddr, &amp;pip6-&gt;saddr, n-&gt;ha);</td></tr>
+<tr><th id="348">348</th><td></td></tr>
+<tr><th id="349">349</th><td>	<b>if</b> (p) {</td></tr>
+<tr><th id="350">350</th><td>		dev_queue_xmit(reply);</td></tr>
+<tr><th id="351">351</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="352">352</th><td>		skb_reset_mac_header(reply);</td></tr>
+<tr><th id="353">353</th><td>		__skb_pull(reply, skb_network_offset(reply));</td></tr>
+<tr><th id="354">354</th><td>		reply-&gt;ip_summed = CHECKSUM_UNNECESSARY;</td></tr>
+<tr><th id="355">355</th><td>		reply-&gt;pkt_type = PACKET_HOST;</td></tr>
+<tr><th id="356">356</th><td></td></tr>
+<tr><th id="357">357</th><td>		netif_rx_ni(reply);</td></tr>
+<tr><th id="358">358</th><td>	}</td></tr>
+<tr><th id="359">359</th><td>}</td></tr>
+<tr><th id="360">360</th><td></td></tr>
+<tr><th id="361">361</th><td><em>static</em> <em>int</em> br_chk_addr_ip6(<b>struct</b> net_device *dev, <em>void</em> *data)</td></tr>
+<tr><th id="362">362</th><td>{</td></tr>
+<tr><th id="363">363</th><td>	<b>struct</b> in6_addr *addr = (<b>struct</b> in6_addr *)data;</td></tr>
+<tr><th id="364">364</th><td></td></tr>
+<tr><th id="365">365</th><td>	<b>if</b> (ipv6_chk_addr(dev_net(dev), addr, dev, <var>0</var>))</td></tr>
+<tr><th id="366">366</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="367">367</th><td></td></tr>
+<tr><th id="368">368</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="369">369</th><td>}</td></tr>
+<tr><th id="370">370</th><td></td></tr>
+<tr><th id="371">371</th><td><em>static</em> bool br_is_local_ip6(<b>struct</b> net_device *dev, <b>struct</b> in6_addr *addr)</td></tr>
+<tr><th id="372">372</th><td></td></tr>
+<tr><th id="373">373</th><td>{</td></tr>
+<tr><th id="374">374</th><td>	<b>if</b> (br_chk_addr_ip6(dev, addr))</td></tr>
+<tr><th id="375">375</th><td>		<b>return</b> true;</td></tr>
+<tr><th id="376">376</th><td></td></tr>
+<tr><th id="377">377</th><td>	<i>/* check if ip is configured on upper dev */</i></td></tr>
+<tr><th id="378">378</th><td>	<b>if</b> (netdev_walk_all_upper_dev_rcu(dev, br_chk_addr_ip6, addr))</td></tr>
+<tr><th id="379">379</th><td>		<b>return</b> true;</td></tr>
+<tr><th id="380">380</th><td></td></tr>
+<tr><th id="381">381</th><td>	<b>return</b> false;</td></tr>
+<tr><th id="382">382</th><td>}</td></tr>
+<tr><th id="383">383</th><td></td></tr>
+<tr><th id="384">384</th><td><em>void</em> br_do_suppress_nd(<b>struct</b> sk_buff *skb, <b>struct</b> net_bridge *br,</td></tr>
+<tr><th id="385">385</th><td>		       u16 vid, <b>struct</b> net_bridge_port *p, <b>struct</b> nd_msg *msg)</td></tr>
+<tr><th id="386">386</th><td>{</td></tr>
+<tr><th id="387">387</th><td>	<b>struct</b> net_device *dev = br-&gt;dev;</td></tr>
+<tr><th id="388">388</th><td>	<b>struct</b> net_device *vlandev = NULL;</td></tr>
+<tr><th id="389">389</th><td>	<b>struct</b> in6_addr *saddr, *daddr;</td></tr>
+<tr><th id="390">390</th><td>	<b>struct</b> ipv6hdr *iphdr;</td></tr>
+<tr><th id="391">391</th><td>	<b>struct</b> neighbour *n;</td></tr>
+<tr><th id="392">392</th><td></td></tr>
+<tr><th id="393">393</th><td>	BR_INPUT_SKB_CB(skb)-&gt;proxyarp_replied = false;</td></tr>
+<tr><th id="394">394</th><td></td></tr>
+<tr><th id="395">395</th><td>	<b>if</b> (p &amp;&amp; (p-&gt;flags &amp; BR_NEIGH_SUPPRESS))</td></tr>
+<tr><th id="396">396</th><td>		<b>return</b>;</td></tr>
+<tr><th id="397">397</th><td></td></tr>
+<tr><th id="398">398</th><td>	<b>if</b> (msg-&gt;icmph.icmp6_type == NDISC_NEIGHBOUR_ADVERTISEMENT &amp;&amp;</td></tr>
+<tr><th id="399">399</th><td>	    !msg-&gt;icmph.icmp6_solicited) {</td></tr>
+<tr><th id="400">400</th><td>		<i>/* prevent flooding to neigh suppress ports */</i></td></tr>
+<tr><th id="401">401</th><td>		BR_INPUT_SKB_CB(skb)-&gt;proxyarp_replied = true;</td></tr>
+<tr><th id="402">402</th><td>		<b>return</b>;</td></tr>
+<tr><th id="403">403</th><td>	}</td></tr>
+<tr><th id="404">404</th><td></td></tr>
+<tr><th id="405">405</th><td>	<b>if</b> (msg-&gt;icmph.icmp6_type != NDISC_NEIGHBOUR_SOLICITATION)</td></tr>
+<tr><th id="406">406</th><td>		<b>return</b>;</td></tr>
+<tr><th id="407">407</th><td></td></tr>
+<tr><th id="408">408</th><td>	iphdr = ipv6_hdr(skb);</td></tr>
+<tr><th id="409">409</th><td>	saddr = &amp;iphdr-&gt;saddr;</td></tr>
+<tr><th id="410">410</th><td>	daddr = &amp;iphdr-&gt;daddr;</td></tr>
+<tr><th id="411">411</th><td></td></tr>
+<tr><th id="412">412</th><td>	<b>if</b> (ipv6_addr_any(saddr) || !ipv6_addr_cmp(saddr, daddr)) {</td></tr>
+<tr><th id="413">413</th><td>		<i>/* prevent flooding to neigh suppress ports */</i></td></tr>
+<tr><th id="414">414</th><td>		BR_INPUT_SKB_CB(skb)-&gt;proxyarp_replied = true;</td></tr>
+<tr><th id="415">415</th><td>		<b>return</b>;</td></tr>
+<tr><th id="416">416</th><td>	}</td></tr>
+<tr><th id="417">417</th><td></td></tr>
+<tr><th id="418">418</th><td>	<b>if</b> (vid != <var>0</var>) {</td></tr>
+<tr><th id="419">419</th><td>		<i>/* build neigh table lookup on the vlan device */</i></td></tr>
+<tr><th id="420">420</th><td>		vlandev = __vlan_find_dev_deep_rcu(br-&gt;dev, skb-&gt;vlan_proto,</td></tr>
+<tr><th id="421">421</th><td>						   vid);</td></tr>
+<tr><th id="422">422</th><td>		<b>if</b> (!vlandev)</td></tr>
+<tr><th id="423">423</th><td>			<b>return</b>;</td></tr>
+<tr><th id="424">424</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="425">425</th><td>		vlandev = dev;</td></tr>
+<tr><th id="426">426</th><td>	}</td></tr>
+<tr><th id="427">427</th><td></td></tr>
+<tr><th id="428">428</th><td>	<b>if</b> (br_is_local_ip6(vlandev, &amp;msg-&gt;target)) {</td></tr>
+<tr><th id="429">429</th><td>		<i>/* its our own ip, so don't proxy reply</i></td></tr>
+<tr><th id="430">430</th><td><i>		 * and don't forward to arp suppress ports</i></td></tr>
+<tr><th id="431">431</th><td><i>		 */</i></td></tr>
+<tr><th id="432">432</th><td>		BR_INPUT_SKB_CB(skb)-&gt;proxyarp_replied = true;</td></tr>
+<tr><th id="433">433</th><td>		<b>return</b>;</td></tr>
+<tr><th id="434">434</th><td>	}</td></tr>
+<tr><th id="435">435</th><td></td></tr>
+<tr><th id="436">436</th><td>	n = neigh_lookup(ipv6_stub-&gt;nd_tbl, &amp;msg-&gt;target, vlandev);</td></tr>
+<tr><th id="437">437</th><td>	<b>if</b> (n) {</td></tr>
+<tr><th id="438">438</th><td>		<b>struct</b> net_bridge_fdb_entry *f;</td></tr>
+<tr><th id="439">439</th><td></td></tr>
+<tr><th id="440">440</th><td>		<b>if</b> (!(n-&gt;nud_state &amp; NUD_VALID)) {</td></tr>
+<tr><th id="441">441</th><td>			neigh_release(n);</td></tr>
+<tr><th id="442">442</th><td>			<b>return</b>;</td></tr>
+<tr><th id="443">443</th><td>		}</td></tr>
+<tr><th id="444">444</th><td></td></tr>
+<tr><th id="445">445</th><td>		f = br_fdb_find_rcu(br, n-&gt;ha, vid);</td></tr>
+<tr><th id="446">446</th><td>		<b>if</b> (f) {</td></tr>
+<tr><th id="447">447</th><td>			bool replied = false;</td></tr>
+<tr><th id="448">448</th><td></td></tr>
+<tr><th id="449">449</th><td>			<b>if</b> (f-&gt;dst &amp;&amp; (f-&gt;dst-&gt;flags &amp; BR_NEIGH_SUPPRESS)) {</td></tr>
+<tr><th id="450">450</th><td>				<b>if</b> (vid != <var>0</var>)</td></tr>
+<tr><th id="451">451</th><td>					br_nd_send(br, p, skb, n,</td></tr>
+<tr><th id="452">452</th><td>						   skb-&gt;vlan_proto,</td></tr>
+<tr><th id="453">453</th><td>						   skb_vlan_tag_get(skb), msg);</td></tr>
+<tr><th id="454">454</th><td>				<b>else</b></td></tr>
+<tr><th id="455">455</th><td>					br_nd_send(br, p, skb, n, <var>0</var>, <var>0</var>, msg);</td></tr>
+<tr><th id="456">456</th><td>				replied = true;</td></tr>
+<tr><th id="457">457</th><td>			}</td></tr>
+<tr><th id="458">458</th><td></td></tr>
+<tr><th id="459">459</th><td>			<i>/* If we have replied or as long as we know the</i></td></tr>
+<tr><th id="460">460</th><td><i>			 * mac, indicate to NEIGH_SUPPRESS ports that we</i></td></tr>
+<tr><th id="461">461</th><td><i>			 * have replied</i></td></tr>
+<tr><th id="462">462</th><td><i>			 */</i></td></tr>
+<tr><th id="463">463</th><td>			<b>if</b> (replied || br-&gt;neigh_suppress_enabled)</td></tr>
+<tr><th id="464">464</th><td>				BR_INPUT_SKB_CB(skb)-&gt;proxyarp_replied = true;</td></tr>
+<tr><th id="465">465</th><td>		}</td></tr>
+<tr><th id="466">466</th><td>		neigh_release(n);</td></tr>
+<tr><th id="467">467</th><td>	}</td></tr>
+<tr><th id="468">468</th><td>}</td></tr>
+<tr><th id="469">469</th><td><u>#<span data-ppcond="225">endif</span></u></td></tr>
+<tr><th id="470">470</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,33 @@
+<def f='linux-4.18.y/include/asm-generic/tlb.h' l='51' ll='55'/>
+<size>24</size>
+<doc f='linux-4.18.y/include/asm-generic/tlb.h' l='23'>/*
+ * Semi RCU freeing of the page directories.
+ *
+ * This is needed by some architectures to implement software pagetable walkers.
+ *
+ * gup_fast() and other software pagetable walkers do a lockless page-table
+ * walk and therefore needs some synchronization with the freeing of the page
+ * directories. The chosen means to accomplish that is by disabling IRQs over
+ * the walk.
+ *
+ * Architectures that use IPIs to flush TLBs will then automagically DTRT,
+ * since we unlink the page, flush TLBs, free the page. Since the disabling of
+ * IRQs delays the completion of the TLB flush we can never observe an already
+ * freed page.
+ *
+ * Architectures that do not have this (PPC) need to delay the freeing by some
+ * other means, this is that means.
+ *
+ * What we do is batch the freed directory pages (tables) and RCU free them.
+ * We use the sched RCU variant, as that guarantees that IRQ/preempt disabling
+ * holds off grace periods.
+ *
+ * However, in order to batch these pages we need to allocate storage, this
+ * allocation is deep inside the MM code and can thus easily fail on memory
+ * pressure. To guarantee progress we fall back to single table freeing, see
+ * the implementation of tlb_remove_table_one().
+ *
+ */</doc>
+<mbr r='mmu_table_batch::rcu' o='0' t='struct callback_head'/>
+<mbr r='mmu_table_batch::nr' o='128' t='unsigned int'/>
+<mbr r='mmu_table_batch::tables' o='192' t='void *[0]'/>

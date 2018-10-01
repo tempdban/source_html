@@ -1,0 +1,229 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>kdb_bt.c source code [linux-4.18.y/kernel/debug/kdb/kdb_bt.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/kernel/debug/kdb/kdb_bt.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>linux-4.18.y</a>/<a href='../..'>kernel</a>/<a href='..'>debug</a>/<a href='./'>kdb</a>/<a href='kdb_bt.c.html'>kdb_bt.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Kernel Debugger Architecture Independent Stack Traceback</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> * This file is subject to the terms and conditions of the GNU General Public</i></td></tr>
+<tr><th id="5">5</th><td><i> * License.  See the file "COPYING" in the main directory of this archive</i></td></tr>
+<tr><th id="6">6</th><td><i> * for more details.</i></td></tr>
+<tr><th id="7">7</th><td><i> *</i></td></tr>
+<tr><th id="8">8</th><td><i> * Copyright (c) 1999-2004 Silicon Graphics, Inc.  All Rights Reserved.</i></td></tr>
+<tr><th id="9">9</th><td><i> * Copyright (c) 2009 Wind River Systems, Inc.  All Rights Reserved.</i></td></tr>
+<tr><th id="10">10</th><td><i> */</i></td></tr>
+<tr><th id="11">11</th><td></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../include/linux/ctype.h.html">&lt;linux/ctype.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../include/linux/string.h.html">&lt;linux/string.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../include/linux/kernel.h.html">&lt;linux/kernel.h&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../include/linux/sched/signal.h.html">&lt;linux/sched/signal.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../include/linux/sched/debug.h.html">&lt;linux/sched/debug.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../include/linux/kdb.h.html">&lt;linux/kdb.h&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../include/linux/nmi.h.html">&lt;linux/nmi.h&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="kdb_private.h.html">"kdb_private.h"</a></u></td></tr>
+<tr><th id="20">20</th><td></td></tr>
+<tr><th id="21">21</th><td></td></tr>
+<tr><th id="22">22</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="kdb_show_stack" title='kdb_show_stack' data-type='void kdb_show_stack(struct task_struct * p, void * addr)' data-ref="kdb_show_stack">kdb_show_stack</dfn>(<b>struct</b> <a class="type" href="../../../include/linux/sched.h.html#task_struct" title='task_struct' data-ref="task_struct">task_struct</a> *<dfn class="local col1 decl" id="1p" title='p' data-type='struct task_struct *' data-ref="1p">p</dfn>, <em>void</em> *<dfn class="local col2 decl" id="2addr" title='addr' data-type='void *' data-ref="2addr">addr</dfn>)</td></tr>
+<tr><th id="23">23</th><td>{</td></tr>
+<tr><th id="24">24</th><td>	<em>int</em> <dfn class="local col3 decl" id="3old_lvl" title='old_lvl' data-type='int' data-ref="3old_lvl">old_lvl</dfn> = <a class="macro" href="../../../include/linux/printk.h.html#65" title="(console_printk[0])" data-ref="_M/console_loglevel">console_loglevel</a>;</td></tr>
+<tr><th id="25">25</th><td>	<a class="macro" href="../../../include/linux/printk.h.html#65" title="(console_printk[0])" data-ref="_M/console_loglevel">console_loglevel</a> = <a class="macro" href="../../../include/linux/printk.h.html#55" title="15" data-ref="_M/CONSOLE_LOGLEVEL_MOTORMOUTH">CONSOLE_LOGLEVEL_MOTORMOUTH</a>;</td></tr>
+<tr><th id="26">26</th><td>	<a class="ref" href="../../../include/linux/kdb.h.html#kdb_trap_printk" title='kdb_trap_printk' data-ref="kdb_trap_printk">kdb_trap_printk</a>++;</td></tr>
+<tr><th id="27">27</th><td>	<a class="ref fn" href="kdb_private.h.html#kdb_set_current_task" title='kdb_set_current_task' data-ref="kdb_set_current_task">kdb_set_current_task</a>(<a class="local col1 ref" href="#1p" title='p' data-ref="1p">p</a>);</td></tr>
+<tr><th id="28">28</th><td>	<b>if</b> (<a class="local col2 ref" href="#2addr" title='addr' data-ref="2addr">addr</a>) {</td></tr>
+<tr><th id="29">29</th><td>		<a class="ref fn" href="../../../include/linux/sched/debug.h.html#show_stack" title='show_stack' data-ref="show_stack">show_stack</a>((<b>struct</b> <a class="type" href="../../../include/linux/sched.h.html#task_struct" title='task_struct' data-ref="task_struct">task_struct</a> *)<a class="local col1 ref" href="#1p" title='p' data-ref="1p">p</a>, <a class="local col2 ref" href="#2addr" title='addr' data-ref="2addr">addr</a>);</td></tr>
+<tr><th id="30">30</th><td>	} <b>else</b> <b>if</b> (<a class="ref" href="../../../include/linux/kdb.h.html#kdb_current_regs" title='kdb_current_regs' data-ref="kdb_current_regs">kdb_current_regs</a>) {</td></tr>
+<tr><th id="31">31</th><td><u>#<span data-ppcond="31">ifdef</span> <a class="macro" href="../../../include/generated/autoconf.h.html#209" data-ref="_M/CONFIG_X86">CONFIG_X86</a></u></td></tr>
+<tr><th id="32">32</th><td>		<a class="ref fn" href="../../../include/linux/sched/debug.h.html#show_stack" title='show_stack' data-ref="show_stack">show_stack</a>(<a class="local col1 ref" href="#1p" title='p' data-ref="1p">p</a>, &amp;<a class="ref" href="../../../include/linux/kdb.h.html#kdb_current_regs" title='kdb_current_regs' data-ref="kdb_current_regs">kdb_current_regs</a>-&gt;<a class="ref field" href="../../../arch/x86/include/asm/ptrace.h.html#pt_regs::sp" title='pt_regs::sp' data-ref="pt_regs::sp">sp</a>);</td></tr>
+<tr><th id="33">33</th><td><u>#<span data-ppcond="31">else</span></u></td></tr>
+<tr><th id="34">34</th><td>		show_stack(p, NULL);</td></tr>
+<tr><th id="35">35</th><td><u>#<span data-ppcond="31">endif</span></u></td></tr>
+<tr><th id="36">36</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="37">37</th><td>		<a class="ref fn" href="../../../include/linux/sched/debug.h.html#show_stack" title='show_stack' data-ref="show_stack">show_stack</a>(<a class="local col1 ref" href="#1p" title='p' data-ref="1p">p</a>, <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>);</td></tr>
+<tr><th id="38">38</th><td>	}</td></tr>
+<tr><th id="39">39</th><td>	<a class="macro" href="../../../include/linux/printk.h.html#65" title="(console_printk[0])" data-ref="_M/console_loglevel">console_loglevel</a> = <a class="local col3 ref" href="#3old_lvl" title='old_lvl' data-ref="3old_lvl">old_lvl</a>;</td></tr>
+<tr><th id="40">40</th><td>	<a class="ref" href="../../../include/linux/kdb.h.html#kdb_trap_printk" title='kdb_trap_printk' data-ref="kdb_trap_printk">kdb_trap_printk</a>--;</td></tr>
+<tr><th id="41">41</th><td>}</td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><i  data-doc="kdb_bt1">/*</i></td></tr>
+<tr><th id="44">44</th><td><i  data-doc="kdb_bt1"> * kdb_bt</i></td></tr>
+<tr><th id="45">45</th><td><i  data-doc="kdb_bt1"> *</i></td></tr>
+<tr><th id="46">46</th><td><i  data-doc="kdb_bt1"> *	This function implements the 'bt' command.  Print a stack</i></td></tr>
+<tr><th id="47">47</th><td><i  data-doc="kdb_bt1"> *	traceback.</i></td></tr>
+<tr><th id="48">48</th><td><i  data-doc="kdb_bt1"> *</i></td></tr>
+<tr><th id="49">49</th><td><i  data-doc="kdb_bt1"> *	bt [&lt;address-expression&gt;]	(addr-exp is for alternate stacks)</i></td></tr>
+<tr><th id="50">50</th><td><i  data-doc="kdb_bt1"> *	btp &lt;pid&gt;			Kernel stack for &lt;pid&gt;</i></td></tr>
+<tr><th id="51">51</th><td><i  data-doc="kdb_bt1"> *	btt &lt;address-expression&gt;	Kernel stack for task structure at</i></td></tr>
+<tr><th id="52">52</th><td><i  data-doc="kdb_bt1"> *					&lt;address-expression&gt;</i></td></tr>
+<tr><th id="53">53</th><td><i  data-doc="kdb_bt1"> *	bta [DRSTCZEUIMA]		All useful processes, optionally</i></td></tr>
+<tr><th id="54">54</th><td><i  data-doc="kdb_bt1"> *					filtered by state</i></td></tr>
+<tr><th id="55">55</th><td><i  data-doc="kdb_bt1"> *	btc [&lt;cpu&gt;]			The current process on one cpu,</i></td></tr>
+<tr><th id="56">56</th><td><i  data-doc="kdb_bt1"> *					default is all cpus</i></td></tr>
+<tr><th id="57">57</th><td><i  data-doc="kdb_bt1"> *</i></td></tr>
+<tr><th id="58">58</th><td><i  data-doc="kdb_bt1"> *	bt &lt;address-expression&gt; refers to a address on the stack, that location</i></td></tr>
+<tr><th id="59">59</th><td><i  data-doc="kdb_bt1"> *	is assumed to contain a return address.</i></td></tr>
+<tr><th id="60">60</th><td><i  data-doc="kdb_bt1"> *</i></td></tr>
+<tr><th id="61">61</th><td><i  data-doc="kdb_bt1"> *	btt &lt;address-expression&gt; refers to the address of a struct task.</i></td></tr>
+<tr><th id="62">62</th><td><i  data-doc="kdb_bt1"> *</i></td></tr>
+<tr><th id="63">63</th><td><i  data-doc="kdb_bt1"> * Inputs:</i></td></tr>
+<tr><th id="64">64</th><td><i  data-doc="kdb_bt1"> *	argc	argument count</i></td></tr>
+<tr><th id="65">65</th><td><i  data-doc="kdb_bt1"> *	argv	argument vector</i></td></tr>
+<tr><th id="66">66</th><td><i  data-doc="kdb_bt1"> * Outputs:</i></td></tr>
+<tr><th id="67">67</th><td><i  data-doc="kdb_bt1"> *	None.</i></td></tr>
+<tr><th id="68">68</th><td><i  data-doc="kdb_bt1"> * Returns:</i></td></tr>
+<tr><th id="69">69</th><td><i  data-doc="kdb_bt1"> *	zero for success, a kdb diagnostic if error</i></td></tr>
+<tr><th id="70">70</th><td><i  data-doc="kdb_bt1"> * Locking:</i></td></tr>
+<tr><th id="71">71</th><td><i  data-doc="kdb_bt1"> *	none.</i></td></tr>
+<tr><th id="72">72</th><td><i  data-doc="kdb_bt1"> * Remarks:</i></td></tr>
+<tr><th id="73">73</th><td><i  data-doc="kdb_bt1"> *	Backtrack works best when the code uses frame pointers.  But even</i></td></tr>
+<tr><th id="74">74</th><td><i  data-doc="kdb_bt1"> *	without frame pointers we should get a reasonable trace.</i></td></tr>
+<tr><th id="75">75</th><td><i  data-doc="kdb_bt1"> *</i></td></tr>
+<tr><th id="76">76</th><td><i  data-doc="kdb_bt1"> *	mds comes in handy when examining the stack to do a manual traceback or</i></td></tr>
+<tr><th id="77">77</th><td><i  data-doc="kdb_bt1"> *	to get a starting point for bt &lt;address-expression&gt;.</i></td></tr>
+<tr><th id="78">78</th><td><i  data-doc="kdb_bt1"> */</i></td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="81">81</th><td><dfn class="tu decl def fn" id="kdb_bt1" title='kdb_bt1' data-type='int kdb_bt1(struct task_struct * p, unsigned long mask, int argcount, int btaprompt)' data-ref="kdb_bt1">kdb_bt1</dfn>(<b>struct</b> <a class="type" href="../../../include/linux/sched.h.html#task_struct" title='task_struct' data-ref="task_struct">task_struct</a> *<dfn class="local col4 decl" id="4p" title='p' data-type='struct task_struct *' data-ref="4p">p</dfn>, <em>unsigned</em> <em>long</em> <dfn class="local col5 decl" id="5mask" title='mask' data-type='unsigned long' data-ref="5mask">mask</dfn>,</td></tr>
+<tr><th id="82">82</th><td>	<em>int</em> <dfn class="local col6 decl" id="6argcount" title='argcount' data-type='int' data-ref="6argcount">argcount</dfn>, <em>int</em> <dfn class="local col7 decl" id="7btaprompt" title='btaprompt' data-type='int' data-ref="7btaprompt">btaprompt</dfn>)</td></tr>
+<tr><th id="83">83</th><td>{</td></tr>
+<tr><th id="84">84</th><td>	<em>char</em> <dfn class="local col8 decl" id="8buffer" title='buffer' data-type='char [2]' data-ref="8buffer">buffer</dfn>[<var>2</var>];</td></tr>
+<tr><th id="85">85</th><td>	<b>if</b> (<a class="macro" href="kdb_private.h.html#97" title="kdb_getarea_size(&amp;(buffer[0]), (unsigned long)p, sizeof((buffer[0])))" data-ref="_M/kdb_getarea">kdb_getarea</a>(<a class="local col8 ref" href="#8buffer" title='buffer' data-ref="8buffer">buffer</a>[<var>0</var>], (<em>unsigned</em> <em>long</em>)<a class="local col4 ref" href="#4p" title='p' data-ref="4p">p</a>) ||</td></tr>
+<tr><th id="86">86</th><td>	    <a class="macro" href="kdb_private.h.html#97" title="kdb_getarea_size(&amp;(buffer[0]), (unsigned long)(p+1)-1, sizeof((buffer[0])))" data-ref="_M/kdb_getarea">kdb_getarea</a>(<a class="local col8 ref" href="#8buffer" title='buffer' data-ref="8buffer">buffer</a>[<var>0</var>], (<em>unsigned</em> <em>long</em>)(<a class="local col4 ref" href="#4p" title='p' data-ref="4p">p</a>+<var>1</var>)-<var>1</var>))</td></tr>
+<tr><th id="87">87</th><td>		<b>return</b> <a class="macro" href="../../../include/linux/kdb.h.html#106" title="(-21)" data-ref="_M/KDB_BADADDR">KDB_BADADDR</a>;</td></tr>
+<tr><th id="88">88</th><td>	<b>if</b> (!<a class="ref fn" href="kdb_private.h.html#kdb_task_state" title='kdb_task_state' data-ref="kdb_task_state">kdb_task_state</a>(<a class="local col4 ref" href="#4p" title='p' data-ref="4p">p</a>, <a class="local col5 ref" href="#5mask" title='mask' data-ref="5mask">mask</a>))</td></tr>
+<tr><th id="89">89</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="90">90</th><td>	<a class="ref fn" href="../../../include/linux/kdb.h.html#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"Stack traceback for pid %d\n"</q>, <a class="local col4 ref" href="#4p" title='p' data-ref="4p">p</a>-&gt;<a class="ref field" href="../../../include/linux/sched.h.html#task_struct::pid" title='task_struct::pid' data-ref="task_struct::pid">pid</a>);</td></tr>
+<tr><th id="91">91</th><td>	<a class="ref fn" href="kdb_private.h.html#kdb_ps1" title='kdb_ps1' data-ref="kdb_ps1">kdb_ps1</a>(<a class="local col4 ref" href="#4p" title='p' data-ref="4p">p</a>);</td></tr>
+<tr><th id="92">92</th><td>	<a class="tu ref fn" href="#kdb_show_stack" title='kdb_show_stack' data-use='c' data-ref="kdb_show_stack">kdb_show_stack</a>(<a class="local col4 ref" href="#4p" title='p' data-ref="4p">p</a>, <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>);</td></tr>
+<tr><th id="93">93</th><td>	<b>if</b> (<a class="local col7 ref" href="#7btaprompt" title='btaprompt' data-ref="7btaprompt">btaprompt</a>) {</td></tr>
+<tr><th id="94">94</th><td>		<a class="ref fn" href="kdb_private.h.html#kdb_getstr" title='kdb_getstr' data-ref="kdb_getstr">kdb_getstr</a>(<a class="local col8 ref" href="#8buffer" title='buffer' data-ref="8buffer">buffer</a>, <b>sizeof</b>(<a class="local col8 ref" href="#8buffer" title='buffer' data-ref="8buffer">buffer</a>),</td></tr>
+<tr><th id="95">95</th><td>			   <q>"Enter &lt;q&gt; to end, &lt;cr&gt; to continue:"</q>);</td></tr>
+<tr><th id="96">96</th><td>		<b>if</b> (<a class="local col8 ref" href="#8buffer" title='buffer' data-ref="8buffer">buffer</a>[<var>0</var>] == <kbd>'q'</kbd>) {</td></tr>
+<tr><th id="97">97</th><td>			<a class="ref fn" href="../../../include/linux/kdb.h.html#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"\n"</q>);</td></tr>
+<tr><th id="98">98</th><td>			<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="99">99</th><td>		}</td></tr>
+<tr><th id="100">100</th><td>	}</td></tr>
+<tr><th id="101">101</th><td>	<a class="ref fn" href="../../../include/linux/nmi.h.html#touch_nmi_watchdog" title='touch_nmi_watchdog' data-ref="touch_nmi_watchdog">touch_nmi_watchdog</a>();</td></tr>
+<tr><th id="102">102</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="103">103</th><td>}</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td><em>int</em></td></tr>
+<tr><th id="106">106</th><td><dfn class="decl def fn" id="kdb_bt" title='kdb_bt' data-ref="kdb_bt">kdb_bt</dfn>(<em>int</em> <dfn class="local col9 decl" id="9argc" title='argc' data-type='int' data-ref="9argc">argc</dfn>, <em>const</em> <em>char</em> **<dfn class="local col0 decl" id="10argv" title='argv' data-type='const char **' data-ref="10argv">argv</dfn>)</td></tr>
+<tr><th id="107">107</th><td>{</td></tr>
+<tr><th id="108">108</th><td>	<em>int</em> <dfn class="local col1 decl" id="11diag" title='diag' data-type='int' data-ref="11diag">diag</dfn>;</td></tr>
+<tr><th id="109">109</th><td>	<em>int</em> <dfn class="local col2 decl" id="12argcount" title='argcount' data-type='int' data-ref="12argcount">argcount</dfn> = <var>5</var>;</td></tr>
+<tr><th id="110">110</th><td>	<em>int</em> <dfn class="local col3 decl" id="13btaprompt" title='btaprompt' data-type='int' data-ref="13btaprompt">btaprompt</dfn> = <var>1</var>;</td></tr>
+<tr><th id="111">111</th><td>	<em>int</em> <dfn class="local col4 decl" id="14nextarg" title='nextarg' data-type='int' data-ref="14nextarg">nextarg</dfn>;</td></tr>
+<tr><th id="112">112</th><td>	<em>unsigned</em> <em>long</em> <dfn class="local col5 decl" id="15addr" title='addr' data-type='unsigned long' data-ref="15addr">addr</dfn>;</td></tr>
+<tr><th id="113">113</th><td>	<em>long</em> <dfn class="local col6 decl" id="16offset" title='offset' data-type='long' data-ref="16offset">offset</dfn>;</td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td>	<i>/* Prompt after each proc in bta */</i></td></tr>
+<tr><th id="116">116</th><td>	<a class="ref fn" href="../../../include/linux/kdb.h.html#kdbgetintenv" title='kdbgetintenv' data-ref="kdbgetintenv">kdbgetintenv</a>(<q>"BTAPROMPT"</q>, &amp;<a class="local col3 ref" href="#13btaprompt" title='btaprompt' data-ref="13btaprompt">btaprompt</a>);</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td>	<b>if</b> (<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strcmp" title='strcmp' data-ref="strcmp">strcmp</a>(<a class="local col0 ref" href="#10argv" title='argv' data-ref="10argv">argv</a>[<var>0</var>], <q>"bta"</q>) == <var>0</var>) {</td></tr>
+<tr><th id="119">119</th><td>		<b>struct</b> <a class="type" href="../../../include/linux/sched.h.html#task_struct" title='task_struct' data-ref="task_struct">task_struct</a> *<dfn class="local col7 decl" id="17g" title='g' data-type='struct task_struct *' data-ref="17g">g</dfn>, *<dfn class="local col8 decl" id="18p" title='p' data-type='struct task_struct *' data-ref="18p">p</dfn>;</td></tr>
+<tr><th id="120">120</th><td>		<em>unsigned</em> <em>long</em> <dfn class="local col9 decl" id="19cpu" title='cpu' data-type='unsigned long' data-ref="19cpu">cpu</dfn>;</td></tr>
+<tr><th id="121">121</th><td>		<em>unsigned</em> <em>long</em> <dfn class="local col0 decl" id="20mask" title='mask' data-type='unsigned long' data-ref="20mask">mask</dfn> = <a class="ref fn" href="kdb_private.h.html#kdb_task_state_string" title='kdb_task_state_string' data-ref="kdb_task_state_string">kdb_task_state_string</a>(<a class="local col9 ref" href="#9argc" title='argc' data-ref="9argc">argc</a> ? <a class="local col0 ref" href="#10argv" title='argv' data-ref="10argv">argv</a>[<var>1</var>] :</td></tr>
+<tr><th id="122">122</th><td>							   <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>);</td></tr>
+<tr><th id="123">123</th><td>		<b>if</b> (<a class="local col9 ref" href="#9argc" title='argc' data-ref="9argc">argc</a> == <var>0</var>)</td></tr>
+<tr><th id="124">124</th><td>			<a class="ref fn" href="kdb_private.h.html#kdb_ps_suppressed" title='kdb_ps_suppressed' data-ref="kdb_ps_suppressed">kdb_ps_suppressed</a>();</td></tr>
+<tr><th id="125">125</th><td>		<i>/* Run the active tasks first */</i></td></tr>
+<tr><th id="126">126</th><td>		<a class="macro" href="../../../include/linux/cpumask.h.html#766" title="for (((cpu)) = -1; ((cpu)) = cpumask_next(((cpu)), (((const struct cpumask *)&amp;__cpu_online_mask))), ((cpu)) &lt; nr_cpu_ids;)" data-ref="_M/for_each_online_cpu">for_each_online_cpu</a>(<a class="local col9 ref" href="#19cpu" title='cpu' data-ref="19cpu">cpu</a>) {</td></tr>
+<tr><th id="127">127</th><td>			<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a> = <a class="ref fn" href="kdb_private.h.html#kdb_curr_task" title='kdb_curr_task' data-ref="kdb_curr_task">kdb_curr_task</a>(<a class="local col9 ref" href="#19cpu" title='cpu' data-ref="19cpu">cpu</a>);</td></tr>
+<tr><th id="128">128</th><td>			<b>if</b> (<a class="tu ref fn" href="#kdb_bt1" title='kdb_bt1' data-use='c' data-ref="kdb_bt1">kdb_bt1</a>(<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>, <a class="local col0 ref" href="#20mask" title='mask' data-ref="20mask">mask</a>, <a class="local col2 ref" href="#12argcount" title='argcount' data-ref="12argcount">argcount</a>, <a class="local col3 ref" href="#13btaprompt" title='btaprompt' data-ref="13btaprompt">btaprompt</a>))</td></tr>
+<tr><th id="129">129</th><td>				<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="130">130</th><td>		}</td></tr>
+<tr><th id="131">131</th><td>		<i>/* Now the inactive tasks */</i></td></tr>
+<tr><th id="132">132</th><td>		<a class="macro" href="kdb_private.h.html#233" title="for (g = p = &amp;init_task ; (g = p = ({ void *__mptr = (void *)(({ union { typeof((g)-&gt;tasks.next) __val; char __c[1]; } __u; if (1) __read_once_size(&amp;((g)-&gt;tasks.next), __u.__c, sizeof((g)-&gt;tasks.next)); else __read_once_size_nocheck(&amp;((g)-&gt;tasks.next), __u.__c, sizeof((g)-&gt;tasks.next)); do { } while (0); __u.__val; })); do { bool __cond = !(!(!__builtin_types_compatible_p(typeof(*(({ union { typeof((g)-&gt;tasks.next) __val; char __c[1]; } __u; if (1) __read_once_size(&amp;((g)-&gt;tasks.next), __u.__c, sizeof((g)-&gt;tasks.next)); else __read_once_size_nocheck(&amp;((g)-&gt;tasks.next), __u.__c, sizeof((g)-&gt;tasks.next)); do { } while (0); __u.__val; }))), typeof(((struct task_struct *)0)-&gt;tasks)) &amp;&amp; !__builtin_types_compatible_p(typeof(*(({ union { typeof((g)-&gt;tasks.next) __val; char __c[1]; } __u; if (1) __read_once_size(&amp;((g)-&gt;tasks.next), __u.__c, sizeof((g)-&gt;tasks.next)); else __read_once_size_nocheck(&amp;((g)-&gt;tasks.next), __u.__c, sizeof((g)-&gt;tasks.next)); do { } while (0); __u.__val; }))), typeof(void)))); extern void __compiletime_assert_132(void) ; if (__cond) __compiletime_assert_132(); do { ((void)sizeof(char[1 - 2 * __cond])); } while (0); } while (0); ((struct task_struct *)(__mptr - __builtin_offsetof(struct task_struct, tasks))); })) != &amp;init_task ; ) do" data-ref="_M/kdb_do_each_thread">kdb_do_each_thread</a>(<a class="local col7 ref" href="#17g" title='g' data-ref="17g">g</a>, <a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>) {</td></tr>
+<tr><th id="133">133</th><td>			<b>if</b> (<a class="macro" href="../../../include/linux/kdb.h.html#133" title="(kdb_flags &amp; (1 &lt;&lt; 2))" data-ref="_M/KDB_FLAG">KDB_FLAG</a>(CMD_INTERRUPT))</td></tr>
+<tr><th id="134">134</th><td>				<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="135">135</th><td>			<b>if</b> (<a class="ref fn" href="../../../include/linux/sched.h.html#task_curr" title='task_curr' data-ref="task_curr">task_curr</a>(<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>))</td></tr>
+<tr><th id="136">136</th><td>				<b>continue</b>;</td></tr>
+<tr><th id="137">137</th><td>			<b>if</b> (<a class="tu ref fn" href="#kdb_bt1" title='kdb_bt1' data-use='c' data-ref="kdb_bt1">kdb_bt1</a>(<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>, <a class="local col0 ref" href="#20mask" title='mask' data-ref="20mask">mask</a>, <a class="local col2 ref" href="#12argcount" title='argcount' data-ref="12argcount">argcount</a>, <a class="local col3 ref" href="#13btaprompt" title='btaprompt' data-ref="13btaprompt">btaprompt</a>))</td></tr>
+<tr><th id="138">138</th><td>				<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="139">139</th><td>		} <a class="macro" href="kdb_private.h.html#234" title="while ((p = next_thread(p)) != g)" data-ref="_M/kdb_while_each_thread">kdb_while_each_thread</a>(<a class="local col7 ref" href="#17g" title='g' data-ref="17g">g</a>, <a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>);</td></tr>
+<tr><th id="140">140</th><td>	} <b>else</b> <b>if</b> (<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strcmp" title='strcmp' data-ref="strcmp">strcmp</a>(<a class="local col0 ref" href="#10argv" title='argv' data-ref="10argv">argv</a>[<var>0</var>], <q>"btp"</q>) == <var>0</var>) {</td></tr>
+<tr><th id="141">141</th><td>		<b>struct</b> <a class="type" href="../../../include/linux/sched.h.html#task_struct" title='task_struct' data-ref="task_struct">task_struct</a> *<dfn class="local col1 decl" id="21p" title='p' data-type='struct task_struct *' data-ref="21p">p</dfn>;</td></tr>
+<tr><th id="142">142</th><td>		<em>unsigned</em> <em>long</em> <dfn class="local col2 decl" id="22pid" title='pid' data-type='unsigned long' data-ref="22pid">pid</dfn>;</td></tr>
+<tr><th id="143">143</th><td>		<b>if</b> (<a class="local col9 ref" href="#9argc" title='argc' data-ref="9argc">argc</a> != <var>1</var>)</td></tr>
+<tr><th id="144">144</th><td>			<b>return</b> <a class="macro" href="../../../include/linux/kdb.h.html#87" title="(-2)" data-ref="_M/KDB_ARGCOUNT">KDB_ARGCOUNT</a>;</td></tr>
+<tr><th id="145">145</th><td>		<a class="local col1 ref" href="#11diag" title='diag' data-ref="11diag">diag</a> = <a class="ref fn" href="kdb_private.h.html#kdbgetularg" title='kdbgetularg' data-ref="kdbgetularg">kdbgetularg</a>((<em>char</em> *)<a class="local col0 ref" href="#10argv" title='argv' data-ref="10argv">argv</a>[<var>1</var>], &amp;<a class="local col2 ref" href="#22pid" title='pid' data-ref="22pid">pid</a>);</td></tr>
+<tr><th id="146">146</th><td>		<b>if</b> (<a class="local col1 ref" href="#11diag" title='diag' data-ref="11diag">diag</a>)</td></tr>
+<tr><th id="147">147</th><td>			<b>return</b> <a class="local col1 ref" href="#11diag" title='diag' data-ref="11diag">diag</a>;</td></tr>
+<tr><th id="148">148</th><td>		<a class="local col1 ref" href="#21p" title='p' data-ref="21p">p</a> = <a class="ref fn" href="../../../include/linux/sched.h.html#find_task_by_pid_ns" title='find_task_by_pid_ns' data-ref="find_task_by_pid_ns">find_task_by_pid_ns</a>(<a class="local col2 ref" href="#22pid" title='pid' data-ref="22pid">pid</a>, &amp;<a class="ref" href="../../../include/linux/pid.h.html#init_pid_ns" title='init_pid_ns' data-ref="init_pid_ns">init_pid_ns</a>);</td></tr>
+<tr><th id="149">149</th><td>		<b>if</b> (<a class="local col1 ref" href="#21p" title='p' data-ref="21p">p</a>) {</td></tr>
+<tr><th id="150">150</th><td>			<a class="ref fn" href="kdb_private.h.html#kdb_set_current_task" title='kdb_set_current_task' data-ref="kdb_set_current_task">kdb_set_current_task</a>(<a class="local col1 ref" href="#21p" title='p' data-ref="21p">p</a>);</td></tr>
+<tr><th id="151">151</th><td>			<b>return</b> <a class="tu ref fn" href="#kdb_bt1" title='kdb_bt1' data-use='c' data-ref="kdb_bt1">kdb_bt1</a>(<a class="local col1 ref" href="#21p" title='p' data-ref="21p">p</a>, ~<var>0UL</var>, <a class="local col2 ref" href="#12argcount" title='argcount' data-ref="12argcount">argcount</a>, <var>0</var>);</td></tr>
+<tr><th id="152">152</th><td>		}</td></tr>
+<tr><th id="153">153</th><td>		<a class="ref fn" href="../../../include/linux/kdb.h.html#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"No process with pid == %ld found\n"</q>, <a class="local col2 ref" href="#22pid" title='pid' data-ref="22pid">pid</a>);</td></tr>
+<tr><th id="154">154</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="155">155</th><td>	} <b>else</b> <b>if</b> (<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strcmp" title='strcmp' data-ref="strcmp">strcmp</a>(<a class="local col0 ref" href="#10argv" title='argv' data-ref="10argv">argv</a>[<var>0</var>], <q>"btt"</q>) == <var>0</var>) {</td></tr>
+<tr><th id="156">156</th><td>		<b>if</b> (<a class="local col9 ref" href="#9argc" title='argc' data-ref="9argc">argc</a> != <var>1</var>)</td></tr>
+<tr><th id="157">157</th><td>			<b>return</b> <a class="macro" href="../../../include/linux/kdb.h.html#87" title="(-2)" data-ref="_M/KDB_ARGCOUNT">KDB_ARGCOUNT</a>;</td></tr>
+<tr><th id="158">158</th><td>		<a class="local col1 ref" href="#11diag" title='diag' data-ref="11diag">diag</a> = <a class="ref fn" href="kdb_private.h.html#kdbgetularg" title='kdbgetularg' data-ref="kdbgetularg">kdbgetularg</a>((<em>char</em> *)<a class="local col0 ref" href="#10argv" title='argv' data-ref="10argv">argv</a>[<var>1</var>], &amp;<a class="local col5 ref" href="#15addr" title='addr' data-ref="15addr">addr</a>);</td></tr>
+<tr><th id="159">159</th><td>		<b>if</b> (<a class="local col1 ref" href="#11diag" title='diag' data-ref="11diag">diag</a>)</td></tr>
+<tr><th id="160">160</th><td>			<b>return</b> <a class="local col1 ref" href="#11diag" title='diag' data-ref="11diag">diag</a>;</td></tr>
+<tr><th id="161">161</th><td>		<a class="ref fn" href="kdb_private.h.html#kdb_set_current_task" title='kdb_set_current_task' data-ref="kdb_set_current_task">kdb_set_current_task</a>((<b>struct</b> <a class="type" href="../../../include/linux/sched.h.html#task_struct" title='task_struct' data-ref="task_struct">task_struct</a> *)<a class="local col5 ref" href="#15addr" title='addr' data-ref="15addr">addr</a>);</td></tr>
+<tr><th id="162">162</th><td>		<b>return</b> <a class="tu ref fn" href="#kdb_bt1" title='kdb_bt1' data-use='c' data-ref="kdb_bt1">kdb_bt1</a>((<b>struct</b> <a class="type" href="../../../include/linux/sched.h.html#task_struct" title='task_struct' data-ref="task_struct">task_struct</a> *)<a class="local col5 ref" href="#15addr" title='addr' data-ref="15addr">addr</a>, ~<var>0UL</var>, <a class="local col2 ref" href="#12argcount" title='argcount' data-ref="12argcount">argcount</a>, <var>0</var>);</td></tr>
+<tr><th id="163">163</th><td>	} <b>else</b> <b>if</b> (<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strcmp" title='strcmp' data-ref="strcmp">strcmp</a>(<a class="local col0 ref" href="#10argv" title='argv' data-ref="10argv">argv</a>[<var>0</var>], <q>"btc"</q>) == <var>0</var>) {</td></tr>
+<tr><th id="164">164</th><td>		<em>unsigned</em> <em>long</em> <dfn class="local col3 decl" id="23cpu" title='cpu' data-type='unsigned long' data-ref="23cpu">cpu</dfn> = ~<var>0</var>;</td></tr>
+<tr><th id="165">165</th><td>		<b>struct</b> <a class="type" href="../../../include/linux/sched.h.html#task_struct" title='task_struct' data-ref="task_struct">task_struct</a> *<dfn class="local col4 decl" id="24save_current_task" title='save_current_task' data-type='struct task_struct *' data-ref="24save_current_task">save_current_task</dfn> = <a class="ref" href="kdb_private.h.html#kdb_current_task" title='kdb_current_task' data-ref="kdb_current_task">kdb_current_task</a>;</td></tr>
+<tr><th id="166">166</th><td>		<em>char</em> <dfn class="local col5 decl" id="25buf" title='buf' data-type='char [80]' data-ref="25buf">buf</dfn>[<var>80</var>];</td></tr>
+<tr><th id="167">167</th><td>		<b>if</b> (<a class="local col9 ref" href="#9argc" title='argc' data-ref="9argc">argc</a> &gt; <var>1</var>)</td></tr>
+<tr><th id="168">168</th><td>			<b>return</b> <a class="macro" href="../../../include/linux/kdb.h.html#87" title="(-2)" data-ref="_M/KDB_ARGCOUNT">KDB_ARGCOUNT</a>;</td></tr>
+<tr><th id="169">169</th><td>		<b>if</b> (<a class="local col9 ref" href="#9argc" title='argc' data-ref="9argc">argc</a> == <var>1</var>) {</td></tr>
+<tr><th id="170">170</th><td>			<a class="local col1 ref" href="#11diag" title='diag' data-ref="11diag">diag</a> = <a class="ref fn" href="kdb_private.h.html#kdbgetularg" title='kdbgetularg' data-ref="kdbgetularg">kdbgetularg</a>((<em>char</em> *)<a class="local col0 ref" href="#10argv" title='argv' data-ref="10argv">argv</a>[<var>1</var>], &amp;<a class="local col3 ref" href="#23cpu" title='cpu' data-ref="23cpu">cpu</a>);</td></tr>
+<tr><th id="171">171</th><td>			<b>if</b> (<a class="local col1 ref" href="#11diag" title='diag' data-ref="11diag">diag</a>)</td></tr>
+<tr><th id="172">172</th><td>				<b>return</b> <a class="local col1 ref" href="#11diag" title='diag' data-ref="11diag">diag</a>;</td></tr>
+<tr><th id="173">173</th><td>		}</td></tr>
+<tr><th id="174">174</th><td>		<i>/* Recursive use of kdb_parse, do not use argv after</i></td></tr>
+<tr><th id="175">175</th><td><i>		 * this point */</i></td></tr>
+<tr><th id="176">176</th><td>		<a class="local col0 ref" href="#10argv" title='argv' data-ref="10argv">argv</a> = <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="177">177</th><td>		<b>if</b> (<a class="local col3 ref" href="#23cpu" title='cpu' data-ref="23cpu">cpu</a> != ~<var>0</var>) {</td></tr>
+<tr><th id="178">178</th><td>			<b>if</b> (<a class="local col3 ref" href="#23cpu" title='cpu' data-ref="23cpu">cpu</a> &gt;= <a class="macro" href="../../../include/linux/cpumask.h.html#100" title="cpumask_weight(((const struct cpumask *)&amp;__cpu_possible_mask))" data-ref="_M/num_possible_cpus">num_possible_cpus</a>() || !<a class="macro" href="../../../include/linux/cpumask.h.html#103" title="cpumask_test_cpu((cpu), ((const struct cpumask *)&amp;__cpu_online_mask))" data-ref="_M/cpu_online">cpu_online</a>(<a class="local col3 ref" href="#23cpu" title='cpu' data-ref="23cpu">cpu</a>)) {</td></tr>
+<tr><th id="179">179</th><td>				<a class="ref fn" href="../../../include/linux/kdb.h.html#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"no process for cpu %ld\n"</q>, <a class="local col3 ref" href="#23cpu" title='cpu' data-ref="23cpu">cpu</a>);</td></tr>
+<tr><th id="180">180</th><td>				<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="181">181</th><td>			}</td></tr>
+<tr><th id="182">182</th><td>			<a class="ref fn" href="../../../include/linux/kernel.h.html#sprintf" title='sprintf' data-ref="sprintf">sprintf</a>(<a class="local col5 ref" href="#25buf" title='buf' data-ref="25buf">buf</a>, <q>"btt 0x%p\n"</q>, <a class="macro" href="kdb_private.h.html#225" title="kgdb_info[cpu].task" data-ref="_M/KDB_TSK">KDB_TSK</a>(<a class="local col3 ref" href="#23cpu" title='cpu' data-ref="23cpu">cpu</a>));</td></tr>
+<tr><th id="183">183</th><td>			<a class="ref fn" href="../debug_core.h.html#kdb_parse" title='kdb_parse' data-ref="kdb_parse">kdb_parse</a>(<a class="local col5 ref" href="#25buf" title='buf' data-ref="25buf">buf</a>);</td></tr>
+<tr><th id="184">184</th><td>			<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="185">185</th><td>		}</td></tr>
+<tr><th id="186">186</th><td>		<a class="ref fn" href="../../../include/linux/kdb.h.html#kdb_printf" title='kdb_printf' data-ref="kdb_printf">kdb_printf</a>(<q>"btc: cpu status: "</q>);</td></tr>
+<tr><th id="187">187</th><td>		<a class="ref fn" href="../debug_core.h.html#kdb_parse" title='kdb_parse' data-ref="kdb_parse">kdb_parse</a>(<q>"cpu\n"</q>);</td></tr>
+<tr><th id="188">188</th><td>		<a class="macro" href="../../../include/linux/cpumask.h.html#766" title="for (((cpu)) = -1; ((cpu)) = cpumask_next(((cpu)), (((const struct cpumask *)&amp;__cpu_online_mask))), ((cpu)) &lt; nr_cpu_ids;)" data-ref="_M/for_each_online_cpu">for_each_online_cpu</a>(<a class="local col3 ref" href="#23cpu" title='cpu' data-ref="23cpu">cpu</a>) {</td></tr>
+<tr><th id="189">189</th><td>			<a class="ref fn" href="../../../include/linux/kernel.h.html#sprintf" title='sprintf' data-ref="sprintf">sprintf</a>(<a class="local col5 ref" href="#25buf" title='buf' data-ref="25buf">buf</a>, <q>"btt 0x%p\n"</q>, <a class="macro" href="kdb_private.h.html#225" title="kgdb_info[cpu].task" data-ref="_M/KDB_TSK">KDB_TSK</a>(<a class="local col3 ref" href="#23cpu" title='cpu' data-ref="23cpu">cpu</a>));</td></tr>
+<tr><th id="190">190</th><td>			<a class="ref fn" href="../debug_core.h.html#kdb_parse" title='kdb_parse' data-ref="kdb_parse">kdb_parse</a>(<a class="local col5 ref" href="#25buf" title='buf' data-ref="25buf">buf</a>);</td></tr>
+<tr><th id="191">191</th><td>			<a class="ref fn" href="../../../include/linux/nmi.h.html#touch_nmi_watchdog" title='touch_nmi_watchdog' data-ref="touch_nmi_watchdog">touch_nmi_watchdog</a>();</td></tr>
+<tr><th id="192">192</th><td>		}</td></tr>
+<tr><th id="193">193</th><td>		<a class="ref fn" href="kdb_private.h.html#kdb_set_current_task" title='kdb_set_current_task' data-ref="kdb_set_current_task">kdb_set_current_task</a>(<a class="local col4 ref" href="#24save_current_task" title='save_current_task' data-ref="24save_current_task">save_current_task</a>);</td></tr>
+<tr><th id="194">194</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="195">195</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="196">196</th><td>		<b>if</b> (<a class="local col9 ref" href="#9argc" title='argc' data-ref="9argc">argc</a>) {</td></tr>
+<tr><th id="197">197</th><td>			<a class="local col4 ref" href="#14nextarg" title='nextarg' data-ref="14nextarg">nextarg</a> = <var>1</var>;</td></tr>
+<tr><th id="198">198</th><td>			<a class="local col1 ref" href="#11diag" title='diag' data-ref="11diag">diag</a> = <a class="ref fn" href="kdb_private.h.html#kdbgetaddrarg" title='kdbgetaddrarg' data-ref="kdbgetaddrarg">kdbgetaddrarg</a>(<a class="local col9 ref" href="#9argc" title='argc' data-ref="9argc">argc</a>, <a class="local col0 ref" href="#10argv" title='argv' data-ref="10argv">argv</a>, &amp;<a class="local col4 ref" href="#14nextarg" title='nextarg' data-ref="14nextarg">nextarg</a>, &amp;<a class="local col5 ref" href="#15addr" title='addr' data-ref="15addr">addr</a>,</td></tr>
+<tr><th id="199">199</th><td>					     &amp;<a class="local col6 ref" href="#16offset" title='offset' data-ref="16offset">offset</a>, <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>);</td></tr>
+<tr><th id="200">200</th><td>			<b>if</b> (<a class="local col1 ref" href="#11diag" title='diag' data-ref="11diag">diag</a>)</td></tr>
+<tr><th id="201">201</th><td>				<b>return</b> <a class="local col1 ref" href="#11diag" title='diag' data-ref="11diag">diag</a>;</td></tr>
+<tr><th id="202">202</th><td>			<a class="tu ref fn" href="#kdb_show_stack" title='kdb_show_stack' data-use='c' data-ref="kdb_show_stack">kdb_show_stack</a>(<a class="ref" href="kdb_private.h.html#kdb_current_task" title='kdb_current_task' data-ref="kdb_current_task">kdb_current_task</a>, (<em>void</em> *)<a class="local col5 ref" href="#15addr" title='addr' data-ref="15addr">addr</a>);</td></tr>
+<tr><th id="203">203</th><td>			<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="204">204</th><td>		} <b>else</b> {</td></tr>
+<tr><th id="205">205</th><td>			<b>return</b> <a class="tu ref fn" href="#kdb_bt1" title='kdb_bt1' data-use='c' data-ref="kdb_bt1">kdb_bt1</a>(<a class="ref" href="kdb_private.h.html#kdb_current_task" title='kdb_current_task' data-ref="kdb_current_task">kdb_current_task</a>, ~<var>0UL</var>, <a class="local col2 ref" href="#12argcount" title='argcount' data-ref="12argcount">argcount</a>, <var>0</var>);</td></tr>
+<tr><th id="206">206</th><td>		}</td></tr>
+<tr><th id="207">207</th><td>	}</td></tr>
+<tr><th id="208">208</th><td></td></tr>
+<tr><th id="209">209</th><td>	<i>/* NOTREACHED */</i></td></tr>
+<tr><th id="210">210</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="211">211</th><td>}</td></tr>
+<tr><th id="212">212</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

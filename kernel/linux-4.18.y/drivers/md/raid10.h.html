@@ -1,0 +1,202 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>raid10.h source code [linux-4.18.y/drivers/md/raid10.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="geom,r10bio,r10bio_state,r10conf,r10dev,raid10_info "/>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/drivers/md/raid10.h'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>linux-4.18.y</a>/<a href='..'>drivers</a>/<a href='./'>md</a>/<a href='raid10.h.html'>raid10.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: GPL-2.0 */</i></td></tr>
+<tr><th id="2">2</th><td><u>#<span data-ppcond="2">ifndef</span> <span class="macro" data-ref="_M/_RAID10_H">_RAID10_H</span></u></td></tr>
+<tr><th id="3">3</th><td><u>#define <dfn class="macro" id="_M/_RAID10_H" data-ref="_M/_RAID10_H">_RAID10_H</dfn></u></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><i>/* Note: raid10_info.rdev can be set to NULL asynchronously by</i></td></tr>
+<tr><th id="6">6</th><td><i> * raid10_remove_disk.</i></td></tr>
+<tr><th id="7">7</th><td><i> * There are three safe ways to access raid10_info.rdev.</i></td></tr>
+<tr><th id="8">8</th><td><i> * 1/ when holding mddev-&gt;reconfig_mutex</i></td></tr>
+<tr><th id="9">9</th><td><i> * 2/ when resync/recovery/reshape is known to be happening - i.e. in code</i></td></tr>
+<tr><th id="10">10</th><td><i> *    that is called as part of performing resync/recovery/reshape.</i></td></tr>
+<tr><th id="11">11</th><td><i> * 3/ while holding rcu_read_lock(), use rcu_dereference to get the pointer</i></td></tr>
+<tr><th id="12">12</th><td><i> *    and if it is non-NULL, increment rdev-&gt;nr_pending before dropping the</i></td></tr>
+<tr><th id="13">13</th><td><i> *    RCU lock.</i></td></tr>
+<tr><th id="14">14</th><td><i> * When .rdev is set to NULL, the nr_pending count checked again and if it has</i></td></tr>
+<tr><th id="15">15</th><td><i> * been incremented, the pointer is put back in .rdev.</i></td></tr>
+<tr><th id="16">16</th><td><i> */</i></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><b>struct</b> <dfn class="type def" id="raid10_info" title='raid10_info' data-ref="raid10_info">raid10_info</dfn> {</td></tr>
+<tr><th id="19">19</th><td>	<b>struct</b> <a class="type" href="md.h.html#md_rdev" title='md_rdev' data-ref="md_rdev">md_rdev</a>	*<dfn class="decl field" id="raid10_info::rdev" title='raid10_info::rdev' data-ref="raid10_info::rdev">rdev</dfn>, *<dfn class="decl field" id="raid10_info::replacement" title='raid10_info::replacement' data-ref="raid10_info::replacement">replacement</dfn>;</td></tr>
+<tr><th id="20">20</th><td>	<a class="typedef" href="../../include/linux/types.h.html#sector_t" title='sector_t' data-type='unsigned long' data-ref="sector_t">sector_t</a>	<dfn class="decl field" id="raid10_info::head_position" title='raid10_info::head_position' data-ref="raid10_info::head_position">head_position</dfn>;</td></tr>
+<tr><th id="21">21</th><td>	<em>int</em>		<dfn class="decl field" id="raid10_info::recovery_disabled" title='raid10_info::recovery_disabled' data-ref="raid10_info::recovery_disabled">recovery_disabled</dfn>;	<i>/* matches</i></td></tr>
+<tr><th id="22">22</th><td><i>						 * mddev-&gt;recovery_disabled</i></td></tr>
+<tr><th id="23">23</th><td><i>						 * when we shouldn't try</i></td></tr>
+<tr><th id="24">24</th><td><i>						 * recovering this device.</i></td></tr>
+<tr><th id="25">25</th><td><i>						 */</i></td></tr>
+<tr><th id="26">26</th><td>};</td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td><b>struct</b> <dfn class="type def" id="r10conf" title='r10conf' data-ref="r10conf">r10conf</dfn> {</td></tr>
+<tr><th id="29">29</th><td>	<b>struct</b> <a class="type" href="md.h.html#mddev" title='mddev' data-ref="mddev">mddev</a>		*<dfn class="decl field" id="r10conf::mddev" title='r10conf::mddev' data-ref="r10conf::mddev">mddev</dfn>;</td></tr>
+<tr><th id="30">30</th><td>	<b>struct</b> <a class="type" href="#raid10_info" title='raid10_info' data-ref="raid10_info">raid10_info</a>	*<dfn class="decl field" id="r10conf::mirrors" title='r10conf::mirrors' data-ref="r10conf::mirrors">mirrors</dfn>;</td></tr>
+<tr><th id="31">31</th><td>	<b>struct</b> <a class="type" href="#raid10_info" title='raid10_info' data-ref="raid10_info">raid10_info</a>	*<dfn class="decl field" id="r10conf::mirrors_new" title='r10conf::mirrors_new' data-ref="r10conf::mirrors_new">mirrors_new</dfn>, *<dfn class="decl field" id="r10conf::mirrors_old" title='r10conf::mirrors_old' data-ref="r10conf::mirrors_old">mirrors_old</dfn>;</td></tr>
+<tr><th id="32">32</th><td>	<a class="typedef" href="../../include/linux/spinlock_types.h.html#spinlock_t" title='spinlock_t' data-type='struct spinlock' data-ref="spinlock_t">spinlock_t</a>		<dfn class="decl field" id="r10conf::device_lock" title='r10conf::device_lock' data-ref="r10conf::device_lock">device_lock</dfn>;</td></tr>
+<tr><th id="33">33</th><td></td></tr>
+<tr><th id="34">34</th><td>	<i>/* geometry */</i></td></tr>
+<tr><th id="35">35</th><td>	<b>struct</b> <dfn class="type def" id="geom" title='geom' data-ref="geom"><a class="type" href="#geom" title='geom' data-ref="geom"><a class="type" href="#geom" title='geom' data-ref="geom">geom</a></a></dfn> {</td></tr>
+<tr><th id="36">36</th><td>		<em>int</em>		<dfn class="decl field" id="geom::raid_disks" title='geom::raid_disks' data-ref="geom::raid_disks">raid_disks</dfn>;</td></tr>
+<tr><th id="37">37</th><td>		<em>int</em>		<dfn class="decl field" id="geom::near_copies" title='geom::near_copies' data-ref="geom::near_copies">near_copies</dfn>;  <i>/* number of copies laid out</i></td></tr>
+<tr><th id="38">38</th><td><i>					       * raid0 style */</i></td></tr>
+<tr><th id="39">39</th><td>		<em>int</em>		<dfn class="decl field" id="geom::far_copies" title='geom::far_copies' data-ref="geom::far_copies">far_copies</dfn>;   <i>/* number of copies laid out</i></td></tr>
+<tr><th id="40">40</th><td><i>					       * at large strides across drives</i></td></tr>
+<tr><th id="41">41</th><td><i>					       */</i></td></tr>
+<tr><th id="42">42</th><td>		<em>int</em>		<dfn class="decl field" id="geom::far_offset" title='geom::far_offset' data-ref="geom::far_offset">far_offset</dfn>;   <i>/* far_copies are offset by 1</i></td></tr>
+<tr><th id="43">43</th><td><i>					       * stripe instead of many</i></td></tr>
+<tr><th id="44">44</th><td><i>					       */</i></td></tr>
+<tr><th id="45">45</th><td>		<a class="typedef" href="../../include/linux/types.h.html#sector_t" title='sector_t' data-type='unsigned long' data-ref="sector_t">sector_t</a>	<dfn class="decl field" id="geom::stride" title='geom::stride' data-ref="geom::stride">stride</dfn>;	      <i>/* distance between far copies.</i></td></tr>
+<tr><th id="46">46</th><td><i>					       * This is size / far_copies unless</i></td></tr>
+<tr><th id="47">47</th><td><i>					       * far_offset, in which case it is</i></td></tr>
+<tr><th id="48">48</th><td><i>					       * 1 stripe.</i></td></tr>
+<tr><th id="49">49</th><td><i>					       */</i></td></tr>
+<tr><th id="50">50</th><td>		<em>int</em>             <dfn class="decl field" id="geom::far_set_size" title='geom::far_set_size' data-ref="geom::far_set_size">far_set_size</dfn>; <i>/* The number of devices in a set,</i></td></tr>
+<tr><th id="51">51</th><td><i>					       * where a 'set' are devices that</i></td></tr>
+<tr><th id="52">52</th><td><i>					       * contain far/offset copies of</i></td></tr>
+<tr><th id="53">53</th><td><i>					       * each other.</i></td></tr>
+<tr><th id="54">54</th><td><i>					       */</i></td></tr>
+<tr><th id="55">55</th><td>		<em>int</em>		<dfn class="decl field" id="geom::chunk_shift" title='geom::chunk_shift' data-ref="geom::chunk_shift">chunk_shift</dfn>; <i>/* shift from chunks to sectors */</i></td></tr>
+<tr><th id="56">56</th><td>		<a class="typedef" href="../../include/linux/types.h.html#sector_t" title='sector_t' data-type='unsigned long' data-ref="sector_t">sector_t</a>	<dfn class="decl field" id="geom::chunk_mask" title='geom::chunk_mask' data-ref="geom::chunk_mask">chunk_mask</dfn>;</td></tr>
+<tr><th id="57">57</th><td>	} <dfn class="decl field" id="r10conf::prev" title='r10conf::prev' data-ref="r10conf::prev">prev</dfn>, <dfn class="decl field" id="r10conf::geo" title='r10conf::geo' data-ref="r10conf::geo">geo</dfn>;</td></tr>
+<tr><th id="58">58</th><td>	<em>int</em>			<dfn class="decl field" id="r10conf::copies" title='r10conf::copies' data-ref="r10conf::copies">copies</dfn>;	      <i>/* near_copies * far_copies.</i></td></tr>
+<tr><th id="59">59</th><td><i>					       * must be &lt;= raid_disks</i></td></tr>
+<tr><th id="60">60</th><td><i>					       */</i></td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td>	<a class="typedef" href="../../include/linux/types.h.html#sector_t" title='sector_t' data-type='unsigned long' data-ref="sector_t">sector_t</a>		<dfn class="decl field" id="r10conf::dev_sectors" title='r10conf::dev_sectors' data-ref="r10conf::dev_sectors">dev_sectors</dfn>;  <i>/* temp copy of</i></td></tr>
+<tr><th id="63">63</th><td><i>					       * mddev-&gt;dev_sectors */</i></td></tr>
+<tr><th id="64">64</th><td>	<a class="typedef" href="../../include/linux/types.h.html#sector_t" title='sector_t' data-type='unsigned long' data-ref="sector_t">sector_t</a>		<dfn class="decl field" id="r10conf::reshape_progress" title='r10conf::reshape_progress' data-ref="r10conf::reshape_progress">reshape_progress</dfn>;</td></tr>
+<tr><th id="65">65</th><td>	<a class="typedef" href="../../include/linux/types.h.html#sector_t" title='sector_t' data-type='unsigned long' data-ref="sector_t">sector_t</a>		<dfn class="decl field" id="r10conf::reshape_safe" title='r10conf::reshape_safe' data-ref="r10conf::reshape_safe">reshape_safe</dfn>;</td></tr>
+<tr><th id="66">66</th><td>	<em>unsigned</em> <em>long</em>		<dfn class="decl field" id="r10conf::reshape_checkpoint" title='r10conf::reshape_checkpoint' data-ref="r10conf::reshape_checkpoint">reshape_checkpoint</dfn>;</td></tr>
+<tr><th id="67">67</th><td>	<a class="typedef" href="../../include/linux/types.h.html#sector_t" title='sector_t' data-type='unsigned long' data-ref="sector_t">sector_t</a>		<dfn class="decl field" id="r10conf::offset_diff" title='r10conf::offset_diff' data-ref="r10conf::offset_diff">offset_diff</dfn>;</td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td>	<b>struct</b> <a class="type" href="../../include/linux/types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a>	<dfn class="decl field" id="r10conf::retry_list" title='r10conf::retry_list' data-ref="r10conf::retry_list">retry_list</dfn>;</td></tr>
+<tr><th id="70">70</th><td>	<i>/* A separate list of r1bio which just need raid_end_bio_io called.</i></td></tr>
+<tr><th id="71">71</th><td><i>	 * This mustn't happen for writes which had any errors if the superblock</i></td></tr>
+<tr><th id="72">72</th><td><i>	 * needs to be written.</i></td></tr>
+<tr><th id="73">73</th><td><i>	 */</i></td></tr>
+<tr><th id="74">74</th><td>	<b>struct</b> <a class="type" href="../../include/linux/types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a>	<dfn class="decl field" id="r10conf::bio_end_io_list" title='r10conf::bio_end_io_list' data-ref="r10conf::bio_end_io_list">bio_end_io_list</dfn>;</td></tr>
+<tr><th id="75">75</th><td></td></tr>
+<tr><th id="76">76</th><td>	<i>/* queue pending writes and submit them on unplug */</i></td></tr>
+<tr><th id="77">77</th><td>	<b>struct</b> <a class="type" href="../../include/linux/bio.h.html#bio_list" title='bio_list' data-ref="bio_list">bio_list</a>		<dfn class="decl field" id="r10conf::pending_bio_list" title='r10conf::pending_bio_list' data-ref="r10conf::pending_bio_list">pending_bio_list</dfn>;</td></tr>
+<tr><th id="78">78</th><td>	<em>int</em>			<dfn class="decl field" id="r10conf::pending_count" title='r10conf::pending_count' data-ref="r10conf::pending_count">pending_count</dfn>;</td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td>	<a class="typedef" href="../../include/linux/spinlock_types.h.html#spinlock_t" title='spinlock_t' data-type='struct spinlock' data-ref="spinlock_t">spinlock_t</a>		<dfn class="decl field" id="r10conf::resync_lock" title='r10conf::resync_lock' data-ref="r10conf::resync_lock">resync_lock</dfn>;</td></tr>
+<tr><th id="81">81</th><td>	<a class="typedef" href="../../include/linux/types.h.html#atomic_t" title='atomic_t' data-type='struct atomic_t' data-ref="atomic_t">atomic_t</a>		<dfn class="decl field" id="r10conf::nr_pending" title='r10conf::nr_pending' data-ref="r10conf::nr_pending">nr_pending</dfn>;</td></tr>
+<tr><th id="82">82</th><td>	<em>int</em>			<dfn class="decl field" id="r10conf::nr_waiting" title='r10conf::nr_waiting' data-ref="r10conf::nr_waiting">nr_waiting</dfn>;</td></tr>
+<tr><th id="83">83</th><td>	<em>int</em>			<dfn class="decl field" id="r10conf::nr_queued" title='r10conf::nr_queued' data-ref="r10conf::nr_queued">nr_queued</dfn>;</td></tr>
+<tr><th id="84">84</th><td>	<em>int</em>			<dfn class="decl field" id="r10conf::barrier" title='r10conf::barrier' data-ref="r10conf::barrier">barrier</dfn>;</td></tr>
+<tr><th id="85">85</th><td>	<em>int</em>			<dfn class="decl field" id="r10conf::array_freeze_pending" title='r10conf::array_freeze_pending' data-ref="r10conf::array_freeze_pending">array_freeze_pending</dfn>;</td></tr>
+<tr><th id="86">86</th><td>	<a class="typedef" href="../../include/linux/types.h.html#sector_t" title='sector_t' data-type='unsigned long' data-ref="sector_t">sector_t</a>		<dfn class="decl field" id="r10conf::next_resync" title='r10conf::next_resync' data-ref="r10conf::next_resync">next_resync</dfn>;</td></tr>
+<tr><th id="87">87</th><td>	<em>int</em>			<dfn class="decl field" id="r10conf::fullsync" title='r10conf::fullsync' data-ref="r10conf::fullsync">fullsync</dfn>;  <i>/* set to 1 if a full sync is needed,</i></td></tr>
+<tr><th id="88">88</th><td><i>					    * (fresh device added).</i></td></tr>
+<tr><th id="89">89</th><td><i>					    * Cleared when a sync completes.</i></td></tr>
+<tr><th id="90">90</th><td><i>					    */</i></td></tr>
+<tr><th id="91">91</th><td>	<em>int</em>			<dfn class="decl field" id="r10conf::have_replacement" title='r10conf::have_replacement' data-ref="r10conf::have_replacement">have_replacement</dfn>; <i>/* There is at least one</i></td></tr>
+<tr><th id="92">92</th><td><i>						   * replacement device.</i></td></tr>
+<tr><th id="93">93</th><td><i>						   */</i></td></tr>
+<tr><th id="94">94</th><td>	<a class="typedef" href="../../include/linux/wait.h.html#wait_queue_head_t" title='wait_queue_head_t' data-type='struct wait_queue_head' data-ref="wait_queue_head_t">wait_queue_head_t</a>	<dfn class="decl field" id="r10conf::wait_barrier" title='r10conf::wait_barrier' data-ref="r10conf::wait_barrier">wait_barrier</dfn>;</td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td>	<a class="typedef" href="../../include/linux/mempool.h.html#mempool_t" title='mempool_t' data-type='struct mempool_s' data-ref="mempool_t">mempool_t</a>		<dfn class="decl field" id="r10conf::r10bio_pool" title='r10conf::r10bio_pool' data-ref="r10conf::r10bio_pool">r10bio_pool</dfn>;</td></tr>
+<tr><th id="97">97</th><td>	<a class="typedef" href="../../include/linux/mempool.h.html#mempool_t" title='mempool_t' data-type='struct mempool_s' data-ref="mempool_t">mempool_t</a>		<dfn class="decl field" id="r10conf::r10buf_pool" title='r10conf::r10buf_pool' data-ref="r10conf::r10buf_pool">r10buf_pool</dfn>;</td></tr>
+<tr><th id="98">98</th><td>	<b>struct</b> <a class="type" href="../../include/linux/mm_types.h.html#page" title='page' data-ref="page">page</a>		*<dfn class="decl field" id="r10conf::tmppage" title='r10conf::tmppage' data-ref="r10conf::tmppage">tmppage</dfn>;</td></tr>
+<tr><th id="99">99</th><td>	<b>struct</b> <a class="type" href="../../include/linux/bio.h.html#bio_set" title='bio_set' data-ref="bio_set">bio_set</a>		<dfn class="decl field" id="r10conf::bio_split" title='r10conf::bio_split' data-ref="r10conf::bio_split">bio_split</dfn>;</td></tr>
+<tr><th id="100">100</th><td></td></tr>
+<tr><th id="101">101</th><td>	<i>/* When taking over an array from a different personality, we store</i></td></tr>
+<tr><th id="102">102</th><td><i>	 * the new thread here until we fully activate the array.</i></td></tr>
+<tr><th id="103">103</th><td><i>	 */</i></td></tr>
+<tr><th id="104">104</th><td>	<b>struct</b> <a class="type" href="md.h.html#md_thread" title='md_thread' data-ref="md_thread">md_thread</a>	*<dfn class="decl field" id="r10conf::thread" title='r10conf::thread' data-ref="r10conf::thread">thread</dfn>;</td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td>	<i>/*</i></td></tr>
+<tr><th id="107">107</th><td><i>	 * Keep track of cluster resync window to send to other nodes.</i></td></tr>
+<tr><th id="108">108</th><td><i>	 */</i></td></tr>
+<tr><th id="109">109</th><td>	<a class="typedef" href="../../include/linux/types.h.html#sector_t" title='sector_t' data-type='unsigned long' data-ref="sector_t">sector_t</a>		<dfn class="decl field" id="r10conf::cluster_sync_low" title='r10conf::cluster_sync_low' data-ref="r10conf::cluster_sync_low">cluster_sync_low</dfn>;</td></tr>
+<tr><th id="110">110</th><td>	<a class="typedef" href="../../include/linux/types.h.html#sector_t" title='sector_t' data-type='unsigned long' data-ref="sector_t">sector_t</a>		<dfn class="decl field" id="r10conf::cluster_sync_high" title='r10conf::cluster_sync_high' data-ref="r10conf::cluster_sync_high">cluster_sync_high</dfn>;</td></tr>
+<tr><th id="111">111</th><td>};</td></tr>
+<tr><th id="112">112</th><td></td></tr>
+<tr><th id="113">113</th><td><i>/*</i></td></tr>
+<tr><th id="114">114</th><td><i> * this is our 'private' RAID10 bio.</i></td></tr>
+<tr><th id="115">115</th><td><i> *</i></td></tr>
+<tr><th id="116">116</th><td><i> * it contains information about what kind of IO operations were started</i></td></tr>
+<tr><th id="117">117</th><td><i> * for this RAID10 operation, and about their status:</i></td></tr>
+<tr><th id="118">118</th><td><i> */</i></td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td><b>struct</b> <dfn class="type def" id="r10bio" title='r10bio' data-ref="r10bio">r10bio</dfn> {</td></tr>
+<tr><th id="121">121</th><td>	<a class="typedef" href="../../include/linux/types.h.html#atomic_t" title='atomic_t' data-type='struct atomic_t' data-ref="atomic_t">atomic_t</a>		<dfn class="decl field" id="r10bio::remaining" title='r10bio::remaining' data-ref="r10bio::remaining">remaining</dfn>; <i>/* 'have we finished' count,</i></td></tr>
+<tr><th id="122">122</th><td><i>					    * used from IRQ handlers</i></td></tr>
+<tr><th id="123">123</th><td><i>					    */</i></td></tr>
+<tr><th id="124">124</th><td>	<a class="typedef" href="../../include/linux/types.h.html#sector_t" title='sector_t' data-type='unsigned long' data-ref="sector_t">sector_t</a>		<dfn class="decl field" id="r10bio::sector" title='r10bio::sector' data-ref="r10bio::sector">sector</dfn>;	<i>/* virtual sector number */</i></td></tr>
+<tr><th id="125">125</th><td>	<em>int</em>			<dfn class="decl field" id="r10bio::sectors" title='r10bio::sectors' data-ref="r10bio::sectors">sectors</dfn>;</td></tr>
+<tr><th id="126">126</th><td>	<em>unsigned</em> <em>long</em>		<dfn class="decl field" id="r10bio::state" title='r10bio::state' data-ref="r10bio::state">state</dfn>;</td></tr>
+<tr><th id="127">127</th><td>	<b>struct</b> <a class="type" href="md.h.html#mddev" title='mddev' data-ref="mddev">mddev</a>		*<dfn class="decl field" id="r10bio::mddev" title='r10bio::mddev' data-ref="r10bio::mddev">mddev</dfn>;</td></tr>
+<tr><th id="128">128</th><td>	<i>/*</i></td></tr>
+<tr><th id="129">129</th><td><i>	 * original bio going to /dev/mdx</i></td></tr>
+<tr><th id="130">130</th><td><i>	 */</i></td></tr>
+<tr><th id="131">131</th><td>	<b>struct</b> <a class="type" href="../../include/linux/blk_types.h.html#bio" title='bio' data-ref="bio">bio</a>		*<dfn class="decl field" id="r10bio::master_bio" title='r10bio::master_bio' data-ref="r10bio::master_bio">master_bio</dfn>;</td></tr>
+<tr><th id="132">132</th><td>	<i>/*</i></td></tr>
+<tr><th id="133">133</th><td><i>	 * if the IO is in READ direction, then this is where we read</i></td></tr>
+<tr><th id="134">134</th><td><i>	 */</i></td></tr>
+<tr><th id="135">135</th><td>	<em>int</em>			<dfn class="decl field" id="r10bio::read_slot" title='r10bio::read_slot' data-ref="r10bio::read_slot">read_slot</dfn>;</td></tr>
+<tr><th id="136">136</th><td></td></tr>
+<tr><th id="137">137</th><td>	<b>struct</b> <a class="type" href="../../include/linux/types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a>	<dfn class="decl field" id="r10bio::retry_list" title='r10bio::retry_list' data-ref="r10bio::retry_list">retry_list</dfn>;</td></tr>
+<tr><th id="138">138</th><td>	<i>/*</i></td></tr>
+<tr><th id="139">139</th><td><i>	 * if the IO is in WRITE direction, then multiple bios are used,</i></td></tr>
+<tr><th id="140">140</th><td><i>	 * one for each copy.</i></td></tr>
+<tr><th id="141">141</th><td><i>	 * When resyncing we also use one for each copy.</i></td></tr>
+<tr><th id="142">142</th><td><i>	 * When reconstructing, we use 2 bios, one for read, one for write.</i></td></tr>
+<tr><th id="143">143</th><td><i>	 * We choose the number when they are allocated.</i></td></tr>
+<tr><th id="144">144</th><td><i>	 * We sometimes need an extra bio to write to the replacement.</i></td></tr>
+<tr><th id="145">145</th><td><i>	 */</i></td></tr>
+<tr><th id="146">146</th><td>	<b>struct</b> <dfn class="type def" id="r10dev" title='r10dev' data-ref="r10dev"><a class="type" href="#r10dev" title='r10dev' data-ref="r10dev">r10dev</a></dfn> {</td></tr>
+<tr><th id="147">147</th><td>		<b>struct</b> <a class="type" href="../../include/linux/blk_types.h.html#bio" title='bio' data-ref="bio">bio</a>	*<dfn class="decl field" id="r10dev::bio" title='r10dev::bio' data-ref="r10dev::bio">bio</dfn>;</td></tr>
+<tr><th id="148">148</th><td>		<b>union</b> {</td></tr>
+<tr><th id="149">149</th><td>			<b>struct</b> <a class="type" href="../../include/linux/blk_types.h.html#bio" title='bio' data-ref="bio">bio</a>	*<dfn class="decl field" id="r10dev::(anonymous)::repl_bio" title='r10dev::(anonymous union)::repl_bio' data-ref="r10dev::(anonymous)::repl_bio">repl_bio</dfn>; <i>/* used for resync and</i></td></tr>
+<tr><th id="150">150</th><td><i>						    * writes */</i></td></tr>
+<tr><th id="151">151</th><td>			<b>struct</b> <a class="type" href="md.h.html#md_rdev" title='md_rdev' data-ref="md_rdev">md_rdev</a>	*<dfn class="decl field" id="r10dev::(anonymous)::rdev" title='r10dev::(anonymous union)::rdev' data-ref="r10dev::(anonymous)::rdev">rdev</dfn>;	   <i>/* used for reads</i></td></tr>
+<tr><th id="152">152</th><td><i>						    * (read_slot &gt;= 0) */</i></td></tr>
+<tr><th id="153">153</th><td>		};</td></tr>
+<tr><th id="154">154</th><td>		<a class="typedef" href="../../include/linux/types.h.html#sector_t" title='sector_t' data-type='unsigned long' data-ref="sector_t">sector_t</a>	<dfn class="decl field" id="r10dev::addr" title='r10dev::addr' data-ref="r10dev::addr">addr</dfn>;</td></tr>
+<tr><th id="155">155</th><td>		<em>int</em>		<dfn class="decl field" id="r10dev::devnum" title='r10dev::devnum' data-ref="r10dev::devnum">devnum</dfn>;</td></tr>
+<tr><th id="156">156</th><td>	} <dfn class="decl field" id="r10bio::devs" title='r10bio::devs' data-ref="r10bio::devs">devs</dfn>[<var>0</var>];</td></tr>
+<tr><th id="157">157</th><td>};</td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td><i>/* bits for r10bio.state */</i></td></tr>
+<tr><th id="160">160</th><td><b>enum</b> <dfn class="type def" id="r10bio_state" title='r10bio_state' data-ref="r10bio_state">r10bio_state</dfn> {</td></tr>
+<tr><th id="161">161</th><td>	<dfn class="enum" id="R10BIO_Uptodate" title='R10BIO_Uptodate' data-ref="R10BIO_Uptodate">R10BIO_Uptodate</dfn>,</td></tr>
+<tr><th id="162">162</th><td>	<dfn class="enum" id="R10BIO_IsSync" title='R10BIO_IsSync' data-ref="R10BIO_IsSync">R10BIO_IsSync</dfn>,</td></tr>
+<tr><th id="163">163</th><td>	<dfn class="enum" id="R10BIO_IsRecover" title='R10BIO_IsRecover' data-ref="R10BIO_IsRecover">R10BIO_IsRecover</dfn>,</td></tr>
+<tr><th id="164">164</th><td>	<dfn class="enum" id="R10BIO_IsReshape" title='R10BIO_IsReshape' data-ref="R10BIO_IsReshape">R10BIO_IsReshape</dfn>,</td></tr>
+<tr><th id="165">165</th><td>	<dfn class="enum" id="R10BIO_Degraded" title='R10BIO_Degraded' data-ref="R10BIO_Degraded">R10BIO_Degraded</dfn>,</td></tr>
+<tr><th id="166">166</th><td><i>/* Set ReadError on bios that experience a read error</i></td></tr>
+<tr><th id="167">167</th><td><i> * so that raid10d knows what to do with them.</i></td></tr>
+<tr><th id="168">168</th><td><i> */</i></td></tr>
+<tr><th id="169">169</th><td>	<dfn class="enum" id="R10BIO_ReadError" title='R10BIO_ReadError' data-ref="R10BIO_ReadError">R10BIO_ReadError</dfn>,</td></tr>
+<tr><th id="170">170</th><td><i>/* If a write for this request means we can clear some</i></td></tr>
+<tr><th id="171">171</th><td><i> * known-bad-block records, we set this flag.</i></td></tr>
+<tr><th id="172">172</th><td><i> */</i></td></tr>
+<tr><th id="173">173</th><td>	<dfn class="enum" id="R10BIO_MadeGood" title='R10BIO_MadeGood' data-ref="R10BIO_MadeGood">R10BIO_MadeGood</dfn>,</td></tr>
+<tr><th id="174">174</th><td>	<dfn class="enum" id="R10BIO_WriteError" title='R10BIO_WriteError' data-ref="R10BIO_WriteError">R10BIO_WriteError</dfn>,</td></tr>
+<tr><th id="175">175</th><td><i>/* During a reshape we might be performing IO on the</i></td></tr>
+<tr><th id="176">176</th><td><i> * 'previous' part of the array, in which case this</i></td></tr>
+<tr><th id="177">177</th><td><i> * flag is set</i></td></tr>
+<tr><th id="178">178</th><td><i> */</i></td></tr>
+<tr><th id="179">179</th><td>	<dfn class="enum" id="R10BIO_Previous" title='R10BIO_Previous' data-ref="R10BIO_Previous">R10BIO_Previous</dfn>,</td></tr>
+<tr><th id="180">180</th><td><i>/* failfast devices did receive failfast requests. */</i></td></tr>
+<tr><th id="181">181</th><td>	<dfn class="enum" id="R10BIO_FailFast" title='R10BIO_FailFast' data-ref="R10BIO_FailFast">R10BIO_FailFast</dfn>,</td></tr>
+<tr><th id="182">182</th><td>};</td></tr>
+<tr><th id="183">183</th><td><u>#<span data-ppcond="2">endif</span></u></td></tr>
+<tr><th id="184">184</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='dm-raid.c.html'>linux-4.18.y/drivers/md/dm-raid.c</a><br/>Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

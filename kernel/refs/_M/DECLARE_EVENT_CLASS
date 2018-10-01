@@ -1,0 +1,705 @@
+<dec f='linux-4.18.y/include/linux/tracepoint.h' l='472'/>
+<doc f='linux-4.18.y/include/linux/tracepoint.h' l='367'>/*
+ * For use with the TRACE_EVENT macro:
+ *
+ * We define a tracepoint, its arguments, its printk format
+ * and its &apos;fast binary record&apos; layout.
+ *
+ * Firstly, name your tracepoint via TRACE_EVENT(name : the
+ * &apos;subsystem_event&apos; notation is fine.
+ *
+ * Think about this whole construct as the
+ * &apos;trace_sched_switch() function&apos; from now on.
+ *
+ *
+ *  TRACE_EVENT(sched_switch,
+ *
+ *	*
+ *	* A function has a regular function arguments
+ *	* prototype, declare it via TP_PROTO():
+ *	*
+ *
+ *	TP_PROTO(struct rq *rq, struct task_struct *prev,
+ *		 struct task_struct *next),
+ *
+ *	*
+ *	* Define the call signature of the &apos;function&apos;.
+ *	* (Design sidenote: we use this instead of a
+ *	*  TP_PROTO1/TP_PROTO2/TP_PROTO3 ugliness.)
+ *	*
+ *
+ *	TP_ARGS(rq, prev, next),
+ *
+ *	*
+ *	* Fast binary tracing: define the trace record via
+ *	* TP_STRUCT__entry(). You can think about it like a
+ *	* regular C structure local variable definition.
+ *	*
+ *	* This is how the trace record is structured and will
+ *	* be saved into the ring buffer. These are the fields
+ *	* that will be exposed to user-space in
+ *	* /sys/kernel/debug/tracing/events/&lt;*&gt;/format.
+ *	*
+ *	* The declared &apos;local variable&apos; is called &apos;__entry&apos;
+ *	*
+ *	* __field(pid_t, prev_prid) is equivalent to a standard declariton:
+ *	*
+ *	*	pid_t	prev_pid;
+ *	*
+ *	* __array(char, prev_comm, TASK_COMM_LEN) is equivalent to:
+ *	*
+ *	*	char	prev_comm[TASK_COMM_LEN];
+ *	*
+ *
+ *	TP_STRUCT__entry(
+ *		__array(	char,	prev_comm,	TASK_COMM_LEN	)
+ *		__field(	pid_t,	prev_pid			)
+ *		__field(	int,	prev_prio			)
+ *		__array(	char,	next_comm,	TASK_COMM_LEN	)
+ *		__field(	pid_t,	next_pid			)
+ *		__field(	int,	next_prio			)
+ *	),
+ *
+ *	*
+ *	* Assign the entry into the trace record, by embedding
+ *	* a full C statement block into TP_fast_assign(). You
+ *	* can refer to the trace record as &apos;__entry&apos; -
+ *	* otherwise you can put arbitrary C code in here.
+ *	*
+ *	* Note: this C code will execute every time a trace event
+ *	* happens, on an active tracepoint.
+ *	*
+ *
+ *	TP_fast_assign(
+ *		memcpy(__entry-&gt;next_comm, next-&gt;comm, TASK_COMM_LEN);
+ *		__entry-&gt;prev_pid	= prev-&gt;pid;
+ *		__entry-&gt;prev_prio	= prev-&gt;prio;
+ *		memcpy(__entry-&gt;prev_comm, prev-&gt;comm, TASK_COMM_LEN);
+ *		__entry-&gt;next_pid	= next-&gt;pid;
+ *		__entry-&gt;next_prio	= next-&gt;prio;
+ *	),
+ *
+ *	*
+ *	* Formatted output of a trace record via TP_printk().
+ *	* This is how the tracepoint will appear under ftrace
+ *	* plugins that make use of this tracepoint.
+ *	*
+ *	* (raw-binary tracing wont actually perform this step.)
+ *	*
+ *
+ *	TP_printk(&quot;task %s:%d [%d] ==&gt; %s:%d [%d]&quot;,
+ *		__entry-&gt;prev_comm, __entry-&gt;prev_pid, __entry-&gt;prev_prio,
+ *		__entry-&gt;next_comm, __entry-&gt;next_pid, __entry-&gt;next_prio),
+ *
+ * );
+ *
+ * This macro construct is thus used for the regular printk format
+ * tracing setup, it is used to construct a function pointer based
+ * tracepoint callback (this is used by programmatic plugins and
+ * can also by used by generic instrumentation like SystemTap), and
+ * it is also used to expose a structured trace record in
+ * /sys/kernel/debug/tracing/events/.
+ *
+ * A set of (un)registration functions can be passed to the variant
+ * TRACE_EVENT_FN to perform any (un)registration work.
+ */</doc>
+<use f='linux-4.18.y/include/trace/trace_events.h' l='110' u='w'/>
+<dec f='linux-4.18.y/include/trace/trace_events.h' l='111'/>
+<use f='linux-4.18.y/include/trace/trace_events.h' l='202' u='w'/>
+<dec f='linux-4.18.y/include/trace/trace_events.h' l='203'/>
+<use f='linux-4.18.y/include/trace/trace_events.h' l='343' u='w'/>
+<dec f='linux-4.18.y/include/trace/trace_events.h' l='344'/>
+<use f='linux-4.18.y/include/trace/trace_events.h' l='447' u='w'/>
+<dec f='linux-4.18.y/include/trace/trace_events.h' l='448'/>
+<use f='linux-4.18.y/include/trace/trace_events.h' l='526' u='w'/>
+<dec f='linux-4.18.y/include/trace/trace_events.h' l='527'/>
+<use f='linux-4.18.y/include/trace/trace_events.h' l='695' u='w'/>
+<dec f='linux-4.18.y/include/trace/trace_events.h' l='696'/>
+<use f='linux-4.18.y/include/trace/trace_events.h' l='758' u='w'/>
+<dec f='linux-4.18.y/include/trace/trace_events.h' l='759'/>
+<use f='linux-4.18.y/include/trace/perf.h' l='30' u='w'/>
+<dec f='linux-4.18.y/include/trace/perf.h' l='31'/>
+<use f='linux-4.18.y/arch/x86/include/asm/trace/fpu.h' l='10' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/trace/irq_vectors.h' l='16' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/trace/irq_vectors.h' l='167' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/trace/irq_vectors.h' l='207' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/trace/irq_vectors.h' l='283' u='c'/>
+<use f='linux-4.18.y/include/trace/events/power.h' l='15' u='c'/>
+<use f='linux-4.18.y/include/trace/events/power.h' l='223' u='c'/>
+<use f='linux-4.18.y/include/trace/events/power.h' l='261' u='c'/>
+<use f='linux-4.18.y/include/trace/events/power.h' l='307' u='c'/>
+<use f='linux-4.18.y/include/trace/events/power.h' l='339' u='c'/>
+<use f='linux-4.18.y/include/trace/events/power.h' l='410' u='c'/>
+<use f='linux-4.18.y/include/trace/events/power.h' l='457' u='c'/>
+<use f='linux-4.18.y/include/trace/events/kvm.h' l='283' u='c'/>
+<use f='linux-4.18.y/include/trace/events/kvm.h' l='316' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='99' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='169' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='99' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='169' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='99' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='169' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='99' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='169' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='99' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='169' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='99' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='169' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='99' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='169' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='99' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='169' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='99' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='169' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='99' u='c'/>
+<use f='linux-4.18.y/arch/x86/kvm/mmutrace.h' l='169' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/msr-trace.h' l='21' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/msr-trace.h' l='21' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/msr-trace.h' l='21' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/msr-trace.h' l='21' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/msr-trace.h' l='21' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/msr-trace.h' l='21' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/msr-trace.h' l='21' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/msr-trace.h' l='21' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/msr-trace.h' l='21' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/msr-trace.h' l='21' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/trace/exceptions.h' l='14' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/trace/exceptions.h' l='14' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/trace/exceptions.h' l='14' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/trace/exceptions.h' l='14' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/trace/exceptions.h' l='14' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/trace/exceptions.h' l='14' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/trace/exceptions.h' l='14' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/trace/exceptions.h' l='14' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/trace/exceptions.h' l='14' u='c'/>
+<use f='linux-4.18.y/arch/x86/include/asm/trace/exceptions.h' l='14' u='c'/>
+<use f='linux-4.18.y/include/trace/events/block.h' l='15' u='c'/>
+<use f='linux-4.18.y/include/trace/events/block.h' l='148' u='c'/>
+<use f='linux-4.18.y/include/trace/events/block.h' l='290' u='c'/>
+<use f='linux-4.18.y/include/trace/events/block.h' l='385' u='c'/>
+<use f='linux-4.18.y/include/trace/events/block.h' l='473' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='46' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='67' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='244' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='294' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='46' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='67' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='244' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='294' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='46' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='67' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='244' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='294' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='46' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='67' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='244' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='294' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='46' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='67' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='244' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='294' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='46' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='67' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='244' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='294' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='46' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='67' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='244' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='294' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='46' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='67' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='244' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='294' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='46' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='67' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='244' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='294' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='46' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='67' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='244' u='c'/>
+<use f='linux-4.18.y/drivers/android/binder_trace.h' l='294' u='c'/>
+<use f='linux-4.18.y/include/trace/events/libata.h' l='210' u='c'/>
+<use f='linux-4.18.y/include/trace/events/libata.h' l='210' u='c'/>
+<use f='linux-4.18.y/include/trace/events/libata.h' l='210' u='c'/>
+<use f='linux-4.18.y/include/trace/events/libata.h' l='210' u='c'/>
+<use f='linux-4.18.y/include/trace/events/libata.h' l='210' u='c'/>
+<use f='linux-4.18.y/include/trace/events/libata.h' l='210' u='c'/>
+<use f='linux-4.18.y/include/trace/events/libata.h' l='210' u='c'/>
+<use f='linux-4.18.y/include/trace/events/libata.h' l='210' u='c'/>
+<use f='linux-4.18.y/include/trace/events/libata.h' l='210' u='c'/>
+<use f='linux-4.18.y/include/trace/events/libata.h' l='210' u='c'/>
+<use f='linux-4.18.y/drivers/base/regmap/trace.h' l='16' u='c'/>
+<use f='linux-4.18.y/drivers/base/regmap/trace.h' l='67' u='c'/>
+<use f='linux-4.18.y/drivers/base/regmap/trace.h' l='142' u='c'/>
+<use f='linux-4.18.y/drivers/base/regmap/trace.h' l='178' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='30' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='196' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='226' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='30' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='196' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='226' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='30' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='196' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='226' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='30' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='196' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='226' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='30' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='196' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='226' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='30' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='196' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='226' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='30' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='196' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='226' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='30' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='196' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='226' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='30' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='196' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='226' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='30' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='196' u='c'/>
+<use f='linux-4.18.y/include/trace/events/random.h' l='226' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='23' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='96' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='129' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='162' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='23' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='96' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='129' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='162' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='23' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='96' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='129' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='162' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='23' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='96' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='129' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='162' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='23' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='96' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='129' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='162' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='23' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='96' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='129' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='162' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='23' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='96' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='129' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='162' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='23' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='96' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='129' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='162' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='23' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='96' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='129' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='162' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='23' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='96' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='129' u='c'/>
+<use f='linux-4.18.y/include/trace/events/clk.h' l='162' u='c'/>
+<use f='linux-4.18.y/include/trace/events/dma_fence.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/dma_fence.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/dma_fence.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/dma_fence.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/dma_fence.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/dma_fence.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/dma_fence.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/dma_fence.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/dma_fence.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/dma_fence.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='18' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='54' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='132' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='18' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='54' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='132' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='18' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='54' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='132' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='18' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='54' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='132' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='18' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='54' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='132' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='18' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='54' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='132' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='18' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='54' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='132' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='18' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='54' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='132' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='18' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='54' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='132' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='18' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='54' u='c'/>
+<use f='linux-4.18.y/include/trace/events/iommu.h' l='132' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='59' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='111' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='156' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='59' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='111' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='156' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='59' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='111' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='156' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='59' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='111' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='156' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='59' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='111' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='156' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='59' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='111' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='156' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='59' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='111' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='156' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='59' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='111' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='156' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='59' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='111' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='156' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='59' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='111' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40e/i40e_trace.h' l='156' u='c'/>
+<use f='linux-4.18.y/include/trace/events/xdp.h' l='53' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40evf/i40e_trace.h' l='59' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40evf/i40e_trace.h' l='111' u='c'/>
+<use f='linux-4.18.y/drivers/net/ethernet/intel/i40evf/i40e_trace.h' l='156' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='10' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='124' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='159' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='10' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='124' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='159' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='10' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='124' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='159' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='10' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='124' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='159' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='10' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='124' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='159' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='10' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='124' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='159' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='10' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='124' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='159' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='10' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='124' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='159' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='10' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='124' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='159' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='10' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='124' u='c'/>
+<use f='linux-4.18.y/include/trace/events/rtc.h' l='159' u='c'/>
+<use f='linux-4.18.y/include/trace/events/scsi.h' l='287' u='c'/>
+<use f='linux-4.18.y/include/trace/events/scsi.h' l='287' u='c'/>
+<use f='linux-4.18.y/include/trace/events/scsi.h' l='287' u='c'/>
+<use f='linux-4.18.y/include/trace/events/scsi.h' l='287' u='c'/>
+<use f='linux-4.18.y/include/trace/events/scsi.h' l='287' u='c'/>
+<use f='linux-4.18.y/include/trace/events/scsi.h' l='287' u='c'/>
+<use f='linux-4.18.y/include/trace/events/scsi.h' l='287' u='c'/>
+<use f='linux-4.18.y/include/trace/events/scsi.h' l='287' u='c'/>
+<use f='linux-4.18.y/include/trace/events/scsi.h' l='287' u='c'/>
+<use f='linux-4.18.y/include/trace/events/scsi.h' l='287' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='112' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='112' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='112' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='112' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='112' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='112' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='112' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='112' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='112' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/spi.h' l='112' u='c'/>
+<use f='linux-4.18.y/drivers/usb/gadget/udc/trace.h' l='20' u='c'/>
+<use f='linux-4.18.y/drivers/usb/gadget/udc/trace.h' l='139' u='c'/>
+<use f='linux-4.18.y/drivers/usb/gadget/udc/trace.h' l='213' u='c'/>
+<use f='linux-4.18.y/drivers/usb/host/xhci-trace.h' l='30' u='c'/>
+<use f='linux-4.18.y/drivers/usb/host/xhci-trace.h' l='75' u='c'/>
+<use f='linux-4.18.y/drivers/usb/host/xhci-trace.h' l='116' u='c'/>
+<use f='linux-4.18.y/drivers/usb/host/xhci-trace.h' l='174' u='c'/>
+<use f='linux-4.18.y/drivers/usb/host/xhci-trace.h' l='205' u='c'/>
+<use f='linux-4.18.y/drivers/usb/host/xhci-trace.h' l='257' u='c'/>
+<use f='linux-4.18.y/drivers/usb/host/xhci-trace.h' l='329' u='c'/>
+<use f='linux-4.18.y/drivers/usb/host/xhci-trace.h' l='369' u='c'/>
+<use f='linux-4.18.y/drivers/usb/host/xhci-trace.h' l='435' u='c'/>
+<use f='linux-4.18.y/drivers/usb/host/xhci-trace.h' l='501' u='c'/>
+<use f='linux-4.18.y/drivers/usb/host/xhci-trace.h' l='533' u='c'/>
+<use f='linux-4.18.y/include/trace/events/sched.h' l='57' u='c'/>
+<use f='linux-4.18.y/include/trace/events/sched.h' l='201' u='c'/>
+<use f='linux-4.18.y/include/trace/events/sched.h' l='328' u='c'/>
+<use f='linux-4.18.y/include/trace/events/sched.h' l='387' u='c'/>
+<use f='linux-4.18.y/include/trace/events/sched.h' l='468' u='c'/>
+<use f='linux-4.18.y/include/trace/events/ext4.h' l='273' u='c'/>
+<use f='linux-4.18.y/include/trace/events/ext4.h' l='318' u='c'/>
+<use f='linux-4.18.y/include/trace/events/ext4.h' l='503' u='c'/>
+<use f='linux-4.18.y/include/trace/events/ext4.h' l='548' u='c'/>
+<use f='linux-4.18.y/include/trace/events/ext4.h' l='612' u='c'/>
+<use f='linux-4.18.y/include/trace/events/ext4.h' l='1063' u='c'/>
+<use f='linux-4.18.y/include/trace/events/ext4.h' l='1239' u='c'/>
+<use f='linux-4.18.y/include/trace/events/ext4.h' l='1346' u='c'/>
+<use f='linux-4.18.y/include/trace/events/ext4.h' l='1472' u='c'/>
+<use f='linux-4.18.y/include/trace/events/ext4.h' l='1589' u='c'/>
+<use f='linux-4.18.y/include/trace/events/ext4.h' l='1631' u='c'/>
+<use f='linux-4.18.y/include/trace/events/ext4.h' l='1773' u='c'/>
+<use f='linux-4.18.y/include/trace/events/ext4.h' l='2206' u='c'/>
+<use f='linux-4.18.y/include/trace/events/ext4.h' l='2381' u='c'/>
+<use f='linux-4.18.y/include/trace/events/ext4.h' l='2516' u='c'/>
+<use f='linux-4.18.y/include/trace/events/ext4.h' l='2553' u='c'/>
+<use f='linux-4.18.y/include/trace/events/f2fs.h' l='156' u='c'/>
+<use f='linux-4.18.y/include/trace/events/f2fs.h' l='195' u='c'/>
+<use f='linux-4.18.y/include/trace/events/f2fs.h' l='387' u='c'/>
+<use f='linux-4.18.y/include/trace/events/f2fs.h' l='445' u='c'/>
+<use f='linux-4.18.y/include/trace/events/f2fs.h' l='961' u='c'/>
+<use f='linux-4.18.y/include/trace/events/f2fs.h' l='1020' u='c'/>
+<use f='linux-4.18.y/include/trace/events/f2fs.h' l='1151' u='c'/>
+<use f='linux-4.18.y/include/trace/events/f2fs.h' l='1350' u='c'/>
+<use f='linux-4.18.y/include/trace/events/f2fs.h' l='1582' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='82' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='165' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='208' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='269' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='306' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='604' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='639' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='699' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='82' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='165' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='208' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='269' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='306' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='604' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='639' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='699' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='82' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='165' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='208' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='269' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='306' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='604' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='639' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='699' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='82' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='165' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='208' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='269' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='306' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='604' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='639' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='699' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='82' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='165' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='208' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='269' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='306' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='604' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='639' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='699' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='82' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='165' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='208' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='269' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='306' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='604' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='639' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='699' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='82' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='165' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='208' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='269' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='306' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='604' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='639' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='699' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='82' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='165' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='208' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='269' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='306' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='604' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='639' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='699' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='82' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='165' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='208' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='269' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='306' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='604' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='639' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='699' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='82' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='165' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='208' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='269' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='306' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='604' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='639' u='c'/>
+<use f='linux-4.18.y/include/trace/events/writeback.h' l='699' u='c'/>
+<use f='linux-4.18.y/include/trace/events/jbd2.h' l='34' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='62' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='62' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='62' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='62' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='62' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='62' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='62' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='62' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='62' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='62' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filelock.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/cgroup.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/cgroup.h' l='54' u='c'/>
+<use f='linux-4.18.y/include/trace/events/cgroup.h' l='108' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq.h' l='103' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='37' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='65' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='37' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='65' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='37' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='65' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='37' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='65' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='37' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='65' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='37' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='65' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='37' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='65' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='37' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='65' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='37' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='65' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='37' u='c'/>
+<use f='linux-4.18.y/include/trace/events/irq_matrix.h' l='65' u='c'/>
+<use f='linux-4.18.y/include/trace/events/alarmtimer.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/alarmtimer.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/alarmtimer.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/alarmtimer.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/alarmtimer.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/alarmtimer.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/alarmtimer.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/alarmtimer.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/alarmtimer.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/alarmtimer.h' l='45' u='c'/>
+<use f='linux-4.18.y/include/trace/events/timer.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/timer.h' l='250' u='c'/>
+<use f='linux-4.18.y/include/trace/events/workqueue.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/workqueue.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/workqueue.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/workqueue.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/workqueue.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/workqueue.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/workqueue.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/workqueue.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/workqueue.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/workqueue.h' l='11' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filemap.h' l='16' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filemap.h' l='16' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filemap.h' l='16' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filemap.h' l='16' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filemap.h' l='16' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filemap.h' l='16' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filemap.h' l='16' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filemap.h' l='16' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filemap.h' l='16' u='c'/>
+<use f='linux-4.18.y/include/trace/events/filemap.h' l='16' u='c'/>
+<use f='linux-4.18.y/include/trace/events/kmem.h' l='12' u='c'/>
+<use f='linux-4.18.y/include/trace/events/kmem.h' l='62' u='c'/>
+<use f='linux-4.18.y/include/trace/events/kmem.h' l='118' u='c'/>
+<use f='linux-4.18.y/include/trace/events/kmem.h' l='221' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='106' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='156' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='106' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='156' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='106' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='156' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='106' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='156' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='106' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='156' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='106' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='156' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='106' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='156' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='106' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='156' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='106' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='156' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='106' u='c'/>
+<use f='linux-4.18.y/include/trace/events/vmscan.h' l='156' u='c'/>
+<use f='linux-4.18.y/include/trace/events/net.h' l='98' u='c'/>
+<use f='linux-4.18.y/include/trace/events/net.h' l='141' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='50' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='50' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='50' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='50' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='50' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='50' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='50' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='50' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='50' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='115' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='50' u='c'/>
+<use f='linux-4.18.y/include/trace/events/tcp.h' l='115' u='c'/>

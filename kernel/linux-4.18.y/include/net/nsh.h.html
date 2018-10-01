@@ -1,0 +1,329 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>nsh.h source code [linux-4.18.y/include/net/nsh.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="nsh_md1_ctx,nsh_md2_tlv,nshhdr "/>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/include/net/nsh.h'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>linux-4.18.y</a>/<a href='..'>include</a>/<a href='./'>net</a>/<a href='nsh.h.html'>nsh.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><u>#<span data-ppcond="1">ifndef</span> <span class="macro" data-ref="_M/__NET_NSH_H">__NET_NSH_H</span></u></td></tr>
+<tr><th id="2">2</th><td><u>#define <dfn class="macro" id="_M/__NET_NSH_H" data-ref="_M/__NET_NSH_H">__NET_NSH_H</dfn> 1</u></td></tr>
+<tr><th id="3">3</th><td></td></tr>
+<tr><th id="4">4</th><td><u>#include <a href="../linux/skbuff.h.html">&lt;linux/skbuff.h&gt;</a></u></td></tr>
+<tr><th id="5">5</th><td></td></tr>
+<tr><th id="6">6</th><td><i>/*</i></td></tr>
+<tr><th id="7">7</th><td><i> * Network Service Header:</i></td></tr>
+<tr><th id="8">8</th><td><i> *  0                   1                   2                   3</i></td></tr>
+<tr><th id="9">9</th><td><i> *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</i></td></tr>
+<tr><th id="10">10</th><td><i> * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</i></td></tr>
+<tr><th id="11">11</th><td><i> * |Ver|O|U|    TTL    |   Length  |U|U|U|U|MD Type| Next Protocol |</i></td></tr>
+<tr><th id="12">12</th><td><i> * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</i></td></tr>
+<tr><th id="13">13</th><td><i> * |          Service Path Identifier (SPI)        | Service Index |</i></td></tr>
+<tr><th id="14">14</th><td><i> * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</i></td></tr>
+<tr><th id="15">15</th><td><i> * |                                                               |</i></td></tr>
+<tr><th id="16">16</th><td><i> * ~               Mandatory/Optional Context Headers              ~</i></td></tr>
+<tr><th id="17">17</th><td><i> * |                                                               |</i></td></tr>
+<tr><th id="18">18</th><td><i> * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</i></td></tr>
+<tr><th id="19">19</th><td><i> *</i></td></tr>
+<tr><th id="20">20</th><td><i> * Version: The version field is used to ensure backward compatibility</i></td></tr>
+<tr><th id="21">21</th><td><i> * going forward with future NSH specification updates.  It MUST be set</i></td></tr>
+<tr><th id="22">22</th><td><i> * to 0x0 by the sender, in this first revision of NSH.  Given the</i></td></tr>
+<tr><th id="23">23</th><td><i> * widespread implementation of existing hardware that uses the first</i></td></tr>
+<tr><th id="24">24</th><td><i> * nibble after an MPLS label stack for ECMP decision processing, this</i></td></tr>
+<tr><th id="25">25</th><td><i> * document reserves version 01b and this value MUST NOT be used in</i></td></tr>
+<tr><th id="26">26</th><td><i> * future versions of the protocol.  Please see [RFC7325] for further</i></td></tr>
+<tr><th id="27">27</th><td><i> * discussion of MPLS-related forwarding requirements.</i></td></tr>
+<tr><th id="28">28</th><td><i> *</i></td></tr>
+<tr><th id="29">29</th><td><i> * O bit: Setting this bit indicates an Operations, Administration, and</i></td></tr>
+<tr><th id="30">30</th><td><i> * Maintenance (OAM) packet.  The actual format and processing of SFC</i></td></tr>
+<tr><th id="31">31</th><td><i> * OAM packets is outside the scope of this specification (see for</i></td></tr>
+<tr><th id="32">32</th><td><i> * example [I-D.ietf-sfc-oam-framework] for one approach).</i></td></tr>
+<tr><th id="33">33</th><td><i> *</i></td></tr>
+<tr><th id="34">34</th><td><i> * The O bit MUST be set for OAM packets and MUST NOT be set for non-OAM</i></td></tr>
+<tr><th id="35">35</th><td><i> * packets.  The O bit MUST NOT be modified along the SFP.</i></td></tr>
+<tr><th id="36">36</th><td><i> *</i></td></tr>
+<tr><th id="37">37</th><td><i> * SF/SFF/SFC Proxy/Classifier implementations that do not support SFC</i></td></tr>
+<tr><th id="38">38</th><td><i> * OAM procedures SHOULD discard packets with O bit set, but MAY support</i></td></tr>
+<tr><th id="39">39</th><td><i> * a configurable parameter to enable forwarding received SFC OAM</i></td></tr>
+<tr><th id="40">40</th><td><i> * packets unmodified to the next element in the chain.  Forwarding OAM</i></td></tr>
+<tr><th id="41">41</th><td><i> * packets unmodified by SFC elements that do not support SFC OAM</i></td></tr>
+<tr><th id="42">42</th><td><i> * procedures may be acceptable for a subset of OAM functions, but can</i></td></tr>
+<tr><th id="43">43</th><td><i> * result in unexpected outcomes for others, thus it is recommended to</i></td></tr>
+<tr><th id="44">44</th><td><i> * analyze the impact of forwarding an OAM packet for all OAM functions</i></td></tr>
+<tr><th id="45">45</th><td><i> * prior to enabling this behavior.  The configurable parameter MUST be</i></td></tr>
+<tr><th id="46">46</th><td><i> * disabled by default.</i></td></tr>
+<tr><th id="47">47</th><td><i> *</i></td></tr>
+<tr><th id="48">48</th><td><i> * TTL: Indicates the maximum SFF hops for an SFP.  This field is used</i></td></tr>
+<tr><th id="49">49</th><td><i> * for service plane loop detection.  The initial TTL value SHOULD be</i></td></tr>
+<tr><th id="50">50</th><td><i> * configurable via the control plane; the configured initial value can</i></td></tr>
+<tr><th id="51">51</th><td><i> * be specific to one or more SFPs.  If no initial value is explicitly</i></td></tr>
+<tr><th id="52">52</th><td><i> * provided, the default initial TTL value of 63 MUST be used.  Each SFF</i></td></tr>
+<tr><th id="53">53</th><td><i> * involved in forwarding an NSH packet MUST decrement the TTL value by</i></td></tr>
+<tr><th id="54">54</th><td><i> * 1 prior to NSH forwarding lookup.  Decrementing by 1 from an incoming</i></td></tr>
+<tr><th id="55">55</th><td><i> * value of 0 shall result in a TTL value of 63.  The packet MUST NOT be</i></td></tr>
+<tr><th id="56">56</th><td><i> * forwarded if TTL is, after decrement, 0.</i></td></tr>
+<tr><th id="57">57</th><td><i> *</i></td></tr>
+<tr><th id="58">58</th><td><i> * All other flag fields, marked U, are unassigned and available for</i></td></tr>
+<tr><th id="59">59</th><td><i> * future use, see Section 11.2.1.  Unassigned bits MUST be set to zero</i></td></tr>
+<tr><th id="60">60</th><td><i> * upon origination, and MUST be ignored and preserved unmodified by</i></td></tr>
+<tr><th id="61">61</th><td><i> * other NSH supporting elements.  Elements which do not understand the</i></td></tr>
+<tr><th id="62">62</th><td><i> * meaning of any of these bits MUST NOT modify their actions based on</i></td></tr>
+<tr><th id="63">63</th><td><i> * those unknown bits.</i></td></tr>
+<tr><th id="64">64</th><td><i> *</i></td></tr>
+<tr><th id="65">65</th><td><i> * Length: The total length, in 4-byte words, of NSH including the Base</i></td></tr>
+<tr><th id="66">66</th><td><i> * Header, the Service Path Header, the Fixed Length Context Header or</i></td></tr>
+<tr><th id="67">67</th><td><i> * Variable Length Context Header(s).  The length MUST be 0x6 for MD</i></td></tr>
+<tr><th id="68">68</th><td><i> * Type equal to 0x1, and MUST be 0x2 or greater for MD Type equal to</i></td></tr>
+<tr><th id="69">69</th><td><i> * 0x2.  The length of the NSH header MUST be an integer multiple of 4</i></td></tr>
+<tr><th id="70">70</th><td><i> * bytes, thus variable length metadata is always padded out to a</i></td></tr>
+<tr><th id="71">71</th><td><i> * multiple of 4 bytes.</i></td></tr>
+<tr><th id="72">72</th><td><i> *</i></td></tr>
+<tr><th id="73">73</th><td><i> * MD Type: Indicates the format of NSH beyond the mandatory Base Header</i></td></tr>
+<tr><th id="74">74</th><td><i> * and the Service Path Header.  MD Type defines the format of the</i></td></tr>
+<tr><th id="75">75</th><td><i> * metadata being carried.</i></td></tr>
+<tr><th id="76">76</th><td><i> *</i></td></tr>
+<tr><th id="77">77</th><td><i> * 0x0 - This is a reserved value.  Implementations SHOULD silently</i></td></tr>
+<tr><th id="78">78</th><td><i> * discard packets with MD Type 0x0.</i></td></tr>
+<tr><th id="79">79</th><td><i> *</i></td></tr>
+<tr><th id="80">80</th><td><i> * 0x1 - This indicates that the format of the header includes a fixed</i></td></tr>
+<tr><th id="81">81</th><td><i> * length Context Header (see Figure 4 below).</i></td></tr>
+<tr><th id="82">82</th><td><i> *</i></td></tr>
+<tr><th id="83">83</th><td><i> * 0x2 - This does not mandate any headers beyond the Base Header and</i></td></tr>
+<tr><th id="84">84</th><td><i> * Service Path Header, but may contain optional variable length Context</i></td></tr>
+<tr><th id="85">85</th><td><i> * Header(s).  The semantics of the variable length Context Header(s)</i></td></tr>
+<tr><th id="86">86</th><td><i> * are not defined in this document.  The format of the optional</i></td></tr>
+<tr><th id="87">87</th><td><i> * variable length Context Headers is provided in Section 2.5.1.</i></td></tr>
+<tr><th id="88">88</th><td><i> *</i></td></tr>
+<tr><th id="89">89</th><td><i> * 0xF - This value is reserved for experimentation and testing, as per</i></td></tr>
+<tr><th id="90">90</th><td><i> * [RFC3692].  Implementations not explicitly configured to be part of</i></td></tr>
+<tr><th id="91">91</th><td><i> * an experiment SHOULD silently discard packets with MD Type 0xF.</i></td></tr>
+<tr><th id="92">92</th><td><i> *</i></td></tr>
+<tr><th id="93">93</th><td><i> * Next Protocol: indicates the protocol type of the encapsulated data.</i></td></tr>
+<tr><th id="94">94</th><td><i> * NSH does not alter the inner payload, and the semantics on the inner</i></td></tr>
+<tr><th id="95">95</th><td><i> * protocol remain unchanged due to NSH service function chaining.</i></td></tr>
+<tr><th id="96">96</th><td><i> * Please see the IANA Considerations section below, Section 11.2.5.</i></td></tr>
+<tr><th id="97">97</th><td><i> *</i></td></tr>
+<tr><th id="98">98</th><td><i> * This document defines the following Next Protocol values:</i></td></tr>
+<tr><th id="99">99</th><td><i> *</i></td></tr>
+<tr><th id="100">100</th><td><i> * 0x1: IPv4</i></td></tr>
+<tr><th id="101">101</th><td><i> * 0x2: IPv6</i></td></tr>
+<tr><th id="102">102</th><td><i> * 0x3: Ethernet</i></td></tr>
+<tr><th id="103">103</th><td><i> * 0x4: NSH</i></td></tr>
+<tr><th id="104">104</th><td><i> * 0x5: MPLS</i></td></tr>
+<tr><th id="105">105</th><td><i> * 0xFE: Experiment 1</i></td></tr>
+<tr><th id="106">106</th><td><i> * 0xFF: Experiment 2</i></td></tr>
+<tr><th id="107">107</th><td><i> *</i></td></tr>
+<tr><th id="108">108</th><td><i> * Packets with Next Protocol values not supported SHOULD be silently</i></td></tr>
+<tr><th id="109">109</th><td><i> * dropped by default, although an implementation MAY provide a</i></td></tr>
+<tr><th id="110">110</th><td><i> * configuration parameter to forward them.  Additionally, an</i></td></tr>
+<tr><th id="111">111</th><td><i> * implementation not explicitly configured for a specific experiment</i></td></tr>
+<tr><th id="112">112</th><td><i> * [RFC3692] SHOULD silently drop packets with Next Protocol values 0xFE</i></td></tr>
+<tr><th id="113">113</th><td><i> * and 0xFF.</i></td></tr>
+<tr><th id="114">114</th><td><i> *</i></td></tr>
+<tr><th id="115">115</th><td><i> * Service Path Identifier (SPI): Identifies a service path.</i></td></tr>
+<tr><th id="116">116</th><td><i> * Participating nodes MUST use this identifier for Service Function</i></td></tr>
+<tr><th id="117">117</th><td><i> * Path selection.  The initial classifier MUST set the appropriate SPI</i></td></tr>
+<tr><th id="118">118</th><td><i> * for a given classification result.</i></td></tr>
+<tr><th id="119">119</th><td><i> *</i></td></tr>
+<tr><th id="120">120</th><td><i> * Service Index (SI): Provides location within the SFP.  The initial</i></td></tr>
+<tr><th id="121">121</th><td><i> * classifier for a given SFP SHOULD set the SI to 255, however the</i></td></tr>
+<tr><th id="122">122</th><td><i> * control plane MAY configure the initial value of SI as appropriate</i></td></tr>
+<tr><th id="123">123</th><td><i> * (i.e., taking into account the length of the service function path).</i></td></tr>
+<tr><th id="124">124</th><td><i> * The Service Index MUST be decremented by a value of 1 by Service</i></td></tr>
+<tr><th id="125">125</th><td><i> * Functions or by SFC Proxy nodes after performing required services</i></td></tr>
+<tr><th id="126">126</th><td><i> * and the new decremented SI value MUST be used in the egress packet's</i></td></tr>
+<tr><th id="127">127</th><td><i> * NSH.  The initial Classifier MUST send the packet to the first SFF in</i></td></tr>
+<tr><th id="128">128</th><td><i> * the identified SFP for forwarding along an SFP.  If re-classification</i></td></tr>
+<tr><th id="129">129</th><td><i> * occurs, and that re-classification results in a new SPI, the</i></td></tr>
+<tr><th id="130">130</th><td><i> * (re)classifier is, in effect, the initial classifier for the</i></td></tr>
+<tr><th id="131">131</th><td><i> * resultant SPI.</i></td></tr>
+<tr><th id="132">132</th><td><i> *</i></td></tr>
+<tr><th id="133">133</th><td><i> * The SI is used in conjunction the with Service Path Identifier for</i></td></tr>
+<tr><th id="134">134</th><td><i> * Service Function Path Selection and for determining the next SFF/SF</i></td></tr>
+<tr><th id="135">135</th><td><i> * in the path.  The SI is also valuable when troubleshooting or</i></td></tr>
+<tr><th id="136">136</th><td><i> * reporting service paths.  Additionally, while the TTL field is the</i></td></tr>
+<tr><th id="137">137</th><td><i> * main mechanism for service plane loop detection, the SI can also be</i></td></tr>
+<tr><th id="138">138</th><td><i> * used for detecting service plane loops.</i></td></tr>
+<tr><th id="139">139</th><td><i> *</i></td></tr>
+<tr><th id="140">140</th><td><i> * When the Base Header specifies MD Type = 0x1, a Fixed Length Context</i></td></tr>
+<tr><th id="141">141</th><td><i> * Header (16-bytes) MUST be present immediately following the Service</i></td></tr>
+<tr><th id="142">142</th><td><i> * Path Header. The value of a Fixed Length Context</i></td></tr>
+<tr><th id="143">143</th><td><i> * Header that carries no metadata MUST be set to zero.</i></td></tr>
+<tr><th id="144">144</th><td><i> *</i></td></tr>
+<tr><th id="145">145</th><td><i> * When the base header specifies MD Type = 0x2, zero or more Variable</i></td></tr>
+<tr><th id="146">146</th><td><i> * Length Context Headers MAY be added, immediately following the</i></td></tr>
+<tr><th id="147">147</th><td><i> * Service Path Header (see Figure 5).  Therefore, Length = 0x2,</i></td></tr>
+<tr><th id="148">148</th><td><i> * indicates that only the Base Header followed by the Service Path</i></td></tr>
+<tr><th id="149">149</th><td><i> * Header are present.  The optional Variable Length Context Headers</i></td></tr>
+<tr><th id="150">150</th><td><i> * MUST be of an integer number of 4-bytes.  The base header Length</i></td></tr>
+<tr><th id="151">151</th><td><i> * field MUST be used to determine the offset to locate the original</i></td></tr>
+<tr><th id="152">152</th><td><i> * packet or frame for SFC nodes that require access to that</i></td></tr>
+<tr><th id="153">153</th><td><i> * information.</i></td></tr>
+<tr><th id="154">154</th><td><i> *</i></td></tr>
+<tr><th id="155">155</th><td><i> * The format of the optional variable length Context Headers</i></td></tr>
+<tr><th id="156">156</th><td><i> *</i></td></tr>
+<tr><th id="157">157</th><td><i> *  0                   1                   2                   3</i></td></tr>
+<tr><th id="158">158</th><td><i> *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</i></td></tr>
+<tr><th id="159">159</th><td><i> * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</i></td></tr>
+<tr><th id="160">160</th><td><i> * |          Metadata Class       |      Type     |U|    Length   |</i></td></tr>
+<tr><th id="161">161</th><td><i> * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</i></td></tr>
+<tr><th id="162">162</th><td><i> * |                      Variable Metadata                        |</i></td></tr>
+<tr><th id="163">163</th><td><i> * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</i></td></tr>
+<tr><th id="164">164</th><td><i> *</i></td></tr>
+<tr><th id="165">165</th><td><i> * Metadata Class (MD Class): Defines the scope of the 'Type' field to</i></td></tr>
+<tr><th id="166">166</th><td><i> * provide a hierarchical namespace.  The IANA Considerations</i></td></tr>
+<tr><th id="167">167</th><td><i> * Section 11.2.4 defines how the MD Class values can be allocated to</i></td></tr>
+<tr><th id="168">168</th><td><i> * standards bodies, vendors, and others.</i></td></tr>
+<tr><th id="169">169</th><td><i> *</i></td></tr>
+<tr><th id="170">170</th><td><i> * Type: Indicates the explicit type of metadata being carried.  The</i></td></tr>
+<tr><th id="171">171</th><td><i> * definition of the Type is the responsibility of the MD Class owner.</i></td></tr>
+<tr><th id="172">172</th><td><i> *</i></td></tr>
+<tr><th id="173">173</th><td><i> * Unassigned bit: One unassigned bit is available for future use. This</i></td></tr>
+<tr><th id="174">174</th><td><i> * bit MUST NOT be set, and MUST be ignored on receipt.</i></td></tr>
+<tr><th id="175">175</th><td><i> *</i></td></tr>
+<tr><th id="176">176</th><td><i> * Length: Indicates the length of the variable metadata, in bytes.  In</i></td></tr>
+<tr><th id="177">177</th><td><i> * case the metadata length is not an integer number of 4-byte words,</i></td></tr>
+<tr><th id="178">178</th><td><i> * the sender MUST add pad bytes immediately following the last metadata</i></td></tr>
+<tr><th id="179">179</th><td><i> * byte to extend the metadata to an integer number of 4-byte words.</i></td></tr>
+<tr><th id="180">180</th><td><i> * The receiver MUST round up the length field to the nearest 4-byte</i></td></tr>
+<tr><th id="181">181</th><td><i> * word boundary, to locate and process the next field in the packet.</i></td></tr>
+<tr><th id="182">182</th><td><i> * The receiver MUST access only those bytes in the metadata indicated</i></td></tr>
+<tr><th id="183">183</th><td><i> * by the length field (i.e., actual number of bytes) and MUST ignore</i></td></tr>
+<tr><th id="184">184</th><td><i> * the remaining bytes up to the nearest 4-byte word boundary.  The</i></td></tr>
+<tr><th id="185">185</th><td><i> * Length may be 0 or greater.</i></td></tr>
+<tr><th id="186">186</th><td><i> *</i></td></tr>
+<tr><th id="187">187</th><td><i> * A value of 0 denotes a Context Header without a Variable Metadata</i></td></tr>
+<tr><th id="188">188</th><td><i> * field.</i></td></tr>
+<tr><th id="189">189</th><td><i> *</i></td></tr>
+<tr><th id="190">190</th><td><i> * [0] <a href="https://datatracker.ietf.org/doc/draft-ietf-sfc-nsh/">https://datatracker.ietf.org/doc/draft-ietf-sfc-nsh/</a></i></td></tr>
+<tr><th id="191">191</th><td><i> */</i></td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="194">194</th><td><i class="doc"> * struct nsh_md1_ctx - Keeps track of NSH context data</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc"> *<span class="command"> @nshc</span>&lt;1-4&gt;: NSH Contexts.</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="197">197</th><td><b>struct</b> <dfn class="type def" id="nsh_md1_ctx" title='nsh_md1_ctx' data-ref="nsh_md1_ctx">nsh_md1_ctx</dfn> {</td></tr>
+<tr><th id="198">198</th><td>	<a class="typedef" href="../uapi/linux/types.h.html#__be32" title='__be32' data-type='__u32' data-ref="__be32">__be32</a> <dfn class="decl field" id="nsh_md1_ctx::context" title='nsh_md1_ctx::context' data-ref="nsh_md1_ctx::context">context</dfn>[<var>4</var>];</td></tr>
+<tr><th id="199">199</th><td>};</td></tr>
+<tr><th id="200">200</th><td></td></tr>
+<tr><th id="201">201</th><td><b>struct</b> <dfn class="type def" id="nsh_md2_tlv" title='nsh_md2_tlv' data-ref="nsh_md2_tlv">nsh_md2_tlv</dfn> {</td></tr>
+<tr><th id="202">202</th><td>	<a class="typedef" href="../uapi/linux/types.h.html#__be16" title='__be16' data-type='__u16' data-ref="__be16">__be16</a> <dfn class="decl field" id="nsh_md2_tlv::md_class" title='nsh_md2_tlv::md_class' data-ref="nsh_md2_tlv::md_class">md_class</dfn>;</td></tr>
+<tr><th id="203">203</th><td>	<a class="typedef" href="../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a> <dfn class="decl field" id="nsh_md2_tlv::type" title='nsh_md2_tlv::type' data-ref="nsh_md2_tlv::type">type</dfn>;</td></tr>
+<tr><th id="204">204</th><td>	<a class="typedef" href="../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a> <dfn class="decl field" id="nsh_md2_tlv::length" title='nsh_md2_tlv::length' data-ref="nsh_md2_tlv::length">length</dfn>;</td></tr>
+<tr><th id="205">205</th><td>	<a class="typedef" href="../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a> <dfn class="decl field" id="nsh_md2_tlv::md_value" title='nsh_md2_tlv::md_value' data-ref="nsh_md2_tlv::md_value">md_value</dfn>[];</td></tr>
+<tr><th id="206">206</th><td>};</td></tr>
+<tr><th id="207">207</th><td></td></tr>
+<tr><th id="208">208</th><td><b>struct</b> <dfn class="type def" id="nshhdr" title='nshhdr' data-ref="nshhdr">nshhdr</dfn> {</td></tr>
+<tr><th id="209">209</th><td>	<a class="typedef" href="../uapi/linux/types.h.html#__be16" title='__be16' data-type='__u16' data-ref="__be16">__be16</a> <dfn class="decl field" id="nshhdr::ver_flags_ttl_len" title='nshhdr::ver_flags_ttl_len' data-ref="nshhdr::ver_flags_ttl_len">ver_flags_ttl_len</dfn>;</td></tr>
+<tr><th id="210">210</th><td>	<a class="typedef" href="../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a> <dfn class="decl field" id="nshhdr::mdtype" title='nshhdr::mdtype' data-ref="nshhdr::mdtype">mdtype</dfn>;</td></tr>
+<tr><th id="211">211</th><td>	<a class="typedef" href="../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a> <dfn class="decl field" id="nshhdr::np" title='nshhdr::np' data-ref="nshhdr::np">np</dfn>;</td></tr>
+<tr><th id="212">212</th><td>	<a class="typedef" href="../uapi/linux/types.h.html#__be32" title='__be32' data-type='__u32' data-ref="__be32">__be32</a> <dfn class="decl field" id="nshhdr::path_hdr" title='nshhdr::path_hdr' data-ref="nshhdr::path_hdr">path_hdr</dfn>;</td></tr>
+<tr><th id="213">213</th><td>	<b>union</b> {</td></tr>
+<tr><th id="214">214</th><td>	    <b>struct</b> <a class="type" href="#nsh_md1_ctx" title='nsh_md1_ctx' data-ref="nsh_md1_ctx">nsh_md1_ctx</a> <dfn class="decl field" id="nshhdr::(anonymous)::md1" title='nshhdr::(anonymous union)::md1' data-ref="nshhdr::(anonymous)::md1">md1</dfn>;</td></tr>
+<tr><th id="215">215</th><td>	    <b>struct</b> <a class="type" href="#nsh_md2_tlv" title='nsh_md2_tlv' data-ref="nsh_md2_tlv">nsh_md2_tlv</a> <dfn class="decl field" id="nshhdr::(anonymous)::md2" title='nshhdr::(anonymous union)::md2' data-ref="nshhdr::(anonymous)::md2">md2</dfn>;</td></tr>
+<tr><th id="216">216</th><td>	};</td></tr>
+<tr><th id="217">217</th><td>};</td></tr>
+<tr><th id="218">218</th><td></td></tr>
+<tr><th id="219">219</th><td><i>/* Masking NSH header fields. */</i></td></tr>
+<tr><th id="220">220</th><td><u>#define <dfn class="macro" id="_M/NSH_VER_MASK" data-ref="_M/NSH_VER_MASK">NSH_VER_MASK</dfn>       0xc000</u></td></tr>
+<tr><th id="221">221</th><td><u>#define <dfn class="macro" id="_M/NSH_VER_SHIFT" data-ref="_M/NSH_VER_SHIFT">NSH_VER_SHIFT</dfn>      14</u></td></tr>
+<tr><th id="222">222</th><td><u>#define <dfn class="macro" id="_M/NSH_FLAGS_MASK" data-ref="_M/NSH_FLAGS_MASK">NSH_FLAGS_MASK</dfn>     0x3000</u></td></tr>
+<tr><th id="223">223</th><td><u>#define <dfn class="macro" id="_M/NSH_FLAGS_SHIFT" data-ref="_M/NSH_FLAGS_SHIFT">NSH_FLAGS_SHIFT</dfn>    12</u></td></tr>
+<tr><th id="224">224</th><td><u>#define <dfn class="macro" id="_M/NSH_TTL_MASK" data-ref="_M/NSH_TTL_MASK">NSH_TTL_MASK</dfn>       0x0fc0</u></td></tr>
+<tr><th id="225">225</th><td><u>#define <dfn class="macro" id="_M/NSH_TTL_SHIFT" data-ref="_M/NSH_TTL_SHIFT">NSH_TTL_SHIFT</dfn>      6</u></td></tr>
+<tr><th id="226">226</th><td><u>#define <dfn class="macro" id="_M/NSH_LEN_MASK" data-ref="_M/NSH_LEN_MASK">NSH_LEN_MASK</dfn>       0x003f</u></td></tr>
+<tr><th id="227">227</th><td><u>#define <dfn class="macro" id="_M/NSH_LEN_SHIFT" data-ref="_M/NSH_LEN_SHIFT">NSH_LEN_SHIFT</dfn>      0</u></td></tr>
+<tr><th id="228">228</th><td></td></tr>
+<tr><th id="229">229</th><td><u>#define <dfn class="macro" id="_M/NSH_MDTYPE_MASK" data-ref="_M/NSH_MDTYPE_MASK">NSH_MDTYPE_MASK</dfn>    0x0f</u></td></tr>
+<tr><th id="230">230</th><td><u>#define <dfn class="macro" id="_M/NSH_MDTYPE_SHIFT" data-ref="_M/NSH_MDTYPE_SHIFT">NSH_MDTYPE_SHIFT</dfn>   0</u></td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td><u>#define <dfn class="macro" id="_M/NSH_SPI_MASK" data-ref="_M/NSH_SPI_MASK">NSH_SPI_MASK</dfn>       0xffffff00</u></td></tr>
+<tr><th id="233">233</th><td><u>#define <dfn class="macro" id="_M/NSH_SPI_SHIFT" data-ref="_M/NSH_SPI_SHIFT">NSH_SPI_SHIFT</dfn>      8</u></td></tr>
+<tr><th id="234">234</th><td><u>#define <dfn class="macro" id="_M/NSH_SI_MASK" data-ref="_M/NSH_SI_MASK">NSH_SI_MASK</dfn>        0x000000ff</u></td></tr>
+<tr><th id="235">235</th><td><u>#define <dfn class="macro" id="_M/NSH_SI_SHIFT" data-ref="_M/NSH_SI_SHIFT">NSH_SI_SHIFT</dfn>       0</u></td></tr>
+<tr><th id="236">236</th><td></td></tr>
+<tr><th id="237">237</th><td><i>/* MD Type Registry. */</i></td></tr>
+<tr><th id="238">238</th><td><u>#define <dfn class="macro" id="_M/NSH_M_TYPE1" data-ref="_M/NSH_M_TYPE1">NSH_M_TYPE1</dfn>     0x01</u></td></tr>
+<tr><th id="239">239</th><td><u>#define <dfn class="macro" id="_M/NSH_M_TYPE2" data-ref="_M/NSH_M_TYPE2">NSH_M_TYPE2</dfn>     0x02</u></td></tr>
+<tr><th id="240">240</th><td><u>#define <dfn class="macro" id="_M/NSH_M_EXP1" data-ref="_M/NSH_M_EXP1">NSH_M_EXP1</dfn>      0xFE</u></td></tr>
+<tr><th id="241">241</th><td><u>#define <dfn class="macro" id="_M/NSH_M_EXP2" data-ref="_M/NSH_M_EXP2">NSH_M_EXP2</dfn>      0xFF</u></td></tr>
+<tr><th id="242">242</th><td></td></tr>
+<tr><th id="243">243</th><td><i>/* NSH Base Header Length */</i></td></tr>
+<tr><th id="244">244</th><td><u>#define <dfn class="macro" id="_M/NSH_BASE_HDR_LEN" data-ref="_M/NSH_BASE_HDR_LEN">NSH_BASE_HDR_LEN</dfn>  8</u></td></tr>
+<tr><th id="245">245</th><td></td></tr>
+<tr><th id="246">246</th><td><i>/* NSH MD Type 1 header Length. */</i></td></tr>
+<tr><th id="247">247</th><td><u>#define <dfn class="macro" id="_M/NSH_M_TYPE1_LEN" data-ref="_M/NSH_M_TYPE1_LEN">NSH_M_TYPE1_LEN</dfn>   24</u></td></tr>
+<tr><th id="248">248</th><td></td></tr>
+<tr><th id="249">249</th><td><i>/* NSH header maximum Length. */</i></td></tr>
+<tr><th id="250">250</th><td><u>#define <dfn class="macro" id="_M/NSH_HDR_MAX_LEN" data-ref="_M/NSH_HDR_MAX_LEN">NSH_HDR_MAX_LEN</dfn> 256</u></td></tr>
+<tr><th id="251">251</th><td></td></tr>
+<tr><th id="252">252</th><td><i>/* NSH context headers maximum Length. */</i></td></tr>
+<tr><th id="253">253</th><td><u>#define <dfn class="macro" id="_M/NSH_CTX_HDRS_MAX_LEN" data-ref="_M/NSH_CTX_HDRS_MAX_LEN">NSH_CTX_HDRS_MAX_LEN</dfn> 248</u></td></tr>
+<tr><th id="254">254</th><td></td></tr>
+<tr><th id="255">255</th><td><em>static</em> <a class="macro" href="../linux/compiler-gcc.h.html#95" title="inline __attribute__((always_inline, unused)) __attribute__((no_instrument_function))" data-ref="_M/inline"><b>inline</b></a> <b>struct</b> <a class="type" href="#nshhdr" title='nshhdr' data-ref="nshhdr">nshhdr</a> *<dfn class="decl def fn" id="nsh_hdr" title='nsh_hdr' data-ref="nsh_hdr">nsh_hdr</dfn>(<b>struct</b> <a class="type" href="../linux/skbuff.h.html#sk_buff" title='sk_buff' data-ref="sk_buff">sk_buff</a> *<dfn class="local col1 decl" id="1skb" title='skb' data-type='struct sk_buff *' data-ref="1skb">skb</dfn>)</td></tr>
+<tr><th id="256">256</th><td>{</td></tr>
+<tr><th id="257">257</th><td>	<b>return</b> (<b>struct</b> <a class="type" href="#nshhdr" title='nshhdr' data-ref="nshhdr">nshhdr</a> *)<a class="ref fn" href="../linux/skbuff.h.html#skb_network_header" title='skb_network_header' data-ref="skb_network_header">skb_network_header</a>(<a class="local col1 ref" href="#1skb" title='skb' data-ref="1skb">skb</a>);</td></tr>
+<tr><th id="258">258</th><td>}</td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td><em>static</em> <a class="macro" href="../linux/compiler-gcc.h.html#95" title="inline __attribute__((always_inline, unused)) __attribute__((no_instrument_function))" data-ref="_M/inline"><b>inline</b></a> <a class="typedef" href="../asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a> <dfn class="decl def fn" id="nsh_hdr_len" title='nsh_hdr_len' data-ref="nsh_hdr_len">nsh_hdr_len</dfn>(<em>const</em> <b>struct</b> <a class="type" href="#nshhdr" title='nshhdr' data-ref="nshhdr">nshhdr</a> *<dfn class="local col2 decl" id="2nsh" title='nsh' data-type='const struct nshhdr *' data-ref="2nsh">nsh</dfn>)</td></tr>
+<tr><th id="261">261</th><td>{</td></tr>
+<tr><th id="262">262</th><td>	<b>return</b> ((<a class="macro" href="../linux/byteorder/generic.h.html#142" title="(__builtin_constant_p((__u16)(( __u16)(__be16)(nsh-&gt;ver_flags_ttl_len))) ? ((__u16)( (((__u16)(( __u16)(__be16)(nsh-&gt;ver_flags_ttl_len)) &amp; (__u16)0x00ffU) &lt;&lt; 8) | (((__u16)(( __u16)(__be16)(nsh-&gt;ver_flags_ttl_len)) &amp; (__u16)0xff00U) &gt;&gt; 8))) : __fswab16(( __u16)(__be16)(nsh-&gt;ver_flags_ttl_len)))" data-ref="_M/ntohs">ntohs</a>(<a class="local col2 ref" href="#2nsh" title='nsh' data-ref="2nsh">nsh</a>-&gt;<a class="ref field" href="#nshhdr::ver_flags_ttl_len" title='nshhdr::ver_flags_ttl_len' data-ref="nshhdr::ver_flags_ttl_len">ver_flags_ttl_len</a>) &amp; <a class="macro" href="#226" title="0x003f" data-ref="_M/NSH_LEN_MASK">NSH_LEN_MASK</a>)</td></tr>
+<tr><th id="263">263</th><td>		&gt;&gt; <a class="macro" href="#227" title="0" data-ref="_M/NSH_LEN_SHIFT">NSH_LEN_SHIFT</a>) &lt;&lt; <var>2</var>;</td></tr>
+<tr><th id="264">264</th><td>}</td></tr>
+<tr><th id="265">265</th><td></td></tr>
+<tr><th id="266">266</th><td><em>static</em> <a class="macro" href="../linux/compiler-gcc.h.html#95" title="inline __attribute__((always_inline, unused)) __attribute__((no_instrument_function))" data-ref="_M/inline"><b>inline</b></a> <a class="typedef" href="../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a> <dfn class="decl def fn" id="nsh_get_ver" title='nsh_get_ver' data-ref="nsh_get_ver">nsh_get_ver</dfn>(<em>const</em> <b>struct</b> <a class="type" href="#nshhdr" title='nshhdr' data-ref="nshhdr">nshhdr</a> *<dfn class="local col3 decl" id="3nsh" title='nsh' data-type='const struct nshhdr *' data-ref="3nsh">nsh</dfn>)</td></tr>
+<tr><th id="267">267</th><td>{</td></tr>
+<tr><th id="268">268</th><td>	<b>return</b> (<a class="macro" href="../linux/byteorder/generic.h.html#142" title="(__builtin_constant_p((__u16)(( __u16)(__be16)(nsh-&gt;ver_flags_ttl_len))) ? ((__u16)( (((__u16)(( __u16)(__be16)(nsh-&gt;ver_flags_ttl_len)) &amp; (__u16)0x00ffU) &lt;&lt; 8) | (((__u16)(( __u16)(__be16)(nsh-&gt;ver_flags_ttl_len)) &amp; (__u16)0xff00U) &gt;&gt; 8))) : __fswab16(( __u16)(__be16)(nsh-&gt;ver_flags_ttl_len)))" data-ref="_M/ntohs">ntohs</a>(<a class="local col3 ref" href="#3nsh" title='nsh' data-ref="3nsh">nsh</a>-&gt;<a class="ref field" href="#nshhdr::ver_flags_ttl_len" title='nshhdr::ver_flags_ttl_len' data-ref="nshhdr::ver_flags_ttl_len">ver_flags_ttl_len</a>) &amp; <a class="macro" href="#220" title="0xc000" data-ref="_M/NSH_VER_MASK">NSH_VER_MASK</a>)</td></tr>
+<tr><th id="269">269</th><td>		&gt;&gt; <a class="macro" href="#221" title="14" data-ref="_M/NSH_VER_SHIFT">NSH_VER_SHIFT</a>;</td></tr>
+<tr><th id="270">270</th><td>}</td></tr>
+<tr><th id="271">271</th><td></td></tr>
+<tr><th id="272">272</th><td><em>static</em> <a class="macro" href="../linux/compiler-gcc.h.html#95" title="inline __attribute__((always_inline, unused)) __attribute__((no_instrument_function))" data-ref="_M/inline"><b>inline</b></a> <a class="typedef" href="../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a> <dfn class="decl def fn" id="nsh_get_flags" title='nsh_get_flags' data-ref="nsh_get_flags">nsh_get_flags</dfn>(<em>const</em> <b>struct</b> <a class="type" href="#nshhdr" title='nshhdr' data-ref="nshhdr">nshhdr</a> *<dfn class="local col4 decl" id="4nsh" title='nsh' data-type='const struct nshhdr *' data-ref="4nsh">nsh</dfn>)</td></tr>
+<tr><th id="273">273</th><td>{</td></tr>
+<tr><th id="274">274</th><td>	<b>return</b> (<a class="macro" href="../linux/byteorder/generic.h.html#142" title="(__builtin_constant_p((__u16)(( __u16)(__be16)(nsh-&gt;ver_flags_ttl_len))) ? ((__u16)( (((__u16)(( __u16)(__be16)(nsh-&gt;ver_flags_ttl_len)) &amp; (__u16)0x00ffU) &lt;&lt; 8) | (((__u16)(( __u16)(__be16)(nsh-&gt;ver_flags_ttl_len)) &amp; (__u16)0xff00U) &gt;&gt; 8))) : __fswab16(( __u16)(__be16)(nsh-&gt;ver_flags_ttl_len)))" data-ref="_M/ntohs">ntohs</a>(<a class="local col4 ref" href="#4nsh" title='nsh' data-ref="4nsh">nsh</a>-&gt;<a class="ref field" href="#nshhdr::ver_flags_ttl_len" title='nshhdr::ver_flags_ttl_len' data-ref="nshhdr::ver_flags_ttl_len">ver_flags_ttl_len</a>) &amp; <a class="macro" href="#222" title="0x3000" data-ref="_M/NSH_FLAGS_MASK">NSH_FLAGS_MASK</a>)</td></tr>
+<tr><th id="275">275</th><td>		&gt;&gt; <a class="macro" href="#223" title="12" data-ref="_M/NSH_FLAGS_SHIFT">NSH_FLAGS_SHIFT</a>;</td></tr>
+<tr><th id="276">276</th><td>}</td></tr>
+<tr><th id="277">277</th><td></td></tr>
+<tr><th id="278">278</th><td><em>static</em> <a class="macro" href="../linux/compiler-gcc.h.html#95" title="inline __attribute__((always_inline, unused)) __attribute__((no_instrument_function))" data-ref="_M/inline"><b>inline</b></a> <a class="typedef" href="../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a> <dfn class="decl def fn" id="nsh_get_ttl" title='nsh_get_ttl' data-ref="nsh_get_ttl">nsh_get_ttl</dfn>(<em>const</em> <b>struct</b> <a class="type" href="#nshhdr" title='nshhdr' data-ref="nshhdr">nshhdr</a> *<dfn class="local col5 decl" id="5nsh" title='nsh' data-type='const struct nshhdr *' data-ref="5nsh">nsh</dfn>)</td></tr>
+<tr><th id="279">279</th><td>{</td></tr>
+<tr><th id="280">280</th><td>	<b>return</b> (<a class="macro" href="../linux/byteorder/generic.h.html#142" title="(__builtin_constant_p((__u16)(( __u16)(__be16)(nsh-&gt;ver_flags_ttl_len))) ? ((__u16)( (((__u16)(( __u16)(__be16)(nsh-&gt;ver_flags_ttl_len)) &amp; (__u16)0x00ffU) &lt;&lt; 8) | (((__u16)(( __u16)(__be16)(nsh-&gt;ver_flags_ttl_len)) &amp; (__u16)0xff00U) &gt;&gt; 8))) : __fswab16(( __u16)(__be16)(nsh-&gt;ver_flags_ttl_len)))" data-ref="_M/ntohs">ntohs</a>(<a class="local col5 ref" href="#5nsh" title='nsh' data-ref="5nsh">nsh</a>-&gt;<a class="ref field" href="#nshhdr::ver_flags_ttl_len" title='nshhdr::ver_flags_ttl_len' data-ref="nshhdr::ver_flags_ttl_len">ver_flags_ttl_len</a>) &amp; <a class="macro" href="#224" title="0x0fc0" data-ref="_M/NSH_TTL_MASK">NSH_TTL_MASK</a>)</td></tr>
+<tr><th id="281">281</th><td>		&gt;&gt; <a class="macro" href="#225" title="6" data-ref="_M/NSH_TTL_SHIFT">NSH_TTL_SHIFT</a>;</td></tr>
+<tr><th id="282">282</th><td>}</td></tr>
+<tr><th id="283">283</th><td></td></tr>
+<tr><th id="284">284</th><td><em>static</em> <a class="macro" href="../linux/compiler-gcc.h.html#95" title="inline __attribute__((always_inline, unused)) __attribute__((no_instrument_function))" data-ref="_M/inline"><b>inline</b></a> <em>void</em> <dfn class="decl def fn" id="__nsh_set_xflag" title='__nsh_set_xflag' data-ref="__nsh_set_xflag">__nsh_set_xflag</dfn>(<b>struct</b> <a class="type" href="#nshhdr" title='nshhdr' data-ref="nshhdr">nshhdr</a> *<dfn class="local col6 decl" id="6nsh" title='nsh' data-type='struct nshhdr *' data-ref="6nsh">nsh</dfn>, <a class="typedef" href="../asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a> <dfn class="local col7 decl" id="7xflag" title='xflag' data-type='u16' data-ref="7xflag">xflag</dfn>, <a class="typedef" href="../asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a> <dfn class="local col8 decl" id="8xmask" title='xmask' data-type='u16' data-ref="8xmask">xmask</dfn>)</td></tr>
+<tr><th id="285">285</th><td>{</td></tr>
+<tr><th id="286">286</th><td>	<a class="local col6 ref" href="#6nsh" title='nsh' data-ref="6nsh">nsh</a>-&gt;<a class="ref field" href="#nshhdr::ver_flags_ttl_len" title='nshhdr::ver_flags_ttl_len' data-ref="nshhdr::ver_flags_ttl_len">ver_flags_ttl_len</a></td></tr>
+<tr><th id="287">287</th><td>		= (<a class="local col6 ref" href="#6nsh" title='nsh' data-ref="6nsh">nsh</a>-&gt;<a class="ref field" href="#nshhdr::ver_flags_ttl_len" title='nshhdr::ver_flags_ttl_len' data-ref="nshhdr::ver_flags_ttl_len">ver_flags_ttl_len</a> &amp; ~<a class="macro" href="../linux/byteorder/generic.h.html#141" title="(( __be16)(__builtin_constant_p((__u16)((xmask))) ? ((__u16)( (((__u16)((xmask)) &amp; (__u16)0x00ffU) &lt;&lt; 8) | (((__u16)((xmask)) &amp; (__u16)0xff00U) &gt;&gt; 8))) : __fswab16((xmask))))" data-ref="_M/htons">htons</a>(<a class="local col8 ref" href="#8xmask" title='xmask' data-ref="8xmask">xmask</a>)) | <a class="macro" href="../linux/byteorder/generic.h.html#141" title="(( __be16)(__builtin_constant_p((__u16)((xflag))) ? ((__u16)( (((__u16)((xflag)) &amp; (__u16)0x00ffU) &lt;&lt; 8) | (((__u16)((xflag)) &amp; (__u16)0xff00U) &gt;&gt; 8))) : __fswab16((xflag))))" data-ref="_M/htons">htons</a>(<a class="local col7 ref" href="#7xflag" title='xflag' data-ref="7xflag">xflag</a>);</td></tr>
+<tr><th id="288">288</th><td>}</td></tr>
+<tr><th id="289">289</th><td></td></tr>
+<tr><th id="290">290</th><td><em>static</em> <a class="macro" href="../linux/compiler-gcc.h.html#95" title="inline __attribute__((always_inline, unused)) __attribute__((no_instrument_function))" data-ref="_M/inline"><b>inline</b></a> <em>void</em> <dfn class="decl def fn" id="nsh_set_flags_and_ttl" title='nsh_set_flags_and_ttl' data-ref="nsh_set_flags_and_ttl">nsh_set_flags_and_ttl</dfn>(<b>struct</b> <a class="type" href="#nshhdr" title='nshhdr' data-ref="nshhdr">nshhdr</a> *<dfn class="local col9 decl" id="9nsh" title='nsh' data-type='struct nshhdr *' data-ref="9nsh">nsh</dfn>, <a class="typedef" href="../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a> <dfn class="local col0 decl" id="10flags" title='flags' data-type='u8' data-ref="10flags">flags</dfn>, <a class="typedef" href="../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a> <dfn class="local col1 decl" id="11ttl" title='ttl' data-type='u8' data-ref="11ttl">ttl</dfn>)</td></tr>
+<tr><th id="291">291</th><td>{</td></tr>
+<tr><th id="292">292</th><td>	<a class="ref fn" href="#__nsh_set_xflag" title='__nsh_set_xflag' data-ref="__nsh_set_xflag">__nsh_set_xflag</a>(<a class="local col9 ref" href="#9nsh" title='nsh' data-ref="9nsh">nsh</a>, ((<a class="local col0 ref" href="#10flags" title='flags' data-ref="10flags">flags</a> &lt;&lt; <a class="macro" href="#223" title="12" data-ref="_M/NSH_FLAGS_SHIFT">NSH_FLAGS_SHIFT</a>) &amp; <a class="macro" href="#222" title="0x3000" data-ref="_M/NSH_FLAGS_MASK">NSH_FLAGS_MASK</a>) |</td></tr>
+<tr><th id="293">293</th><td>			     ((<a class="local col1 ref" href="#11ttl" title='ttl' data-ref="11ttl">ttl</a> &lt;&lt; <a class="macro" href="#225" title="6" data-ref="_M/NSH_TTL_SHIFT">NSH_TTL_SHIFT</a>) &amp; <a class="macro" href="#224" title="0x0fc0" data-ref="_M/NSH_TTL_MASK">NSH_TTL_MASK</a>),</td></tr>
+<tr><th id="294">294</th><td>			<a class="macro" href="#222" title="0x3000" data-ref="_M/NSH_FLAGS_MASK">NSH_FLAGS_MASK</a> | <a class="macro" href="#224" title="0x0fc0" data-ref="_M/NSH_TTL_MASK">NSH_TTL_MASK</a>);</td></tr>
+<tr><th id="295">295</th><td>}</td></tr>
+<tr><th id="296">296</th><td></td></tr>
+<tr><th id="297">297</th><td><em>static</em> <a class="macro" href="../linux/compiler-gcc.h.html#95" title="inline __attribute__((always_inline, unused)) __attribute__((no_instrument_function))" data-ref="_M/inline"><b>inline</b></a> <em>void</em> <dfn class="decl def fn" id="nsh_set_flags_ttl_len" title='nsh_set_flags_ttl_len' data-ref="nsh_set_flags_ttl_len">nsh_set_flags_ttl_len</dfn>(<b>struct</b> <a class="type" href="#nshhdr" title='nshhdr' data-ref="nshhdr">nshhdr</a> *<dfn class="local col2 decl" id="12nsh" title='nsh' data-type='struct nshhdr *' data-ref="12nsh">nsh</dfn>, <a class="typedef" href="../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a> <dfn class="local col3 decl" id="13flags" title='flags' data-type='u8' data-ref="13flags">flags</dfn>,</td></tr>
+<tr><th id="298">298</th><td>					 <a class="typedef" href="../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a> <dfn class="local col4 decl" id="14ttl" title='ttl' data-type='u8' data-ref="14ttl">ttl</dfn>, <a class="typedef" href="../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a> <dfn class="local col5 decl" id="15len" title='len' data-type='u8' data-ref="15len">len</dfn>)</td></tr>
+<tr><th id="299">299</th><td>{</td></tr>
+<tr><th id="300">300</th><td>	<a class="local col5 ref" href="#15len" title='len' data-ref="15len">len</a> = <a class="local col5 ref" href="#15len" title='len' data-ref="15len">len</a> &gt;&gt; <var>2</var>;</td></tr>
+<tr><th id="301">301</th><td>	<a class="ref fn" href="#__nsh_set_xflag" title='__nsh_set_xflag' data-ref="__nsh_set_xflag">__nsh_set_xflag</a>(<a class="local col2 ref" href="#12nsh" title='nsh' data-ref="12nsh">nsh</a>, ((<a class="local col3 ref" href="#13flags" title='flags' data-ref="13flags">flags</a> &lt;&lt; <a class="macro" href="#223" title="12" data-ref="_M/NSH_FLAGS_SHIFT">NSH_FLAGS_SHIFT</a>) &amp; <a class="macro" href="#222" title="0x3000" data-ref="_M/NSH_FLAGS_MASK">NSH_FLAGS_MASK</a>) |</td></tr>
+<tr><th id="302">302</th><td>			     ((<a class="local col4 ref" href="#14ttl" title='ttl' data-ref="14ttl">ttl</a> &lt;&lt; <a class="macro" href="#225" title="6" data-ref="_M/NSH_TTL_SHIFT">NSH_TTL_SHIFT</a>) &amp; <a class="macro" href="#224" title="0x0fc0" data-ref="_M/NSH_TTL_MASK">NSH_TTL_MASK</a>) |</td></tr>
+<tr><th id="303">303</th><td>			     ((<a class="local col5 ref" href="#15len" title='len' data-ref="15len">len</a> &lt;&lt; <a class="macro" href="#227" title="0" data-ref="_M/NSH_LEN_SHIFT">NSH_LEN_SHIFT</a>) &amp; <a class="macro" href="#226" title="0x003f" data-ref="_M/NSH_LEN_MASK">NSH_LEN_MASK</a>),</td></tr>
+<tr><th id="304">304</th><td>			<a class="macro" href="#222" title="0x3000" data-ref="_M/NSH_FLAGS_MASK">NSH_FLAGS_MASK</a> | <a class="macro" href="#224" title="0x0fc0" data-ref="_M/NSH_TTL_MASK">NSH_TTL_MASK</a> | <a class="macro" href="#226" title="0x003f" data-ref="_M/NSH_LEN_MASK">NSH_LEN_MASK</a>);</td></tr>
+<tr><th id="305">305</th><td>}</td></tr>
+<tr><th id="306">306</th><td></td></tr>
+<tr><th id="307">307</th><td><em>int</em> <a class="decl fn" href="../../net/nsh/nsh.c.html#nsh_push" title='nsh_push' data-ref="nsh_push" id="nsh_push">nsh_push</a>(<b>struct</b> <a class="type" href="../linux/skbuff.h.html#sk_buff" title='sk_buff' data-ref="sk_buff">sk_buff</a> *<dfn class="local col6 decl" id="16skb" title='skb' data-type='struct sk_buff *' data-ref="16skb">skb</dfn>, <em>const</em> <b>struct</b> <a class="type" href="#nshhdr" title='nshhdr' data-ref="nshhdr">nshhdr</a> *<dfn class="local col7 decl" id="17pushed_nh" title='pushed_nh' data-type='const struct nshhdr *' data-ref="17pushed_nh">pushed_nh</dfn>);</td></tr>
+<tr><th id="308">308</th><td><em>int</em> <a class="decl fn" href="../../net/nsh/nsh.c.html#nsh_pop" title='nsh_pop' data-ref="nsh_pop" id="nsh_pop">nsh_pop</a>(<b>struct</b> <a class="type" href="../linux/skbuff.h.html#sk_buff" title='sk_buff' data-ref="sk_buff">sk_buff</a> *<dfn class="local col8 decl" id="18skb" title='skb' data-type='struct sk_buff *' data-ref="18skb">skb</dfn>);</td></tr>
+<tr><th id="309">309</th><td></td></tr>
+<tr><th id="310">310</th><td><u>#<span data-ppcond="1">endif</span> /* __NET_NSH_H */</u></td></tr>
+<tr><th id="311">311</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../net/nsh/nsh.c.html'>linux-4.18.y/net/nsh/nsh.c</a><br/>Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

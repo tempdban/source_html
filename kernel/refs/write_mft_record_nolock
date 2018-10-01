@@ -1,0 +1,34 @@
+<dec f='linux-4.18.y/fs/ntfs/mft.h' l='82' type='int write_mft_record_nolock(ntfs_inode * ni, MFT_RECORD * m, int sync)'/>
+<use f='linux-4.18.y/fs/ntfs/mft.h' l='109' u='c' c='write_mft_record'/>
+<def f='linux-4.18.y/fs/ntfs/mft.c' l='670' ll='845' type='int write_mft_record_nolock(ntfs_inode * ni, MFT_RECORD * m, int sync)'/>
+<doc f='linux-4.18.y/fs/ntfs/mft.c' l='639'>/**
+ * write_mft_record_nolock - write out a mapped (extent) mft record
+ * @ni:		ntfs inode describing the mapped (extent) mft record
+ * @m:		mapped (extent) mft record to write
+ * @sync:	if true, wait for i/o completion
+ *
+ * Write the mapped (extent) mft record @m described by the (regular or extent)
+ * ntfs inode @ni to backing store.  If the mft record @m has a counterpart in
+ * the mft mirror, that is also updated.
+ *
+ * We only write the mft record if the ntfs inode @ni is dirty and the first
+ * buffer belonging to its mft record is dirty, too.  We ignore the dirty state
+ * of subsequent buffers because we could have raced with
+ * fs/ntfs/aops.c::mark_ntfs_record_dirty().
+ *
+ * On success, clean the mft record and return 0.  On error, leave the mft
+ * record dirty and return -errno.
+ *
+ * NOTE:  We always perform synchronous i/o and ignore the @sync parameter.
+ * However, if the mft record has a counterpart in the mft mirror and @sync is
+ * true, we write the mft record, wait for i/o completion, and only then write
+ * the mft mirror copy.  This ensures that if the system crashes either the mft
+ * or the mft mirror will contain a self-consistent mft record @m.  If @sync is
+ * false on the other hand, we start i/o on both and then wait for completion
+ * on them.  This provides a speedup but no longer guarantees that you will end
+ * up with a self-consistent mft record in the case of a crash but if you asked
+ * for asynchronous writing you probably do not care about that anyway.
+ *
+ * TODO:  If @sync is false, want to do truly asynchronous i/o, i.e. just
+ * schedule i/o via -&gt;writepage or do it via kntfsd or whatever.
+ */</doc>

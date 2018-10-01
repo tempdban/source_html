@@ -1,0 +1,416 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>unistr.c source code [linux-4.18.y/fs/ntfs/unistr.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/fs/ntfs/unistr.c'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>linux-4.18.y</a>/<a href='..'>fs</a>/<a href='./'>ntfs</a>/<a href='unistr.c.html'>unistr.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * unistr.c - NTFS Unicode string handling. Part of the Linux-NTFS project.</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> * Copyright (c) 2001-2006 Anton Altaparmakov</i></td></tr>
+<tr><th id="5">5</th><td><i> *</i></td></tr>
+<tr><th id="6">6</th><td><i> * This program/include file is free software; you can redistribute it and/or</i></td></tr>
+<tr><th id="7">7</th><td><i> * modify it under the terms of the GNU General Public License as published</i></td></tr>
+<tr><th id="8">8</th><td><i> * by the Free Software Foundation; either version 2 of the License, or</i></td></tr>
+<tr><th id="9">9</th><td><i> * (at your option) any later version.</i></td></tr>
+<tr><th id="10">10</th><td><i> *</i></td></tr>
+<tr><th id="11">11</th><td><i> * This program/include file is distributed in the hope that it will be</i></td></tr>
+<tr><th id="12">12</th><td><i> * useful, but WITHOUT ANY WARRANTY; without even the implied warranty</i></td></tr>
+<tr><th id="13">13</th><td><i> * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</i></td></tr>
+<tr><th id="14">14</th><td><i> * GNU General Public License for more details.</i></td></tr>
+<tr><th id="15">15</th><td><i> *</i></td></tr>
+<tr><th id="16">16</th><td><i> * You should have received a copy of the GNU General Public License</i></td></tr>
+<tr><th id="17">17</th><td><i> * along with this program (in the main directory of the Linux-NTFS</i></td></tr>
+<tr><th id="18">18</th><td><i> * distribution in the file COPYING); if not, write to the Free Software</i></td></tr>
+<tr><th id="19">19</th><td><i> * Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</i></td></tr>
+<tr><th id="20">20</th><td><i> */</i></td></tr>
+<tr><th id="21">21</th><td></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../include/linux/slab.h.html">&lt;linux/slab.h&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="types.h.html">"types.h"</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="debug.h.html">"debug.h"</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="ntfs.h.html">"ntfs.h"</a></u></td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td><i>/*</i></td></tr>
+<tr><th id="29">29</th><td><i> * IMPORTANT</i></td></tr>
+<tr><th id="30">30</th><td><i> * =========</i></td></tr>
+<tr><th id="31">31</th><td><i> *</i></td></tr>
+<tr><th id="32">32</th><td><i> * All these routines assume that the Unicode characters are in little endian</i></td></tr>
+<tr><th id="33">33</th><td><i> * encoding inside the strings!!!</i></td></tr>
+<tr><th id="34">34</th><td><i> */</i></td></tr>
+<tr><th id="35">35</th><td></td></tr>
+<tr><th id="36">36</th><td><i  data-doc="legal_ansi_char_array">/*</i></td></tr>
+<tr><th id="37">37</th><td><i  data-doc="legal_ansi_char_array"> * This is used by the name collation functions to quickly determine what</i></td></tr>
+<tr><th id="38">38</th><td><i  data-doc="legal_ansi_char_array"> * characters are (in)valid.</i></td></tr>
+<tr><th id="39">39</th><td><i  data-doc="legal_ansi_char_array"> */</i></td></tr>
+<tr><th id="40">40</th><td><em>static</em> <em>const</em> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a> <dfn class="tu decl def" id="legal_ansi_char_array" title='legal_ansi_char_array' data-type='const u8 [64]' data-ref="legal_ansi_char_array">legal_ansi_char_array</dfn>[<var>0x40</var>] = {</td></tr>
+<tr><th id="41">41</th><td>	<var>0x00</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>,</td></tr>
+<tr><th id="42">42</th><td>	<var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>,</td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td>	<var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>,</td></tr>
+<tr><th id="45">45</th><td>	<var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>, <var>0x10</var>,</td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td>	<var>0x17</var>, <var>0x07</var>, <var>0x18</var>, <var>0x17</var>, <var>0x17</var>, <var>0x17</var>, <var>0x17</var>, <var>0x17</var>,</td></tr>
+<tr><th id="48">48</th><td>	<var>0x17</var>, <var>0x17</var>, <var>0x18</var>, <var>0x16</var>, <var>0x16</var>, <var>0x17</var>, <var>0x07</var>, <var>0x00</var>,</td></tr>
+<tr><th id="49">49</th><td></td></tr>
+<tr><th id="50">50</th><td>	<var>0x17</var>, <var>0x17</var>, <var>0x17</var>, <var>0x17</var>, <var>0x17</var>, <var>0x17</var>, <var>0x17</var>, <var>0x17</var>,</td></tr>
+<tr><th id="51">51</th><td>	<var>0x17</var>, <var>0x17</var>, <var>0x04</var>, <var>0x16</var>, <var>0x18</var>, <var>0x16</var>, <var>0x18</var>, <var>0x18</var>,</td></tr>
+<tr><th id="52">52</th><td>};</td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="55">55</th><td><i class="doc"> * ntfs_are_names_equal - compare two Unicode names for equality</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc"> * <span class="command">@s1</span>:			name to compare to <span class="command">@s2</span></i></td></tr>
+<tr><th id="57">57</th><td><i class="doc"> * <span class="command">@s1</span>_len:		length in Unicode characters of <span class="command">@s1</span></i></td></tr>
+<tr><th id="58">58</th><td><i class="doc"> * <span class="command">@s2</span>:			name to compare to <span class="command">@s1</span></i></td></tr>
+<tr><th id="59">59</th><td><i class="doc"> * <span class="command">@s2</span>_len:		length in Unicode characters of <span class="command">@s2</span></i></td></tr>
+<tr><th id="60">60</th><td><i class="doc"> *<span class="command"> @ic</span><span class="arg">:</span>			ignore case bool</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc"> *<span class="command"> @upcase</span>:		upcase table (only if<span class="command"> @ic</span> <span class="arg">==</span> IGNORE_CASE)</i></td></tr>
+<tr><th id="62">62</th><td><i class="doc"> *<span class="command"> @upcase</span>_size:	length in Unicode characters of<span class="command"> @upcase</span> (if present)</i></td></tr>
+<tr><th id="63">63</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="64">64</th><td><i class="doc"> * Compare the names <span class="command">@s1</span> and <span class="command">@s2</span> and return 'true' (1) if the names are</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc"> * identical, or 'false' (0) if they are not identical. If<span class="command"> @ic</span> <span class="arg">is</span> IGNORE_CASE,</i></td></tr>
+<tr><th id="66">66</th><td><i class="doc"> * the<span class="command"> @upcase</span> table is used to performa a case insensitive comparison.</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="68">68</th><td><a class="typedef" href="../../include/linux/types.h.html#bool" title='bool' data-type='_Bool' data-ref="bool">bool</a> <dfn class="decl def fn" id="ntfs_are_names_equal" title='ntfs_are_names_equal' data-ref="ntfs_are_names_equal">ntfs_are_names_equal</dfn>(<em>const</em> <a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a> *<dfn class="local col1 decl" id="1s1" title='s1' data-type='const ntfschar *' data-ref="1s1">s1</dfn>, <a class="typedef" href="../../include/linux/types.h.html#size_t" title='size_t' data-type='__kernel_size_t' data-ref="size_t">size_t</a> <dfn class="local col2 decl" id="2s1_len" title='s1_len' data-type='size_t' data-ref="2s1_len">s1_len</dfn>,</td></tr>
+<tr><th id="69">69</th><td>		<em>const</em> <a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a> *<dfn class="local col3 decl" id="3s2" title='s2' data-type='const ntfschar *' data-ref="3s2">s2</dfn>, <a class="typedef" href="../../include/linux/types.h.html#size_t" title='size_t' data-type='__kernel_size_t' data-ref="size_t">size_t</a> <dfn class="local col4 decl" id="4s2_len" title='s2_len' data-type='size_t' data-ref="4s2_len">s2_len</dfn>, <em>const</em> <a class="typedef" href="types.h.html#IGNORE_CASE_BOOL" title='IGNORE_CASE_BOOL' data-type='enum IGNORE_CASE_BOOL' data-ref="IGNORE_CASE_BOOL">IGNORE_CASE_BOOL</a> <dfn class="local col5 decl" id="5ic" title='ic' data-type='const IGNORE_CASE_BOOL' data-ref="5ic">ic</dfn>,</td></tr>
+<tr><th id="70">70</th><td>		<em>const</em> <a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a> *<dfn class="local col6 decl" id="6upcase" title='upcase' data-type='const ntfschar *' data-ref="6upcase">upcase</dfn>, <em>const</em> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col7 decl" id="7upcase_size" title='upcase_size' data-type='const u32' data-ref="7upcase_size">upcase_size</dfn>)</td></tr>
+<tr><th id="71">71</th><td>{</td></tr>
+<tr><th id="72">72</th><td>	<b>if</b> (<a class="local col2 ref" href="#2s1_len" title='s1_len' data-ref="2s1_len">s1_len</a> != <a class="local col4 ref" href="#4s2_len" title='s2_len' data-ref="4s2_len">s2_len</a>)</td></tr>
+<tr><th id="73">73</th><td>		<b>return</b> <a class="enum" href="../../include/linux/stddef.h.html#false" title='false' data-ref="false">false</a>;</td></tr>
+<tr><th id="74">74</th><td>	<b>if</b> (<a class="local col5 ref" href="#5ic" title='ic' data-ref="5ic">ic</a> == <a class="enum" href="types.h.html#CASE_SENSITIVE" title='CASE_SENSITIVE' data-ref="CASE_SENSITIVE">CASE_SENSITIVE</a>)</td></tr>
+<tr><th id="75">75</th><td>		<b>return</b> !<a class="ref fn" href="#ntfs_ucsncmp" title='ntfs_ucsncmp' data-ref="ntfs_ucsncmp">ntfs_ucsncmp</a>(<a class="local col1 ref" href="#1s1" title='s1' data-ref="1s1">s1</a>, <a class="local col3 ref" href="#3s2" title='s2' data-ref="3s2">s2</a>, <a class="local col2 ref" href="#2s1_len" title='s1_len' data-ref="2s1_len">s1_len</a>);</td></tr>
+<tr><th id="76">76</th><td>	<b>return</b> !<a class="ref fn" href="#ntfs_ucsncasecmp" title='ntfs_ucsncasecmp' data-ref="ntfs_ucsncasecmp">ntfs_ucsncasecmp</a>(<a class="local col1 ref" href="#1s1" title='s1' data-ref="1s1">s1</a>, <a class="local col3 ref" href="#3s2" title='s2' data-ref="3s2">s2</a>, <a class="local col2 ref" href="#2s1_len" title='s1_len' data-ref="2s1_len">s1_len</a>, <a class="local col6 ref" href="#6upcase" title='upcase' data-ref="6upcase">upcase</a>, <a class="local col7 ref" href="#7upcase_size" title='upcase_size' data-ref="7upcase_size">upcase_size</a>);</td></tr>
+<tr><th id="77">77</th><td>}</td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="80">80</th><td><i class="doc"> * ntfs_collate_names - collate two Unicode names</i></td></tr>
+<tr><th id="81">81</th><td><i class="doc"> * <span class="command">@name</span>1:<span class="verb">	first Unicode name to compare</span></i></td></tr>
+<tr><th id="82">82</th><td><i class="doc"> * <span class="command">@name</span>2:<span class="verb">	second Unicode name to compare</span></i></td></tr>
+<tr><th id="83">83</th><td><i class="doc"> *<span class="command"> @err</span>_val:	if <span class="command">@name</span>1 <span class="verb">contains an invalid character return this value</span></i></td></tr>
+<tr><th id="84">84</th><td><i class="doc"> *<span class="command"> @ic</span><span class="arg">:</span>		either CASE_SENSITIVE or IGNORE_CASE</i></td></tr>
+<tr><th id="85">85</th><td><i class="doc"> *<span class="command"> @upcase</span>:	upcase table (ignored if<span class="command"> @ic</span> <span class="arg">is</span> CASE_SENSITIVE)</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc"> *<span class="command"> @upcase</span>_len:	upcase table size (ignored if<span class="command"> @ic</span> <span class="arg">is</span> CASE_SENSITIVE)</i></td></tr>
+<tr><th id="87">87</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc"> * ntfs_collate_names collates two Unicode names and returns:</i></td></tr>
+<tr><th id="89">89</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc"> *  -1 if the first name collates before the second one,</i></td></tr>
+<tr><th id="91">91</th><td><i class="doc"> *   0 if the names match,</i></td></tr>
+<tr><th id="92">92</th><td><i class="doc"> *   1 if the second name collates before the first one, or</i></td></tr>
+<tr><th id="93">93</th><td><i class="doc"> *<span class="command"> @err</span>_val if an invalid character is found in <span class="command">@name</span>1 <span class="verb">during the comparison.</span></i></td></tr>
+<tr><th id="94">94</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="95">95</th><td><i class="doc"> * The following characters are considered invalid: '"', '*', '&lt;', '&gt;' and '?'.</i></td></tr>
+<tr><th id="96">96</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="97">97</th><td><em>int</em> <dfn class="decl def fn" id="ntfs_collate_names" title='ntfs_collate_names' data-ref="ntfs_collate_names">ntfs_collate_names</dfn>(<em>const</em> <a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a> *<dfn class="local col8 decl" id="8name1" title='name1' data-type='const ntfschar *' data-ref="8name1">name1</dfn>, <em>const</em> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col9 decl" id="9name1_len" title='name1_len' data-type='const u32' data-ref="9name1_len">name1_len</dfn>,</td></tr>
+<tr><th id="98">98</th><td>		<em>const</em> <a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a> *<dfn class="local col0 decl" id="10name2" title='name2' data-type='const ntfschar *' data-ref="10name2">name2</dfn>, <em>const</em> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col1 decl" id="11name2_len" title='name2_len' data-type='const u32' data-ref="11name2_len">name2_len</dfn>,</td></tr>
+<tr><th id="99">99</th><td>		<em>const</em> <em>int</em> <dfn class="local col2 decl" id="12err_val" title='err_val' data-type='const int' data-ref="12err_val">err_val</dfn>, <em>const</em> <a class="typedef" href="types.h.html#IGNORE_CASE_BOOL" title='IGNORE_CASE_BOOL' data-type='enum IGNORE_CASE_BOOL' data-ref="IGNORE_CASE_BOOL">IGNORE_CASE_BOOL</a> <dfn class="local col3 decl" id="13ic" title='ic' data-type='const IGNORE_CASE_BOOL' data-ref="13ic">ic</dfn>,</td></tr>
+<tr><th id="100">100</th><td>		<em>const</em> <a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a> *<dfn class="local col4 decl" id="14upcase" title='upcase' data-type='const ntfschar *' data-ref="14upcase">upcase</dfn>, <em>const</em> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col5 decl" id="15upcase_len" title='upcase_len' data-type='const u32' data-ref="15upcase_len">upcase_len</dfn>)</td></tr>
+<tr><th id="101">101</th><td>{</td></tr>
+<tr><th id="102">102</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col6 decl" id="16cnt" title='cnt' data-type='u32' data-ref="16cnt">cnt</dfn>, <dfn class="local col7 decl" id="17min_len" title='min_len' data-type='u32' data-ref="17min_len">min_len</dfn>;</td></tr>
+<tr><th id="103">103</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a> <dfn class="local col8 decl" id="18c1" title='c1' data-type='u16' data-ref="18c1">c1</dfn>, <dfn class="local col9 decl" id="19c2" title='c2' data-type='u16' data-ref="19c2">c2</dfn>;</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td>	<a class="local col7 ref" href="#17min_len" title='min_len' data-ref="17min_len">min_len</a> = <a class="local col9 ref" href="#9name1_len" title='name1_len' data-ref="9name1_len">name1_len</a>;</td></tr>
+<tr><th id="106">106</th><td>	<b>if</b> (<a class="local col9 ref" href="#9name1_len" title='name1_len' data-ref="9name1_len">name1_len</a> &gt; <a class="local col1 ref" href="#11name2_len" title='name2_len' data-ref="11name2_len">name2_len</a>)</td></tr>
+<tr><th id="107">107</th><td>		<a class="local col7 ref" href="#17min_len" title='min_len' data-ref="17min_len">min_len</a> = <a class="local col1 ref" href="#11name2_len" title='name2_len' data-ref="11name2_len">name2_len</a>;</td></tr>
+<tr><th id="108">108</th><td>	<b>for</b> (<a class="local col6 ref" href="#16cnt" title='cnt' data-ref="16cnt">cnt</a> = <var>0</var>; <a class="local col6 ref" href="#16cnt" title='cnt' data-ref="16cnt">cnt</a> &lt; <a class="local col7 ref" href="#17min_len" title='min_len' data-ref="17min_len">min_len</a>; ++<a class="local col6 ref" href="#16cnt" title='cnt' data-ref="16cnt">cnt</a>) {</td></tr>
+<tr><th id="109">109</th><td>		<a class="local col8 ref" href="#18c1" title='c1' data-ref="18c1">c1</a> = <a class="macro" href="../../include/linux/byteorder/generic.h.html#91" title="__le16_to_cpu" data-ref="_M/le16_to_cpu">le16_to_cpu</a>(*<a class="local col8 ref" href="#8name1" title='name1' data-ref="8name1">name1</a>++);</td></tr>
+<tr><th id="110">110</th><td>		<a class="local col9 ref" href="#19c2" title='c2' data-ref="19c2">c2</a> = <a class="macro" href="../../include/linux/byteorder/generic.h.html#91" title="__le16_to_cpu" data-ref="_M/le16_to_cpu">le16_to_cpu</a>(*<a class="local col0 ref" href="#10name2" title='name2' data-ref="10name2">name2</a>++);</td></tr>
+<tr><th id="111">111</th><td>		<b>if</b> (<a class="local col3 ref" href="#13ic" title='ic' data-ref="13ic">ic</a>) {</td></tr>
+<tr><th id="112">112</th><td>			<b>if</b> (<a class="local col8 ref" href="#18c1" title='c1' data-ref="18c1">c1</a> &lt; <a class="local col5 ref" href="#15upcase_len" title='upcase_len' data-ref="15upcase_len">upcase_len</a>)</td></tr>
+<tr><th id="113">113</th><td>				<a class="local col8 ref" href="#18c1" title='c1' data-ref="18c1">c1</a> = <a class="macro" href="../../include/linux/byteorder/generic.h.html#91" title="__le16_to_cpu" data-ref="_M/le16_to_cpu">le16_to_cpu</a>(<a class="local col4 ref" href="#14upcase" title='upcase' data-ref="14upcase">upcase</a>[<a class="local col8 ref" href="#18c1" title='c1' data-ref="18c1">c1</a>]);</td></tr>
+<tr><th id="114">114</th><td>			<b>if</b> (<a class="local col9 ref" href="#19c2" title='c2' data-ref="19c2">c2</a> &lt; <a class="local col5 ref" href="#15upcase_len" title='upcase_len' data-ref="15upcase_len">upcase_len</a>)</td></tr>
+<tr><th id="115">115</th><td>				<a class="local col9 ref" href="#19c2" title='c2' data-ref="19c2">c2</a> = <a class="macro" href="../../include/linux/byteorder/generic.h.html#91" title="__le16_to_cpu" data-ref="_M/le16_to_cpu">le16_to_cpu</a>(<a class="local col4 ref" href="#14upcase" title='upcase' data-ref="14upcase">upcase</a>[<a class="local col9 ref" href="#19c2" title='c2' data-ref="19c2">c2</a>]);</td></tr>
+<tr><th id="116">116</th><td>		}</td></tr>
+<tr><th id="117">117</th><td>		<b>if</b> (<a class="local col8 ref" href="#18c1" title='c1' data-ref="18c1">c1</a> &lt; <var>64</var> &amp;&amp; <a class="tu ref" href="#legal_ansi_char_array" title='legal_ansi_char_array' data-use='r' data-ref="legal_ansi_char_array">legal_ansi_char_array</a>[<a class="local col8 ref" href="#18c1" title='c1' data-ref="18c1">c1</a>] &amp; <var>8</var>)</td></tr>
+<tr><th id="118">118</th><td>			<b>return</b> <a class="local col2 ref" href="#12err_val" title='err_val' data-ref="12err_val">err_val</a>;</td></tr>
+<tr><th id="119">119</th><td>		<b>if</b> (<a class="local col8 ref" href="#18c1" title='c1' data-ref="18c1">c1</a> &lt; <a class="local col9 ref" href="#19c2" title='c2' data-ref="19c2">c2</a>)</td></tr>
+<tr><th id="120">120</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="121">121</th><td>		<b>if</b> (<a class="local col8 ref" href="#18c1" title='c1' data-ref="18c1">c1</a> &gt; <a class="local col9 ref" href="#19c2" title='c2' data-ref="19c2">c2</a>)</td></tr>
+<tr><th id="122">122</th><td>			<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="123">123</th><td>	}</td></tr>
+<tr><th id="124">124</th><td>	<b>if</b> (<a class="local col9 ref" href="#9name1_len" title='name1_len' data-ref="9name1_len">name1_len</a> &lt; <a class="local col1 ref" href="#11name2_len" title='name2_len' data-ref="11name2_len">name2_len</a>)</td></tr>
+<tr><th id="125">125</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="126">126</th><td>	<b>if</b> (<a class="local col9 ref" href="#9name1_len" title='name1_len' data-ref="9name1_len">name1_len</a> == <a class="local col1 ref" href="#11name2_len" title='name2_len' data-ref="11name2_len">name2_len</a>)</td></tr>
+<tr><th id="127">127</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="128">128</th><td>	<i>/* name1_len &gt; name2_len */</i></td></tr>
+<tr><th id="129">129</th><td>	<a class="local col8 ref" href="#18c1" title='c1' data-ref="18c1">c1</a> = <a class="macro" href="../../include/linux/byteorder/generic.h.html#91" title="__le16_to_cpu" data-ref="_M/le16_to_cpu">le16_to_cpu</a>(*<a class="local col8 ref" href="#8name1" title='name1' data-ref="8name1">name1</a>);</td></tr>
+<tr><th id="130">130</th><td>	<b>if</b> (<a class="local col8 ref" href="#18c1" title='c1' data-ref="18c1">c1</a> &lt; <var>64</var> &amp;&amp; <a class="tu ref" href="#legal_ansi_char_array" title='legal_ansi_char_array' data-use='r' data-ref="legal_ansi_char_array">legal_ansi_char_array</a>[<a class="local col8 ref" href="#18c1" title='c1' data-ref="18c1">c1</a>] &amp; <var>8</var>)</td></tr>
+<tr><th id="131">131</th><td>		<b>return</b> <a class="local col2 ref" href="#12err_val" title='err_val' data-ref="12err_val">err_val</a>;</td></tr>
+<tr><th id="132">132</th><td>	<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="133">133</th><td>}</td></tr>
+<tr><th id="134">134</th><td></td></tr>
+<tr><th id="135">135</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="136">136</th><td><i class="doc"> * ntfs_ucsncmp - compare two little endian Unicode strings</i></td></tr>
+<tr><th id="137">137</th><td><i class="doc"> * <span class="command">@s1</span>:		first string</i></td></tr>
+<tr><th id="138">138</th><td><i class="doc"> * <span class="command">@s2</span>:		second string</i></td></tr>
+<tr><th id="139">139</th><td><i class="doc"> *<span class="command"> @n</span>:		maximum unicode characters to compare</i></td></tr>
+<tr><th id="140">140</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="141">141</th><td><i class="doc"> * Compare the first<span class="command"> @n</span> characters of the Unicode strings <span class="command">@s1</span> and <span class="command">@s2</span>,</i></td></tr>
+<tr><th id="142">142</th><td><i class="doc"> * The strings in little endian format and appropriate le16_to_cpu()</i></td></tr>
+<tr><th id="143">143</th><td><i class="doc"> * conversion is performed on non-little endian machines.</i></td></tr>
+<tr><th id="144">144</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="145">145</th><td><i class="doc"> * The function returns an integer less than, equal to, or greater than zero</i></td></tr>
+<tr><th id="146">146</th><td><i class="doc"> * if <span class="command">@s1</span> (or the first<span class="command"> @n</span> Unicode characters thereof) is found, respectively,</i></td></tr>
+<tr><th id="147">147</th><td><i class="doc"> * to be less than, to match, or be greater than <span class="command">@s2</span>.</i></td></tr>
+<tr><th id="148">148</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="149">149</th><td><em>int</em> <dfn class="decl def fn" id="ntfs_ucsncmp" title='ntfs_ucsncmp' data-ref="ntfs_ucsncmp">ntfs_ucsncmp</dfn>(<em>const</em> <a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a> *<dfn class="local col0 decl" id="20s1" title='s1' data-type='const ntfschar *' data-ref="20s1">s1</dfn>, <em>const</em> <a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a> *<dfn class="local col1 decl" id="21s2" title='s2' data-type='const ntfschar *' data-ref="21s2">s2</dfn>, <a class="typedef" href="../../include/linux/types.h.html#size_t" title='size_t' data-type='__kernel_size_t' data-ref="size_t">size_t</a> <dfn class="local col2 decl" id="22n" title='n' data-type='size_t' data-ref="22n">n</dfn>)</td></tr>
+<tr><th id="150">150</th><td>{</td></tr>
+<tr><th id="151">151</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a> <dfn class="local col3 decl" id="23c1" title='c1' data-type='u16' data-ref="23c1">c1</dfn>, <dfn class="local col4 decl" id="24c2" title='c2' data-type='u16' data-ref="24c2">c2</dfn>;</td></tr>
+<tr><th id="152">152</th><td>	<a class="typedef" href="../../include/linux/types.h.html#size_t" title='size_t' data-type='__kernel_size_t' data-ref="size_t">size_t</a> <dfn class="local col5 decl" id="25i" title='i' data-type='size_t' data-ref="25i">i</dfn>;</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td>	<b>for</b> (<a class="local col5 ref" href="#25i" title='i' data-ref="25i">i</a> = <var>0</var>; <a class="local col5 ref" href="#25i" title='i' data-ref="25i">i</a> &lt; <a class="local col2 ref" href="#22n" title='n' data-ref="22n">n</a>; ++<a class="local col5 ref" href="#25i" title='i' data-ref="25i">i</a>) {</td></tr>
+<tr><th id="155">155</th><td>		<a class="local col3 ref" href="#23c1" title='c1' data-ref="23c1">c1</a> = <a class="macro" href="../../include/linux/byteorder/generic.h.html#91" title="__le16_to_cpu" data-ref="_M/le16_to_cpu">le16_to_cpu</a>(<a class="local col0 ref" href="#20s1" title='s1' data-ref="20s1">s1</a>[<a class="local col5 ref" href="#25i" title='i' data-ref="25i">i</a>]);</td></tr>
+<tr><th id="156">156</th><td>		<a class="local col4 ref" href="#24c2" title='c2' data-ref="24c2">c2</a> = <a class="macro" href="../../include/linux/byteorder/generic.h.html#91" title="__le16_to_cpu" data-ref="_M/le16_to_cpu">le16_to_cpu</a>(<a class="local col1 ref" href="#21s2" title='s2' data-ref="21s2">s2</a>[<a class="local col5 ref" href="#25i" title='i' data-ref="25i">i</a>]);</td></tr>
+<tr><th id="157">157</th><td>		<b>if</b> (<a class="local col3 ref" href="#23c1" title='c1' data-ref="23c1">c1</a> &lt; <a class="local col4 ref" href="#24c2" title='c2' data-ref="24c2">c2</a>)</td></tr>
+<tr><th id="158">158</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="159">159</th><td>		<b>if</b> (<a class="local col3 ref" href="#23c1" title='c1' data-ref="23c1">c1</a> &gt; <a class="local col4 ref" href="#24c2" title='c2' data-ref="24c2">c2</a>)</td></tr>
+<tr><th id="160">160</th><td>			<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="161">161</th><td>		<b>if</b> (!<a class="local col3 ref" href="#23c1" title='c1' data-ref="23c1">c1</a>)</td></tr>
+<tr><th id="162">162</th><td>			<b>break</b>;</td></tr>
+<tr><th id="163">163</th><td>	}</td></tr>
+<tr><th id="164">164</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="165">165</th><td>}</td></tr>
+<tr><th id="166">166</th><td></td></tr>
+<tr><th id="167">167</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="168">168</th><td><i class="doc"> * ntfs_ucsncasecmp - compare two little endian Unicode strings, ignoring case</i></td></tr>
+<tr><th id="169">169</th><td><i class="doc"> * <span class="command">@s1</span>:			first string</i></td></tr>
+<tr><th id="170">170</th><td><i class="doc"> * <span class="command">@s2</span>:			second string</i></td></tr>
+<tr><th id="171">171</th><td><i class="doc"> *<span class="command"> @n</span>:			maximum unicode characters to compare</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc"> *<span class="command"> @upcase</span>:		upcase table</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc"> *<span class="command"> @upcase</span>_size:	upcase table size in Unicode characters</i></td></tr>
+<tr><th id="174">174</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc"> * Compare the first<span class="command"> @n</span> characters of the Unicode strings <span class="command">@s1</span> and <span class="command">@s2</span>,</i></td></tr>
+<tr><th id="176">176</th><td><i class="doc"> * ignoring case. The strings in little endian format and appropriate</i></td></tr>
+<tr><th id="177">177</th><td><i class="doc"> * le16_to_cpu() conversion is performed on non-little endian machines.</i></td></tr>
+<tr><th id="178">178</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="179">179</th><td><i class="doc"> * Each character is uppercased using the<span class="command"> @upcase</span> table before the comparison.</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="181">181</th><td><i class="doc"> * The function returns an integer less than, equal to, or greater than zero</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc"> * if <span class="command">@s1</span> (or the first<span class="command"> @n</span> Unicode characters thereof) is found, respectively,</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc"> * to be less than, to match, or be greater than <span class="command">@s2</span>.</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="185">185</th><td><em>int</em> <dfn class="decl def fn" id="ntfs_ucsncasecmp" title='ntfs_ucsncasecmp' data-ref="ntfs_ucsncasecmp">ntfs_ucsncasecmp</dfn>(<em>const</em> <a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a> *<dfn class="local col6 decl" id="26s1" title='s1' data-type='const ntfschar *' data-ref="26s1">s1</dfn>, <em>const</em> <a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a> *<dfn class="local col7 decl" id="27s2" title='s2' data-type='const ntfschar *' data-ref="27s2">s2</dfn>, <a class="typedef" href="../../include/linux/types.h.html#size_t" title='size_t' data-type='__kernel_size_t' data-ref="size_t">size_t</a> <dfn class="local col8 decl" id="28n" title='n' data-type='size_t' data-ref="28n">n</dfn>,</td></tr>
+<tr><th id="186">186</th><td>		<em>const</em> <a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a> *<dfn class="local col9 decl" id="29upcase" title='upcase' data-type='const ntfschar *' data-ref="29upcase">upcase</dfn>, <em>const</em> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col0 decl" id="30upcase_size" title='upcase_size' data-type='const u32' data-ref="30upcase_size">upcase_size</dfn>)</td></tr>
+<tr><th id="187">187</th><td>{</td></tr>
+<tr><th id="188">188</th><td>	<a class="typedef" href="../../include/linux/types.h.html#size_t" title='size_t' data-type='__kernel_size_t' data-ref="size_t">size_t</a> <dfn class="local col1 decl" id="31i" title='i' data-type='size_t' data-ref="31i">i</dfn>;</td></tr>
+<tr><th id="189">189</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a> <dfn class="local col2 decl" id="32c1" title='c1' data-type='u16' data-ref="32c1">c1</dfn>, <dfn class="local col3 decl" id="33c2" title='c2' data-type='u16' data-ref="33c2">c2</dfn>;</td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td>	<b>for</b> (<a class="local col1 ref" href="#31i" title='i' data-ref="31i">i</a> = <var>0</var>; <a class="local col1 ref" href="#31i" title='i' data-ref="31i">i</a> &lt; <a class="local col8 ref" href="#28n" title='n' data-ref="28n">n</a>; ++<a class="local col1 ref" href="#31i" title='i' data-ref="31i">i</a>) {</td></tr>
+<tr><th id="192">192</th><td>		<b>if</b> ((<a class="local col2 ref" href="#32c1" title='c1' data-ref="32c1">c1</a> = <a class="macro" href="../../include/linux/byteorder/generic.h.html#91" title="__le16_to_cpu" data-ref="_M/le16_to_cpu">le16_to_cpu</a>(<a class="local col6 ref" href="#26s1" title='s1' data-ref="26s1">s1</a>[<a class="local col1 ref" href="#31i" title='i' data-ref="31i">i</a>])) &lt; <a class="local col0 ref" href="#30upcase_size" title='upcase_size' data-ref="30upcase_size">upcase_size</a>)</td></tr>
+<tr><th id="193">193</th><td>			<a class="local col2 ref" href="#32c1" title='c1' data-ref="32c1">c1</a> = <a class="macro" href="../../include/linux/byteorder/generic.h.html#91" title="__le16_to_cpu" data-ref="_M/le16_to_cpu">le16_to_cpu</a>(<a class="local col9 ref" href="#29upcase" title='upcase' data-ref="29upcase">upcase</a>[<a class="local col2 ref" href="#32c1" title='c1' data-ref="32c1">c1</a>]);</td></tr>
+<tr><th id="194">194</th><td>		<b>if</b> ((<a class="local col3 ref" href="#33c2" title='c2' data-ref="33c2">c2</a> = <a class="macro" href="../../include/linux/byteorder/generic.h.html#91" title="__le16_to_cpu" data-ref="_M/le16_to_cpu">le16_to_cpu</a>(<a class="local col7 ref" href="#27s2" title='s2' data-ref="27s2">s2</a>[<a class="local col1 ref" href="#31i" title='i' data-ref="31i">i</a>])) &lt; <a class="local col0 ref" href="#30upcase_size" title='upcase_size' data-ref="30upcase_size">upcase_size</a>)</td></tr>
+<tr><th id="195">195</th><td>			<a class="local col3 ref" href="#33c2" title='c2' data-ref="33c2">c2</a> = <a class="macro" href="../../include/linux/byteorder/generic.h.html#91" title="__le16_to_cpu" data-ref="_M/le16_to_cpu">le16_to_cpu</a>(<a class="local col9 ref" href="#29upcase" title='upcase' data-ref="29upcase">upcase</a>[<a class="local col3 ref" href="#33c2" title='c2' data-ref="33c2">c2</a>]);</td></tr>
+<tr><th id="196">196</th><td>		<b>if</b> (<a class="local col2 ref" href="#32c1" title='c1' data-ref="32c1">c1</a> &lt; <a class="local col3 ref" href="#33c2" title='c2' data-ref="33c2">c2</a>)</td></tr>
+<tr><th id="197">197</th><td>			<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="198">198</th><td>		<b>if</b> (<a class="local col2 ref" href="#32c1" title='c1' data-ref="32c1">c1</a> &gt; <a class="local col3 ref" href="#33c2" title='c2' data-ref="33c2">c2</a>)</td></tr>
+<tr><th id="199">199</th><td>			<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="200">200</th><td>		<b>if</b> (!<a class="local col2 ref" href="#32c1" title='c1' data-ref="32c1">c1</a>)</td></tr>
+<tr><th id="201">201</th><td>			<b>break</b>;</td></tr>
+<tr><th id="202">202</th><td>	}</td></tr>
+<tr><th id="203">203</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="204">204</th><td>}</td></tr>
+<tr><th id="205">205</th><td></td></tr>
+<tr><th id="206">206</th><td><em>void</em> <dfn class="decl def fn" id="ntfs_upcase_name" title='ntfs_upcase_name' data-ref="ntfs_upcase_name">ntfs_upcase_name</dfn>(<a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a> *<dfn class="local col4 decl" id="34name" title='name' data-type='ntfschar *' data-ref="34name">name</dfn>, <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col5 decl" id="35name_len" title='name_len' data-type='u32' data-ref="35name_len">name_len</dfn>, <em>const</em> <a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a> *<dfn class="local col6 decl" id="36upcase" title='upcase' data-type='const ntfschar *' data-ref="36upcase">upcase</dfn>,</td></tr>
+<tr><th id="207">207</th><td>		<em>const</em> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col7 decl" id="37upcase_len" title='upcase_len' data-type='const u32' data-ref="37upcase_len">upcase_len</dfn>)</td></tr>
+<tr><th id="208">208</th><td>{</td></tr>
+<tr><th id="209">209</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col8 decl" id="38i" title='i' data-type='u32' data-ref="38i">i</dfn>;</td></tr>
+<tr><th id="210">210</th><td>	<a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a> <dfn class="local col9 decl" id="39u" title='u' data-type='u16' data-ref="39u">u</dfn>;</td></tr>
+<tr><th id="211">211</th><td></td></tr>
+<tr><th id="212">212</th><td>	<b>for</b> (<a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a> = <var>0</var>; <a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a> &lt; <a class="local col5 ref" href="#35name_len" title='name_len' data-ref="35name_len">name_len</a>; <a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a>++)</td></tr>
+<tr><th id="213">213</th><td>		<b>if</b> ((<a class="local col9 ref" href="#39u" title='u' data-ref="39u">u</a> = <a class="macro" href="../../include/linux/byteorder/generic.h.html#91" title="__le16_to_cpu" data-ref="_M/le16_to_cpu">le16_to_cpu</a>(<a class="local col4 ref" href="#34name" title='name' data-ref="34name">name</a>[<a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a>])) &lt; <a class="local col7 ref" href="#37upcase_len" title='upcase_len' data-ref="37upcase_len">upcase_len</a>)</td></tr>
+<tr><th id="214">214</th><td>			<a class="local col4 ref" href="#34name" title='name' data-ref="34name">name</a>[<a class="local col8 ref" href="#38i" title='i' data-ref="38i">i</a>] = <a class="local col6 ref" href="#36upcase" title='upcase' data-ref="36upcase">upcase</a>[<a class="local col9 ref" href="#39u" title='u' data-ref="39u">u</a>];</td></tr>
+<tr><th id="215">215</th><td>}</td></tr>
+<tr><th id="216">216</th><td></td></tr>
+<tr><th id="217">217</th><td><em>void</em> <dfn class="decl def fn" id="ntfs_file_upcase_value" title='ntfs_file_upcase_value' data-ref="ntfs_file_upcase_value">ntfs_file_upcase_value</dfn>(<a class="typedef" href="layout.h.html#FILE_NAME_ATTR" title='FILE_NAME_ATTR' data-type='struct FILE_NAME_ATTR' data-ref="FILE_NAME_ATTR">FILE_NAME_ATTR</a> *<dfn class="local col0 decl" id="40file_name_attr" title='file_name_attr' data-type='FILE_NAME_ATTR *' data-ref="40file_name_attr">file_name_attr</dfn>,</td></tr>
+<tr><th id="218">218</th><td>		<em>const</em> <a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a> *<dfn class="local col1 decl" id="41upcase" title='upcase' data-type='const ntfschar *' data-ref="41upcase">upcase</dfn>, <em>const</em> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col2 decl" id="42upcase_len" title='upcase_len' data-type='const u32' data-ref="42upcase_len">upcase_len</dfn>)</td></tr>
+<tr><th id="219">219</th><td>{</td></tr>
+<tr><th id="220">220</th><td>	<a class="ref fn" href="#ntfs_upcase_name" title='ntfs_upcase_name' data-ref="ntfs_upcase_name">ntfs_upcase_name</a>((<a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a>*)&amp;<span class='warning' title="taking address of packed member &apos;file_name&apos; of class or structure &apos;FILE_NAME_ATTR&apos; may result in an unaligned pointer value"><a class="local col0 ref" href="#40file_name_attr" title='file_name_attr' data-ref="40file_name_attr">file_name_attr</a></span>-&gt;<a class="ref field" href="layout.h.html#(anonymous)::file_name" title='(anonymous struct)::file_name' data-ref="(anonymous)::file_name">file_name</a>,</td></tr>
+<tr><th id="221">221</th><td>			<a class="local col0 ref" href="#40file_name_attr" title='file_name_attr' data-ref="40file_name_attr">file_name_attr</a>-&gt;<a class="ref field" href="layout.h.html#(anonymous)::file_name_length" title='(anonymous struct)::file_name_length' data-ref="(anonymous)::file_name_length">file_name_length</a>, <a class="local col1 ref" href="#41upcase" title='upcase' data-ref="41upcase">upcase</a>, <a class="local col2 ref" href="#42upcase_len" title='upcase_len' data-ref="42upcase_len">upcase_len</a>);</td></tr>
+<tr><th id="222">222</th><td>}</td></tr>
+<tr><th id="223">223</th><td></td></tr>
+<tr><th id="224">224</th><td><em>int</em> <dfn class="decl def fn" id="ntfs_file_compare_values" title='ntfs_file_compare_values' data-ref="ntfs_file_compare_values">ntfs_file_compare_values</dfn>(<a class="typedef" href="layout.h.html#FILE_NAME_ATTR" title='FILE_NAME_ATTR' data-type='struct FILE_NAME_ATTR' data-ref="FILE_NAME_ATTR">FILE_NAME_ATTR</a> *<dfn class="local col3 decl" id="43file_name_attr1" title='file_name_attr1' data-type='FILE_NAME_ATTR *' data-ref="43file_name_attr1">file_name_attr1</dfn>,</td></tr>
+<tr><th id="225">225</th><td>		<a class="typedef" href="layout.h.html#FILE_NAME_ATTR" title='FILE_NAME_ATTR' data-type='struct FILE_NAME_ATTR' data-ref="FILE_NAME_ATTR">FILE_NAME_ATTR</a> *<dfn class="local col4 decl" id="44file_name_attr2" title='file_name_attr2' data-type='FILE_NAME_ATTR *' data-ref="44file_name_attr2">file_name_attr2</dfn>,</td></tr>
+<tr><th id="226">226</th><td>		<em>const</em> <em>int</em> <dfn class="local col5 decl" id="45err_val" title='err_val' data-type='const int' data-ref="45err_val">err_val</dfn>, <em>const</em> <a class="typedef" href="types.h.html#IGNORE_CASE_BOOL" title='IGNORE_CASE_BOOL' data-type='enum IGNORE_CASE_BOOL' data-ref="IGNORE_CASE_BOOL">IGNORE_CASE_BOOL</a> <dfn class="local col6 decl" id="46ic" title='ic' data-type='const IGNORE_CASE_BOOL' data-ref="46ic">ic</dfn>,</td></tr>
+<tr><th id="227">227</th><td>		<em>const</em> <a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a> *<dfn class="local col7 decl" id="47upcase" title='upcase' data-type='const ntfschar *' data-ref="47upcase">upcase</dfn>, <em>const</em> <a class="typedef" href="../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col8 decl" id="48upcase_len" title='upcase_len' data-type='const u32' data-ref="48upcase_len">upcase_len</dfn>)</td></tr>
+<tr><th id="228">228</th><td>{</td></tr>
+<tr><th id="229">229</th><td>	<b>return</b> <a class="ref fn" href="#ntfs_collate_names" title='ntfs_collate_names' data-ref="ntfs_collate_names">ntfs_collate_names</a>((<a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a>*)&amp;<span class='warning' title="taking address of packed member &apos;file_name&apos; of class or structure &apos;FILE_NAME_ATTR&apos; may result in an unaligned pointer value"><a class="local col3 ref" href="#43file_name_attr1" title='file_name_attr1' data-ref="43file_name_attr1">file_name_attr1</a></span>-&gt;<a class="ref field" href="layout.h.html#(anonymous)::file_name" title='(anonymous struct)::file_name' data-ref="(anonymous)::file_name">file_name</a>,</td></tr>
+<tr><th id="230">230</th><td>			<a class="local col3 ref" href="#43file_name_attr1" title='file_name_attr1' data-ref="43file_name_attr1">file_name_attr1</a>-&gt;<a class="ref field" href="layout.h.html#(anonymous)::file_name_length" title='(anonymous struct)::file_name_length' data-ref="(anonymous)::file_name_length">file_name_length</a>,</td></tr>
+<tr><th id="231">231</th><td>			(<a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a>*)&amp;<span class='warning' title="taking address of packed member &apos;file_name&apos; of class or structure &apos;FILE_NAME_ATTR&apos; may result in an unaligned pointer value"><a class="local col4 ref" href="#44file_name_attr2" title='file_name_attr2' data-ref="44file_name_attr2">file_name_attr2</a></span>-&gt;<a class="ref field" href="layout.h.html#(anonymous)::file_name" title='(anonymous struct)::file_name' data-ref="(anonymous)::file_name">file_name</a>,</td></tr>
+<tr><th id="232">232</th><td>			<a class="local col4 ref" href="#44file_name_attr2" title='file_name_attr2' data-ref="44file_name_attr2">file_name_attr2</a>-&gt;<a class="ref field" href="layout.h.html#(anonymous)::file_name_length" title='(anonymous struct)::file_name_length' data-ref="(anonymous)::file_name_length">file_name_length</a>,</td></tr>
+<tr><th id="233">233</th><td>			<a class="local col5 ref" href="#45err_val" title='err_val' data-ref="45err_val">err_val</a>, <a class="local col6 ref" href="#46ic" title='ic' data-ref="46ic">ic</a>, <a class="local col7 ref" href="#47upcase" title='upcase' data-ref="47upcase">upcase</a>, <a class="local col8 ref" href="#48upcase_len" title='upcase_len' data-ref="48upcase_len">upcase_len</a>);</td></tr>
+<tr><th id="234">234</th><td>}</td></tr>
+<tr><th id="235">235</th><td></td></tr>
+<tr><th id="236">236</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="237">237</th><td><i class="doc"> * ntfs_nlstoucs - convert NLS string to little endian Unicode string</i></td></tr>
+<tr><th id="238">238</th><td><i class="doc"> *<span class="command"> @vol</span>:	ntfs volume which we are working with</i></td></tr>
+<tr><th id="239">239</th><td><i class="doc"> *<span class="command"> @ins</span>:	input NLS string buffer</i></td></tr>
+<tr><th id="240">240</th><td><i class="doc"> *<span class="command"> @ins</span>_len:	length of input string in bytes</i></td></tr>
+<tr><th id="241">241</th><td><i class="doc"> *<span class="command"> @outs</span>:	on return contains the allocated output Unicode string buffer</i></td></tr>
+<tr><th id="242">242</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="243">243</th><td><i class="doc"> * Convert the input string<span class="command"> @ins</span>, which is in whatever format the loaded NLS</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc"> * map dictates, into a little endian, 2-byte Unicode string.</i></td></tr>
+<tr><th id="245">245</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="246">246</th><td><i class="doc"> * This function allocates the string and the caller is responsible for</i></td></tr>
+<tr><th id="247">247</th><td><i class="doc"> * calling kmem_cache_free(ntfs_name_cache, <span class="command">*@outs</span>); when finished with it.</i></td></tr>
+<tr><th id="248">248</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="249">249</th><td><i class="doc"> * On success the function returns the number of Unicode characters written to</i></td></tr>
+<tr><th id="250">250</th><td><i class="doc"> * the output string <span class="command">*@outs</span> (&gt;= 0), not counting the terminating Unicode NULL</i></td></tr>
+<tr><th id="251">251</th><td><i class="doc"> * character. <span class="command">*@outs</span> is set to the allocated output string buffer.</i></td></tr>
+<tr><th id="252">252</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="253">253</th><td><i class="doc"> * On error, a negative number corresponding to the error code is returned. In</i></td></tr>
+<tr><th id="254">254</th><td><i class="doc"> * that case the output string is not allocated. Both <span class="command">*@outs</span> and <span class="command">*@outs</span>_len</i></td></tr>
+<tr><th id="255">255</th><td><i class="doc"> * are then undefined.</i></td></tr>
+<tr><th id="256">256</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="257">257</th><td><i class="doc"> * This might look a bit odd due to fast path optimization...</i></td></tr>
+<tr><th id="258">258</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="259">259</th><td><em>int</em> <dfn class="decl def fn" id="ntfs_nlstoucs" title='ntfs_nlstoucs' data-ref="ntfs_nlstoucs">ntfs_nlstoucs</dfn>(<em>const</em> <a class="typedef" href="volume.h.html#ntfs_volume" title='ntfs_volume' data-type='struct ntfs_volume' data-ref="ntfs_volume">ntfs_volume</a> *<dfn class="local col9 decl" id="49vol" title='vol' data-type='const ntfs_volume *' data-ref="49vol">vol</dfn>, <em>const</em> <em>char</em> *<dfn class="local col0 decl" id="50ins" title='ins' data-type='const char *' data-ref="50ins">ins</dfn>,</td></tr>
+<tr><th id="260">260</th><td>		<em>const</em> <em>int</em> <dfn class="local col1 decl" id="51ins_len" title='ins_len' data-type='const int' data-ref="51ins_len">ins_len</dfn>, <a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a> **<dfn class="local col2 decl" id="52outs" title='outs' data-type='ntfschar **' data-ref="52outs">outs</dfn>)</td></tr>
+<tr><th id="261">261</th><td>{</td></tr>
+<tr><th id="262">262</th><td>	<b>struct</b> <a class="type" href="../../include/linux/nls.h.html#nls_table" title='nls_table' data-ref="nls_table">nls_table</a> *<dfn class="local col3 decl" id="53nls" title='nls' data-type='struct nls_table *' data-ref="53nls">nls</dfn> = <a class="local col9 ref" href="#49vol" title='vol' data-ref="49vol">vol</a>-&gt;<a class="ref field" href="volume.h.html#(anonymous)::nls_map" title='(anonymous struct)::nls_map' data-ref="(anonymous)::nls_map">nls_map</a>;</td></tr>
+<tr><th id="263">263</th><td>	<a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a> *<dfn class="local col4 decl" id="54ucs" title='ucs' data-type='ntfschar *' data-ref="54ucs">ucs</dfn>;</td></tr>
+<tr><th id="264">264</th><td>	<a class="typedef" href="../../include/linux/nls.h.html#wchar_t" title='wchar_t' data-type='u16' data-ref="wchar_t">wchar_t</a> <dfn class="local col5 decl" id="55wc" title='wc' data-type='wchar_t' data-ref="55wc">wc</dfn>;</td></tr>
+<tr><th id="265">265</th><td>	<em>int</em> <dfn class="local col6 decl" id="56i" title='i' data-type='int' data-ref="56i">i</dfn>, <dfn class="local col7 decl" id="57o" title='o' data-type='int' data-ref="57o">o</dfn>, <dfn class="local col8 decl" id="58wc_len" title='wc_len' data-type='int' data-ref="58wc_len">wc_len</dfn>;</td></tr>
+<tr><th id="266">266</th><td></td></tr>
+<tr><th id="267">267</th><td>	<i>/* We do not trust outside sources. */</i></td></tr>
+<tr><th id="268">268</th><td>	<b>if</b> (<a class="macro" href="../../include/linux/compiler.h.html#76" title="__builtin_expect(!!(ins), 1)" data-ref="_M/likely">likely</a>(<a class="local col0 ref" href="#50ins" title='ins' data-ref="50ins">ins</a>)) {</td></tr>
+<tr><th id="269">269</th><td>		<a class="local col4 ref" href="#54ucs" title='ucs' data-ref="54ucs">ucs</a> = <a class="ref fn" href="../../include/linux/slab.h.html#kmem_cache_alloc" title='kmem_cache_alloc' data-ref="kmem_cache_alloc">kmem_cache_alloc</a>(<a class="ref" href="ntfs.h.html#ntfs_name_cache" title='ntfs_name_cache' data-ref="ntfs_name_cache">ntfs_name_cache</a>, <a class="macro" href="../../include/linux/gfp.h.html#277" title="((( gfp_t)(0x200000u|0x400000u)) | (( gfp_t)0x40u))" data-ref="_M/GFP_NOFS">GFP_NOFS</a>);</td></tr>
+<tr><th id="270">270</th><td>		<b>if</b> (<a class="macro" href="../../include/linux/compiler.h.html#76" title="__builtin_expect(!!(ucs), 1)" data-ref="_M/likely">likely</a>(<a class="local col4 ref" href="#54ucs" title='ucs' data-ref="54ucs">ucs</a>)) {</td></tr>
+<tr><th id="271">271</th><td>			<b>for</b> (<a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a> = <a class="local col7 ref" href="#57o" title='o' data-ref="57o">o</a> = <var>0</var>; <a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a> &lt; <a class="local col1 ref" href="#51ins_len" title='ins_len' data-ref="51ins_len">ins_len</a>; <a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a> += <a class="local col8 ref" href="#58wc_len" title='wc_len' data-ref="58wc_len">wc_len</a>) {</td></tr>
+<tr><th id="272">272</th><td>				<a class="local col8 ref" href="#58wc_len" title='wc_len' data-ref="58wc_len">wc_len</a> = <a class="local col3 ref" href="#53nls" title='nls' data-ref="53nls">nls</a>-&gt;<a class="ref field" href="../../include/linux/nls.h.html#nls_table::char2uni" title='nls_table::char2uni' data-ref="nls_table::char2uni">char2uni</a>(<a class="local col0 ref" href="#50ins" title='ins' data-ref="50ins">ins</a> + <a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>, <a class="local col1 ref" href="#51ins_len" title='ins_len' data-ref="51ins_len">ins_len</a> - <a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>,</td></tr>
+<tr><th id="273">273</th><td>						&amp;<a class="local col5 ref" href="#55wc" title='wc' data-ref="55wc">wc</a>);</td></tr>
+<tr><th id="274">274</th><td>				<b>if</b> (<a class="macro" href="../../include/linux/compiler.h.html#76" title="__builtin_expect(!!(wc_len &gt;= 0 &amp;&amp; o &lt; NTFS_MAX_NAME_LEN), 1)" data-ref="_M/likely">likely</a>(<a class="local col8 ref" href="#58wc_len" title='wc_len' data-ref="58wc_len">wc_len</a> &gt;= <var>0</var> &amp;&amp;</td></tr>
+<tr><th id="275">275</th><td>						<a class="local col7 ref" href="#57o" title='o' data-ref="57o">o</a> &lt; <a class="enum" href="ntfs.h.html#NTFS_MAX_NAME_LEN" title='NTFS_MAX_NAME_LEN' data-ref="NTFS_MAX_NAME_LEN">NTFS_MAX_NAME_LEN</a>)) {</td></tr>
+<tr><th id="276">276</th><td>					<b>if</b> (<a class="macro" href="../../include/linux/compiler.h.html#76" title="__builtin_expect(!!(wc), 1)" data-ref="_M/likely">likely</a>(<a class="local col5 ref" href="#55wc" title='wc' data-ref="55wc">wc</a>)) {</td></tr>
+<tr><th id="277">277</th><td>						<a class="local col4 ref" href="#54ucs" title='ucs' data-ref="54ucs">ucs</a>[<a class="local col7 ref" href="#57o" title='o' data-ref="57o">o</a>++] = <a class="macro" href="../../include/linux/byteorder/generic.h.html#90" title="__cpu_to_le16" data-ref="_M/cpu_to_le16">cpu_to_le16</a>(<a class="local col5 ref" href="#55wc" title='wc' data-ref="55wc">wc</a>);</td></tr>
+<tr><th id="278">278</th><td>						<b>continue</b>;</td></tr>
+<tr><th id="279">279</th><td>					} <i>/* else if (!wc) */</i></td></tr>
+<tr><th id="280">280</th><td>					<b>break</b>;</td></tr>
+<tr><th id="281">281</th><td>				} <i>/* else if (wc_len &lt; 0 ||</i></td></tr>
+<tr><th id="282">282</th><td><i>						o &gt;= NTFS_MAX_NAME_LEN) */</i></td></tr>
+<tr><th id="283">283</th><td>				<b>goto</b> <a class="lbl" href="#59name_err" data-ref="59name_err">name_err</a>;</td></tr>
+<tr><th id="284">284</th><td>			}</td></tr>
+<tr><th id="285">285</th><td>			<a class="local col4 ref" href="#54ucs" title='ucs' data-ref="54ucs">ucs</a>[<a class="local col7 ref" href="#57o" title='o' data-ref="57o">o</a>] = <var>0</var>;</td></tr>
+<tr><th id="286">286</th><td>			*<a class="local col2 ref" href="#52outs" title='outs' data-ref="52outs">outs</a> = <a class="local col4 ref" href="#54ucs" title='ucs' data-ref="54ucs">ucs</a>;</td></tr>
+<tr><th id="287">287</th><td>			<b>return</b> <a class="local col7 ref" href="#57o" title='o' data-ref="57o">o</a>;</td></tr>
+<tr><th id="288">288</th><td>		} <i>/* else if (!ucs) */</i></td></tr>
+<tr><th id="289">289</th><td>		<a class="macro" href="debug.h.html#69" title="__ntfs_error(__func__, vol-&gt;sb, &quot;Failed to allocate buffer for converted &quot; &quot;name from ntfs_name_cache.&quot;)" data-ref="_M/ntfs_error">ntfs_error</a>(<a class="local col9 ref" href="#49vol" title='vol' data-ref="49vol">vol</a>-&gt;<a class="ref field" href="volume.h.html#(anonymous)::sb" title='(anonymous struct)::sb' data-ref="(anonymous)::sb">sb</a>, <q>"Failed to allocate buffer for converted "</q></td></tr>
+<tr><th id="290">290</th><td>				<q>"name from ntfs_name_cache."</q>);</td></tr>
+<tr><th id="291">291</th><td>		<b>return</b> -<a class="macro" href="../../include/uapi/asm-generic/errno-base.h.html#16" title="12" data-ref="_M/ENOMEM">ENOMEM</a>;</td></tr>
+<tr><th id="292">292</th><td>	} <i>/* else if (!ins) */</i></td></tr>
+<tr><th id="293">293</th><td>	<a class="macro" href="debug.h.html#69" title="__ntfs_error(__func__, vol-&gt;sb, &quot;Received NULL pointer.&quot;)" data-ref="_M/ntfs_error">ntfs_error</a>(<a class="local col9 ref" href="#49vol" title='vol' data-ref="49vol">vol</a>-&gt;<a class="ref field" href="volume.h.html#(anonymous)::sb" title='(anonymous struct)::sb' data-ref="(anonymous)::sb">sb</a>, <q>"Received NULL pointer."</q>);</td></tr>
+<tr><th id="294">294</th><td>	<b>return</b> -<a class="macro" href="../../include/uapi/asm-generic/errno-base.h.html#26" title="22" data-ref="_M/EINVAL">EINVAL</a>;</td></tr>
+<tr><th id="295">295</th><td><dfn class="lbl" id="59name_err" data-ref="59name_err">name_err</dfn>:</td></tr>
+<tr><th id="296">296</th><td>	<a class="ref fn" href="../../include/linux/slab.h.html#kmem_cache_free" title='kmem_cache_free' data-ref="kmem_cache_free">kmem_cache_free</a>(<a class="ref" href="ntfs.h.html#ntfs_name_cache" title='ntfs_name_cache' data-ref="ntfs_name_cache">ntfs_name_cache</a>, <a class="local col4 ref" href="#54ucs" title='ucs' data-ref="54ucs">ucs</a>);</td></tr>
+<tr><th id="297">297</th><td>	<b>if</b> (<a class="local col8 ref" href="#58wc_len" title='wc_len' data-ref="58wc_len">wc_len</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="298">298</th><td>		<a class="macro" href="debug.h.html#69" title="__ntfs_error(__func__, vol-&gt;sb, &quot;Name using character set %s contains &quot; &quot;characters that cannot be converted to &quot; &quot;Unicode.&quot;, nls-&gt;charset)" data-ref="_M/ntfs_error">ntfs_error</a>(<a class="local col9 ref" href="#49vol" title='vol' data-ref="49vol">vol</a>-&gt;<a class="ref field" href="volume.h.html#(anonymous)::sb" title='(anonymous struct)::sb' data-ref="(anonymous)::sb">sb</a>, <q>"Name using character set %s contains "</q></td></tr>
+<tr><th id="299">299</th><td>				<q>"characters that cannot be converted to "</q></td></tr>
+<tr><th id="300">300</th><td>				<q>"Unicode."</q>, <a class="local col3 ref" href="#53nls" title='nls' data-ref="53nls">nls</a>-&gt;<a class="ref field" href="../../include/linux/nls.h.html#nls_table::charset" title='nls_table::charset' data-ref="nls_table::charset">charset</a>);</td></tr>
+<tr><th id="301">301</th><td>		<a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a> = -<a class="macro" href="../../include/uapi/asm-generic/errno.h.html#67" title="84" data-ref="_M/EILSEQ">EILSEQ</a>;</td></tr>
+<tr><th id="302">302</th><td>	} <b>else</b> <i>/* if (o &gt;= NTFS_MAX_NAME_LEN) */</i> {</td></tr>
+<tr><th id="303">303</th><td>		<a class="macro" href="debug.h.html#69" title="__ntfs_error(__func__, vol-&gt;sb, &quot;Name is too long (maximum length for a &quot; &quot;name on NTFS is %d Unicode characters.&quot;, NTFS_MAX_NAME_LEN)" data-ref="_M/ntfs_error">ntfs_error</a>(<a class="local col9 ref" href="#49vol" title='vol' data-ref="49vol">vol</a>-&gt;<a class="ref field" href="volume.h.html#(anonymous)::sb" title='(anonymous struct)::sb' data-ref="(anonymous)::sb">sb</a>, <q>"Name is too long (maximum length for a "</q></td></tr>
+<tr><th id="304">304</th><td>				<q>"name on NTFS is %d Unicode characters."</q>,</td></tr>
+<tr><th id="305">305</th><td>				<a class="enum" href="ntfs.h.html#NTFS_MAX_NAME_LEN" title='NTFS_MAX_NAME_LEN' data-ref="NTFS_MAX_NAME_LEN">NTFS_MAX_NAME_LEN</a>);</td></tr>
+<tr><th id="306">306</th><td>		<a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a> = -<a class="macro" href="../../include/uapi/asm-generic/errno.h.html#8" title="36" data-ref="_M/ENAMETOOLONG">ENAMETOOLONG</a>;</td></tr>
+<tr><th id="307">307</th><td>	}</td></tr>
+<tr><th id="308">308</th><td>	<b>return</b> <a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>;</td></tr>
+<tr><th id="309">309</th><td>}</td></tr>
+<tr><th id="310">310</th><td></td></tr>
+<tr><th id="311">311</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="312">312</th><td><i class="doc"> * ntfs_ucstonls - convert little endian Unicode string to NLS string</i></td></tr>
+<tr><th id="313">313</th><td><i class="doc"> *<span class="command"> @vol</span>:	ntfs volume which we are working with</i></td></tr>
+<tr><th id="314">314</th><td><i class="doc"> *<span class="command"> @ins</span>:	input Unicode string buffer</i></td></tr>
+<tr><th id="315">315</th><td><i class="doc"> *<span class="command"> @ins</span>_len:	length of input string in Unicode characters</i></td></tr>
+<tr><th id="316">316</th><td><i class="doc"> *<span class="command"> @outs</span>:	on return contains the (allocated) output NLS string buffer</i></td></tr>
+<tr><th id="317">317</th><td><i class="doc"> *<span class="command"> @outs</span>_len:	length of output string buffer in bytes</i></td></tr>
+<tr><th id="318">318</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="319">319</th><td><i class="doc"> * Convert the input little endian, 2-byte Unicode string<span class="command"> @ins</span>, of length</i></td></tr>
+<tr><th id="320">320</th><td><i class="doc"> *<span class="command"> @ins</span>_len into the string format dictated by the loaded NLS.</i></td></tr>
+<tr><th id="321">321</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="322">322</th><td><i class="doc"> * If <span class="command">*@outs</span> is NULL, this function allocates the string and the caller is</i></td></tr>
+<tr><th id="323">323</th><td><i class="doc"> * responsible for calling kfree(<span class="command">*@outs</span>); when finished with it. In this case</i></td></tr>
+<tr><th id="324">324</th><td><i class="doc"> *<span class="command"> @outs</span>_len is ignored and can be 0.</i></td></tr>
+<tr><th id="325">325</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="326">326</th><td><i class="doc"> * On success the function returns the number of bytes written to the output</i></td></tr>
+<tr><th id="327">327</th><td><i class="doc"> * string <span class="command">*@outs</span> (&gt;= 0), not counting the terminating NULL byte. If the output</i></td></tr>
+<tr><th id="328">328</th><td><i class="doc"> * string buffer was allocated, <span class="command">*@outs</span> is set to it.</i></td></tr>
+<tr><th id="329">329</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="330">330</th><td><i class="doc"> * On error, a negative number corresponding to the error code is returned. In</i></td></tr>
+<tr><th id="331">331</th><td><i class="doc"> * that case the output string is not allocated. The contents of <span class="command">*@outs</span> are</i></td></tr>
+<tr><th id="332">332</th><td><i class="doc"> * then undefined.</i></td></tr>
+<tr><th id="333">333</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="334">334</th><td><i class="doc"> * This might look a bit odd due to fast path optimization...</i></td></tr>
+<tr><th id="335">335</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="336">336</th><td><em>int</em> <dfn class="decl def fn" id="ntfs_ucstonls" title='ntfs_ucstonls' data-ref="ntfs_ucstonls">ntfs_ucstonls</dfn>(<em>const</em> <a class="typedef" href="volume.h.html#ntfs_volume" title='ntfs_volume' data-type='struct ntfs_volume' data-ref="ntfs_volume">ntfs_volume</a> *<dfn class="local col0 decl" id="60vol" title='vol' data-type='const ntfs_volume *' data-ref="60vol">vol</dfn>, <em>const</em> <a class="typedef" href="types.h.html#ntfschar" title='ntfschar' data-type='le16' data-ref="ntfschar">ntfschar</a> *<dfn class="local col1 decl" id="61ins" title='ins' data-type='const ntfschar *' data-ref="61ins">ins</dfn>,</td></tr>
+<tr><th id="337">337</th><td>		<em>const</em> <em>int</em> <dfn class="local col2 decl" id="62ins_len" title='ins_len' data-type='const int' data-ref="62ins_len">ins_len</dfn>, <em>unsigned</em> <em>char</em> **<dfn class="local col3 decl" id="63outs" title='outs' data-type='unsigned char **' data-ref="63outs">outs</dfn>, <em>int</em> <dfn class="local col4 decl" id="64outs_len" title='outs_len' data-type='int' data-ref="64outs_len">outs_len</dfn>)</td></tr>
+<tr><th id="338">338</th><td>{</td></tr>
+<tr><th id="339">339</th><td>	<b>struct</b> <a class="type" href="../../include/linux/nls.h.html#nls_table" title='nls_table' data-ref="nls_table">nls_table</a> *<dfn class="local col5 decl" id="65nls" title='nls' data-type='struct nls_table *' data-ref="65nls">nls</dfn> = <a class="local col0 ref" href="#60vol" title='vol' data-ref="60vol">vol</a>-&gt;<a class="ref field" href="volume.h.html#(anonymous)::nls_map" title='(anonymous struct)::nls_map' data-ref="(anonymous)::nls_map">nls_map</a>;</td></tr>
+<tr><th id="340">340</th><td>	<em>unsigned</em> <em>char</em> *<dfn class="local col6 decl" id="66ns" title='ns' data-type='unsigned char *' data-ref="66ns">ns</dfn>;</td></tr>
+<tr><th id="341">341</th><td>	<em>int</em> <dfn class="local col7 decl" id="67i" title='i' data-type='int' data-ref="67i">i</dfn>, <dfn class="local col8 decl" id="68o" title='o' data-type='int' data-ref="68o">o</dfn>, <dfn class="local col9 decl" id="69ns_len" title='ns_len' data-type='int' data-ref="69ns_len">ns_len</dfn>, <dfn class="local col0 decl" id="70wc" title='wc' data-type='int' data-ref="70wc">wc</dfn>;</td></tr>
+<tr><th id="342">342</th><td></td></tr>
+<tr><th id="343">343</th><td>	<i>/* We don't trust outside sources. */</i></td></tr>
+<tr><th id="344">344</th><td>	<b>if</b> (<a class="local col1 ref" href="#61ins" title='ins' data-ref="61ins">ins</a>) {</td></tr>
+<tr><th id="345">345</th><td>		<a class="local col6 ref" href="#66ns" title='ns' data-ref="66ns">ns</a> = *<a class="local col3 ref" href="#63outs" title='outs' data-ref="63outs">outs</a>;</td></tr>
+<tr><th id="346">346</th><td>		<a class="local col9 ref" href="#69ns_len" title='ns_len' data-ref="69ns_len">ns_len</a> = <a class="local col4 ref" href="#64outs_len" title='outs_len' data-ref="64outs_len">outs_len</a>;</td></tr>
+<tr><th id="347">347</th><td>		<b>if</b> (<a class="local col6 ref" href="#66ns" title='ns' data-ref="66ns">ns</a> &amp;&amp; !<a class="local col9 ref" href="#69ns_len" title='ns_len' data-ref="69ns_len">ns_len</a>) {</td></tr>
+<tr><th id="348">348</th><td>			<a class="local col0 ref" href="#70wc" title='wc' data-ref="70wc">wc</a> = -<a class="macro" href="../../include/uapi/asm-generic/errno.h.html#8" title="36" data-ref="_M/ENAMETOOLONG">ENAMETOOLONG</a>;</td></tr>
+<tr><th id="349">349</th><td>			<b>goto</b> <a class="lbl" href="#71conversion_err" data-ref="71conversion_err">conversion_err</a>;</td></tr>
+<tr><th id="350">350</th><td>		}</td></tr>
+<tr><th id="351">351</th><td>		<b>if</b> (!<a class="local col6 ref" href="#66ns" title='ns' data-ref="66ns">ns</a>) {</td></tr>
+<tr><th id="352">352</th><td>			<a class="local col9 ref" href="#69ns_len" title='ns_len' data-ref="69ns_len">ns_len</a> = <a class="local col2 ref" href="#62ins_len" title='ins_len' data-ref="62ins_len">ins_len</a> * <a class="macro" href="../../include/linux/nls.h.html#38" title="6" data-ref="_M/NLS_MAX_CHARSET_SIZE">NLS_MAX_CHARSET_SIZE</a>;</td></tr>
+<tr><th id="353">353</th><td>			<a class="local col6 ref" href="#66ns" title='ns' data-ref="66ns">ns</a> = <a class="ref fn" href="../../include/linux/slab.h.html#kmalloc" title='kmalloc' data-ref="kmalloc">kmalloc</a>(<a class="local col9 ref" href="#69ns_len" title='ns_len' data-ref="69ns_len">ns_len</a> + <var>1</var>, <a class="macro" href="../../include/linux/gfp.h.html#277" title="((( gfp_t)(0x200000u|0x400000u)) | (( gfp_t)0x40u))" data-ref="_M/GFP_NOFS">GFP_NOFS</a>);</td></tr>
+<tr><th id="354">354</th><td>			<b>if</b> (!<a class="local col6 ref" href="#66ns" title='ns' data-ref="66ns">ns</a>)</td></tr>
+<tr><th id="355">355</th><td>				<b>goto</b> <a class="lbl" href="#72mem_err_out" data-ref="72mem_err_out">mem_err_out</a>;</td></tr>
+<tr><th id="356">356</th><td>		}</td></tr>
+<tr><th id="357">357</th><td>		<b>for</b> (<a class="local col7 ref" href="#67i" title='i' data-ref="67i">i</a> = <a class="local col8 ref" href="#68o" title='o' data-ref="68o">o</a> = <var>0</var>; <a class="local col7 ref" href="#67i" title='i' data-ref="67i">i</a> &lt; <a class="local col2 ref" href="#62ins_len" title='ins_len' data-ref="62ins_len">ins_len</a>; <a class="local col7 ref" href="#67i" title='i' data-ref="67i">i</a>++) {</td></tr>
+<tr><th id="358">358</th><td><dfn class="lbl" id="73retry" data-ref="73retry">retry</dfn>:			<a class="local col0 ref" href="#70wc" title='wc' data-ref="70wc">wc</a> = <a class="local col5 ref" href="#65nls" title='nls' data-ref="65nls">nls</a>-&gt;<a class="ref field" href="../../include/linux/nls.h.html#nls_table::uni2char" title='nls_table::uni2char' data-ref="nls_table::uni2char">uni2char</a>(<a class="macro" href="../../include/linux/byteorder/generic.h.html#91" title="__le16_to_cpu" data-ref="_M/le16_to_cpu">le16_to_cpu</a>(<a class="local col1 ref" href="#61ins" title='ins' data-ref="61ins">ins</a>[<a class="local col7 ref" href="#67i" title='i' data-ref="67i">i</a>]), <a class="local col6 ref" href="#66ns" title='ns' data-ref="66ns">ns</a> + <a class="local col8 ref" href="#68o" title='o' data-ref="68o">o</a>,</td></tr>
+<tr><th id="359">359</th><td>					<a class="local col9 ref" href="#69ns_len" title='ns_len' data-ref="69ns_len">ns_len</a> - <a class="local col8 ref" href="#68o" title='o' data-ref="68o">o</a>);</td></tr>
+<tr><th id="360">360</th><td>			<b>if</b> (<a class="local col0 ref" href="#70wc" title='wc' data-ref="70wc">wc</a> &gt; <var>0</var>) {</td></tr>
+<tr><th id="361">361</th><td>				<a class="local col8 ref" href="#68o" title='o' data-ref="68o">o</a> += <a class="local col0 ref" href="#70wc" title='wc' data-ref="70wc">wc</a>;</td></tr>
+<tr><th id="362">362</th><td>				<b>continue</b>;</td></tr>
+<tr><th id="363">363</th><td>			} <b>else</b> <b>if</b> (!<a class="local col0 ref" href="#70wc" title='wc' data-ref="70wc">wc</a>)</td></tr>
+<tr><th id="364">364</th><td>				<b>break</b>;</td></tr>
+<tr><th id="365">365</th><td>			<b>else</b> <b>if</b> (<a class="local col0 ref" href="#70wc" title='wc' data-ref="70wc">wc</a> == -<a class="macro" href="../../include/uapi/asm-generic/errno.h.html#8" title="36" data-ref="_M/ENAMETOOLONG">ENAMETOOLONG</a> &amp;&amp; <a class="local col6 ref" href="#66ns" title='ns' data-ref="66ns">ns</a> != *<a class="local col3 ref" href="#63outs" title='outs' data-ref="63outs">outs</a>) {</td></tr>
+<tr><th id="366">366</th><td>				<em>unsigned</em> <em>char</em> *<dfn class="local col4 decl" id="74tc" title='tc' data-type='unsigned char *' data-ref="74tc">tc</dfn>;</td></tr>
+<tr><th id="367">367</th><td>				<i>/* Grow in multiples of 64 bytes. */</i></td></tr>
+<tr><th id="368">368</th><td>				<a class="local col4 ref" href="#74tc" title='tc' data-ref="74tc">tc</a> = <a class="ref fn" href="../../include/linux/slab.h.html#kmalloc" title='kmalloc' data-ref="kmalloc">kmalloc</a>((<a class="local col9 ref" href="#69ns_len" title='ns_len' data-ref="69ns_len">ns_len</a> + <var>64</var>) &amp;</td></tr>
+<tr><th id="369">369</th><td>						~<var>63</var>, <a class="macro" href="../../include/linux/gfp.h.html#277" title="((( gfp_t)(0x200000u|0x400000u)) | (( gfp_t)0x40u))" data-ref="_M/GFP_NOFS">GFP_NOFS</a>);</td></tr>
+<tr><th id="370">370</th><td>				<b>if</b> (<a class="local col4 ref" href="#74tc" title='tc' data-ref="74tc">tc</a>) {</td></tr>
+<tr><th id="371">371</th><td>					<a class="macro" href="../../arch/x86/include/asm/string_64.h.html#37" title="({ size_t __len = (ns_len); void *__ret; if (__builtin_constant_p(ns_len) &amp;&amp; __len &gt;= 64) __ret = __memcpy((tc), (ns), __len); else __ret = __builtin_memcpy((tc), (ns), __len); __ret; })" data-ref="_M/memcpy">memcpy</a>(<a class="local col4 ref" href="#74tc" title='tc' data-ref="74tc">tc</a>, <a class="local col6 ref" href="#66ns" title='ns' data-ref="66ns">ns</a>, <a class="local col9 ref" href="#69ns_len" title='ns_len' data-ref="69ns_len">ns_len</a>);</td></tr>
+<tr><th id="372">372</th><td>					<a class="local col9 ref" href="#69ns_len" title='ns_len' data-ref="69ns_len">ns_len</a> = ((<a class="local col9 ref" href="#69ns_len" title='ns_len' data-ref="69ns_len">ns_len</a> + <var>64</var>) &amp; ~<var>63</var>) - <var>1</var>;</td></tr>
+<tr><th id="373">373</th><td>					<a class="ref fn" href="../../include/linux/slab.h.html#kfree" title='kfree' data-ref="kfree">kfree</a>(<a class="local col6 ref" href="#66ns" title='ns' data-ref="66ns">ns</a>);</td></tr>
+<tr><th id="374">374</th><td>					<a class="local col6 ref" href="#66ns" title='ns' data-ref="66ns">ns</a> = <a class="local col4 ref" href="#74tc" title='tc' data-ref="74tc">tc</a>;</td></tr>
+<tr><th id="375">375</th><td>					<b>goto</b> <a class="lbl" href="#73retry" data-ref="73retry">retry</a>;</td></tr>
+<tr><th id="376">376</th><td>				} <i>/* No memory so goto conversion_error; */</i></td></tr>
+<tr><th id="377">377</th><td>			} <i>/* wc &lt; 0, real error. */</i></td></tr>
+<tr><th id="378">378</th><td>			<b>goto</b> <a class="lbl" href="#71conversion_err" data-ref="71conversion_err">conversion_err</a>;</td></tr>
+<tr><th id="379">379</th><td>		}</td></tr>
+<tr><th id="380">380</th><td>		<a class="local col6 ref" href="#66ns" title='ns' data-ref="66ns">ns</a>[<a class="local col8 ref" href="#68o" title='o' data-ref="68o">o</a>] = <var>0</var>;</td></tr>
+<tr><th id="381">381</th><td>		*<a class="local col3 ref" href="#63outs" title='outs' data-ref="63outs">outs</a> = <a class="local col6 ref" href="#66ns" title='ns' data-ref="66ns">ns</a>;</td></tr>
+<tr><th id="382">382</th><td>		<b>return</b> <a class="local col8 ref" href="#68o" title='o' data-ref="68o">o</a>;</td></tr>
+<tr><th id="383">383</th><td>	} <i>/* else (!ins) */</i></td></tr>
+<tr><th id="384">384</th><td>	<a class="macro" href="debug.h.html#69" title="__ntfs_error(__func__, vol-&gt;sb, &quot;Received NULL pointer.&quot;)" data-ref="_M/ntfs_error">ntfs_error</a>(<a class="local col0 ref" href="#60vol" title='vol' data-ref="60vol">vol</a>-&gt;<a class="ref field" href="volume.h.html#(anonymous)::sb" title='(anonymous struct)::sb' data-ref="(anonymous)::sb">sb</a>, <q>"Received NULL pointer."</q>);</td></tr>
+<tr><th id="385">385</th><td>	<b>return</b> -<a class="macro" href="../../include/uapi/asm-generic/errno-base.h.html#26" title="22" data-ref="_M/EINVAL">EINVAL</a>;</td></tr>
+<tr><th id="386">386</th><td><dfn class="lbl" id="71conversion_err" data-ref="71conversion_err">conversion_err</dfn>:</td></tr>
+<tr><th id="387">387</th><td>	<a class="macro" href="debug.h.html#69" title="__ntfs_error(__func__, vol-&gt;sb, &quot;Unicode name contains characters that cannot be &quot; &quot;converted to character set %s.  You might want to &quot; &quot;try to use the mount option nls=utf8.&quot;, nls-&gt;charset)" data-ref="_M/ntfs_error">ntfs_error</a>(<a class="local col0 ref" href="#60vol" title='vol' data-ref="60vol">vol</a>-&gt;<a class="ref field" href="volume.h.html#(anonymous)::sb" title='(anonymous struct)::sb' data-ref="(anonymous)::sb">sb</a>, <q>"Unicode name contains characters that cannot be "</q></td></tr>
+<tr><th id="388">388</th><td>			<q>"converted to character set %s.  You might want to "</q></td></tr>
+<tr><th id="389">389</th><td>			<q>"try to use the mount option nls=utf8."</q>, <a class="local col5 ref" href="#65nls" title='nls' data-ref="65nls">nls</a>-&gt;<a class="ref field" href="../../include/linux/nls.h.html#nls_table::charset" title='nls_table::charset' data-ref="nls_table::charset">charset</a>);</td></tr>
+<tr><th id="390">390</th><td>	<b>if</b> (<a class="local col6 ref" href="#66ns" title='ns' data-ref="66ns">ns</a> != *<a class="local col3 ref" href="#63outs" title='outs' data-ref="63outs">outs</a>)</td></tr>
+<tr><th id="391">391</th><td>		<a class="ref fn" href="../../include/linux/slab.h.html#kfree" title='kfree' data-ref="kfree">kfree</a>(<a class="local col6 ref" href="#66ns" title='ns' data-ref="66ns">ns</a>);</td></tr>
+<tr><th id="392">392</th><td>	<b>if</b> (<a class="local col0 ref" href="#70wc" title='wc' data-ref="70wc">wc</a> != -<a class="macro" href="../../include/uapi/asm-generic/errno.h.html#8" title="36" data-ref="_M/ENAMETOOLONG">ENAMETOOLONG</a>)</td></tr>
+<tr><th id="393">393</th><td>		<a class="local col0 ref" href="#70wc" title='wc' data-ref="70wc">wc</a> = -<a class="macro" href="../../include/uapi/asm-generic/errno.h.html#67" title="84" data-ref="_M/EILSEQ">EILSEQ</a>;</td></tr>
+<tr><th id="394">394</th><td>	<b>return</b> <a class="local col0 ref" href="#70wc" title='wc' data-ref="70wc">wc</a>;</td></tr>
+<tr><th id="395">395</th><td><dfn class="lbl" id="72mem_err_out" data-ref="72mem_err_out">mem_err_out</dfn>:</td></tr>
+<tr><th id="396">396</th><td>	<a class="macro" href="debug.h.html#69" title="__ntfs_error(__func__, vol-&gt;sb, &quot;Failed to allocate name!&quot;)" data-ref="_M/ntfs_error">ntfs_error</a>(<a class="local col0 ref" href="#60vol" title='vol' data-ref="60vol">vol</a>-&gt;<a class="ref field" href="volume.h.html#(anonymous)::sb" title='(anonymous struct)::sb' data-ref="(anonymous)::sb">sb</a>, <q>"Failed to allocate name!"</q>);</td></tr>
+<tr><th id="397">397</th><td>	<b>return</b> -<a class="macro" href="../../include/uapi/asm-generic/errno-base.h.html#16" title="12" data-ref="_M/ENOMEM">ENOMEM</a>;</td></tr>
+<tr><th id="398">398</th><td>}</td></tr>
+<tr><th id="399">399</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,584 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>simplefb.c source code [linux-4.18.y/drivers/video/fbdev/simplefb.c] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="simplefb_par,simplefb_params "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/drivers/video/fbdev/simplefb.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>linux-4.18.y</a>/<a href='../..'>drivers</a>/<a href='..'>video</a>/<a href='./'>fbdev</a>/<a href='simplefb.c.html'>simplefb.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Simplest possible simple frame-buffer driver, as a platform device</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> * Copyright (c) 2013, Stephen Warren</i></td></tr>
+<tr><th id="5">5</th><td><i> *</i></td></tr>
+<tr><th id="6">6</th><td><i> * Based on q40fb.c, which was:</i></td></tr>
+<tr><th id="7">7</th><td><i> * Copyright (C) 2001 Richard Zidlicky &lt;rz@linux-m68k.org&gt;</i></td></tr>
+<tr><th id="8">8</th><td><i> *</i></td></tr>
+<tr><th id="9">9</th><td><i> * Also based on offb.c, which was:</i></td></tr>
+<tr><th id="10">10</th><td><i> * Copyright (C) 1997 Geert Uytterhoeven</i></td></tr>
+<tr><th id="11">11</th><td><i> * Copyright (C) 1996 Paul Mackerras</i></td></tr>
+<tr><th id="12">12</th><td><i> *</i></td></tr>
+<tr><th id="13">13</th><td><i> * This program is free software; you can redistribute it and/or modify it</i></td></tr>
+<tr><th id="14">14</th><td><i> * under the terms and conditions of the GNU General Public License,</i></td></tr>
+<tr><th id="15">15</th><td><i> * version 2, as published by the Free Software Foundation.</i></td></tr>
+<tr><th id="16">16</th><td><i> *</i></td></tr>
+<tr><th id="17">17</th><td><i> * This program is distributed in the hope it will be useful, but WITHOUT</i></td></tr>
+<tr><th id="18">18</th><td><i> * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or</i></td></tr>
+<tr><th id="19">19</th><td><i> * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for</i></td></tr>
+<tr><th id="20">20</th><td><i> * more details.</i></td></tr>
+<tr><th id="21">21</th><td><i> */</i></td></tr>
+<tr><th id="22">22</th><td></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../../include/linux/errno.h.html">&lt;linux/errno.h&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../../../include/linux/fb.h.html">&lt;linux/fb.h&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../../include/linux/io.h.html">&lt;linux/io.h&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../../../include/linux/module.h.html">&lt;linux/module.h&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../../../include/linux/platform_data/simplefb.h.html">&lt;linux/platform_data/simplefb.h&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../../../include/linux/platform_device.h.html">&lt;linux/platform_device.h&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../../../include/linux/clk.h.html">&lt;linux/clk.h&gt;</a></u></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="../../../include/linux/clk-provider.h.html">&lt;linux/clk-provider.h&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="../../../include/linux/of.h.html">&lt;linux/of.h&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="../../../include/linux/of_platform.h.html">&lt;linux/of_platform.h&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="../../../include/linux/parser.h.html">&lt;linux/parser.h&gt;</a></u></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="../../../include/linux/regulator/consumer.h.html">&lt;linux/regulator/consumer.h&gt;</a></u></td></tr>
+<tr><th id="35">35</th><td></td></tr>
+<tr><th id="36">36</th><td><em>static</em> <em>const</em> <b>struct</b> <a class="type" href="../../../include/uapi/linux/fb.h.html#fb_fix_screeninfo" title='fb_fix_screeninfo' data-ref="fb_fix_screeninfo">fb_fix_screeninfo</a> <dfn class="tu decl def" id="simplefb_fix" title='simplefb_fix' data-type='const struct fb_fix_screeninfo' data-ref="simplefb_fix">simplefb_fix</dfn> = {</td></tr>
+<tr><th id="37">37</th><td>	.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_fix_screeninfo::id" title='fb_fix_screeninfo::id' data-ref="fb_fix_screeninfo::id">id</a>		= <q>"simple"</q>,</td></tr>
+<tr><th id="38">38</th><td>	.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_fix_screeninfo::type" title='fb_fix_screeninfo::type' data-ref="fb_fix_screeninfo::type">type</a>		= <a class="macro" href="../../../include/uapi/linux/fb.h.html#39" title="0" data-ref="_M/FB_TYPE_PACKED_PIXELS">FB_TYPE_PACKED_PIXELS</a>,</td></tr>
+<tr><th id="39">39</th><td>	.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_fix_screeninfo::visual" title='fb_fix_screeninfo::visual' data-ref="fb_fix_screeninfo::visual">visual</a>		= <a class="macro" href="../../../include/uapi/linux/fb.h.html#65" title="2" data-ref="_M/FB_VISUAL_TRUECOLOR">FB_VISUAL_TRUECOLOR</a>,</td></tr>
+<tr><th id="40">40</th><td>	.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_fix_screeninfo::accel" title='fb_fix_screeninfo::accel' data-ref="fb_fix_screeninfo::accel">accel</a>		= <a class="macro" href="../../../include/uapi/linux/fb.h.html#71" title="0" data-ref="_M/FB_ACCEL_NONE">FB_ACCEL_NONE</a>,</td></tr>
+<tr><th id="41">41</th><td>};</td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><em>static</em> <em>const</em> <b>struct</b> <a class="type" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo" title='fb_var_screeninfo' data-ref="fb_var_screeninfo">fb_var_screeninfo</a> <dfn class="tu decl def" id="simplefb_var" title='simplefb_var' data-type='const struct fb_var_screeninfo' data-ref="simplefb_var">simplefb_var</dfn> = {</td></tr>
+<tr><th id="44">44</th><td>	.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::height" title='fb_var_screeninfo::height' data-ref="fb_var_screeninfo::height">height</a>		= -<var>1</var>,</td></tr>
+<tr><th id="45">45</th><td>	.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::width" title='fb_var_screeninfo::width' data-ref="fb_var_screeninfo::width">width</a>		= -<var>1</var>,</td></tr>
+<tr><th id="46">46</th><td>	.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::activate" title='fb_var_screeninfo::activate' data-ref="fb_var_screeninfo::activate">activate</a>	= <a class="macro" href="../../../include/uapi/linux/fb.h.html#198" title="0" data-ref="_M/FB_ACTIVATE_NOW">FB_ACTIVATE_NOW</a>,</td></tr>
+<tr><th id="47">47</th><td>	.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::vmode" title='fb_var_screeninfo::vmode' data-ref="fb_var_screeninfo::vmode">vmode</a>		= <a class="macro" href="../../../include/uapi/linux/fb.h.html#220" title="0" data-ref="_M/FB_VMODE_NONINTERLACED">FB_VMODE_NONINTERLACED</a>,</td></tr>
+<tr><th id="48">48</th><td>};</td></tr>
+<tr><th id="49">49</th><td></td></tr>
+<tr><th id="50">50</th><td><u>#define <dfn class="macro" id="_M/PSEUDO_PALETTE_SIZE" data-ref="_M/PSEUDO_PALETTE_SIZE">PSEUDO_PALETTE_SIZE</dfn> 16</u></td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="simplefb_setcolreg" title='simplefb_setcolreg' data-type='int simplefb_setcolreg(u_int regno, u_int red, u_int green, u_int blue, u_int transp, struct fb_info * info)' data-ref="simplefb_setcolreg">simplefb_setcolreg</dfn>(<a class="typedef" href="../../../include/linux/types.h.html#u_int" title='u_int' data-type='unsigned int' data-ref="u_int">u_int</a> <dfn class="local col9 decl" id="9regno" title='regno' data-type='u_int' data-ref="9regno">regno</dfn>, <a class="typedef" href="../../../include/linux/types.h.html#u_int" title='u_int' data-type='unsigned int' data-ref="u_int">u_int</a> <dfn class="local col0 decl" id="10red" title='red' data-type='u_int' data-ref="10red">red</dfn>, <a class="typedef" href="../../../include/linux/types.h.html#u_int" title='u_int' data-type='unsigned int' data-ref="u_int">u_int</a> <dfn class="local col1 decl" id="11green" title='green' data-type='u_int' data-ref="11green">green</dfn>, <a class="typedef" href="../../../include/linux/types.h.html#u_int" title='u_int' data-type='unsigned int' data-ref="u_int">u_int</a> <dfn class="local col2 decl" id="12blue" title='blue' data-type='u_int' data-ref="12blue">blue</dfn>,</td></tr>
+<tr><th id="53">53</th><td>			      <a class="typedef" href="../../../include/linux/types.h.html#u_int" title='u_int' data-type='unsigned int' data-ref="u_int">u_int</a> <dfn class="local col3 decl" id="13transp" title='transp' data-type='u_int' data-ref="13transp">transp</dfn>, <b>struct</b> <a class="type" href="../../../include/linux/fb.h.html#fb_info" title='fb_info' data-ref="fb_info">fb_info</a> *<dfn class="local col4 decl" id="14info" title='info' data-type='struct fb_info *' data-ref="14info">info</dfn>)</td></tr>
+<tr><th id="54">54</th><td>{</td></tr>
+<tr><th id="55">55</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> *<dfn class="local col5 decl" id="15pal" title='pal' data-type='u32 *' data-ref="15pal">pal</dfn> = <a class="local col4 ref" href="#14info" title='info' data-ref="14info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::pseudo_palette" title='fb_info::pseudo_palette' data-ref="fb_info::pseudo_palette">pseudo_palette</a>;</td></tr>
+<tr><th id="56">56</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col6 decl" id="16cr" title='cr' data-type='u32' data-ref="16cr">cr</dfn> = <a class="local col0 ref" href="#10red" title='red' data-ref="10red">red</a> &gt;&gt; (<var>16</var> - <a class="local col4 ref" href="#14info" title='info' data-ref="14info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::red" title='fb_var_screeninfo::red' data-ref="fb_var_screeninfo::red">red</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_bitfield::length" title='fb_bitfield::length' data-ref="fb_bitfield::length">length</a>);</td></tr>
+<tr><th id="57">57</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col7 decl" id="17cg" title='cg' data-type='u32' data-ref="17cg">cg</dfn> = <a class="local col1 ref" href="#11green" title='green' data-ref="11green">green</a> &gt;&gt; (<var>16</var> - <a class="local col4 ref" href="#14info" title='info' data-ref="14info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::green" title='fb_var_screeninfo::green' data-ref="fb_var_screeninfo::green">green</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_bitfield::length" title='fb_bitfield::length' data-ref="fb_bitfield::length">length</a>);</td></tr>
+<tr><th id="58">58</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col8 decl" id="18cb" title='cb' data-type='u32' data-ref="18cb">cb</dfn> = <a class="local col2 ref" href="#12blue" title='blue' data-ref="12blue">blue</a> &gt;&gt; (<var>16</var> - <a class="local col4 ref" href="#14info" title='info' data-ref="14info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::blue" title='fb_var_screeninfo::blue' data-ref="fb_var_screeninfo::blue">blue</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_bitfield::length" title='fb_bitfield::length' data-ref="fb_bitfield::length">length</a>);</td></tr>
+<tr><th id="59">59</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col9 decl" id="19value" title='value' data-type='u32' data-ref="19value">value</dfn>;</td></tr>
+<tr><th id="60">60</th><td></td></tr>
+<tr><th id="61">61</th><td>	<b>if</b> (<a class="local col9 ref" href="#9regno" title='regno' data-ref="9regno">regno</a> &gt;= <a class="macro" href="#50" title="16" data-ref="_M/PSEUDO_PALETTE_SIZE">PSEUDO_PALETTE_SIZE</a>)</td></tr>
+<tr><th id="62">62</th><td>		<b>return</b> -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#26" title="22" data-ref="_M/EINVAL">EINVAL</a>;</td></tr>
+<tr><th id="63">63</th><td></td></tr>
+<tr><th id="64">64</th><td>	<a class="local col9 ref" href="#19value" title='value' data-ref="19value">value</a> = (<a class="local col6 ref" href="#16cr" title='cr' data-ref="16cr">cr</a> &lt;&lt; <a class="local col4 ref" href="#14info" title='info' data-ref="14info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::red" title='fb_var_screeninfo::red' data-ref="fb_var_screeninfo::red">red</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_bitfield::offset" title='fb_bitfield::offset' data-ref="fb_bitfield::offset">offset</a>) |</td></tr>
+<tr><th id="65">65</th><td>		(<a class="local col7 ref" href="#17cg" title='cg' data-ref="17cg">cg</a> &lt;&lt; <a class="local col4 ref" href="#14info" title='info' data-ref="14info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::green" title='fb_var_screeninfo::green' data-ref="fb_var_screeninfo::green">green</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_bitfield::offset" title='fb_bitfield::offset' data-ref="fb_bitfield::offset">offset</a>) |</td></tr>
+<tr><th id="66">66</th><td>		(<a class="local col8 ref" href="#18cb" title='cb' data-ref="18cb">cb</a> &lt;&lt; <a class="local col4 ref" href="#14info" title='info' data-ref="14info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::blue" title='fb_var_screeninfo::blue' data-ref="fb_var_screeninfo::blue">blue</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_bitfield::offset" title='fb_bitfield::offset' data-ref="fb_bitfield::offset">offset</a>);</td></tr>
+<tr><th id="67">67</th><td>	<b>if</b> (<a class="local col4 ref" href="#14info" title='info' data-ref="14info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::transp" title='fb_var_screeninfo::transp' data-ref="fb_var_screeninfo::transp">transp</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_bitfield::length" title='fb_bitfield::length' data-ref="fb_bitfield::length">length</a> &gt; <var>0</var>) {</td></tr>
+<tr><th id="68">68</th><td>		<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="local col0 decl" id="20mask" title='mask' data-type='u32' data-ref="20mask">mask</dfn> = (<var>1</var> &lt;&lt; <a class="local col4 ref" href="#14info" title='info' data-ref="14info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::transp" title='fb_var_screeninfo::transp' data-ref="fb_var_screeninfo::transp">transp</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_bitfield::length" title='fb_bitfield::length' data-ref="fb_bitfield::length">length</a>) - <var>1</var>;</td></tr>
+<tr><th id="69">69</th><td>		<a class="local col0 ref" href="#20mask" title='mask' data-ref="20mask">mask</a> &lt;&lt;= <a class="local col4 ref" href="#14info" title='info' data-ref="14info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::transp" title='fb_var_screeninfo::transp' data-ref="fb_var_screeninfo::transp">transp</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_bitfield::offset" title='fb_bitfield::offset' data-ref="fb_bitfield::offset">offset</a>;</td></tr>
+<tr><th id="70">70</th><td>		<a class="local col9 ref" href="#19value" title='value' data-ref="19value">value</a> |= <a class="local col0 ref" href="#20mask" title='mask' data-ref="20mask">mask</a>;</td></tr>
+<tr><th id="71">71</th><td>	}</td></tr>
+<tr><th id="72">72</th><td>	<a class="local col5 ref" href="#15pal" title='pal' data-ref="15pal">pal</a>[<a class="local col9 ref" href="#9regno" title='regno' data-ref="9regno">regno</a>] = <a class="local col9 ref" href="#19value" title='value' data-ref="19value">value</a>;</td></tr>
+<tr><th id="73">73</th><td></td></tr>
+<tr><th id="74">74</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="75">75</th><td>}</td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td><b>struct</b> <a class="type" href="#simplefb_par" title='simplefb_par' data-ref="simplefb_par">simplefb_par</a>;</td></tr>
+<tr><th id="78">78</th><td><em>static</em> <em>void</em> <a class="tu decl fn" href="#simplefb_clocks_destroy" title='simplefb_clocks_destroy' data-type='void simplefb_clocks_destroy(struct simplefb_par * par)' data-ref="simplefb_clocks_destroy">simplefb_clocks_destroy</a>(<b>struct</b> <a class="type" href="#simplefb_par" title='simplefb_par' data-ref="simplefb_par">simplefb_par</a> *<dfn class="local col1 decl" id="21par" title='par' data-type='struct simplefb_par *' data-ref="21par">par</dfn>);</td></tr>
+<tr><th id="79">79</th><td><em>static</em> <em>void</em> <a class="tu decl fn" href="#simplefb_regulators_destroy" title='simplefb_regulators_destroy' data-type='void simplefb_regulators_destroy(struct simplefb_par * par)' data-ref="simplefb_regulators_destroy">simplefb_regulators_destroy</a>(<b>struct</b> <a class="type" href="#simplefb_par" title='simplefb_par' data-ref="simplefb_par">simplefb_par</a> *<dfn class="local col2 decl" id="22par" title='par' data-type='struct simplefb_par *' data-ref="22par">par</dfn>);</td></tr>
+<tr><th id="80">80</th><td></td></tr>
+<tr><th id="81">81</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="simplefb_destroy" title='simplefb_destroy' data-type='void simplefb_destroy(struct fb_info * info)' data-ref="simplefb_destroy">simplefb_destroy</dfn>(<b>struct</b> <a class="type" href="../../../include/linux/fb.h.html#fb_info" title='fb_info' data-ref="fb_info">fb_info</a> *<dfn class="local col3 decl" id="23info" title='info' data-type='struct fb_info *' data-ref="23info">info</dfn>)</td></tr>
+<tr><th id="82">82</th><td>{</td></tr>
+<tr><th id="83">83</th><td>	<a class="tu ref fn" href="#simplefb_regulators_destroy" title='simplefb_regulators_destroy' data-use='c' data-ref="simplefb_regulators_destroy">simplefb_regulators_destroy</a>(<a class="local col3 ref" href="#23info" title='info' data-ref="23info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::par" title='fb_info::par' data-ref="fb_info::par">par</a>);</td></tr>
+<tr><th id="84">84</th><td>	<a class="tu ref fn" href="#simplefb_clocks_destroy" title='simplefb_clocks_destroy' data-use='c' data-ref="simplefb_clocks_destroy">simplefb_clocks_destroy</a>(<a class="local col3 ref" href="#23info" title='info' data-ref="23info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::par" title='fb_info::par' data-ref="fb_info::par">par</a>);</td></tr>
+<tr><th id="85">85</th><td>	<b>if</b> (<a class="local col3 ref" href="#23info" title='info' data-ref="23info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::(anonymous)::screen_base" title='fb_info::(anonymous union)::screen_base' data-ref="fb_info::(anonymous)::screen_base">screen_base</a>)</td></tr>
+<tr><th id="86">86</th><td>		<a class="macro" href="../../../arch/x86/include/asm/io.h.html#217" title="iounmap" data-ref="_M/iounmap">iounmap</a>(<a class="local col3 ref" href="#23info" title='info' data-ref="23info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::(anonymous)::screen_base" title='fb_info::(anonymous union)::screen_base' data-ref="fb_info::(anonymous)::screen_base">screen_base</a>);</td></tr>
+<tr><th id="87">87</th><td>}</td></tr>
+<tr><th id="88">88</th><td></td></tr>
+<tr><th id="89">89</th><td><em>static</em> <b>struct</b> <a class="type" href="../../../include/linux/fb.h.html#fb_ops" title='fb_ops' data-ref="fb_ops">fb_ops</a> <dfn class="tu decl def" id="simplefb_ops" title='simplefb_ops' data-type='struct fb_ops' data-ref="simplefb_ops">simplefb_ops</dfn> = {</td></tr>
+<tr><th id="90">90</th><td>	.<a class="ref field" href="../../../include/linux/fb.h.html#fb_ops::owner" title='fb_ops::owner' data-ref="fb_ops::owner">owner</a>		= <a class="macro" href="../../../include/linux/export.h.html#31" title="((struct module *)0)" data-ref="_M/THIS_MODULE">THIS_MODULE</a>,</td></tr>
+<tr><th id="91">91</th><td>	.<a class="ref field" href="../../../include/linux/fb.h.html#fb_ops::fb_destroy" title='fb_ops::fb_destroy' data-ref="fb_ops::fb_destroy">fb_destroy</a>	= <a class="tu ref fn" href="#simplefb_destroy" title='simplefb_destroy' data-ref="simplefb_destroy">simplefb_destroy</a>,</td></tr>
+<tr><th id="92">92</th><td>	.<a class="ref field" href="../../../include/linux/fb.h.html#fb_ops::fb_setcolreg" title='fb_ops::fb_setcolreg' data-ref="fb_ops::fb_setcolreg">fb_setcolreg</a>	= <a class="tu ref fn" href="#simplefb_setcolreg" title='simplefb_setcolreg' data-ref="simplefb_setcolreg">simplefb_setcolreg</a>,</td></tr>
+<tr><th id="93">93</th><td>	.<a class="ref field" href="../../../include/linux/fb.h.html#fb_ops::fb_fillrect" title='fb_ops::fb_fillrect' data-ref="fb_ops::fb_fillrect">fb_fillrect</a>	= <a class="ref fn" href="../../../include/linux/fb.h.html#cfb_fillrect" title='cfb_fillrect' data-ref="cfb_fillrect">cfb_fillrect</a>,</td></tr>
+<tr><th id="94">94</th><td>	.<a class="ref field" href="../../../include/linux/fb.h.html#fb_ops::fb_copyarea" title='fb_ops::fb_copyarea' data-ref="fb_ops::fb_copyarea">fb_copyarea</a>	= <a class="ref fn" href="../../../include/linux/fb.h.html#cfb_copyarea" title='cfb_copyarea' data-ref="cfb_copyarea">cfb_copyarea</a>,</td></tr>
+<tr><th id="95">95</th><td>	.<a class="ref field" href="../../../include/linux/fb.h.html#fb_ops::fb_imageblit" title='fb_ops::fb_imageblit' data-ref="fb_ops::fb_imageblit">fb_imageblit</a>	= <a class="ref fn" href="../../../include/linux/fb.h.html#cfb_imageblit" title='cfb_imageblit' data-ref="cfb_imageblit">cfb_imageblit</a>,</td></tr>
+<tr><th id="96">96</th><td>};</td></tr>
+<tr><th id="97">97</th><td></td></tr>
+<tr><th id="98">98</th><td><em>static</em> <b>struct</b> <a class="type" href="../../../include/linux/platform_data/simplefb.h.html#simplefb_format" title='simplefb_format' data-ref="simplefb_format">simplefb_format</a> <dfn class="tu decl def" id="simplefb_formats" title='simplefb_formats' data-type='struct simplefb_format [9]' data-ref="simplefb_formats">simplefb_formats</dfn>[] = <a class="macro" href="../../../include/linux/platform_data/simplefb.h.html#20" title="{ { &quot;r5g6b5&quot;, 16, {11, 5}, {5, 6}, {0, 5}, {0, 0}, ((__u32)(&apos;R&apos;) | ((__u32)(&apos;G&apos;) &lt;&lt; 8) | ((__u32)(&apos;1&apos;) &lt;&lt; 16) | ((__u32)(&apos;6&apos;) &lt;&lt; 24)) }, { &quot;x1r5g5b5&quot;, 16, {10, 5}, {5, 5}, {0, 5}, {0, 0}, ((__u32)(&apos;X&apos;) | ((__u32)(&apos;R&apos;) &lt;&lt; 8) | ((__u32)(&apos;1&apos;) &lt;&lt; 16) | ((__u32)(&apos;5&apos;) &lt;&lt; 24)) }, { &quot;a1r5g5b5&quot;, 16, {10, 5}, {5, 5}, {0, 5}, {15, 1}, ((__u32)(&apos;A&apos;) | ((__u32)(&apos;R&apos;) &lt;&lt; 8) | ((__u32)(&apos;1&apos;) &lt;&lt; 16) | ((__u32)(&apos;5&apos;) &lt;&lt; 24)) }, { &quot;r8g8b8&quot;, 24, {16, 8}, {8, 8}, {0, 8}, {0, 0}, ((__u32)(&apos;R&apos;) | ((__u32)(&apos;G&apos;) &lt;&lt; 8) | ((__u32)(&apos;2&apos;) &lt;&lt; 16) | ((__u32)(&apos;4&apos;) &lt;&lt; 24)) }, { &quot;x8r8g8b8&quot;, 32, {16, 8}, {8, 8}, {0, 8}, {0, 0}, ((__u32)(&apos;X&apos;) | ((__u32)(&apos;R&apos;) &lt;&lt; 8) | ((__u32)(&apos;2&apos;) &lt;&lt; 16) | ((__u32)(&apos;4&apos;) &lt;&lt; 24)) }, { &quot;a8r8g8b8&quot;, 32, {16, 8}, {8, 8}, {0, 8}, {24, 8}, ((__u32)(&apos;A&apos;) | ((__u32)(&apos;R&apos;) &lt;&lt; 8) | ((__u32)(&apos;2&apos;) &lt;&lt; 16) | ((__u32)(&apos;4&apos;) &lt;&lt; 24)) }, { &quot;a8b8g8r8&quot;, 32, {0, 8}, {8, 8}, {16, 8}, {24, 8}, ((__u32)(&apos;A&apos;) | ((__u32)(&apos;B&apos;) &lt;&lt; 8) | ((__u32)(&apos;2&apos;) &lt;&lt; 16) | ((__u32)(&apos;4&apos;) &lt;&lt; 24)) }, { &quot;x2r10g10b10&quot;, 32, {20, 10}, {10, 10}, {0, 10}, {0, 0}, ((__u32)(&apos;X&apos;) | ((__u32)(&apos;R&apos;) &lt;&lt; 8) | ((__u32)(&apos;3&apos;) &lt;&lt; 16) | ((__u32)(&apos;0&apos;) &lt;&lt; 24)) }, { &quot;a2r10g10b10&quot;, 32, {20, 10}, {10, 10}, {0, 10}, {30, 2}, ((__u32)(&apos;A&apos;) | ((__u32)(&apos;R&apos;) &lt;&lt; 8) | ((__u32)(&apos;3&apos;) &lt;&lt; 16) | ((__u32)(&apos;0&apos;) &lt;&lt; 24)) }, }" data-ref="_M/SIMPLEFB_FORMATS">SIMPLEFB_FORMATS</a>;</td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td><b>struct</b> <dfn class="type def" id="simplefb_params" title='simplefb_params' data-ref="simplefb_params">simplefb_params</dfn> {</td></tr>
+<tr><th id="101">101</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="tu decl field" id="simplefb_params::width" title='simplefb_params::width' data-type='u32' data-ref="simplefb_params::width">width</dfn>;</td></tr>
+<tr><th id="102">102</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="tu decl field" id="simplefb_params::height" title='simplefb_params::height' data-type='u32' data-ref="simplefb_params::height">height</dfn>;</td></tr>
+<tr><th id="103">103</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="tu decl field" id="simplefb_params::stride" title='simplefb_params::stride' data-type='u32' data-ref="simplefb_params::stride">stride</dfn>;</td></tr>
+<tr><th id="104">104</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/platform_data/simplefb.h.html#simplefb_format" title='simplefb_format' data-ref="simplefb_format">simplefb_format</a> *<dfn class="tu decl field" id="simplefb_params::format" title='simplefb_params::format' data-type='struct simplefb_format *' data-ref="simplefb_params::format">format</dfn>;</td></tr>
+<tr><th id="105">105</th><td>};</td></tr>
+<tr><th id="106">106</th><td></td></tr>
+<tr><th id="107">107</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="simplefb_parse_dt" title='simplefb_parse_dt' data-type='int simplefb_parse_dt(struct platform_device * pdev, struct simplefb_params * params)' data-ref="simplefb_parse_dt">simplefb_parse_dt</dfn>(<b>struct</b> <a class="type" href="../../../include/linux/platform_device.h.html#platform_device" title='platform_device' data-ref="platform_device">platform_device</a> *<dfn class="local col4 decl" id="24pdev" title='pdev' data-type='struct platform_device *' data-ref="24pdev">pdev</dfn>,</td></tr>
+<tr><th id="108">108</th><td>			   <b>struct</b> <a class="type" href="#simplefb_params" title='simplefb_params' data-ref="simplefb_params">simplefb_params</a> *<dfn class="local col5 decl" id="25params" title='params' data-type='struct simplefb_params *' data-ref="25params">params</dfn>)</td></tr>
+<tr><th id="109">109</th><td>{</td></tr>
+<tr><th id="110">110</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/of.h.html#device_node" title='device_node' data-ref="device_node">device_node</a> *<dfn class="local col6 decl" id="26np" title='np' data-type='struct device_node *' data-ref="26np">np</dfn> = <a class="local col4 ref" href="#24pdev" title='pdev' data-ref="24pdev">pdev</a>-&gt;<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_device::dev" title='platform_device::dev' data-ref="platform_device::dev">dev</a>.<a class="ref field" href="../../../include/linux/device.h.html#device::of_node" title='device::of_node' data-ref="device::of_node">of_node</a>;</td></tr>
+<tr><th id="111">111</th><td>	<em>int</em> <dfn class="local col7 decl" id="27ret" title='ret' data-type='int' data-ref="27ret">ret</dfn>;</td></tr>
+<tr><th id="112">112</th><td>	<em>const</em> <em>char</em> *<dfn class="local col8 decl" id="28format" title='format' data-type='const char *' data-ref="28format">format</dfn>;</td></tr>
+<tr><th id="113">113</th><td>	<em>int</em> <dfn class="local col9 decl" id="29i" title='i' data-type='int' data-ref="29i">i</dfn>;</td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td>	<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a> = <a class="ref fn" href="../../../include/linux/of.h.html#of_property_read_u32" title='of_property_read_u32' data-ref="of_property_read_u32">of_property_read_u32</a>(<a class="local col6 ref" href="#26np" title='np' data-ref="26np">np</a>, <q>"width"</q>, &amp;<a class="local col5 ref" href="#25params" title='params' data-ref="25params">params</a>-&gt;<a class="tu ref field" href="#simplefb_params::width" title='simplefb_params::width' data-use='a' data-ref="simplefb_params::width">width</a>);</td></tr>
+<tr><th id="116">116</th><td>	<b>if</b> (<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a>) {</td></tr>
+<tr><th id="117">117</th><td>		<a class="ref fn" href="../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(&amp;<a class="local col4 ref" href="#24pdev" title='pdev' data-ref="24pdev">pdev</a>-&gt;<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_device::dev" title='platform_device::dev' data-ref="platform_device::dev">dev</a>, <q>"Can't parse width property\n"</q>);</td></tr>
+<tr><th id="118">118</th><td>		<b>return</b> <a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a>;</td></tr>
+<tr><th id="119">119</th><td>	}</td></tr>
+<tr><th id="120">120</th><td></td></tr>
+<tr><th id="121">121</th><td>	<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a> = <a class="ref fn" href="../../../include/linux/of.h.html#of_property_read_u32" title='of_property_read_u32' data-ref="of_property_read_u32">of_property_read_u32</a>(<a class="local col6 ref" href="#26np" title='np' data-ref="26np">np</a>, <q>"height"</q>, &amp;<a class="local col5 ref" href="#25params" title='params' data-ref="25params">params</a>-&gt;<a class="tu ref field" href="#simplefb_params::height" title='simplefb_params::height' data-use='a' data-ref="simplefb_params::height">height</a>);</td></tr>
+<tr><th id="122">122</th><td>	<b>if</b> (<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a>) {</td></tr>
+<tr><th id="123">123</th><td>		<a class="ref fn" href="../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(&amp;<a class="local col4 ref" href="#24pdev" title='pdev' data-ref="24pdev">pdev</a>-&gt;<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_device::dev" title='platform_device::dev' data-ref="platform_device::dev">dev</a>, <q>"Can't parse height property\n"</q>);</td></tr>
+<tr><th id="124">124</th><td>		<b>return</b> <a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a>;</td></tr>
+<tr><th id="125">125</th><td>	}</td></tr>
+<tr><th id="126">126</th><td></td></tr>
+<tr><th id="127">127</th><td>	<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a> = <a class="ref fn" href="../../../include/linux/of.h.html#of_property_read_u32" title='of_property_read_u32' data-ref="of_property_read_u32">of_property_read_u32</a>(<a class="local col6 ref" href="#26np" title='np' data-ref="26np">np</a>, <q>"stride"</q>, &amp;<a class="local col5 ref" href="#25params" title='params' data-ref="25params">params</a>-&gt;<a class="tu ref field" href="#simplefb_params::stride" title='simplefb_params::stride' data-use='a' data-ref="simplefb_params::stride">stride</a>);</td></tr>
+<tr><th id="128">128</th><td>	<b>if</b> (<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a>) {</td></tr>
+<tr><th id="129">129</th><td>		<a class="ref fn" href="../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(&amp;<a class="local col4 ref" href="#24pdev" title='pdev' data-ref="24pdev">pdev</a>-&gt;<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_device::dev" title='platform_device::dev' data-ref="platform_device::dev">dev</a>, <q>"Can't parse stride property\n"</q>);</td></tr>
+<tr><th id="130">130</th><td>		<b>return</b> <a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a>;</td></tr>
+<tr><th id="131">131</th><td>	}</td></tr>
+<tr><th id="132">132</th><td></td></tr>
+<tr><th id="133">133</th><td>	<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a> = <a class="ref fn" href="../../../include/linux/of.h.html#of_property_read_string" title='of_property_read_string' data-ref="of_property_read_string">of_property_read_string</a>(<a class="local col6 ref" href="#26np" title='np' data-ref="26np">np</a>, <q>"format"</q>, &amp;<a class="local col8 ref" href="#28format" title='format' data-ref="28format">format</a>);</td></tr>
+<tr><th id="134">134</th><td>	<b>if</b> (<a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a>) {</td></tr>
+<tr><th id="135">135</th><td>		<a class="ref fn" href="../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(&amp;<a class="local col4 ref" href="#24pdev" title='pdev' data-ref="24pdev">pdev</a>-&gt;<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_device::dev" title='platform_device::dev' data-ref="platform_device::dev">dev</a>, <q>"Can't parse format property\n"</q>);</td></tr>
+<tr><th id="136">136</th><td>		<b>return</b> <a class="local col7 ref" href="#27ret" title='ret' data-ref="27ret">ret</a>;</td></tr>
+<tr><th id="137">137</th><td>	}</td></tr>
+<tr><th id="138">138</th><td>	<a class="local col5 ref" href="#25params" title='params' data-ref="25params">params</a>-&gt;<a class="tu ref field" href="#simplefb_params::format" title='simplefb_params::format' data-use='w' data-ref="simplefb_params::format">format</a> = <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="139">139</th><td>	<b>for</b> (<a class="local col9 ref" href="#29i" title='i' data-ref="29i">i</a> = <var>0</var>; <a class="local col9 ref" href="#29i" title='i' data-ref="29i">i</a> &lt; <a class="macro" href="../../../include/linux/kernel.h.html#72" title="(sizeof(simplefb_formats) / sizeof((simplefb_formats)[0]) + (sizeof(struct { int:(-!!(__builtin_types_compatible_p(typeof((simplefb_formats)), typeof(&amp;(simplefb_formats)[0])))); })))" data-ref="_M/ARRAY_SIZE">ARRAY_SIZE</a>(<a class="tu ref" href="#simplefb_formats" title='simplefb_formats' data-use='r' data-ref="simplefb_formats">simplefb_formats</a>); <a class="local col9 ref" href="#29i" title='i' data-ref="29i">i</a>++) {</td></tr>
+<tr><th id="140">140</th><td>		<b>if</b> (<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strcmp" title='strcmp' data-ref="strcmp">strcmp</a>(<a class="local col8 ref" href="#28format" title='format' data-ref="28format">format</a>, <a class="tu ref" href="#simplefb_formats" title='simplefb_formats' data-use='m' data-ref="simplefb_formats">simplefb_formats</a>[<a class="local col9 ref" href="#29i" title='i' data-ref="29i">i</a>].<a class="ref field" href="../../../include/linux/platform_data/simplefb.h.html#simplefb_format::name" title='simplefb_format::name' data-ref="simplefb_format::name">name</a>))</td></tr>
+<tr><th id="141">141</th><td>			<b>continue</b>;</td></tr>
+<tr><th id="142">142</th><td>		<a class="local col5 ref" href="#25params" title='params' data-ref="25params">params</a>-&gt;<a class="tu ref field" href="#simplefb_params::format" title='simplefb_params::format' data-use='w' data-ref="simplefb_params::format">format</a> = &amp;<a class="tu ref" href="#simplefb_formats" title='simplefb_formats' data-use='a' data-ref="simplefb_formats">simplefb_formats</a>[<a class="local col9 ref" href="#29i" title='i' data-ref="29i">i</a>];</td></tr>
+<tr><th id="143">143</th><td>		<b>break</b>;</td></tr>
+<tr><th id="144">144</th><td>	}</td></tr>
+<tr><th id="145">145</th><td>	<b>if</b> (!<a class="local col5 ref" href="#25params" title='params' data-ref="25params">params</a>-&gt;<a class="tu ref field" href="#simplefb_params::format" title='simplefb_params::format' data-use='r' data-ref="simplefb_params::format">format</a>) {</td></tr>
+<tr><th id="146">146</th><td>		<a class="ref fn" href="../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(&amp;<a class="local col4 ref" href="#24pdev" title='pdev' data-ref="24pdev">pdev</a>-&gt;<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_device::dev" title='platform_device::dev' data-ref="platform_device::dev">dev</a>, <q>"Invalid format value\n"</q>);</td></tr>
+<tr><th id="147">147</th><td>		<b>return</b> -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#26" title="22" data-ref="_M/EINVAL">EINVAL</a>;</td></tr>
+<tr><th id="148">148</th><td>	}</td></tr>
+<tr><th id="149">149</th><td></td></tr>
+<tr><th id="150">150</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="151">151</th><td>}</td></tr>
+<tr><th id="152">152</th><td></td></tr>
+<tr><th id="153">153</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="simplefb_parse_pd" title='simplefb_parse_pd' data-type='int simplefb_parse_pd(struct platform_device * pdev, struct simplefb_params * params)' data-ref="simplefb_parse_pd">simplefb_parse_pd</dfn>(<b>struct</b> <a class="type" href="../../../include/linux/platform_device.h.html#platform_device" title='platform_device' data-ref="platform_device">platform_device</a> *<dfn class="local col0 decl" id="30pdev" title='pdev' data-type='struct platform_device *' data-ref="30pdev">pdev</dfn>,</td></tr>
+<tr><th id="154">154</th><td>			     <b>struct</b> <a class="type" href="#simplefb_params" title='simplefb_params' data-ref="simplefb_params">simplefb_params</a> *<dfn class="local col1 decl" id="31params" title='params' data-type='struct simplefb_params *' data-ref="31params">params</dfn>)</td></tr>
+<tr><th id="155">155</th><td>{</td></tr>
+<tr><th id="156">156</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/platform_data/simplefb.h.html#simplefb_platform_data" title='simplefb_platform_data' data-ref="simplefb_platform_data">simplefb_platform_data</a> *<dfn class="local col2 decl" id="32pd" title='pd' data-type='struct simplefb_platform_data *' data-ref="32pd">pd</dfn> = <a class="ref fn" href="../../../include/linux/device.h.html#dev_get_platdata" title='dev_get_platdata' data-ref="dev_get_platdata">dev_get_platdata</a>(&amp;<a class="local col0 ref" href="#30pdev" title='pdev' data-ref="30pdev">pdev</a>-&gt;<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_device::dev" title='platform_device::dev' data-ref="platform_device::dev">dev</a>);</td></tr>
+<tr><th id="157">157</th><td>	<em>int</em> <dfn class="local col3 decl" id="33i" title='i' data-type='int' data-ref="33i">i</dfn>;</td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td>	<a class="local col1 ref" href="#31params" title='params' data-ref="31params">params</a>-&gt;<a class="tu ref field" href="#simplefb_params::width" title='simplefb_params::width' data-use='w' data-ref="simplefb_params::width">width</a> = <a class="local col2 ref" href="#32pd" title='pd' data-ref="32pd">pd</a>-&gt;<a class="ref field" href="../../../include/linux/platform_data/simplefb.h.html#simplefb_platform_data::width" title='simplefb_platform_data::width' data-ref="simplefb_platform_data::width">width</a>;</td></tr>
+<tr><th id="160">160</th><td>	<a class="local col1 ref" href="#31params" title='params' data-ref="31params">params</a>-&gt;<a class="tu ref field" href="#simplefb_params::height" title='simplefb_params::height' data-use='w' data-ref="simplefb_params::height">height</a> = <a class="local col2 ref" href="#32pd" title='pd' data-ref="32pd">pd</a>-&gt;<a class="ref field" href="../../../include/linux/platform_data/simplefb.h.html#simplefb_platform_data::height" title='simplefb_platform_data::height' data-ref="simplefb_platform_data::height">height</a>;</td></tr>
+<tr><th id="161">161</th><td>	<a class="local col1 ref" href="#31params" title='params' data-ref="31params">params</a>-&gt;<a class="tu ref field" href="#simplefb_params::stride" title='simplefb_params::stride' data-use='w' data-ref="simplefb_params::stride">stride</a> = <a class="local col2 ref" href="#32pd" title='pd' data-ref="32pd">pd</a>-&gt;<a class="ref field" href="../../../include/linux/platform_data/simplefb.h.html#simplefb_platform_data::stride" title='simplefb_platform_data::stride' data-ref="simplefb_platform_data::stride">stride</a>;</td></tr>
+<tr><th id="162">162</th><td></td></tr>
+<tr><th id="163">163</th><td>	<a class="local col1 ref" href="#31params" title='params' data-ref="31params">params</a>-&gt;<a class="tu ref field" href="#simplefb_params::format" title='simplefb_params::format' data-use='w' data-ref="simplefb_params::format">format</a> = <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>;</td></tr>
+<tr><th id="164">164</th><td>	<b>for</b> (<a class="local col3 ref" href="#33i" title='i' data-ref="33i">i</a> = <var>0</var>; <a class="local col3 ref" href="#33i" title='i' data-ref="33i">i</a> &lt; <a class="macro" href="../../../include/linux/kernel.h.html#72" title="(sizeof(simplefb_formats) / sizeof((simplefb_formats)[0]) + (sizeof(struct { int:(-!!(__builtin_types_compatible_p(typeof((simplefb_formats)), typeof(&amp;(simplefb_formats)[0])))); })))" data-ref="_M/ARRAY_SIZE">ARRAY_SIZE</a>(<a class="tu ref" href="#simplefb_formats" title='simplefb_formats' data-use='r' data-ref="simplefb_formats">simplefb_formats</a>); <a class="local col3 ref" href="#33i" title='i' data-ref="33i">i</a>++) {</td></tr>
+<tr><th id="165">165</th><td>		<b>if</b> (<a class="ref fn" href="../../../arch/x86/include/asm/string_64.h.html#strcmp" title='strcmp' data-ref="strcmp">strcmp</a>(<a class="local col2 ref" href="#32pd" title='pd' data-ref="32pd">pd</a>-&gt;<a class="ref field" href="../../../include/linux/platform_data/simplefb.h.html#simplefb_platform_data::format" title='simplefb_platform_data::format' data-ref="simplefb_platform_data::format">format</a>, <a class="tu ref" href="#simplefb_formats" title='simplefb_formats' data-use='m' data-ref="simplefb_formats">simplefb_formats</a>[<a class="local col3 ref" href="#33i" title='i' data-ref="33i">i</a>].<a class="ref field" href="../../../include/linux/platform_data/simplefb.h.html#simplefb_format::name" title='simplefb_format::name' data-ref="simplefb_format::name">name</a>))</td></tr>
+<tr><th id="166">166</th><td>			<b>continue</b>;</td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td>		<a class="local col1 ref" href="#31params" title='params' data-ref="31params">params</a>-&gt;<a class="tu ref field" href="#simplefb_params::format" title='simplefb_params::format' data-use='w' data-ref="simplefb_params::format">format</a> = &amp;<a class="tu ref" href="#simplefb_formats" title='simplefb_formats' data-use='a' data-ref="simplefb_formats">simplefb_formats</a>[<a class="local col3 ref" href="#33i" title='i' data-ref="33i">i</a>];</td></tr>
+<tr><th id="169">169</th><td>		<b>break</b>;</td></tr>
+<tr><th id="170">170</th><td>	}</td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td>	<b>if</b> (!<a class="local col1 ref" href="#31params" title='params' data-ref="31params">params</a>-&gt;<a class="tu ref field" href="#simplefb_params::format" title='simplefb_params::format' data-use='r' data-ref="simplefb_params::format">format</a>) {</td></tr>
+<tr><th id="173">173</th><td>		<a class="ref fn" href="../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(&amp;<a class="local col0 ref" href="#30pdev" title='pdev' data-ref="30pdev">pdev</a>-&gt;<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_device::dev" title='platform_device::dev' data-ref="platform_device::dev">dev</a>, <q>"Invalid format value\n"</q>);</td></tr>
+<tr><th id="174">174</th><td>		<b>return</b> -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#26" title="22" data-ref="_M/EINVAL">EINVAL</a>;</td></tr>
+<tr><th id="175">175</th><td>	}</td></tr>
+<tr><th id="176">176</th><td></td></tr>
+<tr><th id="177">177</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="178">178</th><td>}</td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td><b>struct</b> <dfn class="type def" id="simplefb_par" title='simplefb_par' data-ref="simplefb_par">simplefb_par</dfn> {</td></tr>
+<tr><th id="181">181</th><td>	<a class="typedef" href="../../../include/asm-generic/int-ll64.h.html#u32" title='u32' data-type='__u32' data-ref="u32">u32</a> <dfn class="tu decl field" id="simplefb_par::palette" title='simplefb_par::palette' data-type='u32 [16]' data-ref="simplefb_par::palette">palette</dfn>[<a class="macro" href="#50" title="16" data-ref="_M/PSEUDO_PALETTE_SIZE">PSEUDO_PALETTE_SIZE</a>];</td></tr>
+<tr><th id="182">182</th><td><u>#<span data-ppcond="182">if</span> defined <span class="macro" data-ref="_M/CONFIG_OF">CONFIG_OF</span> &amp;&amp; defined <a class="macro" href="../../../include/generated/autoconf.h.html#705" data-ref="_M/CONFIG_COMMON_CLK">CONFIG_COMMON_CLK</a></u></td></tr>
+<tr><th id="183">183</th><td>	bool clks_enabled;</td></tr>
+<tr><th id="184">184</th><td>	<em>unsigned</em> <em>int</em> clk_count;</td></tr>
+<tr><th id="185">185</th><td>	<b>struct</b> clk **clks;</td></tr>
+<tr><th id="186">186</th><td><u>#<span data-ppcond="182">endif</span></u></td></tr>
+<tr><th id="187">187</th><td><u>#<span data-ppcond="187">if</span> defined <span class="macro" data-ref="_M/CONFIG_OF">CONFIG_OF</span> &amp;&amp; defined <span class="macro" data-ref="_M/CONFIG_REGULATOR">CONFIG_REGULATOR</span></u></td></tr>
+<tr><th id="188">188</th><td>	bool regulators_enabled;</td></tr>
+<tr><th id="189">189</th><td>	u32 regulator_count;</td></tr>
+<tr><th id="190">190</th><td>	<b>struct</b> regulator **regulators;</td></tr>
+<tr><th id="191">191</th><td><u>#<span data-ppcond="187">endif</span></u></td></tr>
+<tr><th id="192">192</th><td>};</td></tr>
+<tr><th id="193">193</th><td></td></tr>
+<tr><th id="194">194</th><td><u>#<span data-ppcond="194">if</span> defined <span class="macro" data-ref="_M/CONFIG_OF">CONFIG_OF</span> &amp;&amp; defined <a class="macro" href="../../../include/generated/autoconf.h.html#705" data-ref="_M/CONFIG_COMMON_CLK">CONFIG_COMMON_CLK</a></u></td></tr>
+<tr><th id="195">195</th><td><i>/*</i></td></tr>
+<tr><th id="196">196</th><td><i> * Clock handling code.</i></td></tr>
+<tr><th id="197">197</th><td><i> *</i></td></tr>
+<tr><th id="198">198</th><td><i> * Here we handle the clocks property of our "simple-framebuffer" dt node.</i></td></tr>
+<tr><th id="199">199</th><td><i> * This is necessary so that we can make sure that any clocks needed by</i></td></tr>
+<tr><th id="200">200</th><td><i> * the display engine that the bootloader set up for us (and for which it</i></td></tr>
+<tr><th id="201">201</th><td><i> * provided a simplefb dt node), stay up, for the life of the simplefb</i></td></tr>
+<tr><th id="202">202</th><td><i> * driver.</i></td></tr>
+<tr><th id="203">203</th><td><i> *</i></td></tr>
+<tr><th id="204">204</th><td><i> * When the driver unloads, we cleanly disable, and then release the clocks.</i></td></tr>
+<tr><th id="205">205</th><td><i> *</i></td></tr>
+<tr><th id="206">206</th><td><i> * We only complain about errors here, no action is taken as the most likely</i></td></tr>
+<tr><th id="207">207</th><td><i> * error can only happen due to a mismatch between the bootloader which set</i></td></tr>
+<tr><th id="208">208</th><td><i> * up simplefb, and the clock definitions in the device tree. Chances are</i></td></tr>
+<tr><th id="209">209</th><td><i> * that there are no adverse effects, and if there are, a clean teardown of</i></td></tr>
+<tr><th id="210">210</th><td><i> * the fb probe will not help us much either. So just complain and carry on,</i></td></tr>
+<tr><th id="211">211</th><td><i> * and hope that the user actually gets a working fb at the end of things.</i></td></tr>
+<tr><th id="212">212</th><td><i> */</i></td></tr>
+<tr><th id="213">213</th><td><em>static</em> <em>int</em> simplefb_clocks_get(<b>struct</b> simplefb_par *par,</td></tr>
+<tr><th id="214">214</th><td>			       <b>struct</b> platform_device *pdev)</td></tr>
+<tr><th id="215">215</th><td>{</td></tr>
+<tr><th id="216">216</th><td>	<b>struct</b> device_node *np = pdev-&gt;dev.of_node;</td></tr>
+<tr><th id="217">217</th><td>	<b>struct</b> clk *clock;</td></tr>
+<tr><th id="218">218</th><td>	<em>int</em> i;</td></tr>
+<tr><th id="219">219</th><td></td></tr>
+<tr><th id="220">220</th><td>	<b>if</b> (dev_get_platdata(&amp;pdev-&gt;dev) || !np)</td></tr>
+<tr><th id="221">221</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td>	par-&gt;clk_count = of_clk_get_parent_count(np);</td></tr>
+<tr><th id="224">224</th><td>	<b>if</b> (!par-&gt;clk_count)</td></tr>
+<tr><th id="225">225</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="226">226</th><td></td></tr>
+<tr><th id="227">227</th><td>	par-&gt;clks = kcalloc(par-&gt;clk_count, <b>sizeof</b>(<b>struct</b> clk *), GFP_KERNEL);</td></tr>
+<tr><th id="228">228</th><td>	<b>if</b> (!par-&gt;clks)</td></tr>
+<tr><th id="229">229</th><td>		<b>return</b> -ENOMEM;</td></tr>
+<tr><th id="230">230</th><td></td></tr>
+<tr><th id="231">231</th><td>	<b>for</b> (i = <var>0</var>; i &lt; par-&gt;clk_count; i++) {</td></tr>
+<tr><th id="232">232</th><td>		clock = of_clk_get(np, i);</td></tr>
+<tr><th id="233">233</th><td>		<b>if</b> (IS_ERR(clock)) {</td></tr>
+<tr><th id="234">234</th><td>			<b>if</b> (PTR_ERR(clock) == -EPROBE_DEFER) {</td></tr>
+<tr><th id="235">235</th><td>				<b>while</b> (--i &gt;= <var>0</var>) {</td></tr>
+<tr><th id="236">236</th><td>					<b>if</b> (par-&gt;clks[i])</td></tr>
+<tr><th id="237">237</th><td>						clk_put(par-&gt;clks[i]);</td></tr>
+<tr><th id="238">238</th><td>				}</td></tr>
+<tr><th id="239">239</th><td>				kfree(par-&gt;clks);</td></tr>
+<tr><th id="240">240</th><td>				<b>return</b> -EPROBE_DEFER;</td></tr>
+<tr><th id="241">241</th><td>			}</td></tr>
+<tr><th id="242">242</th><td>			dev_err(&amp;pdev-&gt;dev, <q>"%s: clock %d not found: %ld\n"</q>,</td></tr>
+<tr><th id="243">243</th><td>				<b>__func__</b>, i, PTR_ERR(clock));</td></tr>
+<tr><th id="244">244</th><td>			<b>continue</b>;</td></tr>
+<tr><th id="245">245</th><td>		}</td></tr>
+<tr><th id="246">246</th><td>		par-&gt;clks[i] = clock;</td></tr>
+<tr><th id="247">247</th><td>	}</td></tr>
+<tr><th id="248">248</th><td></td></tr>
+<tr><th id="249">249</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="250">250</th><td>}</td></tr>
+<tr><th id="251">251</th><td></td></tr>
+<tr><th id="252">252</th><td><em>static</em> <em>void</em> simplefb_clocks_enable(<b>struct</b> simplefb_par *par,</td></tr>
+<tr><th id="253">253</th><td>				   <b>struct</b> platform_device *pdev)</td></tr>
+<tr><th id="254">254</th><td>{</td></tr>
+<tr><th id="255">255</th><td>	<em>int</em> i, ret;</td></tr>
+<tr><th id="256">256</th><td></td></tr>
+<tr><th id="257">257</th><td>	<b>for</b> (i = <var>0</var>; i &lt; par-&gt;clk_count; i++) {</td></tr>
+<tr><th id="258">258</th><td>		<b>if</b> (par-&gt;clks[i]) {</td></tr>
+<tr><th id="259">259</th><td>			ret = clk_prepare_enable(par-&gt;clks[i]);</td></tr>
+<tr><th id="260">260</th><td>			<b>if</b> (ret) {</td></tr>
+<tr><th id="261">261</th><td>				dev_err(&amp;pdev-&gt;dev,</td></tr>
+<tr><th id="262">262</th><td>					<q>"%s: failed to enable clock %d: %d\n"</q>,</td></tr>
+<tr><th id="263">263</th><td>					<b>__func__</b>, i, ret);</td></tr>
+<tr><th id="264">264</th><td>				clk_put(par-&gt;clks[i]);</td></tr>
+<tr><th id="265">265</th><td>				par-&gt;clks[i] = NULL;</td></tr>
+<tr><th id="266">266</th><td>			}</td></tr>
+<tr><th id="267">267</th><td>		}</td></tr>
+<tr><th id="268">268</th><td>	}</td></tr>
+<tr><th id="269">269</th><td>	par-&gt;clks_enabled = true;</td></tr>
+<tr><th id="270">270</th><td>}</td></tr>
+<tr><th id="271">271</th><td></td></tr>
+<tr><th id="272">272</th><td><em>static</em> <em>void</em> simplefb_clocks_destroy(<b>struct</b> simplefb_par *par)</td></tr>
+<tr><th id="273">273</th><td>{</td></tr>
+<tr><th id="274">274</th><td>	<em>int</em> i;</td></tr>
+<tr><th id="275">275</th><td></td></tr>
+<tr><th id="276">276</th><td>	<b>if</b> (!par-&gt;clks)</td></tr>
+<tr><th id="277">277</th><td>		<b>return</b>;</td></tr>
+<tr><th id="278">278</th><td></td></tr>
+<tr><th id="279">279</th><td>	<b>for</b> (i = <var>0</var>; i &lt; par-&gt;clk_count; i++) {</td></tr>
+<tr><th id="280">280</th><td>		<b>if</b> (par-&gt;clks[i]) {</td></tr>
+<tr><th id="281">281</th><td>			<b>if</b> (par-&gt;clks_enabled)</td></tr>
+<tr><th id="282">282</th><td>				clk_disable_unprepare(par-&gt;clks[i]);</td></tr>
+<tr><th id="283">283</th><td>			clk_put(par-&gt;clks[i]);</td></tr>
+<tr><th id="284">284</th><td>		}</td></tr>
+<tr><th id="285">285</th><td>	}</td></tr>
+<tr><th id="286">286</th><td></td></tr>
+<tr><th id="287">287</th><td>	kfree(par-&gt;clks);</td></tr>
+<tr><th id="288">288</th><td>}</td></tr>
+<tr><th id="289">289</th><td><u>#<span data-ppcond="194">else</span></u></td></tr>
+<tr><th id="290">290</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="simplefb_clocks_get" title='simplefb_clocks_get' data-type='int simplefb_clocks_get(struct simplefb_par * par, struct platform_device * pdev)' data-ref="simplefb_clocks_get">simplefb_clocks_get</dfn>(<b>struct</b> <a class="type" href="#simplefb_par" title='simplefb_par' data-ref="simplefb_par">simplefb_par</a> *<dfn class="local col4 decl" id="34par" title='par' data-type='struct simplefb_par *' data-ref="34par">par</dfn>,</td></tr>
+<tr><th id="291">291</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/platform_device.h.html#platform_device" title='platform_device' data-ref="platform_device">platform_device</a> *<dfn class="local col5 decl" id="35pdev" title='pdev' data-type='struct platform_device *' data-ref="35pdev">pdev</dfn>) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="292">292</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="simplefb_clocks_enable" title='simplefb_clocks_enable' data-type='void simplefb_clocks_enable(struct simplefb_par * par, struct platform_device * pdev)' data-ref="simplefb_clocks_enable">simplefb_clocks_enable</dfn>(<b>struct</b> <a class="type" href="#simplefb_par" title='simplefb_par' data-ref="simplefb_par">simplefb_par</a> *<dfn class="local col6 decl" id="36par" title='par' data-type='struct simplefb_par *' data-ref="36par">par</dfn>,</td></tr>
+<tr><th id="293">293</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/platform_device.h.html#platform_device" title='platform_device' data-ref="platform_device">platform_device</a> *<dfn class="local col7 decl" id="37pdev" title='pdev' data-type='struct platform_device *' data-ref="37pdev">pdev</dfn>) { }</td></tr>
+<tr><th id="294">294</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="simplefb_clocks_destroy" title='simplefb_clocks_destroy' data-type='void simplefb_clocks_destroy(struct simplefb_par * par)' data-ref="simplefb_clocks_destroy">simplefb_clocks_destroy</dfn>(<b>struct</b> <a class="type" href="#simplefb_par" title='simplefb_par' data-ref="simplefb_par">simplefb_par</a> *<dfn class="local col8 decl" id="38par" title='par' data-type='struct simplefb_par *' data-ref="38par">par</dfn>) { }</td></tr>
+<tr><th id="295">295</th><td><u>#<span data-ppcond="194">endif</span></u></td></tr>
+<tr><th id="296">296</th><td></td></tr>
+<tr><th id="297">297</th><td><u>#<span data-ppcond="297">if</span> defined <span class="macro" data-ref="_M/CONFIG_OF">CONFIG_OF</span> &amp;&amp; defined <span class="macro" data-ref="_M/CONFIG_REGULATOR">CONFIG_REGULATOR</span></u></td></tr>
+<tr><th id="298">298</th><td></td></tr>
+<tr><th id="299">299</th><td><u>#define SUPPLY_SUFFIX "-supply"</u></td></tr>
+<tr><th id="300">300</th><td></td></tr>
+<tr><th id="301">301</th><td><i>/*</i></td></tr>
+<tr><th id="302">302</th><td><i> * Regulator handling code.</i></td></tr>
+<tr><th id="303">303</th><td><i> *</i></td></tr>
+<tr><th id="304">304</th><td><i> * Here we handle the num-supplies and vin*-supply properties of our</i></td></tr>
+<tr><th id="305">305</th><td><i> * "simple-framebuffer" dt node. This is necessary so that we can make sure</i></td></tr>
+<tr><th id="306">306</th><td><i> * that any regulators needed by the display hardware that the bootloader</i></td></tr>
+<tr><th id="307">307</th><td><i> * set up for us (and for which it provided a simplefb dt node), stay up,</i></td></tr>
+<tr><th id="308">308</th><td><i> * for the life of the simplefb driver.</i></td></tr>
+<tr><th id="309">309</th><td><i> *</i></td></tr>
+<tr><th id="310">310</th><td><i> * When the driver unloads, we cleanly disable, and then release the</i></td></tr>
+<tr><th id="311">311</th><td><i> * regulators.</i></td></tr>
+<tr><th id="312">312</th><td><i> *</i></td></tr>
+<tr><th id="313">313</th><td><i> * We only complain about errors here, no action is taken as the most likely</i></td></tr>
+<tr><th id="314">314</th><td><i> * error can only happen due to a mismatch between the bootloader which set</i></td></tr>
+<tr><th id="315">315</th><td><i> * up simplefb, and the regulator definitions in the device tree. Chances are</i></td></tr>
+<tr><th id="316">316</th><td><i> * that there are no adverse effects, and if there are, a clean teardown of</i></td></tr>
+<tr><th id="317">317</th><td><i> * the fb probe will not help us much either. So just complain and carry on,</i></td></tr>
+<tr><th id="318">318</th><td><i> * and hope that the user actually gets a working fb at the end of things.</i></td></tr>
+<tr><th id="319">319</th><td><i> */</i></td></tr>
+<tr><th id="320">320</th><td><em>static</em> <em>int</em> simplefb_regulators_get(<b>struct</b> simplefb_par *par,</td></tr>
+<tr><th id="321">321</th><td>				   <b>struct</b> platform_device *pdev)</td></tr>
+<tr><th id="322">322</th><td>{</td></tr>
+<tr><th id="323">323</th><td>	<b>struct</b> device_node *np = pdev-&gt;dev.of_node;</td></tr>
+<tr><th id="324">324</th><td>	<b>struct</b> property *prop;</td></tr>
+<tr><th id="325">325</th><td>	<b>struct</b> regulator *regulator;</td></tr>
+<tr><th id="326">326</th><td>	<em>const</em> <em>char</em> *p;</td></tr>
+<tr><th id="327">327</th><td>	<em>int</em> count = <var>0</var>, i = <var>0</var>;</td></tr>
+<tr><th id="328">328</th><td></td></tr>
+<tr><th id="329">329</th><td>	<b>if</b> (dev_get_platdata(&amp;pdev-&gt;dev) || !np)</td></tr>
+<tr><th id="330">330</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="331">331</th><td></td></tr>
+<tr><th id="332">332</th><td>	<i>/* Count the number of regulator supplies */</i></td></tr>
+<tr><th id="333">333</th><td>	for_each_property_of_node(np, prop) {</td></tr>
+<tr><th id="334">334</th><td>		p = strstr(prop-&gt;name, SUPPLY_SUFFIX);</td></tr>
+<tr><th id="335">335</th><td>		<b>if</b> (p &amp;&amp; p != prop-&gt;name)</td></tr>
+<tr><th id="336">336</th><td>			count++;</td></tr>
+<tr><th id="337">337</th><td>	}</td></tr>
+<tr><th id="338">338</th><td></td></tr>
+<tr><th id="339">339</th><td>	<b>if</b> (!count)</td></tr>
+<tr><th id="340">340</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="341">341</th><td></td></tr>
+<tr><th id="342">342</th><td>	par-&gt;regulators = devm_kcalloc(&amp;pdev-&gt;dev, count,</td></tr>
+<tr><th id="343">343</th><td>				       <b>sizeof</b>(<b>struct</b> regulator *), GFP_KERNEL);</td></tr>
+<tr><th id="344">344</th><td>	<b>if</b> (!par-&gt;regulators)</td></tr>
+<tr><th id="345">345</th><td>		<b>return</b> -ENOMEM;</td></tr>
+<tr><th id="346">346</th><td></td></tr>
+<tr><th id="347">347</th><td>	<i>/* Get all the regulators */</i></td></tr>
+<tr><th id="348">348</th><td>	for_each_property_of_node(np, prop) {</td></tr>
+<tr><th id="349">349</th><td>		<em>char</em> name[<var>32</var>]; <i>/* 32 is max size of property name */</i></td></tr>
+<tr><th id="350">350</th><td></td></tr>
+<tr><th id="351">351</th><td>		p = strstr(prop-&gt;name, SUPPLY_SUFFIX);</td></tr>
+<tr><th id="352">352</th><td>		<b>if</b> (!p || p == prop-&gt;name)</td></tr>
+<tr><th id="353">353</th><td>			<b>continue</b>;</td></tr>
+<tr><th id="354">354</th><td></td></tr>
+<tr><th id="355">355</th><td>		strlcpy(name, prop-&gt;name,</td></tr>
+<tr><th id="356">356</th><td>			strlen(prop-&gt;name) - strlen(SUPPLY_SUFFIX) + <var>1</var>);</td></tr>
+<tr><th id="357">357</th><td>		regulator = devm_regulator_get_optional(&amp;pdev-&gt;dev, name);</td></tr>
+<tr><th id="358">358</th><td>		<b>if</b> (IS_ERR(regulator)) {</td></tr>
+<tr><th id="359">359</th><td>			<b>if</b> (PTR_ERR(regulator) == -EPROBE_DEFER)</td></tr>
+<tr><th id="360">360</th><td>				<b>return</b> -EPROBE_DEFER;</td></tr>
+<tr><th id="361">361</th><td>			dev_err(&amp;pdev-&gt;dev, <q>"regulator %s not found: %ld\n"</q>,</td></tr>
+<tr><th id="362">362</th><td>				name, PTR_ERR(regulator));</td></tr>
+<tr><th id="363">363</th><td>			<b>continue</b>;</td></tr>
+<tr><th id="364">364</th><td>		}</td></tr>
+<tr><th id="365">365</th><td>		par-&gt;regulators[i++] = regulator;</td></tr>
+<tr><th id="366">366</th><td>	}</td></tr>
+<tr><th id="367">367</th><td>	par-&gt;regulator_count = i;</td></tr>
+<tr><th id="368">368</th><td></td></tr>
+<tr><th id="369">369</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="370">370</th><td>}</td></tr>
+<tr><th id="371">371</th><td></td></tr>
+<tr><th id="372">372</th><td><em>static</em> <em>void</em> simplefb_regulators_enable(<b>struct</b> simplefb_par *par,</td></tr>
+<tr><th id="373">373</th><td>				       <b>struct</b> platform_device *pdev)</td></tr>
+<tr><th id="374">374</th><td>{</td></tr>
+<tr><th id="375">375</th><td>	<em>int</em> i, ret;</td></tr>
+<tr><th id="376">376</th><td></td></tr>
+<tr><th id="377">377</th><td>	<i>/* Enable all the regulators */</i></td></tr>
+<tr><th id="378">378</th><td>	<b>for</b> (i = <var>0</var>; i &lt; par-&gt;regulator_count; i++) {</td></tr>
+<tr><th id="379">379</th><td>		ret = regulator_enable(par-&gt;regulators[i]);</td></tr>
+<tr><th id="380">380</th><td>		<b>if</b> (ret) {</td></tr>
+<tr><th id="381">381</th><td>			dev_err(&amp;pdev-&gt;dev,</td></tr>
+<tr><th id="382">382</th><td>				<q>"failed to enable regulator %d: %d\n"</q>,</td></tr>
+<tr><th id="383">383</th><td>				i, ret);</td></tr>
+<tr><th id="384">384</th><td>			devm_regulator_put(par-&gt;regulators[i]);</td></tr>
+<tr><th id="385">385</th><td>			par-&gt;regulators[i] = NULL;</td></tr>
+<tr><th id="386">386</th><td>		}</td></tr>
+<tr><th id="387">387</th><td>	}</td></tr>
+<tr><th id="388">388</th><td>	par-&gt;regulators_enabled = true;</td></tr>
+<tr><th id="389">389</th><td>}</td></tr>
+<tr><th id="390">390</th><td></td></tr>
+<tr><th id="391">391</th><td><em>static</em> <em>void</em> simplefb_regulators_destroy(<b>struct</b> simplefb_par *par)</td></tr>
+<tr><th id="392">392</th><td>{</td></tr>
+<tr><th id="393">393</th><td>	<em>int</em> i;</td></tr>
+<tr><th id="394">394</th><td></td></tr>
+<tr><th id="395">395</th><td>	<b>if</b> (!par-&gt;regulators || !par-&gt;regulators_enabled)</td></tr>
+<tr><th id="396">396</th><td>		<b>return</b>;</td></tr>
+<tr><th id="397">397</th><td></td></tr>
+<tr><th id="398">398</th><td>	<b>for</b> (i = <var>0</var>; i &lt; par-&gt;regulator_count; i++)</td></tr>
+<tr><th id="399">399</th><td>		<b>if</b> (par-&gt;regulators[i])</td></tr>
+<tr><th id="400">400</th><td>			regulator_disable(par-&gt;regulators[i]);</td></tr>
+<tr><th id="401">401</th><td>}</td></tr>
+<tr><th id="402">402</th><td><u>#<span data-ppcond="297">else</span></u></td></tr>
+<tr><th id="403">403</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="simplefb_regulators_get" title='simplefb_regulators_get' data-type='int simplefb_regulators_get(struct simplefb_par * par, struct platform_device * pdev)' data-ref="simplefb_regulators_get">simplefb_regulators_get</dfn>(<b>struct</b> <a class="type" href="#simplefb_par" title='simplefb_par' data-ref="simplefb_par">simplefb_par</a> *<dfn class="local col9 decl" id="39par" title='par' data-type='struct simplefb_par *' data-ref="39par">par</dfn>,</td></tr>
+<tr><th id="404">404</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/platform_device.h.html#platform_device" title='platform_device' data-ref="platform_device">platform_device</a> *<dfn class="local col0 decl" id="40pdev" title='pdev' data-type='struct platform_device *' data-ref="40pdev">pdev</dfn>) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="405">405</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="simplefb_regulators_enable" title='simplefb_regulators_enable' data-type='void simplefb_regulators_enable(struct simplefb_par * par, struct platform_device * pdev)' data-ref="simplefb_regulators_enable">simplefb_regulators_enable</dfn>(<b>struct</b> <a class="type" href="#simplefb_par" title='simplefb_par' data-ref="simplefb_par">simplefb_par</a> *<dfn class="local col1 decl" id="41par" title='par' data-type='struct simplefb_par *' data-ref="41par">par</dfn>,</td></tr>
+<tr><th id="406">406</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/platform_device.h.html#platform_device" title='platform_device' data-ref="platform_device">platform_device</a> *<dfn class="local col2 decl" id="42pdev" title='pdev' data-type='struct platform_device *' data-ref="42pdev">pdev</dfn>) { }</td></tr>
+<tr><th id="407">407</th><td><em>static</em> <em>void</em> <dfn class="tu decl def fn" id="simplefb_regulators_destroy" title='simplefb_regulators_destroy' data-type='void simplefb_regulators_destroy(struct simplefb_par * par)' data-ref="simplefb_regulators_destroy">simplefb_regulators_destroy</dfn>(<b>struct</b> <a class="type" href="#simplefb_par" title='simplefb_par' data-ref="simplefb_par">simplefb_par</a> *<dfn class="local col3 decl" id="43par" title='par' data-type='struct simplefb_par *' data-ref="43par">par</dfn>) { }</td></tr>
+<tr><th id="408">408</th><td><u>#<span data-ppcond="297">endif</span></u></td></tr>
+<tr><th id="409">409</th><td></td></tr>
+<tr><th id="410">410</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="simplefb_probe" title='simplefb_probe' data-type='int simplefb_probe(struct platform_device * pdev)' data-ref="simplefb_probe">simplefb_probe</dfn>(<b>struct</b> <a class="type" href="../../../include/linux/platform_device.h.html#platform_device" title='platform_device' data-ref="platform_device">platform_device</a> *<dfn class="local col4 decl" id="44pdev" title='pdev' data-type='struct platform_device *' data-ref="44pdev">pdev</dfn>)</td></tr>
+<tr><th id="411">411</th><td>{</td></tr>
+<tr><th id="412">412</th><td>	<em>int</em> <dfn class="local col5 decl" id="45ret" title='ret' data-type='int' data-ref="45ret">ret</dfn>;</td></tr>
+<tr><th id="413">413</th><td>	<b>struct</b> <a class="type" href="#simplefb_params" title='simplefb_params' data-ref="simplefb_params">simplefb_params</a> <dfn class="local col6 decl" id="46params" title='params' data-type='struct simplefb_params' data-ref="46params">params</dfn>;</td></tr>
+<tr><th id="414">414</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/fb.h.html#fb_info" title='fb_info' data-ref="fb_info">fb_info</a> *<dfn class="local col7 decl" id="47info" title='info' data-type='struct fb_info *' data-ref="47info">info</dfn>;</td></tr>
+<tr><th id="415">415</th><td>	<b>struct</b> <a class="type" href="#simplefb_par" title='simplefb_par' data-ref="simplefb_par">simplefb_par</a> *<dfn class="local col8 decl" id="48par" title='par' data-type='struct simplefb_par *' data-ref="48par">par</dfn>;</td></tr>
+<tr><th id="416">416</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/ioport.h.html#resource" title='resource' data-ref="resource">resource</a> *<dfn class="local col9 decl" id="49mem" title='mem' data-type='struct resource *' data-ref="49mem">mem</dfn>;</td></tr>
+<tr><th id="417">417</th><td></td></tr>
+<tr><th id="418">418</th><td>	<b>if</b> (<a class="ref fn" href="../../../include/linux/fb.h.html#fb_get_options" title='fb_get_options' data-ref="fb_get_options">fb_get_options</a>(<q>"simplefb"</q>, <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>))</td></tr>
+<tr><th id="419">419</th><td>		<b>return</b> -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#23" title="19" data-ref="_M/ENODEV">ENODEV</a>;</td></tr>
+<tr><th id="420">420</th><td></td></tr>
+<tr><th id="421">421</th><td>	<a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a> = -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#23" title="19" data-ref="_M/ENODEV">ENODEV</a>;</td></tr>
+<tr><th id="422">422</th><td>	<b>if</b> (<a class="ref fn" href="../../../include/linux/device.h.html#dev_get_platdata" title='dev_get_platdata' data-ref="dev_get_platdata">dev_get_platdata</a>(&amp;<a class="local col4 ref" href="#44pdev" title='pdev' data-ref="44pdev">pdev</a>-&gt;<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_device::dev" title='platform_device::dev' data-ref="platform_device::dev">dev</a>))</td></tr>
+<tr><th id="423">423</th><td>		<a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a> = <a class="tu ref fn" href="#simplefb_parse_pd" title='simplefb_parse_pd' data-use='c' data-ref="simplefb_parse_pd">simplefb_parse_pd</a>(<a class="local col4 ref" href="#44pdev" title='pdev' data-ref="44pdev">pdev</a>, &amp;<a class="local col6 ref" href="#46params" title='params' data-ref="46params">params</a>);</td></tr>
+<tr><th id="424">424</th><td>	<b>else</b> <b>if</b> (<a class="local col4 ref" href="#44pdev" title='pdev' data-ref="44pdev">pdev</a>-&gt;<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_device::dev" title='platform_device::dev' data-ref="platform_device::dev">dev</a>.<a class="ref field" href="../../../include/linux/device.h.html#device::of_node" title='device::of_node' data-ref="device::of_node">of_node</a>)</td></tr>
+<tr><th id="425">425</th><td>		<a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a> = <a class="tu ref fn" href="#simplefb_parse_dt" title='simplefb_parse_dt' data-use='c' data-ref="simplefb_parse_dt">simplefb_parse_dt</a>(<a class="local col4 ref" href="#44pdev" title='pdev' data-ref="44pdev">pdev</a>, &amp;<a class="local col6 ref" href="#46params" title='params' data-ref="46params">params</a>);</td></tr>
+<tr><th id="426">426</th><td></td></tr>
+<tr><th id="427">427</th><td>	<b>if</b> (<a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a>)</td></tr>
+<tr><th id="428">428</th><td>		<b>return</b> <a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a>;</td></tr>
+<tr><th id="429">429</th><td></td></tr>
+<tr><th id="430">430</th><td>	<a class="local col9 ref" href="#49mem" title='mem' data-ref="49mem">mem</a> = <a class="ref fn" href="../../../include/linux/platform_device.h.html#platform_get_resource" title='platform_get_resource' data-ref="platform_get_resource">platform_get_resource</a>(<a class="local col4 ref" href="#44pdev" title='pdev' data-ref="44pdev">pdev</a>, <a class="macro" href="../../../include/linux/ioport.h.html#38" title="0x00000200" data-ref="_M/IORESOURCE_MEM">IORESOURCE_MEM</a>, <var>0</var>);</td></tr>
+<tr><th id="431">431</th><td>	<b>if</b> (!<a class="local col9 ref" href="#49mem" title='mem' data-ref="49mem">mem</a>) {</td></tr>
+<tr><th id="432">432</th><td>		<a class="ref fn" href="../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(&amp;<a class="local col4 ref" href="#44pdev" title='pdev' data-ref="44pdev">pdev</a>-&gt;<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_device::dev" title='platform_device::dev' data-ref="platform_device::dev">dev</a>, <q>"No memory resource\n"</q>);</td></tr>
+<tr><th id="433">433</th><td>		<b>return</b> -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#26" title="22" data-ref="_M/EINVAL">EINVAL</a>;</td></tr>
+<tr><th id="434">434</th><td>	}</td></tr>
+<tr><th id="435">435</th><td></td></tr>
+<tr><th id="436">436</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a> = <a class="ref fn" href="../../../include/linux/fb.h.html#framebuffer_alloc" title='framebuffer_alloc' data-ref="framebuffer_alloc">framebuffer_alloc</a>(<b>sizeof</b>(<b>struct</b> <a class="type" href="#simplefb_par" title='simplefb_par' data-ref="simplefb_par">simplefb_par</a>), &amp;<a class="local col4 ref" href="#44pdev" title='pdev' data-ref="44pdev">pdev</a>-&gt;<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_device::dev" title='platform_device::dev' data-ref="platform_device::dev">dev</a>);</td></tr>
+<tr><th id="437">437</th><td>	<b>if</b> (!<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>)</td></tr>
+<tr><th id="438">438</th><td>		<b>return</b> -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#16" title="12" data-ref="_M/ENOMEM">ENOMEM</a>;</td></tr>
+<tr><th id="439">439</th><td>	<a class="ref fn" href="../../../include/linux/platform_device.h.html#platform_set_drvdata" title='platform_set_drvdata' data-ref="platform_set_drvdata">platform_set_drvdata</a>(<a class="local col4 ref" href="#44pdev" title='pdev' data-ref="44pdev">pdev</a>, <a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>);</td></tr>
+<tr><th id="440">440</th><td></td></tr>
+<tr><th id="441">441</th><td>	<a class="local col8 ref" href="#48par" title='par' data-ref="48par">par</a> = <a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::par" title='fb_info::par' data-ref="fb_info::par">par</a>;</td></tr>
+<tr><th id="442">442</th><td></td></tr>
+<tr><th id="443">443</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::fix" title='fb_info::fix' data-ref="fb_info::fix">fix</a> = <a class="tu ref" href="#simplefb_fix" title='simplefb_fix' data-use='r' data-ref="simplefb_fix">simplefb_fix</a>;</td></tr>
+<tr><th id="444">444</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::fix" title='fb_info::fix' data-ref="fb_info::fix">fix</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_fix_screeninfo::smem_start" title='fb_fix_screeninfo::smem_start' data-ref="fb_fix_screeninfo::smem_start">smem_start</a> = <a class="local col9 ref" href="#49mem" title='mem' data-ref="49mem">mem</a>-&gt;<a class="ref field" href="../../../include/linux/ioport.h.html#resource::start" title='resource::start' data-ref="resource::start">start</a>;</td></tr>
+<tr><th id="445">445</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::fix" title='fb_info::fix' data-ref="fb_info::fix">fix</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_fix_screeninfo::smem_len" title='fb_fix_screeninfo::smem_len' data-ref="fb_fix_screeninfo::smem_len">smem_len</a> = <a class="ref fn" href="../../../include/linux/ioport.h.html#resource_size" title='resource_size' data-ref="resource_size">resource_size</a>(<a class="local col9 ref" href="#49mem" title='mem' data-ref="49mem">mem</a>);</td></tr>
+<tr><th id="446">446</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::fix" title='fb_info::fix' data-ref="fb_info::fix">fix</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_fix_screeninfo::line_length" title='fb_fix_screeninfo::line_length' data-ref="fb_fix_screeninfo::line_length">line_length</a> = <a class="local col6 ref" href="#46params" title='params' data-ref="46params">params</a>.<a class="tu ref field" href="#simplefb_params::stride" title='simplefb_params::stride' data-use='r' data-ref="simplefb_params::stride">stride</a>;</td></tr>
+<tr><th id="447">447</th><td></td></tr>
+<tr><th id="448">448</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a> = <a class="tu ref" href="#simplefb_var" title='simplefb_var' data-use='r' data-ref="simplefb_var">simplefb_var</a>;</td></tr>
+<tr><th id="449">449</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::xres" title='fb_var_screeninfo::xres' data-ref="fb_var_screeninfo::xres">xres</a> = <a class="local col6 ref" href="#46params" title='params' data-ref="46params">params</a>.<a class="tu ref field" href="#simplefb_params::width" title='simplefb_params::width' data-use='r' data-ref="simplefb_params::width">width</a>;</td></tr>
+<tr><th id="450">450</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::yres" title='fb_var_screeninfo::yres' data-ref="fb_var_screeninfo::yres">yres</a> = <a class="local col6 ref" href="#46params" title='params' data-ref="46params">params</a>.<a class="tu ref field" href="#simplefb_params::height" title='simplefb_params::height' data-use='r' data-ref="simplefb_params::height">height</a>;</td></tr>
+<tr><th id="451">451</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::xres_virtual" title='fb_var_screeninfo::xres_virtual' data-ref="fb_var_screeninfo::xres_virtual">xres_virtual</a> = <a class="local col6 ref" href="#46params" title='params' data-ref="46params">params</a>.<a class="tu ref field" href="#simplefb_params::width" title='simplefb_params::width' data-use='r' data-ref="simplefb_params::width">width</a>;</td></tr>
+<tr><th id="452">452</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::yres_virtual" title='fb_var_screeninfo::yres_virtual' data-ref="fb_var_screeninfo::yres_virtual">yres_virtual</a> = <a class="local col6 ref" href="#46params" title='params' data-ref="46params">params</a>.<a class="tu ref field" href="#simplefb_params::height" title='simplefb_params::height' data-use='r' data-ref="simplefb_params::height">height</a>;</td></tr>
+<tr><th id="453">453</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::bits_per_pixel" title='fb_var_screeninfo::bits_per_pixel' data-ref="fb_var_screeninfo::bits_per_pixel">bits_per_pixel</a> = <a class="local col6 ref" href="#46params" title='params' data-ref="46params">params</a>.<a class="tu ref field" href="#simplefb_params::format" title='simplefb_params::format' data-use='r' data-ref="simplefb_params::format">format</a>-&gt;<a class="ref field" href="../../../include/linux/platform_data/simplefb.h.html#simplefb_format::bits_per_pixel" title='simplefb_format::bits_per_pixel' data-ref="simplefb_format::bits_per_pixel">bits_per_pixel</a>;</td></tr>
+<tr><th id="454">454</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::red" title='fb_var_screeninfo::red' data-ref="fb_var_screeninfo::red">red</a> = <a class="local col6 ref" href="#46params" title='params' data-ref="46params">params</a>.<a class="tu ref field" href="#simplefb_params::format" title='simplefb_params::format' data-use='r' data-ref="simplefb_params::format">format</a>-&gt;<a class="ref field" href="../../../include/linux/platform_data/simplefb.h.html#simplefb_format::red" title='simplefb_format::red' data-ref="simplefb_format::red">red</a>;</td></tr>
+<tr><th id="455">455</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::green" title='fb_var_screeninfo::green' data-ref="fb_var_screeninfo::green">green</a> = <a class="local col6 ref" href="#46params" title='params' data-ref="46params">params</a>.<a class="tu ref field" href="#simplefb_params::format" title='simplefb_params::format' data-use='r' data-ref="simplefb_params::format">format</a>-&gt;<a class="ref field" href="../../../include/linux/platform_data/simplefb.h.html#simplefb_format::green" title='simplefb_format::green' data-ref="simplefb_format::green">green</a>;</td></tr>
+<tr><th id="456">456</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::blue" title='fb_var_screeninfo::blue' data-ref="fb_var_screeninfo::blue">blue</a> = <a class="local col6 ref" href="#46params" title='params' data-ref="46params">params</a>.<a class="tu ref field" href="#simplefb_params::format" title='simplefb_params::format' data-use='r' data-ref="simplefb_params::format">format</a>-&gt;<a class="ref field" href="../../../include/linux/platform_data/simplefb.h.html#simplefb_format::blue" title='simplefb_format::blue' data-ref="simplefb_format::blue">blue</a>;</td></tr>
+<tr><th id="457">457</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::transp" title='fb_var_screeninfo::transp' data-ref="fb_var_screeninfo::transp">transp</a> = <a class="local col6 ref" href="#46params" title='params' data-ref="46params">params</a>.<a class="tu ref field" href="#simplefb_params::format" title='simplefb_params::format' data-use='r' data-ref="simplefb_params::format">format</a>-&gt;<a class="ref field" href="../../../include/linux/platform_data/simplefb.h.html#simplefb_format::transp" title='simplefb_format::transp' data-ref="simplefb_format::transp">transp</a>;</td></tr>
+<tr><th id="458">458</th><td></td></tr>
+<tr><th id="459">459</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::apertures" title='fb_info::apertures' data-ref="fb_info::apertures">apertures</a> = <a class="ref fn" href="../../../include/linux/fb.h.html#alloc_apertures" title='alloc_apertures' data-ref="alloc_apertures">alloc_apertures</a>(<var>1</var>);</td></tr>
+<tr><th id="460">460</th><td>	<b>if</b> (!<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::apertures" title='fb_info::apertures' data-ref="fb_info::apertures">apertures</a>) {</td></tr>
+<tr><th id="461">461</th><td>		<a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a> = -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#16" title="12" data-ref="_M/ENOMEM">ENOMEM</a>;</td></tr>
+<tr><th id="462">462</th><td>		<b>goto</b> <a class="lbl" href="#50error_fb_release" data-ref="50error_fb_release">error_fb_release</a>;</td></tr>
+<tr><th id="463">463</th><td>	}</td></tr>
+<tr><th id="464">464</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::apertures" title='fb_info::apertures' data-ref="fb_info::apertures">apertures</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#apertures_struct::ranges" title='apertures_struct::ranges' data-ref="apertures_struct::ranges">ranges</a>[<var>0</var>].<a class="ref field" href="../../../include/linux/fb.h.html#aperture::base" title='aperture::base' data-ref="aperture::base">base</a> = <a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::fix" title='fb_info::fix' data-ref="fb_info::fix">fix</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_fix_screeninfo::smem_start" title='fb_fix_screeninfo::smem_start' data-ref="fb_fix_screeninfo::smem_start">smem_start</a>;</td></tr>
+<tr><th id="465">465</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::apertures" title='fb_info::apertures' data-ref="fb_info::apertures">apertures</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#apertures_struct::ranges" title='apertures_struct::ranges' data-ref="apertures_struct::ranges">ranges</a>[<var>0</var>].<a class="ref field" href="../../../include/linux/fb.h.html#aperture::size" title='aperture::size' data-ref="aperture::size">size</a> = <a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::fix" title='fb_info::fix' data-ref="fb_info::fix">fix</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_fix_screeninfo::smem_len" title='fb_fix_screeninfo::smem_len' data-ref="fb_fix_screeninfo::smem_len">smem_len</a>;</td></tr>
+<tr><th id="466">466</th><td></td></tr>
+<tr><th id="467">467</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::fbops" title='fb_info::fbops' data-ref="fb_info::fbops">fbops</a> = &amp;<a class="tu ref" href="#simplefb_ops" title='simplefb_ops' data-use='a' data-ref="simplefb_ops">simplefb_ops</a>;</td></tr>
+<tr><th id="468">468</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::flags" title='fb_info::flags' data-ref="fb_info::flags">flags</a> = <a class="macro" href="../../../include/linux/fb.h.html#404" title="0" data-ref="_M/FBINFO_DEFAULT">FBINFO_DEFAULT</a> | <a class="macro" href="../../../include/linux/fb.h.html#448" title="0x80000" data-ref="_M/FBINFO_MISC_FIRMWARE">FBINFO_MISC_FIRMWARE</a>;</td></tr>
+<tr><th id="469">469</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::(anonymous)::screen_base" title='fb_info::(anonymous union)::screen_base' data-ref="fb_info::(anonymous)::screen_base">screen_base</a> = <a class="macro" href="../../../arch/x86/include/asm/io.h.html#366" title="ioremap_wc" data-ref="_M/ioremap_wc">ioremap_wc</a>(<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::fix" title='fb_info::fix' data-ref="fb_info::fix">fix</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_fix_screeninfo::smem_start" title='fb_fix_screeninfo::smem_start' data-ref="fb_fix_screeninfo::smem_start">smem_start</a>,</td></tr>
+<tr><th id="470">470</th><td>				       <a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::fix" title='fb_info::fix' data-ref="fb_info::fix">fix</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_fix_screeninfo::smem_len" title='fb_fix_screeninfo::smem_len' data-ref="fb_fix_screeninfo::smem_len">smem_len</a>);</td></tr>
+<tr><th id="471">471</th><td>	<b>if</b> (!<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::(anonymous)::screen_base" title='fb_info::(anonymous union)::screen_base' data-ref="fb_info::(anonymous)::screen_base">screen_base</a>) {</td></tr>
+<tr><th id="472">472</th><td>		<a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a> = -<a class="macro" href="../../../include/uapi/asm-generic/errno-base.h.html#16" title="12" data-ref="_M/ENOMEM">ENOMEM</a>;</td></tr>
+<tr><th id="473">473</th><td>		<b>goto</b> <a class="lbl" href="#50error_fb_release" data-ref="50error_fb_release">error_fb_release</a>;</td></tr>
+<tr><th id="474">474</th><td>	}</td></tr>
+<tr><th id="475">475</th><td>	<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::pseudo_palette" title='fb_info::pseudo_palette' data-ref="fb_info::pseudo_palette">pseudo_palette</a> = <a class="local col8 ref" href="#48par" title='par' data-ref="48par">par</a>-&gt;<a class="tu ref field" href="#simplefb_par::palette" title='simplefb_par::palette' data-use='r' data-ref="simplefb_par::palette">palette</a>;</td></tr>
+<tr><th id="476">476</th><td></td></tr>
+<tr><th id="477">477</th><td>	<a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a> = <a class="tu ref fn" href="#simplefb_clocks_get" title='simplefb_clocks_get' data-use='c' data-ref="simplefb_clocks_get">simplefb_clocks_get</a>(<a class="local col8 ref" href="#48par" title='par' data-ref="48par">par</a>, <a class="local col4 ref" href="#44pdev" title='pdev' data-ref="44pdev">pdev</a>);</td></tr>
+<tr><th id="478">478</th><td>	<b>if</b> (<a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="479">479</th><td>		<b>goto</b> <a class="lbl" href="#51error_unmap" data-ref="51error_unmap">error_unmap</a>;</td></tr>
+<tr><th id="480">480</th><td></td></tr>
+<tr><th id="481">481</th><td>	<a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a> = <a class="tu ref fn" href="#simplefb_regulators_get" title='simplefb_regulators_get' data-use='c' data-ref="simplefb_regulators_get">simplefb_regulators_get</a>(<a class="local col8 ref" href="#48par" title='par' data-ref="48par">par</a>, <a class="local col4 ref" href="#44pdev" title='pdev' data-ref="44pdev">pdev</a>);</td></tr>
+<tr><th id="482">482</th><td>	<b>if</b> (<a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="483">483</th><td>		<b>goto</b> <a class="lbl" href="#52error_clocks" data-ref="52error_clocks">error_clocks</a>;</td></tr>
+<tr><th id="484">484</th><td></td></tr>
+<tr><th id="485">485</th><td>	<a class="tu ref fn" href="#simplefb_clocks_enable" title='simplefb_clocks_enable' data-use='c' data-ref="simplefb_clocks_enable">simplefb_clocks_enable</a>(<a class="local col8 ref" href="#48par" title='par' data-ref="48par">par</a>, <a class="local col4 ref" href="#44pdev" title='pdev' data-ref="44pdev">pdev</a>);</td></tr>
+<tr><th id="486">486</th><td>	<a class="tu ref fn" href="#simplefb_regulators_enable" title='simplefb_regulators_enable' data-use='c' data-ref="simplefb_regulators_enable">simplefb_regulators_enable</a>(<a class="local col8 ref" href="#48par" title='par' data-ref="48par">par</a>, <a class="local col4 ref" href="#44pdev" title='pdev' data-ref="44pdev">pdev</a>);</td></tr>
+<tr><th id="487">487</th><td></td></tr>
+<tr><th id="488">488</th><td>	<a class="macro" href="../../../include/linux/device.h.html#1395" title="_dev_info(&amp;pdev-&gt;dev, &quot;framebuffer at 0x%lx, 0x%x bytes, mapped to 0x%p\n&quot;, info-&gt;fix.smem_start, info-&gt;fix.smem_len, info-&gt;screen_base)" data-ref="_M/dev_info">dev_info</a>(&amp;<a class="local col4 ref" href="#44pdev" title='pdev' data-ref="44pdev">pdev</a>-&gt;<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_device::dev" title='platform_device::dev' data-ref="platform_device::dev">dev</a>, <q>"framebuffer at 0x%lx, 0x%x bytes, mapped to 0x%p\n"</q>,</td></tr>
+<tr><th id="489">489</th><td>			     <a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::fix" title='fb_info::fix' data-ref="fb_info::fix">fix</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_fix_screeninfo::smem_start" title='fb_fix_screeninfo::smem_start' data-ref="fb_fix_screeninfo::smem_start">smem_start</a>, <a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::fix" title='fb_info::fix' data-ref="fb_info::fix">fix</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_fix_screeninfo::smem_len" title='fb_fix_screeninfo::smem_len' data-ref="fb_fix_screeninfo::smem_len">smem_len</a>,</td></tr>
+<tr><th id="490">490</th><td>			     <a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::(anonymous)::screen_base" title='fb_info::(anonymous union)::screen_base' data-ref="fb_info::(anonymous)::screen_base">screen_base</a>);</td></tr>
+<tr><th id="491">491</th><td>	<a class="macro" href="../../../include/linux/device.h.html#1395" title="_dev_info(&amp;pdev-&gt;dev, &quot;format=%s, mode=%dx%dx%d, linelength=%d\n&quot;, params.format-&gt;name, info-&gt;var.xres, info-&gt;var.yres, info-&gt;var.bits_per_pixel, info-&gt;fix.line_length)" data-ref="_M/dev_info">dev_info</a>(&amp;<a class="local col4 ref" href="#44pdev" title='pdev' data-ref="44pdev">pdev</a>-&gt;<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_device::dev" title='platform_device::dev' data-ref="platform_device::dev">dev</a>, <q>"format=%s, mode=%dx%dx%d, linelength=%d\n"</q>,</td></tr>
+<tr><th id="492">492</th><td>			     <a class="local col6 ref" href="#46params" title='params' data-ref="46params">params</a>.<a class="tu ref field" href="#simplefb_params::format" title='simplefb_params::format' data-use='r' data-ref="simplefb_params::format">format</a>-&gt;<a class="ref field" href="../../../include/linux/platform_data/simplefb.h.html#simplefb_format::name" title='simplefb_format::name' data-ref="simplefb_format::name">name</a>,</td></tr>
+<tr><th id="493">493</th><td>			     <a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::xres" title='fb_var_screeninfo::xres' data-ref="fb_var_screeninfo::xres">xres</a>, <a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::yres" title='fb_var_screeninfo::yres' data-ref="fb_var_screeninfo::yres">yres</a>,</td></tr>
+<tr><th id="494">494</th><td>			     <a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::var" title='fb_info::var' data-ref="fb_info::var">var</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_var_screeninfo::bits_per_pixel" title='fb_var_screeninfo::bits_per_pixel' data-ref="fb_var_screeninfo::bits_per_pixel">bits_per_pixel</a>, <a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::fix" title='fb_info::fix' data-ref="fb_info::fix">fix</a>.<a class="ref field" href="../../../include/uapi/linux/fb.h.html#fb_fix_screeninfo::line_length" title='fb_fix_screeninfo::line_length' data-ref="fb_fix_screeninfo::line_length">line_length</a>);</td></tr>
+<tr><th id="495">495</th><td></td></tr>
+<tr><th id="496">496</th><td>	<a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a> = <a class="ref fn" href="../../../include/linux/fb.h.html#register_framebuffer" title='register_framebuffer' data-ref="register_framebuffer">register_framebuffer</a>(<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>);</td></tr>
+<tr><th id="497">497</th><td>	<b>if</b> (<a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="498">498</th><td>		<a class="ref fn" href="../../../include/linux/device.h.html#dev_err" title='dev_err' data-ref="dev_err">dev_err</a>(&amp;<a class="local col4 ref" href="#44pdev" title='pdev' data-ref="44pdev">pdev</a>-&gt;<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_device::dev" title='platform_device::dev' data-ref="platform_device::dev">dev</a>, <q>"Unable to register simplefb: %d\n"</q>, <a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a>);</td></tr>
+<tr><th id="499">499</th><td>		<b>goto</b> <a class="lbl" href="#53error_regulators" data-ref="53error_regulators">error_regulators</a>;</td></tr>
+<tr><th id="500">500</th><td>	}</td></tr>
+<tr><th id="501">501</th><td></td></tr>
+<tr><th id="502">502</th><td>	<a class="macro" href="../../../include/linux/device.h.html#1395" title="_dev_info(&amp;pdev-&gt;dev, &quot;fb%d: simplefb registered!\n&quot;, info-&gt;node)" data-ref="_M/dev_info">dev_info</a>(&amp;<a class="local col4 ref" href="#44pdev" title='pdev' data-ref="44pdev">pdev</a>-&gt;<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_device::dev" title='platform_device::dev' data-ref="platform_device::dev">dev</a>, <q>"fb%d: simplefb registered!\n"</q>, <a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::node" title='fb_info::node' data-ref="fb_info::node">node</a>);</td></tr>
+<tr><th id="503">503</th><td></td></tr>
+<tr><th id="504">504</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="505">505</th><td></td></tr>
+<tr><th id="506">506</th><td><dfn class="lbl" id="53error_regulators" data-ref="53error_regulators">error_regulators</dfn>:</td></tr>
+<tr><th id="507">507</th><td>	<a class="tu ref fn" href="#simplefb_regulators_destroy" title='simplefb_regulators_destroy' data-use='c' data-ref="simplefb_regulators_destroy">simplefb_regulators_destroy</a>(<a class="local col8 ref" href="#48par" title='par' data-ref="48par">par</a>);</td></tr>
+<tr><th id="508">508</th><td><dfn class="lbl" id="52error_clocks" data-ref="52error_clocks">error_clocks</dfn>:</td></tr>
+<tr><th id="509">509</th><td>	<a class="tu ref fn" href="#simplefb_clocks_destroy" title='simplefb_clocks_destroy' data-use='c' data-ref="simplefb_clocks_destroy">simplefb_clocks_destroy</a>(<a class="local col8 ref" href="#48par" title='par' data-ref="48par">par</a>);</td></tr>
+<tr><th id="510">510</th><td><dfn class="lbl" id="51error_unmap" data-ref="51error_unmap">error_unmap</dfn>:</td></tr>
+<tr><th id="511">511</th><td>	<a class="macro" href="../../../arch/x86/include/asm/io.h.html#217" title="iounmap" data-ref="_M/iounmap">iounmap</a>(<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>-&gt;<a class="ref field" href="../../../include/linux/fb.h.html#fb_info::(anonymous)::screen_base" title='fb_info::(anonymous union)::screen_base' data-ref="fb_info::(anonymous)::screen_base">screen_base</a>);</td></tr>
+<tr><th id="512">512</th><td><dfn class="lbl" id="50error_fb_release" data-ref="50error_fb_release">error_fb_release</dfn>:</td></tr>
+<tr><th id="513">513</th><td>	<a class="ref fn" href="../../../include/linux/fb.h.html#framebuffer_release" title='framebuffer_release' data-ref="framebuffer_release">framebuffer_release</a>(<a class="local col7 ref" href="#47info" title='info' data-ref="47info">info</a>);</td></tr>
+<tr><th id="514">514</th><td>	<b>return</b> <a class="local col5 ref" href="#45ret" title='ret' data-ref="45ret">ret</a>;</td></tr>
+<tr><th id="515">515</th><td>}</td></tr>
+<tr><th id="516">516</th><td></td></tr>
+<tr><th id="517">517</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="simplefb_remove" title='simplefb_remove' data-type='int simplefb_remove(struct platform_device * pdev)' data-ref="simplefb_remove">simplefb_remove</dfn>(<b>struct</b> <a class="type" href="../../../include/linux/platform_device.h.html#platform_device" title='platform_device' data-ref="platform_device">platform_device</a> *<dfn class="local col4 decl" id="54pdev" title='pdev' data-type='struct platform_device *' data-ref="54pdev">pdev</dfn>)</td></tr>
+<tr><th id="518">518</th><td>{</td></tr>
+<tr><th id="519">519</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/fb.h.html#fb_info" title='fb_info' data-ref="fb_info">fb_info</a> *<dfn class="local col5 decl" id="55info" title='info' data-type='struct fb_info *' data-ref="55info">info</dfn> = <a class="ref fn" href="../../../include/linux/platform_device.h.html#platform_get_drvdata" title='platform_get_drvdata' data-ref="platform_get_drvdata">platform_get_drvdata</a>(<a class="local col4 ref" href="#54pdev" title='pdev' data-ref="54pdev">pdev</a>);</td></tr>
+<tr><th id="520">520</th><td></td></tr>
+<tr><th id="521">521</th><td>	<a class="ref fn" href="../../../include/linux/fb.h.html#unregister_framebuffer" title='unregister_framebuffer' data-ref="unregister_framebuffer">unregister_framebuffer</a>(<a class="local col5 ref" href="#55info" title='info' data-ref="55info">info</a>);</td></tr>
+<tr><th id="522">522</th><td>	<a class="ref fn" href="../../../include/linux/fb.h.html#framebuffer_release" title='framebuffer_release' data-ref="framebuffer_release">framebuffer_release</a>(<a class="local col5 ref" href="#55info" title='info' data-ref="55info">info</a>);</td></tr>
+<tr><th id="523">523</th><td></td></tr>
+<tr><th id="524">524</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="525">525</th><td>}</td></tr>
+<tr><th id="526">526</th><td></td></tr>
+<tr><th id="527">527</th><td><em>static</em> <em>const</em> <b>struct</b> <a class="type" href="../../../include/linux/mod_devicetable.h.html#of_device_id" title='of_device_id' data-ref="of_device_id">of_device_id</a> <dfn class="tu decl def" id="simplefb_of_match" title='simplefb_of_match' data-type='const struct of_device_id [2]' data-ref="simplefb_of_match">simplefb_of_match</dfn>[] = {</td></tr>
+<tr><th id="528">528</th><td>	{ .<a class="ref field" href="../../../include/linux/mod_devicetable.h.html#of_device_id::compatible" title='of_device_id::compatible' data-ref="of_device_id::compatible">compatible</a> = <q>"simple-framebuffer"</q>, },</td></tr>
+<tr><th id="529">529</th><td>	{ },</td></tr>
+<tr><th id="530">530</th><td>};</td></tr>
+<tr><th id="531">531</th><td><a class="macro" href="../../../include/linux/module.h.html#216" title="" data-ref="_M/MODULE_DEVICE_TABLE">MODULE_DEVICE_TABLE</a>(of, simplefb_of_match);</td></tr>
+<tr><th id="532">532</th><td></td></tr>
+<tr><th id="533">533</th><td><em>static</em> <b>struct</b> <a class="type" href="../../../include/linux/platform_device.h.html#platform_driver" title='platform_driver' data-ref="platform_driver">platform_driver</a> <dfn class="tu decl def" id="simplefb_driver" title='simplefb_driver' data-type='struct platform_driver' data-ref="simplefb_driver">simplefb_driver</dfn> = {</td></tr>
+<tr><th id="534">534</th><td>	.<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_driver::driver" title='platform_driver::driver' data-ref="platform_driver::driver">driver</a> = {</td></tr>
+<tr><th id="535">535</th><td>		.<a class="ref field" href="../../../include/linux/device.h.html#device_driver::name" title='device_driver::name' data-ref="device_driver::name">name</a> = <q>"simple-framebuffer"</q>,</td></tr>
+<tr><th id="536">536</th><td>		.<a class="ref field" href="../../../include/linux/device.h.html#device_driver::of_match_table" title='device_driver::of_match_table' data-ref="device_driver::of_match_table">of_match_table</a> = <a class="tu ref" href="#simplefb_of_match" title='simplefb_of_match' data-ref="simplefb_of_match">simplefb_of_match</a>,</td></tr>
+<tr><th id="537">537</th><td>	},</td></tr>
+<tr><th id="538">538</th><td>	.<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_driver::probe" title='platform_driver::probe' data-ref="platform_driver::probe">probe</a> = <a class="tu ref fn" href="#simplefb_probe" title='simplefb_probe' data-ref="simplefb_probe">simplefb_probe</a>,</td></tr>
+<tr><th id="539">539</th><td>	.<a class="ref field" href="../../../include/linux/platform_device.h.html#platform_driver::remove" title='platform_driver::remove' data-ref="platform_driver::remove">remove</a> = <a class="tu ref fn" href="#simplefb_remove" title='simplefb_remove' data-ref="simplefb_remove">simplefb_remove</a>,</td></tr>
+<tr><th id="540">540</th><td>};</td></tr>
+<tr><th id="541">541</th><td></td></tr>
+<tr><th id="542">542</th><td><em>static</em> <em>int</em> <a class="macro" href="../../../include/linux/init.h.html#50" title="__attribute__ ((__section__(&quot;.init.text&quot;)))" data-ref="_M/__init">__init</a> <dfn class="tu decl def fn" id="simplefb_init" title='simplefb_init' data-type='int simplefb_init()' data-ref="simplefb_init">simplefb_init</dfn>(<em>void</em>)</td></tr>
+<tr><th id="543">543</th><td>{</td></tr>
+<tr><th id="544">544</th><td>	<em>int</em> <dfn class="local col6 decl" id="56ret" title='ret' data-type='int' data-ref="56ret">ret</dfn>;</td></tr>
+<tr><th id="545">545</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/of.h.html#device_node" title='device_node' data-ref="device_node">device_node</a> *<dfn class="local col7 decl" id="57np" title='np' data-type='struct device_node *' data-ref="57np">np</dfn>;</td></tr>
+<tr><th id="546">546</th><td></td></tr>
+<tr><th id="547">547</th><td>	<a class="local col6 ref" href="#56ret" title='ret' data-ref="56ret">ret</a> = <a class="macro" href="../../../include/linux/platform_device.h.html#197" title="__platform_driver_register(&amp;simplefb_driver, ((struct module *)0))" data-ref="_M/platform_driver_register">platform_driver_register</a>(&amp;<a class="tu ref" href="#simplefb_driver" title='simplefb_driver' data-use='a' data-ref="simplefb_driver">simplefb_driver</a>);</td></tr>
+<tr><th id="548">548</th><td>	<b>if</b> (<a class="local col6 ref" href="#56ret" title='ret' data-ref="56ret">ret</a>)</td></tr>
+<tr><th id="549">549</th><td>		<b>return</b> <a class="local col6 ref" href="#56ret" title='ret' data-ref="56ret">ret</a>;</td></tr>
+<tr><th id="550">550</th><td></td></tr>
+<tr><th id="551">551</th><td>	<b>if</b> (<a class="macro" href="../../../include/linux/kconfig.h.html#71" title="0" data-ref="_M/IS_ENABLED">IS_ENABLED</a>(CONFIG_OF_ADDRESS) &amp;&amp; <a class="ref" href="../../../include/linux/of.h.html#of_chosen" title='of_chosen' data-ref="of_chosen">of_chosen</a>) {</td></tr>
+<tr><th id="552">552</th><td>		<a class="macro" href="../../../include/linux/of.h.html#1188" title="for (np = of_get_next_child(of_chosen, ((void *)0)); np != ((void *)0); np = of_get_next_child(of_chosen, np))" data-ref="_M/for_each_child_of_node">for_each_child_of_node</a>(<a class="ref" href="../../../include/linux/of.h.html#of_chosen" title='of_chosen' data-ref="of_chosen">of_chosen</a>, <a class="local col7 ref" href="#57np" title='np' data-ref="57np">np</a>) {</td></tr>
+<tr><th id="553">553</th><td>			<b>if</b> (<a class="ref fn" href="../../../include/linux/of.h.html#of_device_is_compatible" title='of_device_is_compatible' data-ref="of_device_is_compatible">of_device_is_compatible</a>(<a class="local col7 ref" href="#57np" title='np' data-ref="57np">np</a>, <q>"simple-framebuffer"</q>))</td></tr>
+<tr><th id="554">554</th><td>				<a class="ref fn" href="../../../include/linux/of_platform.h.html#of_platform_device_create" title='of_platform_device_create' data-ref="of_platform_device_create">of_platform_device_create</a>(<a class="local col7 ref" href="#57np" title='np' data-ref="57np">np</a>, <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>, <a class="macro" href="../../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>);</td></tr>
+<tr><th id="555">555</th><td>		}</td></tr>
+<tr><th id="556">556</th><td>	}</td></tr>
+<tr><th id="557">557</th><td></td></tr>
+<tr><th id="558">558</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="559">559</th><td>}</td></tr>
+<tr><th id="560">560</th><td></td></tr>
+<tr><th id="561">561</th><td><a class="macro" href="../../../include/linux/init.h.html#198" title="static initcall_t __initcall_simplefb_init5 __attribute__((__used__)) __attribute__((__section__(&quot;.initcall&quot; &quot;5&quot; &quot;.init&quot;))) = simplefb_init;" data-ref="_M/fs_initcall">fs_initcall</a>(<a class="tu ref fn" href="#simplefb_init" title='simplefb_init' data-ref="simplefb_init">simplefb_init</a>);</td></tr>
+<tr><th id="562">562</th><td></td></tr>
+<tr><th id="563">563</th><td><a class="macro" href="../../../include/linux/module.h.html#205" title="struct __UNIQUE_ID_author29 {}" data-ref="_M/MODULE_AUTHOR">MODULE_AUTHOR</a>(<q>"Stephen Warren &lt;swarren@wwwdotorg.org&gt;"</q>);</td></tr>
+<tr><th id="564">564</th><td><a class="macro" href="../../../include/linux/module.h.html#208" title="struct __UNIQUE_ID_description31 {}" data-ref="_M/MODULE_DESCRIPTION">MODULE_DESCRIPTION</a>(<q>"Simple framebuffer driver"</q>);</td></tr>
+<tr><th id="565">565</th><td><a class="macro" href="../../../include/linux/module.h.html#199" title="struct __UNIQUE_ID_license33 {}" data-ref="_M/MODULE_LICENSE">MODULE_LICENSE</a>(<q>"GPL v2"</q>);</td></tr>
+<tr><th id="566">566</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

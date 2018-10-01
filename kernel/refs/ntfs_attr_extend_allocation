@@ -1,0 +1,63 @@
+<dec f='linux-4.18.y/fs/ntfs/attrib.h' l='108' type='s64 ntfs_attr_extend_allocation(ntfs_inode * ni, s64 new_alloc_size, const s64 new_data_size, const s64 data_start)'/>
+<def f='linux-4.18.y/fs/ntfs/attrib.c' l='1904' ll='2471' type='s64 ntfs_attr_extend_allocation(ntfs_inode * ni, s64 new_alloc_size, const s64 new_data_size, const s64 data_start)'/>
+<doc f='linux-4.18.y/fs/ntfs/attrib.c' l='1845'>/**
+ * ntfs_attr_extend_allocation - extend the allocated space of an attribute
+ * @ni:			ntfs inode of the attribute whose allocation to extend
+ * @new_alloc_size:	new size in bytes to which to extend the allocation to
+ * @new_data_size:	new size in bytes to which to extend the data to
+ * @data_start:		beginning of region which is required to be non-sparse
+ *
+ * Extend the allocated space of an attribute described by the ntfs inode @ni
+ * to @new_alloc_size bytes.  If @data_start is -1, the whole extension may be
+ * implemented as a hole in the file (as long as both the volume and the ntfs
+ * inode @ni have sparse support enabled).  If @data_start is &gt;= 0, then the
+ * region between the old allocated size and @data_start - 1 may be made sparse
+ * but the regions between @data_start and @new_alloc_size must be backed by
+ * actual clusters.
+ *
+ * If @new_data_size is -1, it is ignored.  If it is &gt;= 0, then the data size
+ * of the attribute is extended to @new_data_size.  Note that the i_size of the
+ * vfs inode is not updated.  Only the data size in the base attribute record
+ * is updated.  The caller has to update i_size separately if this is required.
+ * WARNING: It is a BUG() for @new_data_size to be smaller than the old data
+ * size as well as for @new_data_size to be greater than @new_alloc_size.
+ *
+ * For resident attributes this involves resizing the attribute record and if
+ * necessary moving it and/or other attributes into extent mft records and/or
+ * converting the attribute to a non-resident attribute which in turn involves
+ * extending the allocation of a non-resident attribute as described below.
+ *
+ * For non-resident attributes this involves allocating clusters in the data
+ * zone on the volume (except for regions that are being made sparse) and
+ * extending the run list to describe the allocated clusters as well as
+ * updating the mapping pairs array of the attribute.  This in turn involves
+ * resizing the attribute record and if necessary moving it and/or other
+ * attributes into extent mft records and/or splitting the attribute record
+ * into multiple extent attribute records.
+ *
+ * Also, the attribute list attribute is updated if present and in some of the
+ * above cases (the ones where extent mft records/attributes come into play),
+ * an attribute list attribute is created if not already present.
+ *
+ * Return the new allocated size on success and -errno on error.  In the case
+ * that an error is encountered but a partial extension at least up to
+ * @data_start (if present) is possible, the allocation is partially extended
+ * and this is returned.  This means the caller must check the returned size to
+ * determine if the extension was partial.  If @data_start is -1 then partial
+ * allocations are not performed.
+ *
+ * WARNING: Do not call ntfs_attr_extend_allocation() for $MFT/$DATA.
+ *
+ * Locking: This function takes the runlist lock of @ni for writing as well as
+ * locking the mft record of the base ntfs inode.  These locks are maintained
+ * throughout execution of the function.  These locks are required so that the
+ * attribute can be resized safely and so that it can for example be converted
+ * from resident to non-resident safely.
+ *
+ * TODO: At present attribute list attribute handling is not implemented.
+ *
+ * TODO: At present it is not safe to call this function for anything other
+ * than the $DATA attribute(s) of an uncompressed and unencrypted file.
+ */</doc>
+<use f='linux-4.18.y/fs/ntfs/file.c' l='412' u='c' c='ntfs_prepare_file_for_write'/>
+<use f='linux-4.18.y/fs/ntfs/inode.c' l='2682' u='c' c='ntfs_truncate'/>

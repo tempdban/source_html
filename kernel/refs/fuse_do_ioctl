@@ -1,0 +1,55 @@
+<dec f='linux-4.18.y/fs/fuse/fuse_i.h' l='961' type='long fuse_do_ioctl(struct file * file, unsigned int cmd, unsigned long arg, unsigned int flags)'/>
+<use f='linux-4.18.y/fs/fuse/cuse.c' l='163' u='c' c='cuse_file_ioctl'/>
+<use f='linux-4.18.y/fs/fuse/cuse.c' l='176' u='c' c='cuse_file_compat_ioctl'/>
+<def f='linux-4.18.y/fs/fuse/file.c' l='2484' ll='2674' type='long fuse_do_ioctl(struct file * file, unsigned int cmd, unsigned long arg, unsigned int flags)'/>
+<dec f='linux-4.18.y/fs/fuse/file.c' l='2675' type='long fuse_do_ioctl(struct file * , unsigned int , unsigned long , unsigned int )'/>
+<use f='linux-4.18.y/fs/fuse/file.c' l='2675' c='fuse_do_ioctl'/>
+<use f='linux-4.18.y/fs/fuse/file.c' l='2675' u='a'/>
+<use f='linux-4.18.y/fs/fuse/file.c' l='2675' u='a'/>
+<use f='linux-4.18.y/fs/fuse/file.c' l='2689' u='c' c='fuse_ioctl_common'/>
+<doc f='linux-4.18.y/fs/fuse/file.c' l='2438'>/*
+ * For ioctls, there is no generic way to determine how much memory
+ * needs to be read and/or written.  Furthermore, ioctls are allowed
+ * to dereference the passed pointer, so the parameter requires deep
+ * copying but FUSE has no idea whatsoever about what to copy in or
+ * out.
+ *
+ * This is solved by allowing FUSE server to retry ioctl with
+ * necessary in/out iovecs.  Let&apos;s assume the ioctl implementation
+ * needs to read in the following structure.
+ *
+ * struct a {
+ *	char	*buf;
+ *	size_t	buflen;
+ * }
+ *
+ * On the first callout to FUSE server, inarg-&gt;in_size and
+ * inarg-&gt;out_size will be NULL; then, the server completes the ioctl
+ * with FUSE_IOCTL_RETRY set in out-&gt;flags, out-&gt;in_iovs set to 1 and
+ * the actual iov array to
+ *
+ * { { .iov_base = inarg.arg,	.iov_len = sizeof(struct a) } }
+ *
+ * which tells FUSE to copy in the requested area and retry the ioctl.
+ * On the second round, the server has access to the structure and
+ * from that it can tell what to look for next, so on the invocation,
+ * it sets FUSE_IOCTL_RETRY, out-&gt;in_iovs to 2 and iov array to
+ *
+ * { { .iov_base = inarg.arg,	.iov_len = sizeof(struct a)	},
+ *   { .iov_base = a.buf,	.iov_len = a.buflen		} }
+ *
+ * FUSE will copy both struct a and the pointed buffer from the
+ * process doing the ioctl and retry ioctl with both struct a and the
+ * buffer.
+ *
+ * This time, FUSE server has everything it needs and completes ioctl
+ * without FUSE_IOCTL_RETRY which finishes the ioctl call.
+ *
+ * Copying data out works the same way.
+ *
+ * Note that if FUSE_IOCTL_UNRESTRICTED is clear, the kernel
+ * automatically initializes in and out iovs by decoding @cmd with
+ * _IOC_* macros and the server is not allowed to request RETRY.  This
+ * limits ioctl data transfers to well-formed ioctls and is the forced
+ * behavior for all FUSE servers.
+ */</doc>

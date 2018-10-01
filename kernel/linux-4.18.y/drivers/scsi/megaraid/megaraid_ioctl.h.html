@@ -1,0 +1,325 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>megaraid_ioctl.h source code [linux-4.18.y/drivers/scsi/megaraid/megaraid_ioctl.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="mcontroller,mm_dmapool,mraid_hba_info,mraid_mmadp,uioc,uioc_timeout "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/drivers/scsi/megaraid/megaraid_ioctl.h'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>linux-4.18.y</a>/<a href='../..'>drivers</a>/<a href='..'>scsi</a>/<a href='./'>megaraid</a>/<a href='megaraid_ioctl.h.html'>megaraid_ioctl.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> *</i></td></tr>
+<tr><th id="3">3</th><td><i> *			Linux MegaRAID device driver</i></td></tr>
+<tr><th id="4">4</th><td><i> *</i></td></tr>
+<tr><th id="5">5</th><td><i> * Copyright (c) 2003-2004  LSI Logic Corporation.</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> *	   This program is free software; you can redistribute it and/or</i></td></tr>
+<tr><th id="8">8</th><td><i> *	   modify it under the terms of the GNU General Public License</i></td></tr>
+<tr><th id="9">9</th><td><i> *	   as published by the Free Software Foundation; either version</i></td></tr>
+<tr><th id="10">10</th><td><i> *	   2 of the License, or (at your option) any later version.</i></td></tr>
+<tr><th id="11">11</th><td><i> *</i></td></tr>
+<tr><th id="12">12</th><td><i> * FILE		: megaraid_ioctl.h</i></td></tr>
+<tr><th id="13">13</th><td><i> *</i></td></tr>
+<tr><th id="14">14</th><td><i> * Definitions to interface with user level applications</i></td></tr>
+<tr><th id="15">15</th><td><i> */</i></td></tr>
+<tr><th id="16">16</th><td></td></tr>
+<tr><th id="17">17</th><td><u>#<span data-ppcond="17">ifndef</span> <span class="macro" data-ref="_M/_MEGARAID_IOCTL_H_">_MEGARAID_IOCTL_H_</span></u></td></tr>
+<tr><th id="18">18</th><td><u>#define <dfn class="macro" id="_M/_MEGARAID_IOCTL_H_" data-ref="_M/_MEGARAID_IOCTL_H_">_MEGARAID_IOCTL_H_</dfn></u></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../include/linux/types.h.html">&lt;linux/types.h&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../include/linux/semaphore.h.html">&lt;linux/semaphore.h&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../include/linux/timer.h.html">&lt;linux/timer.h&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="mbox_defs.h.html">"mbox_defs.h"</a></u></td></tr>
+<tr><th id="25">25</th><td></td></tr>
+<tr><th id="26">26</th><td><i>/*</i></td></tr>
+<tr><th id="27">27</th><td><i> * console messages debug levels</i></td></tr>
+<tr><th id="28">28</th><td><i> */</i></td></tr>
+<tr><th id="29">29</th><td><u>#define	<dfn class="macro" id="_M/CL_ANN" data-ref="_M/CL_ANN">CL_ANN</dfn>		0	/* print unconditionally, announcements */</u></td></tr>
+<tr><th id="30">30</th><td><u>#define <dfn class="macro" id="_M/CL_DLEVEL1" data-ref="_M/CL_DLEVEL1">CL_DLEVEL1</dfn>	1	/* debug level 1, informative */</u></td></tr>
+<tr><th id="31">31</th><td><u>#define <dfn class="macro" id="_M/CL_DLEVEL2" data-ref="_M/CL_DLEVEL2">CL_DLEVEL2</dfn>	2	/* debug level 2, verbose */</u></td></tr>
+<tr><th id="32">32</th><td><u>#define <dfn class="macro" id="_M/CL_DLEVEL3" data-ref="_M/CL_DLEVEL3">CL_DLEVEL3</dfn>	3	/* debug level 3, very verbose */</u></td></tr>
+<tr><th id="33">33</th><td></td></tr>
+<tr><th id="34">34</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="35">35</th><td><i class="doc"> * con_log() - console log routine</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc"> *<span class="command"> @level</span>		: indicates the severity of the message.</i></td></tr>
+<tr><th id="37">37</th><td><i class="doc"> *<span class="command"> @fmt</span>			: format string</i></td></tr>
+<tr><th id="38">38</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="39">39</th><td><i class="doc"> * con_log displays the error messages on the console based on the current</i></td></tr>
+<tr><th id="40">40</th><td><i class="doc"> * debug level. Also it attaches the appropriate kernel severity level with</i></td></tr>
+<tr><th id="41">41</th><td><i class="doc"> * the message.</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="43">43</th><td><u>#define	<dfn class="macro" id="_M/con_log" data-ref="_M/con_log">con_log</dfn>(level, fmt) if (LSI_DBGLVL &gt;= level) printk fmt;</u></td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td><i>/*</i></td></tr>
+<tr><th id="46">46</th><td><i> * Definitions &amp; Declarations needed to use common management module</i></td></tr>
+<tr><th id="47">47</th><td><i> */</i></td></tr>
+<tr><th id="48">48</th><td></td></tr>
+<tr><th id="49">49</th><td><u>#define <dfn class="macro" id="_M/MEGAIOC_MAGIC" data-ref="_M/MEGAIOC_MAGIC">MEGAIOC_MAGIC</dfn>		'm'</u></td></tr>
+<tr><th id="50">50</th><td><u>#define <dfn class="macro" id="_M/MEGAIOCCMD" data-ref="_M/MEGAIOCCMD">MEGAIOCCMD</dfn>		_IOWR(MEGAIOC_MAGIC, 0, mimd_t)</u></td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td><u>#define <dfn class="macro" id="_M/MEGAIOC_QNADAP" data-ref="_M/MEGAIOC_QNADAP">MEGAIOC_QNADAP</dfn>		'm'	/* Query # of adapters		*/</u></td></tr>
+<tr><th id="53">53</th><td><u>#define <dfn class="macro" id="_M/MEGAIOC_QDRVRVER" data-ref="_M/MEGAIOC_QDRVRVER">MEGAIOC_QDRVRVER</dfn>	'e'	/* Query driver version		*/</u></td></tr>
+<tr><th id="54">54</th><td><u>#define <dfn class="macro" id="_M/MEGAIOC_QADAPINFO" data-ref="_M/MEGAIOC_QADAPINFO">MEGAIOC_QADAPINFO</dfn>   	'g'	/* Query adapter information	*/</u></td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td><u>#define <dfn class="macro" id="_M/USCSICMD" data-ref="_M/USCSICMD">USCSICMD</dfn>		0x80</u></td></tr>
+<tr><th id="57">57</th><td><u>#define <dfn class="macro" id="_M/UIOC_RD" data-ref="_M/UIOC_RD">UIOC_RD</dfn>			0x00001</u></td></tr>
+<tr><th id="58">58</th><td><u>#define <dfn class="macro" id="_M/UIOC_WR" data-ref="_M/UIOC_WR">UIOC_WR</dfn>			0x00002</u></td></tr>
+<tr><th id="59">59</th><td></td></tr>
+<tr><th id="60">60</th><td><u>#define <dfn class="macro" id="_M/MBOX_CMD" data-ref="_M/MBOX_CMD">MBOX_CMD</dfn>		0x00000</u></td></tr>
+<tr><th id="61">61</th><td><u>#define <dfn class="macro" id="_M/GET_DRIVER_VER" data-ref="_M/GET_DRIVER_VER">GET_DRIVER_VER</dfn>		0x10000</u></td></tr>
+<tr><th id="62">62</th><td><u>#define <dfn class="macro" id="_M/GET_N_ADAP" data-ref="_M/GET_N_ADAP">GET_N_ADAP</dfn>		0x20000</u></td></tr>
+<tr><th id="63">63</th><td><u>#define <dfn class="macro" id="_M/GET_ADAP_INFO" data-ref="_M/GET_ADAP_INFO">GET_ADAP_INFO</dfn>		0x30000</u></td></tr>
+<tr><th id="64">64</th><td><u>#define <dfn class="macro" id="_M/GET_CAP" data-ref="_M/GET_CAP">GET_CAP</dfn>			0x40000</u></td></tr>
+<tr><th id="65">65</th><td><u>#define <dfn class="macro" id="_M/GET_STATS" data-ref="_M/GET_STATS">GET_STATS</dfn>		0x50000</u></td></tr>
+<tr><th id="66">66</th><td><u>#define <dfn class="macro" id="_M/GET_IOCTL_VERSION" data-ref="_M/GET_IOCTL_VERSION">GET_IOCTL_VERSION</dfn>	0x01</u></td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td><u>#define <dfn class="macro" id="_M/EXT_IOCTL_SIGN_SZ" data-ref="_M/EXT_IOCTL_SIGN_SZ">EXT_IOCTL_SIGN_SZ</dfn>	16</u></td></tr>
+<tr><th id="69">69</th><td><u>#define <dfn class="macro" id="_M/EXT_IOCTL_SIGN" data-ref="_M/EXT_IOCTL_SIGN">EXT_IOCTL_SIGN</dfn>		"$$_EXTD_IOCTL_$$"</u></td></tr>
+<tr><th id="70">70</th><td></td></tr>
+<tr><th id="71">71</th><td><u>#define	<dfn class="macro" id="_M/MBOX_LEGACY" data-ref="_M/MBOX_LEGACY">MBOX_LEGACY</dfn>		0x00		/* ioctl has legacy mbox*/</u></td></tr>
+<tr><th id="72">72</th><td><u>#define <dfn class="macro" id="_M/MBOX_HPE" data-ref="_M/MBOX_HPE">MBOX_HPE</dfn>		0x01		/* ioctl has hpe mbox	*/</u></td></tr>
+<tr><th id="73">73</th><td></td></tr>
+<tr><th id="74">74</th><td><u>#define	<dfn class="macro" id="_M/APPTYPE_MIMD" data-ref="_M/APPTYPE_MIMD">APPTYPE_MIMD</dfn>		0x00		/* old existing apps	*/</u></td></tr>
+<tr><th id="75">75</th><td><u>#define <dfn class="macro" id="_M/APPTYPE_UIOC" data-ref="_M/APPTYPE_UIOC">APPTYPE_UIOC</dfn>		0x01		/* new apps using uioc	*/</u></td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td><u>#define <dfn class="macro" id="_M/IOCTL_ISSUE" data-ref="_M/IOCTL_ISSUE">IOCTL_ISSUE</dfn>		0x00000001	/* Issue ioctl		*/</u></td></tr>
+<tr><th id="78">78</th><td><u>#define <dfn class="macro" id="_M/IOCTL_ABORT" data-ref="_M/IOCTL_ABORT">IOCTL_ABORT</dfn>		0x00000002	/* Abort previous ioctl	*/</u></td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td><u>#define <dfn class="macro" id="_M/DRVRTYPE_MBOX" data-ref="_M/DRVRTYPE_MBOX">DRVRTYPE_MBOX</dfn>		0x00000001	/* regular mbox driver	*/</u></td></tr>
+<tr><th id="81">81</th><td><u>#define <dfn class="macro" id="_M/DRVRTYPE_HPE" data-ref="_M/DRVRTYPE_HPE">DRVRTYPE_HPE</dfn>		0x00000002	/* new hpe driver	*/</u></td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td><u>#define <dfn class="macro" id="_M/MKADAP" data-ref="_M/MKADAP">MKADAP</dfn>(adapno)	(MEGAIOC_MAGIC &lt;&lt; 8 | (adapno) )</u></td></tr>
+<tr><th id="84">84</th><td><u>#define <dfn class="macro" id="_M/GETADAP" data-ref="_M/GETADAP">GETADAP</dfn>(mkadap)	((mkadap) ^ MEGAIOC_MAGIC &lt;&lt; 8)</u></td></tr>
+<tr><th id="85">85</th><td></td></tr>
+<tr><th id="86">86</th><td><u>#define <dfn class="macro" id="_M/MAX_DMA_POOLS" data-ref="_M/MAX_DMA_POOLS">MAX_DMA_POOLS</dfn>		5		/* 4k, 8k, 16k, 32k, 64k*/</u></td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td></td></tr>
+<tr><th id="89">89</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc"> * struct uioc_t - the common ioctl packet structure</i></td></tr>
+<tr><th id="91">91</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="92">92</th><td><i class="doc"> *<span class="command"> @signature</span>	: Must be "$$_EXTD_IOCTL_$$"</i></td></tr>
+<tr><th id="93">93</th><td><i class="doc"> *<span class="command"> @mb</span><span class="arg">_type</span>	: Type of the mail box (MB_LEGACY or MB_HPE)</i></td></tr>
+<tr><th id="94">94</th><td><i class="doc"> *<span class="command"> @app</span>_type	: Type of the issuing application (existing or new)</i></td></tr>
+<tr><th id="95">95</th><td><i class="doc"> *<span class="command"> @opcode</span>	: Opcode of the command</i></td></tr>
+<tr><th id="96">96</th><td><i class="doc"> *<span class="command"> @adapno</span>	: Adapter number</i></td></tr>
+<tr><th id="97">97</th><td><i class="doc"> *<span class="command"> @cmdbuf</span>	: Pointer to buffer - can point to mbox or plain data buffer</i></td></tr>
+<tr><th id="98">98</th><td><i class="doc"> *<span class="command"> @xferlen</span>	: xferlen for DCMD and non mailbox commands</i></td></tr>
+<tr><th id="99">99</th><td><i class="doc"> * <span class="command">@data</span>_dir	: Direction of the data transfer</i></td></tr>
+<tr><th id="100">100</th><td><i class="doc"> *<span class="command"> @status</span>	: Status from the driver</i></td></tr>
+<tr><th id="101">101</th><td><i class="doc"> *<span class="command"> @reserved</span>	: reserved bytes for future expansion</i></td></tr>
+<tr><th id="102">102</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="103">103</th><td><i class="doc"> *<span class="command"> @user</span>_data	: user data transfer address is saved in this</i></td></tr>
+<tr><th id="104">104</th><td><i class="doc"> *<span class="command"> @user</span>_data_len: length of the data buffer sent by user app</i></td></tr>
+<tr><th id="105">105</th><td><i class="doc"> *<span class="command"> @user</span>_pthru	: user passthru address is saves in this (null if DCMD)</i></td></tr>
+<tr><th id="106">106</th><td><i class="doc"> *<span class="command"> @pthru32</span>	: kernel address passthru (allocated per kioc)</i></td></tr>
+<tr><th id="107">107</th><td><i class="doc"> *<span class="command"> @pthru32</span>_h	: physicall address of<span class="command"> @pthru32</span></i></td></tr>
+<tr><th id="108">108</th><td><i class="doc"> *<span class="command"> @list</span>	: for kioc free pool list maintenance</i></td></tr>
+<tr><th id="109">109</th><td><i class="doc"> *<span class="command"> @done</span>	: call back routine for llds to call when kioc is completed</i></td></tr>
+<tr><th id="110">110</th><td><i class="doc"> * <span class="command">@buf</span>_vaddr	: dma pool buffer attached to kioc for data transfer</i></td></tr>
+<tr><th id="111">111</th><td><i class="doc"> * <span class="command">@buf</span>_paddr	: physical address of the dma pool buffer</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc"> *<span class="command"> @pool</span>_index	: index of the dma pool that <span class="command">@buf</span>_vaddr is taken from</i></td></tr>
+<tr><th id="113">113</th><td><i class="doc"> *<span class="command"> @free</span>_buf	: indicates if buffer needs to be freed after kioc completes</i></td></tr>
+<tr><th id="114">114</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="115">115</th><td><i class="doc"> * Note		: All LSI drivers understand only this packet. Any other</i></td></tr>
+<tr><th id="116">116</th><td><i class="doc"> *		: format sent by applications would be converted to this.</i></td></tr>
+<tr><th id="117">117</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="118">118</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="uioc" title='uioc' data-ref="uioc"><a class="type" href="#uioc" title='uioc' data-ref="uioc">uioc</a></dfn> {</td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td><i>/* User Apps: */</i></td></tr>
+<tr><th id="121">121</th><td></td></tr>
+<tr><th id="122">122</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint8_t" title='uint8_t' data-type='u8' data-ref="uint8_t">uint8_t</a>			<dfn class="decl field" id="uioc::signature" title='uioc::signature' data-ref="uioc::signature">signature</dfn>[<a class="macro" href="#68" title="16" data-ref="_M/EXT_IOCTL_SIGN_SZ">EXT_IOCTL_SIGN_SZ</a>];</td></tr>
+<tr><th id="123">123</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint16_t" title='uint16_t' data-type='u16' data-ref="uint16_t">uint16_t</a>		<dfn class="decl field" id="uioc::mb_type" title='uioc::mb_type' data-ref="uioc::mb_type">mb_type</dfn>;</td></tr>
+<tr><th id="124">124</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint16_t" title='uint16_t' data-type='u16' data-ref="uint16_t">uint16_t</a>		<dfn class="decl field" id="uioc::app_type" title='uioc::app_type' data-ref="uioc::app_type">app_type</dfn>;</td></tr>
+<tr><th id="125">125</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a>		<dfn class="decl field" id="uioc::opcode" title='uioc::opcode' data-ref="uioc::opcode">opcode</dfn>;</td></tr>
+<tr><th id="126">126</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a>		<dfn class="decl field" id="uioc::adapno" title='uioc::adapno' data-ref="uioc::adapno">adapno</dfn>;</td></tr>
+<tr><th id="127">127</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint64_t" title='uint64_t' data-type='u64' data-ref="uint64_t">uint64_t</a>		<dfn class="decl field" id="uioc::cmdbuf" title='uioc::cmdbuf' data-ref="uioc::cmdbuf">cmdbuf</dfn>;</td></tr>
+<tr><th id="128">128</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a>		<dfn class="decl field" id="uioc::xferlen" title='uioc::xferlen' data-ref="uioc::xferlen">xferlen</dfn>;</td></tr>
+<tr><th id="129">129</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a>		<dfn class="decl field" id="uioc::data_dir" title='uioc::data_dir' data-ref="uioc::data_dir">data_dir</dfn>;</td></tr>
+<tr><th id="130">130</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#int32_t" title='int32_t' data-type='s32' data-ref="int32_t">int32_t</a>			<dfn class="decl field" id="uioc::status" title='uioc::status' data-ref="uioc::status">status</dfn>;</td></tr>
+<tr><th id="131">131</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint8_t" title='uint8_t' data-type='u8' data-ref="uint8_t">uint8_t</a>			<dfn class="decl field" id="uioc::reserved" title='uioc::reserved' data-ref="uioc::reserved">reserved</dfn>[<var>128</var>];</td></tr>
+<tr><th id="132">132</th><td></td></tr>
+<tr><th id="133">133</th><td><i>/* Driver Data: */</i></td></tr>
+<tr><th id="134">134</th><td>	<em>void</em> <a class="macro" href="../../../include/linux/compiler_types.h.html#29" title="" data-ref="_M/__user">__user</a> *		<dfn class="decl field" id="uioc::user_data" title='uioc::user_data' data-ref="uioc::user_data">user_data</dfn>;</td></tr>
+<tr><th id="135">135</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a>		<dfn class="decl field" id="uioc::user_data_len" title='uioc::user_data_len' data-ref="uioc::user_data_len">user_data_len</dfn>;</td></tr>
+<tr><th id="136">136</th><td></td></tr>
+<tr><th id="137">137</th><td>	<i>/* 64bit alignment */</i></td></tr>
+<tr><th id="138">138</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a>                <dfn class="decl field" id="uioc::pad_for_64bit_align" title='uioc::pad_for_64bit_align' data-ref="uioc::pad_for_64bit_align">pad_for_64bit_align</dfn>;</td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td>	<a class="typedef" href="mbox_defs.h.html#mraid_passthru_t" title='mraid_passthru_t' data-type='struct mraid_passthru_t' data-ref="mraid_passthru_t">mraid_passthru_t</a>	<a class="macro" href="../../../include/linux/compiler_types.h.html#29" title="" data-ref="_M/__user">__user</a> *<dfn class="decl field" id="uioc::user_pthru" title='uioc::user_pthru' data-ref="uioc::user_pthru">user_pthru</dfn>;</td></tr>
+<tr><th id="141">141</th><td></td></tr>
+<tr><th id="142">142</th><td>	<a class="typedef" href="mbox_defs.h.html#mraid_passthru_t" title='mraid_passthru_t' data-type='struct mraid_passthru_t' data-ref="mraid_passthru_t">mraid_passthru_t</a>	*<dfn class="decl field" id="uioc::pthru32" title='uioc::pthru32' data-ref="uioc::pthru32">pthru32</dfn>;</td></tr>
+<tr><th id="143">143</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#dma_addr_t" title='dma_addr_t' data-type='u64' data-ref="dma_addr_t">dma_addr_t</a>		<dfn class="decl field" id="uioc::pthru32_h" title='uioc::pthru32_h' data-ref="uioc::pthru32_h">pthru32_h</dfn>;</td></tr>
+<tr><th id="144">144</th><td></td></tr>
+<tr><th id="145">145</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a>	<dfn class="decl field" id="uioc::list" title='uioc::list' data-ref="uioc::list">list</dfn>;</td></tr>
+<tr><th id="146">146</th><td>	<em>void</em>			(*<dfn class="decl field" id="uioc::done" title='uioc::done' data-ref="uioc::done">done</dfn>)(<b>struct</b> <a class="type" href="#uioc" title='uioc' data-ref="uioc">uioc</a>*);</td></tr>
+<tr><th id="147">147</th><td></td></tr>
+<tr><th id="148">148</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#caddr_t" title='caddr_t' data-type='__kernel_caddr_t' data-ref="caddr_t">caddr_t</a>			<dfn class="decl field" id="uioc::buf_vaddr" title='uioc::buf_vaddr' data-ref="uioc::buf_vaddr">buf_vaddr</dfn>;</td></tr>
+<tr><th id="149">149</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#dma_addr_t" title='dma_addr_t' data-type='u64' data-ref="dma_addr_t">dma_addr_t</a>		<dfn class="decl field" id="uioc::buf_paddr" title='uioc::buf_paddr' data-ref="uioc::buf_paddr">buf_paddr</dfn>;</td></tr>
+<tr><th id="150">150</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#int8_t" title='int8_t' data-type='s8' data-ref="int8_t">int8_t</a>			<dfn class="decl field" id="uioc::pool_index" title='uioc::pool_index' data-ref="uioc::pool_index">pool_index</dfn>;</td></tr>
+<tr><th id="151">151</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint8_t" title='uint8_t' data-type='u8' data-ref="uint8_t">uint8_t</a>			<dfn class="decl field" id="uioc::free_buf" title='uioc::free_buf' data-ref="uioc::free_buf">free_buf</dfn>;</td></tr>
+<tr><th id="152">152</th><td></td></tr>
+<tr><th id="153">153</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint8_t" title='uint8_t' data-type='u8' data-ref="uint8_t">uint8_t</a>			<dfn class="decl field" id="uioc::timedout" title='uioc::timedout' data-ref="uioc::timedout">timedout</dfn>;</td></tr>
+<tr><th id="154">154</th><td></td></tr>
+<tr><th id="155">155</th><td>} <b>__attribute__</b> ((aligned(<var>1024</var>),packed)) <dfn class="typedef" id="uioc_t" title='uioc_t' data-type='struct uioc' data-ref="uioc_t">uioc_t</dfn>;</td></tr>
+<tr><th id="156">156</th><td></td></tr>
+<tr><th id="157">157</th><td><i>/* For on-stack uioc timers. */</i></td></tr>
+<tr><th id="158">158</th><td><b>struct</b> <dfn class="type def" id="uioc_timeout" title='uioc_timeout' data-ref="uioc_timeout">uioc_timeout</dfn> {</td></tr>
+<tr><th id="159">159</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/timer.h.html#timer_list" title='timer_list' data-ref="timer_list">timer_list</a> <dfn class="decl field" id="uioc_timeout::timer" title='uioc_timeout::timer' data-ref="uioc_timeout::timer">timer</dfn>;</td></tr>
+<tr><th id="160">160</th><td>	<a class="typedef" href="#uioc_t" title='uioc_t' data-type='struct uioc' data-ref="uioc_t">uioc_t</a>		  *<dfn class="decl field" id="uioc_timeout::uioc" title='uioc_timeout::uioc' data-ref="uioc_timeout::uioc">uioc</dfn>;</td></tr>
+<tr><th id="161">161</th><td>};</td></tr>
+<tr><th id="162">162</th><td></td></tr>
+<tr><th id="163">163</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc"> * struct mraid_hba_info - information about the controller</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="166">166</th><td><i class="doc"> *<span class="command"> @pci</span>_vendor_id		: PCI vendor id</i></td></tr>
+<tr><th id="167">167</th><td><i class="doc"> *<span class="command"> @pci</span>_device_id		: PCI device id</i></td></tr>
+<tr><th id="168">168</th><td><i class="doc"> *<span class="command"> @subsystem</span>_vendor_id		: PCI subsystem vendor id</i></td></tr>
+<tr><th id="169">169</th><td><i class="doc"> *<span class="command"> @subsystem</span>_device_id		: PCI subsystem device id</i></td></tr>
+<tr><th id="170">170</th><td><i class="doc"> *<span class="command"> @baseport</span>			: base port of hba memory</i></td></tr>
+<tr><th id="171">171</th><td><i class="doc"> *<span class="command"> @pci</span>_bus			: PCI bus</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc"> *<span class="command"> @pci</span>_dev_fn			: PCI device/function values</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc"> *<span class="command"> @irq</span>				: interrupt vector for the device</i></td></tr>
+<tr><th id="174">174</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc"> * Extended information of 256 bytes about the controller. Align on the single</i></td></tr>
+<tr><th id="176">176</th><td><i class="doc"> * byte boundary so that 32-bit applications can be run on 64-bit platform</i></td></tr>
+<tr><th id="177">177</th><td><i class="doc"> * drivers withoug re-compilation.</i></td></tr>
+<tr><th id="178">178</th><td><i class="doc"> * NOTE: reduce the number of reserved bytes whenever new field are added, so</i></td></tr>
+<tr><th id="179">179</th><td><i class="doc"> * that total size of the structure remains 256 bytes.</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="181">181</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="mraid_hba_info" title='mraid_hba_info' data-ref="mraid_hba_info"><a class="type" href="#mraid_hba_info" title='mraid_hba_info' data-ref="mraid_hba_info">mraid_hba_info</a></dfn> {</td></tr>
+<tr><th id="182">182</th><td></td></tr>
+<tr><th id="183">183</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint16_t" title='uint16_t' data-type='u16' data-ref="uint16_t">uint16_t</a>	<dfn class="decl field" id="mraid_hba_info::pci_vendor_id" title='mraid_hba_info::pci_vendor_id' data-ref="mraid_hba_info::pci_vendor_id">pci_vendor_id</dfn>;</td></tr>
+<tr><th id="184">184</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint16_t" title='uint16_t' data-type='u16' data-ref="uint16_t">uint16_t</a>	<dfn class="decl field" id="mraid_hba_info::pci_device_id" title='mraid_hba_info::pci_device_id' data-ref="mraid_hba_info::pci_device_id">pci_device_id</dfn>;</td></tr>
+<tr><th id="185">185</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint16_t" title='uint16_t' data-type='u16' data-ref="uint16_t">uint16_t</a>	<dfn class="decl field" id="mraid_hba_info::subsys_vendor_id" title='mraid_hba_info::subsys_vendor_id' data-ref="mraid_hba_info::subsys_vendor_id">subsys_vendor_id</dfn>;</td></tr>
+<tr><th id="186">186</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint16_t" title='uint16_t' data-type='u16' data-ref="uint16_t">uint16_t</a>	<dfn class="decl field" id="mraid_hba_info::subsys_device_id" title='mraid_hba_info::subsys_device_id' data-ref="mraid_hba_info::subsys_device_id">subsys_device_id</dfn>;</td></tr>
+<tr><th id="187">187</th><td></td></tr>
+<tr><th id="188">188</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint64_t" title='uint64_t' data-type='u64' data-ref="uint64_t">uint64_t</a>	<dfn class="decl field" id="mraid_hba_info::baseport" title='mraid_hba_info::baseport' data-ref="mraid_hba_info::baseport">baseport</dfn>;</td></tr>
+<tr><th id="189">189</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint8_t" title='uint8_t' data-type='u8' data-ref="uint8_t">uint8_t</a>		<dfn class="decl field" id="mraid_hba_info::pci_bus" title='mraid_hba_info::pci_bus' data-ref="mraid_hba_info::pci_bus">pci_bus</dfn>;</td></tr>
+<tr><th id="190">190</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint8_t" title='uint8_t' data-type='u8' data-ref="uint8_t">uint8_t</a>		<dfn class="decl field" id="mraid_hba_info::pci_dev_fn" title='mraid_hba_info::pci_dev_fn' data-ref="mraid_hba_info::pci_dev_fn">pci_dev_fn</dfn>;</td></tr>
+<tr><th id="191">191</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint8_t" title='uint8_t' data-type='u8' data-ref="uint8_t">uint8_t</a>		<dfn class="decl field" id="mraid_hba_info::pci_slot" title='mraid_hba_info::pci_slot' data-ref="mraid_hba_info::pci_slot">pci_slot</dfn>;</td></tr>
+<tr><th id="192">192</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint8_t" title='uint8_t' data-type='u8' data-ref="uint8_t">uint8_t</a>		<dfn class="decl field" id="mraid_hba_info::irq" title='mraid_hba_info::irq' data-ref="mraid_hba_info::irq">irq</dfn>;</td></tr>
+<tr><th id="193">193</th><td></td></tr>
+<tr><th id="194">194</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a>	<dfn class="decl field" id="mraid_hba_info::unique_id" title='mraid_hba_info::unique_id' data-ref="mraid_hba_info::unique_id">unique_id</dfn>;</td></tr>
+<tr><th id="195">195</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a>	<dfn class="decl field" id="mraid_hba_info::host_no" title='mraid_hba_info::host_no' data-ref="mraid_hba_info::host_no">host_no</dfn>;</td></tr>
+<tr><th id="196">196</th><td></td></tr>
+<tr><th id="197">197</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint8_t" title='uint8_t' data-type='u8' data-ref="uint8_t">uint8_t</a>		<dfn class="decl field" id="mraid_hba_info::num_ldrv" title='mraid_hba_info::num_ldrv' data-ref="mraid_hba_info::num_ldrv">num_ldrv</dfn>;</td></tr>
+<tr><th id="198">198</th><td>} <b>__attribute__</b> ((aligned(<var>256</var>), packed)) <dfn class="typedef" id="mraid_hba_info_t" title='mraid_hba_info_t' data-type='struct mraid_hba_info' data-ref="mraid_hba_info_t">mraid_hba_info_t</dfn>;</td></tr>
+<tr><th id="199">199</th><td></td></tr>
+<tr><th id="200">200</th><td></td></tr>
+<tr><th id="201">201</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="202">202</th><td><i class="doc"> * mcontroller	: adapter info structure for old mimd_t apps</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="204">204</th><td><i class="doc"> *<span class="command"> @base</span>	: base address</i></td></tr>
+<tr><th id="205">205</th><td><i class="doc"> *<span class="command"> @irq</span>		: irq number</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc"> *<span class="command"> @numldrv</span>	: number of logical drives</i></td></tr>
+<tr><th id="207">207</th><td><i class="doc"> *<span class="command"> @pcibus</span>	: pci bus</i></td></tr>
+<tr><th id="208">208</th><td><i class="doc"> *<span class="command"> @pcidev</span>	: pci device</i></td></tr>
+<tr><th id="209">209</th><td><i class="doc"> *<span class="command"> @pcifun</span>	: pci function</i></td></tr>
+<tr><th id="210">210</th><td><i class="doc"> *<span class="command"> @pciid</span>	: pci id</i></td></tr>
+<tr><th id="211">211</th><td><i class="doc"> *<span class="command"> @pcivendor</span>	: vendor id</i></td></tr>
+<tr><th id="212">212</th><td><i class="doc"> *<span class="command"> @pcislot</span>	: slot number</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc"> *<span class="command"> @uid</span>		: unique id</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="215">215</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="mcontroller" title='mcontroller' data-ref="mcontroller"><a class="type" href="#mcontroller" title='mcontroller' data-ref="mcontroller">mcontroller</a></dfn> {</td></tr>
+<tr><th id="216">216</th><td></td></tr>
+<tr><th id="217">217</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint64_t" title='uint64_t' data-type='u64' data-ref="uint64_t">uint64_t</a>	<dfn class="decl field" id="mcontroller::base" title='mcontroller::base' data-ref="mcontroller::base">base</dfn>;</td></tr>
+<tr><th id="218">218</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint8_t" title='uint8_t' data-type='u8' data-ref="uint8_t">uint8_t</a>		<dfn class="decl field" id="mcontroller::irq" title='mcontroller::irq' data-ref="mcontroller::irq">irq</dfn>;</td></tr>
+<tr><th id="219">219</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint8_t" title='uint8_t' data-type='u8' data-ref="uint8_t">uint8_t</a>		<dfn class="decl field" id="mcontroller::numldrv" title='mcontroller::numldrv' data-ref="mcontroller::numldrv">numldrv</dfn>;</td></tr>
+<tr><th id="220">220</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint8_t" title='uint8_t' data-type='u8' data-ref="uint8_t">uint8_t</a>		<dfn class="decl field" id="mcontroller::pcibus" title='mcontroller::pcibus' data-ref="mcontroller::pcibus">pcibus</dfn>;</td></tr>
+<tr><th id="221">221</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint16_t" title='uint16_t' data-type='u16' data-ref="uint16_t">uint16_t</a>	<dfn class="decl field" id="mcontroller::pcidev" title='mcontroller::pcidev' data-ref="mcontroller::pcidev">pcidev</dfn>;</td></tr>
+<tr><th id="222">222</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint8_t" title='uint8_t' data-type='u8' data-ref="uint8_t">uint8_t</a>		<dfn class="decl field" id="mcontroller::pcifun" title='mcontroller::pcifun' data-ref="mcontroller::pcifun">pcifun</dfn>;</td></tr>
+<tr><th id="223">223</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint16_t" title='uint16_t' data-type='u16' data-ref="uint16_t">uint16_t</a>	<dfn class="decl field" id="mcontroller::pciid" title='mcontroller::pciid' data-ref="mcontroller::pciid">pciid</dfn>;</td></tr>
+<tr><th id="224">224</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint16_t" title='uint16_t' data-type='u16' data-ref="uint16_t">uint16_t</a>	<dfn class="decl field" id="mcontroller::pcivendor" title='mcontroller::pcivendor' data-ref="mcontroller::pcivendor">pcivendor</dfn>;</td></tr>
+<tr><th id="225">225</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint8_t" title='uint8_t' data-type='u8' data-ref="uint8_t">uint8_t</a>		<dfn class="decl field" id="mcontroller::pcislot" title='mcontroller::pcislot' data-ref="mcontroller::pcislot">pcislot</dfn>;</td></tr>
+<tr><th id="226">226</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a>	<dfn class="decl field" id="mcontroller::uid" title='mcontroller::uid' data-ref="mcontroller::uid">uid</dfn>;</td></tr>
+<tr><th id="227">227</th><td></td></tr>
+<tr><th id="228">228</th><td>} <b>__attribute__</b> ((packed)) <dfn class="typedef" id="mcontroller_t" title='mcontroller_t' data-type='struct mcontroller' data-ref="mcontroller_t">mcontroller_t</dfn>;</td></tr>
+<tr><th id="229">229</th><td></td></tr>
+<tr><th id="230">230</th><td></td></tr>
+<tr><th id="231">231</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="232">232</th><td><i class="doc"> * mm_dmapool_t	: Represents one dma pool with just one buffer</i></td></tr>
+<tr><th id="233">233</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="234">234</th><td><i class="doc"> *<span class="command"> @vaddr</span>	: Virtual address</i></td></tr>
+<tr><th id="235">235</th><td><i class="doc"> *<span class="command"> @paddr</span>	: DMA physicall address</i></td></tr>
+<tr><th id="236">236</th><td><i class="doc"> *<span class="command"> @bufsize</span>	: In KB - 4 = 4k, 8 = 8k etc.</i></td></tr>
+<tr><th id="237">237</th><td><i class="doc"> *<span class="command"> @handle</span>	: Handle to the dma pool</i></td></tr>
+<tr><th id="238">238</th><td><i class="doc"> *<span class="command"> @lock</span>	: lock to synchronize access to the pool</i></td></tr>
+<tr><th id="239">239</th><td><i class="doc"> * <span class="command">@in</span>_<span class="verb">use	: If pool already in use, attach new block</span></i></td></tr>
+<tr><th id="240">240</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="241">241</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="mm_dmapool" title='mm_dmapool' data-ref="mm_dmapool"><a class="type" href="#mm_dmapool" title='mm_dmapool' data-ref="mm_dmapool">mm_dmapool</a></dfn> {</td></tr>
+<tr><th id="242">242</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#caddr_t" title='caddr_t' data-type='__kernel_caddr_t' data-ref="caddr_t">caddr_t</a>		<dfn class="decl field" id="mm_dmapool::vaddr" title='mm_dmapool::vaddr' data-ref="mm_dmapool::vaddr">vaddr</dfn>;</td></tr>
+<tr><th id="243">243</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#dma_addr_t" title='dma_addr_t' data-type='u64' data-ref="dma_addr_t">dma_addr_t</a>	<dfn class="decl field" id="mm_dmapool::paddr" title='mm_dmapool::paddr' data-ref="mm_dmapool::paddr">paddr</dfn>;</td></tr>
+<tr><th id="244">244</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a>	<dfn class="decl field" id="mm_dmapool::buf_size" title='mm_dmapool::buf_size' data-ref="mm_dmapool::buf_size">buf_size</dfn>;</td></tr>
+<tr><th id="245">245</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/dmapool.h.html#dma_pool" title='dma_pool' data-ref="dma_pool">dma_pool</a>	*<dfn class="decl field" id="mm_dmapool::handle" title='mm_dmapool::handle' data-ref="mm_dmapool::handle">handle</dfn>;</td></tr>
+<tr><th id="246">246</th><td>	<a class="typedef" href="../../../include/linux/spinlock_types.h.html#spinlock_t" title='spinlock_t' data-type='struct spinlock' data-ref="spinlock_t">spinlock_t</a>	<dfn class="decl field" id="mm_dmapool::lock" title='mm_dmapool::lock' data-ref="mm_dmapool::lock">lock</dfn>;</td></tr>
+<tr><th id="247">247</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint8_t" title='uint8_t' data-type='u8' data-ref="uint8_t">uint8_t</a>		<dfn class="decl field" id="mm_dmapool::in_use" title='mm_dmapool::in_use' data-ref="mm_dmapool::in_use">in_use</dfn>;</td></tr>
+<tr><th id="248">248</th><td>} <dfn class="typedef" id="mm_dmapool_t" title='mm_dmapool_t' data-type='struct mm_dmapool' data-ref="mm_dmapool_t">mm_dmapool_t</dfn>;</td></tr>
+<tr><th id="249">249</th><td></td></tr>
+<tr><th id="250">250</th><td></td></tr>
+<tr><th id="251">251</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="252">252</th><td><i class="doc"> * mraid_mmadp_t: Structure that drivers pass during (un)registration</i></td></tr>
+<tr><th id="253">253</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="254">254</th><td><i class="doc"> *<span class="command"> @unique</span>_id		: Any unique id (usually PCI bus+dev+fn)</i></td></tr>
+<tr><th id="255">255</th><td><i class="doc"> *<span class="command"> @drvr</span>_type		: megaraid or hpe (DRVRTYPE_MBOX or DRVRTYPE_HPE)</i></td></tr>
+<tr><th id="256">256</th><td><i class="doc"> *<span class="command"> @drv</span>_data		: Driver specific; not touched by the common module</i></td></tr>
+<tr><th id="257">257</th><td><i class="doc"> *<span class="command"> @timeout</span>		: timeout for issued kiocs</i></td></tr>
+<tr><th id="258">258</th><td><i class="doc"> *<span class="command"> @max</span>_kioc		: Maximum ioctl packets acceptable by the lld</i></td></tr>
+<tr><th id="259">259</th><td><i class="doc"> *<span class="command"> @pdev</span>		: pci dev; used for allocating dma'ble memory</i></td></tr>
+<tr><th id="260">260</th><td><i class="doc"> *<span class="command"> @issue</span>_uioc		: Driver supplied routine to issue uioc_t commands</i></td></tr>
+<tr><th id="261">261</th><td><i class="doc"> *			: issue_uioc(drvr_data, kioc, ISSUE/ABORT, uioc_done)</i></td></tr>
+<tr><th id="262">262</th><td><i class="doc"> *<span class="command"> @quiescent</span>		: flag to indicate if ioctl can be issued to this adp</i></td></tr>
+<tr><th id="263">263</th><td><i class="doc"> *<span class="command"> @list</span>		: attach with the global list of adapters</i></td></tr>
+<tr><th id="264">264</th><td><i class="doc"> *<span class="command"> @kioc</span>_list		: block of mem for<span class="command"> @max</span>_kioc number of kiocs</i></td></tr>
+<tr><th id="265">265</th><td><i class="doc"> *<span class="command"> @kioc</span>_pool		: pool of free kiocs</i></td></tr>
+<tr><th id="266">266</th><td><i class="doc"> *<span class="command"> @kioc</span>_pool_lock	: protection for free pool</i></td></tr>
+<tr><th id="267">267</th><td><i class="doc"> *<span class="command"> @kioc</span>_semaphore	: so as not to exceed<span class="command"> @max</span>_kioc parallel ioctls</i></td></tr>
+<tr><th id="268">268</th><td><i class="doc"> *<span class="command"> @mbox</span>_list		: block of mem for<span class="command"> @max</span>_kioc number of mboxes</i></td></tr>
+<tr><th id="269">269</th><td><i class="doc"> *<span class="command"> @pthru</span>_dma_pool	: DMA pool to allocate passthru packets</i></td></tr>
+<tr><th id="270">270</th><td><i class="doc"> *<span class="command"> @dma</span>_pool_list	: array of dma pools</i></td></tr>
+<tr><th id="271">271</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="272">272</th><td></td></tr>
+<tr><th id="273">273</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="mraid_mmadp" title='mraid_mmadp' data-ref="mraid_mmadp"><a class="type" href="#mraid_mmadp" title='mraid_mmadp' data-ref="mraid_mmadp">mraid_mmadp</a></dfn> {</td></tr>
+<tr><th id="274">274</th><td></td></tr>
+<tr><th id="275">275</th><td><i>/* Filled by driver */</i></td></tr>
+<tr><th id="276">276</th><td></td></tr>
+<tr><th id="277">277</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a>		<dfn class="decl field" id="mraid_mmadp::unique_id" title='mraid_mmadp::unique_id' data-ref="mraid_mmadp::unique_id">unique_id</dfn>;</td></tr>
+<tr><th id="278">278</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a>		<dfn class="decl field" id="mraid_mmadp::drvr_type" title='mraid_mmadp::drvr_type' data-ref="mraid_mmadp::drvr_type">drvr_type</dfn>;</td></tr>
+<tr><th id="279">279</th><td>	<em>unsigned</em> <em>long</em>		<dfn class="decl field" id="mraid_mmadp::drvr_data" title='mraid_mmadp::drvr_data' data-ref="mraid_mmadp::drvr_data">drvr_data</dfn>;</td></tr>
+<tr><th id="280">280</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint16_t" title='uint16_t' data-type='u16' data-ref="uint16_t">uint16_t</a>		<dfn class="decl field" id="mraid_mmadp::timeout" title='mraid_mmadp::timeout' data-ref="mraid_mmadp::timeout">timeout</dfn>;</td></tr>
+<tr><th id="281">281</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint8_t" title='uint8_t' data-type='u8' data-ref="uint8_t">uint8_t</a>			<dfn class="decl field" id="mraid_mmadp::max_kioc" title='mraid_mmadp::max_kioc' data-ref="mraid_mmadp::max_kioc">max_kioc</dfn>;</td></tr>
+<tr><th id="282">282</th><td></td></tr>
+<tr><th id="283">283</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/pci.h.html#pci_dev" title='pci_dev' data-ref="pci_dev">pci_dev</a>		*<dfn class="decl field" id="mraid_mmadp::pdev" title='mraid_mmadp::pdev' data-ref="mraid_mmadp::pdev">pdev</dfn>;</td></tr>
+<tr><th id="284">284</th><td></td></tr>
+<tr><th id="285">285</th><td>	<em>int</em>(*<dfn class="decl field" id="mraid_mmadp::issue_uioc" title='mraid_mmadp::issue_uioc' data-ref="mraid_mmadp::issue_uioc">issue_uioc</dfn>)(<em>unsigned</em> <em>long</em>, <a class="typedef" href="#uioc_t" title='uioc_t' data-type='struct uioc' data-ref="uioc_t">uioc_t</a> *, <a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a>);</td></tr>
+<tr><th id="286">286</th><td></td></tr>
+<tr><th id="287">287</th><td><i>/* Maintained by common module */</i></td></tr>
+<tr><th id="288">288</th><td>	<a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a>		<dfn class="decl field" id="mraid_mmadp::quiescent" title='mraid_mmadp::quiescent' data-ref="mraid_mmadp::quiescent">quiescent</dfn>;</td></tr>
+<tr><th id="289">289</th><td></td></tr>
+<tr><th id="290">290</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a>	<dfn class="decl field" id="mraid_mmadp::list" title='mraid_mmadp::list' data-ref="mraid_mmadp::list">list</dfn>;</td></tr>
+<tr><th id="291">291</th><td>	<a class="typedef" href="#uioc_t" title='uioc_t' data-type='struct uioc' data-ref="uioc_t">uioc_t</a>			*<dfn class="decl field" id="mraid_mmadp::kioc_list" title='mraid_mmadp::kioc_list' data-ref="mraid_mmadp::kioc_list">kioc_list</dfn>;</td></tr>
+<tr><th id="292">292</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a>	<dfn class="decl field" id="mraid_mmadp::kioc_pool" title='mraid_mmadp::kioc_pool' data-ref="mraid_mmadp::kioc_pool">kioc_pool</dfn>;</td></tr>
+<tr><th id="293">293</th><td>	<a class="typedef" href="../../../include/linux/spinlock_types.h.html#spinlock_t" title='spinlock_t' data-type='struct spinlock' data-ref="spinlock_t">spinlock_t</a>		<dfn class="decl field" id="mraid_mmadp::kioc_pool_lock" title='mraid_mmadp::kioc_pool_lock' data-ref="mraid_mmadp::kioc_pool_lock">kioc_pool_lock</dfn>;</td></tr>
+<tr><th id="294">294</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/semaphore.h.html#semaphore" title='semaphore' data-ref="semaphore">semaphore</a>	<dfn class="decl field" id="mraid_mmadp::kioc_semaphore" title='mraid_mmadp::kioc_semaphore' data-ref="mraid_mmadp::kioc_semaphore">kioc_semaphore</dfn>;</td></tr>
+<tr><th id="295">295</th><td></td></tr>
+<tr><th id="296">296</th><td>	<a class="typedef" href="mbox_defs.h.html#mbox64_t" title='mbox64_t' data-type='struct mbox64_t' data-ref="mbox64_t">mbox64_t</a>		*<dfn class="decl field" id="mraid_mmadp::mbox_list" title='mraid_mmadp::mbox_list' data-ref="mraid_mmadp::mbox_list">mbox_list</dfn>;</td></tr>
+<tr><th id="297">297</th><td>	<b>struct</b> <a class="type" href="../../../include/linux/dmapool.h.html#dma_pool" title='dma_pool' data-ref="dma_pool">dma_pool</a>		*<dfn class="decl field" id="mraid_mmadp::pthru_dma_pool" title='mraid_mmadp::pthru_dma_pool' data-ref="mraid_mmadp::pthru_dma_pool">pthru_dma_pool</dfn>;</td></tr>
+<tr><th id="298">298</th><td>	<a class="typedef" href="#mm_dmapool_t" title='mm_dmapool_t' data-type='struct mm_dmapool' data-ref="mm_dmapool_t">mm_dmapool_t</a>		<dfn class="decl field" id="mraid_mmadp::dma_pool_list" title='mraid_mmadp::dma_pool_list' data-ref="mraid_mmadp::dma_pool_list">dma_pool_list</dfn>[<a class="macro" href="#86" title="5" data-ref="_M/MAX_DMA_POOLS">MAX_DMA_POOLS</a>];</td></tr>
+<tr><th id="299">299</th><td></td></tr>
+<tr><th id="300">300</th><td>} <dfn class="typedef" id="mraid_mmadp_t" title='mraid_mmadp_t' data-type='struct mraid_mmadp' data-ref="mraid_mmadp_t">mraid_mmadp_t</dfn>;</td></tr>
+<tr><th id="301">301</th><td></td></tr>
+<tr><th id="302">302</th><td><em>int</em> <dfn class="decl fn" id="mraid_mm_register_adp" title='mraid_mm_register_adp' data-ref="mraid_mm_register_adp">mraid_mm_register_adp</dfn>(<a class="typedef" href="#mraid_mmadp_t" title='mraid_mmadp_t' data-type='struct mraid_mmadp' data-ref="mraid_mmadp_t">mraid_mmadp_t</a> *);</td></tr>
+<tr><th id="303">303</th><td><em>int</em> <dfn class="decl fn" id="mraid_mm_unregister_adp" title='mraid_mm_unregister_adp' data-ref="mraid_mm_unregister_adp">mraid_mm_unregister_adp</dfn>(<a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a>);</td></tr>
+<tr><th id="304">304</th><td><a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a> <dfn class="decl fn" id="mraid_mm_adapter_app_handle" title='mraid_mm_adapter_app_handle' data-ref="mraid_mm_adapter_app_handle">mraid_mm_adapter_app_handle</dfn>(<a class="typedef" href="../../../include/linux/types.h.html#uint32_t" title='uint32_t' data-type='u32' data-ref="uint32_t">uint32_t</a>);</td></tr>
+<tr><th id="305">305</th><td></td></tr>
+<tr><th id="306">306</th><td><u>#<span data-ppcond="17">endif</span> /* _MEGARAID_IOCTL_H_ */</u></td></tr>
+<tr><th id="307">307</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='megaraid_mbox.c.html'>linux-4.18.y/drivers/scsi/megaraid/megaraid_mbox.c</a><br/>Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

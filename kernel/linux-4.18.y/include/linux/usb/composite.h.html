@@ -1,0 +1,661 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>composite.h source code [linux-4.18.y/include/linux/usb/composite.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="usb_composite_dev,usb_composite_driver,usb_composite_overwrite,usb_configuration,usb_function,usb_function_driver,usb_function_instance,usb_os_desc,usb_os_desc_ext_prop,usb_os_desc_table "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/include/linux/usb/composite.h'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>linux-4.18.y</a>/<a href='../..'>include</a>/<a href='..'>linux</a>/<a href='./'>usb</a>/<a href='composite.h.html'>composite.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// SPDX-License-Identifier: GPL-2.0+</i></td></tr>
+<tr><th id="2">2</th><td><i>/*</i></td></tr>
+<tr><th id="3">3</th><td><i> * composite.h -- framework for usb gadgets which are composite devices</i></td></tr>
+<tr><th id="4">4</th><td><i> *</i></td></tr>
+<tr><th id="5">5</th><td><i> * Copyright (C) 2006-2008 David Brownell</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> * This program is free software; you can redistribute it and/or modify</i></td></tr>
+<tr><th id="8">8</th><td><i> * it under the terms of the GNU General Public License as published by</i></td></tr>
+<tr><th id="9">9</th><td><i> * the Free Software Foundation; either version 2 of the License, or</i></td></tr>
+<tr><th id="10">10</th><td><i> * (at your option) any later version.</i></td></tr>
+<tr><th id="11">11</th><td><i> *</i></td></tr>
+<tr><th id="12">12</th><td><i> * This program is distributed in the hope that it will be useful,</i></td></tr>
+<tr><th id="13">13</th><td><i> * but WITHOUT ANY WARRANTY; without even the implied warranty of</i></td></tr>
+<tr><th id="14">14</th><td><i> * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</i></td></tr>
+<tr><th id="15">15</th><td><i> * GNU General Public License for more details.</i></td></tr>
+<tr><th id="16">16</th><td><i> *</i></td></tr>
+<tr><th id="17">17</th><td><i> * You should have received a copy of the GNU General Public License</i></td></tr>
+<tr><th id="18">18</th><td><i> * along with this program; if not, write to the Free Software</i></td></tr>
+<tr><th id="19">19</th><td><i> * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA</i></td></tr>
+<tr><th id="20">20</th><td><i> */</i></td></tr>
+<tr><th id="21">21</th><td></td></tr>
+<tr><th id="22">22</th><td><u>#<span data-ppcond="22">ifndef</span>	<span class="macro" data-ref="_M/__LINUX_USB_COMPOSITE_H">__LINUX_USB_COMPOSITE_H</span></u></td></tr>
+<tr><th id="23">23</th><td><u>#define	<dfn class="macro" id="_M/__LINUX_USB_COMPOSITE_H" data-ref="_M/__LINUX_USB_COMPOSITE_H">__LINUX_USB_COMPOSITE_H</dfn></u></td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td><i>/*</i></td></tr>
+<tr><th id="26">26</th><td><i> * This framework is an optional layer on top of the USB Gadget interface,</i></td></tr>
+<tr><th id="27">27</th><td><i> * making it easier to build (a) Composite devices, supporting multiple</i></td></tr>
+<tr><th id="28">28</th><td><i> * functions within any single configuration, and (b) Multi-configuration</i></td></tr>
+<tr><th id="29">29</th><td><i> * devices, also supporting multiple functions but without necessarily</i></td></tr>
+<tr><th id="30">30</th><td><i> * having more than one function per configuration.</i></td></tr>
+<tr><th id="31">31</th><td><i> *</i></td></tr>
+<tr><th id="32">32</th><td><i> * Example:  a device with a single configuration supporting both network</i></td></tr>
+<tr><th id="33">33</th><td><i> * link and mass storage functions is a composite device.  Those functions</i></td></tr>
+<tr><th id="34">34</th><td><i> * might alternatively be packaged in individual configurations, but in</i></td></tr>
+<tr><th id="35">35</th><td><i> * the composite model the host can use both functions at the same time.</i></td></tr>
+<tr><th id="36">36</th><td><i> */</i></td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><u>#include <a href="../bcd.h.html">&lt;linux/bcd.h&gt;</a></u></td></tr>
+<tr><th id="39">39</th><td><u>#include <a href="../../generated/uapi/linux/version.h.html">&lt;linux/version.h&gt;</a></u></td></tr>
+<tr><th id="40">40</th><td><u>#include <a href="ch9.h.html">&lt;linux/usb/ch9.h&gt;</a></u></td></tr>
+<tr><th id="41">41</th><td><u>#include <a href="gadget.h.html">&lt;linux/usb/gadget.h&gt;</a></u></td></tr>
+<tr><th id="42">42</th><td><u>#include <a href="../log2.h.html">&lt;linux/log2.h&gt;</a></u></td></tr>
+<tr><th id="43">43</th><td><u>#include <a href="../configfs.h.html">&lt;linux/configfs.h&gt;</a></u></td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td><i>/*</i></td></tr>
+<tr><th id="46">46</th><td><i> * USB function drivers should return USB_GADGET_DELAYED_STATUS if they</i></td></tr>
+<tr><th id="47">47</th><td><i> * wish to delay the data/status stages of the control transfer till they</i></td></tr>
+<tr><th id="48">48</th><td><i> * are ready. The control transfer will then be kept from completing till</i></td></tr>
+<tr><th id="49">49</th><td><i> * all the function drivers that requested for USB_GADGET_DELAYED_STAUS</i></td></tr>
+<tr><th id="50">50</th><td><i> * invoke usb_composite_setup_continue().</i></td></tr>
+<tr><th id="51">51</th><td><i> */</i></td></tr>
+<tr><th id="52">52</th><td><u>#define <dfn class="macro" id="_M/USB_GADGET_DELAYED_STATUS" data-ref="_M/USB_GADGET_DELAYED_STATUS">USB_GADGET_DELAYED_STATUS</dfn>       0x7fff	/* Impossibly large value */</u></td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td><i>/* big enough to hold our biggest descriptor */</i></td></tr>
+<tr><th id="55">55</th><td><u>#define <dfn class="macro" id="_M/USB_COMP_EP0_BUFSIZ" data-ref="_M/USB_COMP_EP0_BUFSIZ">USB_COMP_EP0_BUFSIZ</dfn>	4096</u></td></tr>
+<tr><th id="56">56</th><td></td></tr>
+<tr><th id="57">57</th><td><i>/* OS feature descriptor length &lt;= 4kB */</i></td></tr>
+<tr><th id="58">58</th><td><u>#define <dfn class="macro" id="_M/USB_COMP_EP0_OS_DESC_BUFSIZ" data-ref="_M/USB_COMP_EP0_OS_DESC_BUFSIZ">USB_COMP_EP0_OS_DESC_BUFSIZ</dfn>	4096</u></td></tr>
+<tr><th id="59">59</th><td></td></tr>
+<tr><th id="60">60</th><td><u>#define <dfn class="macro" id="_M/USB_MS_TO_HS_INTERVAL" data-ref="_M/USB_MS_TO_HS_INTERVAL">USB_MS_TO_HS_INTERVAL</dfn>(x)	(ilog2((x * 1000 / 125)) + 1)</u></td></tr>
+<tr><th id="61">61</th><td><b>struct</b> <a class="type" href="#usb_configuration" title='usb_configuration' data-ref="usb_configuration">usb_configuration</a>;</td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="64">64</th><td><i class="doc"> * struct usb_os_desc_ext_prop - describes one "Extended Property"</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc"> *<span class="command"> @entry</span>: used to keep a list of extended properties</i></td></tr>
+<tr><th id="66">66</th><td><i class="doc"> *<span class="command"> @type</span>: Extended Property type</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc"> * <span class="command">@name</span>_<span class="verb">len: Extended Property unicode name length, including terminating '\0'</span></i></td></tr>
+<tr><th id="68">68</th><td><i class="doc"> * <span class="command">@name</span>:<span class="verb"> Extended Property name</span></i></td></tr>
+<tr><th id="69">69</th><td><i class="doc"> * <span class="command">@data</span>_len: Length of Extended Property blob (for unicode store double len)</i></td></tr>
+<tr><th id="70">70</th><td><i class="doc"> * <span class="command">@data</span>: Extended Property blob</i></td></tr>
+<tr><th id="71">71</th><td><i class="doc"> *<span class="command"> @item</span>: Represents this Extended Property in configfs</i></td></tr>
+<tr><th id="72">72</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="73">73</th><td><b>struct</b> <dfn class="type def" id="usb_os_desc_ext_prop" title='usb_os_desc_ext_prop' data-ref="usb_os_desc_ext_prop">usb_os_desc_ext_prop</dfn> {</td></tr>
+<tr><th id="74">74</th><td>	<b>struct</b> <a class="type" href="../types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a>	<dfn class="decl field" id="usb_os_desc_ext_prop::entry" title='usb_os_desc_ext_prop::entry' data-ref="usb_os_desc_ext_prop::entry">entry</dfn>;</td></tr>
+<tr><th id="75">75</th><td>	<a class="typedef" href="../../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a>			<dfn class="decl field" id="usb_os_desc_ext_prop::type" title='usb_os_desc_ext_prop::type' data-ref="usb_os_desc_ext_prop::type">type</dfn>;</td></tr>
+<tr><th id="76">76</th><td>	<em>int</em>			<dfn class="decl field" id="usb_os_desc_ext_prop::name_len" title='usb_os_desc_ext_prop::name_len' data-ref="usb_os_desc_ext_prop::name_len">name_len</dfn>;</td></tr>
+<tr><th id="77">77</th><td>	<em>char</em>			*<dfn class="decl field" id="usb_os_desc_ext_prop::name" title='usb_os_desc_ext_prop::name' data-ref="usb_os_desc_ext_prop::name">name</dfn>;</td></tr>
+<tr><th id="78">78</th><td>	<em>int</em>			<dfn class="decl field" id="usb_os_desc_ext_prop::data_len" title='usb_os_desc_ext_prop::data_len' data-ref="usb_os_desc_ext_prop::data_len">data_len</dfn>;</td></tr>
+<tr><th id="79">79</th><td>	<em>char</em>			*<dfn class="decl field" id="usb_os_desc_ext_prop::data" title='usb_os_desc_ext_prop::data' data-ref="usb_os_desc_ext_prop::data">data</dfn>;</td></tr>
+<tr><th id="80">80</th><td>	<b>struct</b> <a class="type" href="../configfs.h.html#config_item" title='config_item' data-ref="config_item">config_item</a>	<dfn class="decl field" id="usb_os_desc_ext_prop::item" title='usb_os_desc_ext_prop::item' data-ref="usb_os_desc_ext_prop::item">item</dfn>;</td></tr>
+<tr><th id="81">81</th><td>};</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="84">84</th><td><i class="doc"> * struct usb_os_desc - describes OS descriptors associated with one interface</i></td></tr>
+<tr><th id="85">85</th><td><i class="doc"> *<span class="command"> @ext</span>_compat_id: 16 bytes of "Compatible ID" and "Subcompatible ID"</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc"> *<span class="command"> @ext</span>_prop: Extended Properties list</i></td></tr>
+<tr><th id="87">87</th><td><i class="doc"> *<span class="command"> @ext</span>_prop_len: Total length of Extended Properties blobs</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc"> *<span class="command"> @ext</span>_prop_count: Number of Extended Properties</i></td></tr>
+<tr><th id="89">89</th><td><i class="doc"> *<span class="command"> @opts</span>_mutex: Optional mutex protecting config data of a usb_function_instance</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc"> *<span class="command"> @group</span>: Represents OS descriptors associated with an interface in configfs</i></td></tr>
+<tr><th id="91">91</th><td><i class="doc"> *<span class="command"> @owner</span>: Module associated with this OS descriptor</i></td></tr>
+<tr><th id="92">92</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="93">93</th><td><b>struct</b> <dfn class="type def" id="usb_os_desc" title='usb_os_desc' data-ref="usb_os_desc">usb_os_desc</dfn> {</td></tr>
+<tr><th id="94">94</th><td>	<em>char</em>			*<dfn class="decl field" id="usb_os_desc::ext_compat_id" title='usb_os_desc::ext_compat_id' data-ref="usb_os_desc::ext_compat_id">ext_compat_id</dfn>;</td></tr>
+<tr><th id="95">95</th><td>	<b>struct</b> <a class="type" href="../types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a>	<dfn class="decl field" id="usb_os_desc::ext_prop" title='usb_os_desc::ext_prop' data-ref="usb_os_desc::ext_prop">ext_prop</dfn>;</td></tr>
+<tr><th id="96">96</th><td>	<em>int</em>			<dfn class="decl field" id="usb_os_desc::ext_prop_len" title='usb_os_desc::ext_prop_len' data-ref="usb_os_desc::ext_prop_len">ext_prop_len</dfn>;</td></tr>
+<tr><th id="97">97</th><td>	<em>int</em>			<dfn class="decl field" id="usb_os_desc::ext_prop_count" title='usb_os_desc::ext_prop_count' data-ref="usb_os_desc::ext_prop_count">ext_prop_count</dfn>;</td></tr>
+<tr><th id="98">98</th><td>	<b>struct</b> <a class="type" href="../mutex.h.html#mutex" title='mutex' data-ref="mutex">mutex</a>		*<dfn class="decl field" id="usb_os_desc::opts_mutex" title='usb_os_desc::opts_mutex' data-ref="usb_os_desc::opts_mutex">opts_mutex</dfn>;</td></tr>
+<tr><th id="99">99</th><td>	<b>struct</b> <a class="type" href="../configfs.h.html#config_group" title='config_group' data-ref="config_group">config_group</a>	<dfn class="decl field" id="usb_os_desc::group" title='usb_os_desc::group' data-ref="usb_os_desc::group">group</dfn>;</td></tr>
+<tr><th id="100">100</th><td>	<b>struct</b> <a class="type" href="../module.h.html#module" title='module' data-ref="module">module</a>		*<dfn class="decl field" id="usb_os_desc::owner" title='usb_os_desc::owner' data-ref="usb_os_desc::owner">owner</dfn>;</td></tr>
+<tr><th id="101">101</th><td>};</td></tr>
+<tr><th id="102">102</th><td></td></tr>
+<tr><th id="103">103</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="104">104</th><td><i class="doc"> * struct usb_os_desc_table - describes OS descriptors associated with one</i></td></tr>
+<tr><th id="105">105</th><td><i class="doc"> * interface of a usb_function</i></td></tr>
+<tr><th id="106">106</th><td><i class="doc"> *<span class="command"> @if</span>_id: Interface id</i></td></tr>
+<tr><th id="107">107</th><td><i class="doc"> *<span class="command"> @os</span>_desc: "Extended Compatibility ID" and "Extended Properties" of the</i></td></tr>
+<tr><th id="108">108</th><td><i class="doc"> *	interface</i></td></tr>
+<tr><th id="109">109</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="110">110</th><td><i class="doc"> * Each interface can have at most one "Extended Compatibility ID" and a</i></td></tr>
+<tr><th id="111">111</th><td><i class="doc"> * number of "Extended Properties".</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="113">113</th><td><b>struct</b> <dfn class="type def" id="usb_os_desc_table" title='usb_os_desc_table' data-ref="usb_os_desc_table">usb_os_desc_table</dfn> {</td></tr>
+<tr><th id="114">114</th><td>	<em>int</em>			<dfn class="decl field" id="usb_os_desc_table::if_id" title='usb_os_desc_table::if_id' data-ref="usb_os_desc_table::if_id">if_id</dfn>;</td></tr>
+<tr><th id="115">115</th><td>	<b>struct</b> <a class="type" href="#usb_os_desc" title='usb_os_desc' data-ref="usb_os_desc">usb_os_desc</a>	*<dfn class="decl field" id="usb_os_desc_table::os_desc" title='usb_os_desc_table::os_desc' data-ref="usb_os_desc_table::os_desc">os_desc</dfn>;</td></tr>
+<tr><th id="116">116</th><td>};</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="119">119</th><td><i class="doc"> * struct usb_function - describes one function of a configuration</i></td></tr>
+<tr><th id="120">120</th><td><i class="doc"> * <span class="command">@name</span>:<span class="verb"> For diagnostics, identifies the function.</span></i></td></tr>
+<tr><th id="121">121</th><td><i class="doc"> *<span class="command"> @strings</span>: tables of strings, keyed by identifiers assigned during bind()</i></td></tr>
+<tr><th id="122">122</th><td><i class="doc"> *	and by language IDs provided in control requests</i></td></tr>
+<tr><th id="123">123</th><td><i class="doc"> *<span class="command"> @fs</span>_descriptors: Table of full (or low) speed descriptors, using interface and</i></td></tr>
+<tr><th id="124">124</th><td><i class="doc"> *	string identifiers assigned during<span class="command"> @bind</span>().  If this pointer is null,</i></td></tr>
+<tr><th id="125">125</th><td><i class="doc"> *	the function will not be available at full speed (or at low speed).</i></td></tr>
+<tr><th id="126">126</th><td><i class="doc"> *<span class="command"> @hs</span>_descriptors: Table of high speed descriptors, using interface and</i></td></tr>
+<tr><th id="127">127</th><td><i class="doc"> *	string identifiers assigned during<span class="command"> @bind</span>().  If this pointer is null,</i></td></tr>
+<tr><th id="128">128</th><td><i class="doc"> *	the function will not be available at high speed.</i></td></tr>
+<tr><th id="129">129</th><td><i class="doc"> * <span class="command">@ss</span>_descriptors: Table of super speed descriptors, using interface and</i></td></tr>
+<tr><th id="130">130</th><td><i class="doc"> *	string identifiers assigned during<span class="command"> @bind</span>(). If this</i></td></tr>
+<tr><th id="131">131</th><td><i class="doc"> *	pointer is null after initiation, the function will not</i></td></tr>
+<tr><th id="132">132</th><td><i class="doc"> *	be available at super speed.</i></td></tr>
+<tr><th id="133">133</th><td><i class="doc"> *<span class="command"> @ssp</span>_descriptors: Table of super speed plus descriptors, using</i></td></tr>
+<tr><th id="134">134</th><td><i class="doc"> *	interface and string identifiers assigned during<span class="command"> @bind</span>(). If</i></td></tr>
+<tr><th id="135">135</th><td><i class="doc"> *	this pointer is null after initiation, the function will not</i></td></tr>
+<tr><th id="136">136</th><td><i class="doc"> *	be available at super speed plus.</i></td></tr>
+<tr><th id="137">137</th><td><i class="doc"> *<span class="command"> @config</span>: assigned when<span class="command"> @usb</span>_add_function() is called; this is the</i></td></tr>
+<tr><th id="138">138</th><td><i class="doc"> *	configuration with which this function is associated.</i></td></tr>
+<tr><th id="139">139</th><td><i class="doc"> *<span class="command"> @os</span>_desc_table: Table of (interface id, os descriptors) pairs. The function</i></td></tr>
+<tr><th id="140">140</th><td><i class="doc"> *	can expose more than one interface. If an interface is a member of</i></td></tr>
+<tr><th id="141">141</th><td><i class="doc"> *	an IAD, only the first interface of IAD has its entry in the table.</i></td></tr>
+<tr><th id="142">142</th><td><i class="doc"> *<span class="command"> @os</span>_desc_n: Number of entries in os_desc_table</i></td></tr>
+<tr><th id="143">143</th><td><i class="doc"> *<span class="command"> @bind</span>: Before the gadget can register, all of its functions bind() to the</i></td></tr>
+<tr><th id="144">144</th><td><i class="doc"> *	available resources including string and interface identifiers used</i></td></tr>
+<tr><th id="145">145</th><td><i class="doc"> *	in interface or class descriptors; endpoints; I/O buffers; and so on.</i></td></tr>
+<tr><th id="146">146</th><td><i class="doc"> *<span class="command"> @unbind</span>: Reverses<span class="command"> @bind</span>; called as a side effect of unregistering the</i></td></tr>
+<tr><th id="147">147</th><td><i class="doc"> *	driver which added this function.</i></td></tr>
+<tr><th id="148">148</th><td><i class="doc"> *<span class="command"> @free</span>_func: free the struct usb_function.</i></td></tr>
+<tr><th id="149">149</th><td><i class="doc"> *<span class="command"> @mod</span>: (internal) points to the module that created this structure.</i></td></tr>
+<tr><th id="150">150</th><td><i class="doc"> * <span class="command">@set</span>_alt: (REQUIRED) Reconfigures altsettings; function drivers may</i></td></tr>
+<tr><th id="151">151</th><td><i class="doc"> *	initialize usb_ep.driver data at this time (when it is used).</i></td></tr>
+<tr><th id="152">152</th><td><i class="doc"> *	Note that setting an interface to its current altsetting resets</i></td></tr>
+<tr><th id="153">153</th><td><i class="doc"> *	interface state, and that all interfaces have a disabled state.</i></td></tr>
+<tr><th id="154">154</th><td><i class="doc"> *<span class="command"> @get</span>_alt: Returns the active altsetting.  If this is not provided,</i></td></tr>
+<tr><th id="155">155</th><td><i class="doc"> *	then only altsetting zero is supported.</i></td></tr>
+<tr><th id="156">156</th><td><i class="doc"> *<span class="command"> @disable</span>: (REQUIRED) Indicates the function should be disabled.  Reasons</i></td></tr>
+<tr><th id="157">157</th><td><i class="doc"> *	include host resetting or reconfiguring the gadget, and disconnection.</i></td></tr>
+<tr><th id="158">158</th><td><i class="doc"> *<span class="command"> @setup</span>: Used for interface-specific control requests.</i></td></tr>
+<tr><th id="159">159</th><td><i class="doc"> * <span class="command">@req</span>_<span class="verb">match: Tests if a given class request can be handled by this function.</span></i></td></tr>
+<tr><th id="160">160</th><td><i class="doc"> *<span class="command"> @suspend</span>: Notifies functions when the host stops sending USB traffic.</i></td></tr>
+<tr><th id="161">161</th><td><i class="doc"> *<span class="command"> @resume</span>: Notifies functions when the host restarts USB traffic.</i></td></tr>
+<tr><th id="162">162</th><td><i class="doc"> *<span class="command"> @get</span>_status: Returns function status as a reply to</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc"> *	GetStatus() request when the recipient is Interface.</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc"> *<span class="command"> @func</span>_suspend: callback to be called when</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc"> *	SetFeature(FUNCTION_SUSPEND) is reseived</i></td></tr>
+<tr><th id="166">166</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="167">167</th><td><i class="doc"> * A single USB function uses one or more interfaces, and should in most</i></td></tr>
+<tr><th id="168">168</th><td><i class="doc"> * cases support operation at both full and high speeds.  Each function is</i></td></tr>
+<tr><th id="169">169</th><td><i class="doc"> * associated by<span class="command"> @usb</span>_add_function() with a one configuration; that function</i></td></tr>
+<tr><th id="170">170</th><td><i class="doc"> * causes<span class="command"> @bind</span>() to be called so resources can be allocated as part of</i></td></tr>
+<tr><th id="171">171</th><td><i class="doc"> * setting up a gadget driver.  Those resources include endpoints, which</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc"> * should be allocated using<span class="command"> @usb</span>_ep_autoconfig().</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="174">174</th><td><i class="doc"> * To support dual speed operation, a function driver provides descriptors</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc"> * for both high and full speed operation.  Except in rare cases that don't</i></td></tr>
+<tr><th id="176">176</th><td><i class="doc"> * involve bulk endpoints, each speed needs different endpoint descriptors.</i></td></tr>
+<tr><th id="177">177</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="178">178</th><td><i class="doc"> * Function drivers choose their own strategies for managing instance data.</i></td></tr>
+<tr><th id="179">179</th><td><i class="doc"> * The simplest strategy just declares it "static', which means the function</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc"> * can only be activated once.  If the function needs to be exposed in more</i></td></tr>
+<tr><th id="181">181</th><td><i class="doc"> * than one configuration at a given speed, it needs to support multiple</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc"> * usb_function structures (one for each configuration).</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc"> * A more complex strategy might encapsulate a<span class="command"> @usb</span>_function structure inside</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc"> * a driver-specific instance structure to allows multiple activations.  An</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc"> * example of multiple activations might be a CDC ACM function that supports</i></td></tr>
+<tr><th id="187">187</th><td><i class="doc"> * two or more distinct instances within the same configuration, providing</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc"> * several independent logical data links to a USB host.</i></td></tr>
+<tr><th id="189">189</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td><b>struct</b> <dfn class="type def" id="usb_function" title='usb_function' data-ref="usb_function">usb_function</dfn> {</td></tr>
+<tr><th id="192">192</th><td>	<em>const</em> <em>char</em>			*<dfn class="decl field" id="usb_function::name" title='usb_function::name' data-ref="usb_function::name">name</dfn>;</td></tr>
+<tr><th id="193">193</th><td>	<b>struct</b> <a class="type" href="gadget.h.html#usb_gadget_strings" title='usb_gadget_strings' data-ref="usb_gadget_strings">usb_gadget_strings</a>	**<dfn class="decl field" id="usb_function::strings" title='usb_function::strings' data-ref="usb_function::strings">strings</dfn>;</td></tr>
+<tr><th id="194">194</th><td>	<b>struct</b> <a class="type" href="../../uapi/linux/usb/ch9.h.html#usb_descriptor_header" title='usb_descriptor_header' data-ref="usb_descriptor_header">usb_descriptor_header</a>	**<dfn class="decl field" id="usb_function::fs_descriptors" title='usb_function::fs_descriptors' data-ref="usb_function::fs_descriptors">fs_descriptors</dfn>;</td></tr>
+<tr><th id="195">195</th><td>	<b>struct</b> <a class="type" href="../../uapi/linux/usb/ch9.h.html#usb_descriptor_header" title='usb_descriptor_header' data-ref="usb_descriptor_header">usb_descriptor_header</a>	**<dfn class="decl field" id="usb_function::hs_descriptors" title='usb_function::hs_descriptors' data-ref="usb_function::hs_descriptors">hs_descriptors</dfn>;</td></tr>
+<tr><th id="196">196</th><td>	<b>struct</b> <a class="type" href="../../uapi/linux/usb/ch9.h.html#usb_descriptor_header" title='usb_descriptor_header' data-ref="usb_descriptor_header">usb_descriptor_header</a>	**<dfn class="decl field" id="usb_function::ss_descriptors" title='usb_function::ss_descriptors' data-ref="usb_function::ss_descriptors">ss_descriptors</dfn>;</td></tr>
+<tr><th id="197">197</th><td>	<b>struct</b> <a class="type" href="../../uapi/linux/usb/ch9.h.html#usb_descriptor_header" title='usb_descriptor_header' data-ref="usb_descriptor_header">usb_descriptor_header</a>	**<dfn class="decl field" id="usb_function::ssp_descriptors" title='usb_function::ssp_descriptors' data-ref="usb_function::ssp_descriptors">ssp_descriptors</dfn>;</td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td>	<b>struct</b> <a class="type" href="#usb_configuration" title='usb_configuration' data-ref="usb_configuration">usb_configuration</a>	*<dfn class="decl field" id="usb_function::config" title='usb_function::config' data-ref="usb_function::config">config</dfn>;</td></tr>
+<tr><th id="200">200</th><td></td></tr>
+<tr><th id="201">201</th><td>	<b>struct</b> <a class="type" href="#usb_os_desc_table" title='usb_os_desc_table' data-ref="usb_os_desc_table">usb_os_desc_table</a>	*<dfn class="decl field" id="usb_function::os_desc_table" title='usb_function::os_desc_table' data-ref="usb_function::os_desc_table">os_desc_table</dfn>;</td></tr>
+<tr><th id="202">202</th><td>	<em>unsigned</em>			<dfn class="decl field" id="usb_function::os_desc_n" title='usb_function::os_desc_n' data-ref="usb_function::os_desc_n">os_desc_n</dfn>;</td></tr>
+<tr><th id="203">203</th><td></td></tr>
+<tr><th id="204">204</th><td>	<i>/* REVISIT:  bind() functions can be marked __init, which</i></td></tr>
+<tr><th id="205">205</th><td><i>	 * makes trouble for section mismatch analysis.  See if</i></td></tr>
+<tr><th id="206">206</th><td><i>	 * we can't restructure things to avoid mismatching.</i></td></tr>
+<tr><th id="207">207</th><td><i>	 * Related:  unbind() may kfree() but bind() won't...</i></td></tr>
+<tr><th id="208">208</th><td><i>	 */</i></td></tr>
+<tr><th id="209">209</th><td></td></tr>
+<tr><th id="210">210</th><td>	<i>/* configuration management:  bind/unbind */</i></td></tr>
+<tr><th id="211">211</th><td>	<em>int</em>			(*<dfn class="decl field" id="usb_function::bind" title='usb_function::bind' data-ref="usb_function::bind">bind</dfn>)(<b>struct</b> <a class="type" href="#usb_configuration" title='usb_configuration' data-ref="usb_configuration">usb_configuration</a> *,</td></tr>
+<tr><th id="212">212</th><td>					<b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *);</td></tr>
+<tr><th id="213">213</th><td>	<em>void</em>			(*<dfn class="decl field" id="usb_function::unbind" title='usb_function::unbind' data-ref="usb_function::unbind">unbind</dfn>)(<b>struct</b> <a class="type" href="#usb_configuration" title='usb_configuration' data-ref="usb_configuration">usb_configuration</a> *,</td></tr>
+<tr><th id="214">214</th><td>					<b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *);</td></tr>
+<tr><th id="215">215</th><td>	<em>void</em>			(*<dfn class="decl field" id="usb_function::free_func" title='usb_function::free_func' data-ref="usb_function::free_func">free_func</dfn>)(<b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *<dfn class="local col2 decl" id="172f" title='f' data-type='struct usb_function *' data-ref="172f">f</dfn>);</td></tr>
+<tr><th id="216">216</th><td>	<b>struct</b> <a class="type" href="../module.h.html#module" title='module' data-ref="module">module</a>		*<dfn class="decl field" id="usb_function::mod" title='usb_function::mod' data-ref="usb_function::mod">mod</dfn>;</td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td>	<i>/* runtime state management */</i></td></tr>
+<tr><th id="219">219</th><td>	<em>int</em>			(*<dfn class="decl field" id="usb_function::set_alt" title='usb_function::set_alt' data-ref="usb_function::set_alt">set_alt</dfn>)(<b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *,</td></tr>
+<tr><th id="220">220</th><td>					<em>unsigned</em> <dfn class="local col3 decl" id="173interface" title='interface' data-type='unsigned int' data-ref="173interface">interface</dfn>, <em>unsigned</em> <dfn class="local col4 decl" id="174alt" title='alt' data-type='unsigned int' data-ref="174alt">alt</dfn>);</td></tr>
+<tr><th id="221">221</th><td>	<em>int</em>			(*<dfn class="decl field" id="usb_function::get_alt" title='usb_function::get_alt' data-ref="usb_function::get_alt">get_alt</dfn>)(<b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *,</td></tr>
+<tr><th id="222">222</th><td>					<em>unsigned</em> <dfn class="local col5 decl" id="175interface" title='interface' data-type='unsigned int' data-ref="175interface">interface</dfn>);</td></tr>
+<tr><th id="223">223</th><td>	<em>void</em>			(*<dfn class="decl field" id="usb_function::disable" title='usb_function::disable' data-ref="usb_function::disable">disable</dfn>)(<b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *);</td></tr>
+<tr><th id="224">224</th><td>	<em>int</em>			(*<dfn class="decl field" id="usb_function::setup" title='usb_function::setup' data-ref="usb_function::setup">setup</dfn>)(<b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *,</td></tr>
+<tr><th id="225">225</th><td>					<em>const</em> <b>struct</b> <a class="type" href="../../uapi/linux/usb/ch9.h.html#usb_ctrlrequest" title='usb_ctrlrequest' data-ref="usb_ctrlrequest">usb_ctrlrequest</a> *);</td></tr>
+<tr><th id="226">226</th><td>	<a class="typedef" href="../types.h.html#bool" title='bool' data-type='_Bool' data-ref="bool">bool</a>			(*<dfn class="decl field" id="usb_function::req_match" title='usb_function::req_match' data-ref="usb_function::req_match">req_match</dfn>)(<b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *,</td></tr>
+<tr><th id="227">227</th><td>					<em>const</em> <b>struct</b> <a class="type" href="../../uapi/linux/usb/ch9.h.html#usb_ctrlrequest" title='usb_ctrlrequest' data-ref="usb_ctrlrequest">usb_ctrlrequest</a> *,</td></tr>
+<tr><th id="228">228</th><td>					<a class="typedef" href="../types.h.html#bool" title='bool' data-type='_Bool' data-ref="bool">bool</a> <dfn class="local col6 decl" id="176config0" title='config0' data-type='bool' data-ref="176config0">config0</dfn>);</td></tr>
+<tr><th id="229">229</th><td>	<em>void</em>			(*<dfn class="decl field" id="usb_function::suspend" title='usb_function::suspend' data-ref="usb_function::suspend">suspend</dfn>)(<b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *);</td></tr>
+<tr><th id="230">230</th><td>	<em>void</em>			(*<dfn class="decl field" id="usb_function::resume" title='usb_function::resume' data-ref="usb_function::resume">resume</dfn>)(<b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *);</td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td>	<i>/* USB 3.0 additions */</i></td></tr>
+<tr><th id="233">233</th><td>	<em>int</em>			(*<dfn class="decl field" id="usb_function::get_status" title='usb_function::get_status' data-ref="usb_function::get_status">get_status</dfn>)(<b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *);</td></tr>
+<tr><th id="234">234</th><td>	<em>int</em>			(*<dfn class="decl field" id="usb_function::func_suspend" title='usb_function::func_suspend' data-ref="usb_function::func_suspend">func_suspend</dfn>)(<b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *,</td></tr>
+<tr><th id="235">235</th><td>						<a class="typedef" href="../../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a> <dfn class="local col7 decl" id="177suspend_opt" title='suspend_opt' data-type='u8' data-ref="177suspend_opt">suspend_opt</dfn>);</td></tr>
+<tr><th id="236">236</th><td>	<i>/* private: */</i></td></tr>
+<tr><th id="237">237</th><td>	<i>/* internals */</i></td></tr>
+<tr><th id="238">238</th><td>	<b>struct</b> <a class="type" href="../types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a>		<dfn class="decl field" id="usb_function::list" title='usb_function::list' data-ref="usb_function::list">list</dfn>;</td></tr>
+<tr><th id="239">239</th><td>	<a class="macro" href="../types.h.html#10" title="unsigned long endpoints[(((32) + (8 * sizeof(long)) - 1) / (8 * sizeof(long)))]" data-ref="_M/DECLARE_BITMAP">DECLARE_BITMAP</a>(<dfn class="decl field" id="usb_function::endpoints" title='usb_function::endpoints' data-ref="usb_function::endpoints">endpoints</dfn>, <var>32</var>);</td></tr>
+<tr><th id="240">240</th><td>	<em>const</em> <b>struct</b> <a class="type" href="#usb_function_instance" title='usb_function_instance' data-ref="usb_function_instance">usb_function_instance</a> *<dfn class="decl field" id="usb_function::fi" title='usb_function::fi' data-ref="usb_function::fi">fi</dfn>;</td></tr>
+<tr><th id="241">241</th><td></td></tr>
+<tr><th id="242">242</th><td>	<em>unsigned</em> <em>int</em>		<dfn class="decl field" id="usb_function::bind_deactivated" title='usb_function::bind_deactivated' data-ref="usb_function::bind_deactivated">bind_deactivated</dfn>:<var>1</var>;</td></tr>
+<tr><th id="243">243</th><td>};</td></tr>
+<tr><th id="244">244</th><td></td></tr>
+<tr><th id="245">245</th><td><em>int</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#usb_add_function" title='usb_add_function' data-ref="usb_add_function" id="usb_add_function">usb_add_function</a>(<b>struct</b> <a class="type" href="#usb_configuration" title='usb_configuration' data-ref="usb_configuration">usb_configuration</a> *, <b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *);</td></tr>
+<tr><th id="246">246</th><td></td></tr>
+<tr><th id="247">247</th><td><em>int</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#usb_function_deactivate" title='usb_function_deactivate' data-ref="usb_function_deactivate" id="usb_function_deactivate">usb_function_deactivate</a>(<b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *);</td></tr>
+<tr><th id="248">248</th><td><em>int</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#usb_function_activate" title='usb_function_activate' data-ref="usb_function_activate" id="usb_function_activate">usb_function_activate</a>(<b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *);</td></tr>
+<tr><th id="249">249</th><td></td></tr>
+<tr><th id="250">250</th><td><em>int</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#usb_interface_id" title='usb_interface_id' data-ref="usb_interface_id" id="usb_interface_id">usb_interface_id</a>(<b>struct</b> <a class="type" href="#usb_configuration" title='usb_configuration' data-ref="usb_configuration">usb_configuration</a> *, <b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *);</td></tr>
+<tr><th id="251">251</th><td></td></tr>
+<tr><th id="252">252</th><td><em>int</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#config_ep_by_speed" title='config_ep_by_speed' data-ref="config_ep_by_speed" id="config_ep_by_speed">config_ep_by_speed</a>(<b>struct</b> <a class="type" href="gadget.h.html#usb_gadget" title='usb_gadget' data-ref="usb_gadget">usb_gadget</a> *<dfn class="local col8 decl" id="178g" title='g' data-type='struct usb_gadget *' data-ref="178g">g</dfn>, <b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *<dfn class="local col9 decl" id="179f" title='f' data-type='struct usb_function *' data-ref="179f">f</dfn>,</td></tr>
+<tr><th id="253">253</th><td>			<b>struct</b> <a class="type" href="gadget.h.html#usb_ep" title='usb_ep' data-ref="usb_ep">usb_ep</a> *<dfn class="local col0 decl" id="180_ep" title='_ep' data-type='struct usb_ep *' data-ref="180_ep">_ep</dfn>);</td></tr>
+<tr><th id="254">254</th><td></td></tr>
+<tr><th id="255">255</th><td><u>#define	<dfn class="macro" id="_M/MAX_CONFIG_INTERFACES" data-ref="_M/MAX_CONFIG_INTERFACES">MAX_CONFIG_INTERFACES</dfn>		16	/* arbitrary; max 255 */</u></td></tr>
+<tr><th id="256">256</th><td></td></tr>
+<tr><th id="257">257</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="258">258</th><td><i class="doc"> * struct usb_configuration - represents one gadget configuration</i></td></tr>
+<tr><th id="259">259</th><td><i class="doc"> *<span class="command"> @label</span>: For diagnostics, describes the configuration.</i></td></tr>
+<tr><th id="260">260</th><td><i class="doc"> *<span class="command"> @strings</span>: Tables of strings, keyed by identifiers assigned during<span class="command"> @bind</span>()</i></td></tr>
+<tr><th id="261">261</th><td><i class="doc"> *	and by language IDs provided in control requests.</i></td></tr>
+<tr><th id="262">262</th><td><i class="doc"> *<span class="command"> @descriptors</span>: Table of descriptors preceding all function descriptors.</i></td></tr>
+<tr><th id="263">263</th><td><i class="doc"> *	Examples include OTG and vendor-specific descriptors.</i></td></tr>
+<tr><th id="264">264</th><td><i class="doc"> *<span class="command"> @unbind</span>: Reverses<span class="command"> @bind</span>; called as a side effect of unregistering the</i></td></tr>
+<tr><th id="265">265</th><td><i class="doc"> *	driver which added this configuration.</i></td></tr>
+<tr><th id="266">266</th><td><i class="doc"> *<span class="command"> @setup</span>: Used to delegate control requests that aren't handled by standard</i></td></tr>
+<tr><th id="267">267</th><td><i class="doc"> *	device infrastructure or directed at a specific interface.</i></td></tr>
+<tr><th id="268">268</th><td><i class="doc"> *<span class="command"> @bConfigurationValue</span>: Copied into configuration descriptor.</i></td></tr>
+<tr><th id="269">269</th><td><i class="doc"> *<span class="command"> @iConfiguration</span>: Copied into configuration descriptor.</i></td></tr>
+<tr><th id="270">270</th><td><i class="doc"> *<span class="command"> @bmAttributes</span>: Copied into configuration descriptor.</i></td></tr>
+<tr><th id="271">271</th><td><i class="doc"> *<span class="command"> @MaxPower</span>: Power consumtion in mA. Used to compute bMaxPower in the</i></td></tr>
+<tr><th id="272">272</th><td><i class="doc"> *	configuration descriptor after considering the bus speed.</i></td></tr>
+<tr><th id="273">273</th><td><i class="doc"> *<span class="command"> @cdev</span>: assigned by<span class="command"> @usb</span>_add_config() before calling<span class="command"> @bind</span>(); this is</i></td></tr>
+<tr><th id="274">274</th><td><i class="doc"> *	the device associated with this configuration.</i></td></tr>
+<tr><th id="275">275</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="276">276</th><td><i class="doc"> * Configurations are building blocks for gadget drivers structured around</i></td></tr>
+<tr><th id="277">277</th><td><i class="doc"> * function drivers.  Simple USB gadgets require only one function and one</i></td></tr>
+<tr><th id="278">278</th><td><i class="doc"> * configuration, and handle dual-speed hardware by always providing the same</i></td></tr>
+<tr><th id="279">279</th><td><i class="doc"> * functionality.  Slightly more complex gadgets may have more than one</i></td></tr>
+<tr><th id="280">280</th><td><i class="doc"> * single-function configuration at a given speed; or have configurations</i></td></tr>
+<tr><th id="281">281</th><td><i class="doc"> * that only work at one speed.</i></td></tr>
+<tr><th id="282">282</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="283">283</th><td><i class="doc"> * Composite devices are, by definition, ones with configurations which</i></td></tr>
+<tr><th id="284">284</th><td><i class="doc"> * include more than one function.</i></td></tr>
+<tr><th id="285">285</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="286">286</th><td><i class="doc"> * The lifecycle of a usb_configuration includes allocation, initialization</i></td></tr>
+<tr><th id="287">287</th><td><i class="doc"> * of the fields described above, and calling<span class="command"> @usb</span>_add_config() to set up</i></td></tr>
+<tr><th id="288">288</th><td><i class="doc"> * internal data and bind it to a specific device.  The configuration's</i></td></tr>
+<tr><th id="289">289</th><td><i class="doc"> *<span class="command"> @bind</span>() method is then used to initialize all the functions and then</i></td></tr>
+<tr><th id="290">290</th><td><i class="doc"> * call<span class="command"> @usb</span>_add_function() for them.</i></td></tr>
+<tr><th id="291">291</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="292">292</th><td><i class="doc"> * Those functions would normally be independent of each other, but that's</i></td></tr>
+<tr><th id="293">293</th><td><i class="doc"> * not mandatory.  CDC WMC devices are an example where functions often</i></td></tr>
+<tr><th id="294">294</th><td><i class="doc"> * depend on other functions, with some functions subsidiary to others.</i></td></tr>
+<tr><th id="295">295</th><td><i class="doc"> * Such interdependency may be managed in any way, so long as all of the</i></td></tr>
+<tr><th id="296">296</th><td><i class="doc"> * descriptors complete by the time the composite driver returns from</i></td></tr>
+<tr><th id="297">297</th><td><i class="doc"> * its bind() routine.</i></td></tr>
+<tr><th id="298">298</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="299">299</th><td><b>struct</b> <dfn class="type def" id="usb_configuration" title='usb_configuration' data-ref="usb_configuration">usb_configuration</dfn> {</td></tr>
+<tr><th id="300">300</th><td>	<em>const</em> <em>char</em>			*<dfn class="decl field" id="usb_configuration::label" title='usb_configuration::label' data-ref="usb_configuration::label">label</dfn>;</td></tr>
+<tr><th id="301">301</th><td>	<b>struct</b> <a class="type" href="gadget.h.html#usb_gadget_strings" title='usb_gadget_strings' data-ref="usb_gadget_strings">usb_gadget_strings</a>	**<dfn class="decl field" id="usb_configuration::strings" title='usb_configuration::strings' data-ref="usb_configuration::strings">strings</dfn>;</td></tr>
+<tr><th id="302">302</th><td>	<em>const</em> <b>struct</b> <a class="type" href="../../uapi/linux/usb/ch9.h.html#usb_descriptor_header" title='usb_descriptor_header' data-ref="usb_descriptor_header">usb_descriptor_header</a> **<dfn class="decl field" id="usb_configuration::descriptors" title='usb_configuration::descriptors' data-ref="usb_configuration::descriptors">descriptors</dfn>;</td></tr>
+<tr><th id="303">303</th><td></td></tr>
+<tr><th id="304">304</th><td>	<i>/* REVISIT:  bind() functions can be marked __init, which</i></td></tr>
+<tr><th id="305">305</th><td><i>	 * makes trouble for section mismatch analysis.  See if</i></td></tr>
+<tr><th id="306">306</th><td><i>	 * we can't restructure things to avoid mismatching...</i></td></tr>
+<tr><th id="307">307</th><td><i>	 */</i></td></tr>
+<tr><th id="308">308</th><td></td></tr>
+<tr><th id="309">309</th><td>	<i>/* configuration management: unbind/setup */</i></td></tr>
+<tr><th id="310">310</th><td>	<em>void</em>			(*<dfn class="decl field" id="usb_configuration::unbind" title='usb_configuration::unbind' data-ref="usb_configuration::unbind">unbind</dfn>)(<b>struct</b> <a class="type" href="#usb_configuration" title='usb_configuration' data-ref="usb_configuration">usb_configuration</a> *);</td></tr>
+<tr><th id="311">311</th><td>	<em>int</em>			(*<dfn class="decl field" id="usb_configuration::setup" title='usb_configuration::setup' data-ref="usb_configuration::setup">setup</dfn>)(<b>struct</b> <a class="type" href="#usb_configuration" title='usb_configuration' data-ref="usb_configuration">usb_configuration</a> *,</td></tr>
+<tr><th id="312">312</th><td>					<em>const</em> <b>struct</b> <a class="type" href="../../uapi/linux/usb/ch9.h.html#usb_ctrlrequest" title='usb_ctrlrequest' data-ref="usb_ctrlrequest">usb_ctrlrequest</a> *);</td></tr>
+<tr><th id="313">313</th><td></td></tr>
+<tr><th id="314">314</th><td>	<i>/* fields in the config descriptor */</i></td></tr>
+<tr><th id="315">315</th><td>	<a class="typedef" href="../../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a>			<dfn class="decl field" id="usb_configuration::bConfigurationValue" title='usb_configuration::bConfigurationValue' data-ref="usb_configuration::bConfigurationValue">bConfigurationValue</dfn>;</td></tr>
+<tr><th id="316">316</th><td>	<a class="typedef" href="../../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a>			<dfn class="decl field" id="usb_configuration::iConfiguration" title='usb_configuration::iConfiguration' data-ref="usb_configuration::iConfiguration">iConfiguration</dfn>;</td></tr>
+<tr><th id="317">317</th><td>	<a class="typedef" href="../../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a>			<dfn class="decl field" id="usb_configuration::bmAttributes" title='usb_configuration::bmAttributes' data-ref="usb_configuration::bmAttributes">bmAttributes</dfn>;</td></tr>
+<tr><th id="318">318</th><td>	<a class="typedef" href="../../asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a>			<dfn class="decl field" id="usb_configuration::MaxPower" title='usb_configuration::MaxPower' data-ref="usb_configuration::MaxPower">MaxPower</dfn>;</td></tr>
+<tr><th id="319">319</th><td></td></tr>
+<tr><th id="320">320</th><td>	<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a>	*<dfn class="decl field" id="usb_configuration::cdev" title='usb_configuration::cdev' data-ref="usb_configuration::cdev">cdev</dfn>;</td></tr>
+<tr><th id="321">321</th><td></td></tr>
+<tr><th id="322">322</th><td>	<i>/* private: */</i></td></tr>
+<tr><th id="323">323</th><td>	<i>/* internals */</i></td></tr>
+<tr><th id="324">324</th><td>	<b>struct</b> <a class="type" href="../types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a>	<dfn class="decl field" id="usb_configuration::list" title='usb_configuration::list' data-ref="usb_configuration::list">list</dfn>;</td></tr>
+<tr><th id="325">325</th><td>	<b>struct</b> <a class="type" href="../types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a>	<dfn class="decl field" id="usb_configuration::functions" title='usb_configuration::functions' data-ref="usb_configuration::functions">functions</dfn>;</td></tr>
+<tr><th id="326">326</th><td>	<a class="typedef" href="../../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a>			<dfn class="decl field" id="usb_configuration::next_interface_id" title='usb_configuration::next_interface_id' data-ref="usb_configuration::next_interface_id">next_interface_id</dfn>;</td></tr>
+<tr><th id="327">327</th><td>	<em>unsigned</em>		<dfn class="decl field" id="usb_configuration::superspeed" title='usb_configuration::superspeed' data-ref="usb_configuration::superspeed">superspeed</dfn>:<var>1</var>;</td></tr>
+<tr><th id="328">328</th><td>	<em>unsigned</em>		<dfn class="decl field" id="usb_configuration::highspeed" title='usb_configuration::highspeed' data-ref="usb_configuration::highspeed">highspeed</dfn>:<var>1</var>;</td></tr>
+<tr><th id="329">329</th><td>	<em>unsigned</em>		<dfn class="decl field" id="usb_configuration::fullspeed" title='usb_configuration::fullspeed' data-ref="usb_configuration::fullspeed">fullspeed</dfn>:<var>1</var>;</td></tr>
+<tr><th id="330">330</th><td>	<em>unsigned</em>		<dfn class="decl field" id="usb_configuration::superspeed_plus" title='usb_configuration::superspeed_plus' data-ref="usb_configuration::superspeed_plus">superspeed_plus</dfn>:<var>1</var>;</td></tr>
+<tr><th id="331">331</th><td>	<b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a>	*<dfn class="decl field" id="usb_configuration::interface" title='usb_configuration::interface' data-ref="usb_configuration::interface">interface</dfn>[<a class="macro" href="#255" title="16" data-ref="_M/MAX_CONFIG_INTERFACES">MAX_CONFIG_INTERFACES</a>];</td></tr>
+<tr><th id="332">332</th><td>};</td></tr>
+<tr><th id="333">333</th><td></td></tr>
+<tr><th id="334">334</th><td><em>int</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#usb_add_config" title='usb_add_config' data-ref="usb_add_config" id="usb_add_config">usb_add_config</a>(<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a> *,</td></tr>
+<tr><th id="335">335</th><td>		<b>struct</b> <a class="type" href="#usb_configuration" title='usb_configuration' data-ref="usb_configuration">usb_configuration</a> *,</td></tr>
+<tr><th id="336">336</th><td>		<em>int</em> (*)(<b>struct</b> <a class="type" href="#usb_configuration" title='usb_configuration' data-ref="usb_configuration">usb_configuration</a> *));</td></tr>
+<tr><th id="337">337</th><td></td></tr>
+<tr><th id="338">338</th><td><em>void</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#usb_remove_config" title='usb_remove_config' data-ref="usb_remove_config" id="usb_remove_config">usb_remove_config</a>(<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a> *,</td></tr>
+<tr><th id="339">339</th><td>		<b>struct</b> <a class="type" href="#usb_configuration" title='usb_configuration' data-ref="usb_configuration">usb_configuration</a> *);</td></tr>
+<tr><th id="340">340</th><td></td></tr>
+<tr><th id="341">341</th><td><i>/* predefined index for usb_composite_driver */</i></td></tr>
+<tr><th id="342">342</th><td><b>enum</b> {</td></tr>
+<tr><th id="343">343</th><td>	<dfn class="enum" id="USB_GADGET_MANUFACTURER_IDX" title='USB_GADGET_MANUFACTURER_IDX' data-ref="USB_GADGET_MANUFACTURER_IDX">USB_GADGET_MANUFACTURER_IDX</dfn>	= <var>0</var>,</td></tr>
+<tr><th id="344">344</th><td>	<dfn class="enum" id="USB_GADGET_PRODUCT_IDX" title='USB_GADGET_PRODUCT_IDX' data-ref="USB_GADGET_PRODUCT_IDX">USB_GADGET_PRODUCT_IDX</dfn>,</td></tr>
+<tr><th id="345">345</th><td>	<dfn class="enum" id="USB_GADGET_SERIAL_IDX" title='USB_GADGET_SERIAL_IDX' data-ref="USB_GADGET_SERIAL_IDX">USB_GADGET_SERIAL_IDX</dfn>,</td></tr>
+<tr><th id="346">346</th><td>	<dfn class="enum" id="USB_GADGET_FIRST_AVAIL_IDX" title='USB_GADGET_FIRST_AVAIL_IDX' data-ref="USB_GADGET_FIRST_AVAIL_IDX">USB_GADGET_FIRST_AVAIL_IDX</dfn>,</td></tr>
+<tr><th id="347">347</th><td>};</td></tr>
+<tr><th id="348">348</th><td></td></tr>
+<tr><th id="349">349</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="350">350</th><td><i class="doc"> * struct usb_composite_driver - groups configurations into a gadget</i></td></tr>
+<tr><th id="351">351</th><td><i class="doc"> * <span class="command">@name</span>:<span class="verb"> For diagnostics, identifies the driver.</span></i></td></tr>
+<tr><th id="352">352</th><td><i class="doc"> * <span class="command">@dev</span>:<span class="verb"> Template descriptor for the device, including default device</span></i></td></tr>
+<tr><th id="353">353</th><td><i class="doc"> *	identifiers.</i></td></tr>
+<tr><th id="354">354</th><td><i class="doc"> *<span class="command"> @strings</span>: tables of strings, keyed by identifiers assigned during<span class="command"> @bind</span></i></td></tr>
+<tr><th id="355">355</th><td><i class="doc"> *	and language IDs provided in control requests. Note: The first entries</i></td></tr>
+<tr><th id="356">356</th><td><i class="doc"> *	are predefined. The first entry that may be used is</i></td></tr>
+<tr><th id="357">357</th><td><i class="doc"> *	USB_GADGET_FIRST_AVAIL_IDX</i></td></tr>
+<tr><th id="358">358</th><td><i class="doc"> *<span class="command"> @max</span>_speed: Highest speed the driver supports.</i></td></tr>
+<tr><th id="359">359</th><td><i class="doc"> *<span class="command"> @needs</span>_serial: set to 1 if the gadget needs userspace to provide</i></td></tr>
+<tr><th id="360">360</th><td><i class="doc"> * 	a serial number.  If one is not provided, warning will be printed.</i></td></tr>
+<tr><th id="361">361</th><td><i class="doc"> *<span class="command"> @bind</span>: (REQUIRED) Used to allocate resources that are shared across the</i></td></tr>
+<tr><th id="362">362</th><td><i class="doc"> *	whole device, such as string IDs, and add its configurations using</i></td></tr>
+<tr><th id="363">363</th><td><i class="doc"> *<span class="command">	@usb</span>_add_config(). This may fail by returning a negative errno</i></td></tr>
+<tr><th id="364">364</th><td><i class="doc"> *	value; it should return zero on successful initialization.</i></td></tr>
+<tr><th id="365">365</th><td><i class="doc"> *<span class="command"> @unbind</span>: Reverses<span class="command"> @bind</span>; called as a side effect of unregistering</i></td></tr>
+<tr><th id="366">366</th><td><i class="doc"> *	this driver.</i></td></tr>
+<tr><th id="367">367</th><td><i class="doc"> *<span class="command"> @disconnect</span>: optional driver disconnect method</i></td></tr>
+<tr><th id="368">368</th><td><i class="doc"> *<span class="command"> @suspend</span>: Notifies when the host stops sending USB traffic,</i></td></tr>
+<tr><th id="369">369</th><td><i class="doc"> *	after function notifications</i></td></tr>
+<tr><th id="370">370</th><td><i class="doc"> *<span class="command"> @resume</span>: Notifies configuration when the host restarts USB traffic,</i></td></tr>
+<tr><th id="371">371</th><td><i class="doc"> *	before function notifications</i></td></tr>
+<tr><th id="372">372</th><td><i class="doc"> *<span class="command"> @gadget</span>_driver: Gadget driver controlling this driver</i></td></tr>
+<tr><th id="373">373</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="374">374</th><td><i class="doc"> * Devices default to reporting self powered operation.  Devices which rely</i></td></tr>
+<tr><th id="375">375</th><td><i class="doc"> * on bus powered operation should report this in their<span class="command"> @bind</span> method.</i></td></tr>
+<tr><th id="376">376</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="377">377</th><td><i class="doc"> * Before returning from<span class="command"> @bind</span>, various fields in the template descriptor</i></td></tr>
+<tr><th id="378">378</th><td><i class="doc"> * may be overridden.  These include the idVendor/idProduct/bcdDevice values</i></td></tr>
+<tr><th id="379">379</th><td><i class="doc"> * normally to bind the appropriate host side driver, and the three strings</i></td></tr>
+<tr><th id="380">380</th><td><i class="doc"> * (iManufacturer, iProduct, iSerialNumber) normally used to provide user</i></td></tr>
+<tr><th id="381">381</th><td><i class="doc"> * meaningful device identifiers.  (The strings will not be defined unless</i></td></tr>
+<tr><th id="382">382</th><td><i class="doc"> * they are defined in <span class="command">@dev</span> <span class="verb">and @strings.)  The correct ep0 maxpacket size</span></i></td></tr>
+<tr><th id="383">383</th><td><i class="doc"> * is also reported, as defined by the underlying controller driver.</i></td></tr>
+<tr><th id="384">384</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="385">385</th><td><b>struct</b> <dfn class="type def" id="usb_composite_driver" title='usb_composite_driver' data-ref="usb_composite_driver">usb_composite_driver</dfn> {</td></tr>
+<tr><th id="386">386</th><td>	<em>const</em> <em>char</em>				*<dfn class="decl field" id="usb_composite_driver::name" title='usb_composite_driver::name' data-ref="usb_composite_driver::name">name</dfn>;</td></tr>
+<tr><th id="387">387</th><td>	<em>const</em> <b>struct</b> <a class="type" href="../../uapi/linux/usb/ch9.h.html#usb_device_descriptor" title='usb_device_descriptor' data-ref="usb_device_descriptor">usb_device_descriptor</a>	*<dfn class="decl field" id="usb_composite_driver::dev" title='usb_composite_driver::dev' data-ref="usb_composite_driver::dev">dev</dfn>;</td></tr>
+<tr><th id="388">388</th><td>	<b>struct</b> <a class="type" href="gadget.h.html#usb_gadget_strings" title='usb_gadget_strings' data-ref="usb_gadget_strings">usb_gadget_strings</a>		**<dfn class="decl field" id="usb_composite_driver::strings" title='usb_composite_driver::strings' data-ref="usb_composite_driver::strings">strings</dfn>;</td></tr>
+<tr><th id="389">389</th><td>	<b>enum</b> <a class="type" href="../../uapi/linux/usb/ch9.h.html#usb_device_speed" title='usb_device_speed' data-ref="usb_device_speed">usb_device_speed</a>			<dfn class="decl field" id="usb_composite_driver::max_speed" title='usb_composite_driver::max_speed' data-ref="usb_composite_driver::max_speed">max_speed</dfn>;</td></tr>
+<tr><th id="390">390</th><td>	<em>unsigned</em>		<dfn class="decl field" id="usb_composite_driver::needs_serial" title='usb_composite_driver::needs_serial' data-ref="usb_composite_driver::needs_serial">needs_serial</dfn>:<var>1</var>;</td></tr>
+<tr><th id="391">391</th><td></td></tr>
+<tr><th id="392">392</th><td>	<em>int</em>			(*<dfn class="decl field" id="usb_composite_driver::bind" title='usb_composite_driver::bind' data-ref="usb_composite_driver::bind">bind</dfn>)(<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a> *<dfn class="local col1 decl" id="181cdev" title='cdev' data-type='struct usb_composite_dev *' data-ref="181cdev">cdev</dfn>);</td></tr>
+<tr><th id="393">393</th><td>	<em>int</em>			(*<dfn class="decl field" id="usb_composite_driver::unbind" title='usb_composite_driver::unbind' data-ref="usb_composite_driver::unbind">unbind</dfn>)(<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a> *);</td></tr>
+<tr><th id="394">394</th><td></td></tr>
+<tr><th id="395">395</th><td>	<em>void</em>			(*<dfn class="decl field" id="usb_composite_driver::disconnect" title='usb_composite_driver::disconnect' data-ref="usb_composite_driver::disconnect">disconnect</dfn>)(<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a> *);</td></tr>
+<tr><th id="396">396</th><td></td></tr>
+<tr><th id="397">397</th><td>	<i>/* global suspend hooks */</i></td></tr>
+<tr><th id="398">398</th><td>	<em>void</em>			(*<dfn class="decl field" id="usb_composite_driver::suspend" title='usb_composite_driver::suspend' data-ref="usb_composite_driver::suspend">suspend</dfn>)(<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a> *);</td></tr>
+<tr><th id="399">399</th><td>	<em>void</em>			(*<dfn class="decl field" id="usb_composite_driver::resume" title='usb_composite_driver::resume' data-ref="usb_composite_driver::resume">resume</dfn>)(<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a> *);</td></tr>
+<tr><th id="400">400</th><td>	<b>struct</b> <a class="type" href="gadget.h.html#usb_gadget_driver" title='usb_gadget_driver' data-ref="usb_gadget_driver">usb_gadget_driver</a>		<dfn class="decl field" id="usb_composite_driver::gadget_driver" title='usb_composite_driver::gadget_driver' data-ref="usb_composite_driver::gadget_driver">gadget_driver</dfn>;</td></tr>
+<tr><th id="401">401</th><td>};</td></tr>
+<tr><th id="402">402</th><td></td></tr>
+<tr><th id="403">403</th><td><b>extern</b> <em>int</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#usb_composite_probe" title='usb_composite_probe' data-ref="usb_composite_probe" id="usb_composite_probe">usb_composite_probe</a>(<b>struct</b> <a class="type" href="#usb_composite_driver" title='usb_composite_driver' data-ref="usb_composite_driver">usb_composite_driver</a> *<dfn class="local col2 decl" id="182driver" title='driver' data-type='struct usb_composite_driver *' data-ref="182driver">driver</dfn>);</td></tr>
+<tr><th id="404">404</th><td><b>extern</b> <em>void</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#usb_composite_unregister" title='usb_composite_unregister' data-ref="usb_composite_unregister" id="usb_composite_unregister">usb_composite_unregister</a>(<b>struct</b> <a class="type" href="#usb_composite_driver" title='usb_composite_driver' data-ref="usb_composite_driver">usb_composite_driver</a> *<dfn class="local col3 decl" id="183driver" title='driver' data-type='struct usb_composite_driver *' data-ref="183driver">driver</dfn>);</td></tr>
+<tr><th id="405">405</th><td></td></tr>
+<tr><th id="406">406</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="407">407</th><td><i class="doc"> * module_usb_composite_driver() - Helper macro for registering a USB gadget</i></td></tr>
+<tr><th id="408">408</th><td><i class="doc"> * composite driver</i></td></tr>
+<tr><th id="409">409</th><td><i class="doc"> * @__usb_composite_driver: usb_composite_driver struct</i></td></tr>
+<tr><th id="410">410</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="411">411</th><td><i class="doc"> * Helper macro for USB gadget composite drivers which do not do anything</i></td></tr>
+<tr><th id="412">412</th><td><i class="doc"> * special in module init/exit. This eliminates a lot of boilerplate. Each</i></td></tr>
+<tr><th id="413">413</th><td><i class="doc"> * module may only use this macro once, and calling it replaces module_init()</i></td></tr>
+<tr><th id="414">414</th><td><i class="doc"> * and module_exit()</i></td></tr>
+<tr><th id="415">415</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="416">416</th><td><u>#define <dfn class="macro" id="_M/module_usb_composite_driver" data-ref="_M/module_usb_composite_driver">module_usb_composite_driver</dfn>(__usb_composite_driver) \</u></td></tr>
+<tr><th id="417">417</th><td><u>	module_driver(__usb_composite_driver, usb_composite_probe, \</u></td></tr>
+<tr><th id="418">418</th><td><u>		       usb_composite_unregister)</u></td></tr>
+<tr><th id="419">419</th><td></td></tr>
+<tr><th id="420">420</th><td><b>extern</b> <em>void</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#usb_composite_setup_continue" title='usb_composite_setup_continue' data-ref="usb_composite_setup_continue" id="usb_composite_setup_continue">usb_composite_setup_continue</a>(<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a> *<dfn class="local col4 decl" id="184cdev" title='cdev' data-type='struct usb_composite_dev *' data-ref="184cdev">cdev</dfn>);</td></tr>
+<tr><th id="421">421</th><td><b>extern</b> <em>int</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#composite_dev_prepare" title='composite_dev_prepare' data-ref="composite_dev_prepare" id="composite_dev_prepare">composite_dev_prepare</a>(<b>struct</b> <a class="type" href="#usb_composite_driver" title='usb_composite_driver' data-ref="usb_composite_driver">usb_composite_driver</a> *<dfn class="local col5 decl" id="185composite" title='composite' data-type='struct usb_composite_driver *' data-ref="185composite">composite</dfn>,</td></tr>
+<tr><th id="422">422</th><td>		<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a> *<dfn class="local col6 decl" id="186cdev" title='cdev' data-type='struct usb_composite_dev *' data-ref="186cdev">cdev</dfn>);</td></tr>
+<tr><th id="423">423</th><td><b>extern</b> <em>int</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#composite_os_desc_req_prepare" title='composite_os_desc_req_prepare' data-ref="composite_os_desc_req_prepare" id="composite_os_desc_req_prepare">composite_os_desc_req_prepare</a>(<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a> *<dfn class="local col7 decl" id="187cdev" title='cdev' data-type='struct usb_composite_dev *' data-ref="187cdev">cdev</dfn>,</td></tr>
+<tr><th id="424">424</th><td>					 <b>struct</b> <a class="type" href="gadget.h.html#usb_ep" title='usb_ep' data-ref="usb_ep">usb_ep</a> *<dfn class="local col8 decl" id="188ep0" title='ep0' data-type='struct usb_ep *' data-ref="188ep0">ep0</dfn>);</td></tr>
+<tr><th id="425">425</th><td><em>void</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#composite_dev_cleanup" title='composite_dev_cleanup' data-ref="composite_dev_cleanup" id="composite_dev_cleanup">composite_dev_cleanup</a>(<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a> *<dfn class="local col9 decl" id="189cdev" title='cdev' data-type='struct usb_composite_dev *' data-ref="189cdev">cdev</dfn>);</td></tr>
+<tr><th id="426">426</th><td></td></tr>
+<tr><th id="427">427</th><td><em>static</em> <a class="macro" href="../compiler-gcc.h.html#95" title="inline __attribute__((always_inline, unused)) __attribute__((no_instrument_function))" data-ref="_M/inline"><b>inline</b></a> <b>struct</b> <a class="type" href="#usb_composite_driver" title='usb_composite_driver' data-ref="usb_composite_driver">usb_composite_driver</a> *<dfn class="decl def fn" id="to_cdriver" title='to_cdriver' data-ref="to_cdriver">to_cdriver</dfn>(</td></tr>
+<tr><th id="428">428</th><td>		<b>struct</b> <a class="type" href="gadget.h.html#usb_gadget_driver" title='usb_gadget_driver' data-ref="usb_gadget_driver">usb_gadget_driver</a> *<dfn class="local col0 decl" id="190gdrv" title='gdrv' data-type='struct usb_gadget_driver *' data-ref="190gdrv">gdrv</dfn>)</td></tr>
+<tr><th id="429">429</th><td>{</td></tr>
+<tr><th id="430">430</th><td>	<b>return</b> <a class="macro" href="../kernel.h.html#962" title="({ void *__mptr = (void *)(gdrv); do { bool __cond = !(!(!__builtin_types_compatible_p(typeof(*(gdrv)), typeof(((struct usb_composite_driver *)0)-&gt;gadget_driver)) &amp;&amp; !__builtin_types_compatible_p(typeof(*(gdrv)), typeof(void)))); extern void __compiletime_assert_430(void) ; if (__cond) __compiletime_assert_430(); do { ((void)sizeof(char[1 - 2 * __cond])); } while (0); } while (0); ((struct usb_composite_driver *)(__mptr - __builtin_offsetof(struct usb_composite_driver, gadget_driver))); })" data-ref="_M/container_of">container_of</a>(<a class="local col0 ref" href="#190gdrv" title='gdrv' data-ref="190gdrv">gdrv</a>, <b>struct</b> <a class="type" href="#usb_composite_driver" title='usb_composite_driver' data-ref="usb_composite_driver">usb_composite_driver</a>, <a class="ref field" href="#usb_composite_driver::gadget_driver" title='usb_composite_driver::gadget_driver' data-ref="usb_composite_driver::gadget_driver">gadget_driver</a>);</td></tr>
+<tr><th id="431">431</th><td>}</td></tr>
+<tr><th id="432">432</th><td></td></tr>
+<tr><th id="433">433</th><td><u>#define <dfn class="macro" id="_M/OS_STRING_QW_SIGN_LEN" data-ref="_M/OS_STRING_QW_SIGN_LEN">OS_STRING_QW_SIGN_LEN</dfn>		14</u></td></tr>
+<tr><th id="434">434</th><td><u>#define <dfn class="macro" id="_M/OS_STRING_IDX" data-ref="_M/OS_STRING_IDX">OS_STRING_IDX</dfn>			0xEE</u></td></tr>
+<tr><th id="435">435</th><td></td></tr>
+<tr><th id="436">436</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="437">437</th><td><i class="doc"> * struct usb_composite_device - represents one composite usb gadget</i></td></tr>
+<tr><th id="438">438</th><td><i class="doc"> *<span class="command"> @gadget</span>: read-only, abstracts the gadget's usb peripheral controller</i></td></tr>
+<tr><th id="439">439</th><td><i class="doc"> * <span class="command">@req</span>:<span class="verb"> used for control responses; buffer is pre-allocated</span></i></td></tr>
+<tr><th id="440">440</th><td><i class="doc"> *<span class="command"> @os</span>_desc_req: used for OS descriptors responses; buffer is pre-allocated</i></td></tr>
+<tr><th id="441">441</th><td><i class="doc"> *<span class="command"> @config</span>: the currently active configuration</i></td></tr>
+<tr><th id="442">442</th><td><i class="doc"> *<span class="command"> @qw</span>_sign: qwSignature part of the OS string</i></td></tr>
+<tr><th id="443">443</th><td><i class="doc"> *<span class="command"> @b</span><span class="arg">_vendor_code:</span> bMS_VendorCode part of the OS string</i></td></tr>
+<tr><th id="444">444</th><td><i class="doc"> *<span class="command"> @use</span>_os_string: false by default, interested gadgets set it</i></td></tr>
+<tr><th id="445">445</th><td><i class="doc"> *<span class="command"> @os</span>_desc_config: the configuration to be used with OS descriptors</i></td></tr>
+<tr><th id="446">446</th><td><i class="doc"> *<span class="command"> @setup</span>_pending: true when setup request is queued but not completed</i></td></tr>
+<tr><th id="447">447</th><td><i class="doc"> *<span class="command"> @os</span>_desc_pending: true when os_desc request is queued but not completed</i></td></tr>
+<tr><th id="448">448</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="449">449</th><td><i class="doc"> * One of these devices is allocated and initialized before the</i></td></tr>
+<tr><th id="450">450</th><td><i class="doc"> * associated device driver's bind() is called.</i></td></tr>
+<tr><th id="451">451</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="452">452</th><td><i class="doc"> * OPEN ISSUE:  it appears that some WUSB devices will need to be</i></td></tr>
+<tr><th id="453">453</th><td><i class="doc"> * built by combining a normal (wired) gadget with a wireless one.</i></td></tr>
+<tr><th id="454">454</th><td><i class="doc"> * This revision of the gadget framework should probably try to make</i></td></tr>
+<tr><th id="455">455</th><td><i class="doc"> * sure doing that won't hurt too much.</i></td></tr>
+<tr><th id="456">456</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="457">457</th><td><i class="doc"> * One notion for how to handle Wireless USB devices involves:</i></td></tr>
+<tr><th id="458">458</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="459">459</th><td><i class="doc"> * (a) a second gadget here, discovery mechanism TBD, but likely</i></td></tr>
+<tr><th id="460">460</th><td><i class="doc"> *     needing separate "register/unregister WUSB gadget" calls;</i></td></tr>
+<tr><th id="461">461</th><td><i class="doc"> * (b) updates to usb_gadget to include flags "is it wireless",</i></td></tr>
+<tr><th id="462">462</th><td><i class="doc"> *     "is it wired", plus (presumably in a wrapper structure)</i></td></tr>
+<tr><th id="463">463</th><td><i class="doc"> *     bandgroup and PHY info;</i></td></tr>
+<tr><th id="464">464</th><td><i class="doc"> * (c) presumably a wireless_ep wrapping a usb_ep, and reporting</i></td></tr>
+<tr><th id="465">465</th><td><i class="doc"> *     wireless-specific parameters like maxburst and maxsequence;</i></td></tr>
+<tr><th id="466">466</th><td><i class="doc"> * (d) configurations that are specific to wireless links;</i></td></tr>
+<tr><th id="467">467</th><td><i class="doc"> * (e) function drivers that understand wireless configs and will</i></td></tr>
+<tr><th id="468">468</th><td><i class="doc"> *     support wireless for (additional) function instances;</i></td></tr>
+<tr><th id="469">469</th><td><i class="doc"> * (f) a function to support association setup (like CBAF), not</i></td></tr>
+<tr><th id="470">470</th><td><i class="doc"> *     necessarily requiring a wireless adapter;</i></td></tr>
+<tr><th id="471">471</th><td><i class="doc"> * (g) composite device setup that can create one or more wireless</i></td></tr>
+<tr><th id="472">472</th><td><i class="doc"> *     configs, including appropriate association setup support;</i></td></tr>
+<tr><th id="473">473</th><td><i class="doc"> * (h) more, TBD.</i></td></tr>
+<tr><th id="474">474</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="475">475</th><td><b>struct</b> <dfn class="type def" id="usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</dfn> {</td></tr>
+<tr><th id="476">476</th><td>	<b>struct</b> <a class="type" href="gadget.h.html#usb_gadget" title='usb_gadget' data-ref="usb_gadget">usb_gadget</a>		*<dfn class="decl field" id="usb_composite_dev::gadget" title='usb_composite_dev::gadget' data-ref="usb_composite_dev::gadget">gadget</dfn>;</td></tr>
+<tr><th id="477">477</th><td>	<b>struct</b> <a class="type" href="gadget.h.html#usb_request" title='usb_request' data-ref="usb_request">usb_request</a>		*<dfn class="decl field" id="usb_composite_dev::req" title='usb_composite_dev::req' data-ref="usb_composite_dev::req">req</dfn>;</td></tr>
+<tr><th id="478">478</th><td>	<b>struct</b> <a class="type" href="gadget.h.html#usb_request" title='usb_request' data-ref="usb_request">usb_request</a>		*<dfn class="decl field" id="usb_composite_dev::os_desc_req" title='usb_composite_dev::os_desc_req' data-ref="usb_composite_dev::os_desc_req">os_desc_req</dfn>;</td></tr>
+<tr><th id="479">479</th><td></td></tr>
+<tr><th id="480">480</th><td>	<b>struct</b> <a class="type" href="#usb_configuration" title='usb_configuration' data-ref="usb_configuration">usb_configuration</a>	*<dfn class="decl field" id="usb_composite_dev::config" title='usb_composite_dev::config' data-ref="usb_composite_dev::config">config</dfn>;</td></tr>
+<tr><th id="481">481</th><td></td></tr>
+<tr><th id="482">482</th><td>	<i>/* OS String is a custom (yet popular) extension to the USB standard. */</i></td></tr>
+<tr><th id="483">483</th><td>	<a class="typedef" href="../../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a>				<dfn class="decl field" id="usb_composite_dev::qw_sign" title='usb_composite_dev::qw_sign' data-ref="usb_composite_dev::qw_sign">qw_sign</dfn>[<a class="macro" href="#433" title="14" data-ref="_M/OS_STRING_QW_SIGN_LEN">OS_STRING_QW_SIGN_LEN</a>];</td></tr>
+<tr><th id="484">484</th><td>	<a class="typedef" href="../../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a>				<dfn class="decl field" id="usb_composite_dev::b_vendor_code" title='usb_composite_dev::b_vendor_code' data-ref="usb_composite_dev::b_vendor_code">b_vendor_code</dfn>;</td></tr>
+<tr><th id="485">485</th><td>	<b>struct</b> <a class="type" href="#usb_configuration" title='usb_configuration' data-ref="usb_configuration">usb_configuration</a>	*<dfn class="decl field" id="usb_composite_dev::os_desc_config" title='usb_composite_dev::os_desc_config' data-ref="usb_composite_dev::os_desc_config">os_desc_config</dfn>;</td></tr>
+<tr><th id="486">486</th><td>	<em>unsigned</em> <em>int</em>			<dfn class="decl field" id="usb_composite_dev::use_os_string" title='usb_composite_dev::use_os_string' data-ref="usb_composite_dev::use_os_string">use_os_string</dfn>:<var>1</var>;</td></tr>
+<tr><th id="487">487</th><td></td></tr>
+<tr><th id="488">488</th><td>	<i>/* private: */</i></td></tr>
+<tr><th id="489">489</th><td>	<i>/* internals */</i></td></tr>
+<tr><th id="490">490</th><td>	<em>unsigned</em> <em>int</em>			<dfn class="decl field" id="usb_composite_dev::suspended" title='usb_composite_dev::suspended' data-ref="usb_composite_dev::suspended">suspended</dfn>:<var>1</var>;</td></tr>
+<tr><th id="491">491</th><td>	<b>struct</b> <a class="type" href="../../uapi/linux/usb/ch9.h.html#usb_device_descriptor" title='usb_device_descriptor' data-ref="usb_device_descriptor">usb_device_descriptor</a>	<dfn class="decl field" id="usb_composite_dev::desc" title='usb_composite_dev::desc' data-ref="usb_composite_dev::desc">desc</dfn>;</td></tr>
+<tr><th id="492">492</th><td>	<b>struct</b> <a class="type" href="../types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a>		<dfn class="decl field" id="usb_composite_dev::configs" title='usb_composite_dev::configs' data-ref="usb_composite_dev::configs">configs</dfn>;</td></tr>
+<tr><th id="493">493</th><td>	<b>struct</b> <a class="type" href="../types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a>		<dfn class="decl field" id="usb_composite_dev::gstrings" title='usb_composite_dev::gstrings' data-ref="usb_composite_dev::gstrings">gstrings</dfn>;</td></tr>
+<tr><th id="494">494</th><td>	<b>struct</b> <a class="type" href="#usb_composite_driver" title='usb_composite_driver' data-ref="usb_composite_driver">usb_composite_driver</a>	*<dfn class="decl field" id="usb_composite_dev::driver" title='usb_composite_dev::driver' data-ref="usb_composite_dev::driver">driver</dfn>;</td></tr>
+<tr><th id="495">495</th><td>	<a class="typedef" href="../../asm-generic/int-ll64.h.html#u8" title='u8' data-type='__u8' data-ref="u8">u8</a>				<dfn class="decl field" id="usb_composite_dev::next_string_id" title='usb_composite_dev::next_string_id' data-ref="usb_composite_dev::next_string_id">next_string_id</dfn>;</td></tr>
+<tr><th id="496">496</th><td>	<em>char</em>				*<dfn class="decl field" id="usb_composite_dev::def_manufacturer" title='usb_composite_dev::def_manufacturer' data-ref="usb_composite_dev::def_manufacturer">def_manufacturer</dfn>;</td></tr>
+<tr><th id="497">497</th><td></td></tr>
+<tr><th id="498">498</th><td>	<i>/* the gadget driver won't enable the data pullup</i></td></tr>
+<tr><th id="499">499</th><td><i>	 * while the deactivation count is nonzero.</i></td></tr>
+<tr><th id="500">500</th><td><i>	 */</i></td></tr>
+<tr><th id="501">501</th><td>	<em>unsigned</em>			<dfn class="decl field" id="usb_composite_dev::deactivations" title='usb_composite_dev::deactivations' data-ref="usb_composite_dev::deactivations">deactivations</dfn>;</td></tr>
+<tr><th id="502">502</th><td></td></tr>
+<tr><th id="503">503</th><td>	<i>/* the composite driver won't complete the control transfer's</i></td></tr>
+<tr><th id="504">504</th><td><i>	 * data/status stages till delayed_status is zero.</i></td></tr>
+<tr><th id="505">505</th><td><i>	 */</i></td></tr>
+<tr><th id="506">506</th><td>	<em>int</em>				<dfn class="decl field" id="usb_composite_dev::delayed_status" title='usb_composite_dev::delayed_status' data-ref="usb_composite_dev::delayed_status">delayed_status</dfn>;</td></tr>
+<tr><th id="507">507</th><td></td></tr>
+<tr><th id="508">508</th><td>	<i>/* protects deactivations and delayed_status counts*/</i></td></tr>
+<tr><th id="509">509</th><td>	<a class="typedef" href="../spinlock_types.h.html#spinlock_t" title='spinlock_t' data-type='struct spinlock' data-ref="spinlock_t">spinlock_t</a>			<dfn class="decl field" id="usb_composite_dev::lock" title='usb_composite_dev::lock' data-ref="usb_composite_dev::lock">lock</dfn>;</td></tr>
+<tr><th id="510">510</th><td></td></tr>
+<tr><th id="511">511</th><td>	<i>/* public: */</i></td></tr>
+<tr><th id="512">512</th><td>	<em>unsigned</em> <em>int</em>			<dfn class="decl field" id="usb_composite_dev::setup_pending" title='usb_composite_dev::setup_pending' data-ref="usb_composite_dev::setup_pending">setup_pending</dfn>:<var>1</var>;</td></tr>
+<tr><th id="513">513</th><td>	<em>unsigned</em> <em>int</em>			<dfn class="decl field" id="usb_composite_dev::os_desc_pending" title='usb_composite_dev::os_desc_pending' data-ref="usb_composite_dev::os_desc_pending">os_desc_pending</dfn>:<var>1</var>;</td></tr>
+<tr><th id="514">514</th><td>};</td></tr>
+<tr><th id="515">515</th><td></td></tr>
+<tr><th id="516">516</th><td><b>extern</b> <em>int</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#usb_string_id" title='usb_string_id' data-ref="usb_string_id" id="usb_string_id">usb_string_id</a>(<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a> *<dfn class="local col1 decl" id="191c" title='c' data-type='struct usb_composite_dev *' data-ref="191c">c</dfn>);</td></tr>
+<tr><th id="517">517</th><td><b>extern</b> <em>int</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#usb_string_ids_tab" title='usb_string_ids_tab' data-ref="usb_string_ids_tab" id="usb_string_ids_tab">usb_string_ids_tab</a>(<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a> *<dfn class="local col2 decl" id="192c" title='c' data-type='struct usb_composite_dev *' data-ref="192c">c</dfn>,</td></tr>
+<tr><th id="518">518</th><td>			      <b>struct</b> <a class="type" href="gadget.h.html#usb_string" title='usb_string' data-ref="usb_string">usb_string</a> *<dfn class="local col3 decl" id="193str" title='str' data-type='struct usb_string *' data-ref="193str">str</dfn>);</td></tr>
+<tr><th id="519">519</th><td><b>extern</b> <b>struct</b> <a class="type" href="gadget.h.html#usb_string" title='usb_string' data-ref="usb_string">usb_string</a> *<a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#usb_gstrings_attach" title='usb_gstrings_attach' data-ref="usb_gstrings_attach" id="usb_gstrings_attach">usb_gstrings_attach</a>(<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a> *<dfn class="local col4 decl" id="194cdev" title='cdev' data-type='struct usb_composite_dev *' data-ref="194cdev">cdev</dfn>,</td></tr>
+<tr><th id="520">520</th><td>		<b>struct</b> <a class="type" href="gadget.h.html#usb_gadget_strings" title='usb_gadget_strings' data-ref="usb_gadget_strings">usb_gadget_strings</a> **<dfn class="local col5 decl" id="195sp" title='sp' data-type='struct usb_gadget_strings **' data-ref="195sp">sp</dfn>, <em>unsigned</em> <dfn class="local col6 decl" id="196n_strings" title='n_strings' data-type='unsigned int' data-ref="196n_strings">n_strings</dfn>);</td></tr>
+<tr><th id="521">521</th><td></td></tr>
+<tr><th id="522">522</th><td><b>extern</b> <em>int</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#usb_string_ids_n" title='usb_string_ids_n' data-ref="usb_string_ids_n" id="usb_string_ids_n">usb_string_ids_n</a>(<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a> *<dfn class="local col7 decl" id="197c" title='c' data-type='struct usb_composite_dev *' data-ref="197c">c</dfn>, <em>unsigned</em> <dfn class="local col8 decl" id="198n" title='n' data-type='unsigned int' data-ref="198n">n</dfn>);</td></tr>
+<tr><th id="523">523</th><td></td></tr>
+<tr><th id="524">524</th><td><b>extern</b> <em>void</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#composite_disconnect" title='composite_disconnect' data-ref="composite_disconnect" id="composite_disconnect">composite_disconnect</a>(<b>struct</b> <a class="type" href="gadget.h.html#usb_gadget" title='usb_gadget' data-ref="usb_gadget">usb_gadget</a> *<dfn class="local col9 decl" id="199gadget" title='gadget' data-type='struct usb_gadget *' data-ref="199gadget">gadget</dfn>);</td></tr>
+<tr><th id="525">525</th><td><b>extern</b> <em>int</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#composite_setup" title='composite_setup' data-ref="composite_setup" id="composite_setup">composite_setup</a>(<b>struct</b> <a class="type" href="gadget.h.html#usb_gadget" title='usb_gadget' data-ref="usb_gadget">usb_gadget</a> *<dfn class="local col0 decl" id="200gadget" title='gadget' data-type='struct usb_gadget *' data-ref="200gadget">gadget</dfn>,</td></tr>
+<tr><th id="526">526</th><td>		<em>const</em> <b>struct</b> <a class="type" href="../../uapi/linux/usb/ch9.h.html#usb_ctrlrequest" title='usb_ctrlrequest' data-ref="usb_ctrlrequest">usb_ctrlrequest</a> *<dfn class="local col1 decl" id="201ctrl" title='ctrl' data-type='const struct usb_ctrlrequest *' data-ref="201ctrl">ctrl</dfn>);</td></tr>
+<tr><th id="527">527</th><td><b>extern</b> <em>void</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#composite_suspend" title='composite_suspend' data-ref="composite_suspend" id="composite_suspend">composite_suspend</a>(<b>struct</b> <a class="type" href="gadget.h.html#usb_gadget" title='usb_gadget' data-ref="usb_gadget">usb_gadget</a> *<dfn class="local col2 decl" id="202gadget" title='gadget' data-type='struct usb_gadget *' data-ref="202gadget">gadget</dfn>);</td></tr>
+<tr><th id="528">528</th><td><b>extern</b> <em>void</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#composite_resume" title='composite_resume' data-ref="composite_resume" id="composite_resume">composite_resume</a>(<b>struct</b> <a class="type" href="gadget.h.html#usb_gadget" title='usb_gadget' data-ref="usb_gadget">usb_gadget</a> *<dfn class="local col3 decl" id="203gadget" title='gadget' data-type='struct usb_gadget *' data-ref="203gadget">gadget</dfn>);</td></tr>
+<tr><th id="529">529</th><td></td></tr>
+<tr><th id="530">530</th><td><i>/*</i></td></tr>
+<tr><th id="531">531</th><td><i> * Some systems will need runtime overrides for the  product identifiers</i></td></tr>
+<tr><th id="532">532</th><td><i> * published in the device descriptor, either numbers or strings or both.</i></td></tr>
+<tr><th id="533">533</th><td><i> * String parameters are in UTF-8 (superset of ASCII's 7 bit characters).</i></td></tr>
+<tr><th id="534">534</th><td><i> */</i></td></tr>
+<tr><th id="535">535</th><td><b>struct</b> <dfn class="type def" id="usb_composite_overwrite" title='usb_composite_overwrite' data-ref="usb_composite_overwrite">usb_composite_overwrite</dfn> {</td></tr>
+<tr><th id="536">536</th><td>	<a class="typedef" href="../../asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a>	<dfn class="decl field" id="usb_composite_overwrite::idVendor" title='usb_composite_overwrite::idVendor' data-ref="usb_composite_overwrite::idVendor">idVendor</dfn>;</td></tr>
+<tr><th id="537">537</th><td>	<a class="typedef" href="../../asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a>	<dfn class="decl field" id="usb_composite_overwrite::idProduct" title='usb_composite_overwrite::idProduct' data-ref="usb_composite_overwrite::idProduct">idProduct</dfn>;</td></tr>
+<tr><th id="538">538</th><td>	<a class="typedef" href="../../asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a>	<dfn class="decl field" id="usb_composite_overwrite::bcdDevice" title='usb_composite_overwrite::bcdDevice' data-ref="usb_composite_overwrite::bcdDevice">bcdDevice</dfn>;</td></tr>
+<tr><th id="539">539</th><td>	<em>char</em>	*<dfn class="decl field" id="usb_composite_overwrite::serial_number" title='usb_composite_overwrite::serial_number' data-ref="usb_composite_overwrite::serial_number">serial_number</dfn>;</td></tr>
+<tr><th id="540">540</th><td>	<em>char</em>	*<dfn class="decl field" id="usb_composite_overwrite::manufacturer" title='usb_composite_overwrite::manufacturer' data-ref="usb_composite_overwrite::manufacturer">manufacturer</dfn>;</td></tr>
+<tr><th id="541">541</th><td>	<em>char</em>	*<dfn class="decl field" id="usb_composite_overwrite::product" title='usb_composite_overwrite::product' data-ref="usb_composite_overwrite::product">product</dfn>;</td></tr>
+<tr><th id="542">542</th><td>};</td></tr>
+<tr><th id="543">543</th><td><u>#define <dfn class="macro" id="_M/USB_GADGET_COMPOSITE_OPTIONS" data-ref="_M/USB_GADGET_COMPOSITE_OPTIONS">USB_GADGET_COMPOSITE_OPTIONS</dfn>()					\</u></td></tr>
+<tr><th id="544">544</th><td><u>	static struct usb_composite_overwrite coverwrite;		\</u></td></tr>
+<tr><th id="545">545</th><td><u>									\</u></td></tr>
+<tr><th id="546">546</th><td><u>	module_param_named(idVendor, coverwrite.idVendor, ushort, S_IRUGO); \</u></td></tr>
+<tr><th id="547">547</th><td><u>	MODULE_PARM_DESC(idVendor, "USB Vendor ID");			\</u></td></tr>
+<tr><th id="548">548</th><td><u>									\</u></td></tr>
+<tr><th id="549">549</th><td><u>	module_param_named(idProduct, coverwrite.idProduct, ushort, S_IRUGO); \</u></td></tr>
+<tr><th id="550">550</th><td><u>	MODULE_PARM_DESC(idProduct, "USB Product ID");			\</u></td></tr>
+<tr><th id="551">551</th><td><u>									\</u></td></tr>
+<tr><th id="552">552</th><td><u>	module_param_named(bcdDevice, coverwrite.bcdDevice, ushort, S_IRUGO); \</u></td></tr>
+<tr><th id="553">553</th><td><u>	MODULE_PARM_DESC(bcdDevice, "USB Device version (BCD)");	\</u></td></tr>
+<tr><th id="554">554</th><td><u>									\</u></td></tr>
+<tr><th id="555">555</th><td><u>	module_param_named(iSerialNumber, coverwrite.serial_number, charp, \</u></td></tr>
+<tr><th id="556">556</th><td><u>			S_IRUGO); \</u></td></tr>
+<tr><th id="557">557</th><td><u>	MODULE_PARM_DESC(iSerialNumber, "SerialNumber string");		\</u></td></tr>
+<tr><th id="558">558</th><td><u>									\</u></td></tr>
+<tr><th id="559">559</th><td><u>	module_param_named(iManufacturer, coverwrite.manufacturer, charp, \</u></td></tr>
+<tr><th id="560">560</th><td><u>			S_IRUGO); \</u></td></tr>
+<tr><th id="561">561</th><td><u>	MODULE_PARM_DESC(iManufacturer, "USB Manufacturer string");	\</u></td></tr>
+<tr><th id="562">562</th><td><u>									\</u></td></tr>
+<tr><th id="563">563</th><td><u>	module_param_named(iProduct, coverwrite.product, charp, S_IRUGO); \</u></td></tr>
+<tr><th id="564">564</th><td><u>	MODULE_PARM_DESC(iProduct, "USB Product string")</u></td></tr>
+<tr><th id="565">565</th><td></td></tr>
+<tr><th id="566">566</th><td><em>void</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#usb_composite_overwrite_options" title='usb_composite_overwrite_options' data-ref="usb_composite_overwrite_options" id="usb_composite_overwrite_options">usb_composite_overwrite_options</a>(<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a> *<dfn class="local col4 decl" id="204cdev" title='cdev' data-type='struct usb_composite_dev *' data-ref="204cdev">cdev</dfn>,</td></tr>
+<tr><th id="567">567</th><td>		<b>struct</b> <a class="type" href="#usb_composite_overwrite" title='usb_composite_overwrite' data-ref="usb_composite_overwrite">usb_composite_overwrite</a> *<dfn class="local col5 decl" id="205covr" title='covr' data-type='struct usb_composite_overwrite *' data-ref="205covr">covr</dfn>);</td></tr>
+<tr><th id="568">568</th><td></td></tr>
+<tr><th id="569">569</th><td><em>static</em> <a class="macro" href="../compiler-gcc.h.html#95" title="inline __attribute__((always_inline, unused)) __attribute__((no_instrument_function))" data-ref="_M/inline"><b>inline</b></a> <a class="typedef" href="../../asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a> <dfn class="decl def fn" id="get_default_bcdDevice" title='get_default_bcdDevice' data-ref="get_default_bcdDevice">get_default_bcdDevice</dfn>(<em>void</em>)</td></tr>
+<tr><th id="570">570</th><td>{</td></tr>
+<tr><th id="571">571</th><td>	<a class="typedef" href="../../asm-generic/int-ll64.h.html#u16" title='u16' data-type='__u16' data-ref="u16">u16</a> <dfn class="local col6 decl" id="206bcdDevice" title='bcdDevice' data-type='u16' data-ref="206bcdDevice">bcdDevice</dfn>;</td></tr>
+<tr><th id="572">572</th><td></td></tr>
+<tr><th id="573">573</th><td>	<a class="local col6 ref" href="#206bcdDevice" title='bcdDevice' data-ref="206bcdDevice">bcdDevice</a> = <a class="macro" href="../bcd.h.html#12" title="(__builtin_constant_p((u8 )((266763 &gt;&gt; 16 &amp; 0xff))) ? (((((266763 &gt;&gt; 16 &amp; 0xff)) / 10) &lt;&lt; 4) + ((266763 &gt;&gt; 16 &amp; 0xff)) % 10) : _bin2bcd((266763 &gt;&gt; 16 &amp; 0xff)))" data-ref="_M/bin2bcd">bin2bcd</a>((<a class="macro" href="../../generated/uapi/linux/version.h.html#1" title="266763" data-ref="_M/LINUX_VERSION_CODE">LINUX_VERSION_CODE</a> &gt;&gt; <var>16</var> &amp; <var>0xff</var>)) &lt;&lt; <var>8</var>;</td></tr>
+<tr><th id="574">574</th><td>	<a class="local col6 ref" href="#206bcdDevice" title='bcdDevice' data-ref="206bcdDevice">bcdDevice</a> |= <a class="macro" href="../bcd.h.html#12" title="(__builtin_constant_p((u8 )((266763 &gt;&gt; 8 &amp; 0xff))) ? (((((266763 &gt;&gt; 8 &amp; 0xff)) / 10) &lt;&lt; 4) + ((266763 &gt;&gt; 8 &amp; 0xff)) % 10) : _bin2bcd((266763 &gt;&gt; 8 &amp; 0xff)))" data-ref="_M/bin2bcd">bin2bcd</a>((<a class="macro" href="../../generated/uapi/linux/version.h.html#1" title="266763" data-ref="_M/LINUX_VERSION_CODE">LINUX_VERSION_CODE</a> &gt;&gt; <var>8</var> &amp; <var>0xff</var>));</td></tr>
+<tr><th id="575">575</th><td>	<b>return</b> <a class="local col6 ref" href="#206bcdDevice" title='bcdDevice' data-ref="206bcdDevice">bcdDevice</a>;</td></tr>
+<tr><th id="576">576</th><td>}</td></tr>
+<tr><th id="577">577</th><td></td></tr>
+<tr><th id="578">578</th><td><b>struct</b> <dfn class="type def" id="usb_function_driver" title='usb_function_driver' data-ref="usb_function_driver">usb_function_driver</dfn> {</td></tr>
+<tr><th id="579">579</th><td>	<em>const</em> <em>char</em> *<dfn class="decl field" id="usb_function_driver::name" title='usb_function_driver::name' data-ref="usb_function_driver::name">name</dfn>;</td></tr>
+<tr><th id="580">580</th><td>	<b>struct</b> <a class="type" href="../module.h.html#module" title='module' data-ref="module">module</a> *<dfn class="decl field" id="usb_function_driver::mod" title='usb_function_driver::mod' data-ref="usb_function_driver::mod">mod</dfn>;</td></tr>
+<tr><th id="581">581</th><td>	<b>struct</b> <a class="type" href="../types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a> <dfn class="decl field" id="usb_function_driver::list" title='usb_function_driver::list' data-ref="usb_function_driver::list">list</dfn>;</td></tr>
+<tr><th id="582">582</th><td>	<b>struct</b> <a class="type" href="#usb_function_instance" title='usb_function_instance' data-ref="usb_function_instance">usb_function_instance</a> *(*<dfn class="decl field" id="usb_function_driver::alloc_inst" title='usb_function_driver::alloc_inst' data-ref="usb_function_driver::alloc_inst">alloc_inst</dfn>)(<em>void</em>);</td></tr>
+<tr><th id="583">583</th><td>	<b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *(*<dfn class="decl field" id="usb_function_driver::alloc_func" title='usb_function_driver::alloc_func' data-ref="usb_function_driver::alloc_func">alloc_func</dfn>)(<b>struct</b> <a class="type" href="#usb_function_instance" title='usb_function_instance' data-ref="usb_function_instance">usb_function_instance</a> *<dfn class="local col7 decl" id="207inst" title='inst' data-type='struct usb_function_instance *' data-ref="207inst">inst</dfn>);</td></tr>
+<tr><th id="584">584</th><td>};</td></tr>
+<tr><th id="585">585</th><td></td></tr>
+<tr><th id="586">586</th><td><b>struct</b> <dfn class="type def" id="usb_function_instance" title='usb_function_instance' data-ref="usb_function_instance">usb_function_instance</dfn> {</td></tr>
+<tr><th id="587">587</th><td>	<b>struct</b> <a class="type" href="../configfs.h.html#config_group" title='config_group' data-ref="config_group">config_group</a> <dfn class="decl field" id="usb_function_instance::group" title='usb_function_instance::group' data-ref="usb_function_instance::group">group</dfn>;</td></tr>
+<tr><th id="588">588</th><td>	<b>struct</b> <a class="type" href="../types.h.html#list_head" title='list_head' data-ref="list_head">list_head</a> <dfn class="decl field" id="usb_function_instance::cfs_list" title='usb_function_instance::cfs_list' data-ref="usb_function_instance::cfs_list">cfs_list</dfn>;</td></tr>
+<tr><th id="589">589</th><td>	<b>struct</b> <a class="type" href="#usb_function_driver" title='usb_function_driver' data-ref="usb_function_driver">usb_function_driver</a> *<dfn class="decl field" id="usb_function_instance::fd" title='usb_function_instance::fd' data-ref="usb_function_instance::fd">fd</dfn>;</td></tr>
+<tr><th id="590">590</th><td>	<em>int</em> (*<dfn class="decl field" id="usb_function_instance::set_inst_name" title='usb_function_instance::set_inst_name' data-ref="usb_function_instance::set_inst_name">set_inst_name</dfn>)(<b>struct</b> <a class="type" href="#usb_function_instance" title='usb_function_instance' data-ref="usb_function_instance">usb_function_instance</a> *<dfn class="local col8 decl" id="208inst" title='inst' data-type='struct usb_function_instance *' data-ref="208inst">inst</dfn>,</td></tr>
+<tr><th id="591">591</th><td>			      <em>const</em> <em>char</em> *<dfn class="local col9 decl" id="209name" title='name' data-type='const char *' data-ref="209name">name</dfn>);</td></tr>
+<tr><th id="592">592</th><td>	<em>void</em> (*<dfn class="decl field" id="usb_function_instance::free_func_inst" title='usb_function_instance::free_func_inst' data-ref="usb_function_instance::free_func_inst">free_func_inst</dfn>)(<b>struct</b> <a class="type" href="#usb_function_instance" title='usb_function_instance' data-ref="usb_function_instance">usb_function_instance</a> *<dfn class="local col0 decl" id="210inst" title='inst' data-type='struct usb_function_instance *' data-ref="210inst">inst</dfn>);</td></tr>
+<tr><th id="593">593</th><td>};</td></tr>
+<tr><th id="594">594</th><td></td></tr>
+<tr><th id="595">595</th><td><em>void</em> <dfn class="decl fn" id="usb_function_unregister" title='usb_function_unregister' data-ref="usb_function_unregister">usb_function_unregister</dfn>(<b>struct</b> <a class="type" href="#usb_function_driver" title='usb_function_driver' data-ref="usb_function_driver">usb_function_driver</a> *<dfn class="local col1 decl" id="211f" title='f' data-type='struct usb_function_driver *' data-ref="211f">f</dfn>);</td></tr>
+<tr><th id="596">596</th><td><em>int</em> <dfn class="decl fn" id="usb_function_register" title='usb_function_register' data-ref="usb_function_register">usb_function_register</dfn>(<b>struct</b> <a class="type" href="#usb_function_driver" title='usb_function_driver' data-ref="usb_function_driver">usb_function_driver</a> *<dfn class="local col2 decl" id="212newf" title='newf' data-type='struct usb_function_driver *' data-ref="212newf">newf</dfn>);</td></tr>
+<tr><th id="597">597</th><td><em>void</em> <dfn class="decl fn" id="usb_put_function_instance" title='usb_put_function_instance' data-ref="usb_put_function_instance">usb_put_function_instance</dfn>(<b>struct</b> <a class="type" href="#usb_function_instance" title='usb_function_instance' data-ref="usb_function_instance">usb_function_instance</a> *<dfn class="local col3 decl" id="213fi" title='fi' data-type='struct usb_function_instance *' data-ref="213fi">fi</dfn>);</td></tr>
+<tr><th id="598">598</th><td><em>void</em> <dfn class="decl fn" id="usb_put_function" title='usb_put_function' data-ref="usb_put_function">usb_put_function</dfn>(<b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *<dfn class="local col4 decl" id="214f" title='f' data-type='struct usb_function *' data-ref="214f">f</dfn>);</td></tr>
+<tr><th id="599">599</th><td><b>struct</b> <a class="type" href="#usb_function_instance" title='usb_function_instance' data-ref="usb_function_instance">usb_function_instance</a> *<dfn class="decl fn" id="usb_get_function_instance" title='usb_get_function_instance' data-ref="usb_get_function_instance">usb_get_function_instance</dfn>(<em>const</em> <em>char</em> *<dfn class="local col5 decl" id="215name" title='name' data-type='const char *' data-ref="215name">name</dfn>);</td></tr>
+<tr><th id="600">600</th><td><b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *<dfn class="decl fn" id="usb_get_function" title='usb_get_function' data-ref="usb_get_function">usb_get_function</dfn>(<b>struct</b> <a class="type" href="#usb_function_instance" title='usb_function_instance' data-ref="usb_function_instance">usb_function_instance</a> *<dfn class="local col6 decl" id="216fi" title='fi' data-type='struct usb_function_instance *' data-ref="216fi">fi</dfn>);</td></tr>
+<tr><th id="601">601</th><td></td></tr>
+<tr><th id="602">602</th><td><b>struct</b> <a class="type" href="#usb_configuration" title='usb_configuration' data-ref="usb_configuration">usb_configuration</a> *<dfn class="decl fn" id="usb_get_config" title='usb_get_config' data-ref="usb_get_config">usb_get_config</dfn>(<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a> *<dfn class="local col7 decl" id="217cdev" title='cdev' data-type='struct usb_composite_dev *' data-ref="217cdev">cdev</dfn>,</td></tr>
+<tr><th id="603">603</th><td>		<em>int</em> <dfn class="local col8 decl" id="218val" title='val' data-type='int' data-ref="218val">val</dfn>);</td></tr>
+<tr><th id="604">604</th><td><em>int</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#usb_add_config_only" title='usb_add_config_only' data-ref="usb_add_config_only" id="usb_add_config_only">usb_add_config_only</a>(<b>struct</b> <a class="type" href="#usb_composite_dev" title='usb_composite_dev' data-ref="usb_composite_dev">usb_composite_dev</a> *<dfn class="local col9 decl" id="219cdev" title='cdev' data-type='struct usb_composite_dev *' data-ref="219cdev">cdev</dfn>,</td></tr>
+<tr><th id="605">605</th><td>		<b>struct</b> <a class="type" href="#usb_configuration" title='usb_configuration' data-ref="usb_configuration">usb_configuration</a> *<dfn class="local col0 decl" id="220config" title='config' data-type='struct usb_configuration *' data-ref="220config">config</dfn>);</td></tr>
+<tr><th id="606">606</th><td><em>void</em> <a class="decl fn" href="../../../drivers/usb/gadget/composite.c.html#usb_remove_function" title='usb_remove_function' data-ref="usb_remove_function" id="usb_remove_function">usb_remove_function</a>(<b>struct</b> <a class="type" href="#usb_configuration" title='usb_configuration' data-ref="usb_configuration">usb_configuration</a> *<dfn class="local col1 decl" id="221c" title='c' data-type='struct usb_configuration *' data-ref="221c">c</dfn>, <b>struct</b> <a class="type" href="#usb_function" title='usb_function' data-ref="usb_function">usb_function</a> *<dfn class="local col2 decl" id="222f" title='f' data-type='struct usb_function *' data-ref="222f">f</dfn>);</td></tr>
+<tr><th id="607">607</th><td></td></tr>
+<tr><th id="608">608</th><td><u>#define <dfn class="macro" id="_M/DECLARE_USB_FUNCTION" data-ref="_M/DECLARE_USB_FUNCTION">DECLARE_USB_FUNCTION</dfn>(_name, _inst_alloc, _func_alloc)		\</u></td></tr>
+<tr><th id="609">609</th><td><u>	static struct usb_function_driver _name ## usb_func = {		\</u></td></tr>
+<tr><th id="610">610</th><td><u>		.name = __stringify(_name),				\</u></td></tr>
+<tr><th id="611">611</th><td><u>		.mod  = THIS_MODULE,					\</u></td></tr>
+<tr><th id="612">612</th><td><u>		.alloc_inst = _inst_alloc,				\</u></td></tr>
+<tr><th id="613">613</th><td><u>		.alloc_func = _func_alloc,				\</u></td></tr>
+<tr><th id="614">614</th><td><u>	};								\</u></td></tr>
+<tr><th id="615">615</th><td><u>	MODULE_ALIAS("usbfunc:"__stringify(_name));</u></td></tr>
+<tr><th id="616">616</th><td></td></tr>
+<tr><th id="617">617</th><td><u>#define <dfn class="macro" id="_M/DECLARE_USB_FUNCTION_INIT" data-ref="_M/DECLARE_USB_FUNCTION_INIT">DECLARE_USB_FUNCTION_INIT</dfn>(_name, _inst_alloc, _func_alloc)	\</u></td></tr>
+<tr><th id="618">618</th><td><u>	DECLARE_USB_FUNCTION(_name, _inst_alloc, _func_alloc)		\</u></td></tr>
+<tr><th id="619">619</th><td><u>	static int __init _name ## mod_init(void)			\</u></td></tr>
+<tr><th id="620">620</th><td><u>	{								\</u></td></tr>
+<tr><th id="621">621</th><td><u>		return usb_function_register(&amp;_name ## usb_func);	\</u></td></tr>
+<tr><th id="622">622</th><td><u>	}								\</u></td></tr>
+<tr><th id="623">623</th><td><u>	static void __exit _name ## mod_exit(void)			\</u></td></tr>
+<tr><th id="624">624</th><td><u>	{								\</u></td></tr>
+<tr><th id="625">625</th><td><u>		usb_function_unregister(&amp;_name ## usb_func);		\</u></td></tr>
+<tr><th id="626">626</th><td><u>	}								\</u></td></tr>
+<tr><th id="627">627</th><td><u>	module_init(_name ## mod_init);					\</u></td></tr>
+<tr><th id="628">628</th><td><u>	module_exit(_name ## mod_exit)</u></td></tr>
+<tr><th id="629">629</th><td></td></tr>
+<tr><th id="630">630</th><td><i>/* messaging utils */</i></td></tr>
+<tr><th id="631">631</th><td><u>#define <dfn class="macro" id="_M/DBG" data-ref="_M/DBG">DBG</dfn>(d, fmt, args...) \</u></td></tr>
+<tr><th id="632">632</th><td><u>	dev_dbg(&amp;(d)-&gt;gadget-&gt;dev , fmt , ## args)</u></td></tr>
+<tr><th id="633">633</th><td><u>#define <dfn class="macro" id="_M/VDBG" data-ref="_M/VDBG">VDBG</dfn>(d, fmt, args...) \</u></td></tr>
+<tr><th id="634">634</th><td><u>	dev_vdbg(&amp;(d)-&gt;gadget-&gt;dev , fmt , ## args)</u></td></tr>
+<tr><th id="635">635</th><td><u>#define <dfn class="macro" id="_M/ERROR" data-ref="_M/ERROR">ERROR</dfn>(d, fmt, args...) \</u></td></tr>
+<tr><th id="636">636</th><td><u>	dev_err(&amp;(d)-&gt;gadget-&gt;dev , fmt , ## args)</u></td></tr>
+<tr><th id="637">637</th><td><u>#define <dfn class="macro" id="_M/WARNING" data-ref="_M/WARNING">WARNING</dfn>(d, fmt, args...) \</u></td></tr>
+<tr><th id="638">638</th><td><u>	dev_warn(&amp;(d)-&gt;gadget-&gt;dev , fmt , ## args)</u></td></tr>
+<tr><th id="639">639</th><td><u>#define <dfn class="macro" id="_M/INFO" data-ref="_M/INFO">INFO</dfn>(d, fmt, args...) \</u></td></tr>
+<tr><th id="640">640</th><td><u>	dev_info(&amp;(d)-&gt;gadget-&gt;dev , fmt , ## args)</u></td></tr>
+<tr><th id="641">641</th><td></td></tr>
+<tr><th id="642">642</th><td><u>#<span data-ppcond="22">endif</span>	/* __LINUX_USB_COMPOSITE_H */</u></td></tr>
+<tr><th id="643">643</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../drivers/usb/gadget/composite.c.html'>linux-4.18.y/drivers/usb/gadget/composite.c</a><br/>Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

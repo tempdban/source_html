@@ -1,0 +1,160 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>bond_debugfs.c source code [linux-4.18.y/drivers/net/bonding/bond_debugfs.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/drivers/net/bonding/bond_debugfs.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>linux-4.18.y</a>/<a href='../..'>drivers</a>/<a href='..'>net</a>/<a href='./'>bonding</a>/<a href='bond_debugfs.c.html'>bond_debugfs.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// SPDX-License-Identifier: GPL-2.0</i></td></tr>
+<tr><th id="2">2</th><td><u>#include <a href="../../../include/linux/kernel.h.html">&lt;linux/kernel.h&gt;</a></u></td></tr>
+<tr><th id="3">3</th><td><u>#include <a href="../../../include/linux/module.h.html">&lt;linux/module.h&gt;</a></u></td></tr>
+<tr><th id="4">4</th><td><u>#include <a href="../../../include/linux/device.h.html">&lt;linux/device.h&gt;</a></u></td></tr>
+<tr><th id="5">5</th><td><u>#include <a href="../../../include/linux/netdevice.h.html">&lt;linux/netdevice.h&gt;</a></u></td></tr>
+<tr><th id="6">6</th><td></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="../../../include/net/bonding.h.html">&lt;net/bonding.h&gt;</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="../../../include/net/bond_alb.h.html">&lt;net/bond_alb.h&gt;</a></u></td></tr>
+<tr><th id="9">9</th><td></td></tr>
+<tr><th id="10">10</th><td><u>#<span data-ppcond="10">if</span> defined(<a class="macro" href="../../../include/generated/autoconf.h.html#691" data-ref="_M/CONFIG_DEBUG_FS">CONFIG_DEBUG_FS</a>) &amp;&amp; !defined(<a class="macro" href="../../../include/generated/autoconf.h.html#1248" data-ref="_M/CONFIG_NET_NS">CONFIG_NET_NS</a>)</u></td></tr>
+<tr><th id="11">11</th><td></td></tr>
+<tr><th id="12">12</th><td><u>#include &lt;linux/debugfs.h&gt;</u></td></tr>
+<tr><th id="13">13</th><td><u>#include &lt;linux/seq_file.h&gt;</u></td></tr>
+<tr><th id="14">14</th><td></td></tr>
+<tr><th id="15">15</th><td><em>static</em> <b>struct</b> dentry *bonding_debug_root;</td></tr>
+<tr><th id="16">16</th><td></td></tr>
+<tr><th id="17">17</th><td><i>/* Show RLB hash table */</i></td></tr>
+<tr><th id="18">18</th><td><em>static</em> <em>int</em> bond_debug_rlb_hash_show(<b>struct</b> seq_file *m, <em>void</em> *v)</td></tr>
+<tr><th id="19">19</th><td>{</td></tr>
+<tr><th id="20">20</th><td>	<b>struct</b> bonding *bond = m-&gt;private;</td></tr>
+<tr><th id="21">21</th><td>	<b>struct</b> alb_bond_info *bond_info = &amp;(BOND_ALB_INFO(bond));</td></tr>
+<tr><th id="22">22</th><td>	<b>struct</b> rlb_client_info *client_info;</td></tr>
+<tr><th id="23">23</th><td>	u32 hash_index;</td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td>	<b>if</b> (BOND_MODE(bond) != BOND_MODE_ALB)</td></tr>
+<tr><th id="26">26</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td>	seq_printf(m, <q>"SourceIP        DestinationIP   "</q></td></tr>
+<tr><th id="29">29</th><td>			<q>"Destination MAC   DEV\n"</q>);</td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td>	spin_lock_bh(&amp;bond-&gt;mode_lock);</td></tr>
+<tr><th id="32">32</th><td></td></tr>
+<tr><th id="33">33</th><td>	hash_index = bond_info-&gt;rx_hashtbl_used_head;</td></tr>
+<tr><th id="34">34</th><td>	<b>for</b> (; hash_index != RLB_NULL_INDEX;</td></tr>
+<tr><th id="35">35</th><td>	     hash_index = client_info-&gt;used_next) {</td></tr>
+<tr><th id="36">36</th><td>		client_info = &amp;(bond_info-&gt;rx_hashtbl[hash_index]);</td></tr>
+<tr><th id="37">37</th><td>		seq_printf(m, <q>"%-15pI4 %-15pI4 %-17pM %s\n"</q>,</td></tr>
+<tr><th id="38">38</th><td>			&amp;client_info-&gt;ip_src,</td></tr>
+<tr><th id="39">39</th><td>			&amp;client_info-&gt;ip_dst,</td></tr>
+<tr><th id="40">40</th><td>			&amp;client_info-&gt;mac_dst,</td></tr>
+<tr><th id="41">41</th><td>			client_info-&gt;slave-&gt;dev-&gt;name);</td></tr>
+<tr><th id="42">42</th><td>	}</td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td>	spin_unlock_bh(&amp;bond-&gt;mode_lock);</td></tr>
+<tr><th id="45">45</th><td></td></tr>
+<tr><th id="46">46</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="47">47</th><td>}</td></tr>
+<tr><th id="48">48</th><td></td></tr>
+<tr><th id="49">49</th><td><em>static</em> <em>int</em> bond_debug_rlb_hash_open(<b>struct</b> inode *inode, <b>struct</b> file *file)</td></tr>
+<tr><th id="50">50</th><td>{</td></tr>
+<tr><th id="51">51</th><td>	<b>return</b> single_open(file, bond_debug_rlb_hash_show, inode-&gt;i_private);</td></tr>
+<tr><th id="52">52</th><td>}</td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td><em>static</em> <em>const</em> <b>struct</b> file_operations bond_debug_rlb_hash_fops = {</td></tr>
+<tr><th id="55">55</th><td>	.owner		= THIS_MODULE,</td></tr>
+<tr><th id="56">56</th><td>	.open		= bond_debug_rlb_hash_open,</td></tr>
+<tr><th id="57">57</th><td>	.read		= seq_read,</td></tr>
+<tr><th id="58">58</th><td>	.llseek		= seq_lseek,</td></tr>
+<tr><th id="59">59</th><td>	.release	= single_release,</td></tr>
+<tr><th id="60">60</th><td>};</td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td><em>void</em> bond_debug_register(<b>struct</b> bonding *bond)</td></tr>
+<tr><th id="63">63</th><td>{</td></tr>
+<tr><th id="64">64</th><td>	<b>if</b> (!bonding_debug_root)</td></tr>
+<tr><th id="65">65</th><td>		<b>return</b>;</td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td>	bond-&gt;debug_dir =</td></tr>
+<tr><th id="68">68</th><td>		debugfs_create_dir(bond-&gt;dev-&gt;name, bonding_debug_root);</td></tr>
+<tr><th id="69">69</th><td></td></tr>
+<tr><th id="70">70</th><td>	<b>if</b> (!bond-&gt;debug_dir) {</td></tr>
+<tr><th id="71">71</th><td>		netdev_warn(bond-&gt;dev, <q>"failed to register to debugfs\n"</q>);</td></tr>
+<tr><th id="72">72</th><td>		<b>return</b>;</td></tr>
+<tr><th id="73">73</th><td>	}</td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td>	debugfs_create_file(<q>"rlb_hash_table"</q>, <var>0400</var>, bond-&gt;debug_dir,</td></tr>
+<tr><th id="76">76</th><td>				bond, &amp;bond_debug_rlb_hash_fops);</td></tr>
+<tr><th id="77">77</th><td>}</td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td><em>void</em> bond_debug_unregister(<b>struct</b> bonding *bond)</td></tr>
+<tr><th id="80">80</th><td>{</td></tr>
+<tr><th id="81">81</th><td>	<b>if</b> (!bonding_debug_root)</td></tr>
+<tr><th id="82">82</th><td>		<b>return</b>;</td></tr>
+<tr><th id="83">83</th><td></td></tr>
+<tr><th id="84">84</th><td>	debugfs_remove_recursive(bond-&gt;debug_dir);</td></tr>
+<tr><th id="85">85</th><td>}</td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td><em>void</em> bond_debug_reregister(<b>struct</b> bonding *bond)</td></tr>
+<tr><th id="88">88</th><td>{</td></tr>
+<tr><th id="89">89</th><td>	<b>struct</b> dentry *d;</td></tr>
+<tr><th id="90">90</th><td></td></tr>
+<tr><th id="91">91</th><td>	<b>if</b> (!bonding_debug_root)</td></tr>
+<tr><th id="92">92</th><td>		<b>return</b>;</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td>	d = debugfs_rename(bonding_debug_root, bond-&gt;debug_dir,</td></tr>
+<tr><th id="95">95</th><td>			   bonding_debug_root, bond-&gt;dev-&gt;name);</td></tr>
+<tr><th id="96">96</th><td>	<b>if</b> (d) {</td></tr>
+<tr><th id="97">97</th><td>		bond-&gt;debug_dir = d;</td></tr>
+<tr><th id="98">98</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="99">99</th><td>		netdev_warn(bond-&gt;dev, <q>"failed to reregister, so just unregister old one\n"</q>);</td></tr>
+<tr><th id="100">100</th><td>		bond_debug_unregister(bond);</td></tr>
+<tr><th id="101">101</th><td>	}</td></tr>
+<tr><th id="102">102</th><td>}</td></tr>
+<tr><th id="103">103</th><td></td></tr>
+<tr><th id="104">104</th><td><em>void</em> bond_create_debugfs(<em>void</em>)</td></tr>
+<tr><th id="105">105</th><td>{</td></tr>
+<tr><th id="106">106</th><td>	bonding_debug_root = debugfs_create_dir(<q>"bonding"</q>, NULL);</td></tr>
+<tr><th id="107">107</th><td></td></tr>
+<tr><th id="108">108</th><td>	<b>if</b> (!bonding_debug_root) {</td></tr>
+<tr><th id="109">109</th><td>		pr_warn(<q>"Warning: Cannot create bonding directory in debugfs\n"</q>);</td></tr>
+<tr><th id="110">110</th><td>	}</td></tr>
+<tr><th id="111">111</th><td>}</td></tr>
+<tr><th id="112">112</th><td></td></tr>
+<tr><th id="113">113</th><td><em>void</em> bond_destroy_debugfs(<em>void</em>)</td></tr>
+<tr><th id="114">114</th><td>{</td></tr>
+<tr><th id="115">115</th><td>	debugfs_remove_recursive(bonding_debug_root);</td></tr>
+<tr><th id="116">116</th><td>	bonding_debug_root = NULL;</td></tr>
+<tr><th id="117">117</th><td>}</td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td><u>#<span data-ppcond="10">else</span> /* !CONFIG_DEBUG_FS */</u></td></tr>
+<tr><th id="121">121</th><td></td></tr>
+<tr><th id="122">122</th><td><em>void</em> <dfn class="decl def fn" id="bond_debug_register" title='bond_debug_register' data-ref="bond_debug_register">bond_debug_register</dfn>(<b>struct</b> <a class="type" href="../../../include/net/bonding.h.html#bonding" title='bonding' data-ref="bonding">bonding</a> *<dfn class="local col1 decl" id="1bond" title='bond' data-type='struct bonding *' data-ref="1bond">bond</dfn>)</td></tr>
+<tr><th id="123">123</th><td>{</td></tr>
+<tr><th id="124">124</th><td>}</td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td><em>void</em> <dfn class="decl def fn" id="bond_debug_unregister" title='bond_debug_unregister' data-ref="bond_debug_unregister">bond_debug_unregister</dfn>(<b>struct</b> <a class="type" href="../../../include/net/bonding.h.html#bonding" title='bonding' data-ref="bonding">bonding</a> *<dfn class="local col2 decl" id="2bond" title='bond' data-type='struct bonding *' data-ref="2bond">bond</dfn>)</td></tr>
+<tr><th id="127">127</th><td>{</td></tr>
+<tr><th id="128">128</th><td>}</td></tr>
+<tr><th id="129">129</th><td></td></tr>
+<tr><th id="130">130</th><td><em>void</em> <dfn class="decl def fn" id="bond_debug_reregister" title='bond_debug_reregister' data-ref="bond_debug_reregister">bond_debug_reregister</dfn>(<b>struct</b> <a class="type" href="../../../include/net/bonding.h.html#bonding" title='bonding' data-ref="bonding">bonding</a> *<dfn class="local col3 decl" id="3bond" title='bond' data-type='struct bonding *' data-ref="3bond">bond</dfn>)</td></tr>
+<tr><th id="131">131</th><td>{</td></tr>
+<tr><th id="132">132</th><td>}</td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td><em>void</em> <dfn class="decl def fn" id="bond_create_debugfs" title='bond_create_debugfs' data-ref="bond_create_debugfs">bond_create_debugfs</dfn>(<em>void</em>)</td></tr>
+<tr><th id="135">135</th><td>{</td></tr>
+<tr><th id="136">136</th><td>}</td></tr>
+<tr><th id="137">137</th><td></td></tr>
+<tr><th id="138">138</th><td><em>void</em> <dfn class="decl def fn" id="bond_destroy_debugfs" title='bond_destroy_debugfs' data-ref="bond_destroy_debugfs">bond_destroy_debugfs</dfn>(<em>void</em>)</td></tr>
+<tr><th id="139">139</th><td>{</td></tr>
+<tr><th id="140">140</th><td>}</td></tr>
+<tr><th id="141">141</th><td></td></tr>
+<tr><th id="142">142</th><td><u>#<span data-ppcond="10">endif</span> /* CONFIG_DEBUG_FS */</u></td></tr>
+<tr><th id="143">143</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

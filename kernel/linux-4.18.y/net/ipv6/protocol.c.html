@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>protocol.c source code [linux-4.18.y/net/ipv6/protocol.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/net/ipv6/protocol.c'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>linux-4.18.y</a>/<a href='..'>net</a>/<a href='./'>ipv6</a>/<a href='protocol.c.html'>protocol.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * INET		An implementation of the TCP/IP protocol suite for the LINUX</i></td></tr>
+<tr><th id="3">3</th><td><i> *		operating system.  INET is implemented using the  BSD Socket</i></td></tr>
+<tr><th id="4">4</th><td><i> *		interface as the means of communication with the user level.</i></td></tr>
+<tr><th id="5">5</th><td><i> *</i></td></tr>
+<tr><th id="6">6</th><td><i> *		PF_INET6 protocol dispatch tables.</i></td></tr>
+<tr><th id="7">7</th><td><i> *</i></td></tr>
+<tr><th id="8">8</th><td><i> * Authors:	Pedro Roque	&lt;roque@di.fc.ul.pt&gt;</i></td></tr>
+<tr><th id="9">9</th><td><i> *</i></td></tr>
+<tr><th id="10">10</th><td><i> *		This program is free software; you can redistribute it and/or</i></td></tr>
+<tr><th id="11">11</th><td><i> *		modify it under the terms of the GNU General Public License</i></td></tr>
+<tr><th id="12">12</th><td><i> *		as published by the Free Software Foundation; either version</i></td></tr>
+<tr><th id="13">13</th><td><i> *		2 of the License, or (at your option) any later version.</i></td></tr>
+<tr><th id="14">14</th><td><i> */</i></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><i>/*</i></td></tr>
+<tr><th id="17">17</th><td><i> *      Changes:</i></td></tr>
+<tr><th id="18">18</th><td><i> *</i></td></tr>
+<tr><th id="19">19</th><td><i> *      Vince Laviano (vince@cs.stanford.edu)       16 May 2001</i></td></tr>
+<tr><th id="20">20</th><td><i> *      - Removed unused variable 'inet6_protocol_base'</i></td></tr>
+<tr><th id="21">21</th><td><i> *      - Modified inet6_del_protocol() to correctly maintain copy bit.</i></td></tr>
+<tr><th id="22">22</th><td><i> */</i></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../include/linux/module.h.html">&lt;linux/module.h&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../../include/linux/netdevice.h.html">&lt;linux/netdevice.h&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../include/linux/spinlock.h.html">&lt;linux/spinlock.h&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../../include/net/protocol.h.html">&lt;net/protocol.h&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td><u>#<span data-ppcond="28">if</span> <a class="macro" href="../../include/linux/kconfig.h.html#71" title="0" data-ref="_M/IS_ENABLED">IS_ENABLED</a>(CONFIG_IPV6)</u></td></tr>
+<tr><th id="29">29</th><td><b>struct</b> inet6_protocol __rcu *inet6_protos[MAX_INET_PROTOS] __read_mostly;</td></tr>
+<tr><th id="30">30</th><td>EXPORT_SYMBOL(inet6_protos);</td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><em>int</em> inet6_add_protocol(<em>const</em> <b>struct</b> inet6_protocol *prot, <em>unsigned</em> <em>char</em> protocol)</td></tr>
+<tr><th id="33">33</th><td>{</td></tr>
+<tr><th id="34">34</th><td>	<b>return</b> !cmpxchg((<em>const</em> <b>struct</b> inet6_protocol **)&amp;inet6_protos[protocol],</td></tr>
+<tr><th id="35">35</th><td>			NULL, prot) ? <var>0</var> : -<var>1</var>;</td></tr>
+<tr><th id="36">36</th><td>}</td></tr>
+<tr><th id="37">37</th><td>EXPORT_SYMBOL(inet6_add_protocol);</td></tr>
+<tr><th id="38">38</th><td></td></tr>
+<tr><th id="39">39</th><td><em>int</em> inet6_del_protocol(<em>const</em> <b>struct</b> inet6_protocol *prot, <em>unsigned</em> <em>char</em> protocol)</td></tr>
+<tr><th id="40">40</th><td>{</td></tr>
+<tr><th id="41">41</th><td>	<em>int</em> ret;</td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td>	ret = (cmpxchg((<em>const</em> <b>struct</b> inet6_protocol **)&amp;inet6_protos[protocol],</td></tr>
+<tr><th id="44">44</th><td>		       prot, NULL) == prot) ? <var>0</var> : -<var>1</var>;</td></tr>
+<tr><th id="45">45</th><td></td></tr>
+<tr><th id="46">46</th><td>	synchronize_net();</td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td>	<b>return</b> ret;</td></tr>
+<tr><th id="49">49</th><td>}</td></tr>
+<tr><th id="50">50</th><td>EXPORT_SYMBOL(inet6_del_protocol);</td></tr>
+<tr><th id="51">51</th><td><u>#<span data-ppcond="28">endif</span></u></td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td><em>const</em> <b>struct</b> <a class="type" href="../../include/net/protocol.h.html#net_offload" title='net_offload' data-ref="net_offload">net_offload</a> <a class="macro" href="../../include/linux/compiler_types.h.html#46" title="" data-ref="_M/__rcu">__rcu</a> *<dfn class="decl def" id="inet6_offloads" title='inet6_offloads' data-ref="inet6_offloads">inet6_offloads</dfn>[<a class="macro" href="../../include/net/protocol.h.html#38" title="256" data-ref="_M/MAX_INET_PROTOS">MAX_INET_PROTOS</a>] <a class="macro" href="../../arch/x86/include/asm/cache.h.html#11" title="__attribute__((__section__(&quot;.data..read_mostly&quot;)))" data-ref="_M/__read_mostly">__read_mostly</a>;</td></tr>
+<tr><th id="54">54</th><td><a class="macro" href="../../include/linux/export.h.html#97" title="extern typeof(inet6_offloads) inet6_offloads; static const char __kstrtab_inet6_offloads[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;inet6_offloads&quot;; static const struct kernel_symbol __ksymtab_inet6_offloads __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;&quot; &quot;+&quot; &quot;inet6_offloads&quot;), used)) = { (unsigned long)&amp;inet6_offloads, __kstrtab_inet6_offloads }" data-ref="_M/EXPORT_SYMBOL">EXPORT_SYMBOL</a>(<a class="decl" href="../../include/net/protocol.h.html#inet6_offloads" title='inet6_offloads' data-ref="inet6_offloads" id="inet6_offloads"><a class="ref" href="../../include/net/protocol.h.html#inet6_offloads" title='inet6_offloads' data-ref="inet6_offloads"><a class="ref" href="../../include/net/protocol.h.html#inet6_offloads" title='inet6_offloads' data-ref="inet6_offloads"><a class="ref" href="../../include/net/protocol.h.html#inet6_offloads" title='inet6_offloads' data-ref="inet6_offloads">inet6_offloads</a></a></a></a>);</td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td><em>int</em> <dfn class="decl def fn" id="inet6_add_offload" title='inet6_add_offload' data-ref="inet6_add_offload">inet6_add_offload</dfn>(<em>const</em> <b>struct</b> <a class="type" href="../../include/net/protocol.h.html#net_offload" title='net_offload' data-ref="net_offload">net_offload</a> *<dfn class="local col1 decl" id="1prot" title='prot' data-type='const struct net_offload *' data-ref="1prot">prot</dfn>, <em>unsigned</em> <em>char</em> <dfn class="local col2 decl" id="2protocol" title='protocol' data-type='unsigned char' data-ref="2protocol">protocol</dfn>)</td></tr>
+<tr><th id="57">57</th><td>{</td></tr>
+<tr><th id="58">58</th><td>	<b>return</b> !<a class="macro" href="../../include/asm-generic/atomic-instrumented.h.html#371" title="({ ((__typeof__(*((const struct net_offload **)&amp;inet6_offloads[protocol])))cmpxchg_size(((const struct net_offload **)&amp;inet6_offloads[protocol]), (unsigned long)(((void *)0)), (unsigned long)(prot), sizeof(*((const struct net_offload **)&amp;inet6_offloads[protocol])))); })" data-ref="_M/cmpxchg">cmpxchg</a>((<em>const</em> <b>struct</b> <a class="type" href="../../include/net/protocol.h.html#net_offload" title='net_offload' data-ref="net_offload">net_offload</a> **)&amp;<a class="ref" href="../../include/net/protocol.h.html#inet6_offloads" title='inet6_offloads' data-ref="inet6_offloads">inet6_offloads</a>[<a class="local col2 ref" href="#2protocol" title='protocol' data-ref="2protocol">protocol</a>],</td></tr>
+<tr><th id="59">59</th><td>			<a class="macro" href="../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>, <a class="local col1 ref" href="#1prot" title='prot' data-ref="1prot">prot</a>) ? <var>0</var> : -<var>1</var>;</td></tr>
+<tr><th id="60">60</th><td>}</td></tr>
+<tr><th id="61">61</th><td><a class="macro" href="../../include/linux/export.h.html#97" title="extern typeof(inet6_add_offload) inet6_add_offload; static const char __kstrtab_inet6_add_offload[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;inet6_add_offload&quot;; static const struct kernel_symbol __ksymtab_inet6_add_offload __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;&quot; &quot;+&quot; &quot;inet6_add_offload&quot;), used)) = { (unsigned long)&amp;inet6_add_offload, __kstrtab_inet6_add_offload }" data-ref="_M/EXPORT_SYMBOL">EXPORT_SYMBOL</a>(<a class="decl fn" href="#inet6_add_offload" title='inet6_add_offload' data-ref="inet6_add_offload"><a class="ref fn" href="#inet6_add_offload" title='inet6_add_offload' data-ref="inet6_add_offload"><a class="ref fn" href="#inet6_add_offload" title='inet6_add_offload' data-ref="inet6_add_offload"><a class="ref fn" href="#inet6_add_offload" title='inet6_add_offload' data-ref="inet6_add_offload">inet6_add_offload</a></a></a></a>);</td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td><em>int</em> <dfn class="decl def fn" id="inet6_del_offload" title='inet6_del_offload' data-ref="inet6_del_offload">inet6_del_offload</dfn>(<em>const</em> <b>struct</b> <a class="type" href="../../include/net/protocol.h.html#net_offload" title='net_offload' data-ref="net_offload">net_offload</a> *<dfn class="local col3 decl" id="3prot" title='prot' data-type='const struct net_offload *' data-ref="3prot">prot</dfn>, <em>unsigned</em> <em>char</em> <dfn class="local col4 decl" id="4protocol" title='protocol' data-type='unsigned char' data-ref="4protocol">protocol</dfn>)</td></tr>
+<tr><th id="64">64</th><td>{</td></tr>
+<tr><th id="65">65</th><td>	<em>int</em> <dfn class="local col5 decl" id="5ret" title='ret' data-type='int' data-ref="5ret">ret</dfn>;</td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td>	<a class="local col5 ref" href="#5ret" title='ret' data-ref="5ret">ret</a> = (<a class="macro" href="../../include/asm-generic/atomic-instrumented.h.html#371" title="({ ((__typeof__(*((const struct net_offload **)&amp;inet6_offloads[protocol])))cmpxchg_size(((const struct net_offload **)&amp;inet6_offloads[protocol]), (unsigned long)(prot), (unsigned long)(((void *)0)), sizeof(*((const struct net_offload **)&amp;inet6_offloads[protocol])))); })" data-ref="_M/cmpxchg">cmpxchg</a>((<em>const</em> <b>struct</b> <a class="type" href="../../include/net/protocol.h.html#net_offload" title='net_offload' data-ref="net_offload">net_offload</a> **)&amp;<a class="ref" href="../../include/net/protocol.h.html#inet6_offloads" title='inet6_offloads' data-ref="inet6_offloads">inet6_offloads</a>[<a class="local col4 ref" href="#4protocol" title='protocol' data-ref="4protocol">protocol</a>],</td></tr>
+<tr><th id="68">68</th><td>		       <a class="local col3 ref" href="#3prot" title='prot' data-ref="3prot">prot</a>, <a class="macro" href="../../include/linux/stddef.h.html#8" title="((void *)0)" data-ref="_M/NULL">NULL</a>) == <a class="local col3 ref" href="#3prot" title='prot' data-ref="3prot">prot</a>) ? <var>0</var> : -<var>1</var>;</td></tr>
+<tr><th id="69">69</th><td></td></tr>
+<tr><th id="70">70</th><td>	<a class="ref fn" href="../../include/linux/netdevice.h.html#synchronize_net" title='synchronize_net' data-ref="synchronize_net">synchronize_net</a>();</td></tr>
+<tr><th id="71">71</th><td></td></tr>
+<tr><th id="72">72</th><td>	<b>return</b> <a class="local col5 ref" href="#5ret" title='ret' data-ref="5ret">ret</a>;</td></tr>
+<tr><th id="73">73</th><td>}</td></tr>
+<tr><th id="74">74</th><td><a class="macro" href="../../include/linux/export.h.html#97" title="extern typeof(inet6_del_offload) inet6_del_offload; static const char __kstrtab_inet6_del_offload[] __attribute__((section(&quot;__ksymtab_strings&quot;), aligned(1))) = &quot;inet6_del_offload&quot;; static const struct kernel_symbol __ksymtab_inet6_del_offload __attribute__((__used__)) __attribute__((section(&quot;___ksymtab&quot; &quot;&quot; &quot;+&quot; &quot;inet6_del_offload&quot;), used)) = { (unsigned long)&amp;inet6_del_offload, __kstrtab_inet6_del_offload }" data-ref="_M/EXPORT_SYMBOL">EXPORT_SYMBOL</a>(<a class="decl fn" href="#inet6_del_offload" title='inet6_del_offload' data-ref="inet6_del_offload"><a class="ref fn" href="#inet6_del_offload" title='inet6_del_offload' data-ref="inet6_del_offload"><a class="ref fn" href="#inet6_del_offload" title='inet6_del_offload' data-ref="inet6_del_offload"><a class="ref fn" href="#inet6_del_offload" title='inet6_del_offload' data-ref="inet6_del_offload">inet6_del_offload</a></a></a></a>);</td></tr>
+<tr><th id="75">75</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>
