@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>malloc_mp.h source code [linux-4.18.y/lib/librte_eal/common/malloc_mp.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="malloc_mp_req,malloc_req_alloc,malloc_req_free,malloc_req_result,malloc_req_type "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/lib/librte_eal/common/malloc_mp.h'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>linux-4.18.y</a>/<a href='../..'>lib</a>/<a href='..'>librte_eal</a>/<a href='./'>common</a>/<a href='malloc_mp.h.html'>malloc_mp.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright(c) 2018 Intel Corporation</i></td></tr>
+<tr><th id="3">3</th><td><i> */</i></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><u>#<span data-ppcond="5">ifndef</span> <span class="macro" data-ref="_M/MALLOC_MP_H">MALLOC_MP_H</span></u></td></tr>
+<tr><th id="6">6</th><td><u>#define <dfn class="macro" id="_M/MALLOC_MP_H" data-ref="_M/MALLOC_MP_H">MALLOC_MP_H</dfn></u></td></tr>
+<tr><th id="7">7</th><td></td></tr>
+<tr><th id="8">8</th><td><u>#include &lt;stdbool.h&gt;</u></td></tr>
+<tr><th id="9">9</th><td><u>#include &lt;stdint.h&gt;</u></td></tr>
+<tr><th id="10">10</th><td></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="include/rte_common.h.html">&lt;rte_common.h&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="include/rte_random.h.html">&lt;rte_random.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="include/arch/x86/rte_spinlock.h.html">&lt;rte_spinlock.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="include/rte_tailq.h.html">&lt;rte_tailq.h&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><i>/* forward declarations */</i></td></tr>
+<tr><th id="17">17</th><td><b>struct</b> <a class="type" href="include/rte_malloc_heap.h.html#malloc_heap" title='malloc_heap' data-ref="malloc_heap" id="malloc_heap">malloc_heap</a>;</td></tr>
+<tr><th id="18">18</th><td><b>struct</b> <a class="type" href="include/rte_memory.h.html#rte_memseg" title='rte_memseg' data-ref="rte_memseg" id="rte_memseg">rte_memseg</a>;</td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><i>/* multiprocess synchronization structures for malloc */</i></td></tr>
+<tr><th id="21">21</th><td><b>enum</b> <dfn class="type def" id="malloc_req_type" title='malloc_req_type' data-ref="malloc_req_type">malloc_req_type</dfn> {</td></tr>
+<tr><th id="22">22</th><td>	<dfn class="enum" id="REQ_TYPE_ALLOC" title='REQ_TYPE_ALLOC' data-ref="REQ_TYPE_ALLOC">REQ_TYPE_ALLOC</dfn>,     <i class="doc">/**&lt; ask primary to allocate */</i></td></tr>
+<tr><th id="23">23</th><td>	<dfn class="enum" id="REQ_TYPE_FREE" title='REQ_TYPE_FREE' data-ref="REQ_TYPE_FREE">REQ_TYPE_FREE</dfn>,      <i class="doc">/**&lt; ask primary to free */</i></td></tr>
+<tr><th id="24">24</th><td>	<dfn class="enum" id="REQ_TYPE_SYNC" title='REQ_TYPE_SYNC' data-ref="REQ_TYPE_SYNC">REQ_TYPE_SYNC</dfn>       <i class="doc">/**&lt; ask secondary to synchronize its memory map */</i></td></tr>
+<tr><th id="25">25</th><td>};</td></tr>
+<tr><th id="26">26</th><td></td></tr>
+<tr><th id="27">27</th><td><b>enum</b> <dfn class="type def" id="malloc_req_result" title='malloc_req_result' data-ref="malloc_req_result">malloc_req_result</dfn> {</td></tr>
+<tr><th id="28">28</th><td>	<dfn class="enum" id="REQ_RESULT_SUCCESS" title='REQ_RESULT_SUCCESS' data-ref="REQ_RESULT_SUCCESS">REQ_RESULT_SUCCESS</dfn>,</td></tr>
+<tr><th id="29">29</th><td>	<dfn class="enum" id="REQ_RESULT_FAIL" title='REQ_RESULT_FAIL' data-ref="REQ_RESULT_FAIL">REQ_RESULT_FAIL</dfn></td></tr>
+<tr><th id="30">30</th><td>};</td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><b>struct</b> <dfn class="type def" id="malloc_req_alloc" title='malloc_req_alloc' data-ref="malloc_req_alloc">malloc_req_alloc</dfn> {</td></tr>
+<tr><th id="33">33</th><td>	<b>struct</b> <a class="type" href="include/rte_malloc_heap.h.html#malloc_heap" title='malloc_heap' data-ref="malloc_heap">malloc_heap</a> *<dfn class="decl field" id="malloc_req_alloc::heap" title='malloc_req_alloc::heap' data-ref="malloc_req_alloc::heap">heap</dfn>;</td></tr>
+<tr><th id="34">34</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="malloc_req_alloc::page_sz" title='malloc_req_alloc::page_sz' data-ref="malloc_req_alloc::page_sz">page_sz</dfn>;</td></tr>
+<tr><th id="35">35</th><td>	<span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="decl field" id="malloc_req_alloc::elt_size" title='malloc_req_alloc::elt_size' data-ref="malloc_req_alloc::elt_size">elt_size</dfn>;</td></tr>
+<tr><th id="36">36</th><td>	<em>int</em> <dfn class="decl field" id="malloc_req_alloc::socket" title='malloc_req_alloc::socket' data-ref="malloc_req_alloc::socket">socket</dfn>;</td></tr>
+<tr><th id="37">37</th><td>	<em>unsigned</em> <em>int</em> <dfn class="decl field" id="malloc_req_alloc::flags" title='malloc_req_alloc::flags' data-ref="malloc_req_alloc::flags">flags</dfn>;</td></tr>
+<tr><th id="38">38</th><td>	<span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="decl field" id="malloc_req_alloc::align" title='malloc_req_alloc::align' data-ref="malloc_req_alloc::align">align</dfn>;</td></tr>
+<tr><th id="39">39</th><td>	<span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="decl field" id="malloc_req_alloc::bound" title='malloc_req_alloc::bound' data-ref="malloc_req_alloc::bound">bound</dfn>;</td></tr>
+<tr><th id="40">40</th><td>	<span class="macro" title="_Bool" data-ref="_M/bool">bool</span> <dfn class="decl field" id="malloc_req_alloc::contig" title='malloc_req_alloc::contig' data-ref="malloc_req_alloc::contig">contig</dfn>;</td></tr>
+<tr><th id="41">41</th><td>};</td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><b>struct</b> <dfn class="type def" id="malloc_req_free" title='malloc_req_free' data-ref="malloc_req_free">malloc_req_free</dfn> {</td></tr>
+<tr><th id="44">44</th><td>	<a class="macro" href="include/rte_common.h.html#39" title="" data-ref="_M/RTE_STD_C11">RTE_STD_C11</a></td></tr>
+<tr><th id="45">45</th><td>	<b>union</b> {</td></tr>
+<tr><th id="46">46</th><td>		<em>void</em> *<dfn class="decl field" id="malloc_req_free::(anonymous)::addr" title='malloc_req_free::(anonymous union)::addr' data-ref="malloc_req_free::(anonymous)::addr">addr</dfn>;</td></tr>
+<tr><th id="47">47</th><td>		<a class="typedef" href="../../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="malloc_req_free::(anonymous)::addr_64" title='malloc_req_free::(anonymous union)::addr_64' data-ref="malloc_req_free::(anonymous)::addr_64">addr_64</dfn>;</td></tr>
+<tr><th id="48">48</th><td>	};</td></tr>
+<tr><th id="49">49</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="malloc_req_free::len" title='malloc_req_free::len' data-ref="malloc_req_free::len">len</dfn>;</td></tr>
+<tr><th id="50">50</th><td>};</td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td><b>struct</b> <dfn class="type def" id="malloc_mp_req" title='malloc_mp_req' data-ref="malloc_mp_req">malloc_mp_req</dfn> {</td></tr>
+<tr><th id="53">53</th><td>	<b>enum</b> <a class="type" href="#malloc_req_type" title='malloc_req_type' data-ref="malloc_req_type">malloc_req_type</a> <dfn class="decl field" id="malloc_mp_req::t" title='malloc_mp_req::t' data-ref="malloc_mp_req::t">t</dfn>;</td></tr>
+<tr><th id="54">54</th><td>	<a class="macro" href="include/rte_common.h.html#39" title="" data-ref="_M/RTE_STD_C11">RTE_STD_C11</a></td></tr>
+<tr><th id="55">55</th><td>	<b>union</b> {</td></tr>
+<tr><th id="56">56</th><td>		<b>struct</b> <a class="type" href="#malloc_req_alloc" title='malloc_req_alloc' data-ref="malloc_req_alloc">malloc_req_alloc</a> <dfn class="decl field" id="malloc_mp_req::(anonymous)::alloc_req" title='malloc_mp_req::(anonymous union)::alloc_req' data-ref="malloc_mp_req::(anonymous)::alloc_req">alloc_req</dfn>;</td></tr>
+<tr><th id="57">57</th><td>		<b>struct</b> <a class="type" href="#malloc_req_free" title='malloc_req_free' data-ref="malloc_req_free">malloc_req_free</a> <dfn class="decl field" id="malloc_mp_req::(anonymous)::free_req" title='malloc_mp_req::(anonymous union)::free_req' data-ref="malloc_mp_req::(anonymous)::free_req">free_req</dfn>;</td></tr>
+<tr><th id="58">58</th><td>	};</td></tr>
+<tr><th id="59">59</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="malloc_mp_req::id" title='malloc_mp_req::id' data-ref="malloc_mp_req::id">id</dfn>; <i class="doc">/**&lt; not to be populated by caller */</i></td></tr>
+<tr><th id="60">60</th><td>	<b>enum</b> <a class="type" href="#malloc_req_result" title='malloc_req_result' data-ref="malloc_req_result">malloc_req_result</a> <dfn class="decl field" id="malloc_mp_req::result" title='malloc_mp_req::result' data-ref="malloc_mp_req::result">result</dfn>;</td></tr>
+<tr><th id="61">61</th><td>};</td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td><em>int</em></td></tr>
+<tr><th id="64">64</th><td><dfn class="decl fn" id="register_mp_requests" title='register_mp_requests' data-ref="register_mp_requests">register_mp_requests</dfn>(<em>void</em>);</td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td><em>int</em></td></tr>
+<tr><th id="67">67</th><td><dfn class="decl fn" id="request_to_primary" title='request_to_primary' data-ref="request_to_primary">request_to_primary</dfn>(<b>struct</b> <a class="type" href="#malloc_mp_req" title='malloc_mp_req' data-ref="malloc_mp_req">malloc_mp_req</a> *<dfn class="local col1 decl" id="1req" title='req' data-type='struct malloc_mp_req *' data-ref="1req">req</dfn>);</td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td><i>/* synchronous memory map sync request */</i></td></tr>
+<tr><th id="70">70</th><td><em>int</em></td></tr>
+<tr><th id="71">71</th><td><dfn class="decl fn" id="request_sync" title='request_sync' data-ref="request_sync">request_sync</dfn>(<em>void</em>);</td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td><i>/* functions from malloc_heap exposed here */</i></td></tr>
+<tr><th id="74">74</th><td><em>int</em></td></tr>
+<tr><th id="75">75</th><td><a class="decl fn" href="malloc_heap.c.html#malloc_heap_free_pages" title='malloc_heap_free_pages' data-ref="malloc_heap_free_pages" id="malloc_heap_free_pages">malloc_heap_free_pages</a>(<em>void</em> *<dfn class="local col2 decl" id="2aligned_start" title='aligned_start' data-type='void *' data-ref="2aligned_start">aligned_start</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col3 decl" id="3aligned_len" title='aligned_len' data-type='size_t' data-ref="3aligned_len">aligned_len</dfn>);</td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td><b>struct</b> <a class="type" href="malloc_elem.h.html#malloc_elem" title='malloc_elem' data-ref="malloc_elem">malloc_elem</a> *</td></tr>
+<tr><th id="78">78</th><td><a class="decl fn" href="malloc_heap.c.html#alloc_pages_on_heap" title='alloc_pages_on_heap' data-ref="alloc_pages_on_heap" id="alloc_pages_on_heap">alloc_pages_on_heap</a>(<b>struct</b> <a class="type" href="include/rte_malloc_heap.h.html#malloc_heap" title='malloc_heap' data-ref="malloc_heap">malloc_heap</a> *<dfn class="local col4 decl" id="4heap" title='heap' data-type='struct malloc_heap *' data-ref="4heap">heap</dfn>, <a class="typedef" href="../../../../include/stdint.h.html#uint64_t" title='uint64_t' data-type='unsigned long' data-ref="uint64_t">uint64_t</a> <dfn class="local col5 decl" id="5pg_sz" title='pg_sz' data-type='uint64_t' data-ref="5pg_sz">pg_sz</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col6 decl" id="6elt_size" title='elt_size' data-type='size_t' data-ref="6elt_size">elt_size</dfn>,</td></tr>
+<tr><th id="79">79</th><td>		<em>int</em> <dfn class="local col7 decl" id="7socket" title='socket' data-type='int' data-ref="7socket">socket</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col8 decl" id="8flags" title='flags' data-type='unsigned int' data-ref="8flags">flags</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col9 decl" id="9align" title='align' data-type='size_t' data-ref="9align">align</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col0 decl" id="10bound" title='bound' data-type='size_t' data-ref="10bound">bound</dfn>,</td></tr>
+<tr><th id="80">80</th><td>		<span class="macro" title="_Bool" data-ref="_M/bool">bool</span> <dfn class="local col1 decl" id="11contig" title='contig' data-type='_Bool' data-ref="11contig">contig</dfn>, <b>struct</b> <a class="type" href="include/rte_memory.h.html#rte_memseg" title='rte_memseg' data-ref="rte_memseg">rte_memseg</a> **<dfn class="local col2 decl" id="12ms" title='ms' data-type='struct rte_memseg **' data-ref="12ms">ms</dfn>, <em>int</em> <dfn class="local col3 decl" id="13n_segs" title='n_segs' data-type='int' data-ref="13n_segs">n_segs</dfn>);</td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td><em>void</em></td></tr>
+<tr><th id="83">83</th><td><a class="decl fn" href="malloc_heap.c.html#rollback_expand_heap" title='rollback_expand_heap' data-ref="rollback_expand_heap" id="rollback_expand_heap">rollback_expand_heap</a>(<b>struct</b> <a class="type" href="include/rte_memory.h.html#rte_memseg" title='rte_memseg' data-ref="rte_memseg">rte_memseg</a> **<dfn class="local col4 decl" id="14ms" title='ms' data-type='struct rte_memseg **' data-ref="14ms">ms</dfn>, <em>int</em> <dfn class="local col5 decl" id="15n_segs" title='n_segs' data-type='int' data-ref="15n_segs">n_segs</dfn>,</td></tr>
+<tr><th id="84">84</th><td>		<b>struct</b> <a class="type" href="malloc_elem.h.html#malloc_elem" title='malloc_elem' data-ref="malloc_elem">malloc_elem</a> *<dfn class="local col6 decl" id="16elem" title='elem' data-type='struct malloc_elem *' data-ref="16elem">elem</dfn>, <em>void</em> *<dfn class="local col7 decl" id="17map_addr" title='map_addr' data-type='void *' data-ref="17map_addr">map_addr</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col8 decl" id="18map_len" title='map_len' data-type='size_t' data-ref="18map_len">map_len</dfn>);</td></tr>
+<tr><th id="85">85</th><td></td></tr>
+<tr><th id="86">86</th><td><u>#<span data-ppcond="5">endif</span> /* MALLOC_MP_H */</u></td></tr>
+<tr><th id="87">87</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='malloc_heap.c.html'>linux-4.18.y/lib/librte_eal/common/malloc_heap.c</a><br/>Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>tap_intr.c source code [linux-4.18.y/drivers/net/tap/tap_intr.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/drivers/net/tap/tap_intr.c'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>linux-4.18.y</a>/<a href='../..'>drivers</a>/<a href='..'>net</a>/<a href='./'>tap</a>/<a href='tap_intr.c.html'>tap_intr.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright 2018 Mellanox Technologies, Ltd</i></td></tr>
+<tr><th id="3">3</th><td><i> */</i></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="6">6</th><td><i class="doc"> *<span class="command"> @file</span></i></td></tr>
+<tr><th id="7">7</th><td><i class="doc"> * Interrupts handling for tap driver.</i></td></tr>
+<tr><th id="8">8</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="9">9</th><td></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../../../include/assert.h.html">&lt;assert.h&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../../../include/errno.h.html">&lt;errno.h&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../../include/fcntl.h.html">&lt;fcntl.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../../include/signal.h.html">&lt;signal.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include &lt;stdint.h&gt;</u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../../include/stdlib.h.html">&lt;stdlib.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../../include/unistd.h.html">&lt;unistd.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="rte_eth_tap.h.html">&lt;rte_eth_tap.h&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../lib/librte_eal/common/include/rte_errno.h.html">&lt;rte_errno.h&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../lib/librte_eal/common/include/rte_interrupts.h.html">&lt;rte_interrupts.h&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td></td></tr>
+<tr><th id="22">22</th><td></td></tr>
+<tr><th id="23">23</th><td><i class="doc" data-doc="tap_rx_intr_vec_uninstall">/**</i></td></tr>
+<tr><th id="24">24</th><td><i class="doc" data-doc="tap_rx_intr_vec_uninstall"> * Unregister Rx interrupts free the queue interrupt vector.</i></td></tr>
+<tr><th id="25">25</th><td><i class="doc" data-doc="tap_rx_intr_vec_uninstall"> *</i></td></tr>
+<tr><th id="26">26</th><td><i class="doc" data-doc="tap_rx_intr_vec_uninstall"> * <span class="command">@param</span> <span class="arg">dev</span></i></td></tr>
+<tr><th id="27">27</th><td><i class="doc" data-doc="tap_rx_intr_vec_uninstall"> *   Pointer to the tap rte_eth_dev structure.</i></td></tr>
+<tr><th id="28">28</th><td><i class="doc" data-doc="tap_rx_intr_vec_uninstall"> */</i></td></tr>
+<tr><th id="29">29</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="30">30</th><td><dfn class="tu decl def fn" id="tap_rx_intr_vec_uninstall" title='tap_rx_intr_vec_uninstall' data-type='void tap_rx_intr_vec_uninstall(struct rte_eth_dev * dev)' data-ref="tap_rx_intr_vec_uninstall">tap_rx_intr_vec_uninstall</dfn>(<b>struct</b> <a class="type" href="../../../lib/librte_ethdev/rte_ethdev_core.h.html#rte_eth_dev" title='rte_eth_dev' data-ref="rte_eth_dev">rte_eth_dev</a> *<dfn class="local col1 decl" id="1dev" title='dev' data-type='struct rte_eth_dev *' data-ref="1dev">dev</dfn>)</td></tr>
+<tr><th id="31">31</th><td>{</td></tr>
+<tr><th id="32">32</th><td>	<b>struct</b> <a class="type" href="rte_eth_tap.h.html#pmd_internals" title='pmd_internals' data-ref="pmd_internals">pmd_internals</a> *<dfn class="local col2 decl" id="2pmd" title='pmd' data-type='struct pmd_internals *' data-ref="2pmd">pmd</dfn> = <a class="local col1 ref" href="#1dev" title='dev' data-ref="1dev">dev</a>-&gt;<a class="ref field" href="../../../lib/librte_ethdev/rte_ethdev_core.h.html#rte_eth_dev::data" title='rte_eth_dev::data' data-ref="rte_eth_dev::data">data</a>-&gt;<a class="ref field" href="../../../lib/librte_ethdev/rte_ethdev_core.h.html#rte_eth_dev_data::dev_private" title='rte_eth_dev_data::dev_private' data-ref="rte_eth_dev_data::dev_private">dev_private</a>;</td></tr>
+<tr><th id="33">33</th><td>	<b>struct</b> <a class="type" href="../../../lib/librte_eal/common/include/rte_eal_interrupts.h.html#rte_intr_handle" title='rte_intr_handle' data-ref="rte_intr_handle">rte_intr_handle</a> *<dfn class="local col3 decl" id="3intr_handle" title='intr_handle' data-type='struct rte_intr_handle *' data-ref="3intr_handle">intr_handle</dfn> = &amp;<a class="local col2 ref" href="#2pmd" title='pmd' data-ref="2pmd">pmd</a>-&gt;<a class="ref field" href="rte_eth_tap.h.html#pmd_internals::intr_handle" title='pmd_internals::intr_handle' data-ref="pmd_internals::intr_handle">intr_handle</a>;</td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td>	<a class="ref fn" href="../../../lib/librte_eal/common/include/rte_eal_interrupts.h.html#rte_intr_free_epoll_fd" title='rte_intr_free_epoll_fd' data-ref="rte_intr_free_epoll_fd">rte_intr_free_epoll_fd</a>(<a class="local col3 ref" href="#3intr_handle" title='intr_handle' data-ref="3intr_handle">intr_handle</a>);</td></tr>
+<tr><th id="36">36</th><td>	<a class="ref fn" href="../../../../include/stdlib.h.html#free" title='free' data-ref="free">free</a>(<a class="local col3 ref" href="#3intr_handle" title='intr_handle' data-ref="3intr_handle">intr_handle</a>-&gt;<a class="ref field" href="../../../lib/librte_eal/common/include/rte_eal_interrupts.h.html#rte_intr_handle::intr_vec" title='rte_intr_handle::intr_vec' data-ref="rte_intr_handle::intr_vec">intr_vec</a>);</td></tr>
+<tr><th id="37">37</th><td>	<a class="local col3 ref" href="#3intr_handle" title='intr_handle' data-ref="3intr_handle">intr_handle</a>-&gt;<a class="ref field" href="../../../lib/librte_eal/common/include/rte_eal_interrupts.h.html#rte_intr_handle::intr_vec" title='rte_intr_handle::intr_vec' data-ref="rte_intr_handle::intr_vec">intr_vec</a> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="38">38</th><td>	<a class="local col3 ref" href="#3intr_handle" title='intr_handle' data-ref="3intr_handle">intr_handle</a>-&gt;<a class="ref field" href="../../../lib/librte_eal/common/include/rte_eal_interrupts.h.html#rte_intr_handle::nb_efd" title='rte_intr_handle::nb_efd' data-ref="rte_intr_handle::nb_efd">nb_efd</a> = <var>0</var>;</td></tr>
+<tr><th id="39">39</th><td>}</td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td><i class="doc" data-doc="tap_rx_intr_vec_install">/**</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc" data-doc="tap_rx_intr_vec_install"> * Allocate Rx queue interrupt vector and register Rx interrupts.</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc" data-doc="tap_rx_intr_vec_install"> *</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc" data-doc="tap_rx_intr_vec_install"> * <span class="command">@param</span> <span class="arg">dev</span></i></td></tr>
+<tr><th id="45">45</th><td><i class="doc" data-doc="tap_rx_intr_vec_install"> *   Pointer to the tap rte_eth_dev device structure.</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc" data-doc="tap_rx_intr_vec_install"> *</i></td></tr>
+<tr><th id="47">47</th><td><i class="doc" data-doc="tap_rx_intr_vec_install"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="48">48</th><td><i class="doc" data-doc="tap_rx_intr_vec_install"> *   0 on success, negative errno value otherwise and rte_errno is set.</i></td></tr>
+<tr><th id="49">49</th><td><i class="doc" data-doc="tap_rx_intr_vec_install"> */</i></td></tr>
+<tr><th id="50">50</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="51">51</th><td><dfn class="tu decl def fn" id="tap_rx_intr_vec_install" title='tap_rx_intr_vec_install' data-type='int tap_rx_intr_vec_install(struct rte_eth_dev * dev)' data-ref="tap_rx_intr_vec_install">tap_rx_intr_vec_install</dfn>(<b>struct</b> <a class="type" href="../../../lib/librte_ethdev/rte_ethdev_core.h.html#rte_eth_dev" title='rte_eth_dev' data-ref="rte_eth_dev">rte_eth_dev</a> *<dfn class="local col4 decl" id="4dev" title='dev' data-type='struct rte_eth_dev *' data-ref="4dev">dev</dfn>)</td></tr>
+<tr><th id="52">52</th><td>{</td></tr>
+<tr><th id="53">53</th><td>	<b>struct</b> <a class="type" href="rte_eth_tap.h.html#pmd_internals" title='pmd_internals' data-ref="pmd_internals">pmd_internals</a> *<dfn class="local col5 decl" id="5pmd" title='pmd' data-type='struct pmd_internals *' data-ref="5pmd">pmd</dfn> = <a class="local col4 ref" href="#4dev" title='dev' data-ref="4dev">dev</a>-&gt;<a class="ref field" href="../../../lib/librte_ethdev/rte_ethdev_core.h.html#rte_eth_dev::data" title='rte_eth_dev::data' data-ref="rte_eth_dev::data">data</a>-&gt;<a class="ref field" href="../../../lib/librte_ethdev/rte_ethdev_core.h.html#rte_eth_dev_data::dev_private" title='rte_eth_dev_data::dev_private' data-ref="rte_eth_dev_data::dev_private">dev_private</a>;</td></tr>
+<tr><th id="54">54</th><td>	<em>unsigned</em> <em>int</em> <dfn class="local col6 decl" id="6rxqs_n" title='rxqs_n' data-type='unsigned int' data-ref="6rxqs_n">rxqs_n</dfn> = <a class="local col5 ref" href="#5pmd" title='pmd' data-ref="5pmd">pmd</a>-&gt;<a class="ref field" href="rte_eth_tap.h.html#pmd_internals::dev" title='pmd_internals::dev' data-ref="pmd_internals::dev">dev</a>-&gt;<a class="ref field" href="../../../lib/librte_ethdev/rte_ethdev_core.h.html#rte_eth_dev::data" title='rte_eth_dev::data' data-ref="rte_eth_dev::data">data</a>-&gt;<a class="ref field" href="../../../lib/librte_ethdev/rte_ethdev_core.h.html#rte_eth_dev_data::nb_rx_queues" title='rte_eth_dev_data::nb_rx_queues' data-ref="rte_eth_dev_data::nb_rx_queues">nb_rx_queues</a>;</td></tr>
+<tr><th id="55">55</th><td>	<b>struct</b> <a class="type" href="../../../lib/librte_eal/common/include/rte_eal_interrupts.h.html#rte_intr_handle" title='rte_intr_handle' data-ref="rte_intr_handle">rte_intr_handle</a> *<dfn class="local col7 decl" id="7intr_handle" title='intr_handle' data-type='struct rte_intr_handle *' data-ref="7intr_handle">intr_handle</dfn> = &amp;<a class="local col5 ref" href="#5pmd" title='pmd' data-ref="5pmd">pmd</a>-&gt;<a class="ref field" href="rte_eth_tap.h.html#pmd_internals::intr_handle" title='pmd_internals::intr_handle' data-ref="pmd_internals::intr_handle">intr_handle</a>;</td></tr>
+<tr><th id="56">56</th><td>	<em>unsigned</em> <em>int</em> <dfn class="local col8 decl" id="8n" title='n' data-type='unsigned int' data-ref="8n">n</dfn> = <a class="macro" href="../../../lib/librte_eal/common/include/rte_common.h.html#412" title="__extension__ ({ __typeof__ (rxqs_n) _a = (rxqs_n); __typeof__ ((uint32_t)32) _b = ((uint32_t)32); _a &lt; _b ? _a : _b; })" data-ref="_M/RTE_MIN">RTE_MIN</a>(<a class="local col6 ref" href="#6rxqs_n" title='rxqs_n' data-ref="6rxqs_n">rxqs_n</a>, (<a class="typedef" href="../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a>)<a class="macro" href="../../../lib/librte_eal/common/include/rte_eal_interrupts.h.html#20" title="32" data-ref="_M/RTE_MAX_RXTX_INTR_VEC_ID">RTE_MAX_RXTX_INTR_VEC_ID</a>);</td></tr>
+<tr><th id="57">57</th><td>	<em>unsigned</em> <em>int</em> <dfn class="local col9 decl" id="9i" title='i' data-type='unsigned int' data-ref="9i">i</dfn>;</td></tr>
+<tr><th id="58">58</th><td>	<em>unsigned</em> <em>int</em> <dfn class="local col0 decl" id="10count" title='count' data-type='unsigned int' data-ref="10count">count</dfn> = <var>0</var>;</td></tr>
+<tr><th id="59">59</th><td></td></tr>
+<tr><th id="60">60</th><td>	<b>if</b> (!<a class="local col4 ref" href="#4dev" title='dev' data-ref="4dev">dev</a>-&gt;<a class="ref field" href="../../../lib/librte_ethdev/rte_ethdev_core.h.html#rte_eth_dev::data" title='rte_eth_dev::data' data-ref="rte_eth_dev::data">data</a>-&gt;<a class="ref field" href="../../../lib/librte_ethdev/rte_ethdev_core.h.html#rte_eth_dev_data::dev_conf" title='rte_eth_dev_data::dev_conf' data-ref="rte_eth_dev_data::dev_conf">dev_conf</a>.<a class="ref field" href="../../../lib/librte_ethdev/rte_ethdev.h.html#rte_eth_conf::intr_conf" title='rte_eth_conf::intr_conf' data-ref="rte_eth_conf::intr_conf">intr_conf</a>.<a class="ref field" href="../../../lib/librte_ethdev/rte_ethdev.h.html#rte_intr_conf::rxq" title='rte_intr_conf::rxq' data-ref="rte_intr_conf::rxq">rxq</a>)</td></tr>
+<tr><th id="61">61</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="62">62</th><td>	<a class="local col7 ref" href="#7intr_handle" title='intr_handle' data-ref="7intr_handle">intr_handle</a>-&gt;<a class="ref field" href="../../../lib/librte_eal/common/include/rte_eal_interrupts.h.html#rte_intr_handle::intr_vec" title='rte_intr_handle::intr_vec' data-ref="rte_intr_handle::intr_vec">intr_vec</a> = <a class="ref fn" href="../../../../include/stdlib.h.html#malloc" title='malloc' data-ref="malloc">malloc</a>(<b>sizeof</b>(<a class="local col7 ref" href="#7intr_handle" title='intr_handle' data-ref="7intr_handle">intr_handle</a>-&gt;<a class="ref field" href="../../../lib/librte_eal/common/include/rte_eal_interrupts.h.html#rte_intr_handle::intr_vec" title='rte_intr_handle::intr_vec' data-ref="rte_intr_handle::intr_vec">intr_vec</a>[<a class="local col6 ref" href="#6rxqs_n" title='rxqs_n' data-ref="6rxqs_n">rxqs_n</a>]));</td></tr>
+<tr><th id="63">63</th><td>	<b>if</b> (<a class="local col7 ref" href="#7intr_handle" title='intr_handle' data-ref="7intr_handle">intr_handle</a>-&gt;<a class="ref field" href="../../../lib/librte_eal/common/include/rte_eal_interrupts.h.html#rte_intr_handle::intr_vec" title='rte_intr_handle::intr_vec' data-ref="rte_intr_handle::intr_vec">intr_vec</a> == <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="64">64</th><td>		<a class="macro" href="../../../lib/librte_eal/common/include/rte_errno.h.html#29" title="(per_lcore__rte_errno)" data-ref="_M/rte_errno">rte_errno</a> = <a class="macro" href="../../../../include/asm-generic/errno-base.h.html#15" title="12" data-ref="_M/ENOMEM">ENOMEM</a>;</td></tr>
+<tr><th id="65">65</th><td>		<a class="macro" href="tap_log.h.html#8" title="rte_log(4U, tap_logtype, &quot;%s(): &quot; &quot;failed to allocate memory for interrupt vector,&quot; &quot; Rx interrupts will not be supported&quot; &quot;\n&quot;, __func__)" data-ref="_M/TAP_LOG">TAP_LOG</a>(ERR,</td></tr>
+<tr><th id="66">66</th><td>			<q>"failed to allocate memory for interrupt vector,"</q></td></tr>
+<tr><th id="67">67</th><td>			<q>" Rx interrupts will not be supported"</q>);</td></tr>
+<tr><th id="68">68</th><td>		<b>return</b> -<a class="macro" href="../../../lib/librte_eal/common/include/rte_errno.h.html#29" title="(per_lcore__rte_errno)" data-ref="_M/rte_errno">rte_errno</a>;</td></tr>
+<tr><th id="69">69</th><td>	}</td></tr>
+<tr><th id="70">70</th><td>	<b>for</b> (<a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a> = <var>0</var>; <a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a> &lt; <a class="local col8 ref" href="#8n" title='n' data-ref="8n">n</a>; <a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a>++) {</td></tr>
+<tr><th id="71">71</th><td>		<b>struct</b> <a class="type" href="rte_eth_tap.h.html#rx_queue" title='rx_queue' data-ref="rx_queue">rx_queue</a> *<dfn class="local col1 decl" id="11rxq" title='rxq' data-type='struct rx_queue *' data-ref="11rxq">rxq</dfn> = <a class="local col5 ref" href="#5pmd" title='pmd' data-ref="5pmd">pmd</a>-&gt;<a class="ref field" href="rte_eth_tap.h.html#pmd_internals::dev" title='pmd_internals::dev' data-ref="pmd_internals::dev">dev</a>-&gt;<a class="ref field" href="../../../lib/librte_ethdev/rte_ethdev_core.h.html#rte_eth_dev::data" title='rte_eth_dev::data' data-ref="rte_eth_dev::data">data</a>-&gt;<a class="ref field" href="../../../lib/librte_ethdev/rte_ethdev_core.h.html#rte_eth_dev_data::rx_queues" title='rte_eth_dev_data::rx_queues' data-ref="rte_eth_dev_data::rx_queues">rx_queues</a>[<a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a>];</td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td>		<i>/* Skip queues that cannot request interrupts. */</i></td></tr>
+<tr><th id="74">74</th><td>		<b>if</b> (!<a class="local col1 ref" href="#11rxq" title='rxq' data-ref="11rxq">rxq</a> || <a class="local col1 ref" href="#11rxq" title='rxq' data-ref="11rxq">rxq</a>-&gt;<a class="ref field" href="rte_eth_tap.h.html#rx_queue::fd" title='rx_queue::fd' data-ref="rx_queue::fd">fd</a> &lt;= <var>0</var>) {</td></tr>
+<tr><th id="75">75</th><td>			<i>/* Use invalid intr_vec[] index to disable entry. */</i></td></tr>
+<tr><th id="76">76</th><td>			<a class="local col7 ref" href="#7intr_handle" title='intr_handle' data-ref="7intr_handle">intr_handle</a>-&gt;<a class="ref field" href="../../../lib/librte_eal/common/include/rte_eal_interrupts.h.html#rte_intr_handle::intr_vec" title='rte_intr_handle::intr_vec' data-ref="rte_intr_handle::intr_vec">intr_vec</a>[<a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a>] =</td></tr>
+<tr><th id="77">77</th><td>				<a class="macro" href="../../../lib/librte_eal/common/include/rte_eal_interrupts.h.html#22" title="1" data-ref="_M/RTE_INTR_VEC_RXTX_OFFSET">RTE_INTR_VEC_RXTX_OFFSET</a> +</td></tr>
+<tr><th id="78">78</th><td>				<a class="macro" href="../../../lib/librte_eal/common/include/rte_eal_interrupts.h.html#20" title="32" data-ref="_M/RTE_MAX_RXTX_INTR_VEC_ID">RTE_MAX_RXTX_INTR_VEC_ID</a>;</td></tr>
+<tr><th id="79">79</th><td>			<b>continue</b>;</td></tr>
+<tr><th id="80">80</th><td>		}</td></tr>
+<tr><th id="81">81</th><td>		<a class="local col7 ref" href="#7intr_handle" title='intr_handle' data-ref="7intr_handle">intr_handle</a>-&gt;<a class="ref field" href="../../../lib/librte_eal/common/include/rte_eal_interrupts.h.html#rte_intr_handle::intr_vec" title='rte_intr_handle::intr_vec' data-ref="rte_intr_handle::intr_vec">intr_vec</a>[<a class="local col9 ref" href="#9i" title='i' data-ref="9i">i</a>] = <a class="macro" href="../../../lib/librte_eal/common/include/rte_eal_interrupts.h.html#22" title="1" data-ref="_M/RTE_INTR_VEC_RXTX_OFFSET">RTE_INTR_VEC_RXTX_OFFSET</a> + <a class="local col0 ref" href="#10count" title='count' data-ref="10count">count</a>;</td></tr>
+<tr><th id="82">82</th><td>		<a class="local col7 ref" href="#7intr_handle" title='intr_handle' data-ref="7intr_handle">intr_handle</a>-&gt;<a class="ref field" href="../../../lib/librte_eal/common/include/rte_eal_interrupts.h.html#rte_intr_handle::efds" title='rte_intr_handle::efds' data-ref="rte_intr_handle::efds">efds</a>[<a class="local col0 ref" href="#10count" title='count' data-ref="10count">count</a>] = <a class="local col1 ref" href="#11rxq" title='rxq' data-ref="11rxq">rxq</a>-&gt;<a class="ref field" href="rte_eth_tap.h.html#rx_queue::fd" title='rx_queue::fd' data-ref="rx_queue::fd">fd</a>;</td></tr>
+<tr><th id="83">83</th><td>		<a class="local col0 ref" href="#10count" title='count' data-ref="10count">count</a>++;</td></tr>
+<tr><th id="84">84</th><td>	}</td></tr>
+<tr><th id="85">85</th><td>	<b>if</b> (!<a class="local col0 ref" href="#10count" title='count' data-ref="10count">count</a>)</td></tr>
+<tr><th id="86">86</th><td>		<a class="tu ref fn" href="#tap_rx_intr_vec_uninstall" title='tap_rx_intr_vec_uninstall' data-use='c' data-ref="tap_rx_intr_vec_uninstall">tap_rx_intr_vec_uninstall</a>(<a class="local col4 ref" href="#4dev" title='dev' data-ref="4dev">dev</a>);</td></tr>
+<tr><th id="87">87</th><td>	<b>else</b></td></tr>
+<tr><th id="88">88</th><td>		<a class="local col7 ref" href="#7intr_handle" title='intr_handle' data-ref="7intr_handle">intr_handle</a>-&gt;<a class="ref field" href="../../../lib/librte_eal/common/include/rte_eal_interrupts.h.html#rte_intr_handle::nb_efd" title='rte_intr_handle::nb_efd' data-ref="rte_intr_handle::nb_efd">nb_efd</a> = <a class="local col0 ref" href="#10count" title='count' data-ref="10count">count</a>;</td></tr>
+<tr><th id="89">89</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="90">90</th><td>}</td></tr>
+<tr><th id="91">91</th><td></td></tr>
+<tr><th id="92">92</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="93">93</th><td><i class="doc"> * Register or unregister the Rx interrupts.</i></td></tr>
+<tr><th id="94">94</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="95">95</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">dev</span></i></td></tr>
+<tr><th id="96">96</th><td><i class="doc"> *   Pointer to the tap rte_eth_dev device structure.</i></td></tr>
+<tr><th id="97">97</th><td><i class="doc"> * <span class="command">@param</span> <span class="arg">set</span></i></td></tr>
+<tr><th id="98">98</th><td><i class="doc"> *   should the operation be register or unregister the interrupts.</i></td></tr>
+<tr><th id="99">99</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="100">100</th><td><i class="doc"> * <span class="command">@return</span></i></td></tr>
+<tr><th id="101">101</th><td><i class="doc"> *   0 on success, negative errno value otherwise and rte_errno is set.</i></td></tr>
+<tr><th id="102">102</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="103">103</th><td><em>int</em></td></tr>
+<tr><th id="104">104</th><td><dfn class="decl def fn" id="tap_rx_intr_vec_set" title='tap_rx_intr_vec_set' data-ref="tap_rx_intr_vec_set">tap_rx_intr_vec_set</dfn>(<b>struct</b> <a class="type" href="../../../lib/librte_ethdev/rte_ethdev_core.h.html#rte_eth_dev" title='rte_eth_dev' data-ref="rte_eth_dev">rte_eth_dev</a> *<dfn class="local col2 decl" id="12dev" title='dev' data-type='struct rte_eth_dev *' data-ref="12dev">dev</dfn>, <em>int</em> <dfn class="local col3 decl" id="13set" title='set' data-type='int' data-ref="13set">set</dfn>)</td></tr>
+<tr><th id="105">105</th><td>{</td></tr>
+<tr><th id="106">106</th><td>	<a class="tu ref fn" href="#tap_rx_intr_vec_uninstall" title='tap_rx_intr_vec_uninstall' data-use='c' data-ref="tap_rx_intr_vec_uninstall">tap_rx_intr_vec_uninstall</a>(<a class="local col2 ref" href="#12dev" title='dev' data-ref="12dev">dev</a>);</td></tr>
+<tr><th id="107">107</th><td>	<b>if</b> (<a class="local col3 ref" href="#13set" title='set' data-ref="13set">set</a>)</td></tr>
+<tr><th id="108">108</th><td>		<b>return</b> <a class="tu ref fn" href="#tap_rx_intr_vec_install" title='tap_rx_intr_vec_install' data-use='c' data-ref="tap_rx_intr_vec_install">tap_rx_intr_vec_install</a>(<a class="local col2 ref" href="#12dev" title='dev' data-ref="12dev">dev</a>);</td></tr>
+<tr><th id="109">109</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="110">110</th><td>}</td></tr>
+<tr><th id="111">111</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,550 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>cmdline_parse.c source code [linux-4.18.y/lib/librte_cmdline/cmdline_parse.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/lib/librte_cmdline/cmdline_parse.c'; var root_path = '../../..'; var data_path = '../../../../data';</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>linux-4.18.y</a>/<a href='..'>lib</a>/<a href='./'>librte_cmdline</a>/<a href='cmdline_parse.c.html'>cmdline_parse.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright(c) 2010-2014 Intel Corporation.</i></td></tr>
+<tr><th id="3">3</th><td><i> * Copyright (c) 2009, Olivier MATZ &lt;zer0@droids-corp.org&gt;</i></td></tr>
+<tr><th id="4">4</th><td><i> * All rights reserved.</i></td></tr>
+<tr><th id="5">5</th><td><i> */</i></td></tr>
+<tr><th id="6">6</th><td></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="../../../include/stdio.h.html">&lt;stdio.h&gt;</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include &lt;stdarg.h&gt;</u></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="../../../include/errno.h.html">&lt;errno.h&gt;</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../../include/string.h.html">&lt;string.h&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include &lt;inttypes.h&gt;</u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../include/ctype.h.html">&lt;ctype.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../include/termios.h.html">&lt;termios.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../include/netinet/in.h.html">&lt;netinet/in.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../librte_eal/common/include/rte_string_fns.h.html">&lt;rte_string_fns.h&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="cmdline_rdline.h.html">"cmdline_rdline.h"</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="cmdline_parse.h.html">"cmdline_parse.h"</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="cmdline.h.html">"cmdline.h"</a></u></td></tr>
+<tr><th id="22">22</th><td></td></tr>
+<tr><th id="23">23</th><td><u>#<span data-ppcond="23">ifdef</span> <span class="macro" data-ref="_M/RTE_LIBRTE_CMDLINE_DEBUG">RTE_LIBRTE_CMDLINE_DEBUG</span></u></td></tr>
+<tr><th id="24">24</th><td><u>#define debug_printf printf</u></td></tr>
+<tr><th id="25">25</th><td><u>#<span data-ppcond="23">else</span></u></td></tr>
+<tr><th id="26">26</th><td><u>#define <dfn class="macro" id="_M/debug_printf" data-ref="_M/debug_printf">debug_printf</dfn>(args...) do {} while(0)</u></td></tr>
+<tr><th id="27">27</th><td><u>#<span data-ppcond="23">endif</span></u></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><u>#define <dfn class="macro" id="_M/CMDLINE_BUFFER_SIZE" data-ref="_M/CMDLINE_BUFFER_SIZE">CMDLINE_BUFFER_SIZE</dfn> 64</u></td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><i  data-doc="isblank2">/* isblank() needs _XOPEN_SOURCE &gt;= 600 || _ISOC99_SOURCE, so use our</i></td></tr>
+<tr><th id="32">32</th><td><i  data-doc="isblank2"> * own. */</i></td></tr>
+<tr><th id="33">33</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="34">34</th><td><dfn class="tu decl def fn" id="isblank2" title='isblank2' data-type='int isblank2(char c)' data-ref="isblank2">isblank2</dfn>(<em>char</em> <dfn class="local col1 decl" id="1c" title='c' data-type='char' data-ref="1c">c</dfn>)</td></tr>
+<tr><th id="35">35</th><td>{</td></tr>
+<tr><th id="36">36</th><td>	<b>if</b> (<a class="local col1 ref" href="#1c" title='c' data-ref="1c">c</a> == <kbd>' '</kbd> ||</td></tr>
+<tr><th id="37">37</th><td>	    <a class="local col1 ref" href="#1c" title='c' data-ref="1c">c</a> == <kbd>'\t'</kbd> )</td></tr>
+<tr><th id="38">38</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="39">39</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="40">40</th><td>}</td></tr>
+<tr><th id="41">41</th><td></td></tr>
+<tr><th id="42">42</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="43">43</th><td><dfn class="tu decl def fn" id="isendofline" title='isendofline' data-type='int isendofline(char c)' data-ref="isendofline">isendofline</dfn>(<em>char</em> <dfn class="local col2 decl" id="2c" title='c' data-type='char' data-ref="2c">c</dfn>)</td></tr>
+<tr><th id="44">44</th><td>{</td></tr>
+<tr><th id="45">45</th><td>	<b>if</b> (<a class="local col2 ref" href="#2c" title='c' data-ref="2c">c</a> == <kbd>'\n'</kbd> ||</td></tr>
+<tr><th id="46">46</th><td>	    <a class="local col2 ref" href="#2c" title='c' data-ref="2c">c</a> == <kbd>'\r'</kbd> )</td></tr>
+<tr><th id="47">47</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="48">48</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="49">49</th><td>}</td></tr>
+<tr><th id="50">50</th><td></td></tr>
+<tr><th id="51">51</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="52">52</th><td><dfn class="tu decl def fn" id="iscomment" title='iscomment' data-type='int iscomment(char c)' data-ref="iscomment">iscomment</dfn>(<em>char</em> <dfn class="local col3 decl" id="3c" title='c' data-type='char' data-ref="3c">c</dfn>)</td></tr>
+<tr><th id="53">53</th><td>{</td></tr>
+<tr><th id="54">54</th><td>	<b>if</b> (<a class="local col3 ref" href="#3c" title='c' data-ref="3c">c</a> == <kbd>'#'</kbd>)</td></tr>
+<tr><th id="55">55</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="56">56</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="57">57</th><td>}</td></tr>
+<tr><th id="58">58</th><td></td></tr>
+<tr><th id="59">59</th><td><em>int</em></td></tr>
+<tr><th id="60">60</th><td><dfn class="decl def fn" id="cmdline_isendoftoken" title='cmdline_isendoftoken' data-ref="cmdline_isendoftoken">cmdline_isendoftoken</dfn>(<em>char</em> <dfn class="local col4 decl" id="4c" title='c' data-type='char' data-ref="4c">c</dfn>)</td></tr>
+<tr><th id="61">61</th><td>{</td></tr>
+<tr><th id="62">62</th><td>	<b>if</b> (!<a class="local col4 ref" href="#4c" title='c' data-ref="4c">c</a> || <a class="tu ref fn" href="#iscomment" title='iscomment' data-use='c' data-ref="iscomment">iscomment</a>(<a class="local col4 ref" href="#4c" title='c' data-ref="4c">c</a>) || <a class="tu ref fn" href="#isblank2" title='isblank2' data-use='c' data-ref="isblank2">isblank2</a>(<a class="local col4 ref" href="#4c" title='c' data-ref="4c">c</a>) || <a class="tu ref fn" href="#isendofline" title='isendofline' data-use='c' data-ref="isendofline">isendofline</a>(<a class="local col4 ref" href="#4c" title='c' data-ref="4c">c</a>))</td></tr>
+<tr><th id="63">63</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="64">64</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="65">65</th><td>}</td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td><em>int</em></td></tr>
+<tr><th id="68">68</th><td><dfn class="decl def fn" id="cmdline_isendofcommand" title='cmdline_isendofcommand' data-ref="cmdline_isendofcommand">cmdline_isendofcommand</dfn>(<em>char</em> <dfn class="local col5 decl" id="5c" title='c' data-type='char' data-ref="5c">c</dfn>)</td></tr>
+<tr><th id="69">69</th><td>{</td></tr>
+<tr><th id="70">70</th><td>	<b>if</b> (!<a class="local col5 ref" href="#5c" title='c' data-ref="5c">c</a> || <a class="tu ref fn" href="#iscomment" title='iscomment' data-use='c' data-ref="iscomment">iscomment</a>(<a class="local col5 ref" href="#5c" title='c' data-ref="5c">c</a>) || <a class="tu ref fn" href="#isendofline" title='isendofline' data-use='c' data-ref="isendofline">isendofline</a>(<a class="local col5 ref" href="#5c" title='c' data-ref="5c">c</a>))</td></tr>
+<tr><th id="71">71</th><td>		<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="72">72</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="73">73</th><td>}</td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td><em>static</em> <em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="76">76</th><td><dfn class="tu decl def fn" id="nb_common_chars" title='nb_common_chars' data-type='unsigned int nb_common_chars(const char * s1, const char * s2)' data-ref="nb_common_chars">nb_common_chars</dfn>(<em>const</em> <em>char</em> * <dfn class="local col6 decl" id="6s1" title='s1' data-type='const char *' data-ref="6s1">s1</dfn>, <em>const</em> <em>char</em> * <dfn class="local col7 decl" id="7s2" title='s2' data-type='const char *' data-ref="7s2">s2</dfn>)</td></tr>
+<tr><th id="77">77</th><td>{</td></tr>
+<tr><th id="78">78</th><td>	<em>unsigned</em> <em>int</em> <dfn class="local col8 decl" id="8i" title='i' data-type='unsigned int' data-ref="8i">i</dfn>=<var>0</var>;</td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td>	<b>while</b> (*<a class="local col6 ref" href="#6s1" title='s1' data-ref="6s1">s1</a>==*<a class="local col7 ref" href="#7s2" title='s2' data-ref="7s2">s2</a> &amp;&amp; *<a class="local col6 ref" href="#6s1" title='s1' data-ref="6s1">s1</a>) {</td></tr>
+<tr><th id="81">81</th><td>		<a class="local col6 ref" href="#6s1" title='s1' data-ref="6s1">s1</a>++;</td></tr>
+<tr><th id="82">82</th><td>		<a class="local col7 ref" href="#7s2" title='s2' data-ref="7s2">s2</a>++;</td></tr>
+<tr><th id="83">83</th><td>		<a class="local col8 ref" href="#8i" title='i' data-ref="8i">i</a>++;</td></tr>
+<tr><th id="84">84</th><td>	}</td></tr>
+<tr><th id="85">85</th><td>	<b>return</b> <a class="local col8 ref" href="#8i" title='i' data-ref="8i">i</a>;</td></tr>
+<tr><th id="86">86</th><td>}</td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td><i class="doc" data-doc="get_token">/** Retrieve either static or dynamic token at a given index. */</i></td></tr>
+<tr><th id="89">89</th><td><em>static</em> <a class="typedef" href="cmdline_parse.h.html#cmdline_parse_token_hdr_t" title='cmdline_parse_token_hdr_t' data-type='struct cmdline_token_hdr' data-ref="cmdline_parse_token_hdr_t">cmdline_parse_token_hdr_t</a> *</td></tr>
+<tr><th id="90">90</th><td><dfn class="tu decl def fn" id="get_token" title='get_token' data-type='cmdline_parse_token_hdr_t * get_token(cmdline_parse_inst_t * inst, unsigned int index)' data-ref="get_token">get_token</dfn>(<a class="typedef" href="cmdline_parse.h.html#cmdline_parse_inst_t" title='cmdline_parse_inst_t' data-type='struct cmdline_inst' data-ref="cmdline_parse_inst_t">cmdline_parse_inst_t</a> *<dfn class="local col9 decl" id="9inst" title='inst' data-type='cmdline_parse_inst_t *' data-ref="9inst">inst</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col0 decl" id="10index" title='index' data-type='unsigned int' data-ref="10index">index</dfn>)</td></tr>
+<tr><th id="91">91</th><td>{</td></tr>
+<tr><th id="92">92</th><td>	<a class="typedef" href="cmdline_parse.h.html#cmdline_parse_token_hdr_t" title='cmdline_parse_token_hdr_t' data-type='struct cmdline_token_hdr' data-ref="cmdline_parse_token_hdr_t">cmdline_parse_token_hdr_t</a> *<dfn class="local col1 decl" id="11token_p" title='token_p' data-type='cmdline_parse_token_hdr_t *' data-ref="11token_p">token_p</dfn>;</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td>	<i>/* check presence of static tokens first */</i></td></tr>
+<tr><th id="95">95</th><td>	<b>if</b> (<a class="local col9 ref" href="#9inst" title='inst' data-ref="9inst">inst</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_inst::tokens" title='cmdline_inst::tokens' data-ref="cmdline_inst::tokens">tokens</a>[<var>0</var>] || !<a class="local col9 ref" href="#9inst" title='inst' data-ref="9inst">inst</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_inst::f" title='cmdline_inst::f' data-ref="cmdline_inst::f">f</a>)</td></tr>
+<tr><th id="96">96</th><td>		<b>return</b> <a class="local col9 ref" href="#9inst" title='inst' data-ref="9inst">inst</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_inst::tokens" title='cmdline_inst::tokens' data-ref="cmdline_inst::tokens">tokens</a>[<a class="local col0 ref" href="#10index" title='index' data-ref="10index">index</a>];</td></tr>
+<tr><th id="97">97</th><td>	<i>/* generate dynamic token */</i></td></tr>
+<tr><th id="98">98</th><td>	<a class="local col1 ref" href="#11token_p" title='token_p' data-ref="11token_p">token_p</a> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="99">99</th><td>	<a class="local col9 ref" href="#9inst" title='inst' data-ref="9inst">inst</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_inst::f" title='cmdline_inst::f' data-ref="cmdline_inst::f">f</a>(&amp;<a class="local col1 ref" href="#11token_p" title='token_p' data-ref="11token_p">token_p</a>, <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>, &amp;<a class="local col9 ref" href="#9inst" title='inst' data-ref="9inst">inst</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_inst::tokens" title='cmdline_inst::tokens' data-ref="cmdline_inst::tokens">tokens</a>[<a class="local col0 ref" href="#10index" title='index' data-ref="10index">index</a>]);</td></tr>
+<tr><th id="100">100</th><td>	<b>return</b> <a class="local col1 ref" href="#11token_p" title='token_p' data-ref="11token_p">token_p</a>;</td></tr>
+<tr><th id="101">101</th><td>}</td></tr>
+<tr><th id="102">102</th><td></td></tr>
+<tr><th id="103">103</th><td><i class="doc" data-doc="match_inst">/**</i></td></tr>
+<tr><th id="104">104</th><td><i class="doc" data-doc="match_inst"> * try to match the buffer with an instruction (only the first</i></td></tr>
+<tr><th id="105">105</th><td><i class="doc" data-doc="match_inst"> * nb_match_token tokens if != 0). Return 0 if we match all the</i></td></tr>
+<tr><th id="106">106</th><td><i class="doc" data-doc="match_inst"> * tokens, else the number of matched tokens, else -1.</i></td></tr>
+<tr><th id="107">107</th><td><i class="doc" data-doc="match_inst"> */</i></td></tr>
+<tr><th id="108">108</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="109">109</th><td><dfn class="tu decl def fn" id="match_inst" title='match_inst' data-type='int match_inst(cmdline_parse_inst_t * inst, const char * buf, unsigned int nb_match_token, void * resbuf, unsigned int resbuf_size)' data-ref="match_inst">match_inst</dfn>(<a class="typedef" href="cmdline_parse.h.html#cmdline_parse_inst_t" title='cmdline_parse_inst_t' data-type='struct cmdline_inst' data-ref="cmdline_parse_inst_t">cmdline_parse_inst_t</a> *<dfn class="local col2 decl" id="12inst" title='inst' data-type='cmdline_parse_inst_t *' data-ref="12inst">inst</dfn>, <em>const</em> <em>char</em> *<dfn class="local col3 decl" id="13buf" title='buf' data-type='const char *' data-ref="13buf">buf</dfn>,</td></tr>
+<tr><th id="110">110</th><td>	   <em>unsigned</em> <em>int</em> <dfn class="local col4 decl" id="14nb_match_token" title='nb_match_token' data-type='unsigned int' data-ref="14nb_match_token">nb_match_token</dfn>, <em>void</em> *<dfn class="local col5 decl" id="15resbuf" title='resbuf' data-type='void *' data-ref="15resbuf">resbuf</dfn>, <em>unsigned</em> <dfn class="local col6 decl" id="16resbuf_size" title='resbuf_size' data-type='unsigned int' data-ref="16resbuf_size">resbuf_size</dfn>)</td></tr>
+<tr><th id="111">111</th><td>{</td></tr>
+<tr><th id="112">112</th><td>	<a class="typedef" href="cmdline_parse.h.html#cmdline_parse_token_hdr_t" title='cmdline_parse_token_hdr_t' data-type='struct cmdline_token_hdr' data-ref="cmdline_parse_token_hdr_t">cmdline_parse_token_hdr_t</a> *<dfn class="local col7 decl" id="17token_p" title='token_p' data-type='cmdline_parse_token_hdr_t *' data-ref="17token_p">token_p</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="113">113</th><td>	<em>unsigned</em> <em>int</em> <dfn class="local col8 decl" id="18i" title='i' data-type='unsigned int' data-ref="18i">i</dfn>=<var>0</var>;</td></tr>
+<tr><th id="114">114</th><td>	<em>int</em> <dfn class="local col9 decl" id="19n" title='n' data-type='int' data-ref="19n">n</dfn> = <var>0</var>;</td></tr>
+<tr><th id="115">115</th><td>	<b>struct</b> <a class="type" href="cmdline_parse.h.html#cmdline_token_hdr" title='cmdline_token_hdr' data-ref="cmdline_token_hdr">cmdline_token_hdr</a> <dfn class="local col0 decl" id="20token_hdr" title='token_hdr' data-type='struct cmdline_token_hdr' data-ref="20token_hdr">token_hdr</dfn>;</td></tr>
+<tr><th id="116">116</th><td></td></tr>
+<tr><th id="117">117</th><td>	<b>if</b> (<a class="local col5 ref" href="#15resbuf" title='resbuf' data-ref="15resbuf">resbuf</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>)</td></tr>
+<tr><th id="118">118</th><td>		<a class="ref fn" href="../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(<a class="local col5 ref" href="#15resbuf" title='resbuf' data-ref="15resbuf">resbuf</a>, <var>0</var>, <a class="local col6 ref" href="#16resbuf_size" title='resbuf_size' data-ref="16resbuf_size">resbuf_size</a>);</td></tr>
+<tr><th id="119">119</th><td>	<i>/* check if we match all tokens of inst */</i></td></tr>
+<tr><th id="120">120</th><td>	<b>while</b> (!<a class="local col4 ref" href="#14nb_match_token" title='nb_match_token' data-ref="14nb_match_token">nb_match_token</a> || <a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a> &lt; <a class="local col4 ref" href="#14nb_match_token" title='nb_match_token' data-ref="14nb_match_token">nb_match_token</a>) {</td></tr>
+<tr><th id="121">121</th><td>		<a class="local col7 ref" href="#17token_p" title='token_p' data-ref="17token_p">token_p</a> = <a class="tu ref fn" href="#get_token" title='get_token' data-use='c' data-ref="get_token">get_token</a>(<a class="local col2 ref" href="#12inst" title='inst' data-ref="12inst">inst</a>, <a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>);</td></tr>
+<tr><th id="122">122</th><td>		<b>if</b> (!<a class="local col7 ref" href="#17token_p" title='token_p' data-ref="17token_p">token_p</a>)</td></tr>
+<tr><th id="123">123</th><td>			<b>break</b>;</td></tr>
+<tr><th id="124">124</th><td>		<a class="ref fn" href="../../../include/string.h.html#memcpy" title='memcpy' data-ref="memcpy">memcpy</a>(&amp;<a class="local col0 ref" href="#20token_hdr" title='token_hdr' data-ref="20token_hdr">token_hdr</a>, <a class="local col7 ref" href="#17token_p" title='token_p' data-ref="17token_p">token_p</a>, <b>sizeof</b>(<a class="local col0 ref" href="#20token_hdr" title='token_hdr' data-ref="20token_hdr">token_hdr</a>));</td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td>		<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"TK\n"</q>);</td></tr>
+<tr><th id="127">127</th><td>		<i>/* skip spaces */</i></td></tr>
+<tr><th id="128">128</th><td>		<b>while</b> (<a class="tu ref fn" href="#isblank2" title='isblank2' data-use='c' data-ref="isblank2">isblank2</a>(*<a class="local col3 ref" href="#13buf" title='buf' data-ref="13buf">buf</a>)) {</td></tr>
+<tr><th id="129">129</th><td>			<a class="local col3 ref" href="#13buf" title='buf' data-ref="13buf">buf</a>++;</td></tr>
+<tr><th id="130">130</th><td>		}</td></tr>
+<tr><th id="131">131</th><td></td></tr>
+<tr><th id="132">132</th><td>		<i>/* end of buf */</i></td></tr>
+<tr><th id="133">133</th><td>		<b>if</b> ( <a class="tu ref fn" href="#isendofline" title='isendofline' data-use='c' data-ref="isendofline">isendofline</a>(*<a class="local col3 ref" href="#13buf" title='buf' data-ref="13buf">buf</a>) || <a class="tu ref fn" href="#iscomment" title='iscomment' data-use='c' data-ref="iscomment">iscomment</a>(*<a class="local col3 ref" href="#13buf" title='buf' data-ref="13buf">buf</a>) )</td></tr>
+<tr><th id="134">134</th><td>			<b>break</b>;</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td>		<b>if</b> (<a class="local col5 ref" href="#15resbuf" title='resbuf' data-ref="15resbuf">resbuf</a> == <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="137">137</th><td>			<a class="local col9 ref" href="#19n" title='n' data-ref="19n">n</a> = <a class="local col0 ref" href="#20token_hdr" title='token_hdr' data-ref="20token_hdr">token_hdr</a>.<a class="ref field" href="cmdline_parse.h.html#cmdline_token_hdr::ops" title='cmdline_token_hdr::ops' data-ref="cmdline_token_hdr::ops">ops</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_token_ops::parse" title='cmdline_token_ops::parse' data-ref="cmdline_token_ops::parse">parse</a>(<a class="local col7 ref" href="#17token_p" title='token_p' data-ref="17token_p">token_p</a>, <a class="local col3 ref" href="#13buf" title='buf' data-ref="13buf">buf</a>, <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>, <var>0</var>);</td></tr>
+<tr><th id="138">138</th><td>		} <b>else</b> {</td></tr>
+<tr><th id="139">139</th><td>			<em>unsigned</em> <dfn class="local col1 decl" id="21rb_sz" title='rb_sz' data-type='unsigned int' data-ref="21rb_sz">rb_sz</dfn>;</td></tr>
+<tr><th id="140">140</th><td></td></tr>
+<tr><th id="141">141</th><td>			<b>if</b> (<a class="local col0 ref" href="#20token_hdr" title='token_hdr' data-ref="20token_hdr">token_hdr</a>.<a class="ref field" href="cmdline_parse.h.html#cmdline_token_hdr::offset" title='cmdline_token_hdr::offset' data-ref="cmdline_token_hdr::offset">offset</a> &gt; <a class="local col6 ref" href="#16resbuf_size" title='resbuf_size' data-ref="16resbuf_size">resbuf_size</a>) {</td></tr>
+<tr><th id="142">142</th><td>				<a class="ref fn" href="../../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a>(<q>"Parse error(%s:%d): Token offset(%u) "</q></td></tr>
+<tr><th id="143">143</th><td>					<q>"exceeds maximum size(%u)\n"</q>,</td></tr>
+<tr><th id="144">144</th><td>					<span class="macro" title="&quot;/home/tempdban/dpdk/build/build/lib/librte_cmdline/../../../../lib/librte_cmdline/cmdline_parse.c&quot;" data-ref="_M/__FILE__">__FILE__</span>, <span class="macro" title="144" data-ref="_M/__LINE__">__LINE__</span>,</td></tr>
+<tr><th id="145">145</th><td>					<a class="local col0 ref" href="#20token_hdr" title='token_hdr' data-ref="20token_hdr">token_hdr</a>.<a class="ref field" href="cmdline_parse.h.html#cmdline_token_hdr::offset" title='cmdline_token_hdr::offset' data-ref="cmdline_token_hdr::offset">offset</a>, <a class="local col6 ref" href="#16resbuf_size" title='resbuf_size' data-ref="16resbuf_size">resbuf_size</a>);</td></tr>
+<tr><th id="146">146</th><td>				<b>return</b> -<a class="macro" href="../../../include/asm-generic/errno.h.html#78" title="105" data-ref="_M/ENOBUFS">ENOBUFS</a>;</td></tr>
+<tr><th id="147">147</th><td>			}</td></tr>
+<tr><th id="148">148</th><td>			<a class="local col1 ref" href="#21rb_sz" title='rb_sz' data-ref="21rb_sz">rb_sz</a> = <a class="local col6 ref" href="#16resbuf_size" title='resbuf_size' data-ref="16resbuf_size">resbuf_size</a> - <a class="local col0 ref" href="#20token_hdr" title='token_hdr' data-ref="20token_hdr">token_hdr</a>.<a class="ref field" href="cmdline_parse.h.html#cmdline_token_hdr::offset" title='cmdline_token_hdr::offset' data-ref="cmdline_token_hdr::offset">offset</a>;</td></tr>
+<tr><th id="149">149</th><td></td></tr>
+<tr><th id="150">150</th><td>			<a class="local col9 ref" href="#19n" title='n' data-ref="19n">n</a> = <a class="local col0 ref" href="#20token_hdr" title='token_hdr' data-ref="20token_hdr">token_hdr</a>.<a class="ref field" href="cmdline_parse.h.html#cmdline_token_hdr::ops" title='cmdline_token_hdr::ops' data-ref="cmdline_token_hdr::ops">ops</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_token_ops::parse" title='cmdline_token_ops::parse' data-ref="cmdline_token_ops::parse">parse</a>(<a class="local col7 ref" href="#17token_p" title='token_p' data-ref="17token_p">token_p</a>, <a class="local col3 ref" href="#13buf" title='buf' data-ref="13buf">buf</a>, (<em>char</em> *)<a class="local col5 ref" href="#15resbuf" title='resbuf' data-ref="15resbuf">resbuf</a> +</td></tr>
+<tr><th id="151">151</th><td>				<a class="local col0 ref" href="#20token_hdr" title='token_hdr' data-ref="20token_hdr">token_hdr</a>.<a class="ref field" href="cmdline_parse.h.html#cmdline_token_hdr::offset" title='cmdline_token_hdr::offset' data-ref="cmdline_token_hdr::offset">offset</a>, <a class="local col1 ref" href="#21rb_sz" title='rb_sz' data-ref="21rb_sz">rb_sz</a>);</td></tr>
+<tr><th id="152">152</th><td>		}</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td>		<b>if</b> (<a class="local col9 ref" href="#19n" title='n' data-ref="19n">n</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="155">155</th><td>			<b>break</b>;</td></tr>
+<tr><th id="156">156</th><td></td></tr>
+<tr><th id="157">157</th><td>		<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"TK parsed (len=%d)\n"</q>, n);</td></tr>
+<tr><th id="158">158</th><td>		<a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>++;</td></tr>
+<tr><th id="159">159</th><td>		<a class="local col3 ref" href="#13buf" title='buf' data-ref="13buf">buf</a> += <a class="local col9 ref" href="#19n" title='n' data-ref="19n">n</a>;</td></tr>
+<tr><th id="160">160</th><td>	}</td></tr>
+<tr><th id="161">161</th><td></td></tr>
+<tr><th id="162">162</th><td>	<i>/* does not match */</i></td></tr>
+<tr><th id="163">163</th><td>	<b>if</b> (<a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>==<var>0</var>)</td></tr>
+<tr><th id="164">164</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="165">165</th><td></td></tr>
+<tr><th id="166">166</th><td>	<i>/* in case we want to match a specific num of token */</i></td></tr>
+<tr><th id="167">167</th><td>	<b>if</b> (<a class="local col4 ref" href="#14nb_match_token" title='nb_match_token' data-ref="14nb_match_token">nb_match_token</a>) {</td></tr>
+<tr><th id="168">168</th><td>		<b>if</b> (<a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a> == <a class="local col4 ref" href="#14nb_match_token" title='nb_match_token' data-ref="14nb_match_token">nb_match_token</a>) {</td></tr>
+<tr><th id="169">169</th><td>			<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="170">170</th><td>		}</td></tr>
+<tr><th id="171">171</th><td>		<b>return</b> <a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>;</td></tr>
+<tr><th id="172">172</th><td>	}</td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td>	<i>/* we don't match all the tokens */</i></td></tr>
+<tr><th id="175">175</th><td>	<b>if</b> (<a class="local col7 ref" href="#17token_p" title='token_p' data-ref="17token_p">token_p</a>) {</td></tr>
+<tr><th id="176">176</th><td>		<b>return</b> <a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>;</td></tr>
+<tr><th id="177">177</th><td>	}</td></tr>
+<tr><th id="178">178</th><td></td></tr>
+<tr><th id="179">179</th><td>	<i>/* are there are some tokens more */</i></td></tr>
+<tr><th id="180">180</th><td>	<b>while</b> (<a class="tu ref fn" href="#isblank2" title='isblank2' data-use='c' data-ref="isblank2">isblank2</a>(*<a class="local col3 ref" href="#13buf" title='buf' data-ref="13buf">buf</a>)) {</td></tr>
+<tr><th id="181">181</th><td>		<a class="local col3 ref" href="#13buf" title='buf' data-ref="13buf">buf</a>++;</td></tr>
+<tr><th id="182">182</th><td>	}</td></tr>
+<tr><th id="183">183</th><td></td></tr>
+<tr><th id="184">184</th><td>	<i>/* end of buf */</i></td></tr>
+<tr><th id="185">185</th><td>	<b>if</b> ( <a class="tu ref fn" href="#isendofline" title='isendofline' data-use='c' data-ref="isendofline">isendofline</a>(*<a class="local col3 ref" href="#13buf" title='buf' data-ref="13buf">buf</a>) || <a class="tu ref fn" href="#iscomment" title='iscomment' data-use='c' data-ref="iscomment">iscomment</a>(*<a class="local col3 ref" href="#13buf" title='buf' data-ref="13buf">buf</a>) )</td></tr>
+<tr><th id="186">186</th><td>		<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="187">187</th><td></td></tr>
+<tr><th id="188">188</th><td>	<i>/* garbage after inst */</i></td></tr>
+<tr><th id="189">189</th><td>	<b>return</b> <a class="local col8 ref" href="#18i" title='i' data-ref="18i">i</a>;</td></tr>
+<tr><th id="190">190</th><td>}</td></tr>
+<tr><th id="191">191</th><td></td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td><em>int</em></td></tr>
+<tr><th id="194">194</th><td><dfn class="decl def fn" id="cmdline_parse" title='cmdline_parse' data-ref="cmdline_parse">cmdline_parse</dfn>(<b>struct</b> <a class="type" href="cmdline.h.html#cmdline" title='cmdline' data-ref="cmdline">cmdline</a> *<dfn class="local col2 decl" id="22cl" title='cl' data-type='struct cmdline *' data-ref="22cl">cl</dfn>, <em>const</em> <em>char</em> * <dfn class="local col3 decl" id="23buf" title='buf' data-type='const char *' data-ref="23buf">buf</dfn>)</td></tr>
+<tr><th id="195">195</th><td>{</td></tr>
+<tr><th id="196">196</th><td>	<em>unsigned</em> <em>int</em> <dfn class="local col4 decl" id="24inst_num" title='inst_num' data-type='unsigned int' data-ref="24inst_num">inst_num</dfn>=<var>0</var>;</td></tr>
+<tr><th id="197">197</th><td>	<a class="typedef" href="cmdline_parse.h.html#cmdline_parse_inst_t" title='cmdline_parse_inst_t' data-type='struct cmdline_inst' data-ref="cmdline_parse_inst_t">cmdline_parse_inst_t</a> *<dfn class="local col5 decl" id="25inst" title='inst' data-type='cmdline_parse_inst_t *' data-ref="25inst">inst</dfn>;</td></tr>
+<tr><th id="198">198</th><td>	<em>const</em> <em>char</em> *<dfn class="local col6 decl" id="26curbuf" title='curbuf' data-type='const char *' data-ref="26curbuf">curbuf</dfn>;</td></tr>
+<tr><th id="199">199</th><td>	<b>union</b> {</td></tr>
+<tr><th id="200">200</th><td>		<em>char</em> <dfn class="local col7 decl field" id="27buf" title='buf' data-type='char [8192]' data-ref="27buf">buf</dfn>[<a class="macro" href="cmdline_parse.h.html#30" title="8192" data-ref="_M/CMDLINE_PARSE_RESULT_BUFSIZE">CMDLINE_PARSE_RESULT_BUFSIZE</a>];</td></tr>
+<tr><th id="201">201</th><td>		<em>long</em> <em>double</em> <dfn class="local col8 decl field" id="28align" title='align' data-type='long double' data-ref="28align">align</dfn>; <i>/* strong alignment constraint for buf */</i></td></tr>
+<tr><th id="202">202</th><td>	} <dfn class="local col9 decl" id="29result" title='result' data-type='union (anonymous union at /home/tempdban/dpdk/build/build/lib/librte_cmdline/../../../../lib/librte_cmdline/cmdline_parse.c:199:2)' data-ref="29result">result</dfn>, <dfn class="local col0 decl" id="30tmp_result" title='tmp_result' data-type='union (anonymous union at /home/tempdban/dpdk/build/build/lib/librte_cmdline/../../../../lib/librte_cmdline/cmdline_parse.c:199:2)' data-ref="30tmp_result">tmp_result</dfn>;</td></tr>
+<tr><th id="203">203</th><td>	<em>void</em> (*<dfn class="local col1 decl" id="31f" title='f' data-type='void (*)(void *, struct cmdline *, void *)' data-ref="31f">f</dfn>)(<em>void</em> *, <b>struct</b> <a class="type" href="cmdline.h.html#cmdline" title='cmdline' data-ref="cmdline">cmdline</a> *, <em>void</em> *) = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="204">204</th><td>	<em>void</em> *<dfn class="local col2 decl" id="32data" title='data' data-type='void *' data-ref="32data">data</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="205">205</th><td>	<em>int</em> <dfn class="local col3 decl" id="33comment" title='comment' data-type='int' data-ref="33comment">comment</dfn> = <var>0</var>;</td></tr>
+<tr><th id="206">206</th><td>	<em>int</em> <dfn class="local col4 decl" id="34linelen" title='linelen' data-type='int' data-ref="34linelen">linelen</dfn> = <var>0</var>;</td></tr>
+<tr><th id="207">207</th><td>	<em>int</em> <dfn class="local col5 decl" id="35parse_it" title='parse_it' data-type='int' data-ref="35parse_it">parse_it</dfn> = <var>0</var>;</td></tr>
+<tr><th id="208">208</th><td>	<em>int</em> <dfn class="local col6 decl" id="36err" title='err' data-type='int' data-ref="36err">err</dfn> = <a class="macro" href="cmdline_parse.h.html#21" title="-2" data-ref="_M/CMDLINE_PARSE_NOMATCH">CMDLINE_PARSE_NOMATCH</a>;</td></tr>
+<tr><th id="209">209</th><td>	<em>int</em> <dfn class="local col7 decl" id="37tok" title='tok' data-type='int' data-ref="37tok">tok</dfn>;</td></tr>
+<tr><th id="210">210</th><td>	<a class="typedef" href="cmdline_parse.h.html#cmdline_parse_ctx_t" title='cmdline_parse_ctx_t' data-type='cmdline_parse_inst_t *' data-ref="cmdline_parse_ctx_t">cmdline_parse_ctx_t</a> *<dfn class="local col8 decl" id="38ctx" title='ctx' data-type='cmdline_parse_ctx_t *' data-ref="38ctx">ctx</dfn>;</td></tr>
+<tr><th id="211">211</th><td>	<em>char</em> *<dfn class="local col9 decl" id="39result_buf" title='result_buf' data-type='char *' data-ref="39result_buf">result_buf</dfn> = <a class="local col9 ref" href="#29result" title='result' data-ref="29result">result</a>.<a class="local col7 ref field" href="#27buf" title='buf' data-ref="27buf">buf</a>;</td></tr>
+<tr><th id="212">212</th><td></td></tr>
+<tr><th id="213">213</th><td>	<b>if</b> (!<a class="local col2 ref" href="#22cl" title='cl' data-ref="22cl">cl</a> || !<a class="local col3 ref" href="#23buf" title='buf' data-ref="23buf">buf</a>)</td></tr>
+<tr><th id="214">214</th><td>		<b>return</b> <a class="macro" href="cmdline_parse.h.html#22" title="-3" data-ref="_M/CMDLINE_PARSE_BAD_ARGS">CMDLINE_PARSE_BAD_ARGS</a>;</td></tr>
+<tr><th id="215">215</th><td></td></tr>
+<tr><th id="216">216</th><td>	<a class="local col8 ref" href="#38ctx" title='ctx' data-ref="38ctx">ctx</a> = <a class="local col2 ref" href="#22cl" title='cl' data-ref="22cl">cl</a>-&gt;<a class="ref field" href="cmdline.h.html#cmdline::ctx" title='cmdline::ctx' data-ref="cmdline::ctx">ctx</a>;</td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td>	<i>/*</i></td></tr>
+<tr><th id="219">219</th><td><i>	 * - look if the buffer contains at least one line</i></td></tr>
+<tr><th id="220">220</th><td><i>	 * - look if line contains only spaces or comments</i></td></tr>
+<tr><th id="221">221</th><td><i>	 * - count line length</i></td></tr>
+<tr><th id="222">222</th><td><i>	 */</i></td></tr>
+<tr><th id="223">223</th><td>	<a class="local col6 ref" href="#26curbuf" title='curbuf' data-ref="26curbuf">curbuf</a> = <a class="local col3 ref" href="#23buf" title='buf' data-ref="23buf">buf</a>;</td></tr>
+<tr><th id="224">224</th><td>	<b>while</b> (! <a class="tu ref fn" href="#isendofline" title='isendofline' data-use='c' data-ref="isendofline">isendofline</a>(*<a class="local col6 ref" href="#26curbuf" title='curbuf' data-ref="26curbuf">curbuf</a>)) {</td></tr>
+<tr><th id="225">225</th><td>		<b>if</b> ( *<a class="local col6 ref" href="#26curbuf" title='curbuf' data-ref="26curbuf">curbuf</a> == <kbd>'\0'</kbd> ) {</td></tr>
+<tr><th id="226">226</th><td>			<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"Incomplete buf (len=%d)\n"</q>, linelen);</td></tr>
+<tr><th id="227">227</th><td>			<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="228">228</th><td>		}</td></tr>
+<tr><th id="229">229</th><td>		<b>if</b> ( <a class="tu ref fn" href="#iscomment" title='iscomment' data-use='c' data-ref="iscomment">iscomment</a>(*<a class="local col6 ref" href="#26curbuf" title='curbuf' data-ref="26curbuf">curbuf</a>) ) {</td></tr>
+<tr><th id="230">230</th><td>			<a class="local col3 ref" href="#33comment" title='comment' data-ref="33comment">comment</a> = <var>1</var>;</td></tr>
+<tr><th id="231">231</th><td>		}</td></tr>
+<tr><th id="232">232</th><td>		<b>if</b> ( ! <a class="tu ref fn" href="#isblank2" title='isblank2' data-use='c' data-ref="isblank2">isblank2</a>(*<a class="local col6 ref" href="#26curbuf" title='curbuf' data-ref="26curbuf">curbuf</a>) &amp;&amp; ! <a class="local col3 ref" href="#33comment" title='comment' data-ref="33comment">comment</a>) {</td></tr>
+<tr><th id="233">233</th><td>			<a class="local col5 ref" href="#35parse_it" title='parse_it' data-ref="35parse_it">parse_it</a> = <var>1</var>;</td></tr>
+<tr><th id="234">234</th><td>		}</td></tr>
+<tr><th id="235">235</th><td>		<a class="local col6 ref" href="#26curbuf" title='curbuf' data-ref="26curbuf">curbuf</a>++;</td></tr>
+<tr><th id="236">236</th><td>		<a class="local col4 ref" href="#34linelen" title='linelen' data-ref="34linelen">linelen</a>++;</td></tr>
+<tr><th id="237">237</th><td>	}</td></tr>
+<tr><th id="238">238</th><td></td></tr>
+<tr><th id="239">239</th><td>	<i>/* skip all endofline chars */</i></td></tr>
+<tr><th id="240">240</th><td>	<b>while</b> (<a class="tu ref fn" href="#isendofline" title='isendofline' data-use='c' data-ref="isendofline">isendofline</a>(<a class="local col3 ref" href="#23buf" title='buf' data-ref="23buf">buf</a>[<a class="local col4 ref" href="#34linelen" title='linelen' data-ref="34linelen">linelen</a>])) {</td></tr>
+<tr><th id="241">241</th><td>		<a class="local col4 ref" href="#34linelen" title='linelen' data-ref="34linelen">linelen</a>++;</td></tr>
+<tr><th id="242">242</th><td>	}</td></tr>
+<tr><th id="243">243</th><td></td></tr>
+<tr><th id="244">244</th><td>	<i>/* empty line */</i></td></tr>
+<tr><th id="245">245</th><td>	<b>if</b> ( <a class="local col5 ref" href="#35parse_it" title='parse_it' data-ref="35parse_it">parse_it</a> == <var>0</var> ) {</td></tr>
+<tr><th id="246">246</th><td>		<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"Empty line (len=%d)\n"</q>, linelen);</td></tr>
+<tr><th id="247">247</th><td>		<b>return</b> <a class="local col4 ref" href="#34linelen" title='linelen' data-ref="34linelen">linelen</a>;</td></tr>
+<tr><th id="248">248</th><td>	}</td></tr>
+<tr><th id="249">249</th><td></td></tr>
+<tr><th id="250">250</th><td>	<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"Parse line : len=%d, &lt;%.*s&gt;\n"</q>,</td></tr>
+<tr><th id="251">251</th><td>		     linelen, linelen &gt; <var>64</var> ? <var>64</var> : linelen, buf);</td></tr>
+<tr><th id="252">252</th><td></td></tr>
+<tr><th id="253">253</th><td>	<i>/* parse it !! */</i></td></tr>
+<tr><th id="254">254</th><td>	<a class="local col5 ref" href="#25inst" title='inst' data-ref="25inst">inst</a> = <a class="local col8 ref" href="#38ctx" title='ctx' data-ref="38ctx">ctx</a>[<a class="local col4 ref" href="#24inst_num" title='inst_num' data-ref="24inst_num">inst_num</a>];</td></tr>
+<tr><th id="255">255</th><td>	<b>while</b> (<a class="local col5 ref" href="#25inst" title='inst' data-ref="25inst">inst</a>) {</td></tr>
+<tr><th id="256">256</th><td>		<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"INST %d\n"</q>, inst_num);</td></tr>
+<tr><th id="257">257</th><td></td></tr>
+<tr><th id="258">258</th><td>		<i>/* fully parsed */</i></td></tr>
+<tr><th id="259">259</th><td>		<a class="local col7 ref" href="#37tok" title='tok' data-ref="37tok">tok</a> = <a class="tu ref fn" href="#match_inst" title='match_inst' data-use='c' data-ref="match_inst">match_inst</a>(<a class="local col5 ref" href="#25inst" title='inst' data-ref="25inst">inst</a>, <a class="local col3 ref" href="#23buf" title='buf' data-ref="23buf">buf</a>, <var>0</var>, <a class="local col9 ref" href="#39result_buf" title='result_buf' data-ref="39result_buf">result_buf</a>,</td></tr>
+<tr><th id="260">260</th><td>				 <a class="macro" href="cmdline_parse.h.html#30" title="8192" data-ref="_M/CMDLINE_PARSE_RESULT_BUFSIZE">CMDLINE_PARSE_RESULT_BUFSIZE</a>);</td></tr>
+<tr><th id="261">261</th><td></td></tr>
+<tr><th id="262">262</th><td>		<b>if</b> (<a class="local col7 ref" href="#37tok" title='tok' data-ref="37tok">tok</a> &gt; <var>0</var>) <i>/* we matched at least one token */</i></td></tr>
+<tr><th id="263">263</th><td>			<a class="local col6 ref" href="#36err" title='err' data-ref="36err">err</a> = <a class="macro" href="cmdline_parse.h.html#22" title="-3" data-ref="_M/CMDLINE_PARSE_BAD_ARGS">CMDLINE_PARSE_BAD_ARGS</a>;</td></tr>
+<tr><th id="264">264</th><td></td></tr>
+<tr><th id="265">265</th><td>		<b>else</b> <b>if</b> (!<a class="local col7 ref" href="#37tok" title='tok' data-ref="37tok">tok</a>) {</td></tr>
+<tr><th id="266">266</th><td>			<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"INST fully parsed\n"</q>);</td></tr>
+<tr><th id="267">267</th><td>			<i>/* skip spaces */</i></td></tr>
+<tr><th id="268">268</th><td>			<b>while</b> (<a class="tu ref fn" href="#isblank2" title='isblank2' data-use='c' data-ref="isblank2">isblank2</a>(*<a class="local col6 ref" href="#26curbuf" title='curbuf' data-ref="26curbuf">curbuf</a>)) {</td></tr>
+<tr><th id="269">269</th><td>				<a class="local col6 ref" href="#26curbuf" title='curbuf' data-ref="26curbuf">curbuf</a>++;</td></tr>
+<tr><th id="270">270</th><td>			}</td></tr>
+<tr><th id="271">271</th><td></td></tr>
+<tr><th id="272">272</th><td>			<i>/* if end of buf -&gt; there is no garbage after inst */</i></td></tr>
+<tr><th id="273">273</th><td>			<b>if</b> (<a class="tu ref fn" href="#isendofline" title='isendofline' data-use='c' data-ref="isendofline">isendofline</a>(*<a class="local col6 ref" href="#26curbuf" title='curbuf' data-ref="26curbuf">curbuf</a>) || <a class="tu ref fn" href="#iscomment" title='iscomment' data-use='c' data-ref="iscomment">iscomment</a>(*<a class="local col6 ref" href="#26curbuf" title='curbuf' data-ref="26curbuf">curbuf</a>)) {</td></tr>
+<tr><th id="274">274</th><td>				<b>if</b> (!<a class="local col1 ref" href="#31f" title='f' data-ref="31f">f</a>) {</td></tr>
+<tr><th id="275">275</th><td>					<a class="ref fn" href="../../../include/string.h.html#memcpy" title='memcpy' data-ref="memcpy">memcpy</a>(&amp;<a class="local col1 ref" href="#31f" title='f' data-ref="31f">f</a>, &amp;<a class="local col5 ref" href="#25inst" title='inst' data-ref="25inst">inst</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_inst::f" title='cmdline_inst::f' data-ref="cmdline_inst::f">f</a>, <b>sizeof</b>(<a class="local col1 ref" href="#31f" title='f' data-ref="31f">f</a>));</td></tr>
+<tr><th id="276">276</th><td>					<a class="ref fn" href="../../../include/string.h.html#memcpy" title='memcpy' data-ref="memcpy">memcpy</a>(&amp;<a class="local col2 ref" href="#32data" title='data' data-ref="32data">data</a>, &amp;<a class="local col5 ref" href="#25inst" title='inst' data-ref="25inst">inst</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_inst::data" title='cmdline_inst::data' data-ref="cmdline_inst::data">data</a>, <b>sizeof</b>(<a class="local col2 ref" href="#32data" title='data' data-ref="32data">data</a>));</td></tr>
+<tr><th id="277">277</th><td>					<a class="local col9 ref" href="#39result_buf" title='result_buf' data-ref="39result_buf">result_buf</a> = <a class="local col0 ref" href="#30tmp_result" title='tmp_result' data-ref="30tmp_result">tmp_result</a>.<a class="local col7 ref field" href="#27buf" title='buf' data-ref="27buf">buf</a>;</td></tr>
+<tr><th id="278">278</th><td>				}</td></tr>
+<tr><th id="279">279</th><td>				<b>else</b> {</td></tr>
+<tr><th id="280">280</th><td>					<i>/* more than 1 inst matches */</i></td></tr>
+<tr><th id="281">281</th><td>					<a class="local col6 ref" href="#36err" title='err' data-ref="36err">err</a> = <a class="macro" href="cmdline_parse.h.html#20" title="-1" data-ref="_M/CMDLINE_PARSE_AMBIGUOUS">CMDLINE_PARSE_AMBIGUOUS</a>;</td></tr>
+<tr><th id="282">282</th><td>					<a class="local col1 ref" href="#31f" title='f' data-ref="31f">f</a>=<span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="283">283</th><td>					<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"Ambiguous cmd\n"</q>);</td></tr>
+<tr><th id="284">284</th><td>					<b>break</b>;</td></tr>
+<tr><th id="285">285</th><td>				}</td></tr>
+<tr><th id="286">286</th><td>			}</td></tr>
+<tr><th id="287">287</th><td>		}</td></tr>
+<tr><th id="288">288</th><td></td></tr>
+<tr><th id="289">289</th><td>		<a class="local col4 ref" href="#24inst_num" title='inst_num' data-ref="24inst_num">inst_num</a> ++;</td></tr>
+<tr><th id="290">290</th><td>		<a class="local col5 ref" href="#25inst" title='inst' data-ref="25inst">inst</a> = <a class="local col8 ref" href="#38ctx" title='ctx' data-ref="38ctx">ctx</a>[<a class="local col4 ref" href="#24inst_num" title='inst_num' data-ref="24inst_num">inst_num</a>];</td></tr>
+<tr><th id="291">291</th><td>	}</td></tr>
+<tr><th id="292">292</th><td></td></tr>
+<tr><th id="293">293</th><td>	<i>/* call func */</i></td></tr>
+<tr><th id="294">294</th><td>	<b>if</b> (<a class="local col1 ref" href="#31f" title='f' data-ref="31f">f</a>) {</td></tr>
+<tr><th id="295">295</th><td>		<a class="local col1 ref" href="#31f" title='f' data-ref="31f">f</a>(<a class="local col9 ref" href="#29result" title='result' data-ref="29result">result</a>.<a class="local col7 ref field" href="#27buf" title='buf' data-ref="27buf">buf</a>, <a class="local col2 ref" href="#22cl" title='cl' data-ref="22cl">cl</a>, <a class="local col2 ref" href="#32data" title='data' data-ref="32data">data</a>);</td></tr>
+<tr><th id="296">296</th><td>	}</td></tr>
+<tr><th id="297">297</th><td></td></tr>
+<tr><th id="298">298</th><td>	<i>/* no match */</i></td></tr>
+<tr><th id="299">299</th><td>	<b>else</b> {</td></tr>
+<tr><th id="300">300</th><td>		<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"No match err=%d\n"</q>, err);</td></tr>
+<tr><th id="301">301</th><td>		<b>return</b> <a class="local col6 ref" href="#36err" title='err' data-ref="36err">err</a>;</td></tr>
+<tr><th id="302">302</th><td>	}</td></tr>
+<tr><th id="303">303</th><td></td></tr>
+<tr><th id="304">304</th><td>	<b>return</b> <a class="local col4 ref" href="#34linelen" title='linelen' data-ref="34linelen">linelen</a>;</td></tr>
+<tr><th id="305">305</th><td>}</td></tr>
+<tr><th id="306">306</th><td></td></tr>
+<tr><th id="307">307</th><td><em>int</em></td></tr>
+<tr><th id="308">308</th><td><dfn class="decl def fn" id="cmdline_complete" title='cmdline_complete' data-ref="cmdline_complete">cmdline_complete</dfn>(<b>struct</b> <a class="type" href="cmdline.h.html#cmdline" title='cmdline' data-ref="cmdline">cmdline</a> *<dfn class="local col0 decl" id="40cl" title='cl' data-type='struct cmdline *' data-ref="40cl">cl</dfn>, <em>const</em> <em>char</em> *<dfn class="local col1 decl" id="41buf" title='buf' data-type='const char *' data-ref="41buf">buf</dfn>, <em>int</em> *<dfn class="local col2 decl" id="42state" title='state' data-type='int *' data-ref="42state">state</dfn>,</td></tr>
+<tr><th id="309">309</th><td>		 <em>char</em> *<dfn class="local col3 decl" id="43dst" title='dst' data-type='char *' data-ref="43dst">dst</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col4 decl" id="44size" title='size' data-type='unsigned int' data-ref="44size">size</dfn>)</td></tr>
+<tr><th id="310">310</th><td>{</td></tr>
+<tr><th id="311">311</th><td>	<em>const</em> <em>char</em> *<dfn class="local col5 decl" id="45partial_tok" title='partial_tok' data-type='const char *' data-ref="45partial_tok">partial_tok</dfn> = <a class="local col1 ref" href="#41buf" title='buf' data-ref="41buf">buf</a>;</td></tr>
+<tr><th id="312">312</th><td>	<em>unsigned</em> <em>int</em> <dfn class="local col6 decl" id="46inst_num" title='inst_num' data-type='unsigned int' data-ref="46inst_num">inst_num</dfn> = <var>0</var>;</td></tr>
+<tr><th id="313">313</th><td>	<a class="typedef" href="cmdline_parse.h.html#cmdline_parse_inst_t" title='cmdline_parse_inst_t' data-type='struct cmdline_inst' data-ref="cmdline_parse_inst_t">cmdline_parse_inst_t</a> *<dfn class="local col7 decl" id="47inst" title='inst' data-type='cmdline_parse_inst_t *' data-ref="47inst">inst</dfn>;</td></tr>
+<tr><th id="314">314</th><td>	<a class="typedef" href="cmdline_parse.h.html#cmdline_parse_token_hdr_t" title='cmdline_parse_token_hdr_t' data-type='struct cmdline_token_hdr' data-ref="cmdline_parse_token_hdr_t">cmdline_parse_token_hdr_t</a> *<dfn class="local col8 decl" id="48token_p" title='token_p' data-type='cmdline_parse_token_hdr_t *' data-ref="48token_p">token_p</dfn>;</td></tr>
+<tr><th id="315">315</th><td>	<b>struct</b> <a class="type" href="cmdline_parse.h.html#cmdline_token_hdr" title='cmdline_token_hdr' data-ref="cmdline_token_hdr">cmdline_token_hdr</a> <dfn class="local col9 decl" id="49token_hdr" title='token_hdr' data-type='struct cmdline_token_hdr' data-ref="49token_hdr">token_hdr</dfn>;</td></tr>
+<tr><th id="316">316</th><td>	<em>char</em> <dfn class="local col0 decl" id="50tmpbuf" title='tmpbuf' data-type='char [64]' data-ref="50tmpbuf">tmpbuf</dfn>[<a class="macro" href="#29" title="64" data-ref="_M/CMDLINE_BUFFER_SIZE">CMDLINE_BUFFER_SIZE</a>], <dfn class="local col1 decl" id="51comp_buf" title='comp_buf' data-type='char [64]' data-ref="51comp_buf">comp_buf</dfn>[<a class="macro" href="#29" title="64" data-ref="_M/CMDLINE_BUFFER_SIZE">CMDLINE_BUFFER_SIZE</a>];</td></tr>
+<tr><th id="317">317</th><td>	<em>unsigned</em> <em>int</em> <dfn class="local col2 decl" id="52partial_tok_len" title='partial_tok_len' data-type='unsigned int' data-ref="52partial_tok_len">partial_tok_len</dfn>;</td></tr>
+<tr><th id="318">318</th><td>	<em>int</em> <dfn class="local col3 decl" id="53comp_len" title='comp_len' data-type='int' data-ref="53comp_len">comp_len</dfn> = -<var>1</var>;</td></tr>
+<tr><th id="319">319</th><td>	<em>int</em> <dfn class="local col4 decl" id="54tmp_len" title='tmp_len' data-type='int' data-ref="54tmp_len">tmp_len</dfn> = -<var>1</var>;</td></tr>
+<tr><th id="320">320</th><td>	<em>int</em> <dfn class="local col5 decl" id="55nb_token" title='nb_token' data-type='int' data-ref="55nb_token">nb_token</dfn> = <var>0</var>;</td></tr>
+<tr><th id="321">321</th><td>	<em>unsigned</em> <em>int</em> <dfn class="local col6 decl" id="56i" title='i' data-type='unsigned int' data-ref="56i">i</dfn>, <dfn class="local col7 decl" id="57n" title='n' data-type='unsigned int' data-ref="57n">n</dfn>;</td></tr>
+<tr><th id="322">322</th><td>	<em>int</em> <dfn class="local col8 decl" id="58l" title='l' data-type='int' data-ref="58l">l</dfn>;</td></tr>
+<tr><th id="323">323</th><td>	<em>unsigned</em> <em>int</em> <dfn class="local col9 decl" id="59nb_completable" title='nb_completable' data-type='unsigned int' data-ref="59nb_completable">nb_completable</dfn>;</td></tr>
+<tr><th id="324">324</th><td>	<em>unsigned</em> <em>int</em> <dfn class="local col0 decl" id="60nb_non_completable" title='nb_non_completable' data-type='unsigned int' data-ref="60nb_non_completable">nb_non_completable</dfn>;</td></tr>
+<tr><th id="325">325</th><td>	<em>int</em> <dfn class="local col1 decl" id="61local_state" title='local_state' data-type='int' data-ref="61local_state">local_state</dfn> = <var>0</var>;</td></tr>
+<tr><th id="326">326</th><td>	<em>const</em> <em>char</em> *<dfn class="local col2 decl" id="62help_str" title='help_str' data-type='const char *' data-ref="62help_str">help_str</dfn>;</td></tr>
+<tr><th id="327">327</th><td>	<a class="typedef" href="cmdline_parse.h.html#cmdline_parse_ctx_t" title='cmdline_parse_ctx_t' data-type='cmdline_parse_inst_t *' data-ref="cmdline_parse_ctx_t">cmdline_parse_ctx_t</a> *<dfn class="local col3 decl" id="63ctx" title='ctx' data-type='cmdline_parse_ctx_t *' data-ref="63ctx">ctx</dfn>;</td></tr>
+<tr><th id="328">328</th><td></td></tr>
+<tr><th id="329">329</th><td>	<b>if</b> (!<a class="local col0 ref" href="#40cl" title='cl' data-ref="40cl">cl</a> || !<a class="local col1 ref" href="#41buf" title='buf' data-ref="41buf">buf</a> || !<a class="local col2 ref" href="#42state" title='state' data-ref="42state">state</a> || !<a class="local col3 ref" href="#43dst" title='dst' data-ref="43dst">dst</a>)</td></tr>
+<tr><th id="330">330</th><td>		<b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="331">331</th><td></td></tr>
+<tr><th id="332">332</th><td>	<a class="local col3 ref" href="#63ctx" title='ctx' data-ref="63ctx">ctx</a> = <a class="local col0 ref" href="#40cl" title='cl' data-ref="40cl">cl</a>-&gt;<a class="ref field" href="cmdline.h.html#cmdline::ctx" title='cmdline::ctx' data-ref="cmdline::ctx">ctx</a>;</td></tr>
+<tr><th id="333">333</th><td></td></tr>
+<tr><th id="334">334</th><td>	<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"%s called\n"</q>, <b>__func__</b>);</td></tr>
+<tr><th id="335">335</th><td>	<a class="ref fn" href="../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(&amp;<a class="local col9 ref" href="#49token_hdr" title='token_hdr' data-ref="49token_hdr">token_hdr</a>, <var>0</var>, <b>sizeof</b>(<a class="local col9 ref" href="#49token_hdr" title='token_hdr' data-ref="49token_hdr">token_hdr</a>));</td></tr>
+<tr><th id="336">336</th><td></td></tr>
+<tr><th id="337">337</th><td>	<i>/* count the number of complete token to parse */</i></td></tr>
+<tr><th id="338">338</th><td>	<b>for</b> (<a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>=<var>0</var> ; <a class="local col1 ref" href="#41buf" title='buf' data-ref="41buf">buf</a>[<a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>] ; <a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>++) {</td></tr>
+<tr><th id="339">339</th><td>		<b>if</b> (!<a class="tu ref fn" href="#isblank2" title='isblank2' data-use='c' data-ref="isblank2">isblank2</a>(<a class="local col1 ref" href="#41buf" title='buf' data-ref="41buf">buf</a>[<a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>]) &amp;&amp; <a class="tu ref fn" href="#isblank2" title='isblank2' data-use='c' data-ref="isblank2">isblank2</a>(<a class="local col1 ref" href="#41buf" title='buf' data-ref="41buf">buf</a>[<a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>+<var>1</var>]))</td></tr>
+<tr><th id="340">340</th><td>			<a class="local col5 ref" href="#55nb_token" title='nb_token' data-ref="55nb_token">nb_token</a>++;</td></tr>
+<tr><th id="341">341</th><td>		<b>if</b> (<a class="tu ref fn" href="#isblank2" title='isblank2' data-use='c' data-ref="isblank2">isblank2</a>(<a class="local col1 ref" href="#41buf" title='buf' data-ref="41buf">buf</a>[<a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>]) &amp;&amp; !<a class="tu ref fn" href="#isblank2" title='isblank2' data-use='c' data-ref="isblank2">isblank2</a>(<a class="local col1 ref" href="#41buf" title='buf' data-ref="41buf">buf</a>[<a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>+<var>1</var>]))</td></tr>
+<tr><th id="342">342</th><td>			<a class="local col5 ref" href="#45partial_tok" title='partial_tok' data-ref="45partial_tok">partial_tok</a> = <a class="local col1 ref" href="#41buf" title='buf' data-ref="41buf">buf</a>+<a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>+<var>1</var>;</td></tr>
+<tr><th id="343">343</th><td>	}</td></tr>
+<tr><th id="344">344</th><td>	<a class="local col2 ref" href="#52partial_tok_len" title='partial_tok_len' data-ref="52partial_tok_len">partial_tok_len</a> = <a class="ref fn" href="../../../include/string.h.html#strnlen" title='strnlen' data-ref="strnlen">strnlen</a>(<a class="local col5 ref" href="#45partial_tok" title='partial_tok' data-ref="45partial_tok">partial_tok</a>, <a class="macro" href="cmdline_rdline.h.html#42" title="512" data-ref="_M/RDLINE_BUF_SIZE">RDLINE_BUF_SIZE</a>);</td></tr>
+<tr><th id="345">345</th><td></td></tr>
+<tr><th id="346">346</th><td>	<i>/* first call -&gt; do a first pass */</i></td></tr>
+<tr><th id="347">347</th><td>	<b>if</b> (*<a class="local col2 ref" href="#42state" title='state' data-ref="42state">state</a> &lt;= <var>0</var>) {</td></tr>
+<tr><th id="348">348</th><td>		<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"try complete &lt;%s&gt;\n"</q>, buf);</td></tr>
+<tr><th id="349">349</th><td>		<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"there is %d complete tokens, &lt;%s&gt; is incomplete\n"</q>,</td></tr>
+<tr><th id="350">350</th><td>			     nb_token, partial_tok);</td></tr>
+<tr><th id="351">351</th><td></td></tr>
+<tr><th id="352">352</th><td>		<a class="local col9 ref" href="#59nb_completable" title='nb_completable' data-ref="59nb_completable">nb_completable</a> = <var>0</var>;</td></tr>
+<tr><th id="353">353</th><td>		<a class="local col0 ref" href="#60nb_non_completable" title='nb_non_completable' data-ref="60nb_non_completable">nb_non_completable</a> = <var>0</var>;</td></tr>
+<tr><th id="354">354</th><td></td></tr>
+<tr><th id="355">355</th><td>		<a class="local col7 ref" href="#47inst" title='inst' data-ref="47inst">inst</a> = <a class="local col3 ref" href="#63ctx" title='ctx' data-ref="63ctx">ctx</a>[<a class="local col6 ref" href="#46inst_num" title='inst_num' data-ref="46inst_num">inst_num</a>];</td></tr>
+<tr><th id="356">356</th><td>		<b>while</b> (<a class="local col7 ref" href="#47inst" title='inst' data-ref="47inst">inst</a>) {</td></tr>
+<tr><th id="357">357</th><td>			<i>/* parse the first tokens of the inst */</i></td></tr>
+<tr><th id="358">358</th><td>			<b>if</b> (<a class="local col5 ref" href="#55nb_token" title='nb_token' data-ref="55nb_token">nb_token</a> &amp;&amp;</td></tr>
+<tr><th id="359">359</th><td>			    <a class="tu ref fn" href="#match_inst" title='match_inst' data-use='c' data-ref="match_inst">match_inst</a>(<a class="local col7 ref" href="#47inst" title='inst' data-ref="47inst">inst</a>, <a class="local col1 ref" href="#41buf" title='buf' data-ref="41buf">buf</a>, <a class="local col5 ref" href="#55nb_token" title='nb_token' data-ref="55nb_token">nb_token</a>, <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>, <var>0</var>))</td></tr>
+<tr><th id="360">360</th><td>				<b>goto</b> <a class="lbl" href="#64next" data-ref="64next">next</a>;</td></tr>
+<tr><th id="361">361</th><td></td></tr>
+<tr><th id="362">362</th><td>			<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"instruction match\n"</q>);</td></tr>
+<tr><th id="363">363</th><td>			<a class="local col8 ref" href="#48token_p" title='token_p' data-ref="48token_p">token_p</a> = <a class="tu ref fn" href="#get_token" title='get_token' data-use='c' data-ref="get_token">get_token</a>(<a class="local col7 ref" href="#47inst" title='inst' data-ref="47inst">inst</a>, <a class="local col5 ref" href="#55nb_token" title='nb_token' data-ref="55nb_token">nb_token</a>);</td></tr>
+<tr><th id="364">364</th><td>			<b>if</b> (<a class="local col8 ref" href="#48token_p" title='token_p' data-ref="48token_p">token_p</a>)</td></tr>
+<tr><th id="365">365</th><td>				<a class="ref fn" href="../../../include/string.h.html#memcpy" title='memcpy' data-ref="memcpy">memcpy</a>(&amp;<a class="local col9 ref" href="#49token_hdr" title='token_hdr' data-ref="49token_hdr">token_hdr</a>, <a class="local col8 ref" href="#48token_p" title='token_p' data-ref="48token_p">token_p</a>, <b>sizeof</b>(<a class="local col9 ref" href="#49token_hdr" title='token_hdr' data-ref="49token_hdr">token_hdr</a>));</td></tr>
+<tr><th id="366">366</th><td></td></tr>
+<tr><th id="367">367</th><td>			<i>/* non completable */</i></td></tr>
+<tr><th id="368">368</th><td>			<b>if</b> (!<a class="local col8 ref" href="#48token_p" title='token_p' data-ref="48token_p">token_p</a> ||</td></tr>
+<tr><th id="369">369</th><td>			    !<a class="local col9 ref" href="#49token_hdr" title='token_hdr' data-ref="49token_hdr">token_hdr</a>.<a class="ref field" href="cmdline_parse.h.html#cmdline_token_hdr::ops" title='cmdline_token_hdr::ops' data-ref="cmdline_token_hdr::ops">ops</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_token_ops::complete_get_nb" title='cmdline_token_ops::complete_get_nb' data-ref="cmdline_token_ops::complete_get_nb">complete_get_nb</a> ||</td></tr>
+<tr><th id="370">370</th><td>			    !<a class="local col9 ref" href="#49token_hdr" title='token_hdr' data-ref="49token_hdr">token_hdr</a>.<a class="ref field" href="cmdline_parse.h.html#cmdline_token_hdr::ops" title='cmdline_token_hdr::ops' data-ref="cmdline_token_hdr::ops">ops</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_token_ops::complete_get_elt" title='cmdline_token_ops::complete_get_elt' data-ref="cmdline_token_ops::complete_get_elt">complete_get_elt</a> ||</td></tr>
+<tr><th id="371">371</th><td>			    (<a class="local col7 ref" href="#57n" title='n' data-ref="57n">n</a> = <a class="local col9 ref" href="#49token_hdr" title='token_hdr' data-ref="49token_hdr">token_hdr</a>.<a class="ref field" href="cmdline_parse.h.html#cmdline_token_hdr::ops" title='cmdline_token_hdr::ops' data-ref="cmdline_token_hdr::ops">ops</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_token_ops::complete_get_nb" title='cmdline_token_ops::complete_get_nb' data-ref="cmdline_token_ops::complete_get_nb">complete_get_nb</a>(<a class="local col8 ref" href="#48token_p" title='token_p' data-ref="48token_p">token_p</a>)) == <var>0</var>) {</td></tr>
+<tr><th id="372">372</th><td>				<a class="local col0 ref" href="#60nb_non_completable" title='nb_non_completable' data-ref="60nb_non_completable">nb_non_completable</a>++;</td></tr>
+<tr><th id="373">373</th><td>				<b>goto</b> <a class="lbl" href="#64next" data-ref="64next">next</a>;</td></tr>
+<tr><th id="374">374</th><td>			}</td></tr>
+<tr><th id="375">375</th><td></td></tr>
+<tr><th id="376">376</th><td>			<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"%d choices for this token\n"</q>, n);</td></tr>
+<tr><th id="377">377</th><td>			<b>for</b> (<a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>=<var>0</var> ; <a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>&lt;<a class="local col7 ref" href="#57n" title='n' data-ref="57n">n</a> ; <a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>++) {</td></tr>
+<tr><th id="378">378</th><td>				<b>if</b> (<a class="local col9 ref" href="#49token_hdr" title='token_hdr' data-ref="49token_hdr">token_hdr</a>.<a class="ref field" href="cmdline_parse.h.html#cmdline_token_hdr::ops" title='cmdline_token_hdr::ops' data-ref="cmdline_token_hdr::ops">ops</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_token_ops::complete_get_elt" title='cmdline_token_ops::complete_get_elt' data-ref="cmdline_token_ops::complete_get_elt">complete_get_elt</a>(<a class="local col8 ref" href="#48token_p" title='token_p' data-ref="48token_p">token_p</a>, <a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>,</td></tr>
+<tr><th id="379">379</th><td>								    <a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>,</td></tr>
+<tr><th id="380">380</th><td>								    <b>sizeof</b>(<a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>)) &lt; <var>0</var>)</td></tr>
+<tr><th id="381">381</th><td>					<b>continue</b>;</td></tr>
+<tr><th id="382">382</th><td></td></tr>
+<tr><th id="383">383</th><td>				<i>/* we have at least room for one char */</i></td></tr>
+<tr><th id="384">384</th><td>				<a class="local col4 ref" href="#54tmp_len" title='tmp_len' data-ref="54tmp_len">tmp_len</a> = <a class="ref fn" href="../../../include/string.h.html#strnlen" title='strnlen' data-ref="strnlen">strnlen</a>(<a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>, <b>sizeof</b>(<a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>));</td></tr>
+<tr><th id="385">385</th><td>				<b>if</b> (<a class="local col4 ref" href="#54tmp_len" title='tmp_len' data-ref="54tmp_len">tmp_len</a> &lt; <a class="macro" href="#29" title="64" data-ref="_M/CMDLINE_BUFFER_SIZE">CMDLINE_BUFFER_SIZE</a> - <var>1</var>) {</td></tr>
+<tr><th id="386">386</th><td>					<a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>[<a class="local col4 ref" href="#54tmp_len" title='tmp_len' data-ref="54tmp_len">tmp_len</a>] = <kbd>' '</kbd>;</td></tr>
+<tr><th id="387">387</th><td>					<a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>[<a class="local col4 ref" href="#54tmp_len" title='tmp_len' data-ref="54tmp_len">tmp_len</a>+<var>1</var>] = <var>0</var>;</td></tr>
+<tr><th id="388">388</th><td>				}</td></tr>
+<tr><th id="389">389</th><td></td></tr>
+<tr><th id="390">390</th><td>				<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"   choice &lt;%s&gt;\n"</q>, tmpbuf);</td></tr>
+<tr><th id="391">391</th><td></td></tr>
+<tr><th id="392">392</th><td>				<i>/* does the completion match the</i></td></tr>
+<tr><th id="393">393</th><td><i>				 * beginning of the word ? */</i></td></tr>
+<tr><th id="394">394</th><td>				<b>if</b> (!<a class="macro" href="../../../include/bits/string2.h.html#919" title="(__extension__ (__builtin_constant_p (partial_tok_len) &amp;&amp; ((__builtin_constant_p (partial_tok) &amp;&amp; strlen (partial_tok) &lt; ((size_t) (partial_tok_len))) || (__builtin_constant_p (tmpbuf) &amp;&amp; strlen (tmpbuf) &lt; ((size_t) (partial_tok_len)))) ? __extension__ ({ size_t __s1_len, __s2_len; (__builtin_constant_p (partial_tok) &amp;&amp; __builtin_constant_p (tmpbuf) &amp;&amp; (__s1_len = strlen (partial_tok), __s2_len = strlen (tmpbuf), (!((size_t)(const void *)((partial_tok) + 1) - (size_t)(const void *)(partial_tok) == 1) || __s1_len &gt;= 4) &amp;&amp; (!((size_t)(const void *)((tmpbuf) + 1) - (size_t)(const void *)(tmpbuf) == 1) || __s2_len &gt;= 4)) ? __builtin_strcmp (partial_tok, tmpbuf) : (__builtin_constant_p (partial_tok) &amp;&amp; ((size_t)(const void *)((partial_tok) + 1) - (size_t)(const void *)(partial_tok) == 1) &amp;&amp; (__s1_len = strlen (partial_tok), __s1_len &lt; 4) ? (__builtin_constant_p (tmpbuf) &amp;&amp; ((size_t)(const void *)((tmpbuf) + 1) - (size_t)(const void *)(tmpbuf) == 1) ? __builtin_strcmp (partial_tok, tmpbuf) : (__extension__ ({ const unsigned char *__s2 = (const unsigned char *) (const char *) (tmpbuf); register int __result = (((const unsigned char *) (const char *) (partial_tok))[0] - __s2[0]); if (__s1_len &gt; 0 &amp;&amp; __result == 0) { __result = (((const unsigned char *) (const char *) (partial_tok))[1] - __s2[1]); if (__s1_len &gt; 1 &amp;&amp; __result == 0) { __result = (((const unsigned char *) (const char *) (partial_tok))[2] - __s2[2]); if (__s1_len &gt; 2 &amp;&amp; __result == 0) __result = (((const unsigned char *) (const char *) (partial_tok))[3] - __s2[3]); } } __result; }))) : (__builtin_constant_p (tmpbuf) &amp;&amp; ((size_t)(const void *)((tmpbuf) + 1) - (size_t)(const void *)(tmpbuf) == 1) &amp;&amp; (__s2_len = strlen (tmpbuf), __s2_len &lt; 4) ? (__builtin_constant_p (partial_tok) &amp;&amp; ((size_t)(const void *)((partial_tok) + 1) - (size_t)(const void *)(partial_tok) == 1) ? __builtin_strcmp (partial_tok, tmpbuf) : (__extension__ ({ const unsigned char *__s1 = (const unsigned char *) (const char *) (partial_tok); register int __result = __s1[0] - ((const unsigned char *) (const char *) (tmpbuf))[0]; if (__s2_len &gt; 0 &amp;&amp; __result == 0) { __result = (__s1[1] - ((const unsigned char *) (const char *) (tmpbuf))[1]); if (__s2_len &gt; 1 &amp;&amp; __result == 0) { __result = (__s1[2] - ((const unsigned char *) (const char *) (tmpbuf))[2]); if (__s2_len &gt; 2 &amp;&amp; __result == 0) __result = (__s1[3] - ((const unsigned char *) (const char *) (tmpbuf))[3]); } } __result; }))) : __builtin_strcmp (partial_tok, tmpbuf)))); }) : strncmp (partial_tok, tmpbuf, partial_tok_len)))" data-ref="_M/strncmp">strncmp</a>(<a class="local col5 ref" href="#45partial_tok" title='partial_tok' data-ref="45partial_tok">partial_tok</a>, <a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>,</td></tr>
+<tr><th id="395">395</th><td>					     <a class="local col2 ref" href="#52partial_tok_len" title='partial_tok_len' data-ref="52partial_tok_len">partial_tok_len</a>)) {</td></tr>
+<tr><th id="396">396</th><td>					<b>if</b> (<a class="local col3 ref" href="#53comp_len" title='comp_len' data-ref="53comp_len">comp_len</a> == -<var>1</var>) {</td></tr>
+<tr><th id="397">397</th><td>						<a class="ref fn" href="../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a>(<a class="local col1 ref" href="#51comp_buf" title='comp_buf' data-ref="51comp_buf">comp_buf</a>, <b>sizeof</b>(<a class="local col1 ref" href="#51comp_buf" title='comp_buf' data-ref="51comp_buf">comp_buf</a>),</td></tr>
+<tr><th id="398">398</th><td>							 <q>"%s"</q>, <a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a> + <a class="local col2 ref" href="#52partial_tok_len" title='partial_tok_len' data-ref="52partial_tok_len">partial_tok_len</a>);</td></tr>
+<tr><th id="399">399</th><td>						<a class="local col3 ref" href="#53comp_len" title='comp_len' data-ref="53comp_len">comp_len</a> =</td></tr>
+<tr><th id="400">400</th><td>							<a class="ref fn" href="../../../include/string.h.html#strnlen" title='strnlen' data-ref="strnlen">strnlen</a>(<a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a> + <a class="local col2 ref" href="#52partial_tok_len" title='partial_tok_len' data-ref="52partial_tok_len">partial_tok_len</a>,</td></tr>
+<tr><th id="401">401</th><td>									<b>sizeof</b>(<a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>) - <a class="local col2 ref" href="#52partial_tok_len" title='partial_tok_len' data-ref="52partial_tok_len">partial_tok_len</a>);</td></tr>
+<tr><th id="402">402</th><td></td></tr>
+<tr><th id="403">403</th><td>					}</td></tr>
+<tr><th id="404">404</th><td>					<b>else</b> {</td></tr>
+<tr><th id="405">405</th><td>						<a class="local col3 ref" href="#53comp_len" title='comp_len' data-ref="53comp_len">comp_len</a> =</td></tr>
+<tr><th id="406">406</th><td>							<a class="tu ref fn" href="#nb_common_chars" title='nb_common_chars' data-use='c' data-ref="nb_common_chars">nb_common_chars</a>(<a class="local col1 ref" href="#51comp_buf" title='comp_buf' data-ref="51comp_buf">comp_buf</a>,</td></tr>
+<tr><th id="407">407</th><td>									<a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>+<a class="local col2 ref" href="#52partial_tok_len" title='partial_tok_len' data-ref="52partial_tok_len">partial_tok_len</a>);</td></tr>
+<tr><th id="408">408</th><td>						<a class="local col1 ref" href="#51comp_buf" title='comp_buf' data-ref="51comp_buf">comp_buf</a>[<a class="local col3 ref" href="#53comp_len" title='comp_len' data-ref="53comp_len">comp_len</a>] = <var>0</var>;</td></tr>
+<tr><th id="409">409</th><td>					}</td></tr>
+<tr><th id="410">410</th><td>					<a class="local col9 ref" href="#59nb_completable" title='nb_completable' data-ref="59nb_completable">nb_completable</a>++;</td></tr>
+<tr><th id="411">411</th><td>				}</td></tr>
+<tr><th id="412">412</th><td>			}</td></tr>
+<tr><th id="413">413</th><td>		<dfn class="lbl" id="64next" data-ref="64next">next</dfn>:</td></tr>
+<tr><th id="414">414</th><td>			<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"next\n"</q>);</td></tr>
+<tr><th id="415">415</th><td>			<a class="local col6 ref" href="#46inst_num" title='inst_num' data-ref="46inst_num">inst_num</a> ++;</td></tr>
+<tr><th id="416">416</th><td>			<a class="local col7 ref" href="#47inst" title='inst' data-ref="47inst">inst</a> = <a class="local col3 ref" href="#63ctx" title='ctx' data-ref="63ctx">ctx</a>[<a class="local col6 ref" href="#46inst_num" title='inst_num' data-ref="46inst_num">inst_num</a>];</td></tr>
+<tr><th id="417">417</th><td>		}</td></tr>
+<tr><th id="418">418</th><td></td></tr>
+<tr><th id="419">419</th><td>		<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"total choices %d for this completion\n"</q>,</td></tr>
+<tr><th id="420">420</th><td>			     nb_completable);</td></tr>
+<tr><th id="421">421</th><td></td></tr>
+<tr><th id="422">422</th><td>		<i>/* no possible completion */</i></td></tr>
+<tr><th id="423">423</th><td>		<b>if</b> (<a class="local col9 ref" href="#59nb_completable" title='nb_completable' data-ref="59nb_completable">nb_completable</a> == <var>0</var> &amp;&amp; <a class="local col0 ref" href="#60nb_non_completable" title='nb_non_completable' data-ref="60nb_non_completable">nb_non_completable</a> == <var>0</var>)</td></tr>
+<tr><th id="424">424</th><td>			<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="425">425</th><td></td></tr>
+<tr><th id="426">426</th><td>		<i>/* if multichoice is not required */</i></td></tr>
+<tr><th id="427">427</th><td>		<b>if</b> (*<a class="local col2 ref" href="#42state" title='state' data-ref="42state">state</a> == <var>0</var> &amp;&amp; <a class="local col2 ref" href="#52partial_tok_len" title='partial_tok_len' data-ref="52partial_tok_len">partial_tok_len</a> &gt; <var>0</var>) {</td></tr>
+<tr><th id="428">428</th><td>			<i>/* one or several choices starting with the</i></td></tr>
+<tr><th id="429">429</th><td><i>			   same chars */</i></td></tr>
+<tr><th id="430">430</th><td>			<b>if</b> (<a class="local col3 ref" href="#53comp_len" title='comp_len' data-ref="53comp_len">comp_len</a> &gt; <var>0</var>) {</td></tr>
+<tr><th id="431">431</th><td>				<b>if</b> ((<em>unsigned</em>)(<a class="local col3 ref" href="#53comp_len" title='comp_len' data-ref="53comp_len">comp_len</a> + <var>1</var>) &gt; <a class="local col4 ref" href="#44size" title='size' data-ref="44size">size</a>)</td></tr>
+<tr><th id="432">432</th><td>					<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="433">433</th><td></td></tr>
+<tr><th id="434">434</th><td>				<a class="macro" href="../librte_eal/common/include/rte_string_fns.h.html#74" title="rte_strlcpy(dst, comp_buf, size)" data-ref="_M/strlcpy">strlcpy</a>(<a class="local col3 ref" href="#43dst" title='dst' data-ref="43dst">dst</a>, <a class="local col1 ref" href="#51comp_buf" title='comp_buf' data-ref="51comp_buf">comp_buf</a>, <a class="local col4 ref" href="#44size" title='size' data-ref="44size">size</a>);</td></tr>
+<tr><th id="435">435</th><td>				<a class="local col3 ref" href="#43dst" title='dst' data-ref="43dst">dst</a>[<a class="local col3 ref" href="#53comp_len" title='comp_len' data-ref="53comp_len">comp_len</a>] = <var>0</var>;</td></tr>
+<tr><th id="436">436</th><td>				<b>return</b> <var>2</var>;</td></tr>
+<tr><th id="437">437</th><td>			}</td></tr>
+<tr><th id="438">438</th><td>		}</td></tr>
+<tr><th id="439">439</th><td>	}</td></tr>
+<tr><th id="440">440</th><td></td></tr>
+<tr><th id="441">441</th><td>	<i>/* init state correctly */</i></td></tr>
+<tr><th id="442">442</th><td>	<b>if</b> (*<a class="local col2 ref" href="#42state" title='state' data-ref="42state">state</a> == -<var>1</var>)</td></tr>
+<tr><th id="443">443</th><td>		*<a class="local col2 ref" href="#42state" title='state' data-ref="42state">state</a> = <var>0</var>;</td></tr>
+<tr><th id="444">444</th><td></td></tr>
+<tr><th id="445">445</th><td>	<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"Multiple choice STATE=%d\n"</q>, *state);</td></tr>
+<tr><th id="446">446</th><td></td></tr>
+<tr><th id="447">447</th><td>	<a class="local col6 ref" href="#46inst_num" title='inst_num' data-ref="46inst_num">inst_num</a> = <var>0</var>;</td></tr>
+<tr><th id="448">448</th><td>	<a class="local col7 ref" href="#47inst" title='inst' data-ref="47inst">inst</a> = <a class="local col3 ref" href="#63ctx" title='ctx' data-ref="63ctx">ctx</a>[<a class="local col6 ref" href="#46inst_num" title='inst_num' data-ref="46inst_num">inst_num</a>];</td></tr>
+<tr><th id="449">449</th><td>	<b>while</b> (<a class="local col7 ref" href="#47inst" title='inst' data-ref="47inst">inst</a>) {</td></tr>
+<tr><th id="450">450</th><td>		<i>/* we need to redo it */</i></td></tr>
+<tr><th id="451">451</th><td>		<a class="local col7 ref" href="#47inst" title='inst' data-ref="47inst">inst</a> = <a class="local col3 ref" href="#63ctx" title='ctx' data-ref="63ctx">ctx</a>[<a class="local col6 ref" href="#46inst_num" title='inst_num' data-ref="46inst_num">inst_num</a>];</td></tr>
+<tr><th id="452">452</th><td></td></tr>
+<tr><th id="453">453</th><td>		<b>if</b> (<a class="local col5 ref" href="#55nb_token" title='nb_token' data-ref="55nb_token">nb_token</a> &amp;&amp;</td></tr>
+<tr><th id="454">454</th><td>		    <a class="tu ref fn" href="#match_inst" title='match_inst' data-use='c' data-ref="match_inst">match_inst</a>(<a class="local col7 ref" href="#47inst" title='inst' data-ref="47inst">inst</a>, <a class="local col1 ref" href="#41buf" title='buf' data-ref="41buf">buf</a>, <a class="local col5 ref" href="#55nb_token" title='nb_token' data-ref="55nb_token">nb_token</a>, <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>, <var>0</var>))</td></tr>
+<tr><th id="455">455</th><td>			<b>goto</b> <a class="lbl" href="#65next2" data-ref="65next2">next2</a>;</td></tr>
+<tr><th id="456">456</th><td></td></tr>
+<tr><th id="457">457</th><td>		<a class="local col8 ref" href="#48token_p" title='token_p' data-ref="48token_p">token_p</a> = <a class="tu ref fn" href="#get_token" title='get_token' data-use='c' data-ref="get_token">get_token</a>(<a class="local col7 ref" href="#47inst" title='inst' data-ref="47inst">inst</a>, <a class="local col5 ref" href="#55nb_token" title='nb_token' data-ref="55nb_token">nb_token</a>);</td></tr>
+<tr><th id="458">458</th><td>		<b>if</b> (<a class="local col8 ref" href="#48token_p" title='token_p' data-ref="48token_p">token_p</a>)</td></tr>
+<tr><th id="459">459</th><td>			<a class="ref fn" href="../../../include/string.h.html#memcpy" title='memcpy' data-ref="memcpy">memcpy</a>(&amp;<a class="local col9 ref" href="#49token_hdr" title='token_hdr' data-ref="49token_hdr">token_hdr</a>, <a class="local col8 ref" href="#48token_p" title='token_p' data-ref="48token_p">token_p</a>, <b>sizeof</b>(<a class="local col9 ref" href="#49token_hdr" title='token_hdr' data-ref="49token_hdr">token_hdr</a>));</td></tr>
+<tr><th id="460">460</th><td></td></tr>
+<tr><th id="461">461</th><td>		<i>/* one choice for this token */</i></td></tr>
+<tr><th id="462">462</th><td>		<b>if</b> (!<a class="local col8 ref" href="#48token_p" title='token_p' data-ref="48token_p">token_p</a> ||</td></tr>
+<tr><th id="463">463</th><td>		    !<a class="local col9 ref" href="#49token_hdr" title='token_hdr' data-ref="49token_hdr">token_hdr</a>.<a class="ref field" href="cmdline_parse.h.html#cmdline_token_hdr::ops" title='cmdline_token_hdr::ops' data-ref="cmdline_token_hdr::ops">ops</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_token_ops::complete_get_nb" title='cmdline_token_ops::complete_get_nb' data-ref="cmdline_token_ops::complete_get_nb">complete_get_nb</a> ||</td></tr>
+<tr><th id="464">464</th><td>		    !<a class="local col9 ref" href="#49token_hdr" title='token_hdr' data-ref="49token_hdr">token_hdr</a>.<a class="ref field" href="cmdline_parse.h.html#cmdline_token_hdr::ops" title='cmdline_token_hdr::ops' data-ref="cmdline_token_hdr::ops">ops</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_token_ops::complete_get_elt" title='cmdline_token_ops::complete_get_elt' data-ref="cmdline_token_ops::complete_get_elt">complete_get_elt</a> ||</td></tr>
+<tr><th id="465">465</th><td>		    (<a class="local col7 ref" href="#57n" title='n' data-ref="57n">n</a> = <a class="local col9 ref" href="#49token_hdr" title='token_hdr' data-ref="49token_hdr">token_hdr</a>.<a class="ref field" href="cmdline_parse.h.html#cmdline_token_hdr::ops" title='cmdline_token_hdr::ops' data-ref="cmdline_token_hdr::ops">ops</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_token_ops::complete_get_nb" title='cmdline_token_ops::complete_get_nb' data-ref="cmdline_token_ops::complete_get_nb">complete_get_nb</a>(<a class="local col8 ref" href="#48token_p" title='token_p' data-ref="48token_p">token_p</a>)) == <var>0</var>) {</td></tr>
+<tr><th id="466">466</th><td>			<b>if</b> (<a class="local col1 ref" href="#61local_state" title='local_state' data-ref="61local_state">local_state</a> &lt; *<a class="local col2 ref" href="#42state" title='state' data-ref="42state">state</a>) {</td></tr>
+<tr><th id="467">467</th><td>				<a class="local col1 ref" href="#61local_state" title='local_state' data-ref="61local_state">local_state</a>++;</td></tr>
+<tr><th id="468">468</th><td>				<b>goto</b> <a class="lbl" href="#65next2" data-ref="65next2">next2</a>;</td></tr>
+<tr><th id="469">469</th><td>			}</td></tr>
+<tr><th id="470">470</th><td>			(*<a class="local col2 ref" href="#42state" title='state' data-ref="42state">state</a>)++;</td></tr>
+<tr><th id="471">471</th><td>			<b>if</b> (<a class="local col8 ref" href="#48token_p" title='token_p' data-ref="48token_p">token_p</a> &amp;&amp; <a class="local col9 ref" href="#49token_hdr" title='token_hdr' data-ref="49token_hdr">token_hdr</a>.<a class="ref field" href="cmdline_parse.h.html#cmdline_token_hdr::ops" title='cmdline_token_hdr::ops' data-ref="cmdline_token_hdr::ops">ops</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_token_ops::get_help" title='cmdline_token_ops::get_help' data-ref="cmdline_token_ops::get_help">get_help</a>) {</td></tr>
+<tr><th id="472">472</th><td>				<a class="local col9 ref" href="#49token_hdr" title='token_hdr' data-ref="49token_hdr">token_hdr</a>.<a class="ref field" href="cmdline_parse.h.html#cmdline_token_hdr::ops" title='cmdline_token_hdr::ops' data-ref="cmdline_token_hdr::ops">ops</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_token_ops::get_help" title='cmdline_token_ops::get_help' data-ref="cmdline_token_ops::get_help">get_help</a>(<a class="local col8 ref" href="#48token_p" title='token_p' data-ref="48token_p">token_p</a>, <a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>,</td></tr>
+<tr><th id="473">473</th><td>							<b>sizeof</b>(<a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>));</td></tr>
+<tr><th id="474">474</th><td>				<a class="local col2 ref" href="#62help_str" title='help_str' data-ref="62help_str">help_str</a> = <a class="local col7 ref" href="#47inst" title='inst' data-ref="47inst">inst</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_inst::help_str" title='cmdline_inst::help_str' data-ref="cmdline_inst::help_str">help_str</a>;</td></tr>
+<tr><th id="475">475</th><td>				<b>if</b> (<a class="local col2 ref" href="#62help_str" title='help_str' data-ref="62help_str">help_str</a>)</td></tr>
+<tr><th id="476">476</th><td>					<a class="ref fn" href="../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a>(<a class="local col3 ref" href="#43dst" title='dst' data-ref="43dst">dst</a>, <a class="local col4 ref" href="#44size" title='size' data-ref="44size">size</a>, <q>"[%s]: %s"</q>, <a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>,</td></tr>
+<tr><th id="477">477</th><td>						 <a class="local col2 ref" href="#62help_str" title='help_str' data-ref="62help_str">help_str</a>);</td></tr>
+<tr><th id="478">478</th><td>				<b>else</b></td></tr>
+<tr><th id="479">479</th><td>					<a class="ref fn" href="../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a>(<a class="local col3 ref" href="#43dst" title='dst' data-ref="43dst">dst</a>, <a class="local col4 ref" href="#44size" title='size' data-ref="44size">size</a>, <q>"[%s]: No help"</q>,</td></tr>
+<tr><th id="480">480</th><td>						 <a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>);</td></tr>
+<tr><th id="481">481</th><td>			}</td></tr>
+<tr><th id="482">482</th><td>			<b>else</b> {</td></tr>
+<tr><th id="483">483</th><td>				<a class="ref fn" href="../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a>(<a class="local col3 ref" href="#43dst" title='dst' data-ref="43dst">dst</a>, <a class="local col4 ref" href="#44size" title='size' data-ref="44size">size</a>, <q>"[RETURN]"</q>);</td></tr>
+<tr><th id="484">484</th><td>			}</td></tr>
+<tr><th id="485">485</th><td>			<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="486">486</th><td>		}</td></tr>
+<tr><th id="487">487</th><td></td></tr>
+<tr><th id="488">488</th><td>		<i>/* several choices */</i></td></tr>
+<tr><th id="489">489</th><td>		<b>for</b> (<a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>=<var>0</var> ; <a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>&lt;<a class="local col7 ref" href="#57n" title='n' data-ref="57n">n</a> ; <a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>++) {</td></tr>
+<tr><th id="490">490</th><td>			<b>if</b> (<a class="local col9 ref" href="#49token_hdr" title='token_hdr' data-ref="49token_hdr">token_hdr</a>.<a class="ref field" href="cmdline_parse.h.html#cmdline_token_hdr::ops" title='cmdline_token_hdr::ops' data-ref="cmdline_token_hdr::ops">ops</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_token_ops::complete_get_elt" title='cmdline_token_ops::complete_get_elt' data-ref="cmdline_token_ops::complete_get_elt">complete_get_elt</a>(<a class="local col8 ref" href="#48token_p" title='token_p' data-ref="48token_p">token_p</a>, <a class="local col6 ref" href="#56i" title='i' data-ref="56i">i</a>, <a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>,</td></tr>
+<tr><th id="491">491</th><td>							    <b>sizeof</b>(<a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>)) &lt; <var>0</var>)</td></tr>
+<tr><th id="492">492</th><td>				<b>continue</b>;</td></tr>
+<tr><th id="493">493</th><td>			<i>/* we have at least room for one char */</i></td></tr>
+<tr><th id="494">494</th><td>			<a class="local col4 ref" href="#54tmp_len" title='tmp_len' data-ref="54tmp_len">tmp_len</a> = <a class="ref fn" href="../../../include/string.h.html#strnlen" title='strnlen' data-ref="strnlen">strnlen</a>(<a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>, <b>sizeof</b>(<a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>));</td></tr>
+<tr><th id="495">495</th><td>			<b>if</b> (<a class="local col4 ref" href="#54tmp_len" title='tmp_len' data-ref="54tmp_len">tmp_len</a> &lt; <a class="macro" href="#29" title="64" data-ref="_M/CMDLINE_BUFFER_SIZE">CMDLINE_BUFFER_SIZE</a> - <var>1</var>) {</td></tr>
+<tr><th id="496">496</th><td>				<a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>[<a class="local col4 ref" href="#54tmp_len" title='tmp_len' data-ref="54tmp_len">tmp_len</a>] = <kbd>' '</kbd>;</td></tr>
+<tr><th id="497">497</th><td>				<a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>[<a class="local col4 ref" href="#54tmp_len" title='tmp_len' data-ref="54tmp_len">tmp_len</a> + <var>1</var>] = <var>0</var>;</td></tr>
+<tr><th id="498">498</th><td>			}</td></tr>
+<tr><th id="499">499</th><td></td></tr>
+<tr><th id="500">500</th><td>			<a class="macro" href="#26" title="do {} while(0)" data-ref="_M/debug_printf">debug_printf</a>(<q>"   choice &lt;%s&gt;\n"</q>, tmpbuf);</td></tr>
+<tr><th id="501">501</th><td></td></tr>
+<tr><th id="502">502</th><td>			<i>/* does the completion match the beginning of</i></td></tr>
+<tr><th id="503">503</th><td><i>			 * the word ? */</i></td></tr>
+<tr><th id="504">504</th><td>			<b>if</b> (!<a class="macro" href="../../../include/bits/string2.h.html#919" title="(__extension__ (__builtin_constant_p (partial_tok_len) &amp;&amp; ((__builtin_constant_p (partial_tok) &amp;&amp; strlen (partial_tok) &lt; ((size_t) (partial_tok_len))) || (__builtin_constant_p (tmpbuf) &amp;&amp; strlen (tmpbuf) &lt; ((size_t) (partial_tok_len)))) ? __extension__ ({ size_t __s1_len, __s2_len; (__builtin_constant_p (partial_tok) &amp;&amp; __builtin_constant_p (tmpbuf) &amp;&amp; (__s1_len = strlen (partial_tok), __s2_len = strlen (tmpbuf), (!((size_t)(const void *)((partial_tok) + 1) - (size_t)(const void *)(partial_tok) == 1) || __s1_len &gt;= 4) &amp;&amp; (!((size_t)(const void *)((tmpbuf) + 1) - (size_t)(const void *)(tmpbuf) == 1) || __s2_len &gt;= 4)) ? __builtin_strcmp (partial_tok, tmpbuf) : (__builtin_constant_p (partial_tok) &amp;&amp; ((size_t)(const void *)((partial_tok) + 1) - (size_t)(const void *)(partial_tok) == 1) &amp;&amp; (__s1_len = strlen (partial_tok), __s1_len &lt; 4) ? (__builtin_constant_p (tmpbuf) &amp;&amp; ((size_t)(const void *)((tmpbuf) + 1) - (size_t)(const void *)(tmpbuf) == 1) ? __builtin_strcmp (partial_tok, tmpbuf) : (__extension__ ({ const unsigned char *__s2 = (const unsigned char *) (const char *) (tmpbuf); register int __result = (((const unsigned char *) (const char *) (partial_tok))[0] - __s2[0]); if (__s1_len &gt; 0 &amp;&amp; __result == 0) { __result = (((const unsigned char *) (const char *) (partial_tok))[1] - __s2[1]); if (__s1_len &gt; 1 &amp;&amp; __result == 0) { __result = (((const unsigned char *) (const char *) (partial_tok))[2] - __s2[2]); if (__s1_len &gt; 2 &amp;&amp; __result == 0) __result = (((const unsigned char *) (const char *) (partial_tok))[3] - __s2[3]); } } __result; }))) : (__builtin_constant_p (tmpbuf) &amp;&amp; ((size_t)(const void *)((tmpbuf) + 1) - (size_t)(const void *)(tmpbuf) == 1) &amp;&amp; (__s2_len = strlen (tmpbuf), __s2_len &lt; 4) ? (__builtin_constant_p (partial_tok) &amp;&amp; ((size_t)(const void *)((partial_tok) + 1) - (size_t)(const void *)(partial_tok) == 1) ? __builtin_strcmp (partial_tok, tmpbuf) : (__extension__ ({ const unsigned char *__s1 = (const unsigned char *) (const char *) (partial_tok); register int __result = __s1[0] - ((const unsigned char *) (const char *) (tmpbuf))[0]; if (__s2_len &gt; 0 &amp;&amp; __result == 0) { __result = (__s1[1] - ((const unsigned char *) (const char *) (tmpbuf))[1]); if (__s2_len &gt; 1 &amp;&amp; __result == 0) { __result = (__s1[2] - ((const unsigned char *) (const char *) (tmpbuf))[2]); if (__s2_len &gt; 2 &amp;&amp; __result == 0) __result = (__s1[3] - ((const unsigned char *) (const char *) (tmpbuf))[3]); } } __result; }))) : __builtin_strcmp (partial_tok, tmpbuf)))); }) : strncmp (partial_tok, tmpbuf, partial_tok_len)))" data-ref="_M/strncmp">strncmp</a>(<a class="local col5 ref" href="#45partial_tok" title='partial_tok' data-ref="45partial_tok">partial_tok</a>, <a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>,</td></tr>
+<tr><th id="505">505</th><td>				     <a class="local col2 ref" href="#52partial_tok_len" title='partial_tok_len' data-ref="52partial_tok_len">partial_tok_len</a>)) {</td></tr>
+<tr><th id="506">506</th><td>				<b>if</b> (<a class="local col1 ref" href="#61local_state" title='local_state' data-ref="61local_state">local_state</a> &lt; *<a class="local col2 ref" href="#42state" title='state' data-ref="42state">state</a>) {</td></tr>
+<tr><th id="507">507</th><td>					<a class="local col1 ref" href="#61local_state" title='local_state' data-ref="61local_state">local_state</a>++;</td></tr>
+<tr><th id="508">508</th><td>					<b>continue</b>;</td></tr>
+<tr><th id="509">509</th><td>				}</td></tr>
+<tr><th id="510">510</th><td>				(*<a class="local col2 ref" href="#42state" title='state' data-ref="42state">state</a>)++;</td></tr>
+<tr><th id="511">511</th><td>				<a class="local col8 ref" href="#58l" title='l' data-ref="58l">l</a>=<a class="macro" href="../librte_eal/common/include/rte_string_fns.h.html#74" title="rte_strlcpy(dst, tmpbuf, size)" data-ref="_M/strlcpy">strlcpy</a>(<a class="local col3 ref" href="#43dst" title='dst' data-ref="43dst">dst</a>, <a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>, <a class="local col4 ref" href="#44size" title='size' data-ref="44size">size</a>);</td></tr>
+<tr><th id="512">512</th><td>				<b>if</b> (<a class="local col8 ref" href="#58l" title='l' data-ref="58l">l</a>&gt;=<var>0</var> &amp;&amp; <a class="local col9 ref" href="#49token_hdr" title='token_hdr' data-ref="49token_hdr">token_hdr</a>.<a class="ref field" href="cmdline_parse.h.html#cmdline_token_hdr::ops" title='cmdline_token_hdr::ops' data-ref="cmdline_token_hdr::ops">ops</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_token_ops::get_help" title='cmdline_token_ops::get_help' data-ref="cmdline_token_ops::get_help">get_help</a>) {</td></tr>
+<tr><th id="513">513</th><td>					<a class="local col9 ref" href="#49token_hdr" title='token_hdr' data-ref="49token_hdr">token_hdr</a>.<a class="ref field" href="cmdline_parse.h.html#cmdline_token_hdr::ops" title='cmdline_token_hdr::ops' data-ref="cmdline_token_hdr::ops">ops</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_token_ops::get_help" title='cmdline_token_ops::get_help' data-ref="cmdline_token_ops::get_help">get_help</a>(<a class="local col8 ref" href="#48token_p" title='token_p' data-ref="48token_p">token_p</a>, <a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>,</td></tr>
+<tr><th id="514">514</th><td>								<b>sizeof</b>(<a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>));</td></tr>
+<tr><th id="515">515</th><td>					<a class="local col2 ref" href="#62help_str" title='help_str' data-ref="62help_str">help_str</a> = <a class="local col7 ref" href="#47inst" title='inst' data-ref="47inst">inst</a>-&gt;<a class="ref field" href="cmdline_parse.h.html#cmdline_inst::help_str" title='cmdline_inst::help_str' data-ref="cmdline_inst::help_str">help_str</a>;</td></tr>
+<tr><th id="516">516</th><td>					<b>if</b> (<a class="local col2 ref" href="#62help_str" title='help_str' data-ref="62help_str">help_str</a>)</td></tr>
+<tr><th id="517">517</th><td>						<a class="ref fn" href="../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a>(<a class="local col3 ref" href="#43dst" title='dst' data-ref="43dst">dst</a>+<a class="local col8 ref" href="#58l" title='l' data-ref="58l">l</a>, <a class="local col4 ref" href="#44size" title='size' data-ref="44size">size</a>-<a class="local col8 ref" href="#58l" title='l' data-ref="58l">l</a>, <q>"[%s]: %s"</q>,</td></tr>
+<tr><th id="518">518</th><td>							 <a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>, <a class="local col2 ref" href="#62help_str" title='help_str' data-ref="62help_str">help_str</a>);</td></tr>
+<tr><th id="519">519</th><td>					<b>else</b></td></tr>
+<tr><th id="520">520</th><td>						<a class="ref fn" href="../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a>(<a class="local col3 ref" href="#43dst" title='dst' data-ref="43dst">dst</a>+<a class="local col8 ref" href="#58l" title='l' data-ref="58l">l</a>, <a class="local col4 ref" href="#44size" title='size' data-ref="44size">size</a>-<a class="local col8 ref" href="#58l" title='l' data-ref="58l">l</a>,</td></tr>
+<tr><th id="521">521</th><td>							 <q>"[%s]: No help"</q>, <a class="local col0 ref" href="#50tmpbuf" title='tmpbuf' data-ref="50tmpbuf">tmpbuf</a>);</td></tr>
+<tr><th id="522">522</th><td>				}</td></tr>
+<tr><th id="523">523</th><td></td></tr>
+<tr><th id="524">524</th><td>				<b>return</b> <var>1</var>;</td></tr>
+<tr><th id="525">525</th><td>			}</td></tr>
+<tr><th id="526">526</th><td>		}</td></tr>
+<tr><th id="527">527</th><td>	<dfn class="lbl" id="65next2" data-ref="65next2">next2</dfn>:</td></tr>
+<tr><th id="528">528</th><td>		<a class="local col6 ref" href="#46inst_num" title='inst_num' data-ref="46inst_num">inst_num</a> ++;</td></tr>
+<tr><th id="529">529</th><td>		<a class="local col7 ref" href="#47inst" title='inst' data-ref="47inst">inst</a> = <a class="local col3 ref" href="#63ctx" title='ctx' data-ref="63ctx">ctx</a>[<a class="local col6 ref" href="#46inst_num" title='inst_num' data-ref="46inst_num">inst_num</a>];</td></tr>
+<tr><th id="530">530</th><td>	}</td></tr>
+<tr><th id="531">531</th><td>	<b>return</b> <var>0</var>;</td></tr>
+<tr><th id="532">532</th><td>}</td></tr>
+<tr><th id="533">533</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

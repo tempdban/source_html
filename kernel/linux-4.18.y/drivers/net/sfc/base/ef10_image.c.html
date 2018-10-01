@@ -1,0 +1,904 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>ef10_image.c source code [linux-4.18.y/drivers/net/sfc/base/ef10_image.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/drivers/net/sfc/base/ef10_image.c'; var root_path = '../../../../..'; var data_path = '../../../../../../data';</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>linux-4.18.y</a>/<a href='../../..'>drivers</a>/<a href='../..'>net</a>/<a href='..'>sfc</a>/<a href='./'>base</a>/<a href='ef10_image.c.html'>ef10_image.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> *</i></td></tr>
+<tr><th id="3">3</th><td><i> * Copyright (c) 2017-2018 Solarflare Communications Inc.</i></td></tr>
+<tr><th id="4">4</th><td><i> * All rights reserved.</i></td></tr>
+<tr><th id="5">5</th><td><i> */</i></td></tr>
+<tr><th id="6">6</th><td></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="efx.h.html">"efx.h"</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="efx_impl.h.html">"efx_impl.h"</a></u></td></tr>
+<tr><th id="9">9</th><td></td></tr>
+<tr><th id="10">10</th><td><u>#<span data-ppcond="10">if</span> <a class="macro" href="../efsys.h.html#115" title="1" data-ref="_M/EFSYS_OPT_MEDFORD">EFSYS_OPT_MEDFORD</a> || <a class="macro" href="../efsys.h.html#117" title="1" data-ref="_M/EFSYS_OPT_MEDFORD2">EFSYS_OPT_MEDFORD2</a></u></td></tr>
+<tr><th id="11">11</th><td></td></tr>
+<tr><th id="12">12</th><td><u>#<span data-ppcond="12">if</span> <a class="macro" href="../efsys.h.html#144" title="0" data-ref="_M/EFSYS_OPT_IMAGE_LAYOUT">EFSYS_OPT_IMAGE_LAYOUT</a></u></td></tr>
+<tr><th id="13">13</th><td></td></tr>
+<tr><th id="14">14</th><td><i>/*</i></td></tr>
+<tr><th id="15">15</th><td><i> * Utility routines to support limited parsing of ASN.1 tags. This is not a</i></td></tr>
+<tr><th id="16">16</th><td><i> * general purpose ASN.1 parser, but is sufficient to locate the required</i></td></tr>
+<tr><th id="17">17</th><td><i> * objects in a signed image with CMS headers.</i></td></tr>
+<tr><th id="18">18</th><td><i> */</i></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><i>/* DER encodings for ASN.1 tags (see ITU-T X.690) */</i></td></tr>
+<tr><th id="21">21</th><td><u>#define	ASN1_TAG_INTEGER	    (0x02)</u></td></tr>
+<tr><th id="22">22</th><td><u>#define	ASN1_TAG_OCTET_STRING	    (0x04)</u></td></tr>
+<tr><th id="23">23</th><td><u>#define	ASN1_TAG_OBJ_ID		    (0x06)</u></td></tr>
+<tr><th id="24">24</th><td><u>#define	ASN1_TAG_SEQUENCE	    (0x30)</u></td></tr>
+<tr><th id="25">25</th><td><u>#define	ASN1_TAG_SET		    (0x31)</u></td></tr>
+<tr><th id="26">26</th><td></td></tr>
+<tr><th id="27">27</th><td><u>#define	ASN1_TAG_IS_PRIM(tag)	    ((tag &amp; 0x20) == 0)</u></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><u>#define	ASN1_TAG_PRIM_CONTEXT(n)    (0x80 + (n))</u></td></tr>
+<tr><th id="30">30</th><td><u>#define	ASN1_TAG_CONS_CONTEXT(n)    (0xA0 + (n))</u></td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><b>typedef</b> <b>struct</b> efx_asn1_cursor_s {</td></tr>
+<tr><th id="33">33</th><td>	uint8_t		*buffer;</td></tr>
+<tr><th id="34">34</th><td>	uint32_t	length;</td></tr>
+<tr><th id="35">35</th><td></td></tr>
+<tr><th id="36">36</th><td>	uint8_t		tag;</td></tr>
+<tr><th id="37">37</th><td>	uint32_t	hdr_size;</td></tr>
+<tr><th id="38">38</th><td>	uint32_t	val_size;</td></tr>
+<tr><th id="39">39</th><td>} efx_asn1_cursor_t;</td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td></td></tr>
+<tr><th id="42">42</th><td><i>/* Parse header of DER encoded ASN.1 TLV and match tag */</i></td></tr>
+<tr><th id="43">43</th><td><em>static</em>	__checkReturn	efx_rc_t</td></tr>
+<tr><th id="44">44</th><td>efx_asn1_parse_header_match_tag(</td></tr>
+<tr><th id="45">45</th><td>	__inout		efx_asn1_cursor_t	*cursor,</td></tr>
+<tr><th id="46">46</th><td>	__in		uint8_t			tag)</td></tr>
+<tr><th id="47">47</th><td>{</td></tr>
+<tr><th id="48">48</th><td>	efx_rc_t rc;</td></tr>
+<tr><th id="49">49</th><td></td></tr>
+<tr><th id="50">50</th><td>	<b>if</b> (cursor == NULL || cursor-&gt;buffer == NULL || cursor-&gt;length &lt; <var>2</var>) {</td></tr>
+<tr><th id="51">51</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="52">52</th><td>		<b>goto</b> fail1;</td></tr>
+<tr><th id="53">53</th><td>	}</td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td>	cursor-&gt;tag = cursor-&gt;buffer[<var>0</var>];</td></tr>
+<tr><th id="56">56</th><td>	<b>if</b> (cursor-&gt;tag != tag) {</td></tr>
+<tr><th id="57">57</th><td>		<i>/* Tag not matched */</i></td></tr>
+<tr><th id="58">58</th><td>		rc = ENOENT;</td></tr>
+<tr><th id="59">59</th><td>		<b>goto</b> fail2;</td></tr>
+<tr><th id="60">60</th><td>	}</td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td>	<b>if</b> ((cursor-&gt;tag &amp; <var>0x1F</var>) == <var>0x1F</var>) {</td></tr>
+<tr><th id="63">63</th><td>		<i>/* Long tag format not used in CMS syntax */</i></td></tr>
+<tr><th id="64">64</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="65">65</th><td>		<b>goto</b> fail3;</td></tr>
+<tr><th id="66">66</th><td>	}</td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td>	<b>if</b> ((cursor-&gt;buffer[<var>1</var>] &amp; <var>0x80</var>) == <var>0</var>) {</td></tr>
+<tr><th id="69">69</th><td>		<i>/* Short form: length is 0..127 */</i></td></tr>
+<tr><th id="70">70</th><td>		cursor-&gt;hdr_size = <var>2</var>;</td></tr>
+<tr><th id="71">71</th><td>		cursor-&gt;val_size = cursor-&gt;buffer[<var>1</var>];</td></tr>
+<tr><th id="72">72</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="73">73</th><td>		<i>/* Long form: length encoded as [0x80+nbytes][length bytes] */</i></td></tr>
+<tr><th id="74">74</th><td>		uint32_t nbytes = cursor-&gt;buffer[<var>1</var>] &amp; <var>0x7F</var>;</td></tr>
+<tr><th id="75">75</th><td>		uint32_t offset;</td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td>		<b>if</b> (nbytes == <var>0</var>) {</td></tr>
+<tr><th id="78">78</th><td>			<i>/* Indefinite length not allowed in DER encoding */</i></td></tr>
+<tr><th id="79">79</th><td>			rc = EINVAL;</td></tr>
+<tr><th id="80">80</th><td>			<b>goto</b> fail4;</td></tr>
+<tr><th id="81">81</th><td>		}</td></tr>
+<tr><th id="82">82</th><td>		<b>if</b> (<var>2</var> + nbytes &gt; cursor-&gt;length) {</td></tr>
+<tr><th id="83">83</th><td>			<i>/* Header length overflows image buffer */</i></td></tr>
+<tr><th id="84">84</th><td>			rc = EINVAL;</td></tr>
+<tr><th id="85">85</th><td>			<b>goto</b> fail6;</td></tr>
+<tr><th id="86">86</th><td>		}</td></tr>
+<tr><th id="87">87</th><td>		<b>if</b> (nbytes &gt; <b>sizeof</b> (uint32_t)) {</td></tr>
+<tr><th id="88">88</th><td>			<i>/* Length encoding too big */</i></td></tr>
+<tr><th id="89">89</th><td>			rc = E2BIG;</td></tr>
+<tr><th id="90">90</th><td>			<b>goto</b> fail5;</td></tr>
+<tr><th id="91">91</th><td>		}</td></tr>
+<tr><th id="92">92</th><td>		cursor-&gt;hdr_size = <var>2</var> + nbytes;</td></tr>
+<tr><th id="93">93</th><td>		cursor-&gt;val_size = <var>0</var>;</td></tr>
+<tr><th id="94">94</th><td>		<b>for</b> (offset = <var>2</var>; offset &lt; cursor-&gt;hdr_size; offset++) {</td></tr>
+<tr><th id="95">95</th><td>			cursor-&gt;val_size =</td></tr>
+<tr><th id="96">96</th><td>			    (cursor-&gt;val_size &lt;&lt; <var>8</var>) | cursor-&gt;buffer[offset];</td></tr>
+<tr><th id="97">97</th><td>		}</td></tr>
+<tr><th id="98">98</th><td>	}</td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td>	<b>if</b> ((cursor-&gt;hdr_size + cursor-&gt;val_size) &gt; cursor-&gt;length) {</td></tr>
+<tr><th id="101">101</th><td>		<i>/* Length overflows image buffer */</i></td></tr>
+<tr><th id="102">102</th><td>		rc = E2BIG;</td></tr>
+<tr><th id="103">103</th><td>		<b>goto</b> fail7;</td></tr>
+<tr><th id="104">104</th><td>	}</td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td>	<b>return</b> (<var>0</var>);</td></tr>
+<tr><th id="107">107</th><td></td></tr>
+<tr><th id="108">108</th><td>fail7:</td></tr>
+<tr><th id="109">109</th><td>	EFSYS_PROBE(fail7);</td></tr>
+<tr><th id="110">110</th><td>fail6:</td></tr>
+<tr><th id="111">111</th><td>	EFSYS_PROBE(fail6);</td></tr>
+<tr><th id="112">112</th><td>fail5:</td></tr>
+<tr><th id="113">113</th><td>	EFSYS_PROBE(fail5);</td></tr>
+<tr><th id="114">114</th><td>fail4:</td></tr>
+<tr><th id="115">115</th><td>	EFSYS_PROBE(fail4);</td></tr>
+<tr><th id="116">116</th><td>fail3:</td></tr>
+<tr><th id="117">117</th><td>	EFSYS_PROBE(fail3);</td></tr>
+<tr><th id="118">118</th><td>fail2:</td></tr>
+<tr><th id="119">119</th><td>	EFSYS_PROBE(fail2);</td></tr>
+<tr><th id="120">120</th><td>fail1:</td></tr>
+<tr><th id="121">121</th><td>	EFSYS_PROBE1(fail1, efx_rc_t, rc);</td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td>	<b>return</b> (rc);</td></tr>
+<tr><th id="124">124</th><td>}</td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td><i>/* Enter nested ASN.1 TLV (contained in value of current TLV) */</i></td></tr>
+<tr><th id="127">127</th><td><em>static</em>	__checkReturn	efx_rc_t</td></tr>
+<tr><th id="128">128</th><td>efx_asn1_enter_tag(</td></tr>
+<tr><th id="129">129</th><td>	__inout		efx_asn1_cursor_t	*cursor,</td></tr>
+<tr><th id="130">130</th><td>	__in		uint8_t			tag)</td></tr>
+<tr><th id="131">131</th><td>{</td></tr>
+<tr><th id="132">132</th><td>	efx_rc_t rc;</td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td>	<b>if</b> (cursor == NULL) {</td></tr>
+<tr><th id="135">135</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="136">136</th><td>		<b>goto</b> fail1;</td></tr>
+<tr><th id="137">137</th><td>	}</td></tr>
+<tr><th id="138">138</th><td></td></tr>
+<tr><th id="139">139</th><td>	<b>if</b> (ASN1_TAG_IS_PRIM(tag)) {</td></tr>
+<tr><th id="140">140</th><td>		<i>/* Cannot enter a primitive tag */</i></td></tr>
+<tr><th id="141">141</th><td>		rc = ENOTSUP;</td></tr>
+<tr><th id="142">142</th><td>		<b>goto</b> fail2;</td></tr>
+<tr><th id="143">143</th><td>	}</td></tr>
+<tr><th id="144">144</th><td>	rc = efx_asn1_parse_header_match_tag(cursor, tag);</td></tr>
+<tr><th id="145">145</th><td>	<b>if</b> (rc != <var>0</var>) {</td></tr>
+<tr><th id="146">146</th><td>		<i>/* Invalid TLV or wrong tag */</i></td></tr>
+<tr><th id="147">147</th><td>		<b>goto</b> fail3;</td></tr>
+<tr><th id="148">148</th><td>	}</td></tr>
+<tr><th id="149">149</th><td></td></tr>
+<tr><th id="150">150</th><td>	<i>/* Limit cursor range to nested TLV */</i></td></tr>
+<tr><th id="151">151</th><td>	cursor-&gt;buffer += cursor-&gt;hdr_size;</td></tr>
+<tr><th id="152">152</th><td>	cursor-&gt;length = cursor-&gt;val_size;</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td>	<b>return</b> (<var>0</var>);</td></tr>
+<tr><th id="155">155</th><td></td></tr>
+<tr><th id="156">156</th><td>fail3:</td></tr>
+<tr><th id="157">157</th><td>	EFSYS_PROBE(fail3);</td></tr>
+<tr><th id="158">158</th><td>fail2:</td></tr>
+<tr><th id="159">159</th><td>	EFSYS_PROBE(fail2);</td></tr>
+<tr><th id="160">160</th><td>fail1:</td></tr>
+<tr><th id="161">161</th><td>	EFSYS_PROBE1(fail1, efx_rc_t, rc);</td></tr>
+<tr><th id="162">162</th><td></td></tr>
+<tr><th id="163">163</th><td>	<b>return</b> (rc);</td></tr>
+<tr><th id="164">164</th><td>}</td></tr>
+<tr><th id="165">165</th><td></td></tr>
+<tr><th id="166">166</th><td><i>/*</i></td></tr>
+<tr><th id="167">167</th><td><i> * Check that the current ASN.1 TLV matches the given tag and value.</i></td></tr>
+<tr><th id="168">168</th><td><i> * Advance cursor to next TLV on a successful match.</i></td></tr>
+<tr><th id="169">169</th><td><i> */</i></td></tr>
+<tr><th id="170">170</th><td><em>static</em>	__checkReturn	efx_rc_t</td></tr>
+<tr><th id="171">171</th><td>efx_asn1_match_tag_value(</td></tr>
+<tr><th id="172">172</th><td>	__inout		efx_asn1_cursor_t	*cursor,</td></tr>
+<tr><th id="173">173</th><td>	__in		uint8_t			tag,</td></tr>
+<tr><th id="174">174</th><td>	__in		<em>const</em> <em>void</em>		*valp,</td></tr>
+<tr><th id="175">175</th><td>	__in		uint32_t		val_size)</td></tr>
+<tr><th id="176">176</th><td>{</td></tr>
+<tr><th id="177">177</th><td>	efx_rc_t rc;</td></tr>
+<tr><th id="178">178</th><td></td></tr>
+<tr><th id="179">179</th><td>	<b>if</b> (cursor == NULL) {</td></tr>
+<tr><th id="180">180</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="181">181</th><td>		<b>goto</b> fail1;</td></tr>
+<tr><th id="182">182</th><td>	}</td></tr>
+<tr><th id="183">183</th><td>	rc = efx_asn1_parse_header_match_tag(cursor, tag);</td></tr>
+<tr><th id="184">184</th><td>	<b>if</b> (rc != <var>0</var>) {</td></tr>
+<tr><th id="185">185</th><td>		<i>/* Invalid TLV or wrong tag */</i></td></tr>
+<tr><th id="186">186</th><td>		<b>goto</b> fail2;</td></tr>
+<tr><th id="187">187</th><td>	}</td></tr>
+<tr><th id="188">188</th><td>	<b>if</b> (cursor-&gt;val_size != val_size) {</td></tr>
+<tr><th id="189">189</th><td>		<i>/* Value size is different */</i></td></tr>
+<tr><th id="190">190</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="191">191</th><td>		<b>goto</b> fail3;</td></tr>
+<tr><th id="192">192</th><td>	}</td></tr>
+<tr><th id="193">193</th><td>	<b>if</b> (memcmp(cursor-&gt;buffer + cursor-&gt;hdr_size, valp, val_size) != <var>0</var>) {</td></tr>
+<tr><th id="194">194</th><td>		<i>/* Value content is different */</i></td></tr>
+<tr><th id="195">195</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="196">196</th><td>		<b>goto</b> fail4;</td></tr>
+<tr><th id="197">197</th><td>	}</td></tr>
+<tr><th id="198">198</th><td>	cursor-&gt;buffer += cursor-&gt;hdr_size + cursor-&gt;val_size;</td></tr>
+<tr><th id="199">199</th><td>	cursor-&gt;length -= cursor-&gt;hdr_size + cursor-&gt;val_size;</td></tr>
+<tr><th id="200">200</th><td></td></tr>
+<tr><th id="201">201</th><td>	<b>return</b> (<var>0</var>);</td></tr>
+<tr><th id="202">202</th><td></td></tr>
+<tr><th id="203">203</th><td>fail4:</td></tr>
+<tr><th id="204">204</th><td>	EFSYS_PROBE(fail4);</td></tr>
+<tr><th id="205">205</th><td>fail3:</td></tr>
+<tr><th id="206">206</th><td>	EFSYS_PROBE(fail3);</td></tr>
+<tr><th id="207">207</th><td>fail2:</td></tr>
+<tr><th id="208">208</th><td>	EFSYS_PROBE(fail2);</td></tr>
+<tr><th id="209">209</th><td>fail1:</td></tr>
+<tr><th id="210">210</th><td>	EFSYS_PROBE1(fail1, efx_rc_t, rc);</td></tr>
+<tr><th id="211">211</th><td></td></tr>
+<tr><th id="212">212</th><td>	<b>return</b> (rc);</td></tr>
+<tr><th id="213">213</th><td>}</td></tr>
+<tr><th id="214">214</th><td></td></tr>
+<tr><th id="215">215</th><td><i>/* Advance cursor to next TLV */</i></td></tr>
+<tr><th id="216">216</th><td><em>static</em>	__checkReturn	efx_rc_t</td></tr>
+<tr><th id="217">217</th><td>efx_asn1_skip_tag(</td></tr>
+<tr><th id="218">218</th><td>	__inout		efx_asn1_cursor_t	*cursor,</td></tr>
+<tr><th id="219">219</th><td>	__in		uint8_t			tag)</td></tr>
+<tr><th id="220">220</th><td>{</td></tr>
+<tr><th id="221">221</th><td>	efx_rc_t rc;</td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td>	<b>if</b> (cursor == NULL) {</td></tr>
+<tr><th id="224">224</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="225">225</th><td>		<b>goto</b> fail1;</td></tr>
+<tr><th id="226">226</th><td>	}</td></tr>
+<tr><th id="227">227</th><td></td></tr>
+<tr><th id="228">228</th><td>	rc = efx_asn1_parse_header_match_tag(cursor, tag);</td></tr>
+<tr><th id="229">229</th><td>	<b>if</b> (rc != <var>0</var>) {</td></tr>
+<tr><th id="230">230</th><td>		<i>/* Invalid TLV or wrong tag */</i></td></tr>
+<tr><th id="231">231</th><td>		<b>goto</b> fail2;</td></tr>
+<tr><th id="232">232</th><td>	}</td></tr>
+<tr><th id="233">233</th><td>	cursor-&gt;buffer += cursor-&gt;hdr_size + cursor-&gt;val_size;</td></tr>
+<tr><th id="234">234</th><td>	cursor-&gt;length -= cursor-&gt;hdr_size + cursor-&gt;val_size;</td></tr>
+<tr><th id="235">235</th><td></td></tr>
+<tr><th id="236">236</th><td>	<b>return</b> (<var>0</var>);</td></tr>
+<tr><th id="237">237</th><td></td></tr>
+<tr><th id="238">238</th><td>fail2:</td></tr>
+<tr><th id="239">239</th><td>	EFSYS_PROBE(fail2);</td></tr>
+<tr><th id="240">240</th><td>fail1:</td></tr>
+<tr><th id="241">241</th><td>	EFSYS_PROBE1(fail1, efx_rc_t, rc);</td></tr>
+<tr><th id="242">242</th><td></td></tr>
+<tr><th id="243">243</th><td>	<b>return</b> (rc);</td></tr>
+<tr><th id="244">244</th><td>}</td></tr>
+<tr><th id="245">245</th><td></td></tr>
+<tr><th id="246">246</th><td><i>/* Return pointer to value octets and value size from current TLV */</i></td></tr>
+<tr><th id="247">247</th><td><em>static</em>	__checkReturn	efx_rc_t</td></tr>
+<tr><th id="248">248</th><td>efx_asn1_get_tag_value(</td></tr>
+<tr><th id="249">249</th><td>	__inout		efx_asn1_cursor_t	*cursor,</td></tr>
+<tr><th id="250">250</th><td>	__in		uint8_t			tag,</td></tr>
+<tr><th id="251">251</th><td>	__out		uint8_t			**valp,</td></tr>
+<tr><th id="252">252</th><td>	__out		uint32_t		*val_sizep)</td></tr>
+<tr><th id="253">253</th><td>{</td></tr>
+<tr><th id="254">254</th><td>	efx_rc_t rc;</td></tr>
+<tr><th id="255">255</th><td></td></tr>
+<tr><th id="256">256</th><td>	<b>if</b> (cursor == NULL || valp == NULL || val_sizep == NULL) {</td></tr>
+<tr><th id="257">257</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="258">258</th><td>		<b>goto</b> fail1;</td></tr>
+<tr><th id="259">259</th><td>	}</td></tr>
+<tr><th id="260">260</th><td></td></tr>
+<tr><th id="261">261</th><td>	rc = efx_asn1_parse_header_match_tag(cursor, tag);</td></tr>
+<tr><th id="262">262</th><td>	<b>if</b> (rc != <var>0</var>) {</td></tr>
+<tr><th id="263">263</th><td>		<i>/* Invalid TLV or wrong tag */</i></td></tr>
+<tr><th id="264">264</th><td>		<b>goto</b> fail2;</td></tr>
+<tr><th id="265">265</th><td>	}</td></tr>
+<tr><th id="266">266</th><td>	*valp = cursor-&gt;buffer + cursor-&gt;hdr_size;</td></tr>
+<tr><th id="267">267</th><td>	*val_sizep = cursor-&gt;val_size;</td></tr>
+<tr><th id="268">268</th><td></td></tr>
+<tr><th id="269">269</th><td>	<b>return</b> (<var>0</var>);</td></tr>
+<tr><th id="270">270</th><td></td></tr>
+<tr><th id="271">271</th><td>fail2:</td></tr>
+<tr><th id="272">272</th><td>	EFSYS_PROBE(fail2);</td></tr>
+<tr><th id="273">273</th><td>fail1:</td></tr>
+<tr><th id="274">274</th><td>	EFSYS_PROBE1(fail1, efx_rc_t, rc);</td></tr>
+<tr><th id="275">275</th><td></td></tr>
+<tr><th id="276">276</th><td>	<b>return</b> (rc);</td></tr>
+<tr><th id="277">277</th><td>}</td></tr>
+<tr><th id="278">278</th><td></td></tr>
+<tr><th id="279">279</th><td></td></tr>
+<tr><th id="280">280</th><td><i>/*</i></td></tr>
+<tr><th id="281">281</th><td><i> * Utility routines for parsing CMS headers (see RFC2315, PKCS#7)</i></td></tr>
+<tr><th id="282">282</th><td><i> */</i></td></tr>
+<tr><th id="283">283</th><td></td></tr>
+<tr><th id="284">284</th><td><i>/* OID 1.2.840.113549.1.7.2 */</i></td></tr>
+<tr><th id="285">285</th><td><em>static</em> <em>const</em> uint8_t PKCS7_SignedData[] =</td></tr>
+<tr><th id="286">286</th><td>{ <var>0x2A</var>, <var>0x86</var>, <var>0x48</var>, <var>0x86</var>, <var>0xF7</var>, <var>0x0D</var>, <var>0x01</var>, <var>0x07</var>, <var>0x02</var> };</td></tr>
+<tr><th id="287">287</th><td></td></tr>
+<tr><th id="288">288</th><td><i>/* OID 1.2.840.113549.1.7.1 */</i></td></tr>
+<tr><th id="289">289</th><td><em>static</em> <em>const</em> uint8_t PKCS7_Data[] =</td></tr>
+<tr><th id="290">290</th><td>{ <var>0x2A</var>, <var>0x86</var>, <var>0x48</var>, <var>0x86</var>, <var>0xF7</var>, <var>0x0D</var>, <var>0x01</var>, <var>0x07</var>, <var>0x01</var> };</td></tr>
+<tr><th id="291">291</th><td></td></tr>
+<tr><th id="292">292</th><td><i>/* SignedData structure version */</i></td></tr>
+<tr><th id="293">293</th><td><em>static</em> <em>const</em> uint8_t SignedData_Version[] =</td></tr>
+<tr><th id="294">294</th><td>{ <var>0x03</var> };</td></tr>
+<tr><th id="295">295</th><td></td></tr>
+<tr><th id="296">296</th><td><i>/*</i></td></tr>
+<tr><th id="297">297</th><td><i> * Check for a valid image in signed image format. This uses CMS syntax</i></td></tr>
+<tr><th id="298">298</th><td><i> * (see RFC2315, PKCS#7) to provide signatures, and certificates required</i></td></tr>
+<tr><th id="299">299</th><td><i> * to validate the signatures. The encapsulated content is in unsigned image</i></td></tr>
+<tr><th id="300">300</th><td><i> * format (reflash header, image code, trailer checksum).</i></td></tr>
+<tr><th id="301">301</th><td><i> */</i></td></tr>
+<tr><th id="302">302</th><td><em>static</em>	__checkReturn	efx_rc_t</td></tr>
+<tr><th id="303">303</th><td>efx_check_signed_image_header(</td></tr>
+<tr><th id="304">304</th><td>	__in		<em>void</em>		*bufferp,</td></tr>
+<tr><th id="305">305</th><td>	__in		uint32_t	buffer_size,</td></tr>
+<tr><th id="306">306</th><td>	__out		uint32_t	*content_offsetp,</td></tr>
+<tr><th id="307">307</th><td>	__out		uint32_t	*content_lengthp)</td></tr>
+<tr><th id="308">308</th><td>{</td></tr>
+<tr><th id="309">309</th><td>	efx_asn1_cursor_t cursor;</td></tr>
+<tr><th id="310">310</th><td>	uint8_t *valp;</td></tr>
+<tr><th id="311">311</th><td>	uint32_t val_size;</td></tr>
+<tr><th id="312">312</th><td>	efx_rc_t rc;</td></tr>
+<tr><th id="313">313</th><td></td></tr>
+<tr><th id="314">314</th><td>	<b>if</b> (content_offsetp == NULL || content_lengthp == NULL) {</td></tr>
+<tr><th id="315">315</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="316">316</th><td>		<b>goto</b> fail1;</td></tr>
+<tr><th id="317">317</th><td>	}</td></tr>
+<tr><th id="318">318</th><td>	cursor.buffer = (uint8_t *)bufferp;</td></tr>
+<tr><th id="319">319</th><td>	cursor.length = buffer_size;</td></tr>
+<tr><th id="320">320</th><td></td></tr>
+<tr><th id="321">321</th><td>	<i>/* ContextInfo */</i></td></tr>
+<tr><th id="322">322</th><td>	rc = efx_asn1_enter_tag(&amp;cursor, ASN1_TAG_SEQUENCE);</td></tr>
+<tr><th id="323">323</th><td>	<b>if</b> (rc != <var>0</var>)</td></tr>
+<tr><th id="324">324</th><td>		<b>goto</b> fail2;</td></tr>
+<tr><th id="325">325</th><td></td></tr>
+<tr><th id="326">326</th><td>	<i>/* ContextInfo.contentType */</i></td></tr>
+<tr><th id="327">327</th><td>	rc = efx_asn1_match_tag_value(&amp;cursor, ASN1_TAG_OBJ_ID,</td></tr>
+<tr><th id="328">328</th><td>	    PKCS7_SignedData, <b>sizeof</b> (PKCS7_SignedData));</td></tr>
+<tr><th id="329">329</th><td>	<b>if</b> (rc != <var>0</var>)</td></tr>
+<tr><th id="330">330</th><td>		<b>goto</b> fail3;</td></tr>
+<tr><th id="331">331</th><td></td></tr>
+<tr><th id="332">332</th><td>	<i>/* ContextInfo.content */</i></td></tr>
+<tr><th id="333">333</th><td>	rc = efx_asn1_enter_tag(&amp;cursor, ASN1_TAG_CONS_CONTEXT(<var>0</var>));</td></tr>
+<tr><th id="334">334</th><td>	<b>if</b> (rc != <var>0</var>)</td></tr>
+<tr><th id="335">335</th><td>		<b>goto</b> fail4;</td></tr>
+<tr><th id="336">336</th><td></td></tr>
+<tr><th id="337">337</th><td>	<i>/* SignedData */</i></td></tr>
+<tr><th id="338">338</th><td>	rc = efx_asn1_enter_tag(&amp;cursor, ASN1_TAG_SEQUENCE);</td></tr>
+<tr><th id="339">339</th><td>	<b>if</b> (rc != <var>0</var>)</td></tr>
+<tr><th id="340">340</th><td>		<b>goto</b> fail5;</td></tr>
+<tr><th id="341">341</th><td></td></tr>
+<tr><th id="342">342</th><td>	<i>/* SignedData.version */</i></td></tr>
+<tr><th id="343">343</th><td>	rc = efx_asn1_match_tag_value(&amp;cursor, ASN1_TAG_INTEGER,</td></tr>
+<tr><th id="344">344</th><td>	    SignedData_Version, <b>sizeof</b> (SignedData_Version));</td></tr>
+<tr><th id="345">345</th><td>	<b>if</b> (rc != <var>0</var>)</td></tr>
+<tr><th id="346">346</th><td>		<b>goto</b> fail6;</td></tr>
+<tr><th id="347">347</th><td></td></tr>
+<tr><th id="348">348</th><td>	<i>/* SignedData.digestAlgorithms */</i></td></tr>
+<tr><th id="349">349</th><td>	rc = efx_asn1_skip_tag(&amp;cursor, ASN1_TAG_SET);</td></tr>
+<tr><th id="350">350</th><td>	<b>if</b> (rc != <var>0</var>)</td></tr>
+<tr><th id="351">351</th><td>		<b>goto</b> fail7;</td></tr>
+<tr><th id="352">352</th><td></td></tr>
+<tr><th id="353">353</th><td>	<i>/* SignedData.encapContentInfo */</i></td></tr>
+<tr><th id="354">354</th><td>	rc = efx_asn1_enter_tag(&amp;cursor, ASN1_TAG_SEQUENCE);</td></tr>
+<tr><th id="355">355</th><td>	<b>if</b> (rc != <var>0</var>)</td></tr>
+<tr><th id="356">356</th><td>		<b>goto</b> fail8;</td></tr>
+<tr><th id="357">357</th><td></td></tr>
+<tr><th id="358">358</th><td>	<i>/* SignedData.encapContentInfo.econtentType */</i></td></tr>
+<tr><th id="359">359</th><td>	rc = efx_asn1_match_tag_value(&amp;cursor, ASN1_TAG_OBJ_ID,</td></tr>
+<tr><th id="360">360</th><td>	    PKCS7_Data, <b>sizeof</b> (PKCS7_Data));</td></tr>
+<tr><th id="361">361</th><td>	<b>if</b> (rc != <var>0</var>)</td></tr>
+<tr><th id="362">362</th><td>		<b>goto</b> fail9;</td></tr>
+<tr><th id="363">363</th><td></td></tr>
+<tr><th id="364">364</th><td>	<i>/* SignedData.encapContentInfo.econtent */</i></td></tr>
+<tr><th id="365">365</th><td>	rc = efx_asn1_enter_tag(&amp;cursor, ASN1_TAG_CONS_CONTEXT(<var>0</var>));</td></tr>
+<tr><th id="366">366</th><td>	<b>if</b> (rc != <var>0</var>)</td></tr>
+<tr><th id="367">367</th><td>		<b>goto</b> fail10;</td></tr>
+<tr><th id="368">368</th><td></td></tr>
+<tr><th id="369">369</th><td>	<i>/*</i></td></tr>
+<tr><th id="370">370</th><td><i>	 * The octet string contains the image header, image code bytes and</i></td></tr>
+<tr><th id="371">371</th><td><i>	 * image trailer CRC (same as unsigned image layout).</i></td></tr>
+<tr><th id="372">372</th><td><i>	 */</i></td></tr>
+<tr><th id="373">373</th><td>	valp = NULL;</td></tr>
+<tr><th id="374">374</th><td>	val_size = <var>0</var>;</td></tr>
+<tr><th id="375">375</th><td>	rc = efx_asn1_get_tag_value(&amp;cursor, ASN1_TAG_OCTET_STRING,</td></tr>
+<tr><th id="376">376</th><td>	    &amp;valp, &amp;val_size);</td></tr>
+<tr><th id="377">377</th><td>	<b>if</b> (rc != <var>0</var>)</td></tr>
+<tr><th id="378">378</th><td>		<b>goto</b> fail11;</td></tr>
+<tr><th id="379">379</th><td></td></tr>
+<tr><th id="380">380</th><td>	<b>if</b> ((valp == NULL) || (val_size == <var>0</var>)) {</td></tr>
+<tr><th id="381">381</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="382">382</th><td>		<b>goto</b> fail12;</td></tr>
+<tr><th id="383">383</th><td>	}</td></tr>
+<tr><th id="384">384</th><td>	<b>if</b> (valp &lt; (uint8_t *)bufferp) {</td></tr>
+<tr><th id="385">385</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="386">386</th><td>		<b>goto</b> fail13;</td></tr>
+<tr><th id="387">387</th><td>	}</td></tr>
+<tr><th id="388">388</th><td>	<b>if</b> ((valp + val_size) &gt; ((uint8_t *)bufferp + buffer_size)) {</td></tr>
+<tr><th id="389">389</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="390">390</th><td>		<b>goto</b> fail14;</td></tr>
+<tr><th id="391">391</th><td>	}</td></tr>
+<tr><th id="392">392</th><td></td></tr>
+<tr><th id="393">393</th><td>	*content_offsetp = (uint32_t)(valp - (uint8_t *)bufferp);</td></tr>
+<tr><th id="394">394</th><td>	*content_lengthp = val_size;</td></tr>
+<tr><th id="395">395</th><td></td></tr>
+<tr><th id="396">396</th><td>	<b>return</b> (<var>0</var>);</td></tr>
+<tr><th id="397">397</th><td></td></tr>
+<tr><th id="398">398</th><td>fail14:</td></tr>
+<tr><th id="399">399</th><td>	EFSYS_PROBE(fail14);</td></tr>
+<tr><th id="400">400</th><td>fail13:</td></tr>
+<tr><th id="401">401</th><td>	EFSYS_PROBE(fail13);</td></tr>
+<tr><th id="402">402</th><td>fail12:</td></tr>
+<tr><th id="403">403</th><td>	EFSYS_PROBE(fail12);</td></tr>
+<tr><th id="404">404</th><td>fail11:</td></tr>
+<tr><th id="405">405</th><td>	EFSYS_PROBE(fail11);</td></tr>
+<tr><th id="406">406</th><td>fail10:</td></tr>
+<tr><th id="407">407</th><td>	EFSYS_PROBE(fail10);</td></tr>
+<tr><th id="408">408</th><td>fail9:</td></tr>
+<tr><th id="409">409</th><td>	EFSYS_PROBE(fail9);</td></tr>
+<tr><th id="410">410</th><td>fail8:</td></tr>
+<tr><th id="411">411</th><td>	EFSYS_PROBE(fail8);</td></tr>
+<tr><th id="412">412</th><td>fail7:</td></tr>
+<tr><th id="413">413</th><td>	EFSYS_PROBE(fail7);</td></tr>
+<tr><th id="414">414</th><td>fail6:</td></tr>
+<tr><th id="415">415</th><td>	EFSYS_PROBE(fail6);</td></tr>
+<tr><th id="416">416</th><td>fail5:</td></tr>
+<tr><th id="417">417</th><td>	EFSYS_PROBE(fail5);</td></tr>
+<tr><th id="418">418</th><td>fail4:</td></tr>
+<tr><th id="419">419</th><td>	EFSYS_PROBE(fail4);</td></tr>
+<tr><th id="420">420</th><td>fail3:</td></tr>
+<tr><th id="421">421</th><td>	EFSYS_PROBE(fail3);</td></tr>
+<tr><th id="422">422</th><td>fail2:</td></tr>
+<tr><th id="423">423</th><td>	EFSYS_PROBE(fail2);</td></tr>
+<tr><th id="424">424</th><td>fail1:</td></tr>
+<tr><th id="425">425</th><td>	EFSYS_PROBE1(fail1, efx_rc_t, rc);</td></tr>
+<tr><th id="426">426</th><td></td></tr>
+<tr><th id="427">427</th><td>	<b>return</b> (rc);</td></tr>
+<tr><th id="428">428</th><td>}</td></tr>
+<tr><th id="429">429</th><td></td></tr>
+<tr><th id="430">430</th><td><em>static</em>	__checkReturn	efx_rc_t</td></tr>
+<tr><th id="431">431</th><td>efx_check_unsigned_image(</td></tr>
+<tr><th id="432">432</th><td>	__in		<em>void</em>		*bufferp,</td></tr>
+<tr><th id="433">433</th><td>	__in		uint32_t	buffer_size)</td></tr>
+<tr><th id="434">434</th><td>{</td></tr>
+<tr><th id="435">435</th><td>	efx_image_header_t *header;</td></tr>
+<tr><th id="436">436</th><td>	efx_image_trailer_t *trailer;</td></tr>
+<tr><th id="437">437</th><td>	uint32_t crc;</td></tr>
+<tr><th id="438">438</th><td>	efx_rc_t rc;</td></tr>
+<tr><th id="439">439</th><td></td></tr>
+<tr><th id="440">440</th><td>	EFX_STATIC_ASSERT(<b>sizeof</b> (*header) == EFX_IMAGE_HEADER_SIZE);</td></tr>
+<tr><th id="441">441</th><td>	EFX_STATIC_ASSERT(<b>sizeof</b> (*trailer) == EFX_IMAGE_TRAILER_SIZE);</td></tr>
+<tr><th id="442">442</th><td></td></tr>
+<tr><th id="443">443</th><td>	<i>/* Must have at least enough space for required image header fields */</i></td></tr>
+<tr><th id="444">444</th><td>	<b>if</b> (buffer_size &lt; (EFX_FIELD_OFFSET(efx_image_header_t, eih_size) +</td></tr>
+<tr><th id="445">445</th><td>		<b>sizeof</b> (header-&gt;eih_size))) {</td></tr>
+<tr><th id="446">446</th><td>		rc = ENOSPC;</td></tr>
+<tr><th id="447">447</th><td>		<b>goto</b> fail1;</td></tr>
+<tr><th id="448">448</th><td>	}</td></tr>
+<tr><th id="449">449</th><td>	header = (efx_image_header_t *)bufferp;</td></tr>
+<tr><th id="450">450</th><td></td></tr>
+<tr><th id="451">451</th><td>	<b>if</b> (header-&gt;eih_magic != EFX_IMAGE_HEADER_MAGIC) {</td></tr>
+<tr><th id="452">452</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="453">453</th><td>		<b>goto</b> fail2;</td></tr>
+<tr><th id="454">454</th><td>	}</td></tr>
+<tr><th id="455">455</th><td></td></tr>
+<tr><th id="456">456</th><td>	<i>/*</i></td></tr>
+<tr><th id="457">457</th><td><i>	 * Check image header version is same or higher than lowest required</i></td></tr>
+<tr><th id="458">458</th><td><i>	 * version.</i></td></tr>
+<tr><th id="459">459</th><td><i>	 */</i></td></tr>
+<tr><th id="460">460</th><td>	<b>if</b> (header-&gt;eih_version &lt; EFX_IMAGE_HEADER_VERSION) {</td></tr>
+<tr><th id="461">461</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="462">462</th><td>		<b>goto</b> fail3;</td></tr>
+<tr><th id="463">463</th><td>	}</td></tr>
+<tr><th id="464">464</th><td></td></tr>
+<tr><th id="465">465</th><td>	<i>/* Buffer must have space for image header, code and image trailer. */</i></td></tr>
+<tr><th id="466">466</th><td>	<b>if</b> (buffer_size &lt; (header-&gt;eih_size + header-&gt;eih_code_size +</td></tr>
+<tr><th id="467">467</th><td>		EFX_IMAGE_TRAILER_SIZE)) {</td></tr>
+<tr><th id="468">468</th><td>		rc = ENOSPC;</td></tr>
+<tr><th id="469">469</th><td>		<b>goto</b> fail4;</td></tr>
+<tr><th id="470">470</th><td>	}</td></tr>
+<tr><th id="471">471</th><td></td></tr>
+<tr><th id="472">472</th><td>	<i>/* Check CRC from image buffer matches computed CRC. */</i></td></tr>
+<tr><th id="473">473</th><td>	trailer = (efx_image_trailer_t *)((uint8_t *)header +</td></tr>
+<tr><th id="474">474</th><td>	    header-&gt;eih_size + header-&gt;eih_code_size);</td></tr>
+<tr><th id="475">475</th><td></td></tr>
+<tr><th id="476">476</th><td>	crc = efx_crc32_calculate(<var>0</var>, (uint8_t *)header,</td></tr>
+<tr><th id="477">477</th><td>	    (header-&gt;eih_size + header-&gt;eih_code_size));</td></tr>
+<tr><th id="478">478</th><td></td></tr>
+<tr><th id="479">479</th><td>	<b>if</b> (trailer-&gt;eit_crc != crc) {</td></tr>
+<tr><th id="480">480</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="481">481</th><td>		<b>goto</b> fail5;</td></tr>
+<tr><th id="482">482</th><td>	}</td></tr>
+<tr><th id="483">483</th><td></td></tr>
+<tr><th id="484">484</th><td>	<b>return</b> (<var>0</var>);</td></tr>
+<tr><th id="485">485</th><td></td></tr>
+<tr><th id="486">486</th><td>fail5:</td></tr>
+<tr><th id="487">487</th><td>	EFSYS_PROBE(fail5);</td></tr>
+<tr><th id="488">488</th><td>fail4:</td></tr>
+<tr><th id="489">489</th><td>	EFSYS_PROBE(fail4);</td></tr>
+<tr><th id="490">490</th><td>fail3:</td></tr>
+<tr><th id="491">491</th><td>	EFSYS_PROBE(fail3);</td></tr>
+<tr><th id="492">492</th><td>fail2:</td></tr>
+<tr><th id="493">493</th><td>	EFSYS_PROBE(fail2);</td></tr>
+<tr><th id="494">494</th><td>fail1:</td></tr>
+<tr><th id="495">495</th><td>	EFSYS_PROBE1(fail1, efx_rc_t, rc);</td></tr>
+<tr><th id="496">496</th><td></td></tr>
+<tr><th id="497">497</th><td>	<b>return</b> (rc);</td></tr>
+<tr><th id="498">498</th><td>}</td></tr>
+<tr><th id="499">499</th><td></td></tr>
+<tr><th id="500">500</th><td>	__checkReturn	efx_rc_t</td></tr>
+<tr><th id="501">501</th><td>efx_check_reflash_image(</td></tr>
+<tr><th id="502">502</th><td>	__in		<em>void</em>			*bufferp,</td></tr>
+<tr><th id="503">503</th><td>	__in		uint32_t		buffer_size,</td></tr>
+<tr><th id="504">504</th><td>	__out		efx_image_info_t	*infop)</td></tr>
+<tr><th id="505">505</th><td>{</td></tr>
+<tr><th id="506">506</th><td>	efx_image_format_t format = EFX_IMAGE_FORMAT_NO_IMAGE;</td></tr>
+<tr><th id="507">507</th><td>	uint32_t image_offset;</td></tr>
+<tr><th id="508">508</th><td>	uint32_t image_size;</td></tr>
+<tr><th id="509">509</th><td>	<em>void</em> *imagep;</td></tr>
+<tr><th id="510">510</th><td>	efx_rc_t rc;</td></tr>
+<tr><th id="511">511</th><td></td></tr>
+<tr><th id="512">512</th><td></td></tr>
+<tr><th id="513">513</th><td>	EFSYS_ASSERT(infop != NULL);</td></tr>
+<tr><th id="514">514</th><td>	<b>if</b> (infop == NULL) {</td></tr>
+<tr><th id="515">515</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="516">516</th><td>		<b>goto</b> fail1;</td></tr>
+<tr><th id="517">517</th><td>	}</td></tr>
+<tr><th id="518">518</th><td>	memset(infop, <var>0</var>, <b>sizeof</b> (*infop));</td></tr>
+<tr><th id="519">519</th><td></td></tr>
+<tr><th id="520">520</th><td>	<b>if</b> (bufferp == NULL || buffer_size == <var>0</var>) {</td></tr>
+<tr><th id="521">521</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="522">522</th><td>		<b>goto</b> fail2;</td></tr>
+<tr><th id="523">523</th><td>	}</td></tr>
+<tr><th id="524">524</th><td></td></tr>
+<tr><th id="525">525</th><td>	<i>/*</i></td></tr>
+<tr><th id="526">526</th><td><i>	 * Check if the buffer contains an image in signed format, and if so,</i></td></tr>
+<tr><th id="527">527</th><td><i>	 * locate the image header.</i></td></tr>
+<tr><th id="528">528</th><td><i>	 */</i></td></tr>
+<tr><th id="529">529</th><td>	rc = efx_check_signed_image_header(bufferp, buffer_size,</td></tr>
+<tr><th id="530">530</th><td>	    &amp;image_offset, &amp;image_size);</td></tr>
+<tr><th id="531">531</th><td>	<b>if</b> (rc == <var>0</var>) {</td></tr>
+<tr><th id="532">532</th><td>		<i>/*</i></td></tr>
+<tr><th id="533">533</th><td><i>		 * Buffer holds signed image format. Check that the encapsulated</i></td></tr>
+<tr><th id="534">534</th><td><i>		 * content is in unsigned image format.</i></td></tr>
+<tr><th id="535">535</th><td><i>		 */</i></td></tr>
+<tr><th id="536">536</th><td>		format = EFX_IMAGE_FORMAT_SIGNED;</td></tr>
+<tr><th id="537">537</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="538">538</th><td>		<i>/* Check if the buffer holds image in unsigned image format */</i></td></tr>
+<tr><th id="539">539</th><td>		format = EFX_IMAGE_FORMAT_UNSIGNED;</td></tr>
+<tr><th id="540">540</th><td>		image_offset = <var>0</var>;</td></tr>
+<tr><th id="541">541</th><td>		image_size = buffer_size;</td></tr>
+<tr><th id="542">542</th><td>	}</td></tr>
+<tr><th id="543">543</th><td>	<b>if</b> (image_offset + image_size &gt; buffer_size) {</td></tr>
+<tr><th id="544">544</th><td>		rc = E2BIG;</td></tr>
+<tr><th id="545">545</th><td>		<b>goto</b> fail3;</td></tr>
+<tr><th id="546">546</th><td>	}</td></tr>
+<tr><th id="547">547</th><td>	imagep = (uint8_t *)bufferp + image_offset;</td></tr>
+<tr><th id="548">548</th><td></td></tr>
+<tr><th id="549">549</th><td>	<i>/* Check unsigned image layout (image header, code, image trailer) */</i></td></tr>
+<tr><th id="550">550</th><td>	rc = efx_check_unsigned_image(imagep, image_size);</td></tr>
+<tr><th id="551">551</th><td>	<b>if</b> (rc != <var>0</var>)</td></tr>
+<tr><th id="552">552</th><td>		<b>goto</b> fail4;</td></tr>
+<tr><th id="553">553</th><td></td></tr>
+<tr><th id="554">554</th><td>	<i>/* Return image details */</i></td></tr>
+<tr><th id="555">555</th><td>	infop-&gt;eii_format = format;</td></tr>
+<tr><th id="556">556</th><td>	infop-&gt;eii_imagep = bufferp;</td></tr>
+<tr><th id="557">557</th><td>	infop-&gt;eii_image_size = buffer_size;</td></tr>
+<tr><th id="558">558</th><td>	infop-&gt;eii_headerp = (efx_image_header_t *)imagep;</td></tr>
+<tr><th id="559">559</th><td></td></tr>
+<tr><th id="560">560</th><td>	<b>return</b> (<var>0</var>);</td></tr>
+<tr><th id="561">561</th><td></td></tr>
+<tr><th id="562">562</th><td>fail4:</td></tr>
+<tr><th id="563">563</th><td>	EFSYS_PROBE(fail4);</td></tr>
+<tr><th id="564">564</th><td>fail3:</td></tr>
+<tr><th id="565">565</th><td>	EFSYS_PROBE(fail3);</td></tr>
+<tr><th id="566">566</th><td>fail2:</td></tr>
+<tr><th id="567">567</th><td>	EFSYS_PROBE(fail2);</td></tr>
+<tr><th id="568">568</th><td>	infop-&gt;eii_format = EFX_IMAGE_FORMAT_INVALID;</td></tr>
+<tr><th id="569">569</th><td>	infop-&gt;eii_imagep = NULL;</td></tr>
+<tr><th id="570">570</th><td>	infop-&gt;eii_image_size = <var>0</var>;</td></tr>
+<tr><th id="571">571</th><td></td></tr>
+<tr><th id="572">572</th><td>fail1:</td></tr>
+<tr><th id="573">573</th><td>	EFSYS_PROBE1(fail1, efx_rc_t, rc);</td></tr>
+<tr><th id="574">574</th><td></td></tr>
+<tr><th id="575">575</th><td>	<b>return</b> (rc);</td></tr>
+<tr><th id="576">576</th><td>}</td></tr>
+<tr><th id="577">577</th><td></td></tr>
+<tr><th id="578">578</th><td>	__checkReturn	efx_rc_t</td></tr>
+<tr><th id="579">579</th><td>efx_build_signed_image_write_buffer(</td></tr>
+<tr><th id="580">580</th><td>	__out_bcount(buffer_size)</td></tr>
+<tr><th id="581">581</th><td>			uint8_t			*bufferp,</td></tr>
+<tr><th id="582">582</th><td>	__in		uint32_t		buffer_size,</td></tr>
+<tr><th id="583">583</th><td>	__in		efx_image_info_t	*infop,</td></tr>
+<tr><th id="584">584</th><td>	__out		efx_image_header_t	**headerpp)</td></tr>
+<tr><th id="585">585</th><td>{</td></tr>
+<tr><th id="586">586</th><td>	signed_image_chunk_hdr_t chunk_hdr;</td></tr>
+<tr><th id="587">587</th><td>	uint32_t hdr_offset;</td></tr>
+<tr><th id="588">588</th><td>	<b>struct</b> {</td></tr>
+<tr><th id="589">589</th><td>		uint32_t offset;</td></tr>
+<tr><th id="590">590</th><td>		uint32_t size;</td></tr>
+<tr><th id="591">591</th><td>	} cms_header, image_header, code, image_trailer, signature;</td></tr>
+<tr><th id="592">592</th><td>	efx_rc_t rc;</td></tr>
+<tr><th id="593">593</th><td></td></tr>
+<tr><th id="594">594</th><td>	EFSYS_ASSERT((infop != NULL) &amp;&amp; (headerpp != NULL));</td></tr>
+<tr><th id="595">595</th><td></td></tr>
+<tr><th id="596">596</th><td>	<b>if</b> ((bufferp == NULL) || (buffer_size == <var>0</var>) ||</td></tr>
+<tr><th id="597">597</th><td>	    (infop == NULL) || (headerpp == NULL)) {</td></tr>
+<tr><th id="598">598</th><td>		<i>/* Invalid arguments */</i></td></tr>
+<tr><th id="599">599</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="600">600</th><td>		<b>goto</b> fail1;</td></tr>
+<tr><th id="601">601</th><td>	}</td></tr>
+<tr><th id="602">602</th><td>	<b>if</b> ((infop-&gt;eii_format != EFX_IMAGE_FORMAT_SIGNED) ||</td></tr>
+<tr><th id="603">603</th><td>	    (infop-&gt;eii_imagep == NULL) ||</td></tr>
+<tr><th id="604">604</th><td>	    (infop-&gt;eii_headerp == NULL) ||</td></tr>
+<tr><th id="605">605</th><td>	    ((uint8_t *)infop-&gt;eii_headerp &lt; (uint8_t *)infop-&gt;eii_imagep) ||</td></tr>
+<tr><th id="606">606</th><td>	    (infop-&gt;eii_image_size &lt; EFX_IMAGE_HEADER_SIZE) ||</td></tr>
+<tr><th id="607">607</th><td>	    ((size_t)((uint8_t *)infop-&gt;eii_headerp - infop-&gt;eii_imagep) &gt;</td></tr>
+<tr><th id="608">608</th><td>	    (infop-&gt;eii_image_size - EFX_IMAGE_HEADER_SIZE))) {</td></tr>
+<tr><th id="609">609</th><td>		<i>/* Invalid image info */</i></td></tr>
+<tr><th id="610">610</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="611">611</th><td>		<b>goto</b> fail2;</td></tr>
+<tr><th id="612">612</th><td>	}</td></tr>
+<tr><th id="613">613</th><td></td></tr>
+<tr><th id="614">614</th><td>	<i>/* Locate image chunks in original signed image */</i></td></tr>
+<tr><th id="615">615</th><td>	cms_header.offset = <var>0</var>;</td></tr>
+<tr><th id="616">616</th><td>	cms_header.size =</td></tr>
+<tr><th id="617">617</th><td>	    (uint32_t)((uint8_t *)infop-&gt;eii_headerp - infop-&gt;eii_imagep);</td></tr>
+<tr><th id="618">618</th><td>	<b>if</b> ((cms_header.size &gt; buffer_size) ||</td></tr>
+<tr><th id="619">619</th><td>	    (cms_header.offset &gt; (buffer_size - cms_header.size))) {</td></tr>
+<tr><th id="620">620</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="621">621</th><td>		<b>goto</b> fail3;</td></tr>
+<tr><th id="622">622</th><td>	}</td></tr>
+<tr><th id="623">623</th><td></td></tr>
+<tr><th id="624">624</th><td>	image_header.offset = cms_header.offset + cms_header.size;</td></tr>
+<tr><th id="625">625</th><td>	image_header.size = infop-&gt;eii_headerp-&gt;eih_size;</td></tr>
+<tr><th id="626">626</th><td>	<b>if</b> ((image_header.size &gt; buffer_size) ||</td></tr>
+<tr><th id="627">627</th><td>	    (image_header.offset &gt; (buffer_size - image_header.size))) {</td></tr>
+<tr><th id="628">628</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="629">629</th><td>		<b>goto</b> fail4;</td></tr>
+<tr><th id="630">630</th><td>	}</td></tr>
+<tr><th id="631">631</th><td></td></tr>
+<tr><th id="632">632</th><td>	code.offset = image_header.offset + image_header.size;</td></tr>
+<tr><th id="633">633</th><td>	code.size = infop-&gt;eii_headerp-&gt;eih_code_size;</td></tr>
+<tr><th id="634">634</th><td>	<b>if</b> ((code.size &gt; buffer_size) ||</td></tr>
+<tr><th id="635">635</th><td>	    (code.offset &gt; (buffer_size - code.size))) {</td></tr>
+<tr><th id="636">636</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="637">637</th><td>		<b>goto</b> fail5;</td></tr>
+<tr><th id="638">638</th><td>	}</td></tr>
+<tr><th id="639">639</th><td></td></tr>
+<tr><th id="640">640</th><td>	image_trailer.offset = code.offset + code.size;</td></tr>
+<tr><th id="641">641</th><td>	image_trailer.size = EFX_IMAGE_TRAILER_SIZE;</td></tr>
+<tr><th id="642">642</th><td>	<b>if</b> ((image_trailer.size &gt; buffer_size) ||</td></tr>
+<tr><th id="643">643</th><td>	    (image_trailer.offset &gt; (buffer_size - image_trailer.size))) {</td></tr>
+<tr><th id="644">644</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="645">645</th><td>		<b>goto</b> fail6;</td></tr>
+<tr><th id="646">646</th><td>	}</td></tr>
+<tr><th id="647">647</th><td></td></tr>
+<tr><th id="648">648</th><td>	signature.offset = image_trailer.offset + image_trailer.size;</td></tr>
+<tr><th id="649">649</th><td>	signature.size = (uint32_t)(infop-&gt;eii_image_size - signature.offset);</td></tr>
+<tr><th id="650">650</th><td>	<b>if</b> ((signature.size &gt; buffer_size) ||</td></tr>
+<tr><th id="651">651</th><td>	    (signature.offset &gt; (buffer_size - signature.size))) {</td></tr>
+<tr><th id="652">652</th><td>		rc = EINVAL;</td></tr>
+<tr><th id="653">653</th><td>		<b>goto</b> fail7;</td></tr>
+<tr><th id="654">654</th><td>	}</td></tr>
+<tr><th id="655">655</th><td></td></tr>
+<tr><th id="656">656</th><td>	EFSYS_ASSERT3U(infop-&gt;eii_image_size, ==, cms_header.size +</td></tr>
+<tr><th id="657">657</th><td>	    image_header.size + code.size + image_trailer.size +</td></tr>
+<tr><th id="658">658</th><td>	    signature.size);</td></tr>
+<tr><th id="659">659</th><td></td></tr>
+<tr><th id="660">660</th><td>	<i>/* BEGIN CSTYLED */</i></td></tr>
+<tr><th id="661">661</th><td>	<i>/*</i></td></tr>
+<tr><th id="662">662</th><td><i>	 * Build signed image partition, inserting chunk headers.</i></td></tr>
+<tr><th id="663">663</th><td><i>	 *</i></td></tr>
+<tr><th id="664">664</th><td><i>	 *  Signed Image:                  Image in NVRAM partition:</i></td></tr>
+<tr><th id="665">665</th><td><i>	 *</i></td></tr>
+<tr><th id="666">666</th><td><i>	 *  +-----------------+            +-----------------+</i></td></tr>
+<tr><th id="667">667</th><td><i>	 *  | CMS header      |            |  mcfw.update    |&lt;----+</i></td></tr>
+<tr><th id="668">668</th><td><i>	 *  +-----------------+            |                 |     |</i></td></tr>
+<tr><th id="669">669</th><td><i>	 *  | reflash header  |            +-----------------+     |</i></td></tr>
+<tr><th id="670">670</th><td><i>	 *  +-----------------+            | chunk header:   |--&gt;--|-+</i></td></tr>
+<tr><th id="671">671</th><td><i>	 *  | mcfw.update     |            | REFLASH_TRAILER |     | |</i></td></tr>
+<tr><th id="672">672</th><td><i>	 *  |                 |            +-----------------+     | |</i></td></tr>
+<tr><th id="673">673</th><td><i>	 *  +-----------------+        +--&gt;| CMS header      |     | |</i></td></tr>
+<tr><th id="674">674</th><td><i>	 *  | reflash trailer |        |   +-----------------+     | |</i></td></tr>
+<tr><th id="675">675</th><td><i>	 *  +-----------------+        |   | chunk header:   |-&gt;-+ | |</i></td></tr>
+<tr><th id="676">676</th><td><i>	 *  | signature       |        |   | REFLASH_HEADER  |   | | |</i></td></tr>
+<tr><th id="677">677</th><td><i>	 *  +-----------------+        |   +-----------------+   | | |</i></td></tr>
+<tr><th id="678">678</th><td><i>	 *                             |   | reflash header  |&lt;--+ | |</i></td></tr>
+<tr><th id="679">679</th><td><i>	 *                             |   +-----------------+     | |</i></td></tr>
+<tr><th id="680">680</th><td><i>	 *                             |   | chunk header:   |--&gt;--+ |</i></td></tr>
+<tr><th id="681">681</th><td><i>	 *                             |   | IMAGE           |       |</i></td></tr>
+<tr><th id="682">682</th><td><i>	 *                             |   +-----------------+       |</i></td></tr>
+<tr><th id="683">683</th><td><i>	 *                             |   | reflash trailer |&lt;------+</i></td></tr>
+<tr><th id="684">684</th><td><i>	 *                             |   +-----------------+</i></td></tr>
+<tr><th id="685">685</th><td><i>	 *                             |   | chunk header:   |</i></td></tr>
+<tr><th id="686">686</th><td><i>	 *                             |   | SIGNATURE       |-&gt;-+</i></td></tr>
+<tr><th id="687">687</th><td><i>	 *                             |   +-----------------+   |</i></td></tr>
+<tr><th id="688">688</th><td><i>	 *                             |   | signature       |&lt;--+</i></td></tr>
+<tr><th id="689">689</th><td><i>	 *                             |   +-----------------+</i></td></tr>
+<tr><th id="690">690</th><td><i>	 *                             |   | ...unused...    |</i></td></tr>
+<tr><th id="691">691</th><td><i>	 *                             |   +-----------------+</i></td></tr>
+<tr><th id="692">692</th><td><i>	 *                             +-&lt;-| chunk header:   |</i></td></tr>
+<tr><th id="693">693</th><td><i>	 *                             &gt;--&gt;| CMS_HEADER      |</i></td></tr>
+<tr><th id="694">694</th><td><i>	 *                                 +-----------------+</i></td></tr>
+<tr><th id="695">695</th><td><i>	 *</i></td></tr>
+<tr><th id="696">696</th><td><i>	 * Each chunk header gives the partition offset and length of the image</i></td></tr>
+<tr><th id="697">697</th><td><i>	 * chunk's data. The image chunk data is immediately followed by the</i></td></tr>
+<tr><th id="698">698</th><td><i>	 * chunk header for the next chunk.</i></td></tr>
+<tr><th id="699">699</th><td><i>	 *</i></td></tr>
+<tr><th id="700">700</th><td><i>	 * The data chunk for the firmware code must be at the start of the</i></td></tr>
+<tr><th id="701">701</th><td><i>	 * partition (needed for the bootloader). The first chunk header in the</i></td></tr>
+<tr><th id="702">702</th><td><i>	 * chain (for the CMS header) is stored at the end of the partition. The</i></td></tr>
+<tr><th id="703">703</th><td><i>	 * chain of chunk headers maintains the same logical order of image</i></td></tr>
+<tr><th id="704">704</th><td><i>	 * chunks as the original signed image file. This set of constraints</i></td></tr>
+<tr><th id="705">705</th><td><i>	 * results in the layout used for the data chunks and chunk headers.</i></td></tr>
+<tr><th id="706">706</th><td><i>	 */</i></td></tr>
+<tr><th id="707">707</th><td>	<i>/* END CSTYLED */</i></td></tr>
+<tr><th id="708">708</th><td>	memset(bufferp, <var>0xFF</var>, buffer_size);</td></tr>
+<tr><th id="709">709</th><td></td></tr>
+<tr><th id="710">710</th><td>	EFX_STATIC_ASSERT(<b>sizeof</b> (chunk_hdr) == SIGNED_IMAGE_CHUNK_HDR_LEN);</td></tr>
+<tr><th id="711">711</th><td>	memset(&amp;chunk_hdr, <var>0</var>, SIGNED_IMAGE_CHUNK_HDR_LEN);</td></tr>
+<tr><th id="712">712</th><td></td></tr>
+<tr><th id="713">713</th><td>	<i>/*</i></td></tr>
+<tr><th id="714">714</th><td><i>	 * CMS header</i></td></tr>
+<tr><th id="715">715</th><td><i>	 */</i></td></tr>
+<tr><th id="716">716</th><td>	<b>if</b> (buffer_size &lt; SIGNED_IMAGE_CHUNK_HDR_LEN) {</td></tr>
+<tr><th id="717">717</th><td>		rc = ENOSPC;</td></tr>
+<tr><th id="718">718</th><td>		<b>goto</b> fail8;</td></tr>
+<tr><th id="719">719</th><td>	}</td></tr>
+<tr><th id="720">720</th><td>	hdr_offset = buffer_size - SIGNED_IMAGE_CHUNK_HDR_LEN;</td></tr>
+<tr><th id="721">721</th><td></td></tr>
+<tr><th id="722">722</th><td>	chunk_hdr.magic		= SIGNED_IMAGE_CHUNK_HDR_MAGIC;</td></tr>
+<tr><th id="723">723</th><td>	chunk_hdr.version	= SIGNED_IMAGE_CHUNK_HDR_VERSION;</td></tr>
+<tr><th id="724">724</th><td>	chunk_hdr.id		= SIGNED_IMAGE_CHUNK_CMS_HEADER;</td></tr>
+<tr><th id="725">725</th><td>	chunk_hdr.offset	= code.size + SIGNED_IMAGE_CHUNK_HDR_LEN;</td></tr>
+<tr><th id="726">726</th><td>	chunk_hdr.len		= cms_header.size;</td></tr>
+<tr><th id="727">727</th><td></td></tr>
+<tr><th id="728">728</th><td>	memcpy(bufferp + hdr_offset, &amp;chunk_hdr, <b>sizeof</b> (chunk_hdr));</td></tr>
+<tr><th id="729">729</th><td></td></tr>
+<tr><th id="730">730</th><td>	<b>if</b> ((chunk_hdr.len &gt; buffer_size) ||</td></tr>
+<tr><th id="731">731</th><td>	    (chunk_hdr.offset &gt; (buffer_size - chunk_hdr.len))) {</td></tr>
+<tr><th id="732">732</th><td>		rc = ENOSPC;</td></tr>
+<tr><th id="733">733</th><td>		<b>goto</b> fail9;</td></tr>
+<tr><th id="734">734</th><td>	}</td></tr>
+<tr><th id="735">735</th><td>	memcpy(bufferp + chunk_hdr.offset,</td></tr>
+<tr><th id="736">736</th><td>	    infop-&gt;eii_imagep + cms_header.offset,</td></tr>
+<tr><th id="737">737</th><td>	    cms_header.size);</td></tr>
+<tr><th id="738">738</th><td></td></tr>
+<tr><th id="739">739</th><td>	<i>/*</i></td></tr>
+<tr><th id="740">740</th><td><i>	 * Image header</i></td></tr>
+<tr><th id="741">741</th><td><i>	 */</i></td></tr>
+<tr><th id="742">742</th><td>	hdr_offset = chunk_hdr.offset + chunk_hdr.len;</td></tr>
+<tr><th id="743">743</th><td>	<b>if</b> (hdr_offset &gt; (buffer_size - SIGNED_IMAGE_CHUNK_HDR_LEN)) {</td></tr>
+<tr><th id="744">744</th><td>		rc = ENOSPC;</td></tr>
+<tr><th id="745">745</th><td>		<b>goto</b> fail10;</td></tr>
+<tr><th id="746">746</th><td>	}</td></tr>
+<tr><th id="747">747</th><td>	chunk_hdr.magic		= SIGNED_IMAGE_CHUNK_HDR_MAGIC;</td></tr>
+<tr><th id="748">748</th><td>	chunk_hdr.version	= SIGNED_IMAGE_CHUNK_HDR_VERSION;</td></tr>
+<tr><th id="749">749</th><td>	chunk_hdr.id		= SIGNED_IMAGE_CHUNK_REFLASH_HEADER;</td></tr>
+<tr><th id="750">750</th><td>	chunk_hdr.offset	= hdr_offset + SIGNED_IMAGE_CHUNK_HDR_LEN;</td></tr>
+<tr><th id="751">751</th><td>	chunk_hdr.len		= image_header.size;</td></tr>
+<tr><th id="752">752</th><td></td></tr>
+<tr><th id="753">753</th><td>	memcpy(bufferp + hdr_offset, &amp;chunk_hdr, SIGNED_IMAGE_CHUNK_HDR_LEN);</td></tr>
+<tr><th id="754">754</th><td></td></tr>
+<tr><th id="755">755</th><td>	<b>if</b> ((chunk_hdr.len &gt; buffer_size) ||</td></tr>
+<tr><th id="756">756</th><td>	    (chunk_hdr.offset &gt; (buffer_size - chunk_hdr.len))) {</td></tr>
+<tr><th id="757">757</th><td>		rc = ENOSPC;</td></tr>
+<tr><th id="758">758</th><td>		<b>goto</b> fail11;</td></tr>
+<tr><th id="759">759</th><td>	}</td></tr>
+<tr><th id="760">760</th><td>	memcpy(bufferp + chunk_hdr.offset,</td></tr>
+<tr><th id="761">761</th><td>	    infop-&gt;eii_imagep + image_header.offset,</td></tr>
+<tr><th id="762">762</th><td>	    image_header.size);</td></tr>
+<tr><th id="763">763</th><td></td></tr>
+<tr><th id="764">764</th><td>	*headerpp = (efx_image_header_t *)(bufferp + chunk_hdr.offset);</td></tr>
+<tr><th id="765">765</th><td></td></tr>
+<tr><th id="766">766</th><td>	<i>/*</i></td></tr>
+<tr><th id="767">767</th><td><i>	 * Firmware code</i></td></tr>
+<tr><th id="768">768</th><td><i>	 */</i></td></tr>
+<tr><th id="769">769</th><td>	hdr_offset = chunk_hdr.offset + chunk_hdr.len;</td></tr>
+<tr><th id="770">770</th><td>	<b>if</b> (hdr_offset &gt; (buffer_size - SIGNED_IMAGE_CHUNK_HDR_LEN)) {</td></tr>
+<tr><th id="771">771</th><td>		rc = ENOSPC;</td></tr>
+<tr><th id="772">772</th><td>		<b>goto</b> fail12;</td></tr>
+<tr><th id="773">773</th><td>	}</td></tr>
+<tr><th id="774">774</th><td>	chunk_hdr.magic		= SIGNED_IMAGE_CHUNK_HDR_MAGIC;</td></tr>
+<tr><th id="775">775</th><td>	chunk_hdr.version	= SIGNED_IMAGE_CHUNK_HDR_VERSION;</td></tr>
+<tr><th id="776">776</th><td>	chunk_hdr.id		= SIGNED_IMAGE_CHUNK_IMAGE;</td></tr>
+<tr><th id="777">777</th><td>	chunk_hdr.offset	= <var>0</var>;</td></tr>
+<tr><th id="778">778</th><td>	chunk_hdr.len		= code.size;</td></tr>
+<tr><th id="779">779</th><td></td></tr>
+<tr><th id="780">780</th><td>	memcpy(bufferp + hdr_offset, &amp;chunk_hdr, SIGNED_IMAGE_CHUNK_HDR_LEN);</td></tr>
+<tr><th id="781">781</th><td></td></tr>
+<tr><th id="782">782</th><td>	<b>if</b> ((chunk_hdr.len &gt; buffer_size) ||</td></tr>
+<tr><th id="783">783</th><td>	    (chunk_hdr.offset &gt; (buffer_size - chunk_hdr.len))) {</td></tr>
+<tr><th id="784">784</th><td>		rc = ENOSPC;</td></tr>
+<tr><th id="785">785</th><td>		<b>goto</b> fail13;</td></tr>
+<tr><th id="786">786</th><td>	}</td></tr>
+<tr><th id="787">787</th><td>	memcpy(bufferp + chunk_hdr.offset,</td></tr>
+<tr><th id="788">788</th><td>	    infop-&gt;eii_imagep + code.offset,</td></tr>
+<tr><th id="789">789</th><td>	    code.size);</td></tr>
+<tr><th id="790">790</th><td></td></tr>
+<tr><th id="791">791</th><td>	<i>/*</i></td></tr>
+<tr><th id="792">792</th><td><i>	 * Image trailer (CRC)</i></td></tr>
+<tr><th id="793">793</th><td><i>	 */</i></td></tr>
+<tr><th id="794">794</th><td>	chunk_hdr.magic		= SIGNED_IMAGE_CHUNK_HDR_MAGIC;</td></tr>
+<tr><th id="795">795</th><td>	chunk_hdr.version	= SIGNED_IMAGE_CHUNK_HDR_VERSION;</td></tr>
+<tr><th id="796">796</th><td>	chunk_hdr.id		= SIGNED_IMAGE_CHUNK_REFLASH_TRAILER;</td></tr>
+<tr><th id="797">797</th><td>	chunk_hdr.offset	= hdr_offset + SIGNED_IMAGE_CHUNK_HDR_LEN;</td></tr>
+<tr><th id="798">798</th><td>	chunk_hdr.len		= image_trailer.size;</td></tr>
+<tr><th id="799">799</th><td></td></tr>
+<tr><th id="800">800</th><td>	hdr_offset = code.size;</td></tr>
+<tr><th id="801">801</th><td>	<b>if</b> (hdr_offset &gt; (buffer_size - SIGNED_IMAGE_CHUNK_HDR_LEN)) {</td></tr>
+<tr><th id="802">802</th><td>		rc = ENOSPC;</td></tr>
+<tr><th id="803">803</th><td>		<b>goto</b> fail14;</td></tr>
+<tr><th id="804">804</th><td>	}</td></tr>
+<tr><th id="805">805</th><td></td></tr>
+<tr><th id="806">806</th><td>	memcpy(bufferp + hdr_offset, &amp;chunk_hdr, SIGNED_IMAGE_CHUNK_HDR_LEN);</td></tr>
+<tr><th id="807">807</th><td></td></tr>
+<tr><th id="808">808</th><td>	<b>if</b> ((chunk_hdr.len &gt; buffer_size) ||</td></tr>
+<tr><th id="809">809</th><td>	    (chunk_hdr.offset &gt; (buffer_size - chunk_hdr.len))) {</td></tr>
+<tr><th id="810">810</th><td>		rc = ENOSPC;</td></tr>
+<tr><th id="811">811</th><td>		<b>goto</b> fail15;</td></tr>
+<tr><th id="812">812</th><td>	}</td></tr>
+<tr><th id="813">813</th><td>	memcpy((uint8_t *)bufferp + chunk_hdr.offset,</td></tr>
+<tr><th id="814">814</th><td>	    infop-&gt;eii_imagep + image_trailer.offset,</td></tr>
+<tr><th id="815">815</th><td>	    image_trailer.size);</td></tr>
+<tr><th id="816">816</th><td></td></tr>
+<tr><th id="817">817</th><td>	<i>/*</i></td></tr>
+<tr><th id="818">818</th><td><i>	 * Signature</i></td></tr>
+<tr><th id="819">819</th><td><i>	 */</i></td></tr>
+<tr><th id="820">820</th><td>	hdr_offset = chunk_hdr.offset + chunk_hdr.len;</td></tr>
+<tr><th id="821">821</th><td>	<b>if</b> (hdr_offset &gt; (buffer_size - SIGNED_IMAGE_CHUNK_HDR_LEN)) {</td></tr>
+<tr><th id="822">822</th><td>		rc = ENOSPC;</td></tr>
+<tr><th id="823">823</th><td>		<b>goto</b> fail16;</td></tr>
+<tr><th id="824">824</th><td>	}</td></tr>
+<tr><th id="825">825</th><td>	chunk_hdr.magic		= SIGNED_IMAGE_CHUNK_HDR_MAGIC;</td></tr>
+<tr><th id="826">826</th><td>	chunk_hdr.version	= SIGNED_IMAGE_CHUNK_HDR_VERSION;</td></tr>
+<tr><th id="827">827</th><td>	chunk_hdr.id		= SIGNED_IMAGE_CHUNK_SIGNATURE;</td></tr>
+<tr><th id="828">828</th><td>	chunk_hdr.offset	= chunk_hdr.offset + SIGNED_IMAGE_CHUNK_HDR_LEN;</td></tr>
+<tr><th id="829">829</th><td>	chunk_hdr.len		= signature.size;</td></tr>
+<tr><th id="830">830</th><td></td></tr>
+<tr><th id="831">831</th><td>	memcpy(bufferp + hdr_offset, &amp;chunk_hdr, SIGNED_IMAGE_CHUNK_HDR_LEN);</td></tr>
+<tr><th id="832">832</th><td></td></tr>
+<tr><th id="833">833</th><td>	<b>if</b> ((chunk_hdr.len &gt; buffer_size) ||</td></tr>
+<tr><th id="834">834</th><td>	    (chunk_hdr.offset &gt; (buffer_size - chunk_hdr.len))) {</td></tr>
+<tr><th id="835">835</th><td>		rc = ENOSPC;</td></tr>
+<tr><th id="836">836</th><td>		<b>goto</b> fail17;</td></tr>
+<tr><th id="837">837</th><td>	}</td></tr>
+<tr><th id="838">838</th><td>	memcpy(bufferp + chunk_hdr.offset,</td></tr>
+<tr><th id="839">839</th><td>	    infop-&gt;eii_imagep + signature.offset,</td></tr>
+<tr><th id="840">840</th><td>	    signature.size);</td></tr>
+<tr><th id="841">841</th><td></td></tr>
+<tr><th id="842">842</th><td>	<b>return</b> (<var>0</var>);</td></tr>
+<tr><th id="843">843</th><td></td></tr>
+<tr><th id="844">844</th><td>fail17:</td></tr>
+<tr><th id="845">845</th><td>	EFSYS_PROBE(fail17);</td></tr>
+<tr><th id="846">846</th><td>fail16:</td></tr>
+<tr><th id="847">847</th><td>	EFSYS_PROBE(fail16);</td></tr>
+<tr><th id="848">848</th><td>fail15:</td></tr>
+<tr><th id="849">849</th><td>	EFSYS_PROBE(fail15);</td></tr>
+<tr><th id="850">850</th><td>fail14:</td></tr>
+<tr><th id="851">851</th><td>	EFSYS_PROBE(fail14);</td></tr>
+<tr><th id="852">852</th><td>fail13:</td></tr>
+<tr><th id="853">853</th><td>	EFSYS_PROBE(fail13);</td></tr>
+<tr><th id="854">854</th><td>fail12:</td></tr>
+<tr><th id="855">855</th><td>	EFSYS_PROBE(fail12);</td></tr>
+<tr><th id="856">856</th><td>fail11:</td></tr>
+<tr><th id="857">857</th><td>	EFSYS_PROBE(fail11);</td></tr>
+<tr><th id="858">858</th><td>fail10:</td></tr>
+<tr><th id="859">859</th><td>	EFSYS_PROBE(fail10);</td></tr>
+<tr><th id="860">860</th><td>fail9:</td></tr>
+<tr><th id="861">861</th><td>	EFSYS_PROBE(fail9);</td></tr>
+<tr><th id="862">862</th><td>fail8:</td></tr>
+<tr><th id="863">863</th><td>	EFSYS_PROBE(fail8);</td></tr>
+<tr><th id="864">864</th><td>fail7:</td></tr>
+<tr><th id="865">865</th><td>	EFSYS_PROBE(fail7);</td></tr>
+<tr><th id="866">866</th><td>fail6:</td></tr>
+<tr><th id="867">867</th><td>	EFSYS_PROBE(fail6);</td></tr>
+<tr><th id="868">868</th><td>fail5:</td></tr>
+<tr><th id="869">869</th><td>	EFSYS_PROBE(fail5);</td></tr>
+<tr><th id="870">870</th><td>fail4:</td></tr>
+<tr><th id="871">871</th><td>	EFSYS_PROBE(fail4);</td></tr>
+<tr><th id="872">872</th><td>fail3:</td></tr>
+<tr><th id="873">873</th><td>	EFSYS_PROBE(fail3);</td></tr>
+<tr><th id="874">874</th><td>fail2:</td></tr>
+<tr><th id="875">875</th><td>	EFSYS_PROBE(fail2);</td></tr>
+<tr><th id="876">876</th><td>fail1:</td></tr>
+<tr><th id="877">877</th><td>	EFSYS_PROBE1(fail1, efx_rc_t, rc);</td></tr>
+<tr><th id="878">878</th><td></td></tr>
+<tr><th id="879">879</th><td>	<b>return</b> (rc);</td></tr>
+<tr><th id="880">880</th><td>}</td></tr>
+<tr><th id="881">881</th><td></td></tr>
+<tr><th id="882">882</th><td></td></tr>
+<tr><th id="883">883</th><td></td></tr>
+<tr><th id="884">884</th><td><u>#<span data-ppcond="12">endif</span>	/* EFSYS_OPT_IMAGE_LAYOUT */</u></td></tr>
+<tr><th id="885">885</th><td></td></tr>
+<tr><th id="886">886</th><td><u>#<span data-ppcond="10">endif</span>	/* EFSYS_OPT_MEDFORD || EFSYS_OPT_MEDFORD2 */</u></td></tr>
+<tr><th id="887">887</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

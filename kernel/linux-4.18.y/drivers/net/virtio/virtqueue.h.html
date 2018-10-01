@@ -1,0 +1,390 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>virtqueue.h source code [linux-4.18.y/drivers/net/virtio/virtqueue.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="virtio_net_ctrl_hdr,virtio_net_ctrl_mac,virtio_net_hdr,virtio_net_hdr_mrg_rxbuf,virtio_pmd_ctrl,virtio_tx_region,virtqueue,vq_desc_extra "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'linux-4.18.y/drivers/net/virtio/virtqueue.h'; var root_path = '../../../..'; var data_path = '../../../../../data';</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>linux-4.18.y</a>/<a href='../..'>drivers</a>/<a href='..'>net</a>/<a href='./'>virtio</a>/<a href='virtqueue.h.html'>virtqueue.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* SPDX-License-Identifier: BSD-3-Clause</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright(c) 2010-2014 Intel Corporation</i></td></tr>
+<tr><th id="3">3</th><td><i> */</i></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><u>#<span data-ppcond="5">ifndef</span> <span class="macro" data-ref="_M/_VIRTQUEUE_H_">_VIRTQUEUE_H_</span></u></td></tr>
+<tr><th id="6">6</th><td><u>#define <dfn class="macro" id="_M/_VIRTQUEUE_H_" data-ref="_M/_VIRTQUEUE_H_">_VIRTQUEUE_H_</dfn></u></td></tr>
+<tr><th id="7">7</th><td></td></tr>
+<tr><th id="8">8</th><td><u>#include &lt;stdint.h&gt;</u></td></tr>
+<tr><th id="9">9</th><td></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../../lib/librte_eal/common/include/arch/x86/rte_atomic.h.html">&lt;rte_atomic.h&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../../lib/librte_eal/common/include/rte_memory.h.html">&lt;rte_memory.h&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../lib/librte_mempool/rte_mempool.h.html">&lt;rte_mempool.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="virtio_pci.h.html">"virtio_pci.h"</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="virtio_ring.h.html">"virtio_ring.h"</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="virtio_logs.h.html">"virtio_logs.h"</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="virtio_rxtx.h.html">"virtio_rxtx.h"</a></u></td></tr>
+<tr><th id="18">18</th><td></td></tr>
+<tr><th id="19">19</th><td><b>struct</b> <a class="type" href="../../../lib/librte_mbuf/rte_mbuf.h.html#rte_mbuf" title='rte_mbuf' data-ref="rte_mbuf" id="rte_mbuf">rte_mbuf</a>;</td></tr>
+<tr><th id="20">20</th><td></td></tr>
+<tr><th id="21">21</th><td><i>/*</i></td></tr>
+<tr><th id="22">22</th><td><i> * Per virtio_config.h in Linux.</i></td></tr>
+<tr><th id="23">23</th><td><i> *     For virtio_pci on SMP, we don't need to order with respect to MMIO</i></td></tr>
+<tr><th id="24">24</th><td><i> *     accesses through relaxed memory I/O windows, so smp_mb() et al are</i></td></tr>
+<tr><th id="25">25</th><td><i> *     sufficient.</i></td></tr>
+<tr><th id="26">26</th><td><i> *</i></td></tr>
+<tr><th id="27">27</th><td><i> */</i></td></tr>
+<tr><th id="28">28</th><td><u>#define <dfn class="macro" id="_M/virtio_mb" data-ref="_M/virtio_mb">virtio_mb</dfn>()	rte_smp_mb()</u></td></tr>
+<tr><th id="29">29</th><td><u>#define <dfn class="macro" id="_M/virtio_rmb" data-ref="_M/virtio_rmb">virtio_rmb</dfn>()	rte_smp_rmb()</u></td></tr>
+<tr><th id="30">30</th><td><u>#define <dfn class="macro" id="_M/virtio_wmb" data-ref="_M/virtio_wmb">virtio_wmb</dfn>()	rte_smp_wmb()</u></td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><u>#<span data-ppcond="32">ifdef</span> <a class="macro" href="../../../build/include/rte_config.h.html#275" data-ref="_M/RTE_PMD_PACKET_PREFETCH">RTE_PMD_PACKET_PREFETCH</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#define <dfn class="macro" id="_M/rte_packet_prefetch" data-ref="_M/rte_packet_prefetch">rte_packet_prefetch</dfn>(p)  rte_prefetch1(p)</u></td></tr>
+<tr><th id="34">34</th><td><u>#<span data-ppcond="32">else</span></u></td></tr>
+<tr><th id="35">35</th><td><u>#define rte_packet_prefetch(p)  do {} while(0)</u></td></tr>
+<tr><th id="36">36</th><td><u>#<span data-ppcond="32">endif</span></u></td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><u>#define <dfn class="macro" id="_M/VIRTQUEUE_MAX_NAME_SZ" data-ref="_M/VIRTQUEUE_MAX_NAME_SZ">VIRTQUEUE_MAX_NAME_SZ</dfn> 32</u></td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><u>#<span data-ppcond="40">ifdef</span> <a class="macro" href="../../../build/include/rte_config.h.html#237" data-ref="_M/RTE_VIRTIO_USER">RTE_VIRTIO_USER</a></u></td></tr>
+<tr><th id="41">41</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc"> * Return the physical address (or virtual address in case of</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc"> * virtio-user) of mbuf data buffer.</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc"> * The address is firstly casted to the word size (sizeof(uintptr_t))</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc"> * before casting it to uint64_t. This is to make it work with different</i></td></tr>
+<tr><th id="47">47</th><td><i class="doc"> * combination of word size (64 bit and 32 bit) and virtio device</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc"> * (virtio-pci and virtio-user).</i></td></tr>
+<tr><th id="49">49</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="50">50</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_MBUF_ADDR" data-ref="_M/VIRTIO_MBUF_ADDR">VIRTIO_MBUF_ADDR</dfn>(mb, vq) \</u></td></tr>
+<tr><th id="51">51</th><td><u>	((uint64_t)(*(uintptr_t *)((uintptr_t)(mb) + (vq)-&gt;offset)))</u></td></tr>
+<tr><th id="52">52</th><td><u>#<span data-ppcond="40">else</span></u></td></tr>
+<tr><th id="53">53</th><td><u>#define VIRTIO_MBUF_ADDR(mb, vq) ((mb)-&gt;buf_iova)</u></td></tr>
+<tr><th id="54">54</th><td><u>#<span data-ppcond="40">endif</span></u></td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc"> * Return the physical address (or virtual address in case of</i></td></tr>
+<tr><th id="58">58</th><td><i class="doc"> * virtio-user) of mbuf data buffer, taking care of mbuf data offset</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="60">60</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_MBUF_DATA_DMA_ADDR" data-ref="_M/VIRTIO_MBUF_DATA_DMA_ADDR">VIRTIO_MBUF_DATA_DMA_ADDR</dfn>(mb, vq) \</u></td></tr>
+<tr><th id="61">61</th><td><u>	(VIRTIO_MBUF_ADDR(mb, vq) + (mb)-&gt;data_off)</u></td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td><u>#define <dfn class="macro" id="_M/VTNET_SQ_RQ_QUEUE_IDX" data-ref="_M/VTNET_SQ_RQ_QUEUE_IDX">VTNET_SQ_RQ_QUEUE_IDX</dfn> 0</u></td></tr>
+<tr><th id="64">64</th><td><u>#define <dfn class="macro" id="_M/VTNET_SQ_TQ_QUEUE_IDX" data-ref="_M/VTNET_SQ_TQ_QUEUE_IDX">VTNET_SQ_TQ_QUEUE_IDX</dfn> 1</u></td></tr>
+<tr><th id="65">65</th><td><u>#define <dfn class="macro" id="_M/VTNET_SQ_CQ_QUEUE_IDX" data-ref="_M/VTNET_SQ_CQ_QUEUE_IDX">VTNET_SQ_CQ_QUEUE_IDX</dfn> 2</u></td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td><b>enum</b> { <dfn class="enum" id="VTNET_RQ" title='VTNET_RQ' data-ref="VTNET_RQ">VTNET_RQ</dfn> = <var>0</var>, <dfn class="enum" id="VTNET_TQ" title='VTNET_TQ' data-ref="VTNET_TQ">VTNET_TQ</dfn> = <var>1</var>, <dfn class="enum" id="VTNET_CQ" title='VTNET_CQ' data-ref="VTNET_CQ">VTNET_CQ</dfn> = <var>2</var> };</td></tr>
+<tr><th id="68">68</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="69">69</th><td><i class="doc"> * The maximum virtqueue size is 2^15. Use that value as the end of</i></td></tr>
+<tr><th id="70">70</th><td><i class="doc"> * descriptor chain terminator since it will never be a valid index</i></td></tr>
+<tr><th id="71">71</th><td><i class="doc"> * in the descriptor table. This is used to verify we are correctly</i></td></tr>
+<tr><th id="72">72</th><td><i class="doc"> * handling vq_free_cnt.</i></td></tr>
+<tr><th id="73">73</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="74">74</th><td><u>#define <dfn class="macro" id="_M/VQ_RING_DESC_CHAIN_END" data-ref="_M/VQ_RING_DESC_CHAIN_END">VQ_RING_DESC_CHAIN_END</dfn> 32768</u></td></tr>
+<tr><th id="75">75</th><td></td></tr>
+<tr><th id="76">76</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="77">77</th><td><i class="doc"> * Control the RX mode, ie. promiscuous, allmulti, etc...</i></td></tr>
+<tr><th id="78">78</th><td><i class="doc"> * All commands require an "out" sg entry containing a 1 byte</i></td></tr>
+<tr><th id="79">79</th><td><i class="doc"> * state value, zero = disable, non-zero = enable.  Commands</i></td></tr>
+<tr><th id="80">80</th><td><i class="doc"> * 0 and 1 are supported with the VIRTIO_NET_F_CTRL_RX feature.</i></td></tr>
+<tr><th id="81">81</th><td><i class="doc"> * Commands 2-5 are added with VIRTIO_NET_F_CTRL_RX_EXTRA.</i></td></tr>
+<tr><th id="82">82</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="83">83</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_RX" data-ref="_M/VIRTIO_NET_CTRL_RX">VIRTIO_NET_CTRL_RX</dfn>              0</u></td></tr>
+<tr><th id="84">84</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_RX_PROMISC" data-ref="_M/VIRTIO_NET_CTRL_RX_PROMISC">VIRTIO_NET_CTRL_RX_PROMISC</dfn>      0</u></td></tr>
+<tr><th id="85">85</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_RX_ALLMULTI" data-ref="_M/VIRTIO_NET_CTRL_RX_ALLMULTI">VIRTIO_NET_CTRL_RX_ALLMULTI</dfn>     1</u></td></tr>
+<tr><th id="86">86</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_RX_ALLUNI" data-ref="_M/VIRTIO_NET_CTRL_RX_ALLUNI">VIRTIO_NET_CTRL_RX_ALLUNI</dfn>       2</u></td></tr>
+<tr><th id="87">87</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_RX_NOMULTI" data-ref="_M/VIRTIO_NET_CTRL_RX_NOMULTI">VIRTIO_NET_CTRL_RX_NOMULTI</dfn>      3</u></td></tr>
+<tr><th id="88">88</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_RX_NOUNI" data-ref="_M/VIRTIO_NET_CTRL_RX_NOUNI">VIRTIO_NET_CTRL_RX_NOUNI</dfn>        4</u></td></tr>
+<tr><th id="89">89</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_RX_NOBCAST" data-ref="_M/VIRTIO_NET_CTRL_RX_NOBCAST">VIRTIO_NET_CTRL_RX_NOBCAST</dfn>      5</u></td></tr>
+<tr><th id="90">90</th><td></td></tr>
+<tr><th id="91">91</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="92">92</th><td><i class="doc"> * Control the MAC</i></td></tr>
+<tr><th id="93">93</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="94">94</th><td><i class="doc"> * The MAC filter table is managed by the hypervisor, the guest should</i></td></tr>
+<tr><th id="95">95</th><td><i class="doc"> * assume the size is infinite.  Filtering should be considered</i></td></tr>
+<tr><th id="96">96</th><td><i class="doc"> * non-perfect, ie. based on hypervisor resources, the guest may</i></td></tr>
+<tr><th id="97">97</th><td><i class="doc"> * received packets from sources not specified in the filter list.</i></td></tr>
+<tr><th id="98">98</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="99">99</th><td><i class="doc"> * In addition to the class/cmd header, the TABLE_SET command requires</i></td></tr>
+<tr><th id="100">100</th><td><i class="doc"> * two out scatterlists.  Each contains a 4 byte count of entries followed</i></td></tr>
+<tr><th id="101">101</th><td><i class="doc"> * by a concatenated byte stream of the ETH_ALEN MAC addresses.  The</i></td></tr>
+<tr><th id="102">102</th><td><i class="doc"> * first sg list contains unicast addresses, the second is for multicast.</i></td></tr>
+<tr><th id="103">103</th><td><i class="doc"> * This functionality is present if the VIRTIO_NET_F_CTRL_RX feature</i></td></tr>
+<tr><th id="104">104</th><td><i class="doc"> * is available.</i></td></tr>
+<tr><th id="105">105</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="106">106</th><td><i class="doc"> * The ADDR_SET command requests one out scatterlist, it contains a</i></td></tr>
+<tr><th id="107">107</th><td><i class="doc"> * 6 bytes MAC address. This functionality is present if the</i></td></tr>
+<tr><th id="108">108</th><td><i class="doc"> * VIRTIO_NET_F_CTRL_MAC_ADDR feature is available.</i></td></tr>
+<tr><th id="109">109</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="110">110</th><td><b>struct</b> <dfn class="type def" id="virtio_net_ctrl_mac" title='virtio_net_ctrl_mac' data-ref="virtio_net_ctrl_mac">virtio_net_ctrl_mac</dfn> {</td></tr>
+<tr><th id="111">111</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint32_t" title='uint32_t' data-type='unsigned int' data-ref="uint32_t">uint32_t</a> <dfn class="decl field" id="virtio_net_ctrl_mac::entries" title='virtio_net_ctrl_mac::entries' data-ref="virtio_net_ctrl_mac::entries">entries</dfn>;</td></tr>
+<tr><th id="112">112</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="virtio_net_ctrl_mac::macs" title='virtio_net_ctrl_mac::macs' data-ref="virtio_net_ctrl_mac::macs">macs</dfn>[][<a class="macro" href="../../../lib/librte_net/rte_ether.h.html#26" title="6" data-ref="_M/ETHER_ADDR_LEN">ETHER_ADDR_LEN</a>];</td></tr>
+<tr><th id="113">113</th><td>} <b>__attribute__</b>((__packed__));</td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_MAC" data-ref="_M/VIRTIO_NET_CTRL_MAC">VIRTIO_NET_CTRL_MAC</dfn>    1</u></td></tr>
+<tr><th id="116">116</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_MAC_TABLE_SET" data-ref="_M/VIRTIO_NET_CTRL_MAC_TABLE_SET">VIRTIO_NET_CTRL_MAC_TABLE_SET</dfn>        0</u></td></tr>
+<tr><th id="117">117</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_MAC_ADDR_SET" data-ref="_M/VIRTIO_NET_CTRL_MAC_ADDR_SET">VIRTIO_NET_CTRL_MAC_ADDR_SET</dfn>         1</u></td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="120">120</th><td><i class="doc"> * Control VLAN filtering</i></td></tr>
+<tr><th id="121">121</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="122">122</th><td><i class="doc"> * The VLAN filter table is controlled via a simple ADD/DEL interface.</i></td></tr>
+<tr><th id="123">123</th><td><i class="doc"> * VLAN IDs not added may be filtered by the hypervisor.  Del is the</i></td></tr>
+<tr><th id="124">124</th><td><i class="doc"> * opposite of add.  Both commands expect an out entry containing a 2</i></td></tr>
+<tr><th id="125">125</th><td><i class="doc"> * byte VLAN ID.  VLAN filtering is available with the</i></td></tr>
+<tr><th id="126">126</th><td><i class="doc"> * VIRTIO_NET_F_CTRL_VLAN feature bit.</i></td></tr>
+<tr><th id="127">127</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="128">128</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_VLAN" data-ref="_M/VIRTIO_NET_CTRL_VLAN">VIRTIO_NET_CTRL_VLAN</dfn>     2</u></td></tr>
+<tr><th id="129">129</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_VLAN_ADD" data-ref="_M/VIRTIO_NET_CTRL_VLAN_ADD">VIRTIO_NET_CTRL_VLAN_ADD</dfn> 0</u></td></tr>
+<tr><th id="130">130</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_VLAN_DEL" data-ref="_M/VIRTIO_NET_CTRL_VLAN_DEL">VIRTIO_NET_CTRL_VLAN_DEL</dfn> 1</u></td></tr>
+<tr><th id="131">131</th><td></td></tr>
+<tr><th id="132">132</th><td><i>/*</i></td></tr>
+<tr><th id="133">133</th><td><i> * Control link announce acknowledgement</i></td></tr>
+<tr><th id="134">134</th><td><i> *</i></td></tr>
+<tr><th id="135">135</th><td><i> * The command VIRTIO_NET_CTRL_ANNOUNCE_ACK is used to indicate that</i></td></tr>
+<tr><th id="136">136</th><td><i> * driver has recevied the notification; device would clear the</i></td></tr>
+<tr><th id="137">137</th><td><i> * VIRTIO_NET_S_ANNOUNCE bit in the status field after it receives</i></td></tr>
+<tr><th id="138">138</th><td><i> * this command.</i></td></tr>
+<tr><th id="139">139</th><td><i> */</i></td></tr>
+<tr><th id="140">140</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_ANNOUNCE" data-ref="_M/VIRTIO_NET_CTRL_ANNOUNCE">VIRTIO_NET_CTRL_ANNOUNCE</dfn>     3</u></td></tr>
+<tr><th id="141">141</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_ANNOUNCE_ACK" data-ref="_M/VIRTIO_NET_CTRL_ANNOUNCE_ACK">VIRTIO_NET_CTRL_ANNOUNCE_ACK</dfn> 0</u></td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td><b>struct</b> <dfn class="type def" id="virtio_net_ctrl_hdr" title='virtio_net_ctrl_hdr' data-ref="virtio_net_ctrl_hdr">virtio_net_ctrl_hdr</dfn> {</td></tr>
+<tr><th id="144">144</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="virtio_net_ctrl_hdr::class" title='virtio_net_ctrl_hdr::class' data-ref="virtio_net_ctrl_hdr::class">class</dfn>;</td></tr>
+<tr><th id="145">145</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="virtio_net_ctrl_hdr::cmd" title='virtio_net_ctrl_hdr::cmd' data-ref="virtio_net_ctrl_hdr::cmd">cmd</dfn>;</td></tr>
+<tr><th id="146">146</th><td>} <b>__attribute__</b>((packed));</td></tr>
+<tr><th id="147">147</th><td></td></tr>
+<tr><th id="148">148</th><td><b>typedef</b> <a class="typedef" href="../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="typedef" id="virtio_net_ctrl_ack" title='virtio_net_ctrl_ack' data-type='uint8_t' data-ref="virtio_net_ctrl_ack">virtio_net_ctrl_ack</dfn>;</td></tr>
+<tr><th id="149">149</th><td></td></tr>
+<tr><th id="150">150</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_OK" data-ref="_M/VIRTIO_NET_OK">VIRTIO_NET_OK</dfn>     0</u></td></tr>
+<tr><th id="151">151</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_ERR" data-ref="_M/VIRTIO_NET_ERR">VIRTIO_NET_ERR</dfn>    1</u></td></tr>
+<tr><th id="152">152</th><td></td></tr>
+<tr><th id="153">153</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_MAX_CTRL_DATA" data-ref="_M/VIRTIO_MAX_CTRL_DATA">VIRTIO_MAX_CTRL_DATA</dfn> 2048</u></td></tr>
+<tr><th id="154">154</th><td></td></tr>
+<tr><th id="155">155</th><td><b>struct</b> <dfn class="type def" id="virtio_pmd_ctrl" title='virtio_pmd_ctrl' data-ref="virtio_pmd_ctrl">virtio_pmd_ctrl</dfn> {</td></tr>
+<tr><th id="156">156</th><td>	<b>struct</b> <a class="type" href="#virtio_net_ctrl_hdr" title='virtio_net_ctrl_hdr' data-ref="virtio_net_ctrl_hdr">virtio_net_ctrl_hdr</a> <dfn class="decl field" id="virtio_pmd_ctrl::hdr" title='virtio_pmd_ctrl::hdr' data-ref="virtio_pmd_ctrl::hdr">hdr</dfn>;</td></tr>
+<tr><th id="157">157</th><td>	<a class="typedef" href="#virtio_net_ctrl_ack" title='virtio_net_ctrl_ack' data-type='uint8_t' data-ref="virtio_net_ctrl_ack">virtio_net_ctrl_ack</a> <dfn class="decl field" id="virtio_pmd_ctrl::status" title='virtio_pmd_ctrl::status' data-ref="virtio_pmd_ctrl::status">status</dfn>;</td></tr>
+<tr><th id="158">158</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="virtio_pmd_ctrl::data" title='virtio_pmd_ctrl::data' data-ref="virtio_pmd_ctrl::data">data</dfn>[<a class="macro" href="#153" title="2048" data-ref="_M/VIRTIO_MAX_CTRL_DATA">VIRTIO_MAX_CTRL_DATA</a>];</td></tr>
+<tr><th id="159">159</th><td>};</td></tr>
+<tr><th id="160">160</th><td></td></tr>
+<tr><th id="161">161</th><td><b>struct</b> <dfn class="type def" id="vq_desc_extra" title='vq_desc_extra' data-ref="vq_desc_extra">vq_desc_extra</dfn> {</td></tr>
+<tr><th id="162">162</th><td>	<em>void</em> *<dfn class="decl field" id="vq_desc_extra::cookie" title='vq_desc_extra::cookie' data-ref="vq_desc_extra::cookie">cookie</dfn>;</td></tr>
+<tr><th id="163">163</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="vq_desc_extra::ndescs" title='vq_desc_extra::ndescs' data-ref="vq_desc_extra::ndescs">ndescs</dfn>;</td></tr>
+<tr><th id="164">164</th><td>};</td></tr>
+<tr><th id="165">165</th><td></td></tr>
+<tr><th id="166">166</th><td><b>struct</b> <dfn class="type def" id="virtqueue" title='virtqueue' data-ref="virtqueue">virtqueue</dfn> {</td></tr>
+<tr><th id="167">167</th><td>	<b>struct</b> <a class="type" href="virtio_pci.h.html#virtio_hw" title='virtio_hw' data-ref="virtio_hw">virtio_hw</a>  *<dfn class="decl field" id="virtqueue::hw" title='virtqueue::hw' data-ref="virtqueue::hw">hw</dfn>; <i class="doc">/**&lt; virtio_hw structure pointer. */</i></td></tr>
+<tr><th id="168">168</th><td>	<b>struct</b> <a class="type" href="virtio_ring.h.html#vring" title='vring' data-ref="vring">vring</a> <dfn class="decl field" id="virtqueue::vq_ring" title='virtqueue::vq_ring' data-ref="virtqueue::vq_ring">vq_ring</dfn>;  <i class="doc">/**&lt; vring keeping desc, used and avail */</i></td></tr>
+<tr><th id="169">169</th><td>	<i class="doc">/**</i></td></tr>
+<tr><th id="170">170</th><td><i class="doc">	 * Last consumed descriptor in the used table,</i></td></tr>
+<tr><th id="171">171</th><td><i class="doc">	 * trails vq_ring.used-&gt;idx.</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="173">173</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="virtqueue::vq_used_cons_idx" title='virtqueue::vq_used_cons_idx' data-ref="virtqueue::vq_used_cons_idx">vq_used_cons_idx</dfn>;</td></tr>
+<tr><th id="174">174</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="virtqueue::vq_nentries" title='virtqueue::vq_nentries' data-ref="virtqueue::vq_nentries">vq_nentries</dfn>;  <i class="doc">/**&lt; vring desc numbers */</i></td></tr>
+<tr><th id="175">175</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="virtqueue::vq_free_cnt" title='virtqueue::vq_free_cnt' data-ref="virtqueue::vq_free_cnt">vq_free_cnt</dfn>;  <i class="doc">/**&lt; num of desc available */</i></td></tr>
+<tr><th id="176">176</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="virtqueue::vq_avail_idx" title='virtqueue::vq_avail_idx' data-ref="virtqueue::vq_avail_idx">vq_avail_idx</dfn>; <i class="doc">/**&lt; sync until needed */</i></td></tr>
+<tr><th id="177">177</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="virtqueue::vq_free_thresh" title='virtqueue::vq_free_thresh' data-ref="virtqueue::vq_free_thresh">vq_free_thresh</dfn>; <i class="doc">/**&lt; free threshold */</i></td></tr>
+<tr><th id="178">178</th><td></td></tr>
+<tr><th id="179">179</th><td>	<em>void</em> *<dfn class="decl field" id="virtqueue::vq_ring_virt_mem" title='virtqueue::vq_ring_virt_mem' data-ref="virtqueue::vq_ring_virt_mem">vq_ring_virt_mem</dfn>;  <i class="doc">/**&lt; linear address of vring*/</i></td></tr>
+<tr><th id="180">180</th><td>	<em>unsigned</em> <em>int</em> <dfn class="decl field" id="virtqueue::vq_ring_size" title='virtqueue::vq_ring_size' data-ref="virtqueue::vq_ring_size">vq_ring_size</dfn>;</td></tr>
+<tr><th id="181">181</th><td></td></tr>
+<tr><th id="182">182</th><td>	<b>union</b> {</td></tr>
+<tr><th id="183">183</th><td>		<b>struct</b> <a class="type" href="virtio_rxtx.h.html#virtnet_rx" title='virtnet_rx' data-ref="virtnet_rx">virtnet_rx</a> <dfn class="decl field" id="virtqueue::(anonymous)::rxq" title='virtqueue::(anonymous union)::rxq' data-ref="virtqueue::(anonymous)::rxq">rxq</dfn>;</td></tr>
+<tr><th id="184">184</th><td>		<b>struct</b> <a class="type" href="virtio_rxtx.h.html#virtnet_tx" title='virtnet_tx' data-ref="virtnet_tx">virtnet_tx</a> <dfn class="decl field" id="virtqueue::(anonymous)::txq" title='virtqueue::(anonymous union)::txq' data-ref="virtqueue::(anonymous)::txq">txq</dfn>;</td></tr>
+<tr><th id="185">185</th><td>		<b>struct</b> <a class="type" href="virtio_rxtx.h.html#virtnet_ctl" title='virtnet_ctl' data-ref="virtnet_ctl">virtnet_ctl</a> <dfn class="decl field" id="virtqueue::(anonymous)::cq" title='virtqueue::(anonymous union)::cq' data-ref="virtqueue::(anonymous)::cq">cq</dfn>;</td></tr>
+<tr><th id="186">186</th><td>	};</td></tr>
+<tr><th id="187">187</th><td></td></tr>
+<tr><th id="188">188</th><td>	<a class="typedef" href="../../../lib/librte_eal/common/include/rte_memory.h.html#rte_iova_t" title='rte_iova_t' data-type='uint64_t' data-ref="rte_iova_t">rte_iova_t</a> <dfn class="decl field" id="virtqueue::vq_ring_mem" title='virtqueue::vq_ring_mem' data-ref="virtqueue::vq_ring_mem">vq_ring_mem</dfn>; <i class="doc">/**&lt; physical address of vring,</i></td></tr>
+<tr><th id="189">189</th><td><i class="doc">	                         * or virtual address for virtio_user. */</i></td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td>	<i class="doc">/**</i></td></tr>
+<tr><th id="192">192</th><td><i class="doc">	 * Head of the free chain in the descriptor table. If</i></td></tr>
+<tr><th id="193">193</th><td><i class="doc">	 * there are no free descriptors, this will be set to</i></td></tr>
+<tr><th id="194">194</th><td><i class="doc">	 * VQ_RING_DESC_CHAIN_END.</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc">	 */</i></td></tr>
+<tr><th id="196">196</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a>  <dfn class="decl field" id="virtqueue::vq_desc_head_idx" title='virtqueue::vq_desc_head_idx' data-ref="virtqueue::vq_desc_head_idx">vq_desc_head_idx</dfn>;</td></tr>
+<tr><th id="197">197</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a>  <dfn class="decl field" id="virtqueue::vq_desc_tail_idx" title='virtqueue::vq_desc_tail_idx' data-ref="virtqueue::vq_desc_tail_idx">vq_desc_tail_idx</dfn>;</td></tr>
+<tr><th id="198">198</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a>  <dfn class="decl field" id="virtqueue::vq_queue_index" title='virtqueue::vq_queue_index' data-ref="virtqueue::vq_queue_index">vq_queue_index</dfn>;   <i class="doc">/**&lt; PCI queue index */</i></td></tr>
+<tr><th id="199">199</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="virtqueue::offset" title='virtqueue::offset' data-ref="virtqueue::offset">offset</dfn>; <i class="doc">/**&lt; relative offset to obtain addr in mbuf */</i></td></tr>
+<tr><th id="200">200</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a>  *<dfn class="decl field" id="virtqueue::notify_addr" title='virtqueue::notify_addr' data-ref="virtqueue::notify_addr">notify_addr</dfn>;</td></tr>
+<tr><th id="201">201</th><td>	<b>struct</b> <a class="type" href="../../../lib/librte_mbuf/rte_mbuf.h.html#rte_mbuf" title='rte_mbuf' data-ref="rte_mbuf">rte_mbuf</a> **<dfn class="decl field" id="virtqueue::sw_ring" title='virtqueue::sw_ring' data-ref="virtqueue::sw_ring">sw_ring</dfn>;  <i class="doc">/**&lt; RX software ring. */</i></td></tr>
+<tr><th id="202">202</th><td>	<b>struct</b> <a class="type" href="#vq_desc_extra" title='vq_desc_extra' data-ref="vq_desc_extra">vq_desc_extra</a> <dfn class="decl field" id="virtqueue::vq_descx" title='virtqueue::vq_descx' data-ref="virtqueue::vq_descx">vq_descx</dfn>[<var>0</var>];</td></tr>
+<tr><th id="203">203</th><td>};</td></tr>
+<tr><th id="204">204</th><td></td></tr>
+<tr><th id="205">205</th><td><i>/* If multiqueue is provided by host, then we suppport it. */</i></td></tr>
+<tr><th id="206">206</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_MQ" data-ref="_M/VIRTIO_NET_CTRL_MQ">VIRTIO_NET_CTRL_MQ</dfn>   4</u></td></tr>
+<tr><th id="207">207</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_MQ_VQ_PAIRS_SET" data-ref="_M/VIRTIO_NET_CTRL_MQ_VQ_PAIRS_SET">VIRTIO_NET_CTRL_MQ_VQ_PAIRS_SET</dfn>        0</u></td></tr>
+<tr><th id="208">208</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_MQ_VQ_PAIRS_MIN" data-ref="_M/VIRTIO_NET_CTRL_MQ_VQ_PAIRS_MIN">VIRTIO_NET_CTRL_MQ_VQ_PAIRS_MIN</dfn>        1</u></td></tr>
+<tr><th id="209">209</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_CTRL_MQ_VQ_PAIRS_MAX" data-ref="_M/VIRTIO_NET_CTRL_MQ_VQ_PAIRS_MAX">VIRTIO_NET_CTRL_MQ_VQ_PAIRS_MAX</dfn>        0x8000</u></td></tr>
+<tr><th id="210">210</th><td></td></tr>
+<tr><th id="211">211</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="212">212</th><td><i class="doc"> * This is the first element of the scatter-gather list.  If you don't</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc"> * specify GSO or CSUM features, you can simply ignore the header.</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="215">215</th><td><b>struct</b> <dfn class="type def" id="virtio_net_hdr" title='virtio_net_hdr' data-ref="virtio_net_hdr">virtio_net_hdr</dfn> {</td></tr>
+<tr><th id="216">216</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_HDR_F_NEEDS_CSUM" data-ref="_M/VIRTIO_NET_HDR_F_NEEDS_CSUM">VIRTIO_NET_HDR_F_NEEDS_CSUM</dfn> 1    /**&lt; Use csum_start,csum_offset*/</u></td></tr>
+<tr><th id="217">217</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_HDR_F_DATA_VALID" data-ref="_M/VIRTIO_NET_HDR_F_DATA_VALID">VIRTIO_NET_HDR_F_DATA_VALID</dfn> 2    /**&lt; Checksum is valid */</u></td></tr>
+<tr><th id="218">218</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="virtio_net_hdr::flags" title='virtio_net_hdr::flags' data-ref="virtio_net_hdr::flags">flags</dfn>;</td></tr>
+<tr><th id="219">219</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_HDR_GSO_NONE" data-ref="_M/VIRTIO_NET_HDR_GSO_NONE">VIRTIO_NET_HDR_GSO_NONE</dfn>     0    /**&lt; Not a GSO frame */</u></td></tr>
+<tr><th id="220">220</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_HDR_GSO_TCPV4" data-ref="_M/VIRTIO_NET_HDR_GSO_TCPV4">VIRTIO_NET_HDR_GSO_TCPV4</dfn>    1    /**&lt; GSO frame, IPv4 TCP (TSO) */</u></td></tr>
+<tr><th id="221">221</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_HDR_GSO_UDP" data-ref="_M/VIRTIO_NET_HDR_GSO_UDP">VIRTIO_NET_HDR_GSO_UDP</dfn>      3    /**&lt; GSO frame, IPv4 UDP (UFO) */</u></td></tr>
+<tr><th id="222">222</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_HDR_GSO_TCPV6" data-ref="_M/VIRTIO_NET_HDR_GSO_TCPV6">VIRTIO_NET_HDR_GSO_TCPV6</dfn>    4    /**&lt; GSO frame, IPv6 TCP */</u></td></tr>
+<tr><th id="223">223</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_NET_HDR_GSO_ECN" data-ref="_M/VIRTIO_NET_HDR_GSO_ECN">VIRTIO_NET_HDR_GSO_ECN</dfn>      0x80 /**&lt; TCP has ECN set */</u></td></tr>
+<tr><th id="224">224</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint8_t" title='uint8_t' data-type='unsigned char' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="virtio_net_hdr::gso_type" title='virtio_net_hdr::gso_type' data-ref="virtio_net_hdr::gso_type">gso_type</dfn>;</td></tr>
+<tr><th id="225">225</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="virtio_net_hdr::hdr_len" title='virtio_net_hdr::hdr_len' data-ref="virtio_net_hdr::hdr_len">hdr_len</dfn>;     <i class="doc">/**&lt; Ethernet + IP + tcp/udp hdrs */</i></td></tr>
+<tr><th id="226">226</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="virtio_net_hdr::gso_size" title='virtio_net_hdr::gso_size' data-ref="virtio_net_hdr::gso_size">gso_size</dfn>;    <i class="doc">/**&lt; Bytes to append to hdr_len per frame */</i></td></tr>
+<tr><th id="227">227</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="virtio_net_hdr::csum_start" title='virtio_net_hdr::csum_start' data-ref="virtio_net_hdr::csum_start">csum_start</dfn>;  <i class="doc">/**&lt; Position to start checksumming from */</i></td></tr>
+<tr><th id="228">228</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="virtio_net_hdr::csum_offset" title='virtio_net_hdr::csum_offset' data-ref="virtio_net_hdr::csum_offset">csum_offset</dfn>; <i class="doc">/**&lt; Offset after that to place checksum */</i></td></tr>
+<tr><th id="229">229</th><td>};</td></tr>
+<tr><th id="230">230</th><td></td></tr>
+<tr><th id="231">231</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="232">232</th><td><i class="doc"> * This is the version of the header to use when the MRG_RXBUF</i></td></tr>
+<tr><th id="233">233</th><td><i class="doc"> * feature has been negotiated.</i></td></tr>
+<tr><th id="234">234</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="235">235</th><td><b>struct</b> <dfn class="type def" id="virtio_net_hdr_mrg_rxbuf" title='virtio_net_hdr_mrg_rxbuf' data-ref="virtio_net_hdr_mrg_rxbuf">virtio_net_hdr_mrg_rxbuf</dfn> {</td></tr>
+<tr><th id="236">236</th><td>	<b>struct</b>   <a class="type" href="#virtio_net_hdr" title='virtio_net_hdr' data-ref="virtio_net_hdr">virtio_net_hdr</a> <dfn class="decl field" id="virtio_net_hdr_mrg_rxbuf::hdr" title='virtio_net_hdr_mrg_rxbuf::hdr' data-ref="virtio_net_hdr_mrg_rxbuf::hdr">hdr</dfn>;</td></tr>
+<tr><th id="237">237</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="decl field" id="virtio_net_hdr_mrg_rxbuf::num_buffers" title='virtio_net_hdr_mrg_rxbuf::num_buffers' data-ref="virtio_net_hdr_mrg_rxbuf::num_buffers">num_buffers</dfn>; <i class="doc">/**&lt; Number of merged rx buffers */</i></td></tr>
+<tr><th id="238">238</th><td>};</td></tr>
+<tr><th id="239">239</th><td></td></tr>
+<tr><th id="240">240</th><td><i>/* Region reserved to allow for transmit header and indirect ring */</i></td></tr>
+<tr><th id="241">241</th><td><u>#define <dfn class="macro" id="_M/VIRTIO_MAX_TX_INDIRECT" data-ref="_M/VIRTIO_MAX_TX_INDIRECT">VIRTIO_MAX_TX_INDIRECT</dfn> 8</u></td></tr>
+<tr><th id="242">242</th><td><b>struct</b> <dfn class="type def" id="virtio_tx_region" title='virtio_tx_region' data-ref="virtio_tx_region">virtio_tx_region</dfn> {</td></tr>
+<tr><th id="243">243</th><td>	<b>struct</b> <a class="type" href="#virtio_net_hdr_mrg_rxbuf" title='virtio_net_hdr_mrg_rxbuf' data-ref="virtio_net_hdr_mrg_rxbuf">virtio_net_hdr_mrg_rxbuf</a> <dfn class="decl field" id="virtio_tx_region::tx_hdr" title='virtio_tx_region::tx_hdr' data-ref="virtio_tx_region::tx_hdr">tx_hdr</dfn>;</td></tr>
+<tr><th id="244">244</th><td>	<b>struct</b> <a class="type" href="virtio_ring.h.html#vring_desc" title='vring_desc' data-ref="vring_desc">vring_desc</a> <dfn class="decl field" id="virtio_tx_region::tx_indir" title='virtio_tx_region::tx_indir' data-ref="virtio_tx_region::tx_indir">tx_indir</dfn>[<a class="macro" href="#241" title="8" data-ref="_M/VIRTIO_MAX_TX_INDIRECT">VIRTIO_MAX_TX_INDIRECT</a>]</td></tr>
+<tr><th id="245">245</th><td>			   <b>__attribute__</b>((__aligned__(<var>16</var>)));</td></tr>
+<tr><th id="246">246</th><td>};</td></tr>
+<tr><th id="247">247</th><td></td></tr>
+<tr><th id="248">248</th><td><i>/* Chain all the descriptors in the ring with an END */</i></td></tr>
+<tr><th id="249">249</th><td><em>static</em> <b>inline</b> <em>void</em></td></tr>
+<tr><th id="250">250</th><td><dfn class="decl def fn" id="vring_desc_init" title='vring_desc_init' data-ref="vring_desc_init">vring_desc_init</dfn>(<b>struct</b> <a class="type" href="virtio_ring.h.html#vring_desc" title='vring_desc' data-ref="vring_desc">vring_desc</a> *<dfn class="local col2 decl" id="92dp" title='dp' data-type='struct vring_desc *' data-ref="92dp">dp</dfn>, <a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="local col3 decl" id="93n" title='n' data-type='uint16_t' data-ref="93n">n</dfn>)</td></tr>
+<tr><th id="251">251</th><td>{</td></tr>
+<tr><th id="252">252</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="local col4 decl" id="94i" title='i' data-type='uint16_t' data-ref="94i">i</dfn>;</td></tr>
+<tr><th id="253">253</th><td></td></tr>
+<tr><th id="254">254</th><td>	<b>for</b> (<a class="local col4 ref" href="#94i" title='i' data-ref="94i">i</a> = <var>0</var>; <a class="local col4 ref" href="#94i" title='i' data-ref="94i">i</a> &lt; <a class="local col3 ref" href="#93n" title='n' data-ref="93n">n</a> - <var>1</var>; <a class="local col4 ref" href="#94i" title='i' data-ref="94i">i</a>++)</td></tr>
+<tr><th id="255">255</th><td>		<a class="local col2 ref" href="#92dp" title='dp' data-ref="92dp">dp</a>[<a class="local col4 ref" href="#94i" title='i' data-ref="94i">i</a>].<a class="ref field" href="virtio_ring.h.html#vring_desc::next" title='vring_desc::next' data-ref="vring_desc::next">next</a> = (<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a>)(<a class="local col4 ref" href="#94i" title='i' data-ref="94i">i</a> + <var>1</var>);</td></tr>
+<tr><th id="256">256</th><td>	<a class="local col2 ref" href="#92dp" title='dp' data-ref="92dp">dp</a>[<a class="local col4 ref" href="#94i" title='i' data-ref="94i">i</a>].<a class="ref field" href="virtio_ring.h.html#vring_desc::next" title='vring_desc::next' data-ref="vring_desc::next">next</a> = <a class="macro" href="#74" title="32768" data-ref="_M/VQ_RING_DESC_CHAIN_END">VQ_RING_DESC_CHAIN_END</a>;</td></tr>
+<tr><th id="257">257</th><td>}</td></tr>
+<tr><th id="258">258</th><td></td></tr>
+<tr><th id="259">259</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="260">260</th><td><i class="doc"> * Tell the backend not to interrupt us.</i></td></tr>
+<tr><th id="261">261</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="262">262</th><td><em>static</em> <b>inline</b> <em>void</em></td></tr>
+<tr><th id="263">263</th><td><dfn class="decl def fn" id="virtqueue_disable_intr" title='virtqueue_disable_intr' data-ref="virtqueue_disable_intr">virtqueue_disable_intr</dfn>(<b>struct</b> <a class="type" href="#virtqueue" title='virtqueue' data-ref="virtqueue">virtqueue</a> *<dfn class="local col5 decl" id="95vq" title='vq' data-type='struct virtqueue *' data-ref="95vq">vq</dfn>)</td></tr>
+<tr><th id="264">264</th><td>{</td></tr>
+<tr><th id="265">265</th><td>	<a class="local col5 ref" href="#95vq" title='vq' data-ref="95vq">vq</a>-&gt;<a class="ref field" href="#virtqueue::vq_ring" title='virtqueue::vq_ring' data-ref="virtqueue::vq_ring">vq_ring</a>.<a class="ref field" href="virtio_ring.h.html#vring::avail" title='vring::avail' data-ref="vring::avail">avail</a>-&gt;<a class="ref field" href="virtio_ring.h.html#vring_avail::flags" title='vring_avail::flags' data-ref="vring_avail::flags">flags</a> |= <a class="macro" href="virtio_ring.h.html#26" title="1" data-ref="_M/VRING_AVAIL_F_NO_INTERRUPT">VRING_AVAIL_F_NO_INTERRUPT</a>;</td></tr>
+<tr><th id="266">266</th><td>}</td></tr>
+<tr><th id="267">267</th><td></td></tr>
+<tr><th id="268">268</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="269">269</th><td><i class="doc"> * Tell the backend to interrupt us.</i></td></tr>
+<tr><th id="270">270</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="271">271</th><td><em>static</em> <b>inline</b> <em>void</em></td></tr>
+<tr><th id="272">272</th><td><dfn class="decl def fn" id="virtqueue_enable_intr" title='virtqueue_enable_intr' data-ref="virtqueue_enable_intr">virtqueue_enable_intr</dfn>(<b>struct</b> <a class="type" href="#virtqueue" title='virtqueue' data-ref="virtqueue">virtqueue</a> *<dfn class="local col6 decl" id="96vq" title='vq' data-type='struct virtqueue *' data-ref="96vq">vq</dfn>)</td></tr>
+<tr><th id="273">273</th><td>{</td></tr>
+<tr><th id="274">274</th><td>	<a class="local col6 ref" href="#96vq" title='vq' data-ref="96vq">vq</a>-&gt;<a class="ref field" href="#virtqueue::vq_ring" title='virtqueue::vq_ring' data-ref="virtqueue::vq_ring">vq_ring</a>.<a class="ref field" href="virtio_ring.h.html#vring::avail" title='vring::avail' data-ref="vring::avail">avail</a>-&gt;<a class="ref field" href="virtio_ring.h.html#vring_avail::flags" title='vring_avail::flags' data-ref="vring_avail::flags">flags</a> &amp;= (~<a class="macro" href="virtio_ring.h.html#26" title="1" data-ref="_M/VRING_AVAIL_F_NO_INTERRUPT">VRING_AVAIL_F_NO_INTERRUPT</a>);</td></tr>
+<tr><th id="275">275</th><td>}</td></tr>
+<tr><th id="276">276</th><td></td></tr>
+<tr><th id="277">277</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="278">278</th><td><i class="doc"> *  Dump virtqueue internal structures, for debug purpose only.</i></td></tr>
+<tr><th id="279">279</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="280">280</th><td><em>void</em> <dfn class="decl fn" id="virtqueue_dump" title='virtqueue_dump' data-ref="virtqueue_dump">virtqueue_dump</dfn>(<b>struct</b> <a class="type" href="#virtqueue" title='virtqueue' data-ref="virtqueue">virtqueue</a> *<dfn class="local col7 decl" id="97vq" title='vq' data-type='struct virtqueue *' data-ref="97vq">vq</dfn>);</td></tr>
+<tr><th id="281">281</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="282">282</th><td><i class="doc"> *  Get all mbufs to be freed.</i></td></tr>
+<tr><th id="283">283</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="284">284</th><td><b>struct</b> <a class="type" href="../../../lib/librte_mbuf/rte_mbuf.h.html#rte_mbuf" title='rte_mbuf' data-ref="rte_mbuf">rte_mbuf</a> *<dfn class="decl fn" id="virtqueue_detach_unused" title='virtqueue_detach_unused' data-ref="virtqueue_detach_unused">virtqueue_detach_unused</dfn>(<b>struct</b> <a class="type" href="#virtqueue" title='virtqueue' data-ref="virtqueue">virtqueue</a> *<dfn class="local col8 decl" id="98vq" title='vq' data-type='struct virtqueue *' data-ref="98vq">vq</dfn>);</td></tr>
+<tr><th id="285">285</th><td></td></tr>
+<tr><th id="286">286</th><td><i>/* Flush the elements in the used ring. */</i></td></tr>
+<tr><th id="287">287</th><td><em>void</em> <dfn class="decl fn" id="virtqueue_rxvq_flush" title='virtqueue_rxvq_flush' data-ref="virtqueue_rxvq_flush">virtqueue_rxvq_flush</dfn>(<b>struct</b> <a class="type" href="#virtqueue" title='virtqueue' data-ref="virtqueue">virtqueue</a> *<dfn class="local col9 decl" id="99vq" title='vq' data-type='struct virtqueue *' data-ref="99vq">vq</dfn>);</td></tr>
+<tr><th id="288">288</th><td></td></tr>
+<tr><th id="289">289</th><td><em>static</em> <b>inline</b> <em>int</em></td></tr>
+<tr><th id="290">290</th><td><dfn class="decl def fn" id="virtqueue_full" title='virtqueue_full' data-ref="virtqueue_full">virtqueue_full</dfn>(<em>const</em> <b>struct</b> <a class="type" href="#virtqueue" title='virtqueue' data-ref="virtqueue">virtqueue</a> *<dfn class="local col0 decl" id="100vq" title='vq' data-type='const struct virtqueue *' data-ref="100vq">vq</dfn>)</td></tr>
+<tr><th id="291">291</th><td>{</td></tr>
+<tr><th id="292">292</th><td>	<b>return</b> <a class="local col0 ref" href="#100vq" title='vq' data-ref="100vq">vq</a>-&gt;<a class="ref field" href="#virtqueue::vq_free_cnt" title='virtqueue::vq_free_cnt' data-ref="virtqueue::vq_free_cnt">vq_free_cnt</a> == <var>0</var>;</td></tr>
+<tr><th id="293">293</th><td>}</td></tr>
+<tr><th id="294">294</th><td></td></tr>
+<tr><th id="295">295</th><td><em>static</em> <b>inline</b> <em>int</em></td></tr>
+<tr><th id="296">296</th><td><dfn class="decl def fn" id="virtio_get_queue_type" title='virtio_get_queue_type' data-ref="virtio_get_queue_type">virtio_get_queue_type</dfn>(<b>struct</b> <a class="type" href="virtio_pci.h.html#virtio_hw" title='virtio_hw' data-ref="virtio_hw">virtio_hw</a> *<dfn class="local col1 decl" id="101hw" title='hw' data-type='struct virtio_hw *' data-ref="101hw">hw</dfn>, <a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="local col2 decl" id="102vtpci_queue_idx" title='vtpci_queue_idx' data-type='uint16_t' data-ref="102vtpci_queue_idx">vtpci_queue_idx</dfn>)</td></tr>
+<tr><th id="297">297</th><td>{</td></tr>
+<tr><th id="298">298</th><td>	<b>if</b> (<a class="local col2 ref" href="#102vtpci_queue_idx" title='vtpci_queue_idx' data-ref="102vtpci_queue_idx">vtpci_queue_idx</a> == <a class="local col1 ref" href="#101hw" title='hw' data-ref="101hw">hw</a>-&gt;<a class="ref field" href="virtio_pci.h.html#virtio_hw::max_queue_pairs" title='virtio_hw::max_queue_pairs' data-ref="virtio_hw::max_queue_pairs">max_queue_pairs</a> * <var>2</var>)</td></tr>
+<tr><th id="299">299</th><td>		<b>return</b> <a class="enum" href="#VTNET_CQ" title='VTNET_CQ' data-ref="VTNET_CQ">VTNET_CQ</a>;</td></tr>
+<tr><th id="300">300</th><td>	<b>else</b> <b>if</b> (<a class="local col2 ref" href="#102vtpci_queue_idx" title='vtpci_queue_idx' data-ref="102vtpci_queue_idx">vtpci_queue_idx</a> % <var>2</var> == <var>0</var>)</td></tr>
+<tr><th id="301">301</th><td>		<b>return</b> <a class="enum" href="#VTNET_RQ" title='VTNET_RQ' data-ref="VTNET_RQ">VTNET_RQ</a>;</td></tr>
+<tr><th id="302">302</th><td>	<b>else</b></td></tr>
+<tr><th id="303">303</th><td>		<b>return</b> <a class="enum" href="#VTNET_TQ" title='VTNET_TQ' data-ref="VTNET_TQ">VTNET_TQ</a>;</td></tr>
+<tr><th id="304">304</th><td>}</td></tr>
+<tr><th id="305">305</th><td></td></tr>
+<tr><th id="306">306</th><td><u>#define <dfn class="macro" id="_M/VIRTQUEUE_NUSED" data-ref="_M/VIRTQUEUE_NUSED">VIRTQUEUE_NUSED</dfn>(vq) ((uint16_t)((vq)-&gt;vq_ring.used-&gt;idx - (vq)-&gt;vq_used_cons_idx))</u></td></tr>
+<tr><th id="307">307</th><td></td></tr>
+<tr><th id="308">308</th><td><em>void</em> <dfn class="decl fn" id="vq_ring_free_chain" title='vq_ring_free_chain' data-ref="vq_ring_free_chain">vq_ring_free_chain</dfn>(<b>struct</b> <a class="type" href="#virtqueue" title='virtqueue' data-ref="virtqueue">virtqueue</a> *<dfn class="local col3 decl" id="103vq" title='vq' data-type='struct virtqueue *' data-ref="103vq">vq</dfn>, <a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="local col4 decl" id="104desc_idx" title='desc_idx' data-type='uint16_t' data-ref="104desc_idx">desc_idx</dfn>);</td></tr>
+<tr><th id="309">309</th><td><em>void</em> <dfn class="decl fn" id="vq_ring_free_inorder" title='vq_ring_free_inorder' data-ref="vq_ring_free_inorder">vq_ring_free_inorder</dfn>(<b>struct</b> <a class="type" href="#virtqueue" title='virtqueue' data-ref="virtqueue">virtqueue</a> *<dfn class="local col5 decl" id="105vq" title='vq' data-type='struct virtqueue *' data-ref="105vq">vq</dfn>, <a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="local col6 decl" id="106desc_idx" title='desc_idx' data-type='uint16_t' data-ref="106desc_idx">desc_idx</dfn>,</td></tr>
+<tr><th id="310">310</th><td>			  <a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="local col7 decl" id="107num" title='num' data-type='uint16_t' data-ref="107num">num</dfn>);</td></tr>
+<tr><th id="311">311</th><td></td></tr>
+<tr><th id="312">312</th><td><em>static</em> <b>inline</b> <em>void</em></td></tr>
+<tr><th id="313">313</th><td><dfn class="decl def fn" id="vq_update_avail_idx" title='vq_update_avail_idx' data-ref="vq_update_avail_idx">vq_update_avail_idx</dfn>(<b>struct</b> <a class="type" href="#virtqueue" title='virtqueue' data-ref="virtqueue">virtqueue</a> *<dfn class="local col8 decl" id="108vq" title='vq' data-type='struct virtqueue *' data-ref="108vq">vq</dfn>)</td></tr>
+<tr><th id="314">314</th><td>{</td></tr>
+<tr><th id="315">315</th><td>	<a class="macro" href="#30" title="do { __asm__ volatile (&quot;&quot; : : : &quot;memory&quot;); } while(0)" data-ref="_M/virtio_wmb">virtio_wmb</a>();</td></tr>
+<tr><th id="316">316</th><td>	<a class="local col8 ref" href="#108vq" title='vq' data-ref="108vq">vq</a>-&gt;<a class="ref field" href="#virtqueue::vq_ring" title='virtqueue::vq_ring' data-ref="virtqueue::vq_ring">vq_ring</a>.<a class="ref field" href="virtio_ring.h.html#vring::avail" title='vring::avail' data-ref="vring::avail">avail</a>-&gt;<a class="ref field" href="virtio_ring.h.html#vring_avail::idx" title='vring_avail::idx' data-ref="vring_avail::idx">idx</a> = <a class="local col8 ref" href="#108vq" title='vq' data-ref="108vq">vq</a>-&gt;<a class="ref field" href="#virtqueue::vq_avail_idx" title='virtqueue::vq_avail_idx' data-ref="virtqueue::vq_avail_idx">vq_avail_idx</a>;</td></tr>
+<tr><th id="317">317</th><td>}</td></tr>
+<tr><th id="318">318</th><td></td></tr>
+<tr><th id="319">319</th><td><em>static</em> <b>inline</b> <em>void</em></td></tr>
+<tr><th id="320">320</th><td><dfn class="decl def fn" id="vq_update_avail_ring" title='vq_update_avail_ring' data-ref="vq_update_avail_ring">vq_update_avail_ring</dfn>(<b>struct</b> <a class="type" href="#virtqueue" title='virtqueue' data-ref="virtqueue">virtqueue</a> *<dfn class="local col9 decl" id="109vq" title='vq' data-type='struct virtqueue *' data-ref="109vq">vq</dfn>, <a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="local col0 decl" id="110desc_idx" title='desc_idx' data-type='uint16_t' data-ref="110desc_idx">desc_idx</dfn>)</td></tr>
+<tr><th id="321">321</th><td>{</td></tr>
+<tr><th id="322">322</th><td>	<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a> <dfn class="local col1 decl" id="111avail_idx" title='avail_idx' data-type='uint16_t' data-ref="111avail_idx">avail_idx</dfn>;</td></tr>
+<tr><th id="323">323</th><td>	<i>/*</i></td></tr>
+<tr><th id="324">324</th><td><i>	 * Place the head of the descriptor chain into the next slot and make</i></td></tr>
+<tr><th id="325">325</th><td><i>	 * it usable to the host. The chain is made available now rather than</i></td></tr>
+<tr><th id="326">326</th><td><i>	 * deferring to virtqueue_notify() in the hopes that if the host is</i></td></tr>
+<tr><th id="327">327</th><td><i>	 * currently running on another CPU, we can keep it processing the new</i></td></tr>
+<tr><th id="328">328</th><td><i>	 * descriptor.</i></td></tr>
+<tr><th id="329">329</th><td><i>	 */</i></td></tr>
+<tr><th id="330">330</th><td>	<a class="local col1 ref" href="#111avail_idx" title='avail_idx' data-ref="111avail_idx">avail_idx</a> = (<a class="typedef" href="../../../../include/stdint.h.html#uint16_t" title='uint16_t' data-type='unsigned short' data-ref="uint16_t">uint16_t</a>)(<a class="local col9 ref" href="#109vq" title='vq' data-ref="109vq">vq</a>-&gt;<a class="ref field" href="#virtqueue::vq_avail_idx" title='virtqueue::vq_avail_idx' data-ref="virtqueue::vq_avail_idx">vq_avail_idx</a> &amp; (<a class="local col9 ref" href="#109vq" title='vq' data-ref="109vq">vq</a>-&gt;<a class="ref field" href="#virtqueue::vq_nentries" title='virtqueue::vq_nentries' data-ref="virtqueue::vq_nentries">vq_nentries</a> - <var>1</var>));</td></tr>
+<tr><th id="331">331</th><td>	<b>if</b> (<a class="macro" href="../../../lib/librte_eal/common/include/rte_branch_prediction.h.html#38" title="__builtin_expect(!!(vq-&gt;vq_ring.avail-&gt;ring[avail_idx] != desc_idx), 0)" data-ref="_M/unlikely">unlikely</a>(<a class="local col9 ref" href="#109vq" title='vq' data-ref="109vq">vq</a>-&gt;<a class="ref field" href="#virtqueue::vq_ring" title='virtqueue::vq_ring' data-ref="virtqueue::vq_ring">vq_ring</a>.<a class="ref field" href="virtio_ring.h.html#vring::avail" title='vring::avail' data-ref="vring::avail">avail</a>-&gt;<a class="ref field" href="virtio_ring.h.html#vring_avail::ring" title='vring_avail::ring' data-ref="vring_avail::ring">ring</a>[<a class="local col1 ref" href="#111avail_idx" title='avail_idx' data-ref="111avail_idx">avail_idx</a>] != <a class="local col0 ref" href="#110desc_idx" title='desc_idx' data-ref="110desc_idx">desc_idx</a>))</td></tr>
+<tr><th id="332">332</th><td>		<a class="local col9 ref" href="#109vq" title='vq' data-ref="109vq">vq</a>-&gt;<a class="ref field" href="#virtqueue::vq_ring" title='virtqueue::vq_ring' data-ref="virtqueue::vq_ring">vq_ring</a>.<a class="ref field" href="virtio_ring.h.html#vring::avail" title='vring::avail' data-ref="vring::avail">avail</a>-&gt;<a class="ref field" href="virtio_ring.h.html#vring_avail::ring" title='vring_avail::ring' data-ref="vring_avail::ring">ring</a>[<a class="local col1 ref" href="#111avail_idx" title='avail_idx' data-ref="111avail_idx">avail_idx</a>] = <a class="local col0 ref" href="#110desc_idx" title='desc_idx' data-ref="110desc_idx">desc_idx</a>;</td></tr>
+<tr><th id="333">333</th><td>	<a class="local col9 ref" href="#109vq" title='vq' data-ref="109vq">vq</a>-&gt;<a class="ref field" href="#virtqueue::vq_avail_idx" title='virtqueue::vq_avail_idx' data-ref="virtqueue::vq_avail_idx">vq_avail_idx</a>++;</td></tr>
+<tr><th id="334">334</th><td>}</td></tr>
+<tr><th id="335">335</th><td></td></tr>
+<tr><th id="336">336</th><td><em>static</em> <b>inline</b> <em>int</em></td></tr>
+<tr><th id="337">337</th><td><dfn class="decl def fn" id="virtqueue_kick_prepare" title='virtqueue_kick_prepare' data-ref="virtqueue_kick_prepare">virtqueue_kick_prepare</dfn>(<b>struct</b> <a class="type" href="#virtqueue" title='virtqueue' data-ref="virtqueue">virtqueue</a> *<dfn class="local col2 decl" id="112vq" title='vq' data-type='struct virtqueue *' data-ref="112vq">vq</dfn>)</td></tr>
+<tr><th id="338">338</th><td>{</td></tr>
+<tr><th id="339">339</th><td>	<b>return</b> !(<a class="local col2 ref" href="#112vq" title='vq' data-ref="112vq">vq</a>-&gt;<a class="ref field" href="#virtqueue::vq_ring" title='virtqueue::vq_ring' data-ref="virtqueue::vq_ring">vq_ring</a>.<a class="ref field" href="virtio_ring.h.html#vring::used" title='vring::used' data-ref="vring::used">used</a>-&gt;<a class="ref field" href="virtio_ring.h.html#vring_used::flags" title='vring_used::flags' data-ref="vring_used::flags">flags</a> &amp; <a class="macro" href="virtio_ring.h.html#22" title="1" data-ref="_M/VRING_USED_F_NO_NOTIFY">VRING_USED_F_NO_NOTIFY</a>);</td></tr>
+<tr><th id="340">340</th><td>}</td></tr>
+<tr><th id="341">341</th><td></td></tr>
+<tr><th id="342">342</th><td><em>static</em> <b>inline</b> <em>void</em></td></tr>
+<tr><th id="343">343</th><td><dfn class="decl def fn" id="virtqueue_notify" title='virtqueue_notify' data-ref="virtqueue_notify">virtqueue_notify</dfn>(<b>struct</b> <a class="type" href="#virtqueue" title='virtqueue' data-ref="virtqueue">virtqueue</a> *<dfn class="local col3 decl" id="113vq" title='vq' data-type='struct virtqueue *' data-ref="113vq">vq</dfn>)</td></tr>
+<tr><th id="344">344</th><td>{</td></tr>
+<tr><th id="345">345</th><td>	<i>/*</i></td></tr>
+<tr><th id="346">346</th><td><i>	 * Ensure updated avail-&gt;idx is visible to host.</i></td></tr>
+<tr><th id="347">347</th><td><i>	 * For virtio on IA, the notificaiton is through io port operation</i></td></tr>
+<tr><th id="348">348</th><td><i>	 * which is a serialization instruction itself.</i></td></tr>
+<tr><th id="349">349</th><td><i>	 */</i></td></tr>
+<tr><th id="350">350</th><td>	<a class="macro" href="virtio_pci.h.html#276" title="(virtio_hw_internal[(vq-&gt;hw)-&gt;port_id].vtpci_ops)" data-ref="_M/VTPCI_OPS">VTPCI_OPS</a>(<a class="local col3 ref" href="#113vq" title='vq' data-ref="113vq">vq</a>-&gt;<a class="ref field" href="#virtqueue::hw" title='virtqueue::hw' data-ref="virtqueue::hw">hw</a>)-&gt;<a class="ref field" href="virtio_pci.h.html#virtio_pci_ops::notify_queue" title='virtio_pci_ops::notify_queue' data-ref="virtio_pci_ops::notify_queue">notify_queue</a>(<a class="local col3 ref" href="#113vq" title='vq' data-ref="113vq">vq</a>-&gt;<a class="ref field" href="#virtqueue::hw" title='virtqueue::hw' data-ref="virtqueue::hw">hw</a>, <a class="local col3 ref" href="#113vq" title='vq' data-ref="113vq">vq</a>);</td></tr>
+<tr><th id="351">351</th><td>}</td></tr>
+<tr><th id="352">352</th><td></td></tr>
+<tr><th id="353">353</th><td><u>#<span data-ppcond="353">ifdef</span> <span class="macro" data-ref="_M/RTE_LIBRTE_VIRTIO_DEBUG_DUMP">RTE_LIBRTE_VIRTIO_DEBUG_DUMP</span></u></td></tr>
+<tr><th id="354">354</th><td><u>#define VIRTQUEUE_DUMP(vq) do { \</u></td></tr>
+<tr><th id="355">355</th><td><u>	uint16_t used_idx, nused; \</u></td></tr>
+<tr><th id="356">356</th><td><u>	used_idx = (vq)-&gt;vq_ring.used-&gt;idx; \</u></td></tr>
+<tr><th id="357">357</th><td><u>	nused = (uint16_t)(used_idx - (vq)-&gt;vq_used_cons_idx); \</u></td></tr>
+<tr><th id="358">358</th><td><u>	PMD_INIT_LOG(DEBUG, \</u></td></tr>
+<tr><th id="359">359</th><td><u>	  "VQ: - size=%d; free=%d; used=%d; desc_head_idx=%d;" \</u></td></tr>
+<tr><th id="360">360</th><td><u>	  " avail.idx=%d; used_cons_idx=%d; used.idx=%d;" \</u></td></tr>
+<tr><th id="361">361</th><td><u>	  " avail.flags=0x%x; used.flags=0x%x", \</u></td></tr>
+<tr><th id="362">362</th><td><u>	  (vq)-&gt;vq_nentries, (vq)-&gt;vq_free_cnt, nused, \</u></td></tr>
+<tr><th id="363">363</th><td><u>	  (vq)-&gt;vq_desc_head_idx, (vq)-&gt;vq_ring.avail-&gt;idx, \</u></td></tr>
+<tr><th id="364">364</th><td><u>	  (vq)-&gt;vq_used_cons_idx, (vq)-&gt;vq_ring.used-&gt;idx, \</u></td></tr>
+<tr><th id="365">365</th><td><u>	  (vq)-&gt;vq_ring.avail-&gt;flags, (vq)-&gt;vq_ring.used-&gt;flags); \</u></td></tr>
+<tr><th id="366">366</th><td><u>} while (0)</u></td></tr>
+<tr><th id="367">367</th><td><u>#<span data-ppcond="353">else</span></u></td></tr>
+<tr><th id="368">368</th><td><u>#define <dfn class="macro" id="_M/VIRTQUEUE_DUMP" data-ref="_M/VIRTQUEUE_DUMP">VIRTQUEUE_DUMP</dfn>(vq) do { } while (0)</u></td></tr>
+<tr><th id="369">369</th><td><u>#<span data-ppcond="353">endif</span></u></td></tr>
+<tr><th id="370">370</th><td></td></tr>
+<tr><th id="371">371</th><td><u>#<span data-ppcond="5">endif</span> /* _VIRTQUEUE_H_ */</u></td></tr>
+<tr><th id="372">372</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='virtio_ethdev.c.html'>linux-4.18.y/drivers/net/virtio/virtio_ethdev.c</a><br/>Generated on <em>2018-Oct-01</em> from project linux-4.18.y revision <em>linux-4.18.y</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>
